@@ -30,7 +30,6 @@ bool initGame()
 	{
 		gameData = GameData();
 	}
-
 	return true;
 }
 
@@ -74,16 +73,6 @@ bool gameLogic(float deltaTime)
 		gameData.posx += speed;
 	}
 
-	if (platform::isKeyTyped(platform::Button::NR1)
-		)
-	{
-		gameData.test -= 1;
-	}
-	if (platform::isKeyTyped(platform::Button::NR2)
-		)
-	{
-		gameData.test += 1;
-	}
 
 
 	if (platform::isKeyPressedOn(platform::Button::Enter))
@@ -92,23 +81,11 @@ bool gameLogic(float deltaTime)
 	}
 #pragma endregion
 
-	glm::vec4 colors[4] = { Colors_Orange, Colors_Orange, Colors_Orange, Colors_Orange };
-
-	{
-		colors[0].r = platform::getControllerButtons().LT;
-		colors[1].r = platform::getControllerButtons().RT;
-		colors[2].r = platform::getControllerButtons().LStick.x;
-		colors[3].r = platform::getControllerButtons().RStick.y;
-	}
-
-	renderer.renderRectangle({ 10,10, 100, 100 }, colors, {}, 30);
 
 	
-	renderer.renderRectangle({ gameData.posx,gameData.posy, 100, 100 }, { 0,0 }, 0, texture);
 
-	renderer.renderText({10,200}, std::to_string(gameData.test).c_str(), font, Colors_White, 1.5, 4.0, 3, false);
+	
 
-	//ImGui::ShowDemoWindow();
 
 
 #pragma region set finishing stuff
