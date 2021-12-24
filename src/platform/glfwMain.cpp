@@ -37,6 +37,7 @@ bool fullScreen = 0;
 #pragma endregion
 
 
+
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
 
@@ -303,7 +304,6 @@ int main()
 	glfwSetWindowSizeCallback(wind, windowSizeCallback);
 	glfwSetCursorPosCallback(wind, cursorPositionCallback);
 
-	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 	permaAssertComment(gladLoadGL(), "err initializing glad");
 
 #pragma endregion
@@ -336,7 +336,7 @@ int main()
 		}
 	
 		ImGui_ImplGlfw_InitForOpenGL(wind, true);
-		ImGui_ImplOpenGL3_Init("#version 120");
+		ImGui_ImplOpenGL3_Init("#version 330");
 	#endif
 #pragma endregion
 

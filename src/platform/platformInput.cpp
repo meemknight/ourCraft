@@ -89,6 +89,7 @@ void platform::internal::setRightMouseState(int newState)
 
 }
 
+
 void platform::internal::updateAllButtons(float deltaTime)
 {
 	for (int i = 0; i < platform::Button::BUTTONS_COUNT; i++)

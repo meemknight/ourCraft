@@ -108,7 +108,7 @@ bool gameLogic(float deltaTime)
 
 	renderer.renderText({10,200}, std::to_string(gameData.test).c_str(), font, Colors_White, 1.5, 4.0, 3, false);
 
-	ImGui::ShowDemoWindow();
+	//ImGui::ShowDemoWindow();
 
 
 #pragma region set finishing stuff

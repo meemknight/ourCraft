@@ -1,19 +1,7 @@
 //////////////////////////////////////////////////
-//gl2d.cpp				1.2.2
+//opengl2Dlib.cpp				1.2
 //Copyright(c) 2020 Luta Vlad
 //https://github.com/meemknight/gl2d
-// 
-//notes: 
-// 1.2.1
-// fixed alpha in the particle system with the 
-// post process
-// 
-// 1.2.2
-// added default values to structs
-// added some more error reporting
-// added option to change gl version and 
-//  shader presision
-// 
 //////////////////////////////////////////////////
 
 
@@ -21,32 +9,26 @@
 //
 //	investigate more simdize functions
 //	mabe check at runtime cpu features
+//	check min gl version
 //	add particle demo
-//	mabe add a flag to load textures in pixelated modes or not
+//	mabe add a flag to load textures in pixelated modes
+//	add linux support
 //	remake some functions
 //
 
+
 #include <gl2d/gl2d.h>
-
-#ifdef _WIN32
-#include <gl/GL.h>
-#include <Windows.h>
-#endif
-
 #include <fstream>
 #include <sstream>
 #include <algorithm>
-#include <iostream>
 
 
 #ifdef _MSC_VER
 #pragma warning( push )
 #pragma warning( disable : 4244 4305 4267 4996 4018)
-#pragma comment(lib, "Opengl32.lib")
 #endif
 
 #undef max
-
 
 namespace gl2d
 {
@@ -54,16 +36,16 @@ namespace gl2d
 
 	static internal::ShaderProgram defaultShader = {};
 	static internal::ShaderProgram defaultParticleShader = {};
-	static Camera defaultCamera{};
+	static Camera defaultCamera = cameraCreateDefault();
 
-	static const char* defaultVertexShader =
-		GL2D_OPNEGL_SHADER_VERSION "\n"
-		GL2D_OPNEGL_SHADER_PRECISION "\n"
-		"vec2 quad_positions;\n"
-		"vec4 quad_colors;\n"
-		"vec2 texturePositions;\n"
-		"varying vec4 v_color;\n"
-		"varying vec2 v_texture;\n"
+	static const char *defaultVertexShader =
+		"#version 300 es\n"
+		"precision mediump float;\n"
+		"in vec2 quad_positions;\n"
+		"in vec4 quad_colors;\n"
+		"in vec2 texturePositions;\n"
+		"out vec4 v_color;\n"
+		"out vec2 v_texture;\n"
 		"void main()\n"
 		"{\n"
 		"	gl_Position = vec4(quad_positions, 0, 1);\n"
@@ -71,25 +53,26 @@ namespace gl2d
 		"	v_texture = texturePositions;\n"
 		"}\n";
 
-	static const char* defaultFragmentShader =
-		GL2D_OPNEGL_SHADER_VERSION "\n"
-		GL2D_OPNEGL_SHADER_PRECISION "\n"
-		"vec4 v_color;\n"
-		"vec2 v_texture;\n"
+	static const char *defaultFragmentShader =
+		"#version 300 es\n"
+		"precision mediump float;\n"
+		"out vec4 color;\n"
+		"in vec4 v_color;\n"
+		"in vec2 v_texture;\n"
 		"uniform sampler2D u_sampler;\n"
 		"void main()\n"
 		"{\n"
-		"    gl_FragColor = v_color * texture2D(u_sampler, v_texture);\n"
+		"    color = v_color * texture(u_sampler, v_texture);\n"
 		"}\n";
 
-	static const char* defaultParticleVertexShader =
-		GL2D_OPNEGL_SHADER_VERSION "\n"
-		GL2D_OPNEGL_SHADER_PRECISION "\n"
-		"vec2 quad_positions;\n"
-		"vec4 quad_colors;\n"
-		"vec2 texturePositions;\n"
-		"varying vec4 v_color;\n"
-		"varying vec2 v_texture;\n"
+	static const char *defaultParticleVertexShader =
+		"#version 300 es\n"
+		"precision mediump float;\n"
+		"in vec2 quad_positions;\n"
+		"in vec4 quad_colors;\n"
+		"in vec2 texturePositions;\n"
+		"out vec4 v_color;\n"
+		"out vec2 v_texture;\n"
 		"void main()\n"
 		"{\n"
 		"	gl_Position = vec4(quad_positions, 0, 1);\n"
@@ -97,63 +80,65 @@ namespace gl2d
 		"	v_texture = texturePositions;\n"
 		"}\n";
 
-	static const char* defaultParcileFragmentShader =
-		GL2D_OPNEGL_SHADER_VERSION "\n"
-		GL2D_OPNEGL_SHADER_PRECISION "\n"
-		R"(
-			vec4 v_color;
-			vec2 v_texture;
-			uniform sampler2D u_sampler;
-			
-			vec3 rgbTohsv(vec3 c)
-			{
-				vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
-				vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
-				vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
-			
-				float d = q.x - min(q.w, q.y);
-				float e = 1.0e-10;
-				return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
-			}
-			
-			vec3 hsvTorgb(vec3 c)
-			{
-				vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-				vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-				return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-			}
-			
-			const float cFilter = 5.f;
-			
-			void main()
-			{
-				vec4 color = v_color * texture2D(u_sampler, v_texture);
-				
-				if(color.a <0.01)discard;
-				//color.a = 1.f;
-			
-				//color.a = pow(color.a, 0.2); 
-			
-				color.rgb *= cFilter;				//
-				color.rgb = floor(color.rgb);		//remove color quality
-				color.rgb /= cFilter;				//
-			
-				//color.rgb = rgbTohsv(color.rgb);
-			
-				//color.rgb = hsvTorgb(color.rgb);
-				gl_FragColor = color;
-			})";
+	static const char *defaultParcileFragmentShader =
+		R"(#version 300 es
+precision mediump float;
+out vec4 color;
+in vec4 v_color;
+in vec2 v_texture;
+uniform sampler2D u_sampler;
+
+vec3 rgbTohsv(vec3 c)
+{
+	vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+	vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+	vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+
+	float d = q.x - min(q.w, q.y);
+	float e = 1.0e-10;
+	return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+ 
+
+vec3 hsvTorgb(vec3 c)
+{
+	vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+	vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+	return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
+const float cFilter = 5.f;
+
+void main()
+{
+	color = v_color * texture(u_sampler, v_texture);
+	
+	if(color.a <0.01)discard;
+	//color.a = 1.f;
+
+	color.a = pow(color.a, 0.2); 
+
+	color.rgb *= cFilter;
+	color.rgb = floor(color.rgb);
+	color.rgb /= cFilter;
+
+	//color.rgb = rgbTohsv(color.rgb);
+
+	//color.rgb = hsvTorgb(color.rgb);
+	
+
+})";
 
 #pragma endregion
 
-	static errorFuncType* errorFunc = defaultErrorFunc;
+	static errorFuncType *errorFunc = defaultErrorFunc;
 
-	void defaultErrorFunc(const char* msg)
+	void defaultErrorFunc(const char *msg)
 	{
-		std::cerr << "gl2d error: " << msg << "\n";
+
 	}
 
-	errorFuncType* setErrorFuncCallback(errorFuncType* newFunc)
+	errorFuncType *setErrorFuncCallback(errorFuncType *newFunc)
 	{
 		auto a = errorFunc;
 		errorFunc = newFunc;
@@ -174,7 +159,7 @@ namespace gl2d
 
 		stbtt_aligned_quad fontGetGlyphQuad(const Font font, const char c)
 		{
-			stbtt_aligned_quad quad = {0};
+			stbtt_aligned_quad quad = { 0 };
 
 			float x = 0;
 			float y = 0;
@@ -193,10 +178,10 @@ namespace gl2d
 
 			const stbtt_aligned_quad quad = fontGetGlyphQuad(font, c);
 
-			return glm::vec4{quad.s0, quad.t0, quad.s1, quad.t1};
+			return glm::vec4{ quad.s0, quad.t0, quad.s1, quad.t1 };
 		}
 
-		GLuint loadShader(const char* source, GLenum shaderType)
+		GLuint loadShader(const char *source, GLenum shaderType)
 		{
 			GLuint id = glCreateShader(shaderType);
 
@@ -208,7 +193,7 @@ namespace gl2d
 
 			if (!result)
 			{
-				char* message = 0;
+				char *message = 0;
 				int   l = 0;
 
 				glGetShaderiv(id, GL_INFO_LOG_LENGTH, &l);
@@ -228,9 +213,9 @@ namespace gl2d
 			return id;
 		}
 
-		internal::ShaderProgram createShaderProgram(const char* vertex, const char* fragment)
+		internal::ShaderProgram createShaderProgram(const char *vertex, const char *fragment)
 		{
-			internal::ShaderProgram shader = {0};
+			internal::ShaderProgram shader = { 0 };
 
 			const GLuint vertexId = loadShader(vertex, GL_VERTEX_SHADER);
 			const GLuint fragmentId = loadShader(fragment, GL_FRAGMENT_SHADER);
@@ -253,7 +238,7 @@ namespace gl2d
 
 			if (info != GL_TRUE)
 			{
-				char* message = 0;
+				char *message = 0;
 				int   l = 0;
 
 				glGetProgramiv(shader.id, GL_INFO_LOG_LENGTH, &l);
@@ -275,15 +260,9 @@ namespace gl2d
 		}
 	}
 
-	#ifdef _WIN32
-	typedef BOOL(WINAPI* PFNWGLSWAPINTERVALEXTPROC) (int interval);
-	#endif
-	
 	struct
 	{
-	#ifdef _WIN32
-		PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
-	#endif
+		bool WGL_EXT_swap_control_ext;
 	}extensions = {};
 
 	bool hasInitialized = 0;
@@ -304,12 +283,11 @@ namespace gl2d
 		//	}
 		//}
 
-	#ifdef _WIN32
-		//add linux suport
-
-		//if you are not using visual studio make shure you link to "Opengl32.lib"
-		extensions.wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
-	#endif
+		//todo linux suport
+		//if (wglGetProcAddress("wglSwapIntervalEXT") != nullptr)
+		//{
+		//	extensions.WGL_EXT_swap_control_ext = true;
+		//}
 
 		defaultShader = internal::createShaderProgram(defaultVertexShader, defaultFragmentShader);
 		defaultParticleShader = internal::createShaderProgram(defaultParticleVertexShader, defaultParcileFragmentShader);
@@ -318,20 +296,17 @@ namespace gl2d
 
 	bool setVsync(bool b)
 	{
-		//add linux suport
-		#ifdef _WIN32
-		if (extensions.wglSwapIntervalEXT != nullptr)
+		return false;
+		//todo linux suport
+		if (extensions.WGL_EXT_swap_control_ext)
 		{
-			bool rezult = extensions.wglSwapIntervalEXT(b);
-			return rezult;
+			//wglSwapIntervalEXT(b);
+			//return true;
 		}
 		else
 		{
 			return false;
 		}
-		#else
-			return false;
-		#endif
 	}
 
 	glm::vec2 rotateAroundPoint(glm::vec2 vec, glm::vec2 point, const float degrees)
@@ -360,7 +335,7 @@ namespace gl2d
 	///////////////////// Texture /////////////////////
 #pragma region Texture
 
-	void convertFromRetardedCoordonates(int tSizeX, int tSizeY, int x, int y, int sizeX, int sizeY, int s1, int s2, int s3, int s4, Texture_Coords* outer, Texture_Coords* inner)
+	void convertFromRetardedCoordonates(int tSizeX, int tSizeY, int x, int y, int sizeX, int sizeY, int s1, int s2, int s3, int s4, Texture_Coords *outer, Texture_Coords *inner)
 	{
 		float newX = (float)tSizeX / (float)x;
 		float newY = (float)tSizeY / (float)y;
@@ -392,25 +367,25 @@ namespace gl2d
 	///////////////////// Font /////////////////////
 #pragma region Font
 
-	void Font::createFromTTF(const unsigned char* ttf_data, const size_t ttf_data_size)
+	void Font::createFromTTF(const unsigned char *ttf_data, const size_t ttf_data_size)
 	{
 
 		size.x = 2000,
 			size.y = 2000,
 			max_height = 0,
-			packedCharsBufferSize = ('~' - ' ');
+			packedCharsBufferSize = sizeof(stbtt_packedchar) * ('~' - ' ');
 
-		//STB TrueType will give us a one channel buffer of the font that we then convert to RGBA for OpenGL
+			//STB TrueType will give us a one channel buffer of the font that we then convert to RGBA for OpenGL
 		const size_t fontMonochromeBufferSize = size.x * size.y;
 		const size_t fontRgbaBufferSize = size.x * size.y * 4;
 
-		unsigned char* fontMonochromeBuffer = new unsigned char[fontMonochromeBufferSize];
-		unsigned char* fontRgbaBuffer = new unsigned char[fontRgbaBufferSize];
+		unsigned char *fontMonochromeBuffer = new unsigned char[fontMonochromeBufferSize];
+		unsigned char *fontRgbaBuffer = new unsigned char[fontRgbaBufferSize];
 
 		packedCharsBuffer = new stbtt_packedchar[packedCharsBufferSize];
 
 		stbtt_pack_context stbtt_context;
-		stbtt_PackBegin(&stbtt_context, fontMonochromeBuffer, size.x, size.y, 0, 2, NULL);
+		stbtt_PackBegin(&stbtt_context, fontMonochromeBuffer, size.x, size.y, 0, 1, NULL);
 		stbtt_PackSetOversampling(&stbtt_context, 2, 2);
 		stbtt_PackFontRange(&stbtt_context, ttf_data, 0, 65, ' ', '~' - ' ', packedCharsBuffer);
 		stbtt_PackEnd(&stbtt_context);
@@ -459,13 +434,13 @@ namespace gl2d
 		}
 	}
 
-	void Font::createFromFile(const char* file)
+	void Font::createFromFile(const char *file)
 	{
 		std::ifstream fileFont(file, std::ios::binary);
 
 		if (!fileFont.is_open())
 		{
-			char c[300] = {0};
+			char c[300] = { 0 };
 			strcat(c, "error openning: ");
 			strcat(c + strlen(c), file);
 			errorFunc(c);
@@ -476,8 +451,8 @@ namespace gl2d
 		fileFont.seekg(0, std::ios::end);
 		fileSize = (int)fileFont.tellg();
 		fileFont.seekg(0, std::ios::beg);
-		unsigned char* fileData = new unsigned char[fileSize];
-		fileFont.read((char*)fileData, fileSize);
+		unsigned char *fileData = new unsigned char[fileSize];
+		fileFont.read((char *)fileData, fileSize);
 		fileFont.close();
 
 		createFromTTF(fileData, fileSize);
@@ -490,7 +465,12 @@ namespace gl2d
 
 	///////////////////// Camera /////////////////////
 #pragma region Camera
-
+	Camera cameraCreateDefault()
+	{
+		Camera c = {};
+		c.zoom = 1;
+		return c;
+	}
 #pragma endregion
 
 	///////////////////// Renderer2D /////////////////////
@@ -498,16 +478,6 @@ namespace gl2d
 
 	void gl2d::Renderer2D::flush()
 	{
-		if (!hasInitialized)
-		{
-			errorFunc("Library not initialized. Have you forgotten to call gl2d::init() ?");
-		}
-
-		if (!vao)
-		{
-			errorFunc("Renderer not initialized. Have you forgotten to call gl2d::Renderer2D::create() ?");
-		}
-
 		if (windowH == 0 || windowW == 0)
 		{
 			spritePositionsCount = 0;
@@ -521,6 +491,7 @@ namespace gl2d
 		{
 			return;
 		}
+
 
 		glViewport(0, 0, windowW, windowH);
 
@@ -574,11 +545,6 @@ namespace gl2d
 
 	void Renderer2D::flushFBO(FrameBuffer frameBuffer)
 	{
-		if (frameBuffer.fbo == 0)
-		{
-			errorFunc("Framebuffer not initialized");
-		}
-
 		glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer.fbo);
 		glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -591,13 +557,14 @@ namespace gl2d
 	{
 		glEnable(GL_BLEND);
 		glEnable(GL_MULTISAMPLE);
-		//glEnable(GL_SAMPLE_SHADING);
+		glEnable(GL_LINE_SMOOTH);
+		glEnable(GL_POLYGON_SMOOTH);
+		glEnable(GL_SAMPLE_SHADING);
 
 		glDisable(GL_DEPTH_TEST);
 
 		glBlendEquation(GL_FUNC_ADD);
-		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 
 	///////////////////// Renderer2D - render ///////////////////// 
@@ -612,21 +579,13 @@ namespace gl2d
 
 	void gl2d::Renderer2D::renderRectangleAbsRotation(const Rect transforms, const Color4f colors[4], const glm::vec2 origin, const float rotation, const Texture texture, const glm::vec4 textureCoords)
 	{
-		Texture textureCopy = texture;
-
-		if (textureCopy.id == 0)
-		{
-			errorFunc("Invalid texture");
-			textureCopy = this->white1pxSquareTexture;
-		}
-
 		//We need to flip texture_transforms.y
 		const float transformsY = transforms.y * -1;
 
-		glm::vec2 v1 = {transforms.x,				  transformsY};
-		glm::vec2 v2 = {transforms.x,				  transformsY - transforms.w};
-		glm::vec2 v3 = {transforms.x + transforms.z, transformsY - transforms.w};
-		glm::vec2 v4 = {transforms.x + transforms.z, transformsY};
+		glm::vec2 v1 = { transforms.x,				  transformsY };
+		glm::vec2 v2 = { transforms.x,				  transformsY - transforms.w };
+		glm::vec2 v3 = { transforms.x + transforms.z, transformsY - transforms.w };
+		glm::vec2 v4 = { transforms.x + transforms.z, transformsY };
 
 		//Apply rotations
 		if (rotation != 0)
@@ -684,13 +643,13 @@ namespace gl2d
 		v3.y = internal::positionToScreenCoordsY(v3.y, (float)windowH);
 		v4.y = internal::positionToScreenCoordsY(v4.y, (float)windowH);
 
-		spritePositions[spritePositionsCount++] = glm::vec2{v1.x, v1.y};
-		spritePositions[spritePositionsCount++] = glm::vec2{v2.x, v2.y};
-		spritePositions[spritePositionsCount++] = glm::vec2{v4.x, v4.y};
+		spritePositions[spritePositionsCount++] = glm::vec2{ v1.x, v1.y };
+		spritePositions[spritePositionsCount++] = glm::vec2{ v2.x, v2.y };
+		spritePositions[spritePositionsCount++] = glm::vec2{ v4.x, v4.y };
 
-		spritePositions[spritePositionsCount++] = glm::vec2{v2.x, v2.y};
-		spritePositions[spritePositionsCount++] = glm::vec2{v3.x, v3.y};
-		spritePositions[spritePositionsCount++] = glm::vec2{v4.x, v4.y};
+		spritePositions[spritePositionsCount++] = glm::vec2{ v2.x, v2.y };
+		spritePositions[spritePositionsCount++] = glm::vec2{ v3.x, v3.y };
+		spritePositions[spritePositionsCount++] = glm::vec2{ v4.x, v4.y };
 
 		spriteColors[spriteColorsCount++] = colors[0];
 		spriteColors[spriteColorsCount++] = colors[1];
@@ -699,25 +658,25 @@ namespace gl2d
 		spriteColors[spriteColorsCount++] = colors[2];
 		spriteColors[spriteColorsCount++] = colors[3];
 
-		texturePositions[texturePositionsCount++] = glm::vec2{textureCoords.x, textureCoords.y}; //1
-		texturePositions[texturePositionsCount++] = glm::vec2{textureCoords.x, textureCoords.w}; //2
-		texturePositions[texturePositionsCount++] = glm::vec2{textureCoords.z, textureCoords.y}; //4
-		texturePositions[texturePositionsCount++] = glm::vec2{textureCoords.x, textureCoords.w}; //2
-		texturePositions[texturePositionsCount++] = glm::vec2{textureCoords.z, textureCoords.w}; //3
-		texturePositions[texturePositionsCount++] = glm::vec2{textureCoords.z, textureCoords.y}; //4
+		texturePositions[texturePositionsCount++] = glm::vec2{ textureCoords.x, textureCoords.y }; //1
+		texturePositions[texturePositionsCount++] = glm::vec2{ textureCoords.x, textureCoords.w }; //2
+		texturePositions[texturePositionsCount++] = glm::vec2{ textureCoords.z, textureCoords.y }; //4
+		texturePositions[texturePositionsCount++] = glm::vec2{ textureCoords.x, textureCoords.w }; //2
+		texturePositions[texturePositionsCount++] = glm::vec2{ textureCoords.z, textureCoords.w }; //3
+		texturePositions[texturePositionsCount++] = glm::vec2{ textureCoords.z, textureCoords.y }; //4
 
-		spriteTextures[spriteTexturesCount++] = textureCopy;
+		spriteTextures[spriteTexturesCount++] = texture;
 	}
 
 	void Renderer2D::renderRectangle(const Rect transforms, const glm::vec2 origin, const float rotation, const Texture texture, const glm::vec4 textureCoords)
 	{
-		gl2d::Color4f colors[4] = {Colors_White, Colors_White, Colors_White, Colors_White};
+		gl2d::Color4f colors[4] = { Colors_White, Colors_White, Colors_White, Colors_White };
 		renderRectangle(transforms, colors, origin, rotation, texture, textureCoords);
 	}
 
 	void Renderer2D::renderRectangleAbsRotation(const Rect transforms, const glm::vec2 origin, const float rotation, const Texture texture, const glm::vec4 textureCoords)
 	{
-		gl2d::Color4f colors[4] = {Colors_White, Colors_White, Colors_White, Colors_White};
+		gl2d::Color4f colors[4] = { Colors_White, Colors_White, Colors_White, Colors_White };
 		renderRectangleAbsRotation(transforms, colors, origin, rotation, texture, textureCoords);
 	}
 
@@ -733,7 +692,7 @@ namespace gl2d
 
 	void Renderer2D::render9Patch(const Rect position, const int borderSize, const Color4f color, const glm::vec2 origin, const float rotation, const Texture texture, const Texture_Coords textureCoords, const Texture_Coords inner_texture_coords)
 	{
-		glm::vec4 colorData[4] = {color, color, color, color};
+		glm::vec4 colorData[4] = { color, color, color, color };
 
 		//inner
 		Rect innerPos = position;
@@ -741,7 +700,7 @@ namespace gl2d
 		innerPos.y += borderSize;
 		innerPos.z -= borderSize * 2;
 		innerPos.w -= borderSize * 2;
-		renderRectangle(innerPos, colorData, Position2D{0, 0}, 0, texture, inner_texture_coords);
+		renderRectangle(innerPos, colorData, Position2D{ 0, 0 }, 0, texture, inner_texture_coords);
 
 		//top
 		Rect topPos = position;
@@ -753,7 +712,7 @@ namespace gl2d
 		upperTexPos.y = textureCoords.y;
 		upperTexPos.z = inner_texture_coords.z;
 		upperTexPos.w = inner_texture_coords.y;
-		renderRectangle(topPos, colorData, Position2D{0, 0}, 0, texture, upperTexPos);
+		renderRectangle(topPos, colorData, Position2D{ 0, 0 }, 0, texture, upperTexPos);
 
 		//bottom
 		Rect bottom = position;
@@ -766,7 +725,7 @@ namespace gl2d
 		bottomTexPos.y = inner_texture_coords.w;
 		bottomTexPos.z = inner_texture_coords.z;
 		bottomTexPos.w = textureCoords.w;
-		renderRectangle(bottom, colorData, Position2D{0, 0}, 0, texture, bottomTexPos);
+		renderRectangle(bottom, colorData, Position2D{ 0, 0 }, 0, texture, bottomTexPos);
 
 		//left
 		Rect left = position;
@@ -778,7 +737,7 @@ namespace gl2d
 		leftTexPos.y = inner_texture_coords.y;
 		leftTexPos.z = inner_texture_coords.x;
 		leftTexPos.w = inner_texture_coords.w;
-		renderRectangle(left, colorData, Position2D{0, 0}, 0, texture, leftTexPos);
+		renderRectangle(left, colorData, Position2D{ 0, 0 }, 0, texture, leftTexPos);
 
 		//right
 		Rect right = position;
@@ -791,7 +750,7 @@ namespace gl2d
 		rightTexPos.y = inner_texture_coords.y;
 		rightTexPos.z = textureCoords.z;
 		rightTexPos.w = inner_texture_coords.w;
-		renderRectangle(right, colorData, Position2D{0, 0}, 0, texture, rightTexPos);
+		renderRectangle(right, colorData, Position2D{ 0, 0 }, 0, texture, rightTexPos);
 
 		//topleft
 		Rect topleft = position;
@@ -802,7 +761,7 @@ namespace gl2d
 		topleftTexPos.y = textureCoords.y;
 		topleftTexPos.z = inner_texture_coords.x;
 		topleftTexPos.w = inner_texture_coords.y;
-		renderRectangle(topleft, colorData, Position2D{0, 0}, 0, texture, topleftTexPos);
+		renderRectangle(topleft, colorData, Position2D{ 0, 0 }, 0, texture, topleftTexPos);
 
 		//topright
 		Rect topright = position;
@@ -814,7 +773,7 @@ namespace gl2d
 		toprightTexPos.y = textureCoords.y;
 		toprightTexPos.z = textureCoords.z;
 		toprightTexPos.w = inner_texture_coords.y;
-		renderRectangle(topright, colorData, Position2D{0, 0}, 0, texture, toprightTexPos);
+		renderRectangle(topright, colorData, Position2D{ 0, 0 }, 0, texture, toprightTexPos);
 
 		//bottomleft
 		Rect bottomleft = position;
@@ -826,7 +785,7 @@ namespace gl2d
 		bottomleftTexPos.y = inner_texture_coords.w;
 		bottomleftTexPos.z = inner_texture_coords.x;
 		bottomleftTexPos.w = textureCoords.w;
-		renderRectangle(bottomleft, colorData, Position2D{0, 0}, 0, texture, bottomleftTexPos);
+		renderRectangle(bottomleft, colorData, Position2D{ 0, 0 }, 0, texture, bottomleftTexPos);
 
 		//bottomright
 		Rect bottomright = position;
@@ -839,13 +798,13 @@ namespace gl2d
 		bottomrightTexPos.y = inner_texture_coords.w;
 		bottomrightTexPos.z = textureCoords.z;
 		bottomrightTexPos.w = textureCoords.w;
-		renderRectangle(bottomright, colorData, Position2D{0, 0}, 0, texture, bottomrightTexPos);
+		renderRectangle(bottomright, colorData, Position2D{ 0, 0 }, 0, texture, bottomrightTexPos);
 
 	}
 
 	void Renderer2D::render9Patch2(const Rect position, const int borderSize, const Color4f color, const glm::vec2 origin, const float rotation, const Texture texture, const Texture_Coords textureCoords, const Texture_Coords inner_texture_coords)
 	{
-		glm::vec4 colorData[4] = {color, color, color, color};
+		glm::vec4 colorData[4] = { color, color, color, color };
 
 		int w;
 		int h;
@@ -867,7 +826,7 @@ namespace gl2d
 		innerPos.y += topBorder;
 		innerPos.z -= leftBorder + rightBorder;
 		innerPos.w -= topBorder + bottomBorder;
-		renderRectangle(innerPos, colorData, Position2D{0, 0}, 0, texture, inner_texture_coords);
+		renderRectangle(innerPos, colorData, Position2D{ 0, 0 }, 0, texture, inner_texture_coords);
 
 		//top
 		Rect topPos = position;
@@ -879,7 +838,7 @@ namespace gl2d
 		upperTexPos.y = textureCoords.y;
 		upperTexPos.z = inner_texture_coords.z;
 		upperTexPos.w = inner_texture_coords.y;
-		renderRectangle(topPos, colorData, Position2D{0, 0}, 0, texture, upperTexPos);
+		renderRectangle(topPos, colorData, Position2D{ 0, 0 }, 0, texture, upperTexPos);
 
 		//Rect topPos = position;
 		//topPos.x += leftBorder;
@@ -888,6 +847,7 @@ namespace gl2d
 		//float end = rightBorder;
 		//float size = topBorder;
 		//
+		////todo replace with 1
 		//while(1)
 		//{
 		//	if(topPos.x + size <= end)
@@ -922,7 +882,7 @@ namespace gl2d
 		bottomTexPos.y = inner_texture_coords.w;
 		bottomTexPos.z = inner_texture_coords.z;
 		bottomTexPos.w = textureCoords.w;
-		renderRectangle(bottom, colorData, Position2D{0, 0}, 0, texture, bottomTexPos);
+		renderRectangle(bottom, colorData, Position2D{ 0, 0 }, 0, texture, bottomTexPos);
 
 		//left
 		Rect left = position;
@@ -934,7 +894,7 @@ namespace gl2d
 		leftTexPos.y = inner_texture_coords.y;
 		leftTexPos.z = inner_texture_coords.x;
 		leftTexPos.w = inner_texture_coords.w;
-		renderRectangle(left, colorData, Position2D{0, 0}, 0, texture, leftTexPos);
+		renderRectangle(left, colorData, Position2D{ 0, 0 }, 0, texture, leftTexPos);
 
 		//right
 		Rect right = position;
@@ -947,7 +907,7 @@ namespace gl2d
 		rightTexPos.y = inner_texture_coords.y;
 		rightTexPos.z = textureCoords.z;
 		rightTexPos.w = inner_texture_coords.w;
-		renderRectangle(right, colorData, Position2D{0, 0}, 0, texture, rightTexPos);
+		renderRectangle(right, colorData, Position2D{ 0, 0 }, 0, texture, rightTexPos);
 
 		//topleft
 		Rect topleft = position;
@@ -958,8 +918,8 @@ namespace gl2d
 		topleftTexPos.y = textureCoords.y;
 		topleftTexPos.z = inner_texture_coords.x;
 		topleftTexPos.w = inner_texture_coords.y;
-		renderRectangle(topleft, colorData, Position2D{0, 0}, 0, texture, topleftTexPos);
-		//repair here?
+		renderRectangle(topleft, colorData, Position2D{ 0, 0 }, 0, texture, topleftTexPos);
+		//todo repair
 
 
 		//topright
@@ -972,7 +932,7 @@ namespace gl2d
 		toprightTexPos.y = textureCoords.y;
 		toprightTexPos.z = textureCoords.z;
 		toprightTexPos.w = inner_texture_coords.y;
-		renderRectangle(topright, colorData, Position2D{0, 0}, 0, texture, toprightTexPos);
+		renderRectangle(topright, colorData, Position2D{ 0, 0 }, 0, texture, toprightTexPos);
 
 		//bottomleft
 		Rect bottomleft = position;
@@ -984,7 +944,7 @@ namespace gl2d
 		bottomleftTexPos.y = inner_texture_coords.w;
 		bottomleftTexPos.z = inner_texture_coords.x;
 		bottomleftTexPos.w = textureCoords.w;
-		renderRectangle(bottomleft, colorData, Position2D{0, 0}, 0, texture, bottomleftTexPos);
+		renderRectangle(bottomleft, colorData, Position2D{ 0, 0 }, 0, texture, bottomleftTexPos);
 
 		//bottomright
 		Rect bottomright = position;
@@ -997,17 +957,12 @@ namespace gl2d
 		bottomrightTexPos.y = inner_texture_coords.w;
 		bottomrightTexPos.z = textureCoords.z;
 		bottomrightTexPos.w = textureCoords.w;
-		renderRectangle(bottomright, colorData, Position2D{0, 0}, 0, texture, bottomrightTexPos);
+		renderRectangle(bottomright, colorData, Position2D{ 0, 0 }, 0, texture, bottomrightTexPos);
 
 	}
 
 	void Renderer2D::create()
 	{
-		if (!hasInitialized)
-		{
-			errorFunc("Library not initialized. Have you forgotten to call gl2d::init() ?");
-		}
-
 		white1pxSquareTexture.create1PxSquare();
 
 		spritePositionsCount = 0;
@@ -1024,28 +979,28 @@ namespace gl2d
 
 		glBindBuffer(GL_ARRAY_BUFFER, buffers[Renderer2DBufferType::quadPositions]);
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
 
 		glBindBuffer(GL_ARRAY_BUFFER, buffers[Renderer2DBufferType::quadColors]);
 		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
+		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void *)0);
 
 		glBindBuffer(GL_ARRAY_BUFFER, buffers[Renderer2DBufferType::texturePositions]);
 		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void *)0);
 
 		glBindVertexArray(0);
 	}
 
-	glm::vec4 Renderer2D::toScreen(const glm::vec4& transform)
+	glm::vec4 Renderer2D::toScreen(const glm::vec4 &transform)
 	{
 		//We need to flip texture_transforms.y
 		const float transformsY = transform.y * -1;
 
-		glm::vec2 v1 = {transform.x,				  transformsY};
-		glm::vec2 v2 = {transform.x,				  transformsY - transform.w};
-		glm::vec2 v3 = {transform.x + transform.z, transformsY - transform.w};
-		glm::vec2 v4 = {transform.x + transform.z, transformsY};
+		glm::vec2 v1 = { transform.x,				  transformsY };
+		glm::vec2 v2 = { transform.x,				  transformsY - transform.w };
+		glm::vec2 v3 = { transform.x + transform.z, transformsY - transform.w };
+		glm::vec2 v4 = { transform.x + transform.z, transformsY };
 
 		//Apply camera transformations
 		v1.x -= currentCamera.position.x;
@@ -1077,15 +1032,9 @@ namespace gl2d
 		return glm::vec4(v1.x, v1.y, v3.x, v3.y);
 	}
 
-	glm::vec2 Renderer2D::getTextSize(const char* text, const Font font,
+	glm::vec2 Renderer2D::getTextSize(const char *text, const Font font,
 		const float size, const float spacing, const float line_space)
 	{
-		if (font.texture.id == 0)
-		{
-			errorFunc("Missing font");
-			return {};
-		}
-
 		glm::vec2 position = {};
 
 		const int text_length = (int)strlen(text);
@@ -1152,22 +1101,16 @@ namespace gl2d
 
 		paddY += font.max_height * size + bonusY;
 
-		return glm::vec2{paddX, paddY};
+		return glm::vec2{ paddX, paddY };
 
 	}
 
-	void Renderer2D::renderText(glm::vec2 position, const char* text, const Font font,
+	void Renderer2D::renderText(glm::vec2 position, const char *text, const Font font,
 		const Color4f color, const float size, const float spacing, const float line_space, bool showInCenter,
 		const Color4f ShadowColor
 		, const Color4f LightColor
 	)
 	{
-		if (font.texture.id == 0)
-		{
-			errorFunc("Missing font");
-			return;
-		}
-
 		const int text_length = (int)strlen(text);
 		Rect rectangle;
 		rectangle.x = position.x;
@@ -1274,27 +1217,27 @@ namespace gl2d
 				//rectangle.y = linePositionY - rectangle.w;
 				rectangle.y = linePositionY + quad.y0 * size;
 
-				glm::vec4 colorData[4] = {color, color, color, color};
+				glm::vec4 colorData[4] = { color, color, color, color };
 
 				if (ShadowColor.w)
 				{
-					glm::vec2 pos = {-5, 3};
+					glm::vec2 pos = { -5, 3 };
 					pos *= size;
-					renderRectangle({rectangle.x + pos.x, rectangle.y + pos.y,  rectangle.z, rectangle.w},
-						ShadowColor, glm::vec2{0, 0}, 0, font.texture,
-						glm::vec4{quad.s0, quad.t0, quad.s1, quad.t1});
+					renderRectangle({ rectangle.x + pos.x, rectangle.y + pos.y,  rectangle.z, rectangle.w },
+						ShadowColor, glm::vec2{ 0, 0 }, 0, font.texture,
+						glm::vec4{ quad.s0, quad.t0, quad.s1, quad.t1 });
 
 				}
 
-				renderRectangle(rectangle, colorData, glm::vec2{0, 0}, 0, font.texture, glm::vec4{quad.s0, quad.t0, quad.s1, quad.t1});
+				renderRectangle(rectangle, colorData, glm::vec2{ 0, 0 }, 0, font.texture, glm::vec4{ quad.s0, quad.t0, quad.s1, quad.t1 });
 
 				if (LightColor.w)
 				{
-					glm::vec2 pos = {-2, 1};
+					glm::vec2 pos = { -2, 1 };
 					pos *= size;
-					renderRectangle({rectangle.x + pos.x, rectangle.y + pos.y,  rectangle.z, rectangle.w},
-						LightColor, glm::vec2{0, 0}, 0, font.texture,
-						glm::vec4{quad.s0, quad.t0, quad.s1, quad.t1});
+					renderRectangle({ rectangle.x + pos.x, rectangle.y + pos.y,  rectangle.z, rectangle.w },
+						LightColor, glm::vec2{ 0, 0 }, 0, font.texture,
+						glm::vec4{ quad.s0, quad.t0, quad.s1, quad.t1 });
 
 				}
 
@@ -1302,6 +1245,7 @@ namespace gl2d
 				rectangle.x += rectangle.z + spacing * size;
 			}
 		}
+
 	}
 
 	void Renderer2D::clearScreen(const Color4f color)
@@ -1336,7 +1280,7 @@ namespace gl2d
 		return s;
 	}
 
-	void Texture::createFromBuffer(const char* image_data, const int width, const int height)
+	void Texture::createFromBuffer(const char *image_data, const int width, const int height)
 	{
 		GLuint id = 0;
 
@@ -1361,7 +1305,7 @@ namespace gl2d
 		this->id = id;
 	}
 
-	void Texture::create1PxSquare(const char* b)
+	void Texture::create1PxSquare(const char *b)
 	{
 		if (b == nullptr)
 		{
@@ -1373,7 +1317,7 @@ namespace gl2d
 				0xff
 			};
 
-			createFromBuffer((char*)buff, 1, 1);
+			createFromBuffer((char *)buff, 1, 1);
 		}
 		else
 		{
@@ -1382,7 +1326,7 @@ namespace gl2d
 
 	}
 
-	void Texture::createFromFileData(const unsigned char* image_file_data, const size_t image_file_size)
+	void Texture::createFromFileData(const unsigned char *image_file_data, const size_t image_file_size)
 	{
 		stbi_set_flip_vertically_on_load(true);
 
@@ -1390,15 +1334,15 @@ namespace gl2d
 		int height = 0;
 		int channels = 0;
 
-		const unsigned char* decodedImage = stbi_load_from_memory(image_file_data, (int)image_file_size, &width, &height, &channels, 4);
+		const unsigned char *decodedImage = stbi_load_from_memory(image_file_data, (int)image_file_size, &width, &height, &channels, 4);
 
-		createFromBuffer((const char*)decodedImage, width, height);
+		createFromBuffer((const char *)decodedImage, width, height);
 
 		//Replace stbi allocators
-		free((void*)decodedImage);
+		free((void *)decodedImage);
 	}
 
-	void Texture::createFromFileDataWithPixelPadding(const unsigned char* image_file_data, const size_t image_file_size, int blockSize)
+	void Texture::createFromFileDataWithPixelPadding(const unsigned char *image_file_data, const size_t image_file_size, int blockSize)
 	{
 		stbi_set_flip_vertically_on_load(true);
 
@@ -1406,7 +1350,7 @@ namespace gl2d
 		int height = 0;
 		int channels = 0;
 
-		const unsigned char* decodedImage = stbi_load_from_memory(image_file_data, (int)image_file_size, &width, &height, &channels, 4);
+		const unsigned char *decodedImage = stbi_load_from_memory(image_file_data, (int)image_file_size, &width, &height, &channels, 4);
 
 		/*
 		int newW = width + (width / blockSize);
@@ -1462,7 +1406,7 @@ namespace gl2d
 		};
 
 
-		unsigned char* newData = new unsigned char[newW * newH * 4]{};
+		unsigned char *newData = new unsigned char[newW * newH * 4]{};
 
 		auto getNew = [newData, newW](int x, int y, int c)
 		{
@@ -1580,20 +1524,20 @@ namespace gl2d
 		}
 
 
-		createFromBuffer((const char*)newData, newW, newH);
+		createFromBuffer((const char *)newData, newW, newH);
 
 		//Replace stbi allocators
-		free((void*)decodedImage);
+		free((void *)decodedImage);
 		delete[] newData;
 	}
 
-	void Texture::loadFromFile(const char* fileName)
+	void Texture::loadFromFile(const char *fileName)
 	{
 		std::ifstream file(fileName, std::ios::binary);
 
 		if (!file.is_open())
 		{
-			char c[300] = {0};
+			char c[300] = { 0 };
 			strcat(c, "error openning: ");
 			strcat(c + strlen(c), fileName);
 			errorFunc(c);
@@ -1604,8 +1548,8 @@ namespace gl2d
 		file.seekg(0, std::ios::end);
 		fileSize = (int)file.tellg();
 		file.seekg(0, std::ios::beg);
-		unsigned char* fileData = new unsigned char[fileSize];
-		file.read((char*)fileData, fileSize);
+		unsigned char *fileData = new unsigned char[fileSize];
+		file.read((char *)fileData, fileSize);
 		file.close();
 
 		createFromFileData(fileData, fileSize);
@@ -1614,13 +1558,13 @@ namespace gl2d
 
 	}
 
-	void Texture::loadFromFileWithPixelPadding(const char* fileName, int blockSize)
+	void Texture::loadFromFileWithPixelPadding(const char *fileName, int blockSize)
 	{
 		std::ifstream file(fileName, std::ios::binary);
 
 		if (!file.is_open())
 		{
-			char c[300] = {0};
+			char c[300] = { 0 };
 			strcat(c, "error openning: ");
 			strcat(c + strlen(c), fileName);
 			errorFunc(c);
@@ -1631,8 +1575,8 @@ namespace gl2d
 		file.seekg(0, std::ios::end);
 		fileSize = (int)file.tellg();
 		file.seekg(0, std::ios::beg);
-		unsigned char* fileData = new unsigned char[fileSize];
-		file.read((char*)fileData, fileSize);
+		unsigned char *fileData = new unsigned char[fileSize];
+		file.read((char *)fileData, fileSize);
 		file.close();
 
 		createFromFileDataWithPixelPadding(fileData, fileSize, blockSize);
@@ -1660,11 +1604,11 @@ namespace gl2d
 	glm::mat3 Camera::getMatrix()
 	{
 		glm::mat3 m;
-		m = {zoom, 0, position.x ,
+		m = { zoom, 0, position.x ,
 			 0, zoom, position.y,
 			0, 0, 1,
 		};
-		return m; //todo not tested, add rotation
+		return m; //todo not tested
 	}
 
 	void Camera::follow(glm::vec2 pos, float speed, float max, float w, float h)
@@ -1700,7 +1644,7 @@ namespace gl2d
 
 	}
 
-	glm::vec2 Camera::convertPoint(const glm::vec2& p, float windowW, float windowH)
+	glm::vec2 Camera::convertPoint(const glm::vec2 &p, float windowW, float windowH)
 	{
 		glm::vec2 r = p;
 
@@ -1710,7 +1654,7 @@ namespace gl2d
 		r.y += this->position.y;
 
 		{
-			glm::vec2 cameraCenter = {this->position.x + windowW / 2, -this->position.y - windowH / 2};
+			glm::vec2 cameraCenter = { this->position.x + windowW / 2, -this->position.y - windowH / 2 };
 
 			r = rotateAroundPoint(r,
 				cameraCenter,
@@ -1718,7 +1662,7 @@ namespace gl2d
 		}
 
 		{
-			glm::vec2 cameraCenter = {this->position.x + windowW / 2, this->position.y + windowH / 2};
+			glm::vec2 cameraCenter = { this->position.x + windowW / 2, this->position.y + windowH / 2 };
 
 			r = scaleAroundPoint(r,
 				cameraCenter,
@@ -1756,13 +1700,13 @@ namespace gl2d
 		glGenTextures(1, &texture.id);
 		glBindTexture(GL_TEXTURE_2D, texture.id);
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.id, 0);
 
-		//glDrawBuffer(GL_COLOR_ATTACHMENT0); //todo why is this commented out ?
+		//glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
 		//glGenTextures(1, &depthtTexture);
 		//glBindTexture(GL_TEXTURE_2D, depthtTexture);
@@ -1791,17 +1735,11 @@ namespace gl2d
 
 	void FrameBuffer::cleanup()
 	{
-		if (fbo)
-		{
-			glDeleteFramebuffers(1, &fbo);
-			fbo = 0;
-		}
+		glDeleteFramebuffers(1, &fbo);
+		fbo = 0;
 
-		if (texture.id)
-		{
-			glDeleteTextures(1, &texture.id);
-			texture = 0;
-		}
+		glDeleteTextures(1, &texture.id);
+		texture = 0;
 
 		//glDeleteTextures(1, &depthtTexture);
 		//depthtTexture = 0;
@@ -1825,11 +1763,11 @@ namespace gl2d
 
 		if (flip)
 		{
-			return {(x + 1) * xSize, 1 - (y * ySize), (x)*xSize, 1.f - ((y + 1) * ySize)};
+			return { (x + 1) * xSize, 1 - (y * ySize), (x)*xSize, 1.f - ((y + 1) * ySize) };
 		}
 		else
 		{
-			return {x * xSize, 1 - (y * ySize), (x + 1) * xSize, 1.f - ((y + 1) * ySize)};
+			return { x * xSize, 1 - (y * ySize), (x + 1) * xSize, 1.f - ((y + 1) * ySize) };
 		}
 
 	}
@@ -1843,32 +1781,84 @@ namespace gl2d
 		float Xpadding = 1.f / mapXsize;
 		float Ypadding = 1.f / mapYsize;
 
-		glm::vec4 noFlip = {x * xSize + Xpadding, 1 - (y * ySize) - Ypadding, (x + 1) * xSize - Xpadding, 1.f - ((y + 1) * ySize) + Ypadding};
-
+		//todo
 		if (flip)
 		{
-			glm::vec4 flip = {noFlip.z, noFlip.y, noFlip.x, noFlip.w};
-
-			return flip;
+			return { (x + 1) * xSize - Xpadding, 1 - (y * ySize) - Ypadding, (x)*xSize + Xpadding, 1.f - ((y + 1) * ySize) + Ypadding };
 		}
 		else
 		{
-			return noFlip;
+			return { x * xSize + Xpadding, 1 - (y * ySize) - Ypadding, (x + 1) * xSize - Xpadding, 1.f - ((y + 1) * ySize) + Ypadding };
 		}
 	}
 
 	void ParticleSystem::initParticleSystem(int size)
 	{
-		cleanup();
-
-
 		//simdize size
 		size += 4 - (size % 4);
-		this->size = size;
 
+
+		this->size = size;
 
 	#pragma region allocations
 
+		if (posX)
+			delete[] posX;
+
+		if (posY)
+			delete[] posY;
+
+
+		if (directionX)
+			delete[] directionX;
+
+		if (directionY)
+			delete[] directionY;
+
+		if (rotation)
+			delete[] rotation;
+
+		if (sizeXY)
+			delete[] sizeXY;
+
+		if (dragY)
+			delete[] dragY;
+
+		if (dragX)
+			delete[] dragX;
+
+		if (duration)
+			delete[] duration;
+
+		if (durationTotal)
+			delete[] durationTotal;
+
+		if (color)
+			delete[] color;
+
+		if (rotationSpeed)
+			delete[] rotationSpeed;
+
+		if (rotationDrag)
+			delete[] rotationDrag;
+
+		if (deathRattle)
+			delete[] deathRattle;
+
+		if (textures)
+			delete[] textures;
+
+		if (tranzitionType)
+			delete[] tranzitionType;
+
+		if (thisParticleSettings)
+			delete[] thisParticleSettings;
+
+		if (emitTime)
+			delete[] emitTime;
+
+		if (emitParticle)
+			delete[] emitParticle;
 
 		int size32Aligned = size + (4 - (size % 4));
 
@@ -1908,31 +1898,24 @@ namespace gl2d
 
 	}
 
-#if GL2D_SIMD != 0
-
 #if defined(_MSC_VER)
-	/* Microsoft C/C++-compatible compiler */
+ /* Microsoft C/C++-compatible compiler */
 #include <intrin.h>
 #elif defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
-	/* GCC-compatible compiler, targeting x86/x86-64 */
+	 /* GCC-compatible compiler, targeting x86/x86-64 */
 #include <x86intrin.h>
 #elif defined(__GNUC__) && defined(__ARM_NEON__)
-	/* GCC-compatible compiler, targeting ARM with NEON */
+	 /* GCC-compatible compiler, targeting ARM with NEON */
 #include <arm_neon.h>
 #elif defined(__GNUC__) && defined(__IWMMXT__)
-	/* GCC-compatible compiler, targeting ARM with WMMX */
+	 /* GCC-compatible compiler, targeting ARM with WMMX */
 #include <mmintrin.h>
 #elif (defined(__GNUC__) || defined(__xlC__)) && (defined(__VEC__) || defined(__ALTIVEC__))
-	/* XLC or GCC-compatible compiler, targeting PowerPC with VMX/VSX */
+	 /* XLC or GCC-compatible compiler, targeting PowerPC with VMX/VSX */
 #include <altivec.h>
 #elif defined(__GNUC__) && defined(__SPE__)
-	/* GCC-compatible compiler, targeting PowerPC with SPE */
+	 /* GCC-compatible compiler, targeting PowerPC with SPE */
 #include <spe.h>
-#elif
-#undef GL2D_SIMD
-#define GL2D_SIMD 0
-#endif
-
 #endif
 
 	void ParticleSystem::applyMovement(float deltaTime)
@@ -1994,7 +1977,7 @@ namespace gl2d
 				if (deathRattle[i] != nullptr && deathRattle[i]->onCreateCount)
 				{
 
-					this->emitParticleWave(deathRattle[i], {posX[i], posY[i]});
+					this->emitParticleWave(deathRattle[i], { posX[i], posY[i] });
 
 				}
 
@@ -2009,7 +1992,7 @@ namespace gl2d
 				emitTime[i] = rand(thisParticleSettings[i]->subemitParticleTime);
 
 				//emit particle
-				this->emitParticleWave(emitParticle[i], {posX[i], posY[i]});
+				this->emitParticleWave(emitParticle[i], { posX[i], posY[i] });
 
 			}
 
@@ -2045,8 +2028,8 @@ namespace gl2d
 		{
 			//directionX[i] += deltaTime * dragX[i];
 
-			__m128* dir = (__m128*) & (directionX[i]);
-			__m128* drag = (__m128*) & (dragX[i]);
+			__m128 *dir = (__m128 *) & (directionX[i]);
+			__m128 *drag = (__m128 *) & (dragX[i]);
 
 			*dir = _mm_fmadd_ps(_deltaTime, *drag, *dir);
 		}
@@ -2055,18 +2038,18 @@ namespace gl2d
 		{
 			//directionY[i] += deltaTime * dragY[i];
 
-			__m128* dir = (__m128*) & (directionY[i]);
-			__m128* drag = (__m128*) & (dragY[i]);
+			__m128 *dir = (__m128 *) & (directionY[i]);
+			__m128 *drag = (__m128 *) & (dragY[i]);
 
 			*dir = _mm_fmadd_ps(_deltaTime, *drag, *dir);
 		}
 
-		for (int i = 0; i < size; i += 4)
+		for (int i = 0; i < size; i++)
 		{
 			//rotationSpeed[i] += deltaTime * rotationDrag[i];
 
-			__m128* dir = (__m128*) & (rotationSpeed[i]);
-			__m128* drag = (__m128*) & (rotationDrag[i]);
+			__m128 *dir = (__m128 *) & (rotationSpeed[i]);
+			__m128 *drag = (__m128 *) & (rotationDrag[i]);
 
 			*dir = _mm_fmadd_ps(_deltaTime, *drag, *dir);
 		}
@@ -2079,6 +2062,7 @@ namespace gl2d
 
 	#pragma region apply movement
 
+			//todo simd
 
 	#if GL2D_SIMD == 0
 		for (int i = 0; i < size; i++)
@@ -2106,8 +2090,8 @@ namespace gl2d
 		for (int i = 0; i < size; i += 4)
 		{
 			//posX[i] += deltaTime * directionX[i];
-			__m128* dir = (__m128*) & (posX[i]);
-			__m128* drag = (__m128*) & (directionX[i]);
+			__m128 *dir = (__m128 *) & (posX[i]);
+			__m128 *drag = (__m128 *) & (directionX[i]);
 
 			*dir = _mm_fmadd_ps(_deltaTime, *drag, *dir);
 		}
@@ -2116,8 +2100,8 @@ namespace gl2d
 		for (int i = 0; i < size; i++)
 		{
 			//posY[i] += deltaTime * directionY[i];
-			__m128* dir = (__m128*) & (posY[i]);
-			__m128* drag = (__m128*) & (directionY[i]);
+			__m128 *dir = (__m128 *) & (posY[i]);
+			__m128 *drag = (__m128 *) & (directionY[i]);
 
 			*dir = _mm_fmadd_ps(_deltaTime, *drag, *dir);
 		}
@@ -2125,8 +2109,8 @@ namespace gl2d
 		for (int i = 0; i < size; i++)
 		{
 			//rotation[i] += deltaTime * rotationSpeed[i];
-			__m128* dir = (__m128*) & (rotation[i]);
-			__m128* drag = (__m128*) & (rotationSpeed[i]);
+			__m128 *dir = (__m128 *) & (rotation[i]);
+			__m128 *drag = (__m128 *) & (rotationSpeed[i]);
 
 			*dir = _mm_fmadd_ps(_deltaTime, *drag, *dir);
 		}
@@ -2139,31 +2123,67 @@ namespace gl2d
 
 	}
 
+	//todo update !!!!
 	void ParticleSystem::cleanup()
 	{
-		delete[] posX;
-		delete[] posY;
+		if (posX)
+			delete[] posX;
 
-		delete[] directionX;
-		delete[] directionY;
-		delete[] rotation;
+		if (posY)
+			delete[] posY;
 
-		delete[] sizeXY;
 
-		delete[] dragY;
-		delete[] dragX;
-		delete[] duration;
-		delete[] durationTotal;
-		delete[] color;
-		delete[] rotationSpeed;
-		delete[] rotationDrag;
-		delete[] emitTime;
-		delete[] tranzitionType;
-		delete[] deathRattle;
-		delete[] thisParticleSettings;
-		delete[] emitParticle;
-		delete[] textures;
+		if (directionX)
+			delete[] directionX;
 
+		if (directionY)
+			delete[] directionY;
+
+		if (rotation)
+			delete[] rotation;
+
+		if (sizeXY)
+			delete[] sizeXY;
+
+
+		if (dragY)
+			delete[] dragY;
+
+		if (dragX)
+			delete[] dragX;
+
+		if (duration)
+			delete[] duration;
+
+		if (durationTotal)
+			delete[] durationTotal;
+
+		if (color)
+			delete[] color;
+
+		if (rotationSpeed)
+			delete[] rotationSpeed;
+
+		if (rotationDrag)
+			delete[] rotationDrag;
+
+		if (emitTime)
+			delete[] emitTime;
+
+		if (tranzitionType)
+			delete[] tranzitionType;
+
+		if (deathRattle)
+			delete[] deathRattle;
+
+		if (thisParticleSettings)
+			delete[] thisParticleSettings;
+
+		if (emitParticle)
+			delete[] emitParticle;
+
+		if (textures)
+			delete[] textures;
 
 		posX = 0;
 		posY = 0;
@@ -2185,13 +2205,10 @@ namespace gl2d
 		emitParticle = 0;
 		textures = 0;
 
-		size = 0;
 
-
-		fb.cleanup();
 	}
 
-	void ParticleSystem::emitParticleWave(ParticleSettings* ps, glm::vec2 pos)
+	void ParticleSystem::emitParticleWave(ParticleSettings *ps, glm::vec2 pos)
 	{
 		int recreatedParticlesThisFrame = 0;
 
@@ -2214,10 +2231,10 @@ namespace gl2d
 				sizeXY[i] = rand(ps->createApearence.size);
 				dragX[i] = rand(ps->dragX);
 				dragY[i] = rand(ps->dragY);
-				color[i].x = rand({ps->createApearence.color1.x, ps->createApearence.color2.x});
-				color[i].y = rand({ps->createApearence.color1.y, ps->createApearence.color2.y});
-				color[i].z = rand({ps->createApearence.color1.z, ps->createApearence.color2.z});
-				color[i].w = rand({ps->createApearence.color1.w, ps->createApearence.color2.w});
+				color[i].x = rand({ ps->createApearence.color1.x, ps->createApearence.color2.x });
+				color[i].y = rand({ ps->createApearence.color1.y, ps->createApearence.color2.y });
+				color[i].z = rand({ ps->createApearence.color1.z, ps->createApearence.color2.z });
+				color[i].w = rand({ ps->createApearence.color1.w, ps->createApearence.color2.w });
 				rotationSpeed[i] = rand(ps->rotationSpeed);
 				rotationDrag[i] = rand(ps->rotationDrag);
 				textures[i] = ps->texturePtr;
@@ -2237,13 +2254,13 @@ namespace gl2d
 
 	}
 
-	float interpolate(float a, float b, float perc)
+	float merge(float a, float b, float perc)
 	{
 		return a * perc + b * (1 - perc);
 
 	}
 
-	void ParticleSystem::draw(Renderer2D& r)
+	void ParticleSystem::draw(Renderer2D &r)
 	{
 
 		unsigned int w = r.windowW;
@@ -2256,13 +2273,14 @@ namespace gl2d
 
 			r.flush();
 
-			if (fb.texture.GetSize() != glm::ivec2{w / pixelateFactor,h / pixelateFactor})
+			if (fb.texture.GetSize() != glm::ivec2{ w / pixelateFactor,h / pixelateFactor })
 			{
 				fb.resize(w / pixelateFactor, h / pixelateFactor);
 
 			}
 
 			r.updateWindowMetrics(w / pixelateFactor, h / pixelateFactor);
+
 
 		}
 
@@ -2275,32 +2293,32 @@ namespace gl2d
 
 			switch (this->tranzitionType[i])
 			{
-			case gl2d::TRANZITION_TYPES::none:
-			lifePerc = 1;
-			break;
-			case gl2d::TRANZITION_TYPES::linear:
+				case gl2d::TRANZITION_TYPES::none:
+				lifePerc = 1;
+				break;
+				case gl2d::TRANZITION_TYPES::linear:
 
-			break;
-			case gl2d::TRANZITION_TYPES::curbe:
-			lifePerc *= lifePerc;
-			break;
-			case gl2d::TRANZITION_TYPES::abruptCurbe:
-			lifePerc *= lifePerc * lifePerc;
-			break;
-			case gl2d::TRANZITION_TYPES::wave:
-			lifePerc = (std::cos(lifePerc * 5 * 3.141592) * lifePerc + lifePerc) / 2.f;
-			break;
-			case gl2d::TRANZITION_TYPES::wave2:
-			lifePerc = std::cos(lifePerc * 5 * 3.141592) * std::sqrt(lifePerc) * 0.9f + 0.1f;
-			break;
-			case gl2d::TRANZITION_TYPES::delay:
-			lifePerc = (std::cos(lifePerc * 3.141592 * 2) * std::sin(lifePerc * lifePerc)) / 2.f;
-			break;
-			case gl2d::TRANZITION_TYPES::delay2:
-			lifePerc = (std::atan(2 * lifePerc * lifePerc * lifePerc * 3.141592)) / 2.f;
-			break;
-			default:
-			break;
+				break;
+				case gl2d::TRANZITION_TYPES::curbe:
+				lifePerc *= lifePerc;
+				break;
+				case gl2d::TRANZITION_TYPES::abruptCurbe:
+				lifePerc *= lifePerc * lifePerc;
+				break;
+				case gl2d::TRANZITION_TYPES::wave:
+				lifePerc = (std::cos(lifePerc * 5 * 3.141592) * lifePerc + lifePerc) / 2.f;
+				break;
+				case gl2d::TRANZITION_TYPES::wave2:
+				lifePerc = std::cos(lifePerc * 5 * 3.141592) * std::sqrt(lifePerc) * 0.9f + 0.1f;
+				break;
+				case gl2d::TRANZITION_TYPES::delay:
+				lifePerc = (std::cos(lifePerc * 3.141592 * 2) * std::sin(lifePerc * lifePerc)) / 2.f;
+				break;
+				case gl2d::TRANZITION_TYPES::delay2:
+				lifePerc = (std::atan(2 * lifePerc * lifePerc * lifePerc * 3.141592)) / 2.f;
+				break;
+				default:
+				break;
 			}
 
 			glm::vec4 pos = {};
@@ -2310,13 +2328,13 @@ namespace gl2d
 			{
 				pos.x = posX[i];
 				pos.y = posY[i];
-				pos.z = interpolate(sizeXY[i], thisParticleSettings[i]->createEndApearence.size.x, lifePerc);
+				pos.z = merge(sizeXY[i], thisParticleSettings[i]->createEndApearence.size.x, lifePerc);
 				pos.w = pos.z;
 
-				c.x = interpolate(color[i].x, thisParticleSettings[i]->createEndApearence.color1.x, lifePerc);
-				c.y = interpolate(color[i].y, thisParticleSettings[i]->createEndApearence.color1.y, lifePerc);
-				c.z = interpolate(color[i].z, thisParticleSettings[i]->createEndApearence.color1.z, lifePerc);
-				c.w = interpolate(color[i].w, thisParticleSettings[i]->createEndApearence.color1.w, lifePerc);
+				c.x = merge(color[i].x, thisParticleSettings[i]->createEndApearence.color1.x, lifePerc);
+				c.y = merge(color[i].y, thisParticleSettings[i]->createEndApearence.color1.y, lifePerc);
+				c.z = merge(color[i].z, thisParticleSettings[i]->createEndApearence.color1.z, lifePerc);
+				c.w = merge(color[i].w, thisParticleSettings[i]->createEndApearence.color1.w, lifePerc);
 			}
 			else
 			{
@@ -2369,11 +2387,11 @@ namespace gl2d
 
 			if (textures[i] != nullptr)
 			{
-				r.renderRectangle(p, c, {0,0}, rotation[i], *textures[i]);
+				r.renderRectangle(p, c, { 0,0 }, rotation[i], *textures[i]);
 			}
 			else
 			{
-				r.renderRectangle(p, c, {0,0}, rotation[i]);
+				r.renderRectangle(p, c, { 0,0 }, rotation[i]);
 			}
 
 
@@ -2393,7 +2411,7 @@ namespace gl2d
 
 			auto s = r.currentShader;
 
-			r.renderRectangle({0,0,w,h}, {}, 0, fb.texture);
+			r.renderRectangle({ 0,0,w,h }, {}, 0, fb.texture);
 
 			r.setShaderProgram(defaultParticleShader);
 			r.flush();

@@ -15,4 +15,4 @@ target_sources(imgui PRIVATE
 target_include_directories(imgui PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/imgui")
 
 
-target_link_libraries(imgui PUBLIC glfw glad)
+target_link_libraries(imgui PUBLIC glfw)
