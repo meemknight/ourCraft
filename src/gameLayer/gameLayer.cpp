@@ -22,7 +22,7 @@ struct GameData
 
 }gameData;
 
-Chunk* chunk;
+ChunkSystem chunkSystem;
 int facesCount = 0;
 
 bool initGame()
@@ -39,14 +39,12 @@ bool initGame()
 		gameData = GameData();
 	}
 
-	chunk = new Chunk;
 
-	chunk->create();
 	std::vector<int> blockData;
-	chunk->bake(blockData);
+	chunkSystem.createChunks(6, blockData);
+
 
 	glNamedBufferData(renderer.vertexBuffer, sizeof(int) * blockData.size(), blockData.data(), GL_DYNAMIC_DRAW);
-
 	facesCount = blockData.size() / 4;
 
 	return true;
@@ -72,10 +70,11 @@ bool gameLogic(float deltaTime)
 
 #pragma endregion
 
+	static float moveSpeed = 4.f;
 
 #pragma region input
 	{
-		float speed = 4 * deltaTime;
+		float speed = moveSpeed * deltaTime;
 		glm::vec3 moveDir = {};
 		if (platform::isKeyHeld(platform::Button::Up)
 			|| platform::isKeyHeld(platform::Button::W)
@@ -131,6 +130,15 @@ bool gameLogic(float deltaTime)
 	}
 #pragma endregion
 
+	glm::vec3 posFloat = {};
+	glm::ivec3 posInt = {};
+	gameData.c.decomposePosition(posFloat, posInt);
+	static std::vector<int> data;
+
+	chunkSystem.update(posInt.x, posInt.z, data);
+	glNamedBufferData(renderer.vertexBuffer, sizeof(int) * data.size(), data.data(), GL_DYNAMIC_DRAW);
+	facesCount = data.size() / 4;
+
 
 	glBindVertexArray(renderer.vao);
 	texture.bind(0);
@@ -144,9 +152,7 @@ bool gameLogic(float deltaTime)
 	//mvp[3][2] = 0.f;
 
 	glUniformMatrix4fv(renderer.u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
-	glm::vec3 posFloat = {};
-	glm::ivec3 posInt = {};
-	gameData.c.decomposePosition(posFloat, posInt);
+	
 
 	glUniform3fv(renderer.u_positionFloat, 1, &posFloat[0]);
 	glUniform3iv(renderer.u_positionInt, 1, &posInt[0]);
@@ -157,6 +163,7 @@ bool gameLogic(float deltaTime)
 
 	ImGui::Begin("camera controll");
 	ImGui::DragScalarN("camera pos", ImGuiDataType_Double, &gameData.c.position[0], 3, 0.01);
+	ImGui::DragFloat("camera speed", &moveSpeed);
 
 	ImGui::End();
 

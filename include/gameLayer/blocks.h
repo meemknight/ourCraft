@@ -36,10 +36,13 @@ struct Chunk
 {
 
 	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_HEIGHT];
+	int x, z;
 
 	void clear()
 	{
 		memset(blocks, 0, sizeof(blocks));
+		x = 0;
+		z = 0;
 	}
 
 	Block& unsafeGet(int x, int y, int z)
@@ -53,5 +56,5 @@ struct Chunk
 	//todo will use a gpu buffer in the future
 	void bake(std::vector<int>& bakeVector);
 
-	void create();
+	void create(int x, int y);
 };

@@ -16,7 +16,7 @@ Block* Chunk::safeGet(int x, int y, int z)
 
 void Chunk::bake(std::vector<int>& bakeVector)
 {
-	bakeVector.clear();
+	//bakeVector.clear();
 
 	for (int x = 0; x < CHUNK_SIZE; x++)
 		for (int z = 0; z < CHUNK_SIZE; z++)
@@ -39,9 +39,9 @@ void Chunk::bake(std::vector<int>& bakeVector)
 						if (sides[i]==nullptr || !(sides[i])->isOpaque())
 						{
 							bakeVector.push_back(mergeShorts(i, b.type));
-							bakeVector.push_back(x);
+							bakeVector.push_back(x + this->x * CHUNK_SIZE);
 							bakeVector.push_back(y);
-							bakeVector.push_back(z);
+							bakeVector.push_back(z +this->z * CHUNK_SIZE);
 						}
 					}
 
@@ -51,15 +51,21 @@ void Chunk::bake(std::vector<int>& bakeVector)
 
 }
 
-void Chunk::create()
+void Chunk::create(int x, int z)
 {
 	clear();
+
+	this->x = x;
+	this->z = z;
 
 	for (int x = 0; x < CHUNK_SIZE; x++)
 		for (int z = 0; z < CHUNK_SIZE; z++)
 			for (int y = 0; y < 10; y++)
 			{
-				if (sin((float)x/ CHUNK_SIZE*2) * cos((float)z/CHUNK_SIZE*2) > y/10.f)
+				int calcX = x + this->x * CHUNK_SIZE;
+				int calcZ = z + this->z * CHUNK_SIZE;
+
+				if (sin((float)calcX/ CHUNK_SIZE*2) * cos((float)calcZ/CHUNK_SIZE*2) > y/10.f || y == 0)
 				{
 					unsafeGet(x, y, z).type = BlockTypes::dirt;
 				}
