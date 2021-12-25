@@ -28,7 +28,7 @@ bool initGame()
 
 	renderer2d.create();
 	font.createFromFile(RESOURCES_PATH "roboto_black.ttf");
-	texture.loadFromFile(RESOURCES_PATH "test.jpg");
+	texture.loadFromFile(RESOURCES_PATH "blocks.png");
 	renderer.create();
 
 	if(!platform::readEntireFile(RESOURCES_PATH "gameData.data", &gameData, sizeof(GameData)))
@@ -46,14 +46,15 @@ bool gameLogic(float deltaTime)
 	h = platform::getWindowSizeY();
 
 	renderer2d.updateWindowMetrics(w, h);
-	renderer2d.clearScreen();
 
 	gameData.c.aspectRatio = (float)w / h;
 
-	glDisable(GL_DEPTH_TEST);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 #pragma endregion
 
@@ -118,7 +119,7 @@ bool gameLogic(float deltaTime)
 
 
 	glBindVertexArray(renderer.vao);
-
+	texture.bind(0);
 
 	renderer.defaultShader.bind();
 
@@ -136,7 +137,7 @@ bool gameLogic(float deltaTime)
 	glUniform3fv(renderer.u_positionFloat, 1, &posFloat[0]);
 	glUniform3iv(renderer.u_positionInt, 1, &posInt[0]);
 
-	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 12);
+	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 24);
 
 	glBindVertexArray(0);
 
