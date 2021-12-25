@@ -27,7 +27,6 @@ int data[] =
 // int z
 
 
-
 void Renderer::create()
 {
 	defaultShader.loadShaderProgramFromFile(RESOURCES_PATH "defaultShader.vert", RESOURCES_PATH "defaultShader.frag");
@@ -35,8 +34,8 @@ void Renderer::create()
 
 	//u_viewProjection = defaultShader.getUniform("u_viewProjection");
 	GET_UNIFORM(defaultShader, u_viewProjection);
+	GET_UNIFORM(defaultShader, u_position);
 
-		
 
 	glCreateBuffers(1, &vertexBuffer);
 	glNamedBufferStorage(vertexBuffer, sizeof(data), data, 0);

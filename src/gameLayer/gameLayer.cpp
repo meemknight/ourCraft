@@ -121,12 +121,25 @@ bool gameLogic(float deltaTime)
 
 
 	renderer.defaultShader.bind();
-	glUniformMatrix4fv(renderer.u_viewProjection, 1, GL_FALSE, &gameData.c.getViewProjectionMatrix()[0][0]);
+
+	auto mvp = gameData.c.getProjectionMatrix() * glm::lookAt({0,0,0}, gameData.c.viewDirection, gameData.c.up);
+
+	//mvp[3][0] = 0.f;
+	//mvp[3][1] = 0.f;
+	//mvp[3][2] = 0.f;
+
+	glUniformMatrix4fv(renderer.u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
+	glUniform3fv(renderer.u_position, 1, &gameData.c.position[0]);
 
 	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 12);
 
 	glBindVertexArray(0);
 
+	ImGui::Begin("camera controll");
+
+	ImGui::DragFloat3("camera pos", &gameData.c.position[0], 0.01);
+
+	ImGui::End();
 
 #pragma region set finishing stuff
 	renderer2d.flush();

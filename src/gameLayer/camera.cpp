@@ -1,9 +1,5 @@
 #include "camera.h"
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/mat3x3.hpp>
-#include <glm/gtx/transform.hpp>
+
 
 glm::mat4x4 Camera::getProjectionMatrix()
 {
@@ -17,7 +13,6 @@ glm::mat4x4 Camera::getWorldToViewMatrix()
 {
 	glm::vec3 lookingAt = this->position;
 	lookingAt += viewDirection;
-
 
 	auto mat = glm::lookAt(this->position, lookingAt, this->up);
 	return mat;

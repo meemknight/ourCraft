@@ -6,6 +6,7 @@ struct Renderer
 {
 	Shader defaultShader;
 	GLint u_viewProjection = -1;
+	GLint u_position = -1;
 	
 	void create();
 
