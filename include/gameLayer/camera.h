@@ -24,14 +24,10 @@ struct Camera
 	float farPlane = 200.f;
 
 
-	glm::vec3 position = {};
+	glm::dvec3 position = {};
 	glm::vec3 viewDirection = {0,0,-1};
 
 	glm::mat4x4 getProjectionMatrix();
-
-	glm::mat4x4 getWorldToViewMatrix();
-
-	glm::mat4x4 getViewProjectionMatrix();
 
 	void rotateCamera(const glm::vec2 delta);
 
@@ -57,5 +53,6 @@ struct Camera
 		return !(*this == other);
 	};
 
+	void decomposePosition(glm::vec3 &floatPart, glm::ivec3 &intPart);
 
 };

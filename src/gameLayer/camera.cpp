@@ -9,24 +9,9 @@ glm::mat4x4 Camera::getProjectionMatrix()
 	return mat;
 }
 
-glm::mat4x4 Camera::getWorldToViewMatrix()
-{
-	glm::vec3 lookingAt = this->position;
-	lookingAt += viewDirection;
-
-	auto mat = glm::lookAt(this->position, lookingAt, this->up);
-	return mat;
-}
-
-glm::mat4x4 Camera::getViewProjectionMatrix()
-{
-	return getProjectionMatrix() * getWorldToViewMatrix();
-}
-
 //todo better rotate function
 void Camera::rotateCamera(const glm::vec2 delta)
 {
-
 	glm::vec3 rotateYaxe = glm::cross(viewDirection, up);
 
 	viewDirection = glm::mat3(glm::rotate(delta.x, up)) * viewDirection;
@@ -64,7 +49,6 @@ void Camera::moveFPS(glm::vec3 direction)
 	move += viewDirection * forward;
 
 	this->position += move;
-
 }
 
 void Camera::rotateFPS(glm::ivec2 mousePos, float speed, bool shouldMove)
@@ -86,6 +70,16 @@ void Camera::rotateFPS(glm::ivec2 mousePos, float speed, bool shouldMove)
 	{
 		lastMousePos = mousePos;
 	}
+
+}
+
+void Camera::decomposePosition(glm::vec3& floatPart, glm::ivec3& intPart)
+{
+	intPart = glm::ivec3(position);
+
+	glm::dvec3 doublePosition = position;
+	doublePosition -= intPart;
+	floatPart = doublePosition;
 
 }
 

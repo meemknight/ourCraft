@@ -129,15 +129,19 @@ bool gameLogic(float deltaTime)
 	//mvp[3][2] = 0.f;
 
 	glUniformMatrix4fv(renderer.u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
-	glUniform3fv(renderer.u_position, 1, &gameData.c.position[0]);
+	glm::vec3 posFloat = {};
+	glm::ivec3 posInt = {};
+	gameData.c.decomposePosition(posFloat, posInt);
+
+	glUniform3fv(renderer.u_positionFloat, 1, &posFloat[0]);
+	glUniform3iv(renderer.u_positionInt, 1, &posInt[0]);
 
 	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 12);
 
 	glBindVertexArray(0);
 
 	ImGui::Begin("camera controll");
-
-	ImGui::DragFloat3("camera pos", &gameData.c.position[0], 0.01);
+	ImGui::DragScalarN("camera pos", ImGuiDataType_Double, &gameData.c.position[0], 3, 0.01);
 
 	ImGui::End();
 

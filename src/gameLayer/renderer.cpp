@@ -35,6 +35,8 @@ void Renderer::create()
 	//u_viewProjection = defaultShader.getUniform("u_viewProjection");
 	GET_UNIFORM(defaultShader, u_viewProjection);
 	GET_UNIFORM(defaultShader, u_position);
+	GET_UNIFORM(defaultShader, u_positionInt);
+	GET_UNIFORM(defaultShader, u_positionFloat);
 
 
 	glCreateBuffers(1, &vertexBuffer);
