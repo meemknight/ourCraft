@@ -155,7 +155,6 @@ int atlasPositions[] = int[](
 
 );
 
-
 out vec2 v_uv;
 
 void main()

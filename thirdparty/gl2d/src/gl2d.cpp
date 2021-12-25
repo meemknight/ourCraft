@@ -556,10 +556,10 @@ void main()
 	void enableNecessaryGLFeatures()
 	{
 		glEnable(GL_BLEND);
-		glEnable(GL_MULTISAMPLE);
-		glEnable(GL_LINE_SMOOTH);
-		glEnable(GL_POLYGON_SMOOTH);
-		glEnable(GL_SAMPLE_SHADING);
+		//glEnable(GL_MULTISAMPLE);
+		//glEnable(GL_LINE_SMOOTH);
+		//glEnable(GL_POLYGON_SMOOTH);
+		//glEnable(GL_SAMPLE_SHADING);
 
 		glDisable(GL_DEPTH_TEST);
 
@@ -1297,6 +1297,7 @@ void main()
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 4);
 
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
 		glGenerateMipmap(GL_TEXTURE_2D);

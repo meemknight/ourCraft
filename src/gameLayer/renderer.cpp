@@ -2,13 +2,7 @@
 
 #define GET_UNIFORM(s, n) n = s.getUniform(#n);
 
-constexpr int mergeShorts(short a, short b)
-{
-	int rez = 0;
-	((short*)&rez)[0] = a;
-	((short*)&rez)[1] = b;
-	return rez;
-}
+
 
 int data[] =
 {
@@ -62,7 +56,7 @@ void Renderer::create()
 	GET_UNIFORM(defaultShader, u_texture);
 
 	glCreateBuffers(1, &vertexBuffer);
-	glNamedBufferStorage(vertexBuffer, sizeof(data), data, 0);
+	glNamedBufferData(vertexBuffer, sizeof(data), data, GL_DYNAMIC_DRAW);
 
 
 	glCreateVertexArrays(1, &vao);

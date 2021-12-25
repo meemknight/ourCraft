@@ -290,7 +290,7 @@ int main()
 #pragma region window and opengl
 
 	permaAssertComment(glfwInit(), "err initializing glfw");
-	glfwWindowHint(GLFW_SAMPLES, 4);
+	//glfwWindowHint(GLFW_SAMPLES, 4);
 
 	int w = 500;
 	int h = 500;

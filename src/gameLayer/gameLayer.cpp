@@ -7,6 +7,7 @@
 #include "camera.h"
 #include "errorReporting.h"
 #include "renderer.h"
+#include "chunkSystem.h"
 
 gl2d::Renderer2D renderer2d;
 Renderer renderer;
@@ -21,6 +22,8 @@ struct GameData
 
 }gameData;
 
+Chunk* chunk;
+int facesCount = 0;
 
 bool initGame()
 {
@@ -35,6 +38,17 @@ bool initGame()
 	{
 		gameData = GameData();
 	}
+
+	chunk = new Chunk;
+
+	chunk->create();
+	std::vector<int> blockData;
+	chunk->bake(blockData);
+
+	glNamedBufferData(renderer.vertexBuffer, sizeof(int) * blockData.size(), blockData.data(), GL_DYNAMIC_DRAW);
+
+	facesCount = blockData.size() / 4;
+
 	return true;
 }
 
@@ -52,7 +66,7 @@ bool gameLogic(float deltaTime)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glEnable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
+	glEnable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -137,7 +151,7 @@ bool gameLogic(float deltaTime)
 	glUniform3fv(renderer.u_positionFloat, 1, &posFloat[0]);
 	glUniform3iv(renderer.u_positionInt, 1, &posInt[0]);
 
-	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 24);
+	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
 
 	glBindVertexArray(0);
 

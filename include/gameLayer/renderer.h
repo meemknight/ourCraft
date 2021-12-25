@@ -1,7 +1,6 @@
 #pragma once
 #include "shader.h"
 
-
 struct Renderer
 {
 	Shader defaultShader;
@@ -17,3 +16,11 @@ struct Renderer
 	GLuint vertexBuffer = 0;
 	
 };
+
+constexpr int mergeShorts(short a, short b)
+{
+	int rez = 0;
+	((short*)&rez)[0] = a;
+	((short*)&rez)[1] = b;
+	return rez;
+}
