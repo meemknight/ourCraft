@@ -1,6 +1,6 @@
 #version 330 core
 
-layout(location = 0) vec4 in_pos;
+layout(location = 0) in vec4 in_pos;
 
 uniform mat4 u_viewProjection;
 
