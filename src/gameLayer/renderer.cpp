@@ -2,12 +2,31 @@
 
 #define GET_UNIFORM(s, n) n = s.getUniform(#n);
 
-float data[] =
+int data[] =
 {
-	0.f, 1.f, -1.f,
-	-1.f, -1.f, -1.f,
-	1.f, -1.f, -1.f
+	0,0,0,0,
+	1,0,0,0,
+	2,0,0,0,
+	3,0,0,0,
+	4,0,0,0,
+	5,0,0,0,
+
+	0,2,0,0,
+	1,2,0,0,
+	2,2,0,0,
+	3,2,0,0,
+	4,2,0,0,
+	5,2,0,0,
 };
+
+//data format:
+
+// int orientation
+// int x
+// int y
+// int z
+
+
 
 void Renderer::create()
 {
@@ -29,7 +48,12 @@ void Renderer::create()
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		glVertexAttribIPointer(0, 1, GL_INT, 4*sizeof(int), 0);
+		glVertexAttribDivisor(0, 1);
+
+		glEnableVertexAttribArray(1);
+		glVertexAttribIPointer(1, 3, GL_INT, 4 * sizeof(int), (void*)(1 * sizeof(int)));
+		glVertexAttribDivisor(1, 1);
 
 	glBindVertexArray(0);
 

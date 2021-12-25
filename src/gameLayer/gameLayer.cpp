@@ -53,6 +53,8 @@ bool gameLogic(float deltaTime)
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 #pragma endregion
 
 
@@ -121,7 +123,7 @@ bool gameLogic(float deltaTime)
 	renderer.defaultShader.bind();
 	glUniformMatrix4fv(renderer.u_viewProjection, 1, GL_FALSE, &gameData.c.getViewProjectionMatrix()[0][0]);
 
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 12);
 
 	glBindVertexArray(0);
 
