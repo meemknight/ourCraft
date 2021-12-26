@@ -25,11 +25,12 @@ void ChunkSystem::createChunks(int viewDistance, std::vector<int> &data)
 			loadedChunks.push_back(chunk);
 		}
 
-	for (int x = 0; x < squareSize; x++)
-		for (int z = 0; z < squareSize; z++)
-		{
-			getChunkSafe(x, z)->bake(data);
-		}
+	//for (int x = 0; x < squareSize; x++)
+	//	for (int z = 0; z < squareSize; z++)
+	//	{
+	//		auto chunk = getChunkSafe(x, z);
+	//		chunk->bake();
+	//	}
 
 }
 
@@ -48,6 +49,9 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 	std::vector<Chunk*> newChunkVector;
 	newChunkVector.resize(squareSize * squareSize);
 
+	std::vector<Chunk*> dirtyChunls;
+	dirtyChunls.reserve(squareSize * squareSize);
+
 	for (int i = 0; i < squareSize * squareSize; i++)
 	{
 		glm::ivec2 chunkPos;
@@ -63,15 +67,18 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 			)
 		{
 			glm::ivec2 chunkPosRelToSystem = chunkPos - minPos;
+			loadedChunks[i]->dirty = false;
+
 
 			newChunkVector[chunkPosRelToSystem.x * squareSize + chunkPosRelToSystem.y] = loadedChunks[i];
-			//mark dirty
 			
 			loadedChunks[i] = nullptr;
 		}
 		else
 		{
-			delete loadedChunks[i];
+			loadedChunks[i]->dirty = true;
+			dirtyChunls.push_back(loadedChunks[i]);
+			loadedChunks[i] = nullptr;
 		}
 	}
 
@@ -80,21 +87,37 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 		{
 			if (newChunkVector[x * squareSize + z] == nullptr)
 			{
-				Chunk* chunk = new Chunk;
+				Chunk* chunk = dirtyChunls.back();
+				dirtyChunls.pop_back();
+
 				chunk->create(x + minPos.x, z + minPos.y);
 				newChunkVector[x * squareSize + z] = chunk;
-
 			}
-			
 		}
-	
+
+	assert(dirtyChunls.empty());
+
 	loadedChunks = std::move(newChunkVector);
 
 	for (int x = 0; x < squareSize; x++)
 		for (int z = 0; z < squareSize; z++)
 		{
-			getChunkSafe(x, z)->bake(data);
+			auto chunk = getChunkSafe(x, z);
+			auto left = getChunkSafe(x-1, z);
+			auto right = getChunkSafe(x+1, z);
+			auto front = getChunkSafe(x, z+1);
+			auto back = getChunkSafe(x, z-1);
+
+			chunk->bake(left, right, front, back);
+
+			for (auto i : chunk->opaqueGeometry)
+			{
+				data.push_back(i);
+			}
+
 		}
+
+
 }
 
 

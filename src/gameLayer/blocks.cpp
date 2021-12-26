@@ -14,40 +14,80 @@ Block* Chunk::safeGet(int x, int y, int z)
 	}
 }
 
-void Chunk::bake(std::vector<int>& bakeVector)
+void Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 {
-	//bakeVector.clear();
+	if (
+		//true||
+		dirty
+		||(!neighbourToLeft && left != nullptr)
+		||(!neighbourToRight && right != nullptr)
+		||(!neighbourToFront && front != nullptr)
+		||(!neighbourToBack && back != nullptr)
+		)
+	{
+		dirty = 0;
+		neighbourToLeft = (left != nullptr);
+		neighbourToRight = (right != nullptr);
+		neighbourToFront = (front != nullptr);
+		neighbourToBack = (back != nullptr);
 
-	for (int x = 0; x < CHUNK_SIZE; x++)
-		for (int z = 0; z < CHUNK_SIZE; z++)
-			for (int y = 0; y < CHUNK_HEIGHT; y++)
-			{
-				auto &b = unsafeGet(x, y, z);
-				if (!b.air())
+
+		opaqueGeometry.clear();
+
+		for (int x = 0; x < CHUNK_SIZE; x++)
+			for (int z = 0; z < CHUNK_SIZE; z++)
+				for (int y = 0; y < CHUNK_HEIGHT; y++)
 				{
-					auto front = safeGet(x, y, z + 1);
-					auto back = safeGet(x, y, z - 1);
-					auto top = safeGet(x, y + 1, z);
-					auto bottom = safeGet(x, y - 1, z);
-					auto left = safeGet(x - 1, y, z);
-					auto right = safeGet(x + 1, y, z);
-
-					Block* sides[6] = {front, back, top, bottom, left, right};
-
-					for (int i = 0; i < 6; i++)
+					auto& b = unsafeGet(x, y, z);
+					if (!b.air())
 					{
-						if (sides[i]==nullptr || !(sides[i])->isOpaque())
+						auto bfront = safeGet(x, y, z + 1);
+						auto bback = safeGet(x, y, z - 1);
+						auto btop = safeGet(x, y + 1, z);
+						auto bbottom = safeGet(x, y - 1, z);
+						auto bleft = safeGet(x - 1, y, z);
+						auto bright = safeGet(x + 1, y, z);
+
+						if (bfront == nullptr && front != nullptr)
 						{
-							bakeVector.push_back(mergeShorts(i, b.type));
-							bakeVector.push_back(x + this->x * CHUNK_SIZE);
-							bakeVector.push_back(y);
-							bakeVector.push_back(z +this->z * CHUNK_SIZE);
+							bfront = front->safeGet(x, y, 0);
 						}
+
+						if (bback == nullptr && back != nullptr)
+						{
+							bback = back->safeGet(x, y, CHUNK_SIZE - 1);
+						}
+
+						if (bleft == nullptr && left != nullptr)
+						{
+							bleft = left->safeGet(CHUNK_SIZE-1, y, z);
+						}
+
+						if (bright == nullptr && right != nullptr)
+						{
+							bright = right->safeGet(0, y, z);
+						}
+
+						Block* sides[6] = {bfront, bback, btop, bbottom, bleft, bright};
+
+						for (int i = 0; i < 6; i++)
+						{
+							if (sides[i] == nullptr || !(sides[i])->isOpaque())
+							{
+								opaqueGeometry.push_back(mergeShorts(i, b.type));
+								opaqueGeometry.push_back(x + this->x * CHUNK_SIZE);
+								opaqueGeometry.push_back(y);
+								opaqueGeometry.push_back(z + this->z * CHUNK_SIZE);
+							}
+						}
+
 					}
-
-
 				}
-			}
+	}
+	else
+	{
+
+	}
 
 }
 

@@ -37,6 +37,14 @@ struct Chunk
 
 	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_HEIGHT];
 	int x, z;
+	
+	std::vector<int> opaqueGeometry;
+	char dirty = 1;
+	char neighbourToLeft = 0;
+	char neighbourToRight = 0;
+	char neighbourToFront = 0;
+	char neighbourToBack = 0;
+
 
 	void clear()
 	{
@@ -52,9 +60,8 @@ struct Chunk
 
 	Block* safeGet(int x, int y, int z);
 
-
 	//todo will use a gpu buffer in the future
-	void bake(std::vector<int>& bakeVector);
+	void bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back);
 
 	void create(int x, int y);
 };
