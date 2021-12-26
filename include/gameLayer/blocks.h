@@ -49,8 +49,6 @@ struct Chunk
 	void clear()
 	{
 		memset(blocks, 0, sizeof(blocks));
-		x = 0;
-		z = 0;
 	}
 
 	Block& unsafeGet(int x, int y, int z)

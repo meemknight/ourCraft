@@ -58,6 +58,22 @@ float vertexData[] = float[](
 		0.5, 0.5, -0.5
 );
 
+float vertexColor[] = float[](
+		
+	//front
+	0.9,
+	//back
+	0.8,
+	//top
+	1.0,
+	//bottom
+	0.7,
+	//left
+	0.8,
+	//right
+	0.9
+);
+
 float vertexUV[] = float[](
 		//front
 		1,1,
@@ -156,6 +172,7 @@ int atlasPositions[] = int[](
 );
 
 out vec2 v_uv;
+out float v_color;
 
 void main()
 {
@@ -170,7 +187,9 @@ void main()
 	pos = u_viewProjection * pos;
 
 	gl_Position = pos;
-		
+	
+	v_color = vertexColor[in_faceOrientation];
+
 	v_uv.x = vertexUV[in_faceOrientation * 2 * 6 + gl_VertexID * 2 + 0];
 	v_uv.y = vertexUV[in_faceOrientation * 2 * 6 + gl_VertexID * 2 + 1];
 

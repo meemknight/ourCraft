@@ -24,11 +24,15 @@ struct GameData
 
 ChunkSystem chunkSystem;
 int facesCount = 0;
+float timeCounter = 0;
+int frameCounter = 0;
+int currentFps = 0;
 
 bool initGame()
 {
 	enableReportGlErrors();
-
+	
+	gl2d::setVsync(false);
 	renderer2d.create();
 	font.createFromFile(RESOURCES_PATH "roboto_black.ttf");
 	texture.loadFromFile(RESOURCES_PATH "blocks.png");
@@ -41,8 +45,7 @@ bool initGame()
 
 
 	std::vector<int> blockData;
-	chunkSystem.createChunks(6, blockData);
-
+	chunkSystem.createChunks(32, blockData);
 
 	glNamedBufferData(renderer.vertexBuffer, sizeof(int) * blockData.size(), blockData.data(), GL_DYNAMIC_DRAW);
 	facesCount = blockData.size() / 4;
@@ -69,6 +72,20 @@ bool gameLogic(float deltaTime)
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 #pragma endregion
+
+#pragma region fps
+
+	timeCounter += deltaTime;
+	if(timeCounter >= 1.f)
+	{
+		timeCounter -= 1;
+		currentFps = frameCounter;
+		frameCounter = 0;
+	}
+	frameCounter++;
+
+#pragma endregion
+
 
 	static float moveSpeed = 4.f;
 
@@ -164,7 +181,7 @@ bool gameLogic(float deltaTime)
 	ImGui::Begin("camera controll");
 	ImGui::DragScalarN("camera pos", ImGuiDataType_Double, &gameData.c.position[0], 3, 0.01);
 	ImGui::DragFloat("camera speed", &moveSpeed);
-
+	ImGui::Text("fps: %d", currentFps);
 	ImGui::End();
 
 #pragma region set finishing stuff

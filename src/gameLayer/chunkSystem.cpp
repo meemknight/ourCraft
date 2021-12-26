@@ -120,4 +120,16 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 
 }
 
+Block* ChunkSystem::getBlockSafe(int x, int y, int z)
+{
+	if (y < 0 || y >= CHUNK_HEIGHT) { return nullptr; }
+
+	auto cornerChunk = loadedChunks[0];
+	int cornerX = cornerChunk->x;
+	int cornerZ = cornerChunk->z;
+
+	//todo
+
+}
+
 

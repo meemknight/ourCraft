@@ -16,4 +16,6 @@ struct ChunkSystem
 
 	void update(int x, int z, std::vector<int>& data);
 
+	Block* getBlockSafe(int x, int y, int z);
+
 };

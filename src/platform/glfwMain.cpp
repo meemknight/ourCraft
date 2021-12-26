@@ -296,7 +296,7 @@ int main()
 	int h = 500;
 	wind = glfwCreateWindow(w, h, "geam", nullptr, nullptr);
 	glfwMakeContextCurrent(wind);
-	glfwSwapInterval(1);
+	//glfwSwapInterval(1);
 
 	glfwSetKeyCallback(wind, keyCallback);
 	glfwSetMouseButtonCallback(wind, mouseCallback);

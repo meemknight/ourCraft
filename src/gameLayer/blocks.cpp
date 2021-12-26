@@ -1,6 +1,6 @@
 #include "blocks.h"
 #include "renderer.h"
-
+#include "worldGenerator.h"
 
 Block* Chunk::safeGet(int x, int y, int z)
 {
@@ -17,7 +17,6 @@ Block* Chunk::safeGet(int x, int y, int z)
 void Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 {
 	if (
-		//true||
 		dirty
 		||(!neighbourToLeft && left != nullptr)
 		||(!neighbourToRight && right != nullptr)
@@ -30,7 +29,6 @@ void Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 		neighbourToRight = (right != nullptr);
 		neighbourToFront = (front != nullptr);
 		neighbourToBack = (back != nullptr);
-
 
 		opaqueGeometry.clear();
 
@@ -93,46 +91,10 @@ void Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 
 void Chunk::create(int x, int z)
 {
-	clear();
 
 	this->x = x;
 	this->z = z;
 
-	for (int x = 0; x < CHUNK_SIZE; x++)
-		for (int z = 0; z < CHUNK_SIZE; z++)
-			for (int y = 0; y < 10; y++)
-			{
-				int calcX = x + this->x * CHUNK_SIZE;
-				int calcZ = z + this->z * CHUNK_SIZE;
+	generateChunk(1234, *this);
 
-				if (sin((float)calcX/ CHUNK_SIZE*2) * cos((float)calcZ/CHUNK_SIZE*2) > y/10.f || y == 0)
-				{
-					unsafeGet(x, y, z).type = BlockTypes::dirt;
-				}
-			}
-
-	for (int x = 0; x < CHUNK_SIZE; x++)
-		for (int z = 0; z < CHUNK_SIZE; z++)
-		{
-			int counter = 0;
-			for (int y = CHUNK_HEIGHT - 1; y >= 0; y--)
-			{
-				if (counter == 0)
-				{
-					if (!unsafeGet(x, y, z).air())
-					{
-						unsafeGet(x, y, z).type = BlockTypes::grass;
-						counter = 1;
-					}
-				}
-				else if (counter < 4)
-				{
-					counter++;
-				}
-				else
-				{
-					unsafeGet(x, y, z).type = BlockTypes::stone;
-				}
-			}
-		}
 }
