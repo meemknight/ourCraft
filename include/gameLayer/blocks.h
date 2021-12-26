@@ -9,6 +9,23 @@ enum BlockTypes
 	dirt,
 	stone,
 	ice,
+	woodLog,
+	wooden_plank,
+	cobblestone,
+	gold_block,
+	bricks,
+	sand,
+	sand_stone,
+	snow_dirt,
+	leaves,
+	gold_ore,
+	coar_ore,
+	stoneBrick,
+	iron_ore,
+	diamond_ore,
+	bookShelf,
+	birch_wood,
+	gravel,
 	BlocksCount
 };
 
@@ -22,10 +39,7 @@ struct Block
 	bool isOpaque()
 	{
 		return
-			type == grass ||
-			type == dirt ||
-			type == stone ||
-			type == ice;
+			type != BlockTypes::air;
 	}
 };
 

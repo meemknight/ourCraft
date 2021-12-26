@@ -11,6 +11,13 @@
 #include "threadStuff.h"
 #include <thread>
 
+#define GPU_ENGINE 1
+extern "C"
+{
+	__declspec(dllexport) unsigned long NvOptimusEnablement = GPU_ENGINE;
+	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = GPU_ENGINE;
+}
+
 gl2d::Renderer2D renderer2d;
 Renderer renderer;
 
@@ -49,7 +56,7 @@ bool initGame()
 	serverThread.detach();
 
 	std::vector<int> blockData;
-	chunkSystem.createChunks(32, blockData);
+	chunkSystem.createChunks(6, blockData);
 
 	glNamedBufferData(renderer.vertexBuffer, sizeof(int) * blockData.size(), blockData.data(), GL_DYNAMIC_DRAW);
 	facesCount = blockData.size() / 4;

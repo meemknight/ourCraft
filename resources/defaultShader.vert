@@ -124,7 +124,7 @@ float vertexUV[] = float[](
 		1,1
 );
 
-const int typesCount = 5;
+const int typesCount = 22;
 
 int atlasPositions[] = int[](
 	//front
@@ -133,13 +133,47 @@ int atlasPositions[] = int[](
 	2, 15, // dirt
 	1, 15, //stone
 	3, 11, //ice
-	
+	4, 14,//log
+	4, 15,//wooden_plank
+	0, 14,//cobblestone
+	7, 14,//gold_block
+	7,15,//bricks
+	2,14,//sand
+	0,3,//sand_stone
+	4,11,//snow_dirt
+	5, 12,//leaves
+	0, 13, // gold ore
+	2, 13, // coal ore
+	6, 12, //stone brick
+	1, 13, // iron ore
+	2, 12, // diamond ore
+	3, 13, //block shelf
+	5, 8, //birch wood
+	3, 14, //gravel
+
 	//back
 	0, 0,
 	3, 15, //grass
 	2, 15, // dirt
 	1, 15, //stone
 	3, 11, //ice
+	4, 14,//log
+	4, 15,//wooden_plank
+	0, 14,//cobblestone
+	7, 14,//gold_block
+	7,15,//bricks
+	2,14,//sand
+	0,3,//sand_stone
+	4,11,//snow_dirt
+	5, 12,//leaves
+	0, 13, // gold ore
+	2, 13, // coal ore
+	6, 12, //stone brick
+	1, 13, // iron ore
+	2, 12, // diamond ore
+	3, 13, //block shelf
+	5, 8, //birch wood
+	3, 14, //gravel
 
 	//top
 	0,0,
@@ -147,6 +181,23 @@ int atlasPositions[] = int[](
 	2, 15, // dirt
 	1, 15, //stone
 	3, 11, //ice
+	4, 14,//log
+	4, 15,//wooden_plank
+	0, 14,//cobblestone
+	7, 14,//gold_block
+	7,15,//bricks
+	2,1,//sand
+	0,4,//sand_stone
+	2, 11,// snow_grass
+	5, 12,//leaves
+	0, 13, // gold ore
+	2, 13, // coal ore
+	6, 12, //stone brick
+	1, 13, // iron ore
+	2, 12, // diamond ore
+	4, 15, //block shelf
+	5, 14, //birch wood
+	3, 14, //gravel
 
 	//bottom
 	0, 0,
@@ -154,6 +205,23 @@ int atlasPositions[] = int[](
 	2, 15, // dirt
 	1, 15, //stone
 	3, 11, //ice
+	5, 14,//log
+	4, 15,//wooden_plank
+	0, 14,//cobblestone
+	7, 14,//gold_block
+	7,15,//bricks
+	2,14,//sand
+	0,2,//sand_stone
+	2, 15, // snow_grass
+	5, 12,//leaves
+	0, 13, // gold ore
+	2, 13, // coal ore
+	6, 12, //stone brick
+	1, 13, // iron ore
+	2, 12, // diamond ore
+	4, 15, //block shelf
+	5, 14, //birch wood
+	3, 14, //gravel
 
 	//left
 	0, 0,
@@ -161,13 +229,47 @@ int atlasPositions[] = int[](
 	2, 15, // dirt
 	1, 15, //stone
 	3, 11, //ice
+	4, 14,//log
+	4, 15,//wooden_plank
+	0, 14,//cobblestone
+	7, 14,//gold_block
+	7,15,//bricks
+	2,14,//sand
+	0,3,//sand_stone
+	4,11,//snow_dirt
+	5, 12,//leaves
+	0, 13, // gold ore
+	2, 13, // coal ore
+	6, 12, //stone brick
+	1, 13, // iron ore
+	2, 12, // diamond ore
+	3, 13, //block shelf
+	5, 8, //birch wood
+	3, 14, //gravel
 	
 	//right
 	0, 0,
 	3, 15, //grass
 	2, 15, // dirt
 	1, 15, //stone
-	3, 11 //ice
+	3, 11, //ice
+	4, 14,//log
+	4, 15,//wooden_plank
+	0, 14,//cobblestone
+	7, 14,//gold_block
+	7,15,//bricks
+	2,14,//sand
+	0,3,//sand_stone
+	4,11,//snow_dirt
+	5, 12,//leaves
+	0, 13, // gold ore
+	2, 13, // coal ore
+	6, 12, //stone brick
+	1, 13, // iron ore
+	2, 12, // diamond ore
+	3, 13, //block shelf
+	5, 8, //birch wood
+	3, 14 //gravel
 
 );
 
