@@ -18,6 +18,17 @@ void submitTask(Task& t)
 
 }
 
+void submitTask(std::vector<Task>& t)
+{
+	std::unique_lock<std::mutex> locker(taskMutex);
+	for (auto& i : t)
+	{
+		tasks.push(i);
+	}
+	locker.unlock();
+	taskCondition.notify_one();
+}
+
 std::vector<Task> waitForTasks()
 {
 	std::unique_lock<std::mutex> locker(taskMutex);

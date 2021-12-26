@@ -18,13 +18,15 @@ void ChunkSystem::createChunks(int viewDistance, std::vector<int> &data)
 {
 	squareSize = viewDistance;
 
-	for (int x = 0; x < squareSize; x++)
-		for (int z = 0; z < squareSize; z++)
-		{
-			Chunk *chunk = new Chunk;
-			chunk->create(x, z);
-			loadedChunks.push_back(chunk);
-		}
+	loadedChunks.resize(squareSize * squareSize, nullptr);
+
+	//for (int x = 0; x < squareSize; x++)
+	//	for (int z = 0; z < squareSize; z++)
+	//	{
+	//		Chunk *chunk = new Chunk;
+	//		chunk->create(x, z);
+	//		loadedChunks.push_back(nullptr);
+	//	}
 
 	//for (int x = 0; x < squareSize; x++)
 	//	for (int z = 0; z < squareSize; z++)
@@ -87,11 +89,11 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 			}
 		}
 
+		std::vector<Task> tasks;
 		for (int x = 0; x < squareSize; x++)
 			for (int z = 0; z < squareSize; z++)
 			{
 
-				//todo double submit
 				if (newChunkVector[x * squareSize + z] == nullptr)
 				{
 					//Chunk* chunk = dirtyChunls.back();
@@ -103,9 +105,15 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 
 					t.type = Task::generateChunk;
 					t.pos = glm::ivec3(x + minPos.x, 0, z + minPos.y);
-					submitTask(t);
+					tasks.push_back(t);
 				}
 			}
+		
+		if (!tasks.empty())
+		{
+			submitTask(tasks);
+		}
+
 
 		//assert(dirtyChunls.empty());
 
@@ -147,7 +155,6 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 
 	int currentBaked = 0;
 	const int maxToBake = 3; //this frame
-
 
 	for (int x = 0; x < squareSize; x++)
 		for (int z = 0; z < squareSize; z++)

@@ -17,7 +17,8 @@ struct Task
 };
 
 
-void submitTask(Task &t);
+void submitTask(Task& t);
+void submitTask(std::vector<Task> &t);
 std::vector<Task> waitForTasks();
 
 void submitChunk(Chunk *c);
