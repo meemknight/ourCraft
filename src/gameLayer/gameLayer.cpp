@@ -8,6 +8,8 @@
 #include "errorReporting.h"
 #include "renderer.h"
 #include "chunkSystem.h"
+#include "threadStuff.h"
+#include <thread>
 
 gl2d::Renderer2D renderer2d;
 Renderer renderer;
@@ -43,6 +45,8 @@ bool initGame()
 		gameData = GameData();
 	}
 
+	std::thread serverThread(serverFunction);
+	serverThread.detach();
 
 	std::vector<int> blockData;
 	chunkSystem.createChunks(32, blockData);
@@ -87,7 +91,7 @@ bool gameLogic(float deltaTime)
 #pragma endregion
 
 
-	static float moveSpeed = 4.f;
+	static float moveSpeed = 500.f;
 
 #pragma region input
 	{

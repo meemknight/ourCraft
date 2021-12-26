@@ -14,7 +14,7 @@ Block* Chunk::safeGet(int x, int y, int z)
 	}
 }
 
-void Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
+bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 {
 	if (
 		dirty
@@ -69,7 +69,7 @@ void Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 						Block* sides[6] = {bfront, bback, btop, bbottom, bleft, bright};
 
 						for (int i = 0; i < 6; i++)
-						{
+						{//todo
 							if (sides[i] == nullptr || !(sides[i])->isOpaque())
 							{
 								opaqueGeometry.push_back(mergeShorts(i, b.type));
@@ -81,12 +81,13 @@ void Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 
 					}
 				}
+
+		return true;
 	}
 	else
 	{
-
+		return false;
 	}
-
 }
 
 void Chunk::create(int x, int z)
