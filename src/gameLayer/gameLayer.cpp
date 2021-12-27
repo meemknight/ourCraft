@@ -56,7 +56,7 @@ bool initGame()
 	serverThread.detach();
 
 	std::vector<int> blockData;
-	chunkSystem.createChunks(20, blockData);
+	chunkSystem.createChunks(30, blockData);
 
 	glNamedBufferData(renderer.vertexBuffer, sizeof(int) * blockData.size(), blockData.data(), GL_DYNAMIC_DRAW);
 	facesCount = blockData.size() / 4;
@@ -184,6 +184,8 @@ bool gameLogic(float deltaTime)
 
 	glUniform3fv(renderer.u_positionFloat, 1, &posFloat[0]);
 	glUniform3iv(renderer.u_positionInt, 1, &posInt[0]);
+	glUniform1i(renderer.u_typesCount, 22);
+	
 
 	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
 

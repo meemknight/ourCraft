@@ -1,8 +1,8 @@
 #include "worldGenerator.h"
 #include "FastNoiseSIMD.h"
+#include <cmath>
 
 FastNoiseSIMD* heightNoise = FastNoiseSIMD::NewFastNoiseSIMD();
-
 
 void generateChunk(int seed, Chunk& c)
 {
@@ -15,7 +15,6 @@ void generateChunk(int seed, Chunk& c)
 
 	int xPadd = c.x * 16;
 	int zPadd = c.z * 16;
-
 
 	float* testNoise
 		= heightNoise->GetSimplexFractalSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);

@@ -124,7 +124,6 @@ float vertexUV[] = float[](
 		1,1
 );
 
-const int typesCount = 22;
 
 readonly restrict layout(std430) buffer u_atlasPositions
 {
@@ -156,8 +155,8 @@ void main()
 	v_uv.y = vertexUV[in_faceOrientation * 2 * 6 + gl_VertexID * 2 + 1];
 
 	ivec2 uvInAtlas;
-	uvInAtlas.x = atlasPositions[in_faceOrientation * 2 * typesCount + in_faceType * 2 + 0];
-	uvInAtlas.y = atlasPositions[in_faceOrientation * 2 * typesCount + in_faceType * 2 + 1];
+	uvInAtlas.x = atlasPositions[in_faceOrientation * 2 * u_typesCount + in_faceType * 2 + 0];
+	uvInAtlas.y = atlasPositions[in_faceOrientation * 2 * u_typesCount + in_faceType * 2 + 1];
 
 	v_uv += uvInAtlas;
 	v_uv *= 1.f/16.f;

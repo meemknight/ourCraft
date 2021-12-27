@@ -3,6 +3,8 @@
 #include <mutex>
 #include <queue>
 #include "worldGenerator.h"
+#include <thread>
+#include <unordered_map>
 
 std::mutex taskMutex;
 std::condition_variable taskCondition;
@@ -32,7 +34,10 @@ void submitTask(std::vector<Task>& t)
 std::vector<Task> waitForTasks()
 {
 	std::unique_lock<std::mutex> locker(taskMutex);
-	taskCondition.wait(locker);
+	if (tasks.empty())
+	{
+		taskCondition.wait(locker);
+	}
 
 	auto size = tasks.size();
 	std::vector<Task> retVector;
@@ -79,12 +84,11 @@ std::vector<Chunk*> getChunks()
 	return retVector;
 }
 
-void serverFunction()
-{
 
+void chunkCreatorFunction()
+{
 	while (true)
 	{
-
 		auto tasks = waitForTasks();
 
 		for (auto& i : tasks)
@@ -97,17 +101,32 @@ void serverFunction()
 				c->z = i.pos.z;
 
 				generateChunk(1234, *c);
-				//std::this_thread::sleep_for(std::chrono::milliseconds(10));
+				//std::this_thread::sleep_for(std::chrono::milliseconds(1));
 				submitChunk(c);
 
 			}
 
-
 		}
-
-
-
 	}
+}
+
+
+void serverFunction()
+{
+
+	chunkCreatorFunction();
+
+	//std::thread chunkCreator1(chunkCreatorFunction);
+	//chunkCreator1.detach();
+	//std::thread chunkCreator2(chunkCreatorFunction);
+	//chunkCreator2.detach();
+	//std::thread chunkCreator3(chunkCreatorFunction);
+	//chunkCreator3.detach();
+
+	//while (true)
+	//{
+	//	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	//}
 
 
 }

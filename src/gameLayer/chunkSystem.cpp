@@ -1,6 +1,7 @@
 #include "chunkSystem.h"
 #include <glm/vec2.hpp>
 #include "threadStuff.h"
+#include <algorithm>
 
 Chunk* ChunkSystem::getChunkSafe(int x, int z)
 {
@@ -156,44 +157,102 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 	int currentBaked = 0;
 	const int maxToBake = 3; //this frame
 
-	for (int x = 0; x < squareSize; x++)
-		for (int z = 0; z < squareSize; z++)
-		{
-			auto chunk = getChunkSafe(x, z);
+	auto chunkVectorCopy = loadedChunks;
 
-			if (chunk != nullptr)
+	std::sort(chunkVectorCopy.begin(), chunkVectorCopy.end(),
+		[x, z](Chunk* a, Chunk* b) 
 			{
-				if (currentBaked < maxToBake)
-				{
-					auto left = getChunkSafe(x - 1, z);
-					auto right = getChunkSafe(x + 1, z);
-					auto front = getChunkSafe(x, z + 1);
-					auto back = getChunkSafe(x, z - 1);
-
-					auto b = chunk->bake(left, right, front, back);
-
-					if (b) { currentBaked++; }
-
-					for (auto i : chunk->opaqueGeometry)
-					{
-						data.push_back(i);
-					}
-				}
-				else
-				{
-					if (!chunk->dirty)
-					{
-						for (auto i : chunk->opaqueGeometry)
-						{
-							data.push_back(i);
-						}
-					}
-				}
+				if (a == nullptr) { return false; }
+				if (b == nullptr) { return true; }
 				
+				int ax = a->x - x;
+				int az = a->z - z;
+	
+				int bx = b->x - x;
+				int bz = b->z - z;
+	
+				unsigned long reza = ax * ax + az * az;
+				unsigned long rezb = bx * bx + bz * bz;
+	
+				return reza < rezb;
 			}
+		);
 
+	for (int i = 0; i < chunkVectorCopy.size(); i++)
+	{
+		auto chunk = chunkVectorCopy[i];
+		if (chunk == nullptr) { continue; } //todo break? 
+
+		int x = chunk->x - minPos.x;
+		int z = chunk->z - minPos.y;
+
+		if (currentBaked < maxToBake)
+		{
+			auto left = getChunkSafe(x - 1, z);
+			auto right = getChunkSafe(x + 1, z);
+			auto front = getChunkSafe(x, z + 1);
+			auto back = getChunkSafe(x, z - 1);
+		
+			auto b = chunk->bake(left, right, front, back);
+		
+			if (b) { currentBaked++; }
+		
+			for (auto i : chunk->opaqueGeometry)
+			{
+				data.push_back(i);
+			}
+		}
+		else
+		{
+			if (!chunk->dirty)
+			{
+				for (auto i : chunk->opaqueGeometry)
+				{
+					data.push_back(i);
+				}
+			}
 		}
 
+	}
+
+	//for (int x = 0; x < squareSize; x++)
+	//	for (int z = 0; z < squareSize; z++)
+	//	{
+	//		auto chunk = getChunkSafe(x, z);
+	//
+	//		if (chunk != nullptr)
+	//		{
+	//			if (currentBaked < maxToBake)
+	//			{
+	//				auto left = getChunkSafe(x - 1, z);
+	//				auto right = getChunkSafe(x + 1, z);
+	//				auto front = getChunkSafe(x, z + 1);
+	//				auto back = getChunkSafe(x, z - 1);
+	//
+	//				auto b = chunk->bake(left, right, front, back);
+	//
+	//				if (b) { currentBaked++; }
+	//
+	//				for (auto i : chunk->opaqueGeometry)
+	//				{
+	//					data.push_back(i);
+	//				}
+	//			}
+	//			else
+	//			{
+	//				if (!chunk->dirty)
+	//				{
+	//					for (auto i : chunk->opaqueGeometry)
+	//					{
+	//						data.push_back(i);
+	//					}
+	//				}
+	//			}
+	//			
+	//		}
+	//
+	//	}
+	//
 
 }
 

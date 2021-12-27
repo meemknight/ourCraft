@@ -71,7 +71,7 @@ int atlasData[] = {
 	0, 14,//cobblestone
 	7, 14,//gold_block
 	7, 15,//bricks
-	2, 1,//sand
+	2, 14,//sand
 	0, 4,//sand_stone
 	2, 11,// snow_grass
 	5, 12,//leaves
@@ -163,7 +163,7 @@ void Renderer::create()
 	defaultShader.bind();
 
 	GET_UNIFORM(defaultShader, u_viewProjection);
-	GET_UNIFORM(defaultShader, u_position);
+	GET_UNIFORM(defaultShader, u_typesCount);
 	GET_UNIFORM(defaultShader, u_positionInt);
 	GET_UNIFORM(defaultShader, u_positionFloat);
 	GET_UNIFORM(defaultShader, u_texture);
