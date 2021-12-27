@@ -5,6 +5,7 @@
 #include "worldGenerator.h"
 #include <thread>
 #include <unordered_map>
+#include <iostream>
 
 std::mutex taskMutex;
 std::condition_variable taskCondition;
@@ -54,6 +55,30 @@ std::vector<Task> waitForTasks()
 	return retVector;
 }
 
+std::vector<Task> tryForTasks()
+{
+	std::unique_lock<std::mutex> locker(taskMutex);
+	if (tasks.empty())
+	{
+		locker.unlock();
+		return {};
+	}
+
+	auto size = tasks.size();
+	std::vector<Task> retVector;
+	retVector.reserve(size);
+
+	for (int i = 0; i < size; i++)
+	{
+		retVector.push_back(tasks.front());
+		tasks.pop();
+	}
+
+	locker.unlock();
+
+	return retVector;
+}
+
 std::mutex chunkMutex;
 std::queue<Chunk*> chunks;
 
@@ -84,49 +109,199 @@ std::vector<Chunk*> getChunks()
 	return retVector;
 }
 
+struct ListNode;
 
-void chunkCreatorFunction()
+struct SavedChunk
 {
-	while (true)
+	//std::mutex mu;
+	Chunk chunk;
+	ListNode* node = nullptr;
+};
+
+//https://www.geeksforgeeks.org/how-to-create-an-unordered_map-of-user-defined-class-in-cpp/
+struct ChunkHash
+{
+	size_t operator()(const glm::ivec2& in) const
 	{
-		auto tasks = waitForTasks();
+		int x = in.x;
+		int z = in.y;
 
-		for (auto& i : tasks)
-		{
+		size_t ret = 0;
+		ret += x;
+		ret += (z < 32);
 
-			if (i.type == Task::generateChunk)
-			{
-				Chunk* c = new Chunk;
-				c->x = i.pos.x;
-				c->z = i.pos.z;
-
-				generateChunk(1234, *c);
-				//std::this_thread::sleep_for(std::chrono::milliseconds(1));
-				submitChunk(c);
-
-			}
-
-		}
+		return ret;
 	}
-}
+};
+
+
+struct ListNode
+{
+	ListNode *prev = nullptr;
+	glm::ivec2 chunkPos;
+	ListNode *next = nullptr;
+};
 
 
 void serverFunction()
 {
 
-	chunkCreatorFunction();
+	std::unordered_map<glm::ivec2, SavedChunk*, ChunkHash> savedChunks;
+	const int maxSavedChunks = 2000;
+	ListNode *first = nullptr;
+	ListNode *last = nullptr;
 
-	//std::thread chunkCreator1(chunkCreatorFunction);
-	//chunkCreator1.detach();
-	//std::thread chunkCreator2(chunkCreatorFunction);
-	//chunkCreator2.detach();
-	//std::thread chunkCreator3(chunkCreatorFunction);
-	//chunkCreator3.detach();
+	std::queue<Task> waitingTasks;
 
-	//while (true)
-	//{
-	//	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-	//}
+	while (true)
+	{
+		std::vector<Task> tasks;
+		if (waitingTasks.empty())
+		{
+			tasks = waitForTasks();
+		}
+		else
+		{
+			tasks = tryForTasks();
+		}
+		
+		for (auto i : tasks)
+		{
+			waitingTasks.push(i);
+		}
 
+		int taskIndex = 0;
+		int count = waitingTasks.size();
+		for (;taskIndex < std::min(count, 10); taskIndex++)
+		{
+			auto &i = waitingTasks.front();
+
+			if (i.type == Task::generateChunk)
+			{
+				glm::ivec2 pos = {i.pos.x, i.pos.z};
+				auto foundPos = savedChunks.find(pos);
+				if (foundPos != savedChunks.end())
+				{
+					auto nod = (*foundPos).second->node;
+
+					auto left = nod->prev;
+					auto right = nod->next;
+
+					if (left == nullptr)
+					{
+						//nothing, this is the first element
+					}
+					else if(right == nullptr)
+					{
+						left->next = nullptr;
+						last = left;
+
+						nod->next = first;
+						if (first)
+						{
+							first->prev = nod;
+						}
+						
+						nod->prev = nullptr;
+						first = nod;
+					}
+					else
+					{
+						//link left right:
+						left->next = right;
+						right->prev = left;
+
+						nod->next = first;
+						if (first)
+						{
+							first->prev = nod;
+						}
+
+						nod->prev = nullptr;
+						first = nod;
+					}
+
+					submitChunk(new Chunk((*foundPos).second->chunk));
+				}
+				else
+				{
+
+					if (savedChunks.size() >= maxSavedChunks)
+					{
+						//std::cout << "bad";
+						glm::ivec2 oldPos = last->chunkPos;
+						auto foundPos = savedChunks.find(oldPos);
+						assert(foundPos != savedChunks.end());//unlink of the 2 data structures
+
+						SavedChunk *chunkToRecycle = foundPos->second;
+
+						//here we can save the chunk to a file
+
+
+						savedChunks.erase(foundPos);
+
+						chunkToRecycle->chunk.x = pos.x;
+						chunkToRecycle->chunk.z = pos.y;
+
+						generateChunk(1234, chunkToRecycle->chunk);
+						submitChunk(new Chunk(chunkToRecycle->chunk));
+
+						assert(chunkToRecycle->node == last);
+						last->chunkPos = pos;
+
+						auto prev = last->prev;
+						prev->next = nullptr;
+
+						auto newFirst = last;
+						last = prev;
+
+						first->prev = newFirst;
+						newFirst->prev = nullptr;
+						newFirst->next = first;
+						first = newFirst;
+
+						savedChunks[pos] = chunkToRecycle;
+
+					}
+					else
+					{
+
+						SavedChunk *c = new SavedChunk;
+						c->chunk.x = i.pos.x;
+						c->chunk.z = i.pos.z;
+
+						generateChunk(1234, c->chunk);
+						//std::this_thread::sleep_for(std::chrono::milliseconds(1));
+						submitChunk(new Chunk(c->chunk));
+						
+						ListNode *node = new ListNode;
+						if (last == nullptr) { last = node; }
+						
+						node->prev = nullptr;
+						node->next = first;
+						node->chunkPos = {i.pos.x, i.pos.z};
+
+						if (first)
+						{
+							first->prev = node;
+						}
+
+						first = node;
+
+						c->node = node;
+						savedChunks[{i.pos.x, i.pos.z}] = c;
+
+					}
+				}
+
+			}
+
+			waitingTasks.pop();
+		}
+
+
+	}
+
+	
 
 }
