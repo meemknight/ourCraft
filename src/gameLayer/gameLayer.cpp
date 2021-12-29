@@ -20,6 +20,7 @@ extern "C"
 
 gl2d::Renderer2D renderer2d;
 Renderer renderer;
+GyzmosRenderer gyzmosRenderer;
 
 gl2d::Font font;
 gl2d::Texture texture;
@@ -46,6 +47,7 @@ bool initGame()
 	font.createFromFile(RESOURCES_PATH "roboto_black.ttf");
 	texture.loadFromFile(RESOURCES_PATH "blocks.png");
 	renderer.create();
+	gyzmosRenderer.create();
 
 	if(!platform::readEntireFile(RESOURCES_PATH "gameData.data", &gameData, sizeof(GameData)))
 	{
@@ -186,10 +188,13 @@ bool gameLogic(float deltaTime)
 	glUniform3iv(renderer.u_positionInt, 1, &posInt[0]);
 	glUniform1i(renderer.u_typesCount, 22);
 	
-
 	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
 
 	glBindVertexArray(0);
+	
+	gyzmosRenderer.drawCube(0,60,0);
+	gyzmosRenderer.render(gameData.c, posInt, posFloat);
+
 
 	ImGui::Begin("camera controll");
 	ImGui::DragScalarN("camera pos", ImGuiDataType_Double, &gameData.c.position[0], 3, 0.01);

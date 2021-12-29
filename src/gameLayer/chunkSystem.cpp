@@ -112,6 +112,23 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 		
 		if (!tasks.empty())
 		{
+			std::sort(tasks.begin(), tasks.end(),
+				[x, z](Task &a, Task &b)
+			{
+
+				int ax = a.pos.x - x;
+				int az = a.pos.z - z;
+
+				int bx = b.pos.x - x;
+				int bz = b.pos.z - z;
+
+				unsigned long reza = ax * ax + az * az;
+				unsigned long rezb = bx * bx + bz * bz;
+
+				return reza < rezb;
+			}
+			);
+
 			submitTask(tasks);
 		}
 

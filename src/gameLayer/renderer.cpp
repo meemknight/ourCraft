@@ -201,5 +201,104 @@ void Renderer::create()
 
 }
 
+float cubePositions[] = {
+		-0.5f, +0.5f, +0.5f, // 0
+		+0.5f, +0.5f, +0.5f, // 1
+		+0.5f, +0.5f, -0.5f, // 2
+		-0.5f, +0.5f, -0.5f, // 3
+		-0.5f, +0.5f, -0.5f, // 4
+		+0.5f, +0.5f, -0.5f, // 5
+		+0.5f, -0.5f, -0.5f, // 6
+		-0.5f, -0.5f, -0.5f, // 7
+		+0.5f, +0.5f, -0.5f, // 8
+		+0.5f, +0.5f, +0.5f, // 9
+		+0.5f, -0.5f, +0.5f, // 10
+		+0.5f, -0.5f, -0.5f, // 11
+		-0.5f, +0.5f, +0.5f, // 12
+		-0.5f, +0.5f, -0.5f, // 13
+		-0.5f, -0.5f, -0.5f, // 14
+		-0.5f, -0.5f, +0.5f, // 15
+		+0.5f, +0.5f, +0.5f, // 16
+		-0.5f, +0.5f, +0.5f, // 17
+		-0.5f, -0.5f, +0.5f, // 18
+		+0.5f, -0.5f, +0.5f, // 19
+		+0.5f, -0.5f, -0.5f, // 20
+		-0.5f, -0.5f, -0.5f, // 21
+		-0.5f, -0.5f, +0.5f, // 22
+		+0.5f, -0.5f, +0.5f, // 23
+};
+
+unsigned int cubeIndicesData[] = {
+	0,   1,  2,  0,  2,  3, // Top
+	4,   5,  6,  4,  6,  7, // Back
+	8,   9, 10,  8, 10, 11, // Right
+	12, 13, 14, 12, 14, 15, // Left
+	16, 17, 18, 16, 18, 19, // Front
+	20, 22, 21, 20, 23, 22, // Bottom
+};
+
+
+void GyzmosRenderer::create()
+{
+	gyzmosCubeShader.loadShaderProgramFromFile(RESOURCES_PATH "gyzmosCubeShader.vert",
+		RESOURCES_PATH "gyzmosCubeShader.frag");
+
+	GET_UNIFORM(gyzmosCubeShader, u_viewProjection);
+	GET_UNIFORM(gyzmosCubeShader, u_positionInt);
+	GET_UNIFORM(gyzmosCubeShader, u_positionFloat);
+	
+	glCreateVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	glCreateBuffers(1, &vertexDataBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexDataBuffer);
+	glBufferStorage(GL_ARRAY_BUFFER, sizeof(cubePositions), cubePositions, 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribDivisor(0, 0);
+
+	glCreateBuffers(1, &blockPositionBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, blockPositionBuffer);
+	glBufferData(GL_ARRAY_BUFFER, 0, 0, GL_STREAM_DRAW);
+	glVertexAttribIPointer(1, 3, GL_INT, 0, 0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribDivisor(1, 1);
+
+	glCreateBuffers(1, &cubeIndices);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubeIndices);
+	glBufferStorage(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeIndicesData), (void*)cubeIndicesData, 0);
+
+	glBindVertexArray(0);
+}
+
+
+void GyzmosRenderer::render(Camera &c, glm::ivec3 posInt, glm::vec3 posFloat)
+{
+
+	if (cubes.empty()) { return; }
+
+	glNamedBufferData(blockPositionBuffer, cubes.size() * sizeof(CubeData), cubes.data(), GL_STREAM_DRAW);
+	
+	gyzmosCubeShader.bind();
+	
+	glDepthFunc(GL_LEQUAL);
+	glBindVertexArray(vao);
+	
+	auto mvp = c.getProjectionMatrix() * glm::lookAt({0,0,0}, c.viewDirection, c.up);
+
+	glUniformMatrix4fv(u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
+	glUniform3fv(u_positionFloat, 1, &posFloat[0]);
+	glUniform3iv(u_positionInt, 1, &posInt[0]);
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, cubes.size());
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+	glBindVertexArray(0);
+	glDepthFunc(GL_LESS);
+
+	cubes.clear();
+}
+
 
 #undef GET_UNIFORM

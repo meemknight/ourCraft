@@ -1,5 +1,7 @@
 #pragma once
 #include "shader.h"
+#include <vector>
+#include"camera.h"
 
 struct Renderer
 {
@@ -18,6 +20,33 @@ struct Renderer
 	GLuint atlasBuffer = 0;
 	
 };
+
+struct GyzmosRenderer
+{
+
+	struct CubeData
+	{
+		int x=0, y=0, z=0;
+	};
+
+	void create();
+	Shader gyzmosCubeShader;
+	GLint u_viewProjection = -1;
+	GLint u_positionInt = -1;
+	GLint u_positionFloat = -1;
+	GLuint vao = 0;
+	GLuint vertexDataBuffer = 0;
+	GLuint blockPositionBuffer = 0;
+	GLuint cubeIndices = 0;
+
+	std::vector<CubeData> cubes;
+
+	void drawCube(int x, int y, int z) { cubes.push_back({x, y, z}); };
+	void drawCube(glm::ivec3 pos) { drawCube(pos.x, pos.y, pos.z); };
+	void render(Camera &c, glm::ivec3 posInt, glm::vec3 posFloat);
+
+};
+
 
 constexpr int mergeShorts(short a, short b)
 {
