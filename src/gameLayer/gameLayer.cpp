@@ -63,6 +63,9 @@ bool initGame()
 	glNamedBufferData(renderer.vertexBuffer, sizeof(int) * blockData.size(), blockData.data(), GL_DYNAMIC_DRAW);
 	facesCount = blockData.size() / 4;
 
+	glEnable(GL_LINE_WIDTH);
+	glLineWidth(4);
+
 	return true;
 }
 
@@ -100,7 +103,7 @@ bool gameLogic(float deltaTime)
 #pragma endregion
 
 
-	static float moveSpeed = 500.f;
+	static float moveSpeed = 10.f;
 
 #pragma region input
 	{
@@ -192,7 +195,12 @@ bool gameLogic(float deltaTime)
 
 	glBindVertexArray(0);
 	
-	gyzmosRenderer.drawCube(0,60,0);
+	glm::ivec3 rayCastPos = {};
+	if (chunkSystem.rayCast(gameData.c.position, gameData.c.viewDirection, rayCastPos, 5))
+	{
+		gyzmosRenderer.drawCube(rayCastPos);
+	}
+
 	gyzmosRenderer.render(gameData.c, posInt, posFloat);
 
 

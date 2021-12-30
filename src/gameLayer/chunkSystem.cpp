@@ -2,7 +2,9 @@
 #include <glm/vec2.hpp>
 #include "threadStuff.h"
 #include <algorithm>
+#include <glm/glm.hpp>
 
+//todo rename !!!!!!!!!
 Chunk* ChunkSystem::getChunkSafe(int x, int z)
 {
 	if (x < 0 || z < 0 || x >= squareSize || z >= squareSize)
@@ -49,6 +51,8 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 	glm::ivec2 minPos = glm::ivec2(x, z) - glm::ivec2(squareSize / 2, squareSize / 2);
 	glm::ivec2 maxPos = glm::ivec2(x, z) + glm::ivec2(squareSize / 2 + squareSize % 2, squareSize / 2 + squareSize % 2);
 	//exclusive max
+
+	cornerPos = minPos;
 
 	if (!created || lastX != x || lastZ != z)
 	{
@@ -277,12 +281,70 @@ Block* ChunkSystem::getBlockSafe(int x, int y, int z)
 {
 	if (y < 0 || y >= CHUNK_HEIGHT) { return nullptr; }
 
-	auto cornerChunk = loadedChunks[0];
-	int cornerX = cornerChunk->x;
-	int cornerZ = cornerChunk->z;
+	int cornerX = cornerPos.x;
+	int cornerZ = cornerPos.y;
+	
+	auto divide = [](int x)
+	{
+		if (x < 0)
+		{
+			return (x / CHUNK_SIZE) - 1;
+		}
+		else
+		{
+			return x / CHUNK_SIZE;
+		}
+	};
 
-	//todo
+	auto c = getChunkSafe(divide(x) - cornerX, divide(z) - cornerZ);
 
+	if (!c) { return nullptr; }
+
+	auto mod = [](int x)
+	{
+		if (x < 0)
+		{
+			x = -x;
+			x--;
+			return CHUNK_SIZE - (x % CHUNK_SIZE) - 1;
+		}
+		else
+		{
+			return x % CHUNK_SIZE;
+		}
+	};
+
+	auto b = c->safeGet(mod(x), y, mod(z));
+
+	return b;
+}
+
+Block *ChunkSystem::rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, float maxDist)
+{
+	float deltaMagitude = 0.01f;
+	glm::vec3 delta = glm::normalize(dir) * deltaMagitude;
+
+	glm::dvec3 pos = from;
+
+	for (float walkedDist = 0.f; walkedDist < maxDist; walkedDist += deltaMagitude)
+	{
+		glm::vec3 intPos = pos;
+		outPos = intPos;
+		auto b = getBlockSafe(intPos.x, intPos.y, intPos.z);
+		
+		if (b != nullptr)
+		{
+			if (!b->air())
+			{
+				outPos = intPos;
+				return b;
+			}
+		}
+
+		pos += delta;
+	}
+
+	return nullptr;
 }
 
 
