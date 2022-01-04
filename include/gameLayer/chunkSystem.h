@@ -23,4 +23,8 @@ struct ChunkSystem
 
 	Block *rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, float maxDist);
 
+	void placeBlock(glm::ivec3 pos, int type);
 };
+
+int modBlockToChunk(int x);
+int divideChunk(int x);

@@ -186,7 +186,6 @@ bool gameLogic(float deltaTime)
 
 	glUniformMatrix4fv(renderer.u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
 	
-
 	glUniform3fv(renderer.u_positionFloat, 1, &posFloat[0]);
 	glUniform3iv(renderer.u_positionInt, 1, &posInt[0]);
 	glUniform1i(renderer.u_typesCount, 22);
@@ -202,6 +201,11 @@ bool gameLogic(float deltaTime)
 	}
 
 	gyzmosRenderer.render(gameData.c, posInt, posFloat);
+
+	if (platform::isLMouseReleased())
+	{
+		chunkSystem.placeBlock(rayCastPos, BlockTypes::gold_block);
+	}
 
 
 	ImGui::Begin("camera controll");

@@ -94,7 +94,7 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 			}
 		}
 
-		std::vector<Task> tasks;
+		std::vector<Task> chunkTasks;
 		for (int x = 0; x < squareSize; x++)
 			for (int z = 0; z < squareSize; z++)
 			{
@@ -110,13 +110,13 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 
 					t.type = Task::generateChunk;
 					t.pos = glm::ivec3(x + minPos.x, 0, z + minPos.y);
-					tasks.push_back(t);
+					chunkTasks.push_back(t);
 				}
 			}
 		
-		if (!tasks.empty())
+		if (!chunkTasks.empty())
 		{
-			std::sort(tasks.begin(), tasks.end(),
+			std::sort(chunkTasks.begin(), chunkTasks.end(),
 				[x, z](Task &a, Task &b)
 			{
 
@@ -133,7 +133,7 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 			}
 			);
 
-			submitTask(tasks);
+			submitTask(chunkTasks);
 		}
 
 
@@ -147,32 +147,73 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 	lastX = x;
 	lastZ = z;
 
-	auto recievedChunks = getChunks();
+	auto recievedMessages = getMessages();
 
-	for (auto i : recievedChunks)
+	for (auto &message : recievedMessages)
 	{
-
-		int x = i->x - minPos.x;
-		int z = i->z - minPos.y;
-
-		if (x < 0 || z < 0 || x >= squareSize || z >= squareSize)
+		if (message.type == Message::recievedChunk)
 		{
-			delete i; // ignore chunk, not of use anymore
-			continue;
-		}
-		else
-		{
-			if (loadedChunks[x * squareSize + z] != nullptr)
+			auto &i = message.chunk;
+
+			int x = i->x - minPos.x;
+			int z = i->z - minPos.y;
+
+			if (x < 0 || z < 0 || x >= squareSize || z >= squareSize)
 			{
-				delete i; //double request, ignore
+				delete i; // ignore chunk, not of use anymore
+				continue;
 			}
 			else
 			{
-				//assert(loadedChunks[x * squareSize + z] == nullptr);
-				loadedChunks[x * squareSize + z] = i;
+				if (loadedChunks[x * squareSize + z] != nullptr)
+				{
+					delete i; //double request, ignore
+				}
+				else
+				{
+					//assert(loadedChunks[x * squareSize + z] == nullptr);
+					loadedChunks[x * squareSize + z] = i;
+				}
+
 			}
-			
 		}
+	}
+	
+	for (auto &message : recievedMessages)
+	{
+		if (message.type == Message::placeBlock)
+		{
+			auto pos = message.pos;
+			int xPos = divideChunk(pos.x);
+			int zPos = divideChunk(pos.z);
+
+			if (xPos >= minPos.x && zPos >= minPos.y
+				&& xPos < maxPos.x && zPos < maxPos.y
+				)
+			{
+				//process block placement
+
+				auto rez = getBlockSafe(message.pos.x, message.pos.y, message.pos.z);
+
+				if (rez)
+				{
+					rez->type = message.blockType;
+				}
+
+				auto c = getChunkSafe(xPos - minPos.x, zPos - minPos.y);
+
+				if (c)
+				{
+					c->dirty = true;
+				}
+
+			}
+			else
+			{
+				//ignore message
+			}
+		}
+
 	}
 
 	int currentBaked = 0;
@@ -284,37 +325,11 @@ Block* ChunkSystem::getBlockSafe(int x, int y, int z)
 	int cornerX = cornerPos.x;
 	int cornerZ = cornerPos.y;
 	
-	auto divide = [](int x)
-	{
-		if (x < 0)
-		{
-			return (x / CHUNK_SIZE) - 1;
-		}
-		else
-		{
-			return x / CHUNK_SIZE;
-		}
-	};
-
-	auto c = getChunkSafe(divide(x) - cornerX, divide(z) - cornerZ);
+	auto c = getChunkSafe(divideChunk(x) - cornerX, divideChunk(z) - cornerZ);
 
 	if (!c) { return nullptr; }
 
-	auto mod = [](int x)
-	{
-		if (x < 0)
-		{
-			x = -x;
-			x--;
-			return CHUNK_SIZE - (x % CHUNK_SIZE) - 1;
-		}
-		else
-		{
-			return x % CHUNK_SIZE;
-		}
-	};
-
-	auto b = c->safeGet(mod(x), y, mod(z));
+	auto b = c->safeGet(modBlockToChunk(x), y, modBlockToChunk(z));
 
 	return b;
 }
@@ -347,4 +362,37 @@ Block *ChunkSystem::rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, 
 	return nullptr;
 }
 
+void ChunkSystem::placeBlock(glm::ivec3 pos, int type)
+{
+	Task task;
+	task.type = Task::placeBlock;
+	task.pos = pos;
+	task.blockType = type;
+	submitTask(task);
+}
 
+int modBlockToChunk(int x)
+{
+	if (x < 0)
+	{
+		x = -x;
+		x--;
+		return CHUNK_SIZE - (x % CHUNK_SIZE) - 1;
+	}
+	else
+	{
+		return x % CHUNK_SIZE;
+	}
+}
+
+int divideChunk(int x)
+{
+	if (x < 0)
+	{
+		return (x / CHUNK_SIZE) - 1;
+	}
+	else
+	{
+		return x / CHUNK_SIZE;
+	}
+};
