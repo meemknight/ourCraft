@@ -54,6 +54,8 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 
 	cornerPos = minPos;
 
+#pragma region set chunk borders
+
 	if (!created || lastX != x || lastZ != z)
 	{
 
@@ -143,11 +145,16 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 
 	}
 
+#pragma endregion
+
+
 	created = 1;
 	lastX = x;
 	lastZ = z;
 
 	auto recievedMessages = getMessages();
+
+#pragma region recieve chunks
 
 	for (auto &message : recievedMessages)
 	{
@@ -179,6 +186,11 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 		}
 	}
 	
+#pragma endregion
+
+
+#pragma region place block
+
 	for (auto &message : recievedMessages)
 	{
 		if (message.type == Message::placeBlock)
@@ -215,6 +227,10 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 		}
 
 	}
+#pragma endregion
+
+
+#pragma region bake
 
 	int currentBaked = 0;
 	const int maxToBake = 3; //this frame
@@ -277,44 +293,7 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 
 	}
 
-	//for (int x = 0; x < squareSize; x++)
-	//	for (int z = 0; z < squareSize; z++)
-	//	{
-	//		auto chunk = getChunkSafe(x, z);
-	//
-	//		if (chunk != nullptr)
-	//		{
-	//			if (currentBaked < maxToBake)
-	//			{
-	//				auto left = getChunkSafe(x - 1, z);
-	//				auto right = getChunkSafe(x + 1, z);
-	//				auto front = getChunkSafe(x, z + 1);
-	//				auto back = getChunkSafe(x, z - 1);
-	//
-	//				auto b = chunk->bake(left, right, front, back);
-	//
-	//				if (b) { currentBaked++; }
-	//
-	//				for (auto i : chunk->opaqueGeometry)
-	//				{
-	//					data.push_back(i);
-	//				}
-	//			}
-	//			else
-	//			{
-	//				if (!chunk->dirty)
-	//				{
-	//					for (auto i : chunk->opaqueGeometry)
-	//					{
-	//						data.push_back(i);
-	//					}
-	//				}
-	//			}
-	//			
-	//		}
-	//
-	//	}
-	//
+#pragma endregion
 
 }
 

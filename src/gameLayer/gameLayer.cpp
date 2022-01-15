@@ -168,6 +168,8 @@ bool gameLogic(float deltaTime)
 	gameData.c.decomposePosition(posFloat, posInt);
 	static std::vector<int> data;
 
+	renderer.updateDynamicBlocks();
+
 	chunkSystem.update(posInt.x, posInt.z, data);
 	glNamedBufferData(renderer.vertexBuffer, sizeof(int) * data.size(), data.data(), GL_DYNAMIC_DRAW);
 	facesCount = data.size() / 4;
@@ -198,21 +200,26 @@ bool gameLogic(float deltaTime)
 	if (chunkSystem.rayCast(gameData.c.position, gameData.c.viewDirection, rayCastPos, 5))
 	{
 		gyzmosRenderer.drawCube(rayCastPos);
-	}
 
-	gyzmosRenderer.render(gameData.c, posInt, posFloat);
+		
+	}
 
 	if (platform::isLMouseReleased())
 	{
-		chunkSystem.placeBlock(rayCastPos, BlockTypes::gold_block);
+		chunkSystem.placeBlock(rayCastPos, BlockTypes::leaves);
 	}
 
+	
+	gyzmosRenderer.render(gameData.c, posInt, posFloat);
+
+#pragma region imgui
 
 	ImGui::Begin("camera controll");
 	ImGui::DragScalarN("camera pos", ImGuiDataType_Double, &gameData.c.position[0], 3, 0.01);
 	ImGui::DragFloat("camera speed", &moveSpeed);
 	ImGui::Text("fps: %d", currentFps);
 	ImGui::End();
+#pragma endregion
 
 #pragma region set finishing stuff
 	renderer2d.flush();

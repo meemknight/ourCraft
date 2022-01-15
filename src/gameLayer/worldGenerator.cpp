@@ -6,6 +6,7 @@ FastNoiseSIMD* heightNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
 void generateChunk(int seed, Chunk& c)
 {
+
 	heightNoise->SetNoiseType(FastNoiseSIMD::NoiseType::Perlin);
 	float scale = 1;
 	heightNoise->SetAxisScales(scale, 1, scale);

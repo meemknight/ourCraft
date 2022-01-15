@@ -72,7 +72,8 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 						{//todo
 							if (sides[i] == nullptr || !(sides[i])->isOpaque())
 							{
-								opaqueGeometry.push_back(mergeShorts(i, b.type));
+								
+								opaqueGeometry.push_back(mergeShorts(i + (int)b.isAnimated() * 6, b.type));
 								opaqueGeometry.push_back(x + this->x * CHUNK_SIZE);
 								opaqueGeometry.push_back(y);
 								opaqueGeometry.push_back(z + this->z * CHUNK_SIZE);

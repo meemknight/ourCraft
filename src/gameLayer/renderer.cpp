@@ -1,4 +1,5 @@
 #include "renderer.h"
+#include <ctime>
 
 #define GET_UNIFORM(s, n) n = s.getUniform(#n);
 
@@ -157,6 +158,106 @@ int atlasData[] = {
 	3, 14 //gravel
 };
 
+float vertexData[] = {
+	//front
+	0.5, 0.5, 0.5,
+	-0.5, 0.5, 0.5,
+	-0.5, -0.5, 0.5,
+	-0.5, -0.5, 0.5,
+	0.5, -0.5, 0.5,
+	0.5, 0.5, 0.5,
+
+	//back
+	-0.5, -0.5, -0.5,
+	-0.5, 0.5, -0.5,
+	0.5, 0.5, -0.5,
+	0.5, 0.5, -0.5,
+	0.5, -0.5, -0.5,
+	-0.5, -0.5, -0.5,
+
+	//top
+	-0.5, 0.5, -0.5,
+	-0.5, 0.5, 0.5,
+	0.5, 0.5, 0.5,
+	0.5, 0.5, 0.5,
+	0.5, 0.5, -0.5,
+	-0.5, 0.5, -0.5,
+
+	//bottom
+	0.5, -0.5, 0.5,
+	-0.5, -0.5, 0.5,
+	-0.5, -0.5, -0.5,
+	-0.5, -0.5, -0.5,
+	0.5, -0.5, -0.5,
+	0.5, -0.5, 0.5,
+
+	//left
+	-0.5, -0.5, 0.5,
+	-0.5, 0.5, 0.5,
+	-0.5, 0.5, -0.5,
+	-0.5, 0.5, -0.5,
+	-0.5, -0.5, -0.5,
+	-0.5, -0.5, 0.5,
+
+	//right
+	0.5, 0.5, -0.5,
+	0.5, 0.5, 0.5,
+	0.5, -0.5, 0.5,
+	0.5, -0.5, 0.5,
+	0.5, -0.5, -0.5,
+	0.5, 0.5, -0.5,
+
+
+	//moving leaves
+	//front
+	0.5, 0.5, 0.5,
+	-0.5, 0.5, 0.5,
+	-0.5, -0.5, 0.5,
+	-0.5, -0.5, 0.5,
+	0.5, -0.5, 0.5,
+	0.5, 0.5, 0.5,
+
+	//back
+	-0.5, -0.5, -0.5,
+	-0.5, 0.5, -0.5,
+	0.5, 0.5, -0.5,
+	0.5, 0.5, -0.5,
+	0.5, -0.5, -0.5,
+	-0.5, -0.5, -0.5,
+
+	//top
+	-0.5, 0.5, -0.5,
+	-0.5, 0.5, 0.5,
+	0.5, 0.5, 0.5,
+	0.5, 0.5, 0.5,
+	0.5, 0.5, -0.5,
+	-0.5, 0.5, -0.5,
+
+	//bottom
+	0.5, -0.5, 0.5,
+	-0.5, -0.5, 0.5,
+	-0.5, -0.5, -0.5,
+	-0.5, -0.5, -0.5,
+	0.5, -0.5, -0.5,
+	0.5, -0.5, 0.5,
+
+	//left
+	-0.5, -0.5, 0.5,
+	-0.5, 0.5, 0.5,
+	-0.5, 0.5, -0.5,
+	-0.5, 0.5, -0.5,
+	-0.5, -0.5, -0.5,
+	-0.5, -0.5, 0.5,
+
+	//right
+	0.5, 0.5, -0.5,
+	0.5, 0.5, 0.5,
+	0.5, -0.5, 0.5,
+	0.5, -0.5, 0.5,
+	0.5, -0.5, -0.5,
+	0.5, 0.5, -0.5,
+};
+
 void Renderer::create()
 {
 	defaultShader.loadShaderProgramFromFile(RESOURCES_PATH "defaultShader.vert", RESOURCES_PATH "defaultShader.frag");
@@ -174,11 +275,18 @@ void Renderer::create()
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, atlasBuffer);
 	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(atlasData), atlasData, 0);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, atlasBuffer);
+	
+
+	u_vertexData = getStorageBlockIndex(defaultShader.id, "u_vertexData");
+	glShaderStorageBlockBinding(defaultShader.id, u_vertexData, 1);
+	glGenBuffers(1, &vertexDataBuffer);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexDataBuffer);
+	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(vertexData), vertexData, GL_DYNAMIC_STORAGE_BIT);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vertexDataBuffer);
 
 
 	glCreateBuffers(1, &vertexBuffer);
 	//glNamedBufferData(vertexBuffer, sizeof(data), data, GL_DYNAMIC_DRAW);
-
 
 	glCreateVertexArrays(1, &vao);
 	glBindVertexArray(vao);
@@ -198,6 +306,94 @@ void Renderer::create()
 		glVertexAttribDivisor(2, 1);
 
 	glBindVertexArray(0);
+
+}
+
+void Renderer::updateDynamicBlocks()
+{
+	float time = std::clock();
+
+	glm::vec3 topFrontLeft = {-0.5f, 0.5f, 0.5f};
+	glm::vec3 topFrontRight = {0.5f, 0.5f, 0.5f};
+	glm::vec3 topBackLeft = {-0.5f, 0.5f, -0.5f};
+	glm::vec3 topBackRight = {0.5f, 0.5f, -0.5f};
+	glm::vec3 bottomFrontLeft = {-0.5f, -0.5f, 0.5f};
+	glm::vec3 bottomFrontRight = {0.5f, -0.5f, 0.5f};
+	glm::vec3 bottomBackLeft = {-0.5f, -0.5f, -0.5f};
+	glm::vec3 bottomBackRight = {0.5f, -0.5f, -0.5f};
+
+	glm::vec3 *topFaces[4] = {&topFrontLeft, &topFrontRight, &topBackLeft, &topBackRight};
+	glm::vec3* bottomFaces[4] = {&bottomFrontLeft, &bottomFrontRight, &bottomBackLeft, &bottomBackRight};
+
+	float prelucratedTime = time / 400.f;
+	float s = std::sin(prelucratedTime);
+	float c = std::cos(prelucratedTime);
+
+	glm::vec2 offsetVector = {1, 0};
+	offsetVector = {c * offsetVector.x - s * offsetVector.y, s * offsetVector.x + c * offsetVector.y};
+	offsetVector = glm::normalize(offsetVector) * 0.2f;
+
+	for (int i = 0; i < 4; i++)
+	{
+		topFaces[i]->x += offsetVector.x;
+		//topFaces[i]->y ;
+		topFaces[i]->z += offsetVector.y;
+	}
+
+
+	float newData[] =
+	{
+		//front
+		topFrontRight.x, topFrontRight.y, topFrontRight.z,
+		topFrontLeft.x, topFrontLeft.y, topFrontLeft.z,
+		bottomFrontLeft.x, bottomFrontLeft.y, bottomFrontLeft.z,
+		bottomFrontLeft.x, bottomFrontLeft.y, bottomFrontLeft.z,
+		bottomFrontRight.x, bottomFrontRight.y, bottomFrontRight.z,
+		topFrontRight.x, topFrontRight.y, topFrontRight.z,
+
+		//back
+		bottomBackLeft.x, bottomBackLeft.y, bottomBackLeft.z,
+		topBackLeft.x, topBackLeft.y, topBackLeft.z,
+		topBackRight.x, topBackRight.y, topBackRight.z,
+		topBackRight.x, topBackRight.y, topBackRight.z,
+		bottomBackRight.x, bottomBackRight.y, bottomBackRight.z,
+		bottomBackLeft.x, bottomBackLeft.y, bottomBackLeft.z,
+
+		//top
+		topBackLeft.x, topBackLeft.y, topBackLeft.z,
+		topFrontLeft.x, topFrontLeft.y, topFrontLeft.z,
+		topFrontRight.x, topFrontRight.y, topFrontRight.z,
+		topFrontRight.x, topFrontRight.y, topFrontRight.z,
+		topBackRight.x, topBackRight.y, topBackRight.z,
+		topBackLeft.x, topBackLeft.y, topBackLeft.z,
+
+		//bottom
+		bottomFrontRight.x, bottomFrontRight.y, bottomFrontRight.z,
+		bottomFrontLeft.x, bottomFrontLeft.y, bottomFrontLeft.z,
+		bottomBackLeft.x, bottomBackLeft.y, bottomBackLeft.z,
+		bottomBackLeft.x, bottomBackLeft.y, bottomBackLeft.z,
+		bottomBackRight.x, bottomBackRight.y, bottomBackRight.z,
+		bottomFrontRight.x, bottomFrontRight.y, bottomFrontRight.z,
+
+		//left
+		bottomFrontLeft.x, bottomFrontLeft.y, bottomFrontLeft.z,
+		topFrontLeft.x, topFrontLeft.y, topFrontLeft.z,
+		topBackLeft.x, topBackLeft.y, topBackLeft.z,
+		topBackLeft.x, topBackLeft.y, topBackLeft.z,
+		bottomBackLeft.x, bottomBackLeft.y, bottomBackLeft.z,
+		bottomFrontLeft.x, bottomFrontLeft.y, bottomFrontLeft.z,
+
+		//right
+		topBackRight.x, topBackRight.y, topBackRight.z,
+		topFrontRight.x, topFrontRight.y, topFrontRight.z,
+		bottomFrontRight.x, bottomFrontRight.y, bottomFrontRight.z,
+		bottomFrontRight.x, bottomFrontRight.y, bottomFrontRight.z,
+		bottomBackRight.x, bottomBackRight.y, bottomBackRight.z,
+		topBackRight.x, topBackRight.y, topBackRight.z,
+	};
+
+	glNamedBufferSubData(vertexDataBuffer, sizeof(newData), sizeof(newData), newData);
+
 
 }
 

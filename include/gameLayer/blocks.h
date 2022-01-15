@@ -41,6 +41,11 @@ struct Block
 		return
 			type != BlockTypes::air;
 	}
+	bool isAnimated()
+	{
+		return
+			type == BlockTypes::leaves;
+	}
 };
 
 constexpr int CHUNK_SIZE = 16;

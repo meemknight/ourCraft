@@ -8,56 +8,6 @@ uniform mat4 u_viewProjection;
 uniform ivec3 u_positionInt;
 uniform vec3 u_positionFloat;
 
-float vertexData[] = float[](
-		//front
-		0.5, 0.5, 0.5,
-		-0.5, 0.5, 0.5,
-		-0.5, -0.5, 0.5,
-		-0.5, -0.5, 0.5,
-		0.5, -0.5, 0.5,
-		0.5, 0.5, 0.5,
-
-		//back
-		-0.5, -0.5, -0.5,
-		-0.5, 0.5, -0.5,
-		0.5, 0.5, -0.5,
-		0.5, 0.5, -0.5,
-		0.5, -0.5, -0.5,
-		-0.5, -0.5, -0.5,
-
-		//top
-		-0.5, 0.5, -0.5,
-		-0.5, 0.5, 0.5,
-		0.5, 0.5, 0.5,
-		0.5, 0.5, 0.5,
-		0.5, 0.5, -0.5,
-		-0.5, 0.5, -0.5,
-
-		//bottom
-		0.5, -0.5, 0.5,
-		-0.5, -0.5, 0.5,
-		-0.5, -0.5, -0.5,
-		-0.5, -0.5, -0.5,
-		0.5, -0.5, -0.5,
-		0.5, -0.5, 0.5,
-	
-		//left
-		-0.5, -0.5, 0.5,
-		-0.5, 0.5, 0.5,
-		-0.5, 0.5, -0.5,
-		-0.5, 0.5, -0.5,
-		-0.5, -0.5, -0.5,
-		-0.5, -0.5, 0.5,
-	
-		//right
-		0.5, 0.5, -0.5,
-		0.5, 0.5, 0.5,
-		0.5, -0.5, 0.5,
-		0.5, -0.5, 0.5,
-		0.5, -0.5, -0.5,
-		0.5, 0.5, -0.5
-);
-
 float vertexColor[] = float[](
 		
 	//front
@@ -131,6 +81,12 @@ readonly restrict layout(std430) buffer u_atlasPositions
 };
 uniform int u_typesCount;
 
+readonly restrict layout(std430) buffer u_vertexData
+{
+	float vertexData[];
+};
+
+
 
 out vec2 v_uv;
 out float v_color;
@@ -149,14 +105,14 @@ void main()
 
 	gl_Position = pos;
 	
-	v_color = vertexColor[in_faceOrientation];
+	v_color = vertexColor[in_faceOrientation%6];
 
-	v_uv.x = vertexUV[in_faceOrientation * 2 * 6 + gl_VertexID * 2 + 0];
-	v_uv.y = vertexUV[in_faceOrientation * 2 * 6 + gl_VertexID * 2 + 1];
+	v_uv.x = vertexUV[(in_faceOrientation%6) * 2 * 6 + gl_VertexID * 2 + 0];
+	v_uv.y = vertexUV[(in_faceOrientation%6) * 2 * 6 + gl_VertexID * 2 + 1];
 
 	ivec2 uvInAtlas;
-	uvInAtlas.x = atlasPositions[in_faceOrientation * 2 * u_typesCount + in_faceType * 2 + 0];
-	uvInAtlas.y = atlasPositions[in_faceOrientation * 2 * u_typesCount + in_faceType * 2 + 1];
+	uvInAtlas.x = atlasPositions[(in_faceOrientation%6) * 2 * u_typesCount + in_faceType * 2 + 0];
+	uvInAtlas.y = atlasPositions[(in_faceOrientation%6) * 2 * u_typesCount + in_faceType * 2 + 1];
 
 	v_uv += uvInAtlas;
 	v_uv *= 1.f/16.f;
