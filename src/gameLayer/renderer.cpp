@@ -268,6 +268,7 @@ void Renderer::create()
 	GET_UNIFORM(defaultShader, u_positionInt);
 	GET_UNIFORM(defaultShader, u_positionFloat);
 	GET_UNIFORM(defaultShader, u_texture);
+	GET_UNIFORM(defaultShader, u_time);
 
 	u_atlasBlockIndex = getStorageBlockIndex(defaultShader.id, "u_atlasPositions");
 	glShaderStorageBlockBinding(defaultShader.id, u_atlasBlockIndex, 0);
@@ -333,12 +334,12 @@ void Renderer::updateDynamicBlocks()
 	offsetVector = {c * offsetVector.x - s * offsetVector.y, s * offsetVector.x + c * offsetVector.y};
 	offsetVector = glm::normalize(offsetVector) * 0.2f;
 
-	for (int i = 0; i < 4; i++)
-	{
-		topFaces[i]->x += offsetVector.x;
-		//topFaces[i]->y ;
-		topFaces[i]->z += offsetVector.y;
-	}
+	//for (int i = 0; i < 4; i++)
+	//{
+	//	topFaces[i]->x += offsetVector.x;
+	//	//topFaces[i]->y ;
+	//	topFaces[i]->z += offsetVector.y;
+	//}
 
 
 	float newData[] =
@@ -443,6 +444,7 @@ void GyzmosRenderer::create()
 	GET_UNIFORM(gyzmosCubeShader, u_positionInt);
 	GET_UNIFORM(gyzmosCubeShader, u_positionFloat);
 	
+
 	glCreateVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 

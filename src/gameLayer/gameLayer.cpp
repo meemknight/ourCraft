@@ -10,6 +10,7 @@
 #include "chunkSystem.h"
 #include "threadStuff.h"
 #include <thread>
+#include <ctime>
 
 #define GPU_ENGINE 0
 extern "C"
@@ -191,6 +192,7 @@ bool gameLogic(float deltaTime)
 	glUniform3fv(renderer.u_positionFloat, 1, &posFloat[0]);
 	glUniform3iv(renderer.u_positionInt, 1, &posInt[0]);
 	glUniform1i(renderer.u_typesCount, 22);
+	glUniform1f(renderer.u_time, std::clock() / 400.f);
 	
 	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
 

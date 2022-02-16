@@ -7,6 +7,7 @@ layout(location = 2) in ivec3 in_facePosition;
 uniform mat4 u_viewProjection;
 uniform ivec3 u_positionInt;
 uniform vec3 u_positionFloat;
+uniform float u_time;
 
 float vertexColor[] = float[](
 		
@@ -97,9 +98,37 @@ void main()
 	vec3 floatPosition = intPosition - u_positionFloat;
 	
 	vec4 pos = vec4(floatPosition.xyz,1);
-	pos.x += vertexData[in_faceOrientation * 3 * 6 + gl_VertexID * 3 + 0];
-	pos.y += vertexData[in_faceOrientation * 3 * 6 + gl_VertexID * 3 + 1];
-	pos.z += vertexData[in_faceOrientation * 3 * 6 + gl_VertexID * 3 + 2];
+	vec3 vertexShape;
+
+	vertexShape.x = vertexData[in_faceOrientation * 3 * 6 + gl_VertexID * 3 + 0];
+	vertexShape.y = vertexData[in_faceOrientation * 3 * 6 + gl_VertexID * 3 + 1];
+	vertexShape.z = vertexData[in_faceOrientation * 3 * 6 + gl_VertexID * 3 + 2];
+
+	if(in_faceOrientation >= 6)
+	{
+		if(in_faceOrientation == 6)
+		{//front
+		
+		}else if(in_faceOrientation == 7)
+		{//back
+		
+		}else if(in_faceOrientation == 8)
+		{//top
+		
+		}else if(in_faceOrientation == 9)
+		{//bottom
+		
+		}else if(in_faceOrientation == 10)
+		{//left
+		
+		}else if(in_faceOrientation == 11)
+		{//right
+		
+		}
+		vertexShape *= 1+((sin(u_time)+1)/2.f)*0.2;
+	}
+
+	pos.xyz += vertexShape;
 
 	pos = u_viewProjection * pos;
 

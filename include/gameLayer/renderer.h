@@ -11,6 +11,7 @@ struct Renderer
 	GLint u_positionInt = -1;
 	GLint u_positionFloat = -1;
 	GLint u_texture = -1;
+	GLint u_time = -1;
 	GLuint u_atlasBlockIndex = GL_INVALID_INDEX;
 	GLuint u_vertexData = GL_INVALID_INDEX;
 
