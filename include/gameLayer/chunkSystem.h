@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
+#include <optional>
 
 struct ChunkSystem
 {
@@ -21,7 +22,8 @@ struct ChunkSystem
 
 	Block* getBlockSafe(int x, int y, int z);
 
-	Block *rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, float maxDist);
+	Block *rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, float maxDist
+		, std::optional<glm::ivec3> &prevBlockForPlace);
 
 	void placeBlock(glm::ivec3 pos, int type);
 };

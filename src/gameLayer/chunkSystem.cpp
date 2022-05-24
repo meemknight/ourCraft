@@ -313,12 +313,14 @@ Block* ChunkSystem::getBlockSafe(int x, int y, int z)
 	return b;
 }
 
-Block *ChunkSystem::rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, float maxDist)
+Block *ChunkSystem::rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, float maxDist, std::optional<glm::ivec3> &prevBlockForPlace)
 {
 	float deltaMagitude = 0.01f;
 	glm::vec3 delta = glm::normalize(dir) * deltaMagitude;
 
 	glm::dvec3 pos = from;
+
+	prevBlockForPlace = std::nullopt;
 
 	for (float walkedDist = 0.f; walkedDist < maxDist; walkedDist += deltaMagitude)
 	{
@@ -333,11 +335,16 @@ Block *ChunkSystem::rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, 
 				outPos = intPos;
 				return b;
 			}
+			else
+			{
+				prevBlockForPlace = glm::ivec3{intPos.x, intPos.y, intPos.z};
+			}
 		}
 
 		pos += delta;
 	}
 
+	prevBlockForPlace = std::nullopt;
 	return nullptr;
 }
 

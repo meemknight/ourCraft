@@ -159,7 +159,7 @@ bool gameLogic(float deltaTime)
 			platform::setFullScreen(!platform::isFullScreen());
 		}
 
-		gameData.c.rotateFPS(platform::getRelMousePosition(), 0.6f * deltaTime, platform::isRMouseHeld());
+		gameData.c.rotateFPS(platform::getRelMousePosition(), 0.6f * deltaTime, true);
 
 	}
 #pragma endregion
@@ -199,7 +199,8 @@ bool gameLogic(float deltaTime)
 	glBindVertexArray(0);
 	
 	glm::ivec3 rayCastPos = {};
-	if (chunkSystem.rayCast(gameData.c.position, gameData.c.viewDirection, rayCastPos, 5))
+	std::optional<glm::ivec3> blockToPlace = std::nullopt;
+	if (chunkSystem.rayCast(gameData.c.position, gameData.c.viewDirection, rayCastPos, 5, blockToPlace))
 	{
 		gyzmosRenderer.drawCube(rayCastPos);
 
@@ -208,7 +209,12 @@ bool gameLogic(float deltaTime)
 
 	if (platform::isLMouseReleased())
 	{
-		chunkSystem.placeBlock(rayCastPos, BlockTypes::leaves);
+		if (blockToPlace)
+			chunkSystem.placeBlock(*blockToPlace, BlockTypes::stone);
+	}
+	else if (platform::isRMouseReleased())
+	{
+		chunkSystem.placeBlock(rayCastPos, BlockTypes::air);
 	}
 
 	
