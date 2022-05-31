@@ -11,6 +11,7 @@
 #include "threadStuff.h"
 #include <thread>
 #include <ctime>
+#include "server.h"
 
 #define GPU_ENGINE 0
 extern "C"
@@ -55,8 +56,11 @@ bool initGame()
 		gameData = GameData();
 	}
 
-	std::thread serverThread(serverFunction);
-	serverThread.detach();
+	if (!startServer())
+	{
+		std::cout << "problem starting server\n";
+		return false;
+	}
 
 	std::vector<int> blockData;
 	chunkSystem.createChunks(32, blockData);
