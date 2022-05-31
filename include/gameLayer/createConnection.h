@@ -1,6 +1,9 @@
 #pragma once
 #include <enet/enet.h>
 #include <stdint.h>
+#include <vector>
+
+struct Chunk;
 
 struct ConnectionData
 {
@@ -10,6 +13,7 @@ struct ConnectionData
 };
 
 
+std::vector<Chunk *> getRecievedChunks();
 ConnectionData getConnectionData();
 bool createConnection();
 void clientMessageLoop();

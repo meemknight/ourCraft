@@ -51,11 +51,25 @@ struct Block
 constexpr int CHUNK_SIZE = 16;
 constexpr int CHUNK_HEIGHT = 256;
 
-struct Chunk
+struct ChunkData
 {
-
 	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_HEIGHT];
 	int x, z;
+
+	Block &unsafeGet(int x, int y, int z)
+	{
+		return blocks[x][z][y];
+	}
+
+	void clear()
+	{
+		memset(blocks, 0, sizeof(blocks));
+	}
+};
+
+struct Chunk
+{
+	ChunkData data;
 	
 	std::vector<int> opaqueGeometry;
 	char dirty = 1;
@@ -67,12 +81,12 @@ struct Chunk
 
 	void clear()
 	{
-		memset(blocks, 0, sizeof(blocks));
+		memset(data.blocks, 0, sizeof(data.blocks));
 	}
 
 	Block& unsafeGet(int x, int y, int z)
 	{
-		return blocks[x][z][y];
+		return data.blocks[x][z][y];
 	}
 
 	Block* safeGet(int x, int y, int z);

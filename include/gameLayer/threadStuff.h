@@ -32,14 +32,9 @@ struct Message
 	glm::ivec3 pos;
 };
 
-
-void submitTask(Task& t);
-void submitTask(std::vector<Task> &t);
-std::vector<Task> waitForTasks();
-std::vector<Task> tryForTasks();
-
-void submitMessage(Message m);
-std::vector<Message> getMessages();
+//todo move out of thread stuff
+void submitTaskClient(Task& t);
+void submitTaskClient(std::vector<Task> &t);
 
 
 void serverFunction();

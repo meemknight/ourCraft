@@ -4,9 +4,15 @@
 
 FastNoiseSIMD* heightNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
-void generateChunk(int seed, Chunk& c)
+void generateChunk(int seed, Chunk &c)
 {
+	generateChunk(seed, c.data);
+}
 
+void generateChunk(int seed, ChunkData& c)
+{
+	c.clear();
+	
 	heightNoise->SetNoiseType(FastNoiseSIMD::NoiseType::Perlin);
 	float scale = 1;
 	heightNoise->SetAxisScales(scale, 1, scale);
@@ -25,7 +31,6 @@ void generateChunk(int seed, Chunk& c)
 		return testNoise[x * CHUNK_SIZE * (1) + y * CHUNK_SIZE + z];
 	};
 
-	c.clear();
 
 	for (int x = 0; x < CHUNK_SIZE; x++)
 		for (int z = 0; z < CHUNK_SIZE; z++)

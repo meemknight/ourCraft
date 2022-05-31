@@ -3,4 +3,5 @@
 #include <glm/vec2.hpp>
 #include <FastNoiseSIMD.h>
 
-void generateChunk(int seed, Chunk& c);
+void generateChunk(int seed, Chunk &c);
+void generateChunk(int seed, ChunkData &c);

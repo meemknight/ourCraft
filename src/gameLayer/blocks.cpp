@@ -74,9 +74,9 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 							{
 								
 								opaqueGeometry.push_back(mergeShorts(i + (int)b.isAnimated() * 6, b.type));
-								opaqueGeometry.push_back(x + this->x * CHUNK_SIZE);
+								opaqueGeometry.push_back(x + this->data.x * CHUNK_SIZE);
 								opaqueGeometry.push_back(y);
-								opaqueGeometry.push_back(z + this->z * CHUNK_SIZE);
+								opaqueGeometry.push_back(z + this->data.z * CHUNK_SIZE);
 							}
 						}
 
@@ -94,8 +94,8 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 void Chunk::create(int x, int z)
 {
 
-	this->x = x;
-	this->z = z;
+	this->data.x = x;
+	this->data.z = z;
 
 	generateChunk(1234, *this);
 

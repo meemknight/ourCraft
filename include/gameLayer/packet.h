@@ -1,6 +1,9 @@
 #pragma once
 #include<cstdint>
 #include <enet/enet.h>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <chunkSystem.h>
 
 struct Packet
 {
@@ -16,12 +19,29 @@ enum
 {
 	headerNone = 0,
 	headerReceiveCIDAndData,
-
+	headerRequestChunk,
+	headerPlaceBlock,
+	headerRecieveChunk,
 };
 
-struct Packet_headerReceiveCIDAndData
+struct Packet_ReceiveCIDAndData
 {
+};
 
+struct Packet_RequestChunk
+{
+	glm::ivec2 chunkPosition = {};
+};
+
+struct Packet_RecieveChunk
+{
+	ChunkData chunk = {};
+};
+
+struct Packet_PlaceBlock
+{
+	int blockType = {};
+	glm::ivec3 blockPos = {};
 };
 
 constexpr static int SERVER_CHANNELS = 2;

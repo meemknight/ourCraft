@@ -4,21 +4,72 @@
 #include <iostream>
 
 ConnectionData clientData;
+std::vector<Chunk *> recievedChunks;
+
+std::vector<Chunk *> getRecievedChunks()
+{
+	//auto ret = std::move(recievedChunks);
+	auto ret = recievedChunks;
+	recievedChunks.clear();
+	return ret;
+}
 
 ConnectionData getConnectionData()
 {
 	return clientData;
 }
 
+
+void recieveDataClient(ENetEvent &event)
+{
+	Packet p;
+	size_t size = 0;
+	auto data = parsePacket(event, p, size);
+
+	switch(p.header)
+	{
+		case headerRecieveChunk:
+		{
+			Packet_RecieveChunk *chunkPacket = (Packet_RecieveChunk *)data;
+			Chunk *c = new Chunk();
+			c->data = chunkPacket->chunk;
+			recievedChunks.push_back(c);
+
+			break;
+		}
+
+		case headerPlaceBlock:
+		{
+
+
+			break;
+		}
+
+
+		default:
+		break;
+
+	}
+
+
+}
+
+//this is not multy threaded
 void clientMessageLoop()
 {
 	ENetEvent event;
-	if (enet_host_service(clientData.client, &event, 0) > 0)
+
+	for (int i = 0; i < 3; i++)
 	{
-		switch (event.type)
+		if (enet_host_service(clientData.client, &event, 0) > 0)
 		{
+			switch (event.type)
+			{
 			case ENET_EVENT_TYPE_RECEIVE:
 			{
+
+
+				recieveDataClient(event);
 
 
 				enet_packet_destroy(event.packet);
@@ -33,13 +84,16 @@ void clientMessageLoop()
 				break;
 			}
 
+			}
 		}
 	}
+
 }
 
 bool createConnection()
 {
 	clientData = {};
+	recievedChunks = {};
 
 	clientData.client = enet_host_create(nullptr, 1, 1, 0, 0);
 
@@ -89,7 +143,7 @@ bool createConnection()
 
 		clientData.cid = p.cid;
 
-		auto recievedData = *(Packet_headerReceiveCIDAndData *)data;
+		auto recievedData = *(Packet_ReceiveCIDAndData *)data;
 		
 		//send player own info or sthing
 		//sendPlayerData(e, true);

@@ -6,106 +6,85 @@
 #include <thread>
 #include <unordered_map>
 #include <iostream>
+#include <packet.h>
+#include "createConnection.h"
 
-std::mutex taskMutex;
-std::condition_variable taskCondition;
-std::queue<Task> tasks;
-
-void submitTask(Task& t)
+void submitTaskClient(Task& t)
 {
+	//std::unique_lock<std::mutex> locker(taskMutex);
+	//tasks.push(t);
+	//locker.unlock();
+	//taskCondition.notify_one();
+	auto data = getConnectionData();
 
-	std::unique_lock<std::mutex> locker(taskMutex);
-	tasks.push(t);
-	locker.unlock();
-	taskCondition.notify_one();
+	Packet p;
+	p.cid = data.cid;
+	
+	switch (t.type)
+	{
+		case Task::generateChunk:
+		{
+			p.header = headerRequestChunk;
+			Packet_RequestChunk packetData = {};
+			packetData.chunkPosition = {t.pos.x, t.pos.z};
+
+			sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1, 0);
+			break;
+		}
+		case Task::placeBlock:
+		{
+			p.header = headerPlaceBlock;
+			Packet_PlaceBlock packetData = {};
+			packetData.blockPos = t.pos;
+			packetData.blockType = t.blockType;
+
+			sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1, 0);
+			break;
+		}
+		default:
+
+		break;
+	}
+	
 
 }
 
-void submitTask(std::vector<Task>& t)
+void submitTaskClient(std::vector<Task>& t)
 {
-	std::unique_lock<std::mutex> locker(taskMutex);
 	for (auto& i : t)
 	{
-		tasks.push(i);
+		submitTaskClient(i);
 	}
-	locker.unlock();
-	taskCondition.notify_one();
 }
 
-std::vector<Task> waitForTasks()
-{
-	std::unique_lock<std::mutex> locker(taskMutex);
-	if (tasks.empty())
-	{
-		taskCondition.wait(locker);
-	}
 
-	auto size = tasks.size();
-	std::vector<Task> retVector;
-	retVector.reserve(size);
+//std::mutex chunkMutex;
+//std::queue<Message> chunks;
+//
+//void submitMessage(Message m)
+//{
+//	chunkMutex.lock();
+//
+//	chunks.push(m);
+//
+//	chunkMutex.unlock();
+//}
 
-	for (int i = 0; i < size; i++)
-	{
-		retVector.push_back(tasks.front());
-		tasks.pop();
-	}
-
-	locker.unlock();
-
-	return retVector;
-}
-
-std::vector<Task> tryForTasks()
-{
-	std::unique_lock<std::mutex> locker(taskMutex);
-	if (tasks.empty())
-	{
-		locker.unlock();
-		return {};
-	}
-
-	auto size = tasks.size();
-	std::vector<Task> retVector;
-	retVector.reserve(size);
-
-	for (int i = 0; i < size; i++)
-	{
-		retVector.push_back(tasks.front());
-		tasks.pop();
-	}
-
-	locker.unlock();
-
-	return retVector;
-}
-
-std::mutex chunkMutex;
-std::queue<Message> chunks;
-
-void submitMessage(Message m)
-{
-	chunkMutex.lock();
-
-	chunks.push(m);
-
-	chunkMutex.unlock();
-}
-
-std::vector<Message> getMessages()
-{
-	std::vector<Message> retVector;
-
-	chunkMutex.lock();
-
-	auto size = chunks.size();
-	for (int i = 0; i < size; i++)
-	{
-		retVector.push_back(chunks.front());
-		chunks.pop();
-	}
-
-	chunkMutex.unlock();
-
-	return retVector;
-}
+//std::vector<Message> getMessages()
+//{
+//	std::vector<Message> retVector;
+//
+//	chunkMutex.lock();
+//
+//	auto size = chunks.size();
+//	for (int i = 0; i < size; i++)
+//	{
+//		retVector.push_back(chunks.front());
+//		chunks.pop();
+//	}
+//
+//	chunkMutex.unlock();
+//
+//	return retVector;
+//}
 

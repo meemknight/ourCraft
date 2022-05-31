@@ -3,6 +3,7 @@
 #include "threadStuff.h"
 #include <algorithm>
 #include <glm/glm.hpp>
+#include "createConnection.h"
 
 //todo rename !!!!!!!!!
 Chunk* ChunkSystem::getChunkSafe(int x, int z)
@@ -70,8 +71,8 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 			if (loadedChunks[i] == nullptr) { continue; }
 
 			glm::ivec2 chunkPos;
-			chunkPos.x = loadedChunks[i]->x;
-			chunkPos.y = loadedChunks[i]->z;
+			chunkPos.x = loadedChunks[i]->data.x;
+			chunkPos.y = loadedChunks[i]->data.z;
 
 			if (
 				chunkPos.x >= minPos.x &&
@@ -135,7 +136,7 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 			}
 			);
 
-			submitTask(chunkTasks);
+			submitTaskClient(chunkTasks);
 		}
 
 
@@ -152,37 +153,33 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 	lastX = x;
 	lastZ = z;
 
-	auto recievedMessages = getMessages();
+	auto recievedChunk = getRecievedChunks();
 
 #pragma region recieve chunks
 
-	for (auto &message : recievedMessages)
+	for (auto &i : recievedChunk)
 	{
-		if (message.type == Message::recievedChunk)
+
+		int x = i->data.x - minPos.x;
+		int z = i->data.z - minPos.y;
+
+		if (x < 0 || z < 0 || x >= squareSize || z >= squareSize)
 		{
-			auto &i = message.chunk;
-
-			int x = i->x - minPos.x;
-			int z = i->z - minPos.y;
-
-			if (x < 0 || z < 0 || x >= squareSize || z >= squareSize)
+			delete i; // ignore chunk, not of use anymore
+			continue;
+		}
+		else
+		{
+			if (loadedChunks[x * squareSize + z] != nullptr)
 			{
-				delete i; // ignore chunk, not of use anymore
-				continue;
+				delete i; //double request, ignore
 			}
 			else
 			{
-				if (loadedChunks[x * squareSize + z] != nullptr)
-				{
-					delete i; //double request, ignore
-				}
-				else
-				{
-					//assert(loadedChunks[x * squareSize + z] == nullptr);
-					loadedChunks[x * squareSize + z] = i;
-				}
-
+				//assert(loadedChunks[x * squareSize + z] == nullptr);
+				loadedChunks[x * squareSize + z] = i;
 			}
+
 		}
 	}
 	
@@ -190,43 +187,43 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 
 
 #pragma region place block
-
-	for (auto &message : recievedMessages)
-	{
-		if (message.type == Message::placeBlock)
-		{
-			auto pos = message.pos;
-			int xPos = divideChunk(pos.x);
-			int zPos = divideChunk(pos.z);
-
-			if (xPos >= minPos.x && zPos >= minPos.y
-				&& xPos < maxPos.x && zPos < maxPos.y
-				)
-			{
-				//process block placement
-
-				auto rez = getBlockSafe(message.pos.x, message.pos.y, message.pos.z);
-
-				if (rez)
-				{
-					rez->type = message.blockType;
-				}
-
-				auto c = getChunkSafe(xPos - minPos.x, zPos - minPos.y);
-
-				if (c)
-				{
-					c->dirty = true;
-				}
-
-			}
-			else
-			{
-				//ignore message
-			}
-		}
-
-	}
+	//todo re add
+	//for (auto &message : recievedMessages)
+	//{
+	//	if (message.type == Message::placeBlock)
+	//	{
+	//		auto pos = message.pos;
+	//		int xPos = divideChunk(pos.x);
+	//		int zPos = divideChunk(pos.z);
+	//
+	//		if (xPos >= minPos.x && zPos >= minPos.y
+	//			&& xPos < maxPos.x && zPos < maxPos.y
+	//			)
+	//		{
+	//			//process block placement
+	//
+	//			auto rez = getBlockSafe(message.pos.x, message.pos.y, message.pos.z);
+	//
+	//			if (rez)
+	//			{
+	//				rez->type = message.blockType;
+	//			}
+	//
+	//			auto c = getChunkSafe(xPos - minPos.x, zPos - minPos.y);
+	//
+	//			if (c)
+	//			{
+	//				c->dirty = true;
+	//			}
+	//
+	//		}
+	//		else
+	//		{
+	//			//ignore message
+	//		}
+	//	}
+	//
+	//}
 #pragma endregion
 
 
@@ -243,11 +240,11 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 				if (a == nullptr) { return false; }
 				if (b == nullptr) { return true; }
 				
-				int ax = a->x - x;
-				int az = a->z - z;
+				int ax = a->data.x - x;
+				int az = a->data.z - z;
 	
-				int bx = b->x - x;
-				int bz = b->z - z;
+				int bx = b->data.x - x;
+				int bz = b->data.z - z;
 	
 				unsigned long reza = ax * ax + az * az;
 				unsigned long rezb = bx * bx + bz * bz;
@@ -261,8 +258,8 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 		auto chunk = chunkVectorCopy[i];
 		if (chunk == nullptr) { continue; } //todo break? 
 
-		int x = chunk->x - minPos.x;
-		int z = chunk->z - minPos.y;
+		int x = chunk->data.x - minPos.x;
+		int z = chunk->data.z - minPos.y;
 
 		if (currentBaked < maxToBake)
 		{
@@ -354,7 +351,7 @@ void ChunkSystem::placeBlock(glm::ivec3 pos, int type)
 	task.type = Task::placeBlock;
 	task.pos = pos;
 	task.blockType = type;
-	submitTask(task);
+	submitTaskClient(task);
 }
 
 int modBlockToChunk(int x)

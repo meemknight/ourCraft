@@ -19,7 +19,7 @@ struct ListNode;
 struct SavedChunk
 {
 	//std::mutex mu;
-	Chunk chunk;
+	ChunkData chunk;
 	ListNode *node = nullptr;
 };
 
@@ -73,7 +73,7 @@ struct ChunkPriorityCache
 	ListNode *first = nullptr;
 	ListNode *last = nullptr;
 
-	Chunk *getOrCreateChunk(int posX, int posZ);;
+	ChunkData *getOrCreateChunk(int posX, int posZ);;
 
 };
 
@@ -82,7 +82,7 @@ struct ChunkPriorityCache
 struct ServerData
 {
 	ChunkPriorityCache chunkCache = {};
-	std::queue<Task> waitingTasks = {};
+	std::queue<ServerTask> waitingTasks = {};
 
 }sd;
 
@@ -122,14 +122,14 @@ void serverFunction()
 
 	while (true)
 	{
-		std::vector<Task> tasks;
+		std::vector<ServerTask> tasks;
 		if (sd.waitingTasks.empty())
 		{
-			tasks = waitForTasks();
+			tasks = waitForTasksServer(); //nothing to do we can wait.
 		}
 		else
 		{
-			tasks = tryForTasks();
+			tasks = tryForTasksServer(); //already things to do, we just grab more if ready and wating.
 		}
 
 		for (auto i : tasks)
@@ -143,34 +143,50 @@ void serverFunction()
 		{
 			auto &i = sd.waitingTasks.front();
 
-			if (i.type == Task::generateChunk)
+			if (i.t.type == Task::generateChunk)
 			{
-				auto rez = sd.chunkCache.getOrCreateChunk(i.pos.x, i.pos.z);
-				Message mes;
-				mes.type = Message::recievedChunk;
-				mes.chunk = new Chunk(*rez);
-				submitMessage(mes);
+				auto rez = sd.chunkCache.getOrCreateChunk(i.t.pos.x, i.t.pos.z);
+				//Message mes;
+				//mes.type = Message::recievedChunk;
+				//mes.chunk = new Chunk(*rez);
+				//submitMessage(mes);
+
+				Packet packet;
+				packet.cid = i.cid;
+				packet.header = headerRecieveChunk;
+
+				Packet_RecieveChunk *packetData = new Packet_RecieveChunk(); //todo ring buffer here
+
+				packetData->chunk = *rez;
+
+				auto client = getClient(i.cid);
+
+				sendPacket(client.peer, packet, (char *)packetData, sizeof(Packet_RecieveChunk), true, 0);
+
+				delete packetData;
 			}
 			else
-				if (i.type == Task::placeBlock)
-				{
-					auto chunk = sd.chunkCache.getOrCreateChunk(i.pos.x / 16, i.pos.z / 16);
-					int convertedX = modBlockToChunk(i.pos.x);
-					int convertedZ = modBlockToChunk(i.pos.z);
+			if (i.t.type == Task::placeBlock)
+			{
+				//todo
+				//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
+				//int convertedX = modBlockToChunk(i.t.pos.x);
+				//int convertedZ = modBlockToChunk(i.t.pos.z);
+				//
+				////todo check if place is legal
+				//auto b = chunk->safeGet(convertedX, i.t.pos.y, convertedZ);
+				//if (b)
+				//{
+				//	b->type = i.t.type;
+				//
+				//	Message mes;
+				//	mes.type = Message::placeBlock;
+				//	mes.pos = i.t.pos;
+				//	mes.blockType = i.t.blockType;
+				//	submitMessage(mes);
+				//}
 
-					auto b = chunk->safeGet(convertedX, i.pos.y, convertedZ);
-					if (b)
-					{
-						b->type = i.type;
-
-						Message mes;
-						mes.type = Message::placeBlock;
-						mes.pos = i.pos;
-						mes.blockType = i.blockType;
-						submitMessage(mes);
-					}
-
-				}
+			}
 
 			sd.waitingTasks.pop();
 		}
@@ -183,7 +199,7 @@ void serverFunction()
 }
 
 
-Chunk *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ)
+ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ)
 {
 	glm::ivec2 pos = {posX, posZ};
 	auto foundPos = savedChunks.find(pos);
