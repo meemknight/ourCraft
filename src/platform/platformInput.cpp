@@ -5,6 +5,7 @@ platform::Button leftMouse;
 platform::Button rightMouse;
 
 platform::ControllerButtons controllerButtons;
+std::string typedInput;
 
 int platform::isKeyHeld(int key)
 {
@@ -67,7 +68,12 @@ int platform::isRMouseHeld()
 
 platform::ControllerButtons platform::getControllerButtons()
 {
-	return controllerButtons;
+	return platform::isFocused() ? controllerButtons : platform::ControllerButtons{};
+}
+
+std::string platform::getTypedInput()
+{
+	return typedInput;
 }
 
 void platform::internal::setButtonState(int button, int newState)
@@ -143,6 +149,7 @@ void platform::internal::updateAllButtons(float deltaTime)
 
 void platform::internal::resetInputsToZero()
 {
+	resetTypedInput();
 
 	for (int i = 0; i < platform::Button::BUTTONS_COUNT; i++)
 	{
@@ -153,4 +160,14 @@ void platform::internal::resetInputsToZero()
 	resetButtonToZero(rightMouse);
 	
 	controllerButtons.setAllToZero();
+}
+
+void platform::internal::addToTypedInput(char c)
+{
+	typedInput += c;
+}
+
+void platform::internal::resetTypedInput()
+{
+	typedInput.clear();
 }
