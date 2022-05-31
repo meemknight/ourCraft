@@ -12,6 +12,8 @@
 #include <thread>
 #include <ctime>
 #include "server.h"
+#include "createConnection.h"
+#include <enet/enet.h>
 
 #define GPU_ENGINE 0
 extern "C"
@@ -56,9 +58,22 @@ bool initGame()
 		gameData = GameData();
 	}
 
+	//todo create error function
+	if (enet_initialize() != 0)
+	{
+		std::cout << "problem starting enet\n";
+		return false;
+	}
+
 	if (!startServer())
 	{
 		std::cout << "problem starting server\n";
+		return false;
+	}
+
+	if (!createConnection())
+	{
+		std::cout << "problem joining server\n";
 		return false;
 	}
 
@@ -107,10 +122,16 @@ bool gameLogic(float deltaTime)
 
 #pragma endregion
 
+#pragma region server stuff
+
+	clientMessageLoop();
+
+#pragma endregion
+
+#pragma region input
 
 	static float moveSpeed = 10.f;
 
-#pragma region input
 	{
 		float speed = moveSpeed * deltaTime;
 		glm::vec3 moveDir = {};

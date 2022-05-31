@@ -10,6 +10,9 @@
 #include <unordered_map>
 #include <iostream>
 #include <atomic>
+#include <enet/enet.h>
+#include "packet.h"
+#include "enetServerFunction.h"
 
 struct ListNode;
 
@@ -89,6 +92,26 @@ void serverStartupStuff()
 	sd = ServerData{};
 
 
+	//start enet server
+	ENetAddress adress;
+	adress.host = ENET_HOST_ANY;
+	adress.port = 7771;
+	ENetEvent event;
+
+	//first param adress, players limit, channels, bandwith limit
+	ENetHost *server = enet_host_create(&adress, 32, SERVER_CHANNELS, 0, 0);
+
+	if (!server)
+	{
+		//todo some king of error reporting to the player
+		std::terminate();
+	}
+
+	if (!startEnetListener(server))
+	{
+		std::terminate();
+	}
+
 }
 
 
@@ -96,7 +119,6 @@ void serverFunction()
 {
 
 	serverStartupStuff();
-
 
 	while (true)
 	{
