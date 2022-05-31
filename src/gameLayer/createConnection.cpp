@@ -21,6 +21,7 @@ void clientMessageLoop()
 			{
 
 
+				enet_packet_destroy(event.packet);
 				break;
 			}
 
@@ -38,7 +39,8 @@ void clientMessageLoop()
 
 bool createConnection()
 {
-	
+	clientData = {};
+
 	clientData.client = enet_host_create(nullptr, 1, 1, 0, 0);
 
 	ENetAddress adress = {};
@@ -54,6 +56,57 @@ bool createConnection()
 	{
 		return false;
 	}
+
+	//see if we got events by server
+	//client, event, ms to wait(0 means that we don't wait)
+	if (enet_host_service(clientData.client, &event, 5000) > 0
+		&& event.type == ENET_EVENT_TYPE_CONNECT)
+	{
+		std::cout << "client connected\n";
+	}
+	else
+	{
+		std::cout << "server timeout\n";
+		enet_peer_reset(clientData.server);
+		return false;
+	}
+	
+	#pragma region handshake
+	
+	if (enet_host_service(clientData.client, &event, 5000) > 0
+		&& event.type == ENET_EVENT_TYPE_RECEIVE)
+	{
+		Packet p = {};
+		size_t size;
+		auto data = parsePacket(event, p, size);
+
+		if (p.header != headerReceiveCIDAndData)
+		{
+			enet_peer_reset(clientData.server);
+			std::cout << "server sent wrong data\n";
+			return false;
+		}
+
+		clientData.cid = p.cid;
+
+		auto recievedData = *(Packet_headerReceiveCIDAndData *)data;
+		
+		//send player own info or sthing
+		//sendPlayerData(e, true);
+
+		std::cout << "received cid: " << clientData.cid << "\n";
+		enet_packet_destroy(event.packet);
+		return true;
+	}
+	else
+	{
+		std::cout << "server handshake timeout\n";
+		return 0;
+	}
+
+	#pragma endregion
+
+
 
 	return true;
 }

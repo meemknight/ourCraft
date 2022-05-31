@@ -15,6 +15,12 @@ struct Packet
 enum
 {
 	headerNone = 0,
+	headerReceiveCIDAndData,
+
+};
+
+struct Packet_headerReceiveCIDAndData
+{
 
 };
 
