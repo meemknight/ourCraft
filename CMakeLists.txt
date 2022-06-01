@@ -13,7 +13,7 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
-add_subdirectory(thirdparty/glfw-3.3.2)
+add_subdirectory(thirdparty/glfw-3.3.7)
 add_subdirectory(thirdparty/glad)
 add_subdirectory(thirdparty/stb_image)
 add_subdirectory(thirdparty/stb_truetype)
@@ -24,6 +24,7 @@ add_subdirectory(thirdparty/imgui-docking)
 add_subdirectory(thirdparty/fastNoiseSIMD)
 add_subdirectory(thirdparty/FastNoise2)
 add_subdirectory(thirdparty/enet-1.3.17)
+add_subdirectory(thirdparty/glui)
 
 
 # Define MY_SOURCES to be a list of all the source files for my game 
@@ -62,5 +63,6 @@ target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURC
 target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/platform/")
 
 
-target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE glm glfw glad stb_image stb_truetype gl2d raudio imgui fastNoiseSIMD FastNoise2 enet)
+target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE glm glfw glad stb_image stb_truetype 
+	gl2d raudio imgui fastNoiseSIMD FastNoise2 enet glui)
 

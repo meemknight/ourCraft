@@ -15,6 +15,7 @@
 #include "createConnection.h"
 #include <enet/enet.h>
 #include "Ui.h"
+#include "glui/glui.h"
 
 #define GPU_ENGINE 0
 extern "C"
@@ -53,8 +54,8 @@ bool initGame()
 	gl2d::setVsync(false);
 	renderer2d.create();
 	font.createFromFile(RESOURCES_PATH "roboto_black.ttf");
-	texture.loadFromFile(RESOURCES_PATH "blocks.png");
-	uiTexture.loadFromFile(RESOURCES_PATH "ui0.png");
+	texture.loadFromFile(RESOURCES_PATH "blocks.png", true);
+	uiTexture.loadFromFile(RESOURCES_PATH "ui0.png", true, true);
 
 	renderer.create();
 	gyzmosRenderer.create();
@@ -193,7 +194,7 @@ bool gameLogic(float deltaTime)
 
 		gameData.c.moveFPS(moveDir);
 
-		if (platform::isKeyPressedOn(platform::Button::Enter))
+		if (platform::isKeyPressedOn(platform::Button::P))
 		{
 			platform::setFullScreen(!platform::isFullScreen());
 		}
