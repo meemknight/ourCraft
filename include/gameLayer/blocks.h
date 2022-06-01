@@ -40,8 +40,10 @@ struct Block
 	bool isOpaque()
 	{
 		return
-			type != BlockTypes::air;
+			type != BlockTypes::air
+			&& type != BlockTypes::leaves;
 	}
+
 	bool isAnimated()
 	{
 		return

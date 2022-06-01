@@ -97,9 +97,16 @@ bool gameLogic(float deltaTime)
 	frameCounter++;
 
 #pragma endregion
+	
+
+	if (platform::isKeyPressedOn(platform::Button::P))
+	{
+		platform::setFullScreen(!platform::isFullScreen());
+	}
+
 	static bool gameStarted = 0;
 	static std::string lastError = "";
-
+	
 	if (!gameStarted)
 	{
 		glui::Begin(1);

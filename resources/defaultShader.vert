@@ -88,7 +88,6 @@ readonly restrict layout(std430) buffer u_vertexData
 };
 
 
-
 out vec2 v_uv;
 out float v_color;
 
@@ -104,28 +103,39 @@ void main()
 	vertexShape.y = vertexData[in_faceOrientation * 3 * 6 + gl_VertexID * 3 + 1];
 	vertexShape.z = vertexData[in_faceOrientation * 3 * 6 + gl_VertexID * 3 + 2];
 
+	v_uv.x = vertexUV[(in_faceOrientation%6) * 2 * 6 + gl_VertexID * 2 + 0];
+	v_uv.y = vertexUV[(in_faceOrientation%6) * 2 * 6 + gl_VertexID * 2 + 1];
+
 	if(in_faceOrientation >= 6)
 	{
-		if(in_faceOrientation == 6)
-		{//front
-		
-		}else if(in_faceOrientation == 7)
-		{//back
-		
-		}else if(in_faceOrientation == 8)
-		{//top
-		
-		}else if(in_faceOrientation == 9)
-		{//bottom
-		
-		}else if(in_faceOrientation == 10)
-		{//left
-		
-		}else if(in_faceOrientation == 11)
-		{//right
-		
+
+		if(in_facePosition.y % 2 == 0)
+		{
+			vertexShape.x = -vertexShape.x;
+			vertexShape.z = -vertexShape.z;
+			v_uv.x = 1.f-v_uv.x;
 		}
-		vertexShape *= 1+((sin(u_time)+1)/2.f)*0.2;
+
+		//if(in_faceOrientation == 6)
+		//{//front
+		//
+		//}else if(in_faceOrientation == 7)
+		//{//back
+		//
+		//}else if(in_faceOrientation == 8)
+		//{//top
+		//
+		//}else if(in_faceOrientation == 9)
+		//{//bottom
+		//
+		//}else if(in_faceOrientation == 10)
+		//{//left
+		//
+		//}else if(in_faceOrientation == 11)
+		//{//right
+		//
+		//}
+		//vertexShape *= 0.8+((sin(u_time)+1)/2.f)*0.2;
 	}
 
 	pos.xyz += vertexShape;
@@ -135,9 +145,6 @@ void main()
 	gl_Position = pos;
 	
 	v_color = vertexColor[in_faceOrientation%6];
-
-	v_uv.x = vertexUV[(in_faceOrientation%6) * 2 * 6 + gl_VertexID * 2 + 0];
-	v_uv.y = vertexUV[(in_faceOrientation%6) * 2 * 6 + gl_VertexID * 2 + 1];
 
 	ivec2 uvInAtlas;
 	uvInAtlas.x = atlasPositions[(in_faceOrientation%6) * 2 * u_typesCount + in_faceType * 2 + 0];

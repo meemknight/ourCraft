@@ -314,6 +314,7 @@ void Renderer::updateDynamicBlocks()
 {
 	float time = std::clock();
 
+
 	glm::vec3 topFrontLeft = {-0.5f, 0.5f, 0.5f};
 	glm::vec3 topFrontRight = {0.5f, 0.5f, 0.5f};
 	glm::vec3 topBackLeft = {-0.5f, 0.5f, -0.5f};
@@ -325,21 +326,28 @@ void Renderer::updateDynamicBlocks()
 
 	glm::vec3 *topFaces[4] = {&topFrontLeft, &topFrontRight, &topBackLeft, &topBackRight};
 	glm::vec3* bottomFaces[4] = {&bottomFrontLeft, &bottomFrontRight, &bottomBackLeft, &bottomBackRight};
+	
+	float prelucratedTime = time / 100000.f;
 
-	float prelucratedTime = time / 400.f;
+	prelucratedTime = std::sin(prelucratedTime) * 3.14159 * 10;
+
 	float s = std::sin(prelucratedTime);
 	float c = std::cos(prelucratedTime);
-
+	
 	glm::vec2 offsetVector = {1, 0};
 	offsetVector = {c * offsetVector.x - s * offsetVector.y, s * offsetVector.x + c * offsetVector.y};
-	offsetVector = glm::normalize(offsetVector) * 0.2f;
+	offsetVector = glm::normalize(offsetVector) * 0.06f * std::abs(cos(prelucratedTime * 2.f));
+	
 
-	//for (int i = 0; i < 4; i++)
-	//{
-	//	topFaces[i]->x += offsetVector.x;
-	//	//topFaces[i]->y ;
-	//	topFaces[i]->z += offsetVector.y;
-	//}
+	for (int i = 0; i < 4; i++)
+	{
+		topFaces[i]->x += offsetVector.x;
+		//topFaces[i]->y ;
+		topFaces[i]->z += offsetVector.y;
+	
+		bottomFaces[i]->x -= offsetVector.x;
+		bottomFaces[i]->z -= offsetVector.y;
+	}
 
 
 	float newData[] =

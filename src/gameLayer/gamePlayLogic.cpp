@@ -112,14 +112,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		gameData.c.moveFPS(moveDir);
 
-		if (platform::isKeyPressedOn(platform::Button::P))
-		{
-			platform::setFullScreen(!platform::isFullScreen());
-		}
-
 		bool rotate = !gameData.escapePressed;
 		if (platform::isRMouseHeld()) { rotate = true; }
-		gameData.c.rotateFPS(platform::getRelMousePosition(), 0.6f * deltaTime, rotate);
+		gameData.c.rotateFPS(platform::getRelMousePosition(), 0.5f * deltaTime, rotate);
 
 		if (!gameData.escapePressed)
 		{
@@ -187,7 +182,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	if (platform::isRMouseReleased())
 	{
 		if (blockToPlace)
-			gameData.chunkSystem.placeBlock(*blockToPlace, BlockTypes::stone);
+			gameData.chunkSystem.placeBlock(*blockToPlace, BlockTypes::leaves);
 	}
 	else if (platform::isLMouseReleased())
 	{
