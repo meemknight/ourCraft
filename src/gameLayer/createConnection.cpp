@@ -4,23 +4,23 @@
 #include <iostream>
 
 //todo struct here
+
 static ConnectionData clientData;
-static std::vector<Chunk *> recievedChunks;
-static std::vector<Packet_PlaceBlock> recievedBlocks;
+
 
 std::vector<Chunk *> getRecievedChunks()
 {
 	//auto ret = std::move(recievedChunks);
-	auto ret = recievedChunks;
-	recievedChunks.clear();
+	auto ret = clientData.recievedChunks;
+	clientData.recievedChunks.clear();
 	return ret;
 }
 
 std::vector<Packet_PlaceBlock> getRecievedBlocks()
 {
 	//auto ret = std::move(recievedBlocks);
-	auto ret = recievedBlocks;
-	recievedBlocks.clear();
+	auto ret = clientData.recievedBlocks;
+	clientData.recievedBlocks.clear();
 	return ret;
 }
 
@@ -44,14 +44,14 @@ void recieveDataClient(ENetEvent &event)
 			Packet_RecieveChunk *chunkPacket = (Packet_RecieveChunk *)data;
 			Chunk *c = new Chunk();
 			c->data = chunkPacket->chunk;
-			recievedChunks.push_back(c);
+			clientData.recievedChunks.push_back(c);
 
 			break;
 		}
 
 		case headerPlaceBlock:
 		{
-			recievedBlocks.push_back(*(Packet_PlaceBlock *)data);
+			clientData.recievedBlocks.push_back(*(Packet_PlaceBlock *)data);
 			break;
 		}
 
@@ -108,13 +108,20 @@ void closeConnection()
 {
 	enet_peer_reset(clientData.server);
 	enet_host_destroy(clientData.client);
+	clientData.conected = false;
+
+	for (auto &i : clientData.recievedChunks)
+	{
+		delete i;
+	}
+
 }
 
 bool createConnection()
 {
-	clientData = {};
-	recievedChunks = {};
-	recievedBlocks = {};
+	if (clientData.conected) { return false; }
+
+	clientData = ConnectionData{};
 
 	clientData.client = enet_host_create(nullptr, 1, 1, 0, 0);
 
@@ -186,8 +193,7 @@ bool createConnection()
 
 	#pragma endregion
 
-
-
+	clientData.conected = true;
 	return true;
 }
 

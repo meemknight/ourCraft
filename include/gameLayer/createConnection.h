@@ -11,6 +11,9 @@ struct ConnectionData
 	ENetHost *client = 0;
 	ENetPeer *server = 0;
 	int32_t cid = 0;
+	std::vector<Chunk *> recievedChunks = {};
+	std::vector<Packet_PlaceBlock> recievedBlocks = {};
+	bool conected = false;
 };
 
 

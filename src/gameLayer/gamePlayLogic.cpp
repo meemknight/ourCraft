@@ -239,5 +239,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 void closeGameLogic()
 {
+
+	for (auto &i : gameData.chunkSystem.loadedChunks)
+	{
+		delete i;
+	}
+
+
 	gameData = GameData(); //free all resources
 }
