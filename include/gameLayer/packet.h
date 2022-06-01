@@ -44,6 +44,8 @@ struct Packet_PlaceBlock
 	glm::ivec3 blockPos = {};
 };
 
+//first channel connection and chunks
+//second channel blocks
 constexpr static int SERVER_CHANNELS = 2;
 
 void sendPacket(ENetPeer *to, Packet p, const char *data, size_t size, bool reliable, int channel);

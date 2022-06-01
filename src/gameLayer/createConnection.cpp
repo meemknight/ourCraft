@@ -5,6 +5,7 @@
 
 ConnectionData clientData;
 std::vector<Chunk *> recievedChunks;
+std::vector<Packet_PlaceBlock> recievedBlocks;
 
 std::vector<Chunk *> getRecievedChunks()
 {
@@ -13,6 +14,15 @@ std::vector<Chunk *> getRecievedChunks()
 	recievedChunks.clear();
 	return ret;
 }
+
+std::vector<Packet_PlaceBlock> getRecievedBlocks()
+{
+	//auto ret = std::move(recievedBlocks);
+	auto ret = recievedBlocks;
+	recievedBlocks.clear();
+	return ret;
+}
+
 
 ConnectionData getConnectionData()
 {
@@ -40,8 +50,7 @@ void recieveDataClient(ENetEvent &event)
 
 		case headerPlaceBlock:
 		{
-
-
+			recievedBlocks.push_back(*(Packet_PlaceBlock *)data);
 			break;
 		}
 
@@ -98,6 +107,7 @@ bool createConnection()
 {
 	clientData = {};
 	recievedChunks = {};
+	recievedBlocks = {};
 
 	clientData.client = enet_host_create(nullptr, 1, 1, 0, 0);
 

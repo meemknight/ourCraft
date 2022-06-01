@@ -7,8 +7,8 @@ struct Task
 	enum Type
 	{
 		none = 0,
+		placeBlock,
 		generateChunk,
-		placeBlock
 	};
 
 	glm::ivec3 pos = {};
@@ -17,20 +17,20 @@ struct Task
 
 };
 
-struct Message
-{
-	enum Type
-	{
-		none = 0,
-		recievedChunk,
-		placeBlock,
-	};
-	
-	int type = 0;
-	Chunk *chunk = nullptr;
-	int blockType;
-	glm::ivec3 pos;
-};
+//struct Message
+//{
+//	enum Type
+//	{
+//		none = 0,
+//		recievedChunk,
+//		placeBlock,
+//	};
+//	
+//	int type = 0;
+//	Chunk *chunk = nullptr;
+//	int blockType;
+//	glm::ivec3 pos;
+//};
 
 //todo move out of thread stuff
 void submitTaskClient(Task& t);

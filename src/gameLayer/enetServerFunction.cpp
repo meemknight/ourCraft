@@ -98,7 +98,7 @@ void recieveData(ENetHost *server, ENetEvent &event)
 		case headerPlaceBlock:
 		{
 			Packet_PlaceBlock packetData = *(Packet_PlaceBlock *)data;
-			serverTask.t.type = Task::generateChunk;
+			serverTask.t.type = Task::placeBlock;
 			serverTask.t.pos = {packetData.blockPos};
 			serverTask.t.blockType = {packetData.blockType};
 

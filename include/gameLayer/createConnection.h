@@ -2,6 +2,7 @@
 #include <enet/enet.h>
 #include <stdint.h>
 #include <vector>
+#include "packet.h"
 
 struct Chunk;
 
@@ -14,6 +15,7 @@ struct ConnectionData
 
 
 std::vector<Chunk *> getRecievedChunks();
+std::vector<Packet_PlaceBlock> getRecievedBlocks();
 ConnectionData getConnectionData();
 bool createConnection();
 void clientMessageLoop();

@@ -38,7 +38,7 @@ void submitTaskClient(Task& t)
 			packetData.blockPos = t.pos;
 			packetData.blockType = t.blockType;
 
-			sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1, 0);
+			sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1, 1);
 			break;
 		}
 		default:

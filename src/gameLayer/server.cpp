@@ -82,7 +82,7 @@ struct ChunkPriorityCache
 struct ServerData
 {
 	ChunkPriorityCache chunkCache = {};
-	std::queue<ServerTask> waitingTasks = {};
+	std::vector<ServerTask> waitingTasks = {};
 
 }sd;
 
@@ -134,23 +134,21 @@ void serverFunction()
 
 		for (auto i : tasks)
 		{
-			sd.waitingTasks.push(i);
+			sd.waitingTasks.push_back(i);
 		}
 
-		int taskIndex = 0;
+		std::sort(sd.waitingTasks.begin(), sd.waitingTasks.end(),
+			[](const ServerTask &a, const ServerTask &b) { return a.t.type < b.t.type; });
+
 		int count = sd.waitingTasks.size();
-		for (; taskIndex < std::min(count, 10); taskIndex++)
+		for (int taskIndex = 0; taskIndex < std::min(count, 3); taskIndex++)
 		{
 			auto &i = sd.waitingTasks.front();
 
 			if (i.t.type == Task::generateChunk)
 			{
 				auto rez = sd.chunkCache.getOrCreateChunk(i.t.pos.x, i.t.pos.z);
-				//Message mes;
-				//mes.type = Message::recievedChunk;
-				//mes.chunk = new Chunk(*rez);
-				//submitMessage(mes);
-
+				
 				Packet packet;
 				packet.cid = i.cid;
 				packet.header = headerRecieveChunk;
@@ -168,27 +166,35 @@ void serverFunction()
 			else
 			if (i.t.type == Task::placeBlock)
 			{
-				//todo
-				//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
-				//int convertedX = modBlockToChunk(i.t.pos.x);
-				//int convertedZ = modBlockToChunk(i.t.pos.z);
-				//
-				////todo check if place is legal
-				//auto b = chunk->safeGet(convertedX, i.t.pos.y, convertedZ);
-				//if (b)
-				//{
-				//	b->type = i.t.type;
-				//
-				//	Message mes;
-				//	mes.type = Message::placeBlock;
-				//	mes.pos = i.t.pos;
-				//	mes.blockType = i.t.blockType;
-				//	submitMessage(mes);
-				//}
+
+				auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
+				int convertedX = modBlockToChunk(i.t.pos.x);
+				int convertedZ = modBlockToChunk(i.t.pos.z);
+				
+				//todo check if place is legal
+				auto b = chunk->safeGet(convertedX, i.t.pos.y, convertedZ);
+				if (b && b->type)
+				{
+					b->type = i.t.type;
+					//todo mark this chunk dirty if needed for saving
+				
+					Packet packet;
+					packet.cid = i.cid;
+					packet.header = headerPlaceBlock;
+
+					Packet_PlaceBlock packetData;
+					packetData.blockPos = i.t.pos;
+					packetData.blockType = i.t.blockType;
+
+					auto client = getClient(i.cid);
+
+					//todo broadcast in the future
+					sendPacket(client.peer, packet, (char *)&packetData, sizeof(Packet_PlaceBlock), true, 0);
+				}
 
 			}
 
-			sd.waitingTasks.pop();
+			sd.waitingTasks.erase(sd.waitingTasks.begin());
 		}
 
 

@@ -46,6 +46,7 @@ struct Block
 		return
 			type == BlockTypes::leaves;
 	}
+
 };
 
 constexpr int CHUNK_SIZE = 16;
@@ -64,6 +65,19 @@ struct ChunkData
 	void clear()
 	{
 		memset(blocks, 0, sizeof(blocks));
+	}
+
+	//todo refactor
+	Block *safeGet(int x, int y, int z)
+	{
+		if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || z >= CHUNK_SIZE || y >= CHUNK_HEIGHT)
+		{
+			return nullptr;
+		}
+		else
+		{
+			return &unsafeGet(x, y, z);
+		}
 	}
 };
 

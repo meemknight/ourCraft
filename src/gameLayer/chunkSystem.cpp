@@ -186,7 +186,7 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 		);
 
 
-		constexpr int maxWaitingSubmisions = 7;
+		constexpr int maxWaitingSubmisions = 5;
 		std::vector<Task> finalTask;
 		finalTask.reserve(maxWaitingSubmisions);
 
@@ -198,7 +198,7 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 
 			if (recentlyRequestedChunks.find({t.pos.x, t.pos.z}) == recentlyRequestedChunks.end())
 			{
-				recentlyRequestedChunks[{t.pos.x, t.pos.z}] = 4.f; //time not request again, it can be big since packets are reliable
+				recentlyRequestedChunks[{t.pos.x, t.pos.z}] = 3.f; //time not request again, it can be big since packets are reliable
 				finalTask.push_back(t);
 			}
 		}
@@ -222,43 +222,40 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 
 
 #pragma region place block
-	//todo re add
-	//for (auto &message : recievedMessages)
-	//{
-	//	if (message.type == Message::placeBlock)
-	//	{
-	//		auto pos = message.pos;
-	//		int xPos = divideChunk(pos.x);
-	//		int zPos = divideChunk(pos.z);
-	//
-	//		if (xPos >= minPos.x && zPos >= minPos.y
-	//			&& xPos < maxPos.x && zPos < maxPos.y
-	//			)
-	//		{
-	//			//process block placement
-	//
-	//			auto rez = getBlockSafe(message.pos.x, message.pos.y, message.pos.z);
-	//
-	//			if (rez)
-	//			{
-	//				rez->type = message.blockType;
-	//			}
-	//
-	//			auto c = getChunkSafe(xPos - minPos.x, zPos - minPos.y);
-	//
-	//			if (c)
-	//			{
-	//				c->dirty = true;
-	//			}
-	//
-	//		}
-	//		else
-	//		{
-	//			//ignore message
-	//		}
-	//	}
-	//
-	//}
+	auto recievedBLocks = getRecievedBlocks();
+	for (auto &message : recievedBLocks)
+	{
+		auto pos = message.blockPos;
+		int xPos = divideChunk(pos.x);
+		int zPos = divideChunk(pos.z);
+	
+		if (xPos >= minPos.x && zPos >= minPos.y
+			&& xPos < maxPos.x && zPos < maxPos.y
+			)
+		{
+			//process block placement
+	
+			auto rez = getBlockSafe(message.blockPos.x, message.blockPos.y, message.blockPos.z);
+	
+			if (rez)
+			{
+				rez->type = message.blockType;
+			}
+	
+			auto c = getChunkSafe(xPos - minPos.x, zPos - minPos.y);
+	
+			if (c)
+			{
+				c->dirty = true;
+			}
+	
+		}
+		else
+		{
+			//todo possible problems here
+			//ignore message
+		}
+	}
 #pragma endregion
 
 
