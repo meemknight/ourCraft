@@ -59,7 +59,7 @@ void clientMessageLoop()
 {
 	ENetEvent event;
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 20; i++)
 	{
 		if (enet_host_service(clientData.client, &event, 0) > 0)
 		{
@@ -85,6 +85,10 @@ void clientMessageLoop()
 			}
 
 			}
+		}
+		else
+		{
+			break;
 		}
 	}
 

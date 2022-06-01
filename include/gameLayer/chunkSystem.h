@@ -1,4 +1,6 @@
 #pragma once
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
 #include "blocks.h"
 #include <unordered_map>
 #include <glm/vec3.hpp>
@@ -16,7 +18,7 @@ struct ChunkSystem
 
 	void createChunks(int viewDistance, std::vector<int>& data);
 
-	void update(int x, int z, std::vector<int>& data);
+	void update(int x, int z, std::vector<int>& data, float deltaTime);
 	int lastX = 0, lastZ = 0, created = 0;
 	glm::ivec2 cornerPos = {};
 
@@ -26,6 +28,8 @@ struct ChunkSystem
 		, std::optional<glm::ivec3> &prevBlockForPlace);
 
 	void placeBlock(glm::ivec3 pos, int type);
+
+	std::unordered_map<glm::ivec2, float> recentlyRequestedChunks;
 };
 
 int modBlockToChunk(int x);

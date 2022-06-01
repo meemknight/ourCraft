@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <glm/glm.hpp>
 #include "createConnection.h"
+#include <iostream>
 
 //todo rename !!!!!!!!!
 Chunk* ChunkSystem::getChunkSafe(int x, int z)
@@ -41,8 +42,25 @@ void ChunkSystem::createChunks(int viewDistance, std::vector<int> &data)
 
 }
 
-void ChunkSystem::update(int x, int z, std::vector<int>& data)
+void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 {
+	{
+		std::vector < std::unordered_map<glm::ivec2, float>::iterator > toRemove;
+		for (auto i = recentlyRequestedChunks.begin(); i != recentlyRequestedChunks.end(); i++)
+		{
+			i->second -= deltaTime;
+
+			if (i->second <= 0)
+			{
+				toRemove.push_back(i);
+			}
+		}
+
+		for (auto i : toRemove)
+		{
+			recentlyRequestedChunks.erase(i);
+		}
+	}
 
 	x /= CHUNK_SIZE;
 	z /= CHUNK_SIZE;
@@ -55,6 +73,38 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 
 	cornerPos = minPos;
 
+#pragma region recieve chunks
+	auto recievedChunk = getRecievedChunks();
+
+	for (auto &i : recievedChunk)
+	{
+
+		int x = i->data.x - minPos.x;
+		int z = i->data.z - minPos.y;
+
+		if (x < 0 || z < 0 || x >= squareSize || z >= squareSize)
+		{
+			delete i; // ignore chunk, not of use anymore
+			continue;
+		}
+		else
+		{
+			if (loadedChunks[x * squareSize + z] != nullptr)
+			{
+				delete i; //double request, ignore
+			}
+			else
+			{
+				//assert(loadedChunks[x * squareSize + z] == nullptr);
+				loadedChunks[x * squareSize + z] = i;
+			}
+
+		}
+	}
+
+#pragma endregion
+
+
 #pragma region set chunk borders
 
 	if (!created || lastX != x || lastZ != z)
@@ -62,9 +112,6 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 
 		std::vector<Chunk*> newChunkVector;
 		newChunkVector.resize(squareSize * squareSize);
-
-		std::vector<Chunk*> dirtyChunls;
-		dirtyChunls.reserve(squareSize * squareSize);
 
 		for (int i = 0; i < squareSize * squareSize; i++)
 		{
@@ -97,30 +144,32 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 			}
 		}
 
-		std::vector<Task> chunkTasks;
-		for (int x = 0; x < squareSize; x++)
-			for (int z = 0; z < squareSize; z++)
-			{
+		loadedChunks = std::move(newChunkVector);
+	}
 
-				if (newChunkVector[x * squareSize + z] == nullptr)
-				{
-					//Chunk* chunk = dirtyChunls.back();
-					//dirtyChunls.pop_back();
-					//
-					//chunk->create(x + minPos.x, z + minPos.y);
-					//newChunkVector[x * squareSize + z] = chunk;
-					Task t;
-
-					t.type = Task::generateChunk;
-					t.pos = glm::ivec3(x + minPos.x, 0, z + minPos.y);
-					chunkTasks.push_back(t);
-				}
-			}
-		
-		if (!chunkTasks.empty())
+	std::vector<Task> chunkTasks;
+	for (int x = 0; x < squareSize; x++)
+		for (int z = 0; z < squareSize; z++)
 		{
-			std::sort(chunkTasks.begin(), chunkTasks.end(),
-				[x, z](Task &a, Task &b)
+
+			if (loadedChunks[x * squareSize + z] == nullptr)
+			{
+				//chunk->create(x + minPos.x, z + minPos.y);
+				//newChunkVector[x * squareSize + z] = chunk;
+				Task t;
+
+				t.type = Task::generateChunk;
+				t.pos = glm::ivec3(x + minPos.x, 0, z + minPos.y);
+				
+				chunkTasks.push_back(t);
+			}
+			
+		}
+	
+	if (!chunkTasks.empty())
+	{
+		std::sort(chunkTasks.begin(), chunkTasks.end(),
+			[x, z](Task &a, Task &b)
 			{
 
 				int ax = a.pos.x - x;
@@ -134,17 +183,33 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 
 				return reza < rezb;
 			}
-			);
+		);
 
-			submitTaskClient(chunkTasks);
+
+		constexpr int maxWaitingSubmisions = 7;
+		std::vector<Task> finalTask;
+		finalTask.reserve(maxWaitingSubmisions);
+
+		for (int i = 0; i < maxWaitingSubmisions; i++)
+		{
+			if (chunkTasks.size() <= i) { break; }
+
+			auto &t = chunkTasks[i];
+
+			if (recentlyRequestedChunks.find({t.pos.x, t.pos.z}) == recentlyRequestedChunks.end())
+			{
+				recentlyRequestedChunks[{t.pos.x, t.pos.z}] = 4.f; //time not request again, it can be big since packets are reliable
+				finalTask.push_back(t);
+			}
 		}
 
-
-		//assert(dirtyChunls.empty());
-
-		loadedChunks = std::move(newChunkVector);
-
+		submitTaskClient(finalTask);
 	}
+
+
+	//assert(dirtyChunls.empty());
+
+
 
 #pragma endregion
 
@@ -153,37 +218,7 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data)
 	lastX = x;
 	lastZ = z;
 
-	auto recievedChunk = getRecievedChunks();
 
-#pragma region recieve chunks
-
-	for (auto &i : recievedChunk)
-	{
-
-		int x = i->data.x - minPos.x;
-		int z = i->data.z - minPos.y;
-
-		if (x < 0 || z < 0 || x >= squareSize || z >= squareSize)
-		{
-			delete i; // ignore chunk, not of use anymore
-			continue;
-		}
-		else
-		{
-			if (loadedChunks[x * squareSize + z] != nullptr)
-			{
-				delete i; //double request, ignore
-			}
-			else
-			{
-				//assert(loadedChunks[x * squareSize + z] == nullptr);
-				loadedChunks[x * squareSize + z] = i;
-			}
-
-		}
-	}
-	
-#pragma endregion
 
 
 #pragma region place block

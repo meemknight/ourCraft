@@ -196,7 +196,7 @@ bool gameLogic(float deltaTime)
 
 	renderer.updateDynamicBlocks();
 
-	chunkSystem.update(posInt.x, posInt.z, data);
+	chunkSystem.update(posInt.x, posInt.z, data, deltaTime);
 	glNamedBufferData(renderer.vertexBuffer, sizeof(int) * data.size(), data.data(), GL_DYNAMIC_DRAW);
 	facesCount = data.size() / 4;
 
