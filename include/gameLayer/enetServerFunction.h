@@ -4,6 +4,7 @@
 #include "packet.h"
 
 bool startEnetListener(ENetHost *_server);
+void closeEnetListener();
 
 struct ServerTask
 {
@@ -18,6 +19,8 @@ struct Client
 	//bool changed = 1;
 	//char clientName[56] = {};
 };
+
+void signalWaitingFromServer();
 
 std::vector<ServerTask> waitForTasksServer();
 std::vector<ServerTask> tryForTasksServer();

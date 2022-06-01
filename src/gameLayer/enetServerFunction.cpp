@@ -10,10 +10,12 @@
 #include <mutex>
 #include <queue>
 
+//todo add to a struct
 ENetHost *server = 0;
 std::mutex connectionsMutex;
 std::unordered_map<int32_t, Client> connections;
 int pids = 1;
+static std::thread serverThread;
 
 void broadCastNotLocked(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel)
 {
@@ -132,6 +134,11 @@ void recieveData(ENetHost *server, ENetEvent &event)
 
 }
 
+void signalWaitingFromServer()
+{
+	taskCondition.notify_one();
+}
+
 std::vector<ServerTask> waitForTasksServer()
 {
 	std::unique_lock<std::mutex> locker(taskMutex);
@@ -179,6 +186,7 @@ std::vector<ServerTask> tryForTasksServer()
 	return retVector;
 }
 
+static std::atomic<bool> enetServerRunning = false;
 
 void enetServerFunction()
 {
@@ -186,9 +194,9 @@ void enetServerFunction()
 
 	ENetEvent event = {};
 
-	while (true)
+	while (enetServerRunning)
 	{
-		while (enet_host_service(server, &event, 0) > 0)
+		while (enet_host_service(server, &event, 0) > 0 && enetServerRunning)
 		{
 			switch (event.type)
 			{
@@ -223,7 +231,6 @@ void enetServerFunction()
 }
 
 
-static std::atomic<bool> enetServerRunning = false;
 
 bool startEnetListener(ENetHost *_server)
 {
@@ -232,14 +239,19 @@ bool startEnetListener(ENetHost *_server)
 	pids = 1;
 
 	bool expected = 0;
-	if (enetServerRunning.compare_exchange_strong(expected, 0))
+	if (enetServerRunning.compare_exchange_strong(expected, 1))
 	{
-		std::thread serverThread(enetServerFunction);
-		serverThread.detach();
+		serverThread = std::move(std::thread(enetServerFunction));
 		return 1;
 	}
 	else
 	{
 		return 0;
 	}
+}
+
+void closeEnetListener()
+{
+	enetServerRunning = false;
+	serverThread.join();
 }

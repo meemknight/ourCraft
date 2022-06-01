@@ -49,14 +49,24 @@ struct ListNode
 
 
 static std::atomic<bool> serverRunning = false;
+std::thread serverThread;
+
+bool serverStartupStuff();
 
 bool startServer()
 {
 	bool expected = 0;
-	if (serverRunning.compare_exchange_strong(expected, 0))
+	if (serverRunning.compare_exchange_strong(expected, 1))
 	{
-		std::thread serverThread(serverFunction);
-		serverThread.detach();
+		if (!serverStartupStuff())
+		{
+			serverRunning = false;
+			return 0;
+		}
+
+		serverThread = std::move(std::thread(serverFunction));
+		
+		//serverThread.detach();
 		return 1;
 	}
 	else
@@ -78,15 +88,35 @@ struct ChunkPriorityCache
 };
 
 
-
 struct ServerData
 {
 	ChunkPriorityCache chunkCache = {};
 	std::vector<ServerTask> waitingTasks = {};
-
+	ENetHost *server = nullptr;
 }sd;
 
-void serverStartupStuff()
+void closeServer()
+{
+	//toto cleanup stuff
+	if (serverRunning)
+	{
+		closeEnetListener();
+
+		//close loop
+		serverRunning = false;
+
+		//then signal the barier from the task waiting
+		signalWaitingFromServer();
+
+		//then wait for the server to close
+		serverThread.join();
+
+		enet_host_destroy(sd.server);
+		sd.server = 0;
+	}
+}
+
+bool serverStartupStuff()
 {
 	//reset data
 	sd = ServerData{};
@@ -99,28 +129,29 @@ void serverStartupStuff()
 	ENetEvent event;
 
 	//first param adress, players limit, channels, bandwith limit
-	ENetHost *server = enet_host_create(&adress, 32, SERVER_CHANNELS, 0, 0);
+	sd.server = enet_host_create(&adress, 32, SERVER_CHANNELS, 0, 0);
 
-	if (!server)
+	if (!sd.server)
 	{
 		//todo some king of error reporting to the player
-		std::terminate();
+		return 0;
 	}
 
-	if (!startEnetListener(server))
+	if (!startEnetListener(sd.server))
 	{
-		std::terminate();
+		enet_host_destroy(sd.server);
+		sd.server = 0;
+		return 0;
 	}
 
+	return true;
 }
 
 
 void serverFunction()
 {
 
-	serverStartupStuff();
-
-	while (true)
+	while (serverRunning)
 	{
 		std::vector<ServerTask> tasks;
 		if (sd.waitingTasks.empty())
@@ -205,8 +236,6 @@ void serverFunction()
 
 
 	}
-
-
 
 }
 

@@ -201,13 +201,23 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	if (gameData.escapePressed)
 	{
+		bool terminate = false;
 		if (ImGui::Begin("camera controll", &gameData.escapePressed))
 		{
 			ImGui::DragScalarN("camera pos", ImGuiDataType_Double, &gameData.c.position[0], 3, 0.01);
 			ImGui::DragFloat("camera speed", &moveSpeed);
 			ImGui::Text("fps: %d", programData.currentFps);
+			if (ImGui::Button("Exit game"))
+			{
+				terminate = true;
+			}
 		}
 		ImGui::End();
+
+		if (terminate)
+		{
+			return false;
+		}
 	}
 
 #pragma endregion
@@ -229,5 +239,5 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 void closeGameLogic()
 {
-
+	gameData = GameData(); //free all resources
 }

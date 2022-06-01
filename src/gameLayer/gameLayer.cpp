@@ -107,12 +107,19 @@ bool gameLogic(float deltaTime)
 		{
 			if (!startServer())
 			{
-				std::cout << "problem starting server\n";
-				return false;
+				lastError = "Problem starting server";
+			}
+			else
+			{
+				gameStarted = true;
+				if (!initGameplay(programData))
+				{
+					closeServer();
+					lastError = "Coultn't join, closing server";
+					gameStarted = false;
+				}
 			}
 
-			gameStarted = true;
-			initGameplay(programData);
 		}
 		if (glui::Button("Join game", Colors_Gray))
 		{
@@ -135,7 +142,13 @@ bool gameLogic(float deltaTime)
 	}
 	else
 	{
-		gameplayFrame(deltaTime, w, h, programData);
+		if (!gameplayFrame(deltaTime, w, h, programData))
+		{
+			closeGameLogic();
+			closeConnection();
+			closeServer();
+			gameStarted = false;
+		}
 	}
 
 

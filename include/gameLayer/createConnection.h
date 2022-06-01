@@ -19,3 +19,4 @@ std::vector<Packet_PlaceBlock> getRecievedBlocks();
 ConnectionData getConnectionData();
 bool createConnection();
 void clientMessageLoop();
+void closeConnection();

@@ -3,9 +3,10 @@
 #include "packet.h"
 #include <iostream>
 
-ConnectionData clientData;
-std::vector<Chunk *> recievedChunks;
-std::vector<Packet_PlaceBlock> recievedBlocks;
+//todo struct here
+static ConnectionData clientData;
+static std::vector<Chunk *> recievedChunks;
+static std::vector<Packet_PlaceBlock> recievedBlocks;
 
 std::vector<Chunk *> getRecievedChunks()
 {
@@ -103,6 +104,12 @@ void clientMessageLoop()
 
 }
 
+void closeConnection()
+{
+	enet_peer_reset(clientData.server);
+	enet_host_destroy(clientData.client);
+}
+
 bool createConnection()
 {
 	clientData = {};
@@ -122,6 +129,7 @@ bool createConnection()
 
 	if (clientData.server == nullptr)
 	{
+		enet_host_destroy(clientData.client);
 		return false;
 	}
 
@@ -136,6 +144,7 @@ bool createConnection()
 	{
 		std::cout << "server timeout\n";
 		enet_peer_reset(clientData.server);
+		enet_host_destroy(clientData.client);
 		return false;
 	}
 	
@@ -151,6 +160,7 @@ bool createConnection()
 		if (p.header != headerReceiveCIDAndData)
 		{
 			enet_peer_reset(clientData.server);
+			enet_host_destroy(clientData.client);
 			std::cout << "server sent wrong data\n";
 			return false;
 		}
@@ -168,6 +178,8 @@ bool createConnection()
 	}
 	else
 	{
+		enet_peer_reset(clientData.server);
+		enet_host_destroy(clientData.client);
 		std::cout << "server handshake timeout\n";
 		return 0;
 	}

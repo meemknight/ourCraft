@@ -41,6 +41,7 @@ struct ChunkSystem
 
 	std::unordered_map<glm::ivec2, float> recentlyRequestedChunks;
 	std::unordered_map<glm::ivec3, GhostBlock> ghostBlocks;
+
 };
 
 int modBlockToChunk(int x);
