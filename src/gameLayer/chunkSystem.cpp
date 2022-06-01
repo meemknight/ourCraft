@@ -160,7 +160,6 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 				)
 			{
 				glm::ivec2 chunkPosRelToSystem = chunkPos - minPos;
-				//loadedChunks[i]->dirty = false;
 
 				newChunkVector[chunkPosRelToSystem.x * squareSize + chunkPosRelToSystem.y] = loadedChunks[i];
 
@@ -169,8 +168,6 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 			else
 			{
 				delete loadedChunks[i];
-				//loadedChunks[i]->dirty = true;
-				//dirtyChunls.push_back(loadedChunks[i]);
 				loadedChunks[i] = nullptr;
 			}
 		}
@@ -234,9 +231,6 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 	}
 
 
-	//assert(dirtyChunls.empty());
-
-
 
 #pragma endregion
 
@@ -264,27 +258,29 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 			Chunk *c = 0;
 			auto rez = getBlockSafeAndChunk(message.blockPos.x, message.blockPos.y, message.blockPos.z, c);
 
+			auto it = ghostBlocks.find(message.blockPos);
+
 			if (rez)
 			{
-				rez->type = message.blockType;
-			}
-
-			//auto c = getChunkSafe(xPos - minPos.x, zPos - minPos.y);
-
-			if (c)
-			{
-				c->dirty = true;
-			}
-			//std::cout << "recieved\n";
-
-			{
-				auto it = ghostBlocks.find(message.blockPos);
 				if (it != ghostBlocks.end())
 				{
-					ghostBlocks.erase(it);
-					//std::cout << "yes\n";
+					//no need to check if c
+					if (it->second.newBlock != message.blockType)
+					{
+						setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
+					}
 				}
+
+				rez->type = message.blockType;
+
 			}
+
+			if (it != ghostBlocks.end())
+			{
+				ghostBlocks.erase(it);
+				//std::cout << "yes\n";
+			}
+			
 	
 		}
 		else
@@ -363,11 +359,36 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 
 }
 
+Chunk *ChunkSystem::getChunkSafeFromBlockPos(int x, int z)
+{
+	auto c = getChunkSafe(divideChunk(x) - cornerPos.x, divideChunk(z) - cornerPos.y);
+	return c;
+}
+
+void ChunkSystem::setChunkAndNeighboursFlagDirtyFromBlockPos(int x, int z)
+{
+	const int o = 5;
+	glm::ivec2 offsets[o] = {{0,0}, {-1,0}, {1,0}, {0, -1}, {0, 1}};
+
+	for (int i = 0; i < o; i++)
+	{
+		auto c = getChunkSafeFromBlockPos(x + offsets[i].x, z + offsets[i].y);
+		if (c)
+		{
+			c->dirty = true;
+		}
+	}
+
+}
+
+
 Block* ChunkSystem::getBlockSafe(int x, int y, int z)
 {
 	Chunk *c = 0;
 	return getBlockSafeAndChunk(x, y, z, c);
 }
+
+
 
 Block *ChunkSystem::getBlockSafeAndChunk(int x, int y, int z, Chunk *&chunk)
 {
@@ -446,7 +467,8 @@ void ChunkSystem::placeBlock(glm::ivec3 pos, int type)
 		ghostBlocks[pos] = ghostBlock;
 
 		b->type = type;
-		chunk->dirty = true;
+		
+		setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
 	}
 	
 }

@@ -21,7 +21,9 @@ struct ChunkSystem
 	std::vector<int> requestedChunks;
 	int squareSize = 3;
 
-	Chunk* getChunkSafe(int x, int z);
+	Chunk *getChunkSafe(int x, int z);
+	Chunk *getChunkSafeFromBlockPos(int x, int z);
+	void setChunkAndNeighboursFlagDirtyFromBlockPos(int x, int z);
 
 	void createChunks(int viewDistance, std::vector<int>& data);
 
