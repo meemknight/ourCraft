@@ -40,7 +40,7 @@ struct Packet_RecieveChunk
 
 struct Packet_PlaceBlock
 {
-	int blockType = {};
+	uint16_t blockType = {};
 	glm::ivec3 blockPos = {};
 };
 

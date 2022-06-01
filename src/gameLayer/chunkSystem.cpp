@@ -62,8 +62,39 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 		}
 	}
 
-	x /= CHUNK_SIZE;
-	z /= CHUNK_SIZE;
+	{
+		std::vector < std::unordered_map<glm::ivec3, GhostBlock>::iterator > toRemove;
+		for (auto i = ghostBlocks.begin(); i != ghostBlocks.end(); i++)
+		{
+			i->second.timer -= deltaTime;
+
+			if (i->second.timer <= 0)
+			{
+				toRemove.push_back(i);
+
+				Chunk *chunk = 0;
+				auto b = getBlockSafeAndChunk(i->first.x, i->first.y, i->first.z, chunk);
+
+				if (b)
+				{
+					b->type = i->second.prevBlock;
+					chunk->dirty = true;
+				}
+			}
+		}
+
+		for (auto i : toRemove)
+		{
+			ghostBlocks.erase(i);
+		}
+	}
+
+
+	//x /= CHUNK_SIZE;
+	//z /= CHUNK_SIZE;
+
+	x = divideChunk(x);
+	z = divideChunk(z);
 
 	data.clear();
 
@@ -151,11 +182,8 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 	for (int x = 0; x < squareSize; x++)
 		for (int z = 0; z < squareSize; z++)
 		{
-
 			if (loadedChunks[x * squareSize + z] == nullptr)
 			{
-				//chunk->create(x + minPos.x, z + minPos.y);
-				//newChunkVector[x * squareSize + z] = chunk;
 				Task t;
 
 				t.type = Task::generateChunk;
@@ -163,7 +191,6 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 				
 				chunkTasks.push_back(t);
 			}
-			
 		}
 	
 	if (!chunkTasks.empty())
@@ -220,7 +247,6 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 
 
 
-
 #pragma region place block
 	auto recievedBLocks = getRecievedBlocks();
 	for (auto &message : recievedBLocks)
@@ -234,19 +260,30 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 			)
 		{
 			//process block placement
-	
-			auto rez = getBlockSafe(message.blockPos.x, message.blockPos.y, message.blockPos.z);
-	
+
+			Chunk *c = 0;
+			auto rez = getBlockSafeAndChunk(message.blockPos.x, message.blockPos.y, message.blockPos.z, c);
+
 			if (rez)
 			{
 				rez->type = message.blockType;
 			}
-	
-			auto c = getChunkSafe(xPos - minPos.x, zPos - minPos.y);
-	
+
+			//auto c = getChunkSafe(xPos - minPos.x, zPos - minPos.y);
+
 			if (c)
 			{
 				c->dirty = true;
+			}
+			//std::cout << "recieved\n";
+
+			{
+				auto it = ghostBlocks.find(message.blockPos);
+				if (it != ghostBlocks.end())
+				{
+					ghostBlocks.erase(it);
+					//std::cout << "yes\n";
+				}
 			}
 	
 		}
@@ -328,14 +365,23 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 
 Block* ChunkSystem::getBlockSafe(int x, int y, int z)
 {
+	Chunk *c = 0;
+	return getBlockSafeAndChunk(x, y, z, c);
+}
+
+Block *ChunkSystem::getBlockSafeAndChunk(int x, int y, int z, Chunk *&chunk)
+{
+	chunk = nullptr;
 	if (y < 0 || y >= CHUNK_HEIGHT) { return nullptr; }
 
 	int cornerX = cornerPos.x;
 	int cornerZ = cornerPos.y;
-	
+
 	auto c = getChunkSafe(divideChunk(x) - cornerX, divideChunk(z) - cornerZ);
 
 	if (!c) { return nullptr; }
+
+	chunk = c;
 
 	auto b = c->safeGet(modBlockToChunk(x), y, modBlockToChunk(z));
 
@@ -353,7 +399,7 @@ Block *ChunkSystem::rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, 
 
 	for (float walkedDist = 0.f; walkedDist < maxDist; walkedDist += deltaMagitude)
 	{
-		glm::vec3 intPos = pos;
+		glm::ivec3 intPos = pos;
 		outPos = intPos;
 		auto b = getBlockSafe(intPos.x, intPos.y, intPos.z);
 		
@@ -366,7 +412,7 @@ Block *ChunkSystem::rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, 
 			}
 			else
 			{
-				prevBlockForPlace = glm::ivec3{intPos.x, intPos.y, intPos.z};
+				prevBlockForPlace = intPos;
 			}
 		}
 
@@ -377,13 +423,32 @@ Block *ChunkSystem::rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, 
 	return nullptr;
 }
 
+//todo short for type
 void ChunkSystem::placeBlock(glm::ivec3 pos, int type)
 {
-	Task task;
-	task.type = Task::placeBlock;
-	task.pos = pos;
-	task.blockType = type;
-	submitTaskClient(task);
+	//todo check legality locally
+	Chunk *chunk = 0;
+	auto b = getBlockSafeAndChunk(pos.x, pos.y, pos.z, chunk);
+	
+	if (b != nullptr)
+	{
+		Task task;
+		task.type = Task::placeBlock;
+		task.pos = pos;
+		task.blockType = type;
+		submitTaskClient(task);
+	
+		GhostBlock ghostBlock;
+		ghostBlock.newBlock = type;
+		ghostBlock.prevBlock = b->type;
+		ghostBlock.timer = 0.9; //5 secconds
+
+		ghostBlocks[pos] = ghostBlock;
+
+		b->type = type;
+		chunk->dirty = true;
+	}
+	
 }
 
 int modBlockToChunk(int x)
@@ -404,7 +469,7 @@ int divideChunk(int x)
 {
 	if (x < 0)
 	{
-		return (x / CHUNK_SIZE) - 1;
+		return ((x+1) / CHUNK_SIZE) - 1;
 	}
 	else
 	{

@@ -14,6 +14,7 @@
 #include "server.h"
 #include "createConnection.h"
 #include <enet/enet.h>
+#include "Ui.h"
 
 #define GPU_ENGINE 0
 extern "C"
@@ -28,6 +29,8 @@ GyzmosRenderer gyzmosRenderer;
 
 gl2d::Font font;
 gl2d::Texture texture;
+gl2d::Texture uiTexture;
+gl2d::TextureAtlas uiAtlas{6, 1};
 
 struct GameData
 {
@@ -50,6 +53,8 @@ bool initGame()
 	renderer2d.create();
 	font.createFromFile(RESOURCES_PATH "roboto_black.ttf");
 	texture.loadFromFile(RESOURCES_PATH "blocks.png");
+	uiTexture.loadFromFile(RESOURCES_PATH "ui0.png");
+
 	renderer.create();
 	gyzmosRenderer.create();
 
@@ -225,19 +230,27 @@ bool gameLogic(float deltaTime)
 	
 	glm::ivec3 rayCastPos = {};
 	std::optional<glm::ivec3> blockToPlace = std::nullopt;
-	if (chunkSystem.rayCast(gameData.c.position, gameData.c.viewDirection, rayCastPos, 5, blockToPlace))
+
+	glm::dvec3 cameraRayPos = gameData.c.position;
+	cameraRayPos.y += 0.5;
+	cameraRayPos.x += 0.5;
+	cameraRayPos.z += 0.5;
+	//if (gameData.c.position.x >= 0){cameraRayPos.x += 0.5;}else{cameraRayPos.x -= 0.5;}
+	//if (gameData.c.position.z >= 0){cameraRayPos.z += 0.5;}else{cameraRayPos.z -= 0.5;}
+
+	if (chunkSystem.rayCast(cameraRayPos, gameData.c.viewDirection, rayCastPos, 5, blockToPlace))
 	{
 		gyzmosRenderer.drawCube(rayCastPos);
 
 		
 	}
 
-	if (platform::isLMouseReleased())
+	if (platform::isRMouseReleased())
 	{
 		if (blockToPlace)
 			chunkSystem.placeBlock(*blockToPlace, BlockTypes::stone);
 	}
-	else if (platform::isRMouseReleased())
+	else if (platform::isLMouseReleased())
 	{
 		chunkSystem.placeBlock(rayCastPos, BlockTypes::air);
 	}
@@ -254,7 +267,21 @@ bool gameLogic(float deltaTime)
 	ImGui::End();
 #pragma endregion
 
+#pragma region ui
+	{
+		Ui::Frame f({0,0, w, h});
+
+		renderer2d.renderRectangle(
+			Ui::Box().xCenter().yCenter().xDimensionPixels(30).yAspectRatio(1.f), {}, 0,
+			uiTexture, uiAtlas.get(2, 0)
+		);
+
+	}
+#pragma endregion
+
+
 #pragma region set finishing stuff
+	gl2d::enableNecessaryGLFeatures();
 	renderer2d.flush();
 
 	return true;

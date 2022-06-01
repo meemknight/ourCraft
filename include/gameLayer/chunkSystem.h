@@ -7,6 +7,13 @@
 #include <glm/vec2.hpp>
 #include <optional>
 
+struct GhostBlock
+{
+	float timer = 0;
+	uint16_t prevBlock=0;
+	uint16_t newBlock=0;
+};
+
 struct ChunkSystem
 {
 
@@ -22,7 +29,8 @@ struct ChunkSystem
 	int lastX = 0, lastZ = 0, created = 0;
 	glm::ivec2 cornerPos = {};
 
-	Block* getBlockSafe(int x, int y, int z);
+	Block *getBlockSafe(int x, int y, int z);
+	Block* getBlockSafeAndChunk(int x, int y, int z, Chunk* &chunk);
 
 	Block *rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, float maxDist
 		, std::optional<glm::ivec3> &prevBlockForPlace);
@@ -30,6 +38,7 @@ struct ChunkSystem
 	void placeBlock(glm::ivec3 pos, int type);
 
 	std::unordered_map<glm::ivec2, float> recentlyRequestedChunks;
+	std::unordered_map<glm::ivec3, GhostBlock> ghostBlocks;
 };
 
 int modBlockToChunk(int x);

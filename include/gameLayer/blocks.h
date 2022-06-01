@@ -1,6 +1,7 @@
 #pragma once
 #include <memory.h>
 #include <vector>
+#include <stdint.h>
 
 enum BlockTypes
 {
@@ -31,7 +32,7 @@ enum BlockTypes
 
 struct Block
 {
-	short type;
+	uint16_t type;
 	char lightLevel; //first 4 bytes represent the sun level and bottom 4 bytes the other lights level
 	char notUsed;
 

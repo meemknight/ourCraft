@@ -166,14 +166,15 @@ void serverFunction()
 			else
 			if (i.t.type == Task::placeBlock)
 			{
-
-				auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
+				//std::cout << "server recieved place block\n";
+				//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
+				auto chunk = sd.chunkCache.getOrCreateChunk(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z));
 				int convertedX = modBlockToChunk(i.t.pos.x);
 				int convertedZ = modBlockToChunk(i.t.pos.z);
 				
 				//todo check if place is legal
 				auto b = chunk->safeGet(convertedX, i.t.pos.y, convertedZ);
-				if (b && b->type)
+				if (b)
 				{
 					b->type = i.t.type;
 					//todo mark this chunk dirty if needed for saving
@@ -195,6 +196,11 @@ void serverFunction()
 			}
 
 			sd.waitingTasks.erase(sd.waitingTasks.begin());
+
+			if (i.t.type == Task::generateChunk)
+			{
+				break;
+			}
 		}
 
 
