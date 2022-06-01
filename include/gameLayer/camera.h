@@ -33,7 +33,7 @@ struct Camera
 
 	void moveFPS(glm::vec3 direction);
 	void rotateFPS(glm::ivec2 mousePos, float speed, bool shouldMove);
-
+	glm::ivec2 lastMousePos = {};
 
 	bool operator==(const Camera& other)
 	{

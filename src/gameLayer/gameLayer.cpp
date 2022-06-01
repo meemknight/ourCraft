@@ -44,6 +44,7 @@ int facesCount = 0;
 float timeCounter = 0;
 int frameCounter = 0;
 int currentFps = 0;
+bool escapePressed = 0;
 
 bool initGame()
 {
@@ -137,6 +138,14 @@ bool gameLogic(float deltaTime)
 
 	static float moveSpeed = 10.f;
 
+	if (platform::isKeyReleased(platform::Button::Escape))
+	{
+		escapePressed = !escapePressed;
+		std::cout << "esc\n";
+	}
+
+	platform::showMouse(escapePressed);
+
 	{
 		float speed = moveSpeed * deltaTime;
 		glm::vec3 moveDir = {};
@@ -189,7 +198,15 @@ bool gameLogic(float deltaTime)
 			platform::setFullScreen(!platform::isFullScreen());
 		}
 
-		gameData.c.rotateFPS(platform::getRelMousePosition(), 0.6f * deltaTime, true);
+		bool rotate = !escapePressed;
+		if (platform::isRMouseHeld()){rotate = true; }
+		gameData.c.rotateFPS(platform::getRelMousePosition(), 0.6f * deltaTime, rotate);
+
+		if (!escapePressed)
+		{
+			platform::setRelMousePosition(w / 2, h / 2);
+			gameData.c.lastMousePos = {w / 2, h / 2};
+		}
 
 	}
 #pragma endregion
@@ -260,10 +277,12 @@ bool gameLogic(float deltaTime)
 
 #pragma region imgui
 
-	ImGui::Begin("camera controll");
-	ImGui::DragScalarN("camera pos", ImGuiDataType_Double, &gameData.c.position[0], 3, 0.01);
-	ImGui::DragFloat("camera speed", &moveSpeed);
-	ImGui::Text("fps: %d", currentFps);
+	if (escapePressed && ImGui::Begin("camera controll", &escapePressed))
+	{
+		ImGui::DragScalarN("camera pos", ImGuiDataType_Double, &gameData.c.position[0], 3, 0.01);
+		ImGui::DragFloat("camera speed", &moveSpeed);
+		ImGui::Text("fps: %d", currentFps);
+	}
 	ImGui::End();
 #pragma endregion
 

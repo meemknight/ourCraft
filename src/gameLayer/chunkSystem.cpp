@@ -78,7 +78,8 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 				if (b)
 				{
 					b->type = i->second.prevBlock;
-					chunk->dirty = true;
+					setChunkAndNeighboursFlagDirtyFromBlockPos(i->first.x, i->first.z);
+
 				}
 			}
 		}
@@ -270,6 +271,10 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 						setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
 					}
 				}
+				else
+				{
+					setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
+				}
 
 				rez->type = message.blockType;
 
@@ -278,9 +283,7 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 			if (it != ghostBlocks.end())
 			{
 				ghostBlocks.erase(it);
-				//std::cout << "yes\n";
 			}
-			
 	
 		}
 		else
@@ -462,7 +465,7 @@ void ChunkSystem::placeBlock(glm::ivec3 pos, int type)
 		GhostBlock ghostBlock;
 		ghostBlock.newBlock = type;
 		ghostBlock.prevBlock = b->type;
-		ghostBlock.timer = 0.9; //5 secconds
+		ghostBlock.timer = 2; //secconds
 
 		ghostBlocks[pos] = ghostBlock;
 

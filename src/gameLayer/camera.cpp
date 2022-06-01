@@ -53,7 +53,6 @@ void Camera::moveFPS(glm::vec3 direction)
 
 void Camera::rotateFPS(glm::ivec2 mousePos, float speed, bool shouldMove)
 {
-	static glm::ivec2 lastMousePos = {};
 	if (shouldMove)
 	{
 		glm::ivec2 currentMousePos = mousePos;
