@@ -176,7 +176,7 @@ void serverFunction()
 				auto b = chunk->safeGet(convertedX, i.t.pos.y, convertedZ);
 				if (b)
 				{
-					b->type = i.t.type;
+					b->type = i.t.blockType;
 					//todo mark this chunk dirty if needed for saving
 				
 					Packet packet;
@@ -189,8 +189,8 @@ void serverFunction()
 
 					auto client = getClient(i.cid);
 
-					//todo broadcast in the future
-					sendPacket(client.peer, packet, (char *)&packetData, sizeof(Packet_PlaceBlock), true, 0);
+					broadCast(packet, &packetData, sizeof(Packet_PlaceBlock), nullptr, true, 0);
+					//sendPacket(client.peer, packet, (char *)&packetData, sizeof(Packet_PlaceBlock), true, 0);
 				}
 
 			}

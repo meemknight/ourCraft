@@ -15,6 +15,23 @@ std::mutex connectionsMutex;
 std::unordered_map<int32_t, Client> connections;
 int pids = 1;
 
+void broadCastNotLocked(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel)
+{
+	for (auto it = connections.begin(); it != connections.end(); it++)
+	{
+		if (!peerToIgnore || (it->second.peer != peerToIgnore))
+		{
+			sendPacket(it->second.peer, p, (const char *)data, size, true, channel);
+		}
+	}
+}
+
+void broadCast(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel)
+{
+	connectionsMutex.lock();
+	broadCastNotLocked(p, data, size, peerToIgnore, reliable, channel);
+	connectionsMutex.unlock();
+}
 
 Client getClient(int32_t cid)
 {

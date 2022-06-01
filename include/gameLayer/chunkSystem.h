@@ -25,7 +25,7 @@ struct ChunkSystem
 	Chunk *getChunkSafeFromBlockPos(int x, int z);
 	void setChunkAndNeighboursFlagDirtyFromBlockPos(int x, int z);
 
-	void createChunks(int viewDistance, std::vector<int>& data);
+	void createChunks(int viewDistance);
 
 	void update(int x, int z, std::vector<int>& data, float deltaTime);
 	int lastX = 0, lastZ = 0, created = 0;

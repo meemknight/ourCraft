@@ -127,7 +127,7 @@ bool createConnection()
 
 	//see if we got events by server
 	//client, event, ms to wait(0 means that we don't wait)
-	if (enet_host_service(clientData.client, &event, 5000) > 0
+	if (enet_host_service(clientData.client, &event, 3000) > 0
 		&& event.type == ENET_EVENT_TYPE_CONNECT)
 	{
 		std::cout << "client connected\n";

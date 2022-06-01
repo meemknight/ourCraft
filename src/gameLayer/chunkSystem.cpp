@@ -19,27 +19,10 @@ Chunk* ChunkSystem::getChunkSafe(int x, int z)
 	}
 }
 
-void ChunkSystem::createChunks(int viewDistance, std::vector<int> &data)
+void ChunkSystem::createChunks(int viewDistance)
 {
 	squareSize = viewDistance;
-
 	loadedChunks.resize(squareSize * squareSize, nullptr);
-
-	//for (int x = 0; x < squareSize; x++)
-	//	for (int z = 0; z < squareSize; z++)
-	//	{
-	//		Chunk *chunk = new Chunk;
-	//		chunk->create(x, z);
-	//		loadedChunks.push_back(nullptr);
-	//	}
-
-	//for (int x = 0; x < squareSize; x++)
-	//	for (int z = 0; z < squareSize; z++)
-	//	{
-	//		auto chunk = getChunkSafe(x, z);
-	//		chunk->bake();
-	//	}
-
 }
 
 void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
