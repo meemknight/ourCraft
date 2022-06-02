@@ -154,7 +154,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		glUniform3fv(programData.renderer.u_positionFloat, 1, &posFloat[0]);
 		glUniform3iv(programData.renderer.u_positionInt, 1, &posInt[0]);
-		glUniform1i(programData.renderer.u_typesCount, 22);
+		glUniform1i(programData.renderer.u_typesCount, BlocksCount);
 		glUniform1f(programData.renderer.u_time, std::clock() / 400.f);
 
 		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
@@ -182,7 +182,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	if (platform::isRMouseReleased())
 	{
 		if (blockToPlace)
-			gameData.chunkSystem.placeBlock(*blockToPlace, BlockTypes::leaves);
+			gameData.chunkSystem.placeBlock(*blockToPlace, BlockTypes::grass);
 	}
 	else if (platform::isLMouseReleased())
 	{

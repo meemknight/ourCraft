@@ -68,17 +68,34 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 
 						Block* sides[6] = {bfront, bback, btop, bbottom, bleft, bright};
 
-						for (int i = 0; i < 6; i++)
-						{//todo
-							if (sides[i] == nullptr || !(sides[i])->isOpaque())
+						if (b.isGrassMesh())
+						{
+							for (int i = 6; i <= 9; i++)
 							{
-								
-								opaqueGeometry.push_back(mergeShorts(i + (int)b.isAnimated() * 6, b.type));
+								opaqueGeometry.push_back(mergeShorts(i, b.type));
 								opaqueGeometry.push_back(x + this->data.x * CHUNK_SIZE);
 								opaqueGeometry.push_back(y);
 								opaqueGeometry.push_back(z + this->data.z * CHUNK_SIZE);
 							}
+
 						}
+						else
+						{
+							for (int i = 0; i < 6; i++)
+							{//todo
+
+
+								if (sides[i] == nullptr || !(sides[i])->isOpaque())
+								{
+									opaqueGeometry.push_back(mergeShorts(i + (int)b.isAnimated() * 10, b.type));
+									opaqueGeometry.push_back(x + this->data.x * CHUNK_SIZE);
+									opaqueGeometry.push_back(y);
+									opaqueGeometry.push_back(z + this->data.z * CHUNK_SIZE);
+								}
+							}
+						}
+
+						
 
 					}
 				}

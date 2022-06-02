@@ -36,6 +36,8 @@ int atlasData[] = {
 	3, 13, //block shelf
 	5, 8, //birch wood
 	3, 14, //gravel
+	7, 13,//herbs
+
 
 	//back
 	0, 0,
@@ -60,6 +62,7 @@ int atlasData[] = {
 	3, 13, //block shelf
 	5, 8, //birch wood
 	3, 14, //gravel
+	7, 13,//herbs
 
 	//top
 	0, 0,
@@ -84,6 +87,7 @@ int atlasData[] = {
 	4, 15, //block shelf
 	5, 14, //birch wood
 	3, 14, //gravel
+	7, 13,//herbs
 
 	//bottom
 	0, 0,
@@ -108,6 +112,7 @@ int atlasData[] = {
 	4, 15, //block shelf
 	5, 14, //birch wood
 	3, 14, //gravel
+	7, 13,//herbs
 
 	//left
 	0, 0,
@@ -132,6 +137,7 @@ int atlasData[] = {
 	3, 13, //block shelf
 	5, 8, //birch wood
 	3, 14, //gravel
+	7, 13,//herbs
 
 	//right
 	0, 0,
@@ -155,7 +161,9 @@ int atlasData[] = {
 	2, 12, // diamond ore
 	3, 13, //block shelf
 	5, 8, //birch wood
-	3, 14 //gravel
+	3, 14, //gravel
+	7, 13,//herbs
+
 };
 
 float vertexData[] = {
@@ -207,6 +215,34 @@ float vertexData[] = {
 	0.5, -0.5, -0.5,
 	0.5, 0.5, -0.5,
 
+	//grass
+	0.5, 0.5, 0.5,
+	-0.5, 0.5, -0.5,
+	-0.5, -0.5, -0.5,
+	-0.5, -0.5, -0.5,
+	0.5, -0.5, 0.5,
+	0.5, 0.5, 0.5,
+
+	-0.5, -0.5, -0.5,
+	-0.5, 0.5, -0.5,
+	0.5, 0.5, 0.5,
+	0.5, 0.5, 0.5,
+	0.5, -0.5, 0.5,
+	-0.5, -0.5, -0.5,
+
+	-0.5, 0.5, 0.5,
+	0.5, 0.5, -0.5,
+	0.5, -0.5, -0.5,
+	0.5, -0.5, -0.5,
+	-0.5, -0.5, 0.5,
+	-0.5, 0.5, 0.5,
+
+	0.5, -0.5, -0.5,
+	0.5, 0.5, -0.5,
+	-0.5, 0.5, 0.5,
+	-0.5, 0.5, 0.5,
+	-0.5, -0.5, 0.5,
+	0.5, -0.5, -0.5,
 
 	//moving leaves
 	//front
@@ -314,7 +350,6 @@ void Renderer::updateDynamicBlocks()
 {
 	float time = std::clock();
 
-
 	glm::vec3 topFrontLeft = {-0.5f, 0.5f, 0.5f};
 	glm::vec3 topFrontRight = {0.5f, 0.5f, 0.5f};
 	glm::vec3 topBackLeft = {-0.5f, 0.5f, -0.5f};
@@ -352,6 +387,37 @@ void Renderer::updateDynamicBlocks()
 
 	float newData[] =
 	{
+		//grass
+		topFrontRight.x, topFrontRight.y, topFrontRight.z,
+		topBackLeft.x,topBackLeft.y,topBackLeft.z,
+		-0.5, -0.5, -0.5,
+		-0.5, -0.5, -0.5,
+		0.5, -0.5, 0.5,
+		topFrontRight.x, topFrontRight.y, topFrontRight.z,
+
+		-0.5, -0.5, -0.5,
+		topBackLeft.x,topBackLeft.y,topBackLeft.z,
+		topFrontRight.x, topFrontRight.y, topFrontRight.z,
+		topFrontRight.x, topFrontRight.y, topFrontRight.z,
+		0.5, -0.5, 0.5,
+		-0.5, -0.5, -0.5,
+
+		topFrontLeft.x,topFrontLeft.y,topFrontLeft.z,
+		topBackRight.x,topBackRight.y,topBackRight.z,
+		0.5, -0.5, -0.5,
+		0.5, -0.5, -0.5,
+		-0.5, -0.5, 0.5,
+		topFrontLeft.x,topFrontLeft.y,topFrontLeft.z,
+
+
+		0.5, -0.5, -0.5,
+		topBackRight.x,topBackRight.y,topBackRight.z,
+		topFrontLeft.x,topFrontLeft.y,topFrontLeft.z,
+		topFrontLeft.x,topFrontLeft.y,topFrontLeft.z,
+		-0.5, -0.5, 0.5,
+		0.5, -0.5, -0.5,
+
+		//leaves
 		//front
 		topFrontRight.x, topFrontRight.y, topFrontRight.z,
 		topFrontLeft.x, topFrontLeft.y, topFrontLeft.z,
@@ -399,9 +465,10 @@ void Renderer::updateDynamicBlocks()
 		bottomFrontRight.x, bottomFrontRight.y, bottomFrontRight.z,
 		bottomBackRight.x, bottomBackRight.y, bottomBackRight.z,
 		topBackRight.x, topBackRight.y, topBackRight.z,
+
 	};
 
-	glNamedBufferSubData(vertexDataBuffer, sizeof(newData), sizeof(newData), newData);
+	glNamedBufferSubData(vertexDataBuffer, sizeof(vertexData) - sizeof(newData), sizeof(newData), newData);
 
 
 }

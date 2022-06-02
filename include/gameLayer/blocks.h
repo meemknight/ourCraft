@@ -6,7 +6,7 @@
 enum BlockTypes
 {
 	air = 0,
-	grass,
+	grassBlock,
 	dirt,
 	stone,
 	ice,
@@ -27,6 +27,7 @@ enum BlockTypes
 	bookShelf,
 	birch_wood,
 	gravel,
+	grass,
 	BlocksCount
 };
 
@@ -41,13 +42,19 @@ struct Block
 	{
 		return
 			type != BlockTypes::air
-			&& type != BlockTypes::leaves;
+			&& type != BlockTypes::leaves
+			&& !(isGrassMesh());
 	}
 
 	bool isAnimated()
 	{
 		return
 			type == BlockTypes::leaves;
+	}
+
+	bool isGrassMesh()
+	{
+		return type == BlockTypes::grass;
 	}
 
 };

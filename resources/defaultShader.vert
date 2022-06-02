@@ -106,7 +106,7 @@ void main()
 	v_uv.x = vertexUV[(in_faceOrientation%6) * 2 * 6 + gl_VertexID * 2 + 0];
 	v_uv.y = vertexUV[(in_faceOrientation%6) * 2 * 6 + gl_VertexID * 2 + 1];
 
-	if(in_faceOrientation >= 6)
+	if(in_faceOrientation >= 10)
 	{
 
 		if(in_facePosition.y % 2 == 0)
@@ -144,7 +144,17 @@ void main()
 
 	gl_Position = pos;
 	
-	v_color = vertexColor[in_faceOrientation%6];
+	if(in_faceOrientation<6)
+	{
+		v_color = vertexColor[in_faceOrientation];
+	}else if(in_faceOrientation < 10)
+	{
+		v_color = 0.9; //grass
+	}else
+	{
+		v_color = vertexColor[in_faceOrientation-10];	
+	}
+
 
 	ivec2 uvInAtlas;
 	uvInAtlas.x = atlasPositions[(in_faceOrientation%6) * 2 * u_typesCount + in_faceType * 2 + 0];

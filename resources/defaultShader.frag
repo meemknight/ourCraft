@@ -10,5 +10,6 @@ in float v_color;
 void main()
 {
 	vec4 textureColor = texture(u_texture, v_uv);
+	if(textureColor.a < 0.1){discard;}
 	out_color = vec4(textureColor.rgb*v_color,1.0);
 }

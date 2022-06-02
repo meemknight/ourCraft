@@ -52,7 +52,7 @@ void generateChunk(int seed, ChunkData& c)
 				{
 					if (!c.unsafeGet(x, y, z).air())
 					{
-						c.unsafeGet(x, y, z).type = BlockTypes::grass;
+						c.unsafeGet(x, y, z).type = BlockTypes::grassBlock;
 						counter = 1;
 					}
 				}
