@@ -72,6 +72,87 @@ float vertexUV[] = float[](
 		0,0,
 		0,0,
 		1,0,
+		1,1,
+
+
+		//grass
+		//front
+		1,1,
+		0,1,
+		0,0,
+		0,0,
+		1,0,
+		1,1,
+
+		0,0,
+		0,1,
+		1,1,
+		1,1,
+		1,0,
+		0,0,
+
+		1,1,
+		0,1,
+		0,0,
+		0,0,
+		1,0,
+		1,1,
+
+		1,0,
+		0,0,
+		0,1,
+		0,1,
+		1,1,
+		1,0,
+
+
+		//leaves////////////////////////
+		//front
+		1,1,
+		0,1,
+		0,0,
+		0,0,
+		1,0,
+		1,1,
+
+		//back
+		0,0,
+		0,1,
+		1,1,
+		1,1,
+		1,0,
+		0,0,
+
+		//bottom
+		1,1,
+		0,1,
+		0,0,
+		0,0,
+		1,0,
+		1,1,
+
+		//top
+		1,1,
+		0,1,
+		0,0,
+		0,0,
+		1,0,
+		1,1,
+
+		//left
+		1,0,
+		1,1,
+		0,1,
+		0,1,
+		0,0,
+		1,0,
+
+		//right
+		1,1,
+		0,1,
+		0,0,
+		0,0,
+		1,0,
 		1,1
 );
 
@@ -103,8 +184,8 @@ void main()
 	vertexShape.y = vertexData[in_faceOrientation * 3 * 6 + gl_VertexID * 3 + 1];
 	vertexShape.z = vertexData[in_faceOrientation * 3 * 6 + gl_VertexID * 3 + 2];
 
-	v_uv.x = vertexUV[(in_faceOrientation%6) * 2 * 6 + gl_VertexID * 2 + 0];
-	v_uv.y = vertexUV[(in_faceOrientation%6) * 2 * 6 + gl_VertexID * 2 + 1];
+	v_uv.x = vertexUV[(in_faceOrientation) * 2 * 6 + gl_VertexID * 2 + 0];
+	v_uv.y = vertexUV[(in_faceOrientation) * 2 * 6 + gl_VertexID * 2 + 1];
 
 	if(in_faceOrientation >= 10)
 	{

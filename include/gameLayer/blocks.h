@@ -28,6 +28,7 @@ enum BlockTypes
 	birch_wood,
 	gravel,
 	grass,
+	rose,
 	BlocksCount
 };
 
@@ -54,7 +55,9 @@ struct Block
 
 	bool isGrassMesh()
 	{
-		return type == BlockTypes::grass;
+		return type == BlockTypes::grass
+			|| type == BlockTypes::rose
+			;
 	}
 
 };

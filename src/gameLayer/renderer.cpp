@@ -37,7 +37,7 @@ int atlasData[] = {
 	5, 8, //birch wood
 	3, 14, //gravel
 	7, 13,//herbs
-
+	12, 15,//rose
 
 	//back
 	0, 0,
@@ -63,6 +63,7 @@ int atlasData[] = {
 	5, 8, //birch wood
 	3, 14, //gravel
 	7, 13,//herbs
+	12, 15,//rose
 
 	//top
 	0, 0,
@@ -88,6 +89,7 @@ int atlasData[] = {
 	5, 14, //birch wood
 	3, 14, //gravel
 	7, 13,//herbs
+	12, 15,//rose
 
 	//bottom
 	0, 0,
@@ -113,6 +115,7 @@ int atlasData[] = {
 	5, 14, //birch wood
 	3, 14, //gravel
 	7, 13,//herbs
+	12, 15,//rose
 
 	//left
 	0, 0,
@@ -138,6 +141,7 @@ int atlasData[] = {
 	5, 8, //birch wood
 	3, 14, //gravel
 	7, 13,//herbs
+	12, 15,//rose
 
 	//right
 	0, 0,
@@ -163,6 +167,8 @@ int atlasData[] = {
 	5, 8, //birch wood
 	3, 14, //gravel
 	7, 13,//herbs
+	12, 15,//rose
+
 
 };
 
@@ -237,12 +243,13 @@ float vertexData[] = {
 	-0.5, -0.5, 0.5,
 	-0.5, 0.5, 0.5,
 
-	0.5, -0.5, -0.5,
-	0.5, 0.5, -0.5,
-	-0.5, 0.5, 0.5,
-	-0.5, 0.5, 0.5,
 	-0.5, -0.5, 0.5,
 	0.5, -0.5, -0.5,
+	0.5, 0.5, -0.5,
+	0.5, 0.5, -0.5,
+	-0.5, 0.5, 0.5,
+	-0.5, -0.5, 0.5,
+	
 
 	//moving leaves
 	//front
@@ -371,7 +378,7 @@ void Renderer::updateDynamicBlocks()
 	
 	glm::vec2 offsetVector = {1, 0};
 	offsetVector = {c * offsetVector.x - s * offsetVector.y, s * offsetVector.x + c * offsetVector.y};
-	offsetVector = glm::normalize(offsetVector) * 0.06f * std::abs(cos(prelucratedTime * 2.f));
+	offsetVector = glm::normalize(offsetVector) * 0.1f * std::abs(cos(prelucratedTime * 2.f));
 	
 
 	for (int i = 0; i < 4; i++)
@@ -409,13 +416,21 @@ void Renderer::updateDynamicBlocks()
 		-0.5, -0.5, 0.5,
 		topFrontLeft.x,topFrontLeft.y,topFrontLeft.z,
 
-
-		0.5, -0.5, -0.5,
-		topBackRight.x,topBackRight.y,topBackRight.z,
-		topFrontLeft.x,topFrontLeft.y,topFrontLeft.z,
-		topFrontLeft.x,topFrontLeft.y,topFrontLeft.z,
+		
 		-0.5, -0.5, 0.5,
 		0.5, -0.5, -0.5,
+		topBackRight.x,topBackRight.y,topBackRight.z,
+		topBackRight.x,topBackRight.y,topBackRight.z,
+		topFrontLeft.x,topFrontLeft.y,topFrontLeft.z,
+		-0.5, -0.5, 0.5,
+
+		//-0.5, -0.5, 0.5,
+		//0.5, -0.5, -0.5,
+		//0.5, 0.5, -0.5,
+		//0.5, 0.5, -0.5,
+		//-0.5, 0.5, 0.5,
+		//-0.5, -0.5, 0.5,
+
 
 		//leaves
 		//front
