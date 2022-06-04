@@ -22,139 +22,31 @@ float vertexColor[] = float[](
 	//left
 	0.8,
 	//right
+	0.9,
+
+	//grass
+	0.9,
+	0.9,
+	0.9,
+	0.9,
+
+	// leaves
+	//front
+	0.9,
+	//back
+	0.8,
+	//top
+	1.0,
+	//bottom
+	0.7,
+	//left
+	0.8,
+	//right
 	0.9
+
+
 );
 
-float vertexUV[] = float[](
-		//front
-		1,1,
-		0,1,
-		0,0,
-		0,0,
-		1,0,
-		1,1,
-
-		//back
-		0,0,
-		0,1,
-		1,1,
-		1,1,
-		1,0,
-		0,0,
-
-		//bottom
-		1,1,
-		0,1,
-		0,0,
-		0,0,
-		1,0,
-		1,1,
-
-		//top
-		1,1,
-		0,1,
-		0,0,
-		0,0,
-		1,0,
-		1,1,
-
-		//left
-		1,0,
-		1,1,
-		0,1,
-		0,1,
-		0,0,
-		1,0,
-
-		//right
-		1,1,
-		0,1,
-		0,0,
-		0,0,
-		1,0,
-		1,1,
-
-
-		//grass
-		//front
-		1,1,
-		0,1,
-		0,0,
-		0,0,
-		1,0,
-		1,1,
-
-		0,0,
-		0,1,
-		1,1,
-		1,1,
-		1,0,
-		0,0,
-
-		1,1,
-		0,1,
-		0,0,
-		0,0,
-		1,0,
-		1,1,
-
-		1,0,
-		0,0,
-		0,1,
-		0,1,
-		1,1,
-		1,0,
-
-
-		//leaves////////////////////////
-		//front
-		1,1,
-		0,1,
-		0,0,
-		0,0,
-		1,0,
-		1,1,
-
-		//back
-		0,0,
-		0,1,
-		1,1,
-		1,1,
-		1,0,
-		0,0,
-
-		//bottom
-		1,1,
-		0,1,
-		0,0,
-		0,0,
-		1,0,
-		1,1,
-
-		//top
-		1,1,
-		0,1,
-		0,0,
-		0,0,
-		1,0,
-		1,1,
-
-		//left
-		1,0,
-		1,1,
-		0,1,
-		0,1,
-		0,0,
-		1,0,
-
-		//right
-		1,1,
-		0,1,
-		0,0,
-		0,0,
-		1,0,
-		1,1
-);
 
 
 readonly restrict layout(std430) buffer u_atlasPositions
@@ -166,6 +58,11 @@ uniform int u_typesCount;
 readonly restrict layout(std430) buffer u_vertexData
 {
 	float vertexData[];
+};
+
+readonly restrict layout(std430) buffer u_vertexUV
+{
+	float vertexUV[];
 };
 
 
@@ -225,21 +122,12 @@ void main()
 
 	gl_Position = pos;
 	
-	if(in_faceOrientation<6)
-	{
-		v_color = vertexColor[in_faceOrientation];
-	}else if(in_faceOrientation < 10)
-	{
-		v_color = 0.9; //grass
-	}else
-	{
-		v_color = vertexColor[in_faceOrientation-10];	
-	}
+	v_color = vertexColor[in_faceOrientation];
 
 
 	ivec2 uvInAtlas;
-	uvInAtlas.x = atlasPositions[(in_faceOrientation%6) * 2 * u_typesCount + in_faceType * 2 + 0];
-	uvInAtlas.y = atlasPositions[(in_faceOrientation%6) * 2 * u_typesCount + in_faceType * 2 + 1];
+	uvInAtlas.x = atlasPositions[(in_faceOrientation) * 2 * u_typesCount + in_faceType * 2 + 0];
+	uvInAtlas.y = atlasPositions[(in_faceOrientation) * 2 * u_typesCount + in_faceType * 2 + 1];
 
 	v_uv += uvInAtlas;
 	v_uv *= 1.f/16.f;

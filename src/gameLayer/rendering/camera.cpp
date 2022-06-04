@@ -1,4 +1,4 @@
-#include "camera.h"
+#include "rendering/camera.h"
 
 
 glm::mat4x4 Camera::getProjectionMatrix()
@@ -7,6 +7,11 @@ glm::mat4x4 Camera::getProjectionMatrix()
 		this->farPlane);
 
 	return mat;
+}
+
+glm::mat4x4 Camera::getViewMatrix()
+{
+	return  glm::lookAt(glm::vec3{0,0,0}, viewDirection, up);
 }
 
 //todo better rotate function

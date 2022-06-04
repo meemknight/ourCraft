@@ -1,4 +1,4 @@
-#include "server.h"
+#include "multyPlayer/server.h"
 #include <glm/vec3.hpp>
 #include "chunkSystem.h"
 #include "threadStuff.h"
@@ -11,8 +11,8 @@
 #include <iostream>
 #include <atomic>
 #include <enet/enet.h>
-#include "packet.h"
-#include "enetServerFunction.h"
+#include "multyPlayer/packet.h"
+#include "multyPlayer/enetServerFunction.h"
 
 struct ListNode;
 

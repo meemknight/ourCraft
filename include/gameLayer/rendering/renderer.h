@@ -1,7 +1,8 @@
 #pragma once
-#include "shader.h"
+#include "rendering/shader.h"
 #include <vector>
-#include"camera.h"
+#include "rendering/camera.h"
+#include "rendering/skyBoxRenderer.h"
 
 struct Renderer
 {
@@ -14,14 +15,18 @@ struct Renderer
 	GLint u_time = -1;
 	GLuint u_atlasBlockIndex = GL_INVALID_INDEX;
 	GLuint u_vertexData = GL_INVALID_INDEX;
+	GLuint u_vertexUV = GL_INVALID_INDEX;
 
 	void create();
 	void updateDynamicBlocks();
+
+	SkyBoxRenderer skyBoxRenderer;
 
 	GLuint vao = 0;
 	GLuint vertexBuffer = 0;
 	GLuint atlasBuffer = 0;
 	GLuint vertexDataBuffer = 0;
+	GLuint vertexUVBuffer = 0;
 	
 };
 

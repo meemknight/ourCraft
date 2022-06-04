@@ -1,6 +1,6 @@
 #pragma once
 #include <gl2d/gl2d.h>
-#include "renderer.h"
+#include "rendering/renderer.h"
 
 struct ProgramData
 {

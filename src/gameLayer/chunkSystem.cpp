@@ -3,7 +3,7 @@
 #include "threadStuff.h"
 #include <algorithm>
 #include <glm/glm.hpp>
-#include "createConnection.h"
+#include "multyPlayer/createConnection.h"
 #include <iostream>
 
 //todo rename !!!!!!!!!

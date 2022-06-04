@@ -2,6 +2,7 @@
 #include <enet/enet.h>
 #include "threadStuff.h"
 #include "packet.h"
+#include "createConnection.h"
 
 bool startEnetListener(ENetHost *_server);
 void closeEnetListener();

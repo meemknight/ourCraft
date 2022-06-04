@@ -4,17 +4,17 @@
 #include "imgui.h"
 #include <iostream>
 #include <sstream>
-#include "camera.h"
+#include "rendering/camera.h"
 #include "errorReporting.h"
-#include "renderer.h"
+#include "rendering/renderer.h"
 #include "chunkSystem.h"
 #include "threadStuff.h"
 #include <thread>
 #include <ctime>
-#include "server.h"
-#include "createConnection.h"
+#include "multyPlayer/server.h"
+#include "multyPlayer/createConnection.h"
 #include <enet/enet.h>
-#include "Ui.h"
+#include "rendering/Ui.h"
 #include "glui/glui.h"
 #include "gamePlayLogic.h"
 

@@ -1,4 +1,4 @@
-#include "renderer.h"
+#include "rendering/renderer.h"
 #include <ctime>
 
 #define GET_UNIFORM(s, n) n = s.getUniform(#n);
@@ -169,6 +169,265 @@ int atlasData[] = {
 	7, 13,//herbs
 	12, 15,//rose
 
+	///// moving grass
+	0, 0,
+	0, 15, //grass
+	2, 15, // dirt
+	1, 15, //stone
+	3, 11, //ice
+	4, 14,//log
+	4, 15,//wooden_plank
+	0, 14,//cobblestone
+	7, 14,//gold_block
+	7, 15,//bricks
+	2, 14,//sand
+	0, 4,//sand_stone
+	2, 11,// snow_grass
+	5, 12,//leaves
+	0, 13, // gold ore
+	2, 13, // coal ore
+	6, 12, //stone brick
+	1, 13, // iron ore
+	2, 12, // diamond ore
+	4, 15, //block shelf
+	5, 14, //birch wood
+	3, 14, //gravel
+	7, 13,//herbs
+	12, 15,//rose
+
+	0, 0,
+	2, 15, //grass
+	2, 15, // dirt
+	1, 15, //stone
+	3, 11, //ice
+	5, 14,//log
+	4, 15,//wooden_plank
+	0, 14,//cobblestone
+	7, 14,//gold_block
+	7, 15,//bricks
+	2, 14,//sand
+	0, 2,//sand_stone
+	2, 15, // snow_grass
+	5, 12,//leaves
+	0, 13, // gold ore
+	2, 13, // coal ore
+	6, 12, //stone brick
+	1, 13, // iron ore
+	2, 12, // diamond ore
+	4, 15, //block shelf
+	5, 14, //birch wood
+	3, 14, //gravel
+	7, 13,//herbs
+	12, 15,//rose
+
+	0, 0,
+	3, 15, //grass
+	2, 15, // dirt
+	1, 15, //stone
+	3, 11, //ice
+	4, 14,//log
+	4, 15,//wooden_plank
+	0, 14,//cobblestone
+	7, 14,//gold_block
+	7, 15,//bricks
+	2, 14,//sand
+	0, 3,//sand_stone
+	4, 11,//snow_dirt
+	5, 12,//leaves
+	0, 13, // gold ore
+	2, 13, // coal ore
+	6, 12, //stone brick
+	1, 13, // iron ore
+	2, 12, // diamond ore
+	3, 13, //block shelf
+	5, 8, //birch wood
+	3, 14, //gravel
+	7, 13,//herbs
+	12, 15,//rose
+
+	0, 0,
+	3, 15, //grass
+	2, 15, // dirt
+	1, 15, //stone
+	3, 11, //ice
+	4, 14,//log
+	4, 15,//wooden_plank
+	0, 14,//cobblestone
+	7, 14,//gold_block
+	7, 15,//bricks
+	2, 14,//sand
+	0, 3,//sand_stone
+	4, 11,//snow_dirt
+	5, 12,//leaves
+	0, 13, // gold ore
+	2, 13, // coal ore
+	6, 12, //stone brick
+	1, 13, // iron ore
+	2, 12, // diamond ore
+	3, 13, //block shelf
+	5, 8, //birch wood
+	3, 14, //gravel
+	7, 13,//herbs
+	12, 15,//rose
+
+
+	///// moving blocks
+	//front
+	0, 0,
+	3, 15, //grass
+	2, 15, // dirt
+	1, 15, //stone
+	3, 11, //ice
+	4, 14,//log
+	4, 15,//wooden_plank
+	0, 14,//cobblestone
+	7, 14,//gold_block
+	7, 15,//bricks
+	2, 14,//sand
+	0, 3,//sand_stone
+	4, 11,//snow_dirt
+	5, 12,//leaves
+	0, 13, // gold ore
+	2, 13, // coal ore
+	6, 12, //stone brick
+	1, 13, // iron ore
+	2, 12, // diamond ore
+	3, 13, //block shelf
+	5, 8, //birch wood
+	3, 14, //gravel
+	7, 13,//herbs
+	12, 15,//rose
+
+	//back
+	0, 0,
+	3, 15, //grass
+	2, 15, // dirt
+	1, 15, //stone
+	3, 11, //ice
+	4, 14,//log
+	4, 15,//wooden_plank
+	0, 14,//cobblestone
+	7, 14,//gold_block
+	7, 15,//bricks
+	2, 14,//sand
+	0, 3,//sand_stone
+	4, 11,//snow_dirt
+	5, 12,//leaves
+	0, 13, // gold ore
+	2, 13, // coal ore
+	6, 12, //stone brick
+	1, 13, // iron ore
+	2, 12, // diamond ore
+	3, 13, //block shelf
+	5, 8, //birch wood
+	3, 14, //gravel
+	7, 13,//herbs
+	12, 15,//rose
+
+	//top
+	0, 0,
+	0, 15, //grass
+	2, 15, // dirt
+	1, 15, //stone
+	3, 11, //ice
+	4, 14,//log
+	4, 15,//wooden_plank
+	0, 14,//cobblestone
+	7, 14,//gold_block
+	7, 15,//bricks
+	2, 14,//sand
+	0, 4,//sand_stone
+	2, 11,// snow_grass
+	5, 12,//leaves
+
+	0, 13, // gold ore
+	2, 13, // coal ore
+	6, 12, //stone brick
+	1, 13, // iron ore
+	2, 12, // diamond ore
+	4, 15, //block shelf
+	5, 14, //birch wood
+	3, 14, //gravel
+	7, 13,//herbs
+	12, 15,//rose
+
+	//bottom
+	0, 0,
+	2, 15, //grass
+	2, 15, // dirt
+	1, 15, //stone
+	3, 11, //ice
+	5, 14,//log
+	4, 15,//wooden_plank
+	0, 14,//cobblestone
+	7, 14,//gold_block
+	7, 15,//bricks
+	2, 14,//sand
+	0, 2,//sand_stone
+	2, 15, // snow_grass
+	5, 12,//leaves
+	0, 13, // gold ore
+	2, 13, // coal ore
+	6, 12, //stone brick
+	1, 13, // iron ore
+	2, 12, // diamond ore
+	4, 15, //block shelf
+	5, 14, //birch wood
+	3, 14, //gravel
+	7, 13,//herbs
+	12, 15,//rose
+
+	//left
+	0, 0,
+	3, 15, //grass
+	2, 15, // dirt
+	1, 15, //stone
+	3, 11, //ice
+	4, 14,//log
+	4, 15,//wooden_plank
+	0, 14,//cobblestone
+	7, 14,//gold_block
+	7, 15,//bricks
+	2, 14,//sand
+	0, 3,//sand_stone
+	4, 11,//snow_dirt
+	5, 12,//leaves
+	0, 13, // gold ore
+	2, 13, // coal ore
+	6, 12, //stone brick
+	1, 13, // iron ore
+	2, 12, // diamond ore
+	3, 13, //block shelf
+	5, 8, //birch wood
+	3, 14, //gravel
+	7, 13,//herbs
+	12, 15,//rose
+
+	//right
+	0, 0,
+	3, 15, //grass
+	2, 15, // dirt
+	1, 15, //stone
+	3, 11, //ice
+	4, 14,//log
+	4, 15,//wooden_plank
+	0, 14,//cobblestone
+	7, 14,//gold_block
+	7, 15,//bricks
+	2, 14,//sand
+	0, 3,//sand_stone
+	4, 11,//snow_dirt
+	5, 12,//leaves
+	0, 13, // gold ore
+	2, 13, // coal ore
+	6, 12, //stone brick
+	1, 13, // iron ore
+	2, 12, // diamond ore
+	3, 13, //block shelf
+	5, 8, //birch wood
+	3, 14, //gravel
+	7, 13,//herbs
+	12, 15,//rose
 
 };
 
@@ -301,8 +560,142 @@ float vertexData[] = {
 	0.5, 0.5, -0.5,
 };
 
+float vertexUV[] = {
+	//front
+	1, 1,
+	0, 1,
+	0, 0,
+	0, 0,
+	1, 0,
+	1, 1,
+
+	//back
+	0, 0,
+	0, 1,
+	1, 1,
+	1, 1,
+	1, 0,
+	0, 0,
+
+	//bottom
+	1, 1,
+	0, 1,
+	0, 0,
+	0, 0,
+	1, 0,
+	1, 1,
+
+	//top
+	1, 1,
+	0, 1,
+	0, 0,
+	0, 0,
+	1, 0,
+	1, 1,
+
+	//left
+	1, 0,
+	1, 1,
+	0, 1,
+	0, 1,
+	0, 0,
+	1, 0,
+
+	//right
+	1, 1,
+	0, 1,
+	0, 0,
+	0, 0,
+	1, 0,
+	1, 1,
+
+
+	//grass
+	//front
+	1, 1,
+	0, 1,
+	0, 0,
+	0, 0,
+	1, 0,
+	1, 1,
+
+	0, 0,
+	0, 1,
+	1, 1,
+	1, 1,
+	1, 0,
+	0, 0,
+
+	1, 1,
+	0, 1,
+	0, 0,
+	0, 0,
+	1, 0,
+	1, 1,
+
+	1, 0,
+	0, 0,
+	0, 1,
+	0, 1,
+	1, 1,
+	1, 0,
+
+
+	//leaves////////////////////////
+	//front
+	1, 1,
+	0, 1,
+	0, 0,
+	0, 0,
+	1, 0,
+	1, 1,
+
+	//back
+	0, 0,
+	0, 1,
+	1, 1,
+	1, 1,
+	1, 0,
+	0, 0,
+
+	//bottom
+	1, 1,
+	0, 1,
+	0, 0,
+	0, 0,
+	1, 0,
+	1, 1,
+
+	//top
+	1, 1,
+	0, 1,
+	0, 0,
+	0, 0,
+	1, 0,
+	1, 1,
+
+	//left
+	1, 0,
+	1, 1,
+	0, 1,
+	0, 1,
+	0, 0,
+	1, 0,
+
+	//right
+	1, 1,
+	0, 1,
+	0, 0,
+	0, 0,
+	1, 0,
+	1, 1
+};
+
 void Renderer::create()
 {
+
+	skyBoxRenderer.create();
+
 	defaultShader.loadShaderProgramFromFile(RESOURCES_PATH "defaultShader.vert", RESOURCES_PATH "defaultShader.frag");
 	defaultShader.bind();
 
@@ -327,6 +720,13 @@ void Renderer::create()
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexDataBuffer);
 	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(vertexData), vertexData, GL_DYNAMIC_STORAGE_BIT);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vertexDataBuffer);
+
+	u_vertexUV = getStorageBlockIndex(defaultShader.id, "u_vertexUV");
+	glShaderStorageBlockBinding(defaultShader.id, u_vertexUV, 2);
+	glGenBuffers(1, &vertexUVBuffer);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexUVBuffer);
+	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(vertexUV), vertexUV, 0);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, vertexUVBuffer);
 
 
 	glCreateBuffers(1, &vertexBuffer);
@@ -378,7 +778,7 @@ void Renderer::updateDynamicBlocks()
 	
 	glm::vec2 offsetVector = {1, 0};
 	offsetVector = {c * offsetVector.x - s * offsetVector.y, s * offsetVector.x + c * offsetVector.y};
-	offsetVector = glm::normalize(offsetVector) * 0.1f * std::abs(cos(prelucratedTime * 2.f));
+	offsetVector = glm::normalize(offsetVector) * 0.06f * std::abs(cos(prelucratedTime * 2.f));
 	
 
 	for (int i = 0; i < 4; i++)

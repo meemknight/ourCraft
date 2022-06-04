@@ -1,16 +1,16 @@
 #include "gamePlayLogic.h"
-#include "camera.h"
+#include "rendering/camera.h"
 #include "platformInput.h"
 #include "errorReporting.h"
-#include "renderer.h"
+#include "rendering/renderer.h"
 #include "chunkSystem.h"
 #include "threadStuff.h"
 #include <thread>
 #include <ctime>
-#include "server.h"
-#include "createConnection.h"
+#include "multyPlayer/server.h"
+#include "multyPlayer/createConnection.h"
 #include <enet/enet.h>
-#include "Ui.h"
+#include "rendering/Ui.h"
 #include "glui/glui.h"
 #include "gamePlayLogic.h"
 #include <imgui.h>
@@ -128,6 +128,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	glm::vec3 posFloat = {};
 	glm::ivec3 posInt = {};
 
+	programData.renderer.skyBoxRenderer.render(gameData.c);
+
 	{
 		gameData.c.decomposePosition(posFloat, posInt);
 		static std::vector<int> data;
@@ -182,7 +184,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	if (platform::isRMouseReleased())
 	{
 		if (blockToPlace)
-			gameData.chunkSystem.placeBlock(*blockToPlace, BlockTypes::rose);
+			gameData.chunkSystem.placeBlock(*blockToPlace, BlockTypes::leaves);
 	}
 	else if (platform::isLMouseReleased())
 	{

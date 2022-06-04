@@ -1,5 +1,5 @@
 #pragma once
-#include<cstdint>
+#include <cstdint>
 #include <enet/enet.h>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>

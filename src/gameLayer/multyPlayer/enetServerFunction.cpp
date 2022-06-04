@@ -1,10 +1,10 @@
-#include "enetServerFunction.h"
+#include "multyPlayer/enetServerFunction.h"
 #include <atomic>
 #include <thread>
 #include <enet/enet.h>
 #include <iostream>
 #include <vector>
-#include "packet.h"
+#include "multyPlayer/packet.h"
 #include <unordered_map>
 #include "threadStuff.h"
 #include <mutex>

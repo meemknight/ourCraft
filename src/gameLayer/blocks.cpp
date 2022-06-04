@@ -1,5 +1,5 @@
 #include "blocks.h"
-#include "renderer.h"
+#include "rendering/renderer.h"
 #include "worldGenerator.h"
 
 Block* Chunk::safeGet(int x, int y, int z)

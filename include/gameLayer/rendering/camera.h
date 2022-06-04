@@ -28,6 +28,7 @@ struct Camera
 	glm::vec3 viewDirection = {0,0,-1};
 
 	glm::mat4x4 getProjectionMatrix();
+	glm::mat4x4 getViewMatrix();
 
 	void rotateCamera(const glm::vec2 delta);
 

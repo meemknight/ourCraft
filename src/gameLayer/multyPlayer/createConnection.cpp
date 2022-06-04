@@ -1,13 +1,55 @@
-#include "createConnection.h"
+#include "multyPlayer/createConnection.h"
 #include "enet/enet.h"
-#include "packet.h"
+#include "multyPlayer/packet.h"
 #include <iostream>
 
+void submitTaskClient(Task &t)
+{
+	auto data = getConnectionData();
+
+	Packet p;
+	p.cid = data.cid;
+
+	switch (t.type)
+	{
+	case Task::generateChunk:
+	{
+		p.header = headerRequestChunk;
+		Packet_RequestChunk packetData = {};
+		packetData.chunkPosition = {t.pos.x, t.pos.z};
+
+		sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1, 0);
+		break;
+	}
+	case Task::placeBlock:
+	{
+		p.header = headerPlaceBlock;
+		Packet_PlaceBlock packetData = {};
+		packetData.blockPos = t.pos;
+		packetData.blockType = t.blockType;
+
+		sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1, 1);
+		break;
+	}
+	default:
+
+	break;
+	}
+
+
+}
+
+void submitTaskClient(std::vector<Task> &t)
+{
+	for (auto &i : t)
+	{
+		submitTaskClient(i);
+	}
+}
+
+
 //todo struct here
-
 static ConnectionData clientData;
-
-
 std::vector<Chunk *> getRecievedChunks()
 {
 	//auto ret = std::move(recievedChunks);

@@ -4,6 +4,25 @@
 #include <vector>
 #include "packet.h"
 
+
+struct Task
+{
+	enum Type
+	{
+		none = 0,
+		placeBlock,
+		generateChunk,
+	};
+
+	glm::ivec3 pos = {};
+	int type = 0;
+	uint16_t blockType = 0;
+
+};
+
+void submitTaskClient(Task &t);
+void submitTaskClient(std::vector<Task> &t);
+
 struct Chunk;
 
 struct ConnectionData
