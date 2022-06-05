@@ -1,5 +1,12 @@
 #include "rendering/renderer.h"
 #include <ctime>
+#include "blocks.h"
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/mat3x3.hpp>
+#include <glm/gtx/transform.hpp>
 
 #define GET_UNIFORM(s, n) n = s.getUniform(#n);
 
@@ -885,6 +892,36 @@ void Renderer::updateDynamicBlocks()
 
 	glNamedBufferSubData(vertexDataBuffer, sizeof(vertexData) - sizeof(newData), sizeof(newData), newData);
 
+
+}
+
+void Renderer::render(std::vector<int> &data, Camera &c, gl2d::Texture &texture)
+{
+
+	glm::vec3 posFloat = {};
+	glm::ivec3 posInt = {};
+	c.decomposePosition(posFloat, posInt);
+
+	glNamedBufferData(vertexBuffer, sizeof(int) * data.size(), data.data(), GL_STREAM_DRAW);
+	int facesCount = data.size() / 4;
+
+	glBindVertexArray(vao);
+	texture.bind(0);
+
+	defaultShader.bind();
+
+	auto mvp = c.getProjectionMatrix() * glm::lookAt({0,0,0}, c.viewDirection, c.up);
+
+	glUniformMatrix4fv(u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
+
+	glUniform3fv(u_positionFloat, 1, &posFloat[0]);
+	glUniform3iv(u_positionInt, 1, &posInt[0]);
+	glUniform1i(u_typesCount, BlocksCount);
+	glUniform1f(u_time, std::clock() / 400.f);
+
+	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
+
+	glBindVertexArray(0);
 
 }
 

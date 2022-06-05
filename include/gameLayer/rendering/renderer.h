@@ -3,6 +3,7 @@
 #include <vector>
 #include "rendering/camera.h"
 #include "rendering/skyBoxRenderer.h"
+#include <gl2d/gl2d.h>
 
 struct Renderer
 {
@@ -19,6 +20,7 @@ struct Renderer
 
 	void create();
 	void updateDynamicBlocks();
+	void render(std::vector<int> &data, Camera &c, gl2d::Texture &texture);
 
 	SkyBoxRenderer skyBoxRenderer;
 

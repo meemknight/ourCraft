@@ -16,8 +16,8 @@ out vec3 fragColor;
 
 vec3 u_skyColor = vec3(0.255, 0.425, 0.441);
 vec3 u_sunColor = vec3(0.098, 0.091, 0.014);
-float u_g = 0.7;
-vec3 u_lightPos = normalize(vec3(-1, -0.54, -1));
+float u_g = 0.5;
+vec3 u_lightPos = normalize(vec3(-1, 0.54, -1));
 
 void main (void)
 {

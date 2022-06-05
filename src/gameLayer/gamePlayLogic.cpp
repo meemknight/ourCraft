@@ -12,7 +12,6 @@
 #include <enet/enet.h>
 #include "rendering/Ui.h"
 #include "glui/glui.h"
-#include "gamePlayLogic.h"
 #include <imgui.h>
 #include <iostream>
 
@@ -46,7 +45,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 {
 
 	gameData.c.aspectRatio = (float)w / h;
-
 
 #pragma region server stuff
 
@@ -127,41 +125,19 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	glm::vec3 posFloat = {};
 	glm::ivec3 posInt = {};
-
 	programData.renderer.skyBoxRenderer.render(gameData.c);
 
 	{
-		gameData.c.decomposePosition(posFloat, posInt);
 		static std::vector<int> data;
 
+		gameData.c.decomposePosition(posFloat, posInt);
+		
 		programData.renderer.updateDynamicBlocks();
-
+		
 		gameData.chunkSystem.update(posInt.x, posInt.z, data, deltaTime);
-		glNamedBufferData(programData.renderer.vertexBuffer, sizeof(int) * data.size(), data.data(), GL_DYNAMIC_DRAW);
-		int facesCount = data.size() / 4;
 
+		programData.renderer.render(data, gameData.c, programData.texture);
 
-		glBindVertexArray(programData.renderer.vao);
-		programData.texture.bind(0);
-
-		programData.renderer.defaultShader.bind();
-
-		auto mvp = gameData.c.getProjectionMatrix() * glm::lookAt({0,0,0}, gameData.c.viewDirection, gameData.c.up);
-
-		//mvp[3][0] = 0.f;
-		//mvp[3][1] = 0.f;
-		//mvp[3][2] = 0.f;
-
-		glUniformMatrix4fv(programData.renderer.u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
-
-		glUniform3fv(programData.renderer.u_positionFloat, 1, &posFloat[0]);
-		glUniform3iv(programData.renderer.u_positionInt, 1, &posInt[0]);
-		glUniform1i(programData.renderer.u_typesCount, BlocksCount);
-		glUniform1f(programData.renderer.u_time, std::clock() / 400.f);
-
-		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
-
-		glBindVertexArray(0);
 	}
 
 	glm::ivec3 rayCastPos = {};
@@ -178,13 +154,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	{
 		programData.gyzmosRenderer.drawCube(rayCastPos);
 
-
 	}
 
 	if (platform::isRMouseReleased())
 	{
 		if (blockToPlace)
-			gameData.chunkSystem.placeBlock(*blockToPlace, BlockTypes::leaves);
+			gameData.chunkSystem.placeBlock(*blockToPlace, BlockTypes::rose);
 	}
 	else if (platform::isLMouseReleased())
 	{
