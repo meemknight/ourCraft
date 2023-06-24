@@ -10,12 +10,12 @@ uniform ivec3 u_cameraPositionInt;
 uniform vec3 u_cameraPositionFloat;
 
 uniform ivec3 u_entityPositionInt;
-uniform vec3 u_entityPositionFloat
+uniform vec3 u_entityPositionFloat;
 
 void main()
 {
 
-	ivec3 intPosition = in_blockPosition - u_cameraPositionInt;
+	ivec3 intPosition = u_entityPositionInt - u_cameraPositionInt;
 	vec3 floatPosition = intPosition - u_cameraPositionFloat;
 	
 	vec4 pos = vec4(floatPosition.xyz,1);

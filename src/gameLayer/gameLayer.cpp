@@ -57,7 +57,7 @@ bool initGame()
 
 	//glNamedBufferData(programData.renderer.vertexBuffer, 0, 0, GL_DYNAMIC_DRAW);
 
-	glEnable(GL_LINE_WIDTH);
+	//glEnable(GL_LINE_WIDTH);
 	glLineWidth(4);
 
 

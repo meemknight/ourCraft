@@ -244,6 +244,8 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 
 			auto it = ghostBlocks.find(message.blockPos);
 
+			//todo check if need to update geometry here (if the block is a confirmation of a ghost block placed by me)
+
 			if (rez)
 			{
 				if (it != ghostBlocks.end())
@@ -356,6 +358,7 @@ void ChunkSystem::setChunkAndNeighboursFlagDirtyFromBlockPos(int x, int z)
 	const int o = 5;
 	glm::ivec2 offsets[o] = {{0,0}, {-1,0}, {1,0}, {0, -1}, {0, 1}};
 
+	//todo update neighbours only if necessary
 	for (int i = 0; i < o; i++)
 	{
 		auto c = getChunkSafeFromBlockPos(x + offsets[i].x, z + offsets[i].y);

@@ -119,7 +119,7 @@ struct Chunk
 	Block* safeGet(int x, int y, int z);
 
 	//todo will use a gpu buffer in the future
-	//returns true if did work
+	//returns true if it changed anything
 	bool bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back);
 
 	void create(int x, int y);
