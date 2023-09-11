@@ -156,10 +156,16 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	}
 
+	static int blockTypeToPlace = 1;
+	if (platform::isKeyReleased(platform::Button::Z)) { blockTypeToPlace--; }
+	if (platform::isKeyReleased(platform::Button::X)) { blockTypeToPlace++; }
+
+	blockTypeToPlace = glm::clamp(blockTypeToPlace, 1, BlocksCount - 1);
+
 	if (platform::isRMouseReleased())
 	{
 		if (blockToPlace)
-			gameData.chunkSystem.placeBlock(*blockToPlace, BlockTypes::stoneBrick);
+			gameData.chunkSystem.placeBlock(*blockToPlace, blockTypeToPlace);
 	}
 	else if (platform::isLMouseReleased())
 	{
