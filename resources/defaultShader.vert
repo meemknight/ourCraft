@@ -1,8 +1,8 @@
 #version 430 core
 
-layout(location = 0) in int in_faceOrientation;
-layout(location = 1) in int in_faceType;
-layout(location = 2) in ivec3 in_facePosition;
+layout(location = 0) in int in_faceOrientation; //up down left etc
+layout(location = 1) in int in_faceType; //dirt grass stone etc
+layout(location = 2) in ivec3 in_facePosition; // int x y z
 
 uniform mat4 u_viewProjection;
 uniform ivec3 u_positionInt;

@@ -159,7 +159,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	if (platform::isRMouseReleased())
 	{
 		if (blockToPlace)
-			gameData.chunkSystem.placeBlock(*blockToPlace, BlockTypes::rose);
+			gameData.chunkSystem.placeBlock(*blockToPlace, BlockTypes::stoneBrick);
 	}
 	else if (platform::isLMouseReleased())
 	{
