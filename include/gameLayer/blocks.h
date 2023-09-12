@@ -60,6 +60,19 @@ struct Block
 			;
 	}
 
+	char getSkyLight()
+	{
+		return (lightLevel >> 4);
+	}
+
+	void setSkyLevel(char s)
+	{
+		s = s & 0b1111;
+		s <<= 4;
+		lightLevel &= 0b0000'1111;
+		lightLevel |= s;
+	}
+
 };
 
 constexpr int CHUNK_SIZE = 16;
@@ -92,6 +105,8 @@ struct ChunkData
 			return &unsafeGet(x, y, z);
 		}
 	}
+
+	void clearLightLevels();
 };
 
 struct Chunk

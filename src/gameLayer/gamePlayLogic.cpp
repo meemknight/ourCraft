@@ -16,6 +16,7 @@
 #include <iostream>
 #include "multyPlayer/undoQueue.h"
 #include <platformTools.h>
+#include <lightSystem.h>
 
 struct GameData
 {
@@ -23,6 +24,7 @@ struct GameData
 	ChunkSystem chunkSystem;
 	bool escapePressed = 0;
 	UndoQueue undoQueue;
+	LightSystem lightSystem;
 
 }gameData;
 
@@ -183,6 +185,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	glm::ivec3 posInt = {};
 	programData.renderer.skyBoxRenderer.render(gameData.c);
 
+	gameData.lightSystem.update(gameData.chunkSystem);
+
 	{
 		static std::vector<int> data;
 
@@ -190,7 +194,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		
 		programData.renderer.updateDynamicBlocks();
 		
-		gameData.chunkSystem.update(posInt.x, posInt.z, data, deltaTime, gameData.undoQueue);
+		gameData.chunkSystem.update(posInt.x, posInt.z, data, deltaTime, gameData.undoQueue,
+			gameData.lightSystem);
 
 		programData.renderer.render(data, gameData.c, programData.texture);
 

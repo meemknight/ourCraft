@@ -73,6 +73,7 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 							for (int i = 6; i <= 9; i++)
 							{
 								opaqueGeometry.push_back(mergeShorts(i, b.type));
+								opaqueGeometry.push_back(b.getSkyLight());
 								opaqueGeometry.push_back(x + this->data.x * CHUNK_SIZE);
 								opaqueGeometry.push_back(y);
 								opaqueGeometry.push_back(z + this->data.z * CHUNK_SIZE);
@@ -82,12 +83,27 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 						else
 						{
 							for (int i = 0; i < 6; i++)
-							{//todo
-
-
-								if (sides[i] == nullptr || !(sides[i])->isOpaque())
+							{
+								
+								if ((sides[i] != nullptr && !(sides[i])->isOpaque())
+									|| (i == 2 || i == 3)
+									)
 								{
 									opaqueGeometry.push_back(mergeShorts(i + (int)b.isAnimated() * 10, b.type));
+
+									if (i == 2)
+									{
+										opaqueGeometry.push_back(15);
+									}
+									else if (i == 3)
+									{
+										opaqueGeometry.push_back(0);
+									}
+									else
+									{
+										opaqueGeometry.push_back(sides[i]->getSkyLight());
+									}
+
 									opaqueGeometry.push_back(x + this->data.x * CHUNK_SIZE);
 									opaqueGeometry.push_back(y);
 									opaqueGeometry.push_back(z + this->data.z * CHUNK_SIZE);
@@ -114,6 +130,21 @@ void Chunk::create(int x, int z)
 	this->data.x = x;
 	this->data.z = z;
 
+	data.clearLightLevels();
+
 	generateChunk(1234, *this);
+
+}
+
+void ChunkData::clearLightLevels()
+{
+
+	for (int x = 0; x < CHUNK_SIZE; x++)
+		for (int z = 0; z < CHUNK_SIZE; z++)
+			for (int y = 0; y < CHUNK_HEIGHT; y++)
+			{
+				unsafeGet(x, y, z).lightLevel = 0;
+				unsafeGet(x, y, z).notUsed = 0;
+			}
 
 }

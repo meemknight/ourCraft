@@ -6,6 +6,8 @@
 #include "multyPlayer/createConnection.h"
 #include <iostream>
 #include <rendering/camera.h>
+#include <lightSystem.h>
+#include <platformTools.h>
 
 //todo rename !!!!!!!!!
 Chunk* ChunkSystem::getChunkSafe(int x, int z)
@@ -26,7 +28,8 @@ void ChunkSystem::createChunks(int viewDistance)
 	loadedChunks.resize(squareSize * squareSize, nullptr);
 }
 
-void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime, UndoQueue &undoQueue)
+void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime, UndoQueue &undoQueue
+	, LightSystem &lightSystem)
 {
 	{
 		std::vector < std::unordered_map<glm::ivec2, float>::iterator > toRemove;
@@ -110,8 +113,26 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime, 
 			}
 			else
 			{
-				//assert(loadedChunks[x * squareSize + z] == nullptr);
+				permaAssert(loadedChunks[x * squareSize + z] == nullptr);
 				loadedChunks[x * squareSize + z] = i;
+
+				int xBegin = i->data.x * CHUNK_SIZE;
+				int zBegin = i->data.z * CHUNK_SIZE;
+
+				{
+					for (int xPos = xBegin; xPos < xBegin + CHUNK_SIZE; xPos++)
+						for (int zPos = zBegin; zPos < zBegin + CHUNK_SIZE; zPos++)
+						{
+							if (!i->unsafeGet(xPos - xBegin, CHUNK_HEIGHT - 1, zPos - zBegin).isOpaque())
+							{
+								LightSystem::Light l;
+								l.pos = {xPos, CHUNK_HEIGHT - 1, zPos};
+								l.intensity = 15;
+
+								lightSystem.sunLigtsToAdd.push_back(l);
+							}
+						}
+				}
 			}
 
 		}
@@ -454,6 +475,8 @@ void ChunkSystem::placeBlockByClient(glm::ivec3 pos, int type, UndoQueue &undoQu
 		undoQueue.addPlaceBlockEvent(pos, b->type, type, playerPos);
 		
 		b->type = type;
+		if (b->isOpaque()) { b->lightLevel = 0; }
+
 		setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
 	}
 	
@@ -469,6 +492,8 @@ void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, int type)
 	if (b != nullptr)
 	{
 		b->type = type;
+		if (b->isOpaque()) { b->lightLevel = 0; }
+
 		setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
 	}
 }
