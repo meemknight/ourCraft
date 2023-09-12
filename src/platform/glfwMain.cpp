@@ -37,7 +37,6 @@ bool fullScreen = 0;
 #pragma endregion
 
 
-
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
 

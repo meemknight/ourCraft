@@ -43,7 +43,7 @@ bool initGame()
 
 	programData.renderer.create();
 	programData.gyzmosRenderer.create();
-	
+	programData.pointDebugRenderer.create();
 
 	//todo create error function
 	if (enet_initialize() != 0)
@@ -51,7 +51,6 @@ bool initGame()
 		std::cout << "problem starting enet\n";
 		return false;
 	}
-
 
 	//programData.facesCount = blockData.size() / 4;
 
@@ -176,7 +175,8 @@ bool gameLogic(float deltaTime)
 
 void closeGame()
 {
-
 	closeGameLogic();
+	closeConnection();
+	closeServer();
 
 }

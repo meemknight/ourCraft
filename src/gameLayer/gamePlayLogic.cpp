@@ -33,7 +33,7 @@ bool initGameplay(ProgramData &programData)
 	}
 	
 	gameData = GameData();
-	gameData.c.position = glm::vec3(100, 65, 100);
+	gameData.c.position = glm::vec3(0, 65, 0);
 
 	gameData.chunkSystem.createChunks(32);
 
@@ -112,7 +112,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		bool rotate = !gameData.escapePressed;
 		if (platform::isRMouseHeld()) { rotate = true; }
-		gameData.c.rotateFPS(platform::getRelMousePosition(), 0.5f * deltaTime, rotate);
+		gameData.c.rotateFPS(platform::getRelMousePosition(), 0.3f * deltaTime, rotate);
 
 		if (!gameData.escapePressed)
 		{
@@ -144,45 +144,67 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	std::optional<glm::ivec3> blockToPlace = std::nullopt;
 
 	glm::dvec3 cameraRayPos = gameData.c.position;
-	cameraRayPos.y += 0.5;
-	cameraRayPos.x += 0.5;
-	cameraRayPos.z += 0.5;
 	//if (gameData.c.position.x >= 0){cameraRayPos.x += 0.5;}else{cameraRayPos.x -= 0.5;}
 	//if (gameData.c.position.z >= 0){cameraRayPos.z += 0.5;}else{cameraRayPos.z -= 0.5;}
 
-	if (gameData.chunkSystem.rayCast(cameraRayPos, gameData.c.viewDirection, rayCastPos, 5, blockToPlace))
+	if (gameData.chunkSystem.rayCast(cameraRayPos, gameData.c.viewDirection, rayCastPos, 20, blockToPlace))
 	{
 		programData.gyzmosRenderer.drawCube(rayCastPos);
 
 	}
 
-	static int blockTypeToPlace = 1;
-	if (platform::isKeyReleased(platform::Button::Z)) { blockTypeToPlace--; }
-	if (platform::isKeyReleased(platform::Button::X)) { blockTypeToPlace++; }
-
-	blockTypeToPlace = glm::clamp(blockTypeToPlace, 1, BlocksCount - 1);
-
-	if (platform::isRMouseReleased())
+	if (!gameData.escapePressed)
 	{
-		if (blockToPlace)
-			gameData.chunkSystem.placeBlock(*blockToPlace, blockTypeToPlace);
-	}
-	else if (platform::isLMouseReleased())
+		static int blockTypeToPlace = 1;
+		if (platform::isKeyReleased(platform::Button::Z)) { blockTypeToPlace--; }
+		if (platform::isKeyReleased(platform::Button::X)) { blockTypeToPlace++; }
+
+		blockTypeToPlace = glm::clamp(blockTypeToPlace, 1, BlocksCount - 1);
+
+		if (platform::isRMouseReleased())
+		{
+			if (blockToPlace)
+				gameData.chunkSystem.placeBlock(*blockToPlace, blockTypeToPlace);
+		}
+		else if (platform::isLMouseReleased())
+		{
+			gameData.chunkSystem.placeBlock(rayCastPos, BlockTypes::air);
+		}
+	};
+
+
+
+	static glm::dvec3 point;
+	static bool renderBox = 1;
+
+	programData.pointDebugRenderer.renderCubePoint(gameData.c, point);
+
+	if (renderBox)
 	{
-		gameData.chunkSystem.placeBlock(rayCastPos, BlockTypes::air);
+		programData.gyzmosRenderer.drawCube(from3DPointToBlock(point));
 	}
 
 
 	programData.gyzmosRenderer.render(gameData.c, posInt, posFloat);
 
+
 #pragma region imgui
 
-	if (gameData.escapePressed)
+	//if (gameData.escapePressed)
 	{
 		bool terminate = false;
-		if (ImGui::Begin("camera controll", &gameData.escapePressed))
+		//if (ImGui::Begin("camera controll", &gameData.escapePressed))
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, {26/255.f,26/255.f,26/255.f,0.5f});
+		if (ImGui::Begin("camera controll"))
 		{
 			ImGui::DragScalarN("camera pos", ImGuiDataType_Double, &gameData.c.position[0], 3, 0.01);
+
+			ImGui::Text("camera float: %f, %f, %f", posFloat.x, posFloat.y, posFloat.z);
+			ImGui::Text("camera int: %d, %d, %d", posInt.x, posInt.y, posInt.z);
+
+			ImGui::DragScalarN("Point pos", ImGuiDataType_Double, &point[0], 3, 0.01);
+			ImGui::Checkbox("Render Box", &renderBox);
+
 			ImGui::DragFloat("camera speed", &moveSpeed);
 			ImGui::Text("fps: %d", programData.currentFps);
 			if (ImGui::Button("Exit game"))
@@ -191,6 +213,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			}
 		}
 		ImGui::End();
+		ImGui::PopStyleColor();
 
 		if (terminate)
 		{

@@ -56,4 +56,10 @@ struct Camera
 
 	void decomposePosition(glm::vec3 &floatPart, glm::ivec3 &intPart);
 
+	void decomposePosition(glm::vec3 &floatPart, glm::dvec3 in, glm::ivec3 &intPart);
+
 };
+
+void decomposePosition(glm::dvec3 in, glm::vec3 &floatPart, glm::ivec3 &intPart);
+
+glm::ivec3 from3DPointToBlock(glm::dvec3 in);

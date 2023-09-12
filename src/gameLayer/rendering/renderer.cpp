@@ -1026,4 +1026,63 @@ void GyzmosRenderer::render(Camera &c, glm::ivec3 posInt, glm::vec3 posFloat)
 }
 
 
+
+void PointDebugRenderer::create()
+{
+	pointDebugShader.loadShaderProgramFromFile(RESOURCES_PATH "pointDebugShader.vert",
+		RESOURCES_PATH "pointDebugShader.frag");
+
+	GET_UNIFORM(pointDebugShader, u_viewProjection);
+	GET_UNIFORM(pointDebugShader, u_positionInt);
+	GET_UNIFORM(pointDebugShader, u_positionFloat);
+	GET_UNIFORM(pointDebugShader, u_blockPositionInt);
+	GET_UNIFORM(pointDebugShader, u_blockPositionFloat);
+
+
+	
+}
+
+void PointDebugRenderer::renderPoint(Camera &c, glm::dvec3 point)
+{
+	pointDebugShader.bind();
+
+	auto mvp = c.getProjectionMatrix() * glm::lookAt({0,0,0}, c.viewDirection, c.up);
+
+	glm::vec3 posFloat = {};
+	glm::ivec3 posInt = {};
+	c.decomposePosition(posFloat, posInt);
+
+	glUniformMatrix4fv(u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
+	glUniform3fv(u_positionFloat, 1, &posFloat[0]);
+	glUniform3iv(u_positionInt, 1, &posInt[0]);
+
+	glm::vec3 posFloatBlock = {};
+	glm::ivec3 posIntBlock = {};
+	decomposePosition(point, posFloatBlock, posIntBlock);
+
+	glUniform3fv(u_blockPositionFloat, 1, &posFloatBlock[0]);
+	glUniform3iv(u_blockPositionInt, 1, &posIntBlock[0]);
+
+	glPointSize(15);
+	glDrawArrays(GL_POINTS, 0, 1);
+
+}
+
+void PointDebugRenderer::renderCubePoint(Camera &c, glm::dvec3 point)
+{
+	renderPoint(c, point);
+	
+	renderPoint(c, point + glm::dvec3(0.5,0.5,-0.5));
+	renderPoint(c, point + glm::dvec3(0.5,0.5,0.5));
+	renderPoint(c, point + glm::dvec3(-0.5,0.5,-0.5));
+	renderPoint(c, point + glm::dvec3(-0.5,0.5,0.5));
+
+	renderPoint(c, point + glm::dvec3(0.5, -0.5, -0.5));
+	renderPoint(c, point + glm::dvec3(0.5, -0.5, 0.5));
+	renderPoint(c, point + glm::dvec3(-0.5, -0.5, -0.5));
+	renderPoint(c, point + glm::dvec3(-0.5, -0.5, 0.5));
+
+}
+
+
 #undef GET_UNIFORM

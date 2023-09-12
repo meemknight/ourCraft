@@ -7,6 +7,7 @@ struct ProgramData
 	gl2d::Renderer2D renderer2d;
 	Renderer renderer;
 	GyzmosRenderer gyzmosRenderer;
+	PointDebugRenderer pointDebugRenderer;
 
 	gl2d::Font font;
 	gl2d::Texture texture;

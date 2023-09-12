@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include "multyPlayer/createConnection.h"
 #include <iostream>
+#include <rendering/camera.h>
 
 //todo rename !!!!!!!!!
 Chunk* ChunkSystem::getChunkSafe(int x, int z)
@@ -349,7 +350,10 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 
 Chunk *ChunkSystem::getChunkSafeFromBlockPos(int x, int z)
 {
-	auto c = getChunkSafe(divideChunk(x) - cornerPos.x, divideChunk(z) - cornerPos.y);
+	int divideX = divideChunk(x);
+	int divideZ = divideChunk(z);
+
+	auto c = getChunkSafe(divideX - cornerPos.x, divideZ - cornerPos.y);
 	return c;
 }
 
@@ -377,6 +381,12 @@ Block* ChunkSystem::getBlockSafe(int x, int y, int z)
 	return getBlockSafeAndChunk(x, y, z, c);
 }
 
+Block *ChunkSystem::getBlockSafe(glm::dvec3 pos)
+{
+	auto p = from3DPointToBlock(pos);
+	return getBlockSafe(p.x, p.y, p.z);
+}
+
 
 
 Block *ChunkSystem::getBlockSafeAndChunk(int x, int y, int z, Chunk *&chunk)
@@ -384,16 +394,16 @@ Block *ChunkSystem::getBlockSafeAndChunk(int x, int y, int z, Chunk *&chunk)
 	chunk = nullptr;
 	if (y < 0 || y >= CHUNK_HEIGHT) { return nullptr; }
 
-	int cornerX = cornerPos.x;
-	int cornerZ = cornerPos.y;
-
-	auto c = getChunkSafe(divideChunk(x) - cornerX, divideChunk(z) - cornerZ);
+	auto c = getChunkSafeFromBlockPos(x, z);
 
 	if (!c) { return nullptr; }
 
 	chunk = c;
 
-	auto b = c->safeGet(modBlockToChunk(x), y, modBlockToChunk(z));
+	int modX = modBlockToChunk(x);
+	int modZ = modBlockToChunk(z);
+
+	auto b = c->safeGet(modX, y, modZ);
 
 	return b;
 }
@@ -409,7 +419,7 @@ Block *ChunkSystem::rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, 
 
 	for (float walkedDist = 0.f; walkedDist < maxDist; walkedDist += deltaMagitude)
 	{
-		glm::ivec3 intPos = pos;
+		glm::ivec3 intPos = from3DPointToBlock(pos);
 		outPos = intPos;
 		auto b = getBlockSafe(intPos.x, intPos.y, intPos.z);
 		
@@ -478,12 +488,5 @@ int modBlockToChunk(int x)
 
 int divideChunk(int x)
 {
-	if (x < 0)
-	{
-		return ((x+1) / CHUNK_SIZE) - 1;
-	}
-	else
-	{
-		return x / CHUNK_SIZE;
-	}
+	return (int)floor((float)x / (float)CHUNK_SIZE);
 };

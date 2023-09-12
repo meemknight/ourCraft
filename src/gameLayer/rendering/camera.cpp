@@ -79,14 +79,23 @@ void Camera::rotateFPS(glm::ivec2 mousePos, float speed, bool shouldMove)
 
 void Camera::decomposePosition(glm::vec3& floatPart, glm::ivec3& intPart)
 {
-	intPart = glm::ivec3(position);
-
-	glm::dvec3 doublePosition = position;
-	doublePosition -= intPart;
-	floatPart = doublePosition;
-
+	::decomposePosition(position, floatPart, intPart);
 }
 
+void decomposePosition(glm::dvec3 in, glm::vec3 &floatPart, glm::ivec3 &intPart)
+{
+	intPart = glm::floor(in);
+
+	glm::dvec3 doublePosition = in;
+	doublePosition -= intPart;
+	floatPart = doublePosition;
+}
+
+glm::ivec3 from3DPointToBlock(glm::dvec3 in)
+{
+	in += glm::dvec3(0.5, 0.5, 0.5);
+	return glm::floor(in);
+}
 
 
 

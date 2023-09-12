@@ -32,6 +32,7 @@ struct ChunkSystem
 	glm::ivec2 cornerPos = {};
 
 	Block *getBlockSafe(int x, int y, int z);
+	Block *getBlockSafe(glm::dvec3 pos);
 	Block* getBlockSafeAndChunk(int x, int y, int z, Chunk* &chunk);
 
 	Block *rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, float maxDist

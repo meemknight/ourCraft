@@ -58,6 +58,22 @@ struct GyzmosRenderer
 
 };
 
+struct PointDebugRenderer
+{
+
+	void create();
+	Shader pointDebugShader;
+	GLint u_viewProjection = -1;
+	GLint u_positionInt = -1;
+	GLint u_positionFloat = -1;
+	GLint u_blockPositionInt = -1;
+	GLint u_blockPositionFloat = -1;
+
+	void renderPoint(Camera &c, glm::dvec3 point);
+
+	void renderCubePoint(Camera &c, glm::dvec3 point);
+
+};
 
 constexpr int mergeShorts(short a, short b)
 {
