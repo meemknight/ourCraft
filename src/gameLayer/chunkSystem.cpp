@@ -26,7 +26,7 @@ void ChunkSystem::createChunks(int viewDistance)
 	loadedChunks.resize(squareSize * squareSize, nullptr);
 }
 
-void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
+void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime, UndoQueue &undoQueue)
 {
 	{
 		std::vector < std::unordered_map<glm::ivec2, float>::iterator > toRemove;
@@ -46,34 +46,33 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 		}
 	}
 
-	{
-		std::vector < std::unordered_map<glm::ivec3, GhostBlock>::iterator > toRemove;
-		for (auto i = ghostBlocks.begin(); i != ghostBlocks.end(); i++)
-		{
-			i->second.timer -= deltaTime;
-
-			if (i->second.timer <= 0)
-			{
-				toRemove.push_back(i);
-
-				Chunk *chunk = 0;
-				auto b = getBlockSafeAndChunk(i->first.x, i->first.y, i->first.z, chunk);
-
-				if (b)
-				{
-					b->type = i->second.prevBlock;
-					setChunkAndNeighboursFlagDirtyFromBlockPos(i->first.x, i->first.z);
-
-				}
-			}
-		}
-
-		for (auto i : toRemove)
-		{
-			ghostBlocks.erase(i);
-		}
-	}
-
+	//{
+	//	std::vector < std::unordered_map<glm::ivec3, GhostBlock>::iterator > toRemove;
+	//	for (auto i = ghostBlocks.begin(); i != ghostBlocks.end(); i++)
+	//	{
+	//		i->second.timer -= deltaTime;
+	//
+	//		if (i->second.timer <= 0)
+	//		{
+	//			toRemove.push_back(i);
+	//
+	//			Chunk *chunk = 0;
+	//			auto b = getBlockSafeAndChunk(i->first.x, i->first.y, i->first.z, chunk);
+	//
+	//			if (b)
+	//			{
+	//				b->type = i->second.prevBlock;
+	//				setChunkAndNeighboursFlagDirtyFromBlockPos(i->first.x, i->first.z);
+	//
+	//			}
+	//		}
+	//	}
+	//
+	//	for (auto i : toRemove)
+	//	{
+	//		ghostBlocks.erase(i);
+	//	}
+	//}
 
 	//x /= CHUNK_SIZE;
 	//z /= CHUNK_SIZE;
@@ -226,7 +225,7 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 
 
 
-#pragma region place block
+#pragma region place block by server
 	auto recievedBLocks = getRecievedBlocks();
 	for (auto &message : recievedBLocks)
 	{
@@ -243,32 +242,10 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 			Chunk *c = 0;
 			auto rez = getBlockSafeAndChunk(message.blockPos.x, message.blockPos.y, message.blockPos.z, c);
 
-			auto it = ghostBlocks.find(message.blockPos);
-
-			//todo check if need to update geometry here (if the block is a confirmation of a ghost block placed by me)
-
 			if (rez)
 			{
-				if (it != ghostBlocks.end())
-				{
-					//no need to check if c
-					if (it->second.newBlock != message.blockType)
-					{
-						setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
-					}
-				}
-				else
-				{
-					setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
-				}
-
+				setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
 				rez->type = message.blockType;
-
-			}
-
-			if (it != ghostBlocks.end())
-			{
-				ghostBlocks.erase(it);
 			}
 	
 		}
@@ -277,6 +254,21 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime)
 			//todo possible problems here
 			//ignore message
 		}
+
+
+		//remove undo queue
+
+		for (auto &e :undoQueue.events)
+		{
+
+			if (e.type == Event::iPlacedBlock && e.blockPos == pos)
+			{
+				e.type = Event::doNothing;
+			}
+
+		}
+
+
 	}
 #pragma endregion
 
@@ -360,9 +352,9 @@ Chunk *ChunkSystem::getChunkSafeFromBlockPos(int x, int z)
 void ChunkSystem::setChunkAndNeighboursFlagDirtyFromBlockPos(int x, int z)
 {
 	const int o = 5;
-	glm::ivec2 offsets[o] = {{0,0}, {-1,0}, {1,0}, {0, -1}, {0, 1}};
+	glm::ivec2 offsets[o] = {{0,0}, {-1,0}, {1,0}, {0, -1}, {0, 1}}; 
 
-	//todo update neighbours only if necessary
+	//todo optimize, update neighbours only if necessary
 	for (int i = 0; i < o; i++)
 	{
 		auto c = getChunkSafeFromBlockPos(x + offsets[i].x, z + offsets[i].y);
@@ -444,9 +436,9 @@ Block *ChunkSystem::rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, 
 }
 
 //todo short for type
-void ChunkSystem::placeBlock(glm::ivec3 pos, int type)
+void ChunkSystem::placeBlockByClient(glm::ivec3 pos, int type, UndoQueue &undoQueue, glm::dvec3 playerPos)
 {
-	//todo check legality locally
+	//todo were we will check legality locally
 	Chunk *chunk = 0;
 	auto b = getBlockSafeAndChunk(pos.x, pos.y, pos.z, chunk);
 	
@@ -456,20 +448,29 @@ void ChunkSystem::placeBlock(glm::ivec3 pos, int type)
 		task.type = Task::placeBlock;
 		task.pos = pos;
 		task.blockType = type;
+		task.eventId = undoQueue.currentEventId;
 		submitTaskClient(task);
-	
-		GhostBlock ghostBlock;
-		ghostBlock.newBlock = type;
-		ghostBlock.prevBlock = b->type;
-		ghostBlock.timer = 2; //secconds
 
-		ghostBlocks[pos] = ghostBlock;
-
-		b->type = type;
+		undoQueue.addPlaceBlockEvent(pos, b->type, type, playerPos);
 		
+		b->type = type;
 		setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
 	}
 	
+}
+
+//todo refactor and reuse up
+void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, int type)
+{
+	//todo were we will check legality locally
+	Chunk *chunk = 0;
+	auto b = getBlockSafeAndChunk(pos.x, pos.y, pos.z, chunk);
+
+	if (b != nullptr)
+	{
+		b->type = type;
+		setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
+	}
 }
 
 int modBlockToChunk(int x)

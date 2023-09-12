@@ -3,6 +3,7 @@
 #include "multyPlayer/packet.h"
 #include <iostream>
 
+//todo rename task client
 void submitTaskClient(Task &t)
 {
 	auto data = getConnectionData();
@@ -27,6 +28,7 @@ void submitTaskClient(Task &t)
 		Packet_PlaceBlock packetData = {};
 		packetData.blockPos = t.pos;
 		packetData.blockType = t.blockType;
+		packetData.eventId = t.eventId;
 
 		sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1, 1);
 		break;
@@ -73,7 +75,7 @@ ConnectionData getConnectionData()
 }
 
 
-void recieveDataClient(ENetEvent &event)
+void recieveDataClient(ENetEvent &event, EventCounter &validatedEvent, RevisionNumber &invalidateRevision)
 {
 	Packet p;
 	size_t size = 0;
@@ -97,6 +99,17 @@ void recieveDataClient(ENetEvent &event)
 			break;
 		}
 
+		case headerValidateEvent:
+		{
+			validatedEvent = std::max(validatedEvent, ((Packet_ValidateEvent *)data)->eventId.counter);
+			break;
+		}
+
+		case headerInValidateEvent:
+		{
+			invalidateRevision = std::max(invalidateRevision, ((Packet_InValidateEvent *)data)->eventId.revision);
+			break;
+		}
 
 		default:
 		break;
@@ -107,7 +120,7 @@ void recieveDataClient(ENetEvent &event)
 }
 
 //this is not multy threaded
-void clientMessageLoop()
+void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision)
 {
 	ENetEvent event;
 
@@ -120,8 +133,7 @@ void clientMessageLoop()
 			case ENET_EVENT_TYPE_RECEIVE:
 			{
 
-
-				recieveDataClient(event);
+				recieveDataClient(event, validatedEvent, invalidateRevision);
 
 
 				enet_packet_destroy(event.packet);
@@ -148,14 +160,21 @@ void clientMessageLoop()
 
 void closeConnection()
 {
+
+	if (!clientData.conected) { return; }
+
+	if(clientData.server)
 	enet_peer_reset(clientData.server);
+	
+	if (clientData.client)
 	enet_host_destroy(clientData.client);
-	clientData.conected = false;
 
 	for (auto &i : clientData.recievedChunks)
 	{
 		delete i;
 	}
+
+	clientData = {};
 
 }
 

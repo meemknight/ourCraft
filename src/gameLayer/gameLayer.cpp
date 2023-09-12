@@ -148,6 +148,29 @@ bool gameLogic(float deltaTime)
 	}
 	else
 	{
+		if (isServerRunning())
+		{
+			auto s = getServerSettingsCopy();
+
+			ImGui::PushStyleColor(ImGuiCol_WindowBg, {26 / 255.f,26 / 255.f,26 / 255.f,0.5f});
+			ImGui::Begin("Server window");
+
+			for (auto &c : s.perClientSettings)
+			{
+				ImGui::PushID(c.first);
+				ImGui::Text("%d", c.first);
+				ImGui::Checkbox("Allow validate moves", &c.second.validateStuff);
+				ImGui::Separator();
+				ImGui::PopID();
+			}
+
+
+			ImGui::End();
+			ImGui::PopStyleColor();
+
+			setServerSettings(s);
+		}
+
 		if (!gameplayFrame(deltaTime, w, h, programData))
 		{
 			closeGameLogic();
@@ -155,6 +178,7 @@ bool gameLogic(float deltaTime)
 			closeServer();
 			gameStarted = false;
 		}
+
 	}
 
 

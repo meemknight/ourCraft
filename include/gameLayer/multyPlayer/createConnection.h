@@ -17,7 +17,7 @@ struct Task
 	glm::ivec3 pos = {};
 	int type = 0;
 	uint16_t blockType = 0;
-
+	EventId eventId = {};
 };
 
 void submitTaskClient(Task &t);
@@ -40,5 +40,5 @@ std::vector<Chunk *> getRecievedChunks();
 std::vector<Packet_PlaceBlock> getRecievedBlocks();
 ConnectionData getConnectionData();
 bool createConnection();
-void clientMessageLoop();
+void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision);
 void closeConnection();

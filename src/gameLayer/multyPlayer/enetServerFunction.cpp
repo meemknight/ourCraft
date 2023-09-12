@@ -9,6 +9,7 @@
 #include "threadStuff.h"
 #include <mutex>
 #include <queue>
+#include <multyPlayer/server.h>
 
 //todo add to a struct
 ENetHost *server = 0;
@@ -35,6 +36,7 @@ void broadCast(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool r
 	connectionsMutex.unlock();
 }
 
+//todo typedef cid
 Client getClient(int32_t cid)
 {
 	connectionsMutex.lock();
@@ -63,6 +65,7 @@ void submitTaskForServer(ServerTask t)
 	taskCondition.notify_one();
 }
 
+//todo remove conection
 void addConnection(ENetHost *server, ENetEvent &event)
 {
 	createConnection(pids, Client{event.peer});
@@ -81,7 +84,7 @@ void addConnection(ENetHost *server, ENetEvent &event)
 	//todo send info of other players to this new connection
 
 	//broadcast data of new connection
-	
+	addCidToServerSettings(p.cid);
 
 }
 
@@ -92,12 +95,17 @@ void recieveData(ENetHost *server, ENetEvent &event)
 	auto data = parsePacket(event, p, size);
 
 	//validate data
-	//no need for mutex here fortunatelly
+	//no need for mutex here fortunatelly todo why?
+	connectionsMutex.lock();
 	if (connections[p.cid].peer != event.peer)
 	{
+		connectionsMutex.unlock();
+
 		std::cout << "invalid data!\n";
 		return;
 	}
+	connectionsMutex.unlock();
+
 
 	ServerTask serverTask = {};
 	serverTask.cid = p.cid;
@@ -120,6 +128,7 @@ void recieveData(ENetHost *server, ENetEvent &event)
 			serverTask.t.type = Task::placeBlock;
 			serverTask.t.pos = {packetData.blockPos};
 			serverTask.t.blockType = {packetData.blockType};
+			serverTask.t.eventId = packetData.eventId;
 
 			submitTaskForServer(serverTask);
 			break;

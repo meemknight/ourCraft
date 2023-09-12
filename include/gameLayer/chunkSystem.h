@@ -6,13 +6,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
 #include <optional>
-
-struct GhostBlock
-{
-	float timer = 0;
-	uint16_t prevBlock=0;
-	uint16_t newBlock=0;
-};
+#include "multyPlayer/undoQueue.h"
 
 struct ChunkSystem
 {
@@ -27,7 +21,7 @@ struct ChunkSystem
 
 	void createChunks(int viewDistance);
 
-	void update(int x, int z, std::vector<int>& data, float deltaTime);
+	void update(int x, int z, std::vector<int>& data, float deltaTime, UndoQueue &undoQueue);
 	int lastX = 0, lastZ = 0, created = 0;
 	glm::ivec2 cornerPos = {};
 
@@ -38,11 +32,14 @@ struct ChunkSystem
 	Block *rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, float maxDist
 		, std::optional<glm::ivec3> &prevBlockForPlace);
 
-	void placeBlock(glm::ivec3 pos, int type);
+	//a client places a block and sends a task to the server for it to be placed
+	void placeBlockByClient(glm::ivec3 pos, int type, UndoQueue &undoQueue, glm::dvec3 playerPos);
+
+	//just place the block
+	void placeBlockNoClient(glm::ivec3 pos, int type);
+
 
 	std::unordered_map<glm::ivec2, float> recentlyRequestedChunks;
-	std::unordered_map<glm::ivec3, GhostBlock> ghostBlocks;
-
 };
 
 int modBlockToChunk(int x);

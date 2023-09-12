@@ -19,6 +19,7 @@ struct Client
 	//phisics::Entity entityData = {};
 	//bool changed = 1;
 	//char clientName[56] = {};
+	RevisionNumber revisionNumber = 1;
 };
 
 void signalWaitingFromServer();

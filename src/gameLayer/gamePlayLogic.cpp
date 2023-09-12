@@ -14,12 +14,15 @@
 #include "glui/glui.h"
 #include <imgui.h>
 #include <iostream>
+#include "multyPlayer/undoQueue.h"
+#include <platformTools.h>
 
 struct GameData
 {
 	Camera c;
 	ChunkSystem chunkSystem;
 	bool escapePressed = 0;
+	UndoQueue undoQueue;
 
 }gameData;
 
@@ -47,9 +50,62 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	gameData.c.aspectRatio = (float)w / h;
 
 #pragma region server stuff
+	{
+		EventCounter validateEvent = 0;
+		RevisionNumber inValidateRevision = 0;
 
-	clientMessageLoop();
+		clientMessageLoop(validateEvent, inValidateRevision);
 
+		if (validateEvent)
+		{
+			while (!gameData.undoQueue.events.empty())
+			{
+				if (validateEvent >= gameData.undoQueue.events[0].eventId.counter)
+				{
+					gameData.undoQueue.events.pop_front();
+				}
+			}
+		}
+
+		if (inValidateRevision)
+		{
+			if (gameData.undoQueue.events.empty())
+			{
+				permaAssert(0); // undo queue is empty but I revieved an undo message.
+			}
+
+			RevisionNumber currentRevisionNumber = gameData.undoQueue.events[0].eventId.revision;
+			for (auto &i : gameData.undoQueue.events)
+			{
+				if (i.eventId.revision != currentRevisionNumber)
+				{
+					permaAssert(0); // undo queue has inconsistent revisions
+				}
+			}
+
+			if (inValidateRevision != gameData.undoQueue.currentEventId.revision)
+			{
+				permaAssert(0); //inconsistency between the server's revision and mine
+			}
+
+			for (int i = gameData.undoQueue.events.size() - 1; i >= 0; i--)
+			{
+				
+				auto &e = gameData.undoQueue.events[i];
+
+				if (e.type == Event::iPlacedBlock)
+				{
+					gameData.chunkSystem.placeBlockNoClient(e.blockPos, e.originalBlock);
+				}
+			}
+			
+			gameData.c.position = gameData.undoQueue.events[0].playerPos;
+
+			gameData.undoQueue.events.clear();
+
+			gameData.undoQueue.currentEventId.revision++;
+		}
+	}
 #pragma endregion
 
 #pragma region input
@@ -134,7 +190,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		
 		programData.renderer.updateDynamicBlocks();
 		
-		gameData.chunkSystem.update(posInt.x, posInt.z, data, deltaTime);
+		gameData.chunkSystem.update(posInt.x, posInt.z, data, deltaTime, gameData.undoQueue);
 
 		programData.renderer.render(data, gameData.c, programData.texture);
 
@@ -164,11 +220,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		if (platform::isRMouseReleased())
 		{
 			if (blockToPlace)
-				gameData.chunkSystem.placeBlock(*blockToPlace, blockTypeToPlace);
+				gameData.chunkSystem.placeBlockByClient(*blockToPlace, blockTypeToPlace,
+				gameData.undoQueue, gameData.c.position);
 		}
 		else if (platform::isLMouseReleased())
 		{
-			gameData.chunkSystem.placeBlock(rayCastPos, BlockTypes::air);
+			gameData.chunkSystem.placeBlockByClient(rayCastPos, BlockTypes::air,
+				gameData.undoQueue, gameData.c.position);
 		}
 	};
 

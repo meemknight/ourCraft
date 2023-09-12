@@ -13,6 +13,8 @@
 #include <enet/enet.h>
 #include "multyPlayer/packet.h"
 #include "multyPlayer/enetServerFunction.h"
+#include <platformTools.h>
+#include <iostream>
 
 struct ListNode;
 
@@ -53,6 +55,11 @@ std::thread serverThread;
 
 bool serverStartupStuff();
 
+bool isServerRunning()
+{
+	return serverRunning;
+}
+
 bool startServer()
 {
 	bool expected = 0;
@@ -64,7 +71,7 @@ bool startServer()
 			return 0;
 		}
 
-		serverThread = std::move(std::thread(serverFunction));
+		serverThread = std::move(std::thread(serverWorkerFunction));
 		
 		//serverThread.detach();
 		return 1;
@@ -87,12 +94,15 @@ struct ChunkPriorityCache
 
 };
 
+std::mutex serverSettingsMutex;
 
 struct ServerData
 {
 	ChunkPriorityCache chunkCache = {};
 	std::vector<ServerTask> waitingTasks = {};
 	ENetHost *server = nullptr;
+	ServerSettings settings = {};
+
 }sd;
 
 void closeServer()
@@ -112,8 +122,11 @@ void closeServer()
 		serverThread.join();
 
 		enet_host_destroy(sd.server);
-		sd.server = 0;
+		//todo clear othher stuff
+		sd = {};
 	}
+
+	serverSettingsMutex.unlock();
 }
 
 bool serverStartupStuff()
@@ -147,12 +160,14 @@ bool serverStartupStuff()
 	return true;
 }
 
-
-void serverFunction()
+void serverWorkerFunction()
 {
+
 
 	while (serverRunning)
 	{
+		auto settings = getServerSettingsCopy();
+
 		std::vector<ServerTask> tasks;
 		if (sd.waitingTasks.empty())
 		{
@@ -188,7 +203,7 @@ void serverFunction()
 
 				packetData->chunk = *rez;
 
-				auto client = getClient(i.cid);
+				auto client = getClient(i.cid); //todo this could fail when players leave so return pointer and check
 
 				sendPacket(client.peer, packet, (char *)packetData, sizeof(Packet_RecieveChunk), true, 0);
 
@@ -204,24 +219,78 @@ void serverFunction()
 				int convertedZ = modBlockToChunk(i.t.pos.z);
 				
 				//todo check if place is legal
+				bool legal = 1;
+				bool noNeedToNotifyUndo = 0;
+				auto client = getClient(i.cid);
+
+				if (client.revisionNumber > i.t.eventId.revision)
+				{
+					//if the revision number is increased it means that we already undoed all those moes
+					legal = false;
+					noNeedToNotifyUndo = true;
+					std::cout << "Server revision number ignore: " << client.revisionNumber << " "
+						<< i.t.eventId.revision << "\n";
+				}
+
+				{
+					auto f = settings.perClientSettings.find(i.cid);
+					if (f != settings.perClientSettings.end())
+					{
+						if (!f->second.validateStuff)
+						{
+							legal = false;
+						}
+
+					}
+				}
+
 				auto b = chunk->safeGet(convertedX, i.t.pos.y, convertedZ);
-				if (b)
+				if (b && legal)
 				{
 					b->type = i.t.blockType;
 					//todo mark this chunk dirty if needed for saving
-				
+
+					//todo enum for chanels
+					{
+						Packet packet;
+						packet.cid = i.cid;
+						packet.header = headerPlaceBlock;
+
+						Packet_PlaceBlock packetData;
+						packetData.blockPos = i.t.pos;
+						packetData.blockType = i.t.blockType;
+
+
+						broadCast(packet, &packetData, sizeof(Packet_PlaceBlock), client.peer, true, 0);
+						//sendPacket(client.peer, packet, (char *)&packetData, sizeof(Packet_PlaceBlock), true, 0);
+					}
+
+					{
+						Packet packet;
+						packet.cid = i.cid;
+						packet.header = headerValidateEvent;
+
+
+						Packet_ValidateEvent packetData;
+						packetData.eventId = i.t.eventId;
+
+						sendPacket(client.peer, packet, (char *)&packetData, sizeof(Packet_ValidateEvent), true, 0);
+					}
+
+
+				}
+				else if(!noNeedToNotifyUndo)
+				{
 					Packet packet;
 					packet.cid = i.cid;
-					packet.header = headerPlaceBlock;
+					packet.header = headerInValidateEvent;
 
-					Packet_PlaceBlock packetData;
-					packetData.blockPos = i.t.pos;
-					packetData.blockType = i.t.blockType;
+					Packet_InValidateEvent packetData;
+					packetData.eventId = i.t.eventId;
 
-					auto client = getClient(i.cid);
+					client.revisionNumber++;
 
-					broadCast(packet, &packetData, sizeof(Packet_PlaceBlock), nullptr, true, 0);
-					//sendPacket(client.peer, packet, (char *)&packetData, sizeof(Packet_PlaceBlock), true, 0);
+					sendPacket(client.peer, packet, (char *)&packetData, sizeof(Packet_ValidateEvent), true, 0);
 				}
 
 			}
@@ -238,6 +307,43 @@ void serverFunction()
 	}
 
 }
+
+ServerSettings getServerSettingsCopy()
+{
+	serverSettingsMutex.lock();
+	auto copy = sd.settings;
+	serverSettingsMutex.unlock();
+	return copy;
+}
+
+void setServerSettings(ServerSettings settings)
+{
+	serverSettingsMutex.lock();
+	for (auto &s : sd.settings.perClientSettings)
+	{
+		auto it = settings.perClientSettings.find(s.first);
+		if (it != settings.perClientSettings.end())
+		{
+			s.second = it->second;
+		}
+	}
+	serverSettingsMutex.unlock();
+}
+
+void addCidToServerSettings(int32_t cid)
+{
+	serverSettingsMutex.lock();
+	sd.settings.perClientSettings.insert({cid, {}});
+	serverSettingsMutex.unlock();
+}
+
+void removeCidFromServerSettings(int32_t cid)
+{
+	serverSettingsMutex.lock();
+	sd.settings.perClientSettings.erase(cid);
+	serverSettingsMutex.unlock();
+}
+
 
 
 ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ)
