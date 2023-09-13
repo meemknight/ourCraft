@@ -13,7 +13,7 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 
 		char currentLightLevel = element.intensity;
 
-		auto checkNeighbout = [&](glm::ivec3 p, char newLightLevel, bool down = 0)
+		auto checkNeighbout = [&](glm::ivec3 p, bool down = 0)
 		{
 			auto b2 = chunkSystem.getBlockSafe(p.x, p.y, p.z);
 
@@ -23,6 +23,7 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 
 				if ((down && currentLightLevel == 15) || (b2Level != 0 && b2Level < currentLightLevel))
 				{
+					//remove
 					LightSystem::Light l;
 					l.intensity = b2Level;
 					l.pos = p;
@@ -31,26 +32,24 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 				}
 				else if(b2Level != 0)
 				{
-					newLightLevel = std::max((int)newLightLevel, b2Level); //todo is max necessary here?
-
+					//add
 					LightSystem::Light l;
-					l.intensity = newLightLevel;
+					l.intensity = b2Level;
 					l.pos = p;
 					sunLigtsToAdd.push_back(l);
-					b2->setSkyLevel(newLightLevel);
+					b2->setSkyLevel(b2Level);
 				}
 			}
 		};
 
-		checkNeighbout({element.pos.x - 1, element.pos.y, element.pos.z}, currentLightLevel - 1);
-		checkNeighbout({element.pos.x + 1, element.pos.y, element.pos.z}, currentLightLevel - 1);
-		checkNeighbout({element.pos.x, element.pos.y + 1, element.pos.z}, currentLightLevel - 1);
+		checkNeighbout({element.pos.x - 1, element.pos.y, element.pos.z});
+		checkNeighbout({element.pos.x + 1, element.pos.y, element.pos.z});
+		checkNeighbout({element.pos.x, element.pos.y + 1, element.pos.z});
 		
-		checkNeighbout({element.pos.x, element.pos.y - 1, element.pos.z}, 
-			currentLightLevel == 15?currentLightLevel : currentLightLevel-1, true);
+		checkNeighbout({element.pos.x, element.pos.y - 1, element.pos.z}, true);
 
-		checkNeighbout({element.pos.x, element.pos.y, element.pos.z + 1}, currentLightLevel - 1);
-		checkNeighbout({element.pos.x, element.pos.y, element.pos.z - 1}, currentLightLevel - 1);
+		checkNeighbout({element.pos.x, element.pos.y, element.pos.z + 1});
+		checkNeighbout({element.pos.x, element.pos.y, element.pos.z - 1});
 
 		chunkSystem.setChunkAndNeighboursFlagDirtyFromBlockPos(element.pos.x, element.pos.z);
 
