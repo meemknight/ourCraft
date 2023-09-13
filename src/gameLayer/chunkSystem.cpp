@@ -474,7 +474,14 @@ void ChunkSystem::changeBlockLightStuff(glm::ivec3 pos, int currentLightLevel,
 			auto b = getBlockSafe(pos2.x, pos2.y, pos2.z);
 			if (b && !b->isOpaque())
 			{
-				light = std::max(light, b->getSkyLight() - decrease);
+				if (!decrease && b->getSkyLight() == 15)
+				{
+					light = 15;
+				}
+				else
+				{
+					light = std::max(light, b->getSkyLight() - 1);
+				}
 			}
 		};
 
