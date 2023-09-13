@@ -16,7 +16,6 @@ struct Renderer
 	GLint u_positionFloat = -1;
 	GLint u_texture = -1;
 	GLint u_time = -1;
-	GLuint u_atlasBlockIndex = GL_INVALID_INDEX;
 	GLuint u_vertexData = GL_INVALID_INDEX;
 	GLuint u_vertexUV = GL_INVALID_INDEX;
 	GLuint u_textureSamplerers = GL_INVALID_INDEX;
@@ -29,7 +28,6 @@ struct Renderer
 
 	GLuint vao = 0;
 	GLuint vertexBuffer = 0;
-	GLuint atlasBuffer = 0;
 	GLuint vertexDataBuffer = 0;
 	GLuint vertexUVBuffer = 0;
 	GLuint textureSamplerersBuffer = 0;

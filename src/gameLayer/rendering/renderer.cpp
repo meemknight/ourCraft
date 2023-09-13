@@ -15,429 +15,10 @@
 //data format:
 
 // short orientation
-// short type
+// short texture index
 // int x
 // int y
 // int z
-
-int atlasData[] = {
-	//front
-	0, 0,
-	3, 15, //grass
-	2, 15, // dirt
-	1, 15, //stone
-	3, 11, //ice
-	4, 14,//log
-	4, 15,//wooden_plank
-	0, 14,//cobblestone
-	7, 14,//gold_block
-	7, 15,//bricks
-	2, 14,//sand
-	0, 3,//sand_stone
-	4, 11,//snow_dirt
-	5, 12,//leaves
-	0, 13, // gold ore
-	2, 13, // coal ore
-	6, 12, //stone brick
-	1, 13, // iron ore
-	2, 12, // diamond ore
-	3, 13, //block shelf
-	5, 8, //birch wood
-	3, 14, //gravel
-	7, 13,//herbs
-	12, 15,//rose
-
-	//back
-	0, 0,
-	3, 15, //grass
-	2, 15, // dirt
-	1, 15, //stone
-	3, 11, //ice
-	4, 14,//log
-	4, 15,//wooden_plank
-	0, 14,//cobblestone
-	7, 14,//gold_block
-	7, 15,//bricks
-	2, 14,//sand
-	0, 3,//sand_stone
-	4, 11,//snow_dirt
-	5, 12,//leaves
-	0, 13, // gold ore
-	2, 13, // coal ore
-	6, 12, //stone brick
-	1, 13, // iron ore
-	2, 12, // diamond ore
-	3, 13, //block shelf
-	5, 8, //birch wood
-	3, 14, //gravel
-	7, 13,//herbs
-	12, 15,//rose
-
-	//top
-	0, 0,
-	0, 15, //grass
-	2, 15, // dirt
-	1, 15, //stone
-	3, 11, //ice
-	4, 14,//log
-	4, 15,//wooden_plank
-	0, 14,//cobblestone
-	7, 14,//gold_block
-	7, 15,//bricks
-	2, 14,//sand
-	0, 4,//sand_stone
-	2, 11,// snow_grass
-	5, 12,//leaves
-	0, 13, // gold ore
-	2, 13, // coal ore
-	6, 12, //stone brick
-	1, 13, // iron ore
-	2, 12, // diamond ore
-	4, 15, //block shelf
-	5, 14, //birch wood
-	3, 14, //gravel
-	7, 13,//herbs
-	12, 15,//rose
-
-	//bottom
-	0, 0,
-	2, 15, //grass
-	2, 15, // dirt
-	1, 15, //stone
-	3, 11, //ice
-	5, 14,//log
-	4, 15,//wooden_plank
-	0, 14,//cobblestone
-	7, 14,//gold_block
-	7, 15,//bricks
-	2, 14,//sand
-	0, 2,//sand_stone
-	2, 15, // snow_grass
-	5, 12,//leaves
-	0, 13, // gold ore
-	2, 13, // coal ore
-	6, 12, //stone brick
-	1, 13, // iron ore
-	2, 12, // diamond ore
-	4, 15, //block shelf
-	5, 14, //birch wood
-	3, 14, //gravel
-	7, 13,//herbs
-	12, 15,//rose
-
-	//left
-	0, 0,
-	3, 15, //grass
-	2, 15, // dirt
-	1, 15, //stone
-	3, 11, //ice
-	4, 14,//log
-	4, 15,//wooden_plank
-	0, 14,//cobblestone
-	7, 14,//gold_block
-	7, 15,//bricks
-	2, 14,//sand
-	0, 3,//sand_stone
-	4, 11,//snow_dirt
-	5, 12,//leaves
-	0, 13, // gold ore
-	2, 13, // coal ore
-	6, 12, //stone brick
-	1, 13, // iron ore
-	2, 12, // diamond ore
-	3, 13, //block shelf
-	5, 8, //birch wood
-	3, 14, //gravel
-	7, 13,//herbs
-	12, 15,//rose
-
-	//right
-	0, 0,
-	3, 15, //grass
-	2, 15, // dirt
-	1, 15, //stone
-	3, 11, //ice
-	4, 14,//log
-	4, 15,//wooden_plank
-	0, 14,//cobblestone
-	7, 14,//gold_block
-	7, 15,//bricks
-	2, 14,//sand
-	0, 3,//sand_stone
-	4, 11,//snow_dirt
-	5, 12,//leaves
-	0, 13, // gold ore
-	2, 13, // coal ore
-	6, 12, //stone brick
-	1, 13, // iron ore
-	2, 12, // diamond ore
-	3, 13, //block shelf
-	5, 8, //birch wood
-	3, 14, //gravel
-	7, 13,//herbs
-	12, 15,//rose
-
-	///// moving grass
-	0, 0,
-	0, 15, //grass
-	2, 15, // dirt
-	1, 15, //stone
-	3, 11, //ice
-	4, 14,//log
-	4, 15,//wooden_plank
-	0, 14,//cobblestone
-	7, 14,//gold_block
-	7, 15,//bricks
-	2, 14,//sand
-	0, 4,//sand_stone
-	2, 11,// snow_grass
-	5, 12,//leaves
-	0, 13, // gold ore
-	2, 13, // coal ore
-	6, 12, //stone brick
-	1, 13, // iron ore
-	2, 12, // diamond ore
-	4, 15, //block shelf
-	5, 14, //birch wood
-	3, 14, //gravel
-	7, 13,//herbs
-	12, 15,//rose
-
-	0, 0,
-	2, 15, //grass
-	2, 15, // dirt
-	1, 15, //stone
-	3, 11, //ice
-	5, 14,//log
-	4, 15,//wooden_plank
-	0, 14,//cobblestone
-	7, 14,//gold_block
-	7, 15,//bricks
-	2, 14,//sand
-	0, 2,//sand_stone
-	2, 15, // snow_grass
-	5, 12,//leaves
-	0, 13, // gold ore
-	2, 13, // coal ore
-	6, 12, //stone brick
-	1, 13, // iron ore
-	2, 12, // diamond ore
-	4, 15, //block shelf
-	5, 14, //birch wood
-	3, 14, //gravel
-	7, 13,//herbs
-	12, 15,//rose
-
-	0, 0,
-	3, 15, //grass
-	2, 15, // dirt
-	1, 15, //stone
-	3, 11, //ice
-	4, 14,//log
-	4, 15,//wooden_plank
-	0, 14,//cobblestone
-	7, 14,//gold_block
-	7, 15,//bricks
-	2, 14,//sand
-	0, 3,//sand_stone
-	4, 11,//snow_dirt
-	5, 12,//leaves
-	0, 13, // gold ore
-	2, 13, // coal ore
-	6, 12, //stone brick
-	1, 13, // iron ore
-	2, 12, // diamond ore
-	3, 13, //block shelf
-	5, 8, //birch wood
-	3, 14, //gravel
-	7, 13,//herbs
-	12, 15,//rose
-
-	0, 0,
-	3, 15, //grass
-	2, 15, // dirt
-	1, 15, //stone
-	3, 11, //ice
-	4, 14,//log
-	4, 15,//wooden_plank
-	0, 14,//cobblestone
-	7, 14,//gold_block
-	7, 15,//bricks
-	2, 14,//sand
-	0, 3,//sand_stone
-	4, 11,//snow_dirt
-	5, 12,//leaves
-	0, 13, // gold ore
-	2, 13, // coal ore
-	6, 12, //stone brick
-	1, 13, // iron ore
-	2, 12, // diamond ore
-	3, 13, //block shelf
-	5, 8, //birch wood
-	3, 14, //gravel
-	7, 13,//herbs
-	12, 15,//rose
-
-
-	///// moving blocks
-	//front
-	0, 0,
-	3, 15, //grass
-	2, 15, // dirt
-	1, 15, //stone
-	3, 11, //ice
-	4, 14,//log
-	4, 15,//wooden_plank
-	0, 14,//cobblestone
-	7, 14,//gold_block
-	7, 15,//bricks
-	2, 14,//sand
-	0, 3,//sand_stone
-	4, 11,//snow_dirt
-	5, 12,//leaves
-	0, 13, // gold ore
-	2, 13, // coal ore
-	6, 12, //stone brick
-	1, 13, // iron ore
-	2, 12, // diamond ore
-	3, 13, //block shelf
-	5, 8, //birch wood
-	3, 14, //gravel
-	7, 13,//herbs
-	12, 15,//rose
-
-	//back
-	0, 0,
-	3, 15, //grass
-	2, 15, // dirt
-	1, 15, //stone
-	3, 11, //ice
-	4, 14,//log
-	4, 15,//wooden_plank
-	0, 14,//cobblestone
-	7, 14,//gold_block
-	7, 15,//bricks
-	2, 14,//sand
-	0, 3,//sand_stone
-	4, 11,//snow_dirt
-	5, 12,//leaves
-	0, 13, // gold ore
-	2, 13, // coal ore
-	6, 12, //stone brick
-	1, 13, // iron ore
-	2, 12, // diamond ore
-	3, 13, //block shelf
-	5, 8, //birch wood
-	3, 14, //gravel
-	7, 13,//herbs
-	12, 15,//rose
-
-	//top
-	0, 0,
-	0, 15, //grass
-	2, 15, // dirt
-	1, 15, //stone
-	3, 11, //ice
-	4, 14,//log
-	4, 15,//wooden_plank
-	0, 14,//cobblestone
-	7, 14,//gold_block
-	7, 15,//bricks
-	2, 14,//sand
-	0, 4,//sand_stone
-	2, 11,// snow_grass
-	5, 12,//leaves
-
-	0, 13, // gold ore
-	2, 13, // coal ore
-	6, 12, //stone brick
-	1, 13, // iron ore
-	2, 12, // diamond ore
-	4, 15, //block shelf
-	5, 14, //birch wood
-	3, 14, //gravel
-	7, 13,//herbs
-	12, 15,//rose
-
-	//bottom
-	0, 0,
-	2, 15, //grass
-	2, 15, // dirt
-	1, 15, //stone
-	3, 11, //ice
-	5, 14,//log
-	4, 15,//wooden_plank
-	0, 14,//cobblestone
-	7, 14,//gold_block
-	7, 15,//bricks
-	2, 14,//sand
-	0, 2,//sand_stone
-	2, 15, // snow_grass
-	5, 12,//leaves
-	0, 13, // gold ore
-	2, 13, // coal ore
-	6, 12, //stone brick
-	1, 13, // iron ore
-	2, 12, // diamond ore
-	4, 15, //block shelf
-	5, 14, //birch wood
-	3, 14, //gravel
-	7, 13,//herbs
-	12, 15,//rose
-
-	//left
-	0, 0,
-	3, 15, //grass
-	2, 15, // dirt
-	1, 15, //stone
-	3, 11, //ice
-	4, 14,//log
-	4, 15,//wooden_plank
-	0, 14,//cobblestone
-	7, 14,//gold_block
-	7, 15,//bricks
-	2, 14,//sand
-	0, 3,//sand_stone
-	4, 11,//snow_dirt
-	5, 12,//leaves
-	0, 13, // gold ore
-	2, 13, // coal ore
-	6, 12, //stone brick
-	1, 13, // iron ore
-	2, 12, // diamond ore
-	3, 13, //block shelf
-	5, 8, //birch wood
-	3, 14, //gravel
-	7, 13,//herbs
-	12, 15,//rose
-
-	//right
-	0, 0,
-	3, 15, //grass
-	2, 15, // dirt
-	1, 15, //stone
-	3, 11, //ice
-	4, 14,//log
-	4, 15,//wooden_plank
-	0, 14,//cobblestone
-	7, 14,//gold_block
-	7, 15,//bricks
-	2, 14,//sand
-	0, 3,//sand_stone
-	4, 11,//snow_dirt
-	5, 12,//leaves
-	0, 13, // gold ore
-	2, 13, // coal ore
-	6, 12, //stone brick
-	1, 13, // iron ore
-	2, 12, // diamond ore
-	3, 13, //block shelf
-	5, 8, //birch wood
-	3, 14, //gravel
-	7, 13,//herbs
-	12, 15,//rose
-
-};
 
 float vertexData[] = {
 	//front
@@ -714,14 +295,6 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	GET_UNIFORM(defaultShader, u_texture);
 	GET_UNIFORM(defaultShader, u_time);
 
-	u_atlasBlockIndex = getStorageBlockIndex(defaultShader.id, "u_atlasPositions");
-	glShaderStorageBlockBinding(defaultShader.id, u_atlasBlockIndex, 0);
-	glGenBuffers(1, &atlasBuffer);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, atlasBuffer);
-	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(atlasData), atlasData, 0);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, atlasBuffer);
-	
-
 	u_vertexData = getStorageBlockIndex(defaultShader.id, "u_vertexData");
 	glShaderStorageBlockBinding(defaultShader.id, u_vertexData, 1);
 	glGenBuffers(1, &vertexDataBuffer);
@@ -776,17 +349,29 @@ void Renderer::updateDynamicBlocks()
 {
 	float time = std::clock();
 
-	glm::vec3 topFrontLeft = {-0.5f, 0.5f, 0.5f};
-	glm::vec3 topFrontRight = {0.5f, 0.5f, 0.5f};
-	glm::vec3 topBackLeft = {-0.5f, 0.5f, -0.5f};
-	glm::vec3 topBackRight = {0.5f, 0.5f, -0.5f};
-	glm::vec3 bottomFrontLeft = {-0.5f, -0.5f, 0.5f};
-	glm::vec3 bottomFrontRight = {0.5f, -0.5f, 0.5f};
-	glm::vec3 bottomBackLeft = {-0.5f, -0.5f, -0.5f};
-	glm::vec3 bottomBackRight = {0.5f, -0.5f, -0.5f};
+	glm::vec3 topFrontLeftGrass = {-0.5f, 0.5f, 0.5f};
+	glm::vec3 topFrontRightGrass = {0.5f, 0.5f, 0.5f};
+	glm::vec3 topBackLeftGrass = {-0.5f, 0.5f, -0.5f};
+	glm::vec3 topBackRightGrass = {0.5f, 0.5f, -0.5f};
+	glm::vec3 bottomFrontLeftGrass = {-0.5f, -0.5f, 0.5f};
+	glm::vec3 bottomFrontRightGrass = {0.5f, -0.5f, 0.5f};
+	glm::vec3 bottomBackLeftGrass = {-0.5f, -0.5f, -0.5f};
+	glm::vec3 bottomBackRightGrass = {0.5f, -0.5f, -0.5f};
+
+	glm::vec3 topFrontLeft = {};
+	glm::vec3 topFrontRight = {};
+	glm::vec3 topBackLeft = {};
+	glm::vec3 topBackRight = {};
+	glm::vec3 bottomFrontLeft = {};
+	glm::vec3 bottomFrontRight = {};
+	glm::vec3 bottomBackLeft = {};
+	glm::vec3 bottomBackRight = {};
 
 	glm::vec3 *topFaces[4] = {&topFrontLeft, &topFrontRight, &topBackLeft, &topBackRight};
 	glm::vec3* bottomFaces[4] = {&bottomFrontLeft, &bottomFrontRight, &bottomBackLeft, &bottomBackRight};
+
+	glm::vec3 *topFacesGrass[4] = {&topFrontLeftGrass, &topFrontRightGrass, &topBackLeftGrass, &topBackRightGrass};
+	glm::vec3 *bottomFacesGrass[4] = {&bottomFrontLeftGrass, &bottomFrontRightGrass, &bottomBackLeftGrass, &bottomBackRightGrass};
 	
 	float prelucratedTime = time / 100000.f;
 
@@ -803,44 +388,50 @@ void Renderer::updateDynamicBlocks()
 	for (int i = 0; i < 4; i++)
 	{
 		topFaces[i]->x += offsetVector.x;
-		//topFaces[i]->y ;
 		topFaces[i]->z += offsetVector.y;
 	
 		bottomFaces[i]->x -= offsetVector.x;
 		bottomFaces[i]->z -= offsetVector.y;
+
+
+		topFacesGrass[i]->x += offsetVector.x;
+		topFacesGrass[i]->z += offsetVector.y;
+
+		bottomFacesGrass[i]->x -= offsetVector.x;
+		bottomFacesGrass[i]->z -= offsetVector.y;
 	}
 
 
 	float newData[] =
 	{
 		//grass
-		topFrontRight.x, topFrontRight.y, topFrontRight.z,
-		topBackLeft.x,topBackLeft.y,topBackLeft.z,
+		topFrontRightGrass.x, topFrontRightGrass.y, topFrontRightGrass.z,
+		topBackLeftGrass.x,topBackLeftGrass.y,topBackLeftGrass.z,
 		-0.5, -0.5, -0.5,
 		-0.5, -0.5, -0.5,
 		0.5, -0.5, 0.5,
-		topFrontRight.x, topFrontRight.y, topFrontRight.z,
+		topFrontRightGrass.x, topFrontRightGrass.y, topFrontRightGrass.z,
 
 		-0.5, -0.5, -0.5,
-		topBackLeft.x,topBackLeft.y,topBackLeft.z,
-		topFrontRight.x, topFrontRight.y, topFrontRight.z,
-		topFrontRight.x, topFrontRight.y, topFrontRight.z,
+		topBackLeftGrass.x,topBackLeftGrass.y,topBackLeftGrass.z,
+		topFrontRightGrass.x, topFrontRightGrass.y, topFrontRightGrass.z,
+		topFrontRightGrass.x, topFrontRightGrass.y, topFrontRightGrass.z,
 		0.5, -0.5, 0.5,
 		-0.5, -0.5, -0.5,
 
-		topFrontLeft.x,topFrontLeft.y,topFrontLeft.z,
-		topBackRight.x,topBackRight.y,topBackRight.z,
+		topFrontLeftGrass.x,topFrontLeftGrass.y,topFrontLeftGrass.z,
+		topBackRightGrass.x,topBackRightGrass.y,topBackRightGrass.z,
 		0.5, -0.5, -0.5,
 		0.5, -0.5, -0.5,
 		-0.5, -0.5, 0.5,
-		topFrontLeft.x,topFrontLeft.y,topFrontLeft.z,
+		topFrontLeftGrass.x,topFrontLeftGrass.y,topFrontLeftGrass.z,
 
 		
 		-0.5, -0.5, 0.5,
 		0.5, -0.5, -0.5,
-		topBackRight.x,topBackRight.y,topBackRight.z,
-		topBackRight.x,topBackRight.y,topBackRight.z,
-		topFrontLeft.x,topFrontLeft.y,topFrontLeft.z,
+		topBackRightGrass.x,topBackRightGrass.y,topBackRightGrass.z,
+		topBackRightGrass.x,topBackRightGrass.y,topBackRightGrass.z,
+		topFrontLeftGrass.x,topFrontLeftGrass.y,topFrontLeftGrass.z,
 		-0.5, -0.5, 0.5,
 
 		//-0.5, -0.5, 0.5,

@@ -1,7 +1,7 @@
 #version 430 core
 
 layout(location = 0) in int in_faceOrientation; //up down left etc
-layout(location = 1) in int in_faceType; //dirt grass stone etc
+layout(location = 1) in int in_textureIndex; //dirt grass stone etc
 layout(location = 2) in ivec3 in_facePosition; // int x y z
 layout(location = 3) in int in_skyLight; 
 
@@ -49,14 +49,7 @@ float vertexColor[] = float[](
 
 );
 
-
-
-readonly restrict layout(std430) buffer u_atlasPositions
-{
-	int atlasPositions[];
-};
-uniform int u_typesCount;
-
+//geometry
 readonly restrict layout(std430) buffer u_vertexData
 {
 	float vertexData[];
@@ -85,22 +78,27 @@ void main()
 	vec4 pos = vec4(floatPosition.xyz,1);
 	vec3 vertexShape;
 
+	v_uv.x = vertexUV[(in_faceOrientation) * 2 * 6 + gl_VertexID * 2 + 0];
+	v_uv.y = vertexUV[(in_faceOrientation) * 2 * 6 + gl_VertexID * 2 + 1];
+
 	vertexShape.x = vertexData[in_faceOrientation * 3 * 6 + gl_VertexID * 3 + 0];
 	vertexShape.y = vertexData[in_faceOrientation * 3 * 6 + gl_VertexID * 3 + 1];
 	vertexShape.z = vertexData[in_faceOrientation * 3 * 6 + gl_VertexID * 3 + 2];
 
-	v_uv.x = vertexUV[(in_faceOrientation) * 2 * 6 + gl_VertexID * 2 + 0];
-	v_uv.y = vertexUV[(in_faceOrientation) * 2 * 6 + gl_VertexID * 2 + 1];
 
-	if(in_faceOrientation >= 10)
+	if(in_faceOrientation >= 10) //animated
 	{
 
 		if(in_facePosition.y % 2 == 0)
 		{
 			vertexShape.x = -vertexShape.x;
 			vertexShape.z = -vertexShape.z;
-			v_uv.x = 1.f-v_uv.x;
+			//v_uv.x = 1.f-v_uv.x;
 		}
+
+		vertexShape.x += vertexData[(in_faceOrientation-10) * 3 * 6 + gl_VertexID * 3 + 0];
+		vertexShape.y += vertexData[(in_faceOrientation-10) * 3 * 6 + gl_VertexID * 3 + 1];
+		vertexShape.z += vertexData[(in_faceOrientation-10) * 3 * 6 + gl_VertexID * 3 + 2];
 
 		//if(in_faceOrientation == 6)
 		//{//front
@@ -124,6 +122,8 @@ void main()
 		//vertexShape *= 0.8+((sin(u_time)+1)/2.f)*0.2;
 	}
 
+	
+
 	pos.xyz += vertexShape;
 
 	pos = u_viewProjection * pos;
@@ -134,13 +134,7 @@ void main()
 	//v_color = vertexColor[in_faceOrientation];
 
 
-	//ivec2 uvInAtlas;
-	//uvInAtlas.x = atlasPositions[(in_faceOrientation) * 2 * u_typesCount + in_faceType * 2 + 0];
-	//uvInAtlas.y = atlasPositions[(in_faceOrientation) * 2 * u_typesCount + in_faceType * 2 + 1];
 
-	//v_uv += uvInAtlas;
-	//v_uv *= 1.f/16.f;
-
-	v_textureSampler = textureSamplerers[in_faceType];
+	v_textureSampler = textureSamplerers[in_textureIndex];
 
 }

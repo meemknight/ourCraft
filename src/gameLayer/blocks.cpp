@@ -88,19 +88,35 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 						}
 						else
 						{
+
+							//if (b.isAnimated())
+							//{
+							//
+							//	int a = 0;
+							//
+							//}
+
 							for (int i = 0; i < 6; i++)
 							{
 								
 								if ((sides[i] != nullptr && !(sides[i])->isOpaque())
-									|| ( (i == 3 && y == 0) || (i == 2 && y == CHUNK_HEIGHT-1) )
+									|| ((i == 3 && y == 0) || (i == 2 && y == CHUNK_HEIGHT - 1)
+									)
 									)
 								{
 									//opaqueGeometry.push_back(mergeShorts(i + (int)b.isAnimated() * 10, b.type));
 
-									opaqueGeometry.push_back(mergeShorts(i + (int)b.isAnimated() * 10, 
-										getGpuIdIndexForBlock(b.type, i)));
+									if (b.isAnimated())
+									{
+										opaqueGeometry.push_back(mergeShorts(i + 10,
+											getGpuIdIndexForBlock(b.type, i)));
+									}
+									else
+									{
+										opaqueGeometry.push_back(mergeShorts(i,
+											getGpuIdIndexForBlock(b.type, i)));
+									}
 									
-
 									//if (sides[i] != nullptr && i == 2)
 									//{
 									//	opaqueGeometry.push_back(15);
