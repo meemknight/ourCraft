@@ -101,7 +101,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 				if (e.type == Event::iPlacedBlock)
 				{
-					gameData.chunkSystem.placeBlockNoClient(e.blockPos, e.originalBlock);
+					gameData.chunkSystem.placeBlockNoClient(e.blockPos, e.originalBlock, gameData.lightSystem);
 				}
 			}
 			
@@ -230,12 +230,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		{
 			if (blockToPlace)
 				gameData.chunkSystem.placeBlockByClient(*blockToPlace, blockTypeToPlace,
-				gameData.undoQueue, gameData.c.position);
+				gameData.undoQueue, gameData.c.position, gameData.lightSystem);
 		}
 		else if (platform::isLMouseReleased())
 		{
 			gameData.chunkSystem.placeBlockByClient(rayCastPos, BlockTypes::air,
-				gameData.undoQueue, gameData.c.position);
+				gameData.undoQueue, gameData.c.position, gameData.lightSystem);
 		}
 	};
 

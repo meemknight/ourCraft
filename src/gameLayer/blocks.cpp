@@ -77,12 +77,11 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 								//opaqueGeometry.push_back(mergeShorts(i, b.type));
 								opaqueGeometry.push_back(mergeShorts(i, getGpuIdIndexForBlock(b.type, 0)));
 								
-								//opaqueGeometry.push_back(b.getSkyLight());
 								opaqueGeometry.push_back(x + this->data.x * CHUNK_SIZE);
 								opaqueGeometry.push_back(y);
 								opaqueGeometry.push_back(z + this->data.z * CHUNK_SIZE);
-								opaqueGeometry.push_back(15);
-
+								//opaqueGeometry.push_back(15);
+								opaqueGeometry.push_back(b.getSkyLight());
 							}
 
 						}
@@ -117,23 +116,36 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 											getGpuIdIndexForBlock(b.type, i)));
 									}
 									
-									//if (sides[i] != nullptr && i == 2)
-									//{
-									//	opaqueGeometry.push_back(15);
-									//}
-									//else if (sides[i] != nullptr && i == 3)
-									//{
-									//	opaqueGeometry.push_back(0);
-									//}
-									//else
-									//{
-									//	opaqueGeometry.push_back(sides[i]->getSkyLight());
-									//}
-									//opaqueGeometry.push_back(15);
+									
 									opaqueGeometry.push_back(x + this->data.x * CHUNK_SIZE);
 									opaqueGeometry.push_back(y);
 									opaqueGeometry.push_back(z + this->data.z * CHUNK_SIZE);
-									opaqueGeometry.push_back(15);
+
+									if (sides[i] == nullptr && i == 2)
+									{
+										opaqueGeometry.push_back(15);
+									}
+									else if (sides[i] == nullptr && i == 3)
+									{
+										opaqueGeometry.push_back(5); //bottom of the world
+									}
+									else if(sides[i] != nullptr)
+									{
+										int val = sides[i]->getSkyLight();
+
+										if (val > 0)
+										{
+											int a = 0;
+										}
+
+										opaqueGeometry.push_back(val);
+										//opaqueGeometry.push_back(15);
+									}
+									else
+									{
+										opaqueGeometry.push_back(0);
+									}
+									//opaqueGeometry.push_back(15);
 
 								}
 							}
@@ -185,4 +197,19 @@ bool isBlockMesh(uint16_t type)
 bool isCrossMesh(uint16_t type)
 {
 	return type == grass || type == rose;
+}
+
+bool isOpaque(uint16_t type)
+{
+	return
+		type != BlockTypes::air
+		&& type != BlockTypes::leaves
+		&& !(isGrassMesh(type));
+}
+
+bool isGrassMesh(uint16_t type)
+{
+	return type == BlockTypes::grass
+		|| type == BlockTypes::rose
+		;
 }

@@ -519,7 +519,7 @@ void Renderer::render(std::vector<int> &data, Camera &c, gl2d::Texture &texture)
 
 	glUniform3fv(u_positionFloat, 1, &posFloat[0]);
 	glUniform3iv(u_positionInt, 1, &posInt[0]);
-	glUniform1i(u_typesCount, BlocksCount);
+	glUniform1i(u_typesCount, BlocksCount);	//remove
 	glUniform1f(u_time, std::clock() / 400.f);
 
 	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);

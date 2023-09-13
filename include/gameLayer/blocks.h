@@ -36,20 +36,20 @@ bool isBlockMesh(uint16_t type);
 
 bool isCrossMesh(uint16_t type);
 
+bool isOpaque(uint16_t type);
+
+bool isGrassMesh(uint16_t type);
 
 struct Block
 {
 	uint16_t type;
-	char lightLevel; //first 4 bytes represent the sun level and bottom 4 bytes the other lights level
-	char notUsed;
+	unsigned char lightLevel; //first 4 bytes represent the sun level and bottom 4 bytes the other lights level
+	unsigned char notUsed;
 
 	bool air() { return type == 0; }
 	bool isOpaque()
 	{
-		return
-			type != BlockTypes::air
-			&& type != BlockTypes::leaves
-			&& !(isGrassMesh());
+		return ::isOpaque(type);
 	}
 
 	bool isAnimated()
@@ -60,17 +60,15 @@ struct Block
 
 	bool isGrassMesh()
 	{
-		return type == BlockTypes::grass
-			|| type == BlockTypes::rose
-			;
+		return ::isGrassMesh(type);
 	}
 
-	char getSkyLight()
+	unsigned char getSkyLight()
 	{
 		return (lightLevel >> 4);
 	}
 
-	void setSkyLevel(char s)
+	void setSkyLevel(unsigned char s)
 	{
 		s = s & 0b1111;
 		s <<= 4;
@@ -135,7 +133,7 @@ struct Chunk
 	char neighbourToRight = 0;
 	char neighbourToFront = 0;
 	char neighbourToBack = 0;
-
+	char dontDrawYet = 0; //first time ever don't draw it yet so we have time to process the light
 
 	void clear()
 	{

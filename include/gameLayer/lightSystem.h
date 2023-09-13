@@ -16,5 +16,8 @@ struct LightSystem
 
 	void update(ChunkSystem &chunkSystem);
 	
+	void addSunLight(ChunkSystem &chunkSystem, glm::ivec3 pos, char intensity);
+
+	void removeSunLight(ChunkSystem &chunkSystem, glm::ivec3 pos, char oldVal);
 
 };

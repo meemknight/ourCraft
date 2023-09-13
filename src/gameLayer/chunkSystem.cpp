@@ -119,20 +119,19 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime, 
 				int xBegin = i->data.x * CHUNK_SIZE;
 				int zBegin = i->data.z * CHUNK_SIZE;
 
-				//{
-				//	for (int xPos = xBegin; xPos < xBegin + CHUNK_SIZE; xPos++)
-				//		for (int zPos = zBegin; zPos < zBegin + CHUNK_SIZE; zPos++)
-				//		{
-				//			if (!i->unsafeGet(xPos - xBegin, CHUNK_HEIGHT - 1, zPos - zBegin).isOpaque())
-				//			{
-				//				LightSystem::Light l;
-				//				l.pos = {xPos, CHUNK_HEIGHT - 1, zPos};
-				//				l.intensity = 15;
-				//
-				//				//lightSystem.sunLigtsToAdd.push_back(l);
-				//			}
-				//		}
-				//}
+				{
+					for (int xPos = xBegin; xPos < xBegin + CHUNK_SIZE; xPos++)
+						for (int zPos = zBegin; zPos < zBegin + CHUNK_SIZE; zPos++)
+						{
+							if (!i->unsafeGet(xPos - xBegin, CHUNK_HEIGHT - 1, zPos - zBegin).isOpaque())
+							{
+								lightSystem.addSunLight(*this, {xPos, CHUNK_HEIGHT - 1, zPos}, 15);
+							}
+						}
+
+					i->dontDrawYet = true;
+				}
+
 			}
 
 		}
@@ -323,7 +322,8 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime, 
 	for (int i = 0; i < chunkVectorCopy.size(); i++)
 	{
 		auto chunk = chunkVectorCopy[i];
-		if (chunk == nullptr) { continue; } //todo break? 
+		if (chunk == nullptr) { continue; }
+		if (chunk->dontDrawYet == true) { chunk->dontDrawYet = false; continue; }
 
 		int x = chunk->data.x - minPos.x;
 		int z = chunk->data.z - minPos.y;
@@ -346,7 +346,7 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime, 
 		}
 		else
 		{
-			if (!chunk->dirty)
+			//if (!chunk->dirty)
 			{
 				for (auto i : chunk->opaqueGeometry)
 				{
@@ -456,8 +456,45 @@ Block *ChunkSystem::rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, 
 	return nullptr;
 }
 
+void ChunkSystem::changeBlockLightStuff(glm::ivec3 pos, int currentLightLevel,
+	uint16_t oldType, uint16_t newType, LightSystem &lightSystem)
+{
+	
+	if (!isOpaque(oldType) && isOpaque(newType))
+	{
+		//remove light
+		lightSystem.removeSunLight(*this, pos, currentLightLevel);
+	}
+	else if (isOpaque(oldType) && !isOpaque(newType))
+	{
+		//add light
+		int light = 0;
+		auto checkNeighbour = [&](glm::ivec3 pos2, int decrease)
+		{
+			auto b = getBlockSafe(pos2.x, pos2.y, pos2.z);
+			if (b && !b->isOpaque())
+			{
+				light = std::max(light, b->getSkyLight() - decrease);
+			}
+		};
+
+		checkNeighbour({pos.x+1,pos.y,pos.z}, 1);
+		checkNeighbour({pos.x-1,pos.y,pos.z}, 1);
+		checkNeighbour({pos.x,pos.y+1,pos.z}, 0);
+		checkNeighbour({pos.x,pos.y-1,pos.z}, 1);
+		checkNeighbour({pos.x,pos.y,pos.z+1}, 1);
+		checkNeighbour({pos.x,pos.y,pos.z-1}, 1);
+
+		light = std::max(light, 0);
+
+		lightSystem.addSunLight(*this, pos, light);
+	}
+
+}
+
 //todo short for type
-void ChunkSystem::placeBlockByClient(glm::ivec3 pos, int type, UndoQueue &undoQueue, glm::dvec3 playerPos)
+void ChunkSystem::placeBlockByClient(glm::ivec3 pos, int type, UndoQueue &undoQueue, glm::dvec3 playerPos
+	, LightSystem &lightSystem)
 {
 	//todo were we will check legality locally
 	Chunk *chunk = 0;
@@ -473,17 +510,20 @@ void ChunkSystem::placeBlockByClient(glm::ivec3 pos, int type, UndoQueue &undoQu
 		submitTaskClient(task);
 
 		undoQueue.addPlaceBlockEvent(pos, b->type, type, playerPos);
-		
+
+		changeBlockLightStuff(pos, b->getSkyLight(), b->type, type, lightSystem);
+
 		b->type = type;
 		if (b->isOpaque()) { b->lightLevel = 0; }
 
 		setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
+
 	}
 	
 }
 
 //todo refactor and reuse up
-void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, int type)
+void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, int type, LightSystem &lightSystem)
 {
 	//todo were we will check legality locally
 	Chunk *chunk = 0;
@@ -491,6 +531,8 @@ void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, int type)
 
 	if (b != nullptr)
 	{
+		changeBlockLightStuff(pos, b->getSkyLight(), b->type, type, lightSystem);
+
 		b->type = type;
 		if (b->isOpaque()) { b->lightLevel = 0; }
 
