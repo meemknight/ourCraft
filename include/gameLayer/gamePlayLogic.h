@@ -1,6 +1,7 @@
 #pragma once
 #include <gl2d/gl2d.h>
 #include "rendering/renderer.h"
+#include "blocksLoader.h"
 
 struct ProgramData
 {
@@ -8,6 +9,7 @@ struct ProgramData
 	Renderer renderer;
 	GyzmosRenderer gyzmosRenderer;
 	PointDebugRenderer pointDebugRenderer;
+	BlocksLoader blocksLoader;
 
 	gl2d::Font font;
 	gl2d::Texture texture;

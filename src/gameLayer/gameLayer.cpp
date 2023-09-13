@@ -18,7 +18,7 @@
 #include "glui/glui.h"
 #include "gamePlayLogic.h"
 
-#define GPU_ENGINE 1
+#define GPU_ENGINE 0
 extern "C"
 {
 	__declspec(dllexport) unsigned long NvOptimusEnablement = GPU_ENGINE;
@@ -37,10 +37,24 @@ bool initGame()
 	//gl2d::setVsync(false);
 	programData.renderer2d.create();
 	programData.font.createFromFile(RESOURCES_PATH "roboto_black.ttf");
-	programData.texture.loadFromFile(RESOURCES_PATH "blocks.png", true);
+	programData.texture.loadFromFile(RESOURCES_PATH "blocks.png", true, false);
 	programData.uiTexture.loadFromFile(RESOURCES_PATH "ui0.png", true, true);
 
-	programData.renderer.create();
+
+	{
+		programData.texture.bind();
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.f);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 4.f);
+
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+
+
+	programData.blocksLoader.loadAllTextures();
+	programData.renderer.create(programData.blocksLoader);
 	programData.gyzmosRenderer.create();
 	programData.pointDebugRenderer.create();
 

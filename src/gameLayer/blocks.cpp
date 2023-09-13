@@ -68,6 +68,7 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 
 						Block* sides[6] = {bfront, bback, btop, bbottom, bleft, bright};
 
+						//todo occlude if all of the blocks
 						if (b.isGrassMesh())
 						{
 							for (int i = 6; i <= 9; i++)
@@ -77,7 +78,7 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 								opaqueGeometry.push_back(x + this->data.x * CHUNK_SIZE);
 								opaqueGeometry.push_back(y);
 								opaqueGeometry.push_back(z + this->data.z * CHUNK_SIZE);
-								//opaqueGeometry.push_back(15);
+								opaqueGeometry.push_back(15);
 
 							}
 
@@ -88,7 +89,7 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 							{
 								
 								if ((sides[i] != nullptr && !(sides[i])->isOpaque())
-									|| (i == 2 || i == 3)
+									|| ( (i == 3 && y == 0) || (i == 2 && y == CHUNK_HEIGHT-1) )
 									)
 								{
 									opaqueGeometry.push_back(mergeShorts(i + (int)b.isAnimated() * 10, b.type));
@@ -109,7 +110,7 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 									opaqueGeometry.push_back(x + this->data.x * CHUNK_SIZE);
 									opaqueGeometry.push_back(y);
 									opaqueGeometry.push_back(z + this->data.z * CHUNK_SIZE);
-									//opaqueGeometry.push_back(15);
+									opaqueGeometry.push_back(15);
 
 								}
 							}

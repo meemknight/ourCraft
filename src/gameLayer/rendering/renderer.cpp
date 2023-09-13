@@ -7,6 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/mat3x3.hpp>
 #include <glm/gtx/transform.hpp>
+#include <blocksLoader.h>
 
 #define GET_UNIFORM(s, n) n = s.getUniform(#n);
 
@@ -698,7 +699,7 @@ float vertexUV[] = {
 	1, 1
 };
 
-void Renderer::create()
+void Renderer::create(BlocksLoader &blocksLoader)
 {
 
 	skyBoxRenderer.create();
@@ -735,6 +736,13 @@ void Renderer::create()
 	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(vertexUV), vertexUV, 0);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, vertexUVBuffer);
 
+	u_textureSamplerers = getStorageBlockIndex(defaultShader.id, "u_textureSamplerers");
+	glShaderStorageBlockBinding(defaultShader.id, u_textureSamplerers, 3);
+	glGenBuffers(1, &textureSamplerersBuffer);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, textureSamplerersBuffer);
+	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint64) * blocksLoader.gpuIds.size(), blocksLoader.gpuIds.data(), 0);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, textureSamplerersBuffer);
+
 
 	glCreateBuffers(1, &vertexBuffer);
 	//glNamedBufferData(vertexBuffer, sizeof(data), data, GL_DYNAMIC_DRAW);
@@ -744,33 +752,21 @@ void Renderer::create()
 		
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 
-		//glEnableVertexAttribArray(0);
-		//glVertexAttribIPointer(0, 1, GL_SHORT, 5*sizeof(int), 0);								//short
-		//glVertexAttribDivisor(0, 1);
-		//
-		//glEnableVertexAttribArray(1);
-		//glVertexAttribIPointer(1, 1, GL_SHORT, 5 * sizeof(int), (void*)(1 * sizeof(short)));	//short
-		//glVertexAttribDivisor(1, 1);
-		//
-		//glEnableVertexAttribArray(2);
-		//glVertexAttribIPointer(2, 1, GL_INT, 5 * sizeof(int), (void *)(2 * sizeof(short)));		//int
-		//glVertexAttribDivisor(2, 1);
-		//
-		//glEnableVertexAttribArray(3);
-		//glVertexAttribIPointer(3, 3, GL_INT, 5 * sizeof(int), (void*)(4 * sizeof(short)));
-		//glVertexAttribDivisor(3, 1);
-
 		glEnableVertexAttribArray(0);
-		glVertexAttribIPointer(0, 1, GL_SHORT, 4 * sizeof(int), 0);
+		glVertexAttribIPointer(0, 1, GL_SHORT, 5 * sizeof(int), 0);
 		glVertexAttribDivisor(0, 1);
 
 		glEnableVertexAttribArray(1);
-		glVertexAttribIPointer(1, 1, GL_SHORT, 4 * sizeof(int), (void *)(1 * sizeof(short)));
+		glVertexAttribIPointer(1, 1, GL_SHORT, 5 * sizeof(int), (void *)(1 * sizeof(short)));
 		glVertexAttribDivisor(1, 1);
 
 		glEnableVertexAttribArray(2);
-		glVertexAttribIPointer(2, 3, GL_INT, 4 * sizeof(int), (void *)(1 * sizeof(int)));
+		glVertexAttribIPointer(2, 3, GL_INT, 5 * sizeof(int), (void *)(1 * sizeof(int)));
 		glVertexAttribDivisor(2, 1);
+		
+		glEnableVertexAttribArray(3);
+		glVertexAttribIPointer(3, 3, GL_INT, 5 * sizeof(int), (void *)(4 * sizeof(int)));
+		glVertexAttribDivisor(3, 1);
 
 	glBindVertexArray(0);
 

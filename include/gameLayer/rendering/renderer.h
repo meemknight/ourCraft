@@ -5,6 +5,8 @@
 #include "rendering/skyBoxRenderer.h"
 #include <gl2d/gl2d.h>
 
+struct BlocksLoader;
+
 struct Renderer
 {
 	Shader defaultShader;
@@ -17,8 +19,9 @@ struct Renderer
 	GLuint u_atlasBlockIndex = GL_INVALID_INDEX;
 	GLuint u_vertexData = GL_INVALID_INDEX;
 	GLuint u_vertexUV = GL_INVALID_INDEX;
+	GLuint u_textureSamplerers = GL_INVALID_INDEX;
 
-	void create();
+	void create(BlocksLoader &blocksLoader);
 	void updateDynamicBlocks();
 	void render(std::vector<int> &data, Camera &c, gl2d::Texture &texture);
 
@@ -29,6 +32,7 @@ struct Renderer
 	GLuint atlasBuffer = 0;
 	GLuint vertexDataBuffer = 0;
 	GLuint vertexUVBuffer = 0;
+	GLuint textureSamplerersBuffer = 0;
 	
 };
 

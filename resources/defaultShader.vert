@@ -3,7 +3,7 @@
 layout(location = 0) in int in_faceOrientation; //up down left etc
 layout(location = 1) in int in_faceType; //dirt grass stone etc
 layout(location = 2) in ivec3 in_facePosition; // int x y z
-//layout(location = 3) in int in_skyLight; 
+layout(location = 3) in int in_skyLight; 
 
 
 uniform mat4 u_viewProjection;
@@ -67,9 +67,15 @@ readonly restrict layout(std430) buffer u_vertexUV
 	float vertexUV[];
 };
 
+readonly restrict layout(std430) buffer u_textureSamplerers
+{
+	uvec2 textureSamplerers[];
+};
 
 out vec2 v_uv;
 out float v_color;
+
+out flat uvec2 v_textureSampler;
 
 void main()
 {
@@ -124,15 +130,17 @@ void main()
 
 	gl_Position = pos;
 	
-	//v_color = vertexColor[in_faceOrientation] * (in_skyLight/15.f);
-	v_color = vertexColor[in_faceOrientation];
+	v_color = vertexColor[in_faceOrientation] * (in_skyLight/15.f);
+	//v_color = vertexColor[in_faceOrientation];
 
 
 	ivec2 uvInAtlas;
 	uvInAtlas.x = atlasPositions[(in_faceOrientation) * 2 * u_typesCount + in_faceType * 2 + 0];
 	uvInAtlas.y = atlasPositions[(in_faceOrientation) * 2 * u_typesCount + in_faceType * 2 + 1];
 
-	v_uv += uvInAtlas;
-	v_uv *= 1.f/16.f;
+	//v_uv += uvInAtlas;
+	//v_uv *= 1.f/16.f;
+
+	v_textureSampler = textureSamplerers[0];
 
 }
