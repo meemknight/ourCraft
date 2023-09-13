@@ -73,10 +73,12 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 							for (int i = 6; i <= 9; i++)
 							{
 								opaqueGeometry.push_back(mergeShorts(i, b.type));
-								opaqueGeometry.push_back(b.getSkyLight());
+								//opaqueGeometry.push_back(b.getSkyLight());
 								opaqueGeometry.push_back(x + this->data.x * CHUNK_SIZE);
 								opaqueGeometry.push_back(y);
 								opaqueGeometry.push_back(z + this->data.z * CHUNK_SIZE);
+								//opaqueGeometry.push_back(15);
+
 							}
 
 						}
@@ -103,10 +105,12 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 									//{
 									//	opaqueGeometry.push_back(sides[i]->getSkyLight());
 									//}
-									opaqueGeometry.push_back(15);
+									//opaqueGeometry.push_back(15);
 									opaqueGeometry.push_back(x + this->data.x * CHUNK_SIZE);
 									opaqueGeometry.push_back(y);
 									opaqueGeometry.push_back(z + this->data.z * CHUNK_SIZE);
+									//opaqueGeometry.push_back(15);
+
 								}
 							}
 						}

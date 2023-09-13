@@ -119,20 +119,20 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime, 
 				int xBegin = i->data.x * CHUNK_SIZE;
 				int zBegin = i->data.z * CHUNK_SIZE;
 
-				{
-					for (int xPos = xBegin; xPos < xBegin + CHUNK_SIZE; xPos++)
-						for (int zPos = zBegin; zPos < zBegin + CHUNK_SIZE; zPos++)
-						{
-							if (!i->unsafeGet(xPos - xBegin, CHUNK_HEIGHT - 1, zPos - zBegin).isOpaque())
-							{
-								LightSystem::Light l;
-								l.pos = {xPos, CHUNK_HEIGHT - 1, zPos};
-								l.intensity = 15;
-
-								//lightSystem.sunLigtsToAdd.push_back(l);
-							}
-						}
-				}
+				//{
+				//	for (int xPos = xBegin; xPos < xBegin + CHUNK_SIZE; xPos++)
+				//		for (int zPos = zBegin; zPos < zBegin + CHUNK_SIZE; zPos++)
+				//		{
+				//			if (!i->unsafeGet(xPos - xBegin, CHUNK_HEIGHT - 1, zPos - zBegin).isOpaque())
+				//			{
+				//				LightSystem::Light l;
+				//				l.pos = {xPos, CHUNK_HEIGHT - 1, zPos};
+				//				l.intensity = 15;
+				//
+				//				//lightSystem.sunLigtsToAdd.push_back(l);
+				//			}
+				//		}
+				//}
 			}
 
 		}

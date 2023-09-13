@@ -744,21 +744,33 @@ void Renderer::create()
 		
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 
+		//glEnableVertexAttribArray(0);
+		//glVertexAttribIPointer(0, 1, GL_SHORT, 5*sizeof(int), 0);								//short
+		//glVertexAttribDivisor(0, 1);
+		//
+		//glEnableVertexAttribArray(1);
+		//glVertexAttribIPointer(1, 1, GL_SHORT, 5 * sizeof(int), (void*)(1 * sizeof(short)));	//short
+		//glVertexAttribDivisor(1, 1);
+		//
+		//glEnableVertexAttribArray(2);
+		//glVertexAttribIPointer(2, 1, GL_INT, 5 * sizeof(int), (void *)(2 * sizeof(short)));		//int
+		//glVertexAttribDivisor(2, 1);
+		//
+		//glEnableVertexAttribArray(3);
+		//glVertexAttribIPointer(3, 3, GL_INT, 5 * sizeof(int), (void*)(4 * sizeof(short)));
+		//glVertexAttribDivisor(3, 1);
+
 		glEnableVertexAttribArray(0);
-		glVertexAttribIPointer(0, 1, GL_SHORT, 5*sizeof(int), 0);								//short
+		glVertexAttribIPointer(0, 1, GL_SHORT, 4 * sizeof(int), 0);
 		glVertexAttribDivisor(0, 1);
 
 		glEnableVertexAttribArray(1);
-		glVertexAttribIPointer(1, 1, GL_SHORT, 5 * sizeof(int), (void*)(1 * sizeof(short)));	//short
+		glVertexAttribIPointer(1, 1, GL_SHORT, 4 * sizeof(int), (void *)(1 * sizeof(short)));
 		glVertexAttribDivisor(1, 1);
 
 		glEnableVertexAttribArray(2);
-		glVertexAttribIPointer(2, 1, GL_INT, 5 * sizeof(int), (void *)(2 * sizeof(short)));		//int
+		glVertexAttribIPointer(2, 3, GL_INT, 4 * sizeof(int), (void *)(1 * sizeof(int)));
 		glVertexAttribDivisor(2, 1);
-
-		glEnableVertexAttribArray(3);
-		glVertexAttribIPointer(3, 3, GL_INT, 5 * sizeof(int), (void*)(4 * sizeof(short)));
-		glVertexAttribDivisor(3, 1);
 
 	glBindVertexArray(0);
 

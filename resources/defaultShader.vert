@@ -2,8 +2,9 @@
 
 layout(location = 0) in int in_faceOrientation; //up down left etc
 layout(location = 1) in int in_faceType; //dirt grass stone etc
-layout(location = 2) in int in_skyLight; 
-layout(location = 3) in ivec3 in_facePosition; // int x y z
+layout(location = 2) in ivec3 in_facePosition; // int x y z
+//layout(location = 3) in int in_skyLight; 
+
 
 uniform mat4 u_viewProjection;
 uniform ivec3 u_positionInt;
@@ -123,7 +124,8 @@ void main()
 
 	gl_Position = pos;
 	
-	v_color = vertexColor[in_faceOrientation] * (in_skyLight/15.f);
+	//v_color = vertexColor[in_faceOrientation] * (in_skyLight/15.f);
+	v_color = vertexColor[in_faceOrientation];
 
 
 	ivec2 uvInAtlas;

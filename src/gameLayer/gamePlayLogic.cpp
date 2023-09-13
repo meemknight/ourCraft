@@ -40,7 +40,7 @@ bool initGameplay(ProgramData &programData)
 	gameData = GameData();
 	gameData.c.position = glm::vec3(0, 65, 0);
 
-	gameData.chunkSystem.createChunks(2);
+	gameData.chunkSystem.createChunks(16);
 
 	return true;
 }
