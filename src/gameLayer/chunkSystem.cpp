@@ -129,7 +129,7 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime, 
 								l.pos = {xPos, CHUNK_HEIGHT - 1, zPos};
 								l.intensity = 15;
 
-								lightSystem.sunLigtsToAdd.push_back(l);
+								//lightSystem.sunLigtsToAdd.push_back(l);
 							}
 						}
 				}

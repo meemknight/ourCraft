@@ -4,7 +4,7 @@
 
 void LightSystem::update(ChunkSystem &chunkSystem)
 {
-
+	return;
 	while (!sunLigtsToAdd.empty())
 	{
 		auto element = sunLigtsToAdd.front();
@@ -36,6 +36,7 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 						l.intensity = newLightLevel;
 						l.pos = p;
 						sunLigtsToAdd.push_back(l);
+						b2->setSkyLevel(newLightLevel);
 					}
 				}
 			};

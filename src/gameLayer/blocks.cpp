@@ -91,19 +91,19 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 								{
 									opaqueGeometry.push_back(mergeShorts(i + (int)b.isAnimated() * 10, b.type));
 
-									if (i == 2)
-									{
-										opaqueGeometry.push_back(15);
-									}
-									else if (i == 3)
-									{
-										opaqueGeometry.push_back(0);
-									}
-									else
-									{
-										opaqueGeometry.push_back(sides[i]->getSkyLight());
-									}
-
+									//if (sides[i] != nullptr && i == 2)
+									//{
+									//	opaqueGeometry.push_back(15);
+									//}
+									//else if (sides[i] != nullptr && i == 3)
+									//{
+									//	opaqueGeometry.push_back(0);
+									//}
+									//else
+									//{
+									//	opaqueGeometry.push_back(sides[i]->getSkyLight());
+									//}
+									opaqueGeometry.push_back(15);
 									opaqueGeometry.push_back(x + this->data.x * CHUNK_SIZE);
 									opaqueGeometry.push_back(y);
 									opaqueGeometry.push_back(z + this->data.z * CHUNK_SIZE);
