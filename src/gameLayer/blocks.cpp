@@ -1,6 +1,7 @@
 #include "blocks.h"
 #include "rendering/renderer.h"
 #include "worldGenerator.h"
+#include "blocksLoader.h"
 
 Block* Chunk::safeGet(int x, int y, int z)
 {
@@ -73,7 +74,9 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 						{
 							for (int i = 6; i <= 9; i++)
 							{
-								opaqueGeometry.push_back(mergeShorts(i, b.type));
+								//opaqueGeometry.push_back(mergeShorts(i, b.type));
+								opaqueGeometry.push_back(mergeShorts(i, getGpuIdIndexForBlock(b.type, 0)));
+								
 								//opaqueGeometry.push_back(b.getSkyLight());
 								opaqueGeometry.push_back(x + this->data.x * CHUNK_SIZE);
 								opaqueGeometry.push_back(y);
@@ -92,7 +95,11 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 									|| ( (i == 3 && y == 0) || (i == 2 && y == CHUNK_HEIGHT-1) )
 									)
 								{
-									opaqueGeometry.push_back(mergeShorts(i + (int)b.isAnimated() * 10, b.type));
+									//opaqueGeometry.push_back(mergeShorts(i + (int)b.isAnimated() * 10, b.type));
+
+									opaqueGeometry.push_back(mergeShorts(i + (int)b.isAnimated() * 10, 
+										getGpuIdIndexForBlock(b.type, i)));
+									
 
 									//if (sides[i] != nullptr && i == 2)
 									//{
@@ -152,4 +159,14 @@ void ChunkData::clearLightLevels()
 				unsafeGet(x, y, z).notUsed = 0;
 			}
 
+}
+
+bool isBlockMesh(uint16_t type)
+{
+	return !isBlockMesh(type);
+}
+
+bool isCrossMesh(uint16_t type)
+{
+	return type == grass || type == rose;
 }

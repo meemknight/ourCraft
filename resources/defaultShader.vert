@@ -134,13 +134,13 @@ void main()
 	//v_color = vertexColor[in_faceOrientation];
 
 
-	ivec2 uvInAtlas;
-	uvInAtlas.x = atlasPositions[(in_faceOrientation) * 2 * u_typesCount + in_faceType * 2 + 0];
-	uvInAtlas.y = atlasPositions[(in_faceOrientation) * 2 * u_typesCount + in_faceType * 2 + 1];
+	//ivec2 uvInAtlas;
+	//uvInAtlas.x = atlasPositions[(in_faceOrientation) * 2 * u_typesCount + in_faceType * 2 + 0];
+	//uvInAtlas.y = atlasPositions[(in_faceOrientation) * 2 * u_typesCount + in_faceType * 2 + 1];
 
 	//v_uv += uvInAtlas;
 	//v_uv *= 1.f/16.f;
 
-	v_textureSampler = textureSamplerers[0];
+	v_textureSampler = textureSamplerers[in_faceType];
 
 }

@@ -32,6 +32,11 @@ enum BlockTypes
 	BlocksCount
 };
 
+bool isBlockMesh(uint16_t type);
+
+bool isCrossMesh(uint16_t type);
+
+
 struct Block
 {
 	uint16_t type;
@@ -73,7 +78,18 @@ struct Block
 		lightLevel |= s;
 	}
 
+	bool isBlockMesh()
+	{
+		return ::isBlockMesh(type);
+	}
+
+	bool isCrossMesh()
+	{
+		return ::isCrossMesh(type);
+	}
+
 };
+
 
 constexpr int CHUNK_SIZE = 16;
 constexpr int CHUNK_HEIGHT = 256;

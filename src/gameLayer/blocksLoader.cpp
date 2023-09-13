@@ -1,34 +1,121 @@
 #include <blocksLoader.h>
+#include "blocks.h"
 
-
+//todo add a default texture as texture 0
 const char *texturesNames[] = {
-	"grass_block_top",
-	"grass_block_side",
-	"ice",
-	"oak_log",
-	"oak_log_top",
-	"oak_planks",
-	"cobblestone",
-	"gold_block",
-	"bricks",
-	"sand",
-	"sandstone",
-	"sandstone_bottom",
-	"sandstone_top",
-	"grass_block_snow",
-	"snow",
-	"dark_oak_leaves",
-	"gold_ore",
-	"coal_ore",
-	"stone_bricks",
-	"iron_ore",
-	"diamond_ore",
-	"bookshelf",
-	"birch_log",
-	"birch_log_top",
-	"gravel",
-	"grass", //herbs
-	"rose",
+	
+	"dirt",				//1
+	"grass_block_top",	//2 
+	"grass_block_side",	//3
+	"ice",				//4
+	"oak_log",			//5
+	"oak_log_top",		//6
+	"oak_planks",		//7
+	"cobblestone",		//8
+	"gold_block",		//9
+	"bricks",			//10
+	"sand",				//11
+	"sandstone",		//12
+	"sandstone_bottom",	//13
+	"sandstone_top",	//14
+	"grass_block_snow",	//15
+	"snow",				//16
+	"dark_oak_leaves",	//17
+	"gold_ore",			//18
+	"coal_ore",			//19
+	"stone_bricks",		//20
+	"iron_ore",			//21
+	"diamond_ore",		//22
+	"bookshelf",		//23
+	"birch_log",		//24
+	"birch_log_top",	//25
+	"gravel",			//26
+	"grass", //herbs	//27
+	"rose",				//28
+	"stone",			//29
+};
+
+//front
+//back
+//top
+//bottom
+//left
+//right
+
+uint16_t blocksLookupTable[] = {
+
+	//air
+	0,0,0,0,0,0,
+
+	//grass
+	3,3,2,1,3,3,
+
+	// dirt
+	1,1,1,1,1,1,
+
+	//stone
+	29,29,29,29,29,29,
+
+	//ice
+	4,4,4,4,4,4,
+
+	//log
+	5,5,6,6,5,5,
+
+	//wooden_plank
+	7,7,7,7,7,7,
+
+	//cobblestone
+	8,8,8,8,8,8,
+
+	//gold_block
+	9,9,9,9,9,9,
+
+	//bricks
+	10,10,10,10,10,10,
+
+	//sand
+	11,11,11,11,11,11,
+
+	//sand_stone
+	12,12,14,13,12,12,
+
+	//snow_dirt
+	15,15,16,1,15,15,
+
+	//leaves 
+	17,17,17,17,17,17,
+
+	// gold ore
+	18,18,18,18,18,18,
+
+	// coal ore
+	19,19,19,19,19,19,
+
+	//stone brick
+	20,20,20,20,20,20,
+
+	// iron ore
+	21,21,21,21,21,21,
+
+	// diamond ore
+	22,22,22,22,22,22,
+
+	//boock shelf
+	23,23,7,7,23,23,
+
+	//birch wood
+	24,24,25,25,24,24,
+
+	//gravel
+	26,26,26,26,26,26,
+
+	//herbs
+	27,27,27,27,27,27,
+
+	//rose
+	28,28,28,28,28,28,
+
 };
 
 
@@ -36,8 +123,11 @@ void BlocksLoader::loadAllTextures()
 {
 	size_t count = sizeof(texturesNames) / sizeof(char *);
 	
-	gpuIds.reserve(count);
-	texturesIds.reserve(count);
+	gpuIds.reserve(count + 1);
+	texturesIds.reserve(count+ 1);
+
+	gpuIds.push_back(0);
+	texturesIds.push_back(0); //todo
 
 	std::string path;
 
@@ -72,7 +162,7 @@ void BlocksLoader::loadAllTextures()
 
 }
 
-GLuint64 BlocksLoader::getGpuIdForBlock(short type, int face)
+uint16_t getGpuIdIndexForBlock(short type, int face)
 {
-	return GLuint64();
+	return blocksLookupTable[type * 6 + face];
 }

@@ -66,6 +66,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				{
 					gameData.undoQueue.events.pop_front();
 				}
+				else
+				{
+					break;
+				}
 			}
 		}
 
