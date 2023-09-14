@@ -206,6 +206,31 @@ void Chunk::create(int x, int z)
 void Chunk::createGpuData()
 {
 	glGenBuffers(1, &opaqueGeometryBuffer);
+	glGenVertexArrays(1, &vao);
+
+	glBindVertexArray(vao);
+
+	glBindBuffer(GL_ARRAY_BUFFER, opaqueGeometryBuffer);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribIPointer(0, 1, GL_SHORT, 5 * sizeof(int), 0);
+	glVertexAttribDivisor(0, 1);
+
+	glEnableVertexAttribArray(1);
+	glVertexAttribIPointer(1, 1, GL_SHORT, 5 * sizeof(int), (void *)(1 * sizeof(short)));
+	glVertexAttribDivisor(1, 1);
+
+	glEnableVertexAttribArray(2);
+	glVertexAttribIPointer(2, 3, GL_INT, 5 * sizeof(int), (void *)(1 * sizeof(int)));
+	glVertexAttribDivisor(2, 1);
+
+	glEnableVertexAttribArray(3);
+	glVertexAttribIPointer(3, 1, GL_INT, 5 * sizeof(int), (void *)(4 * sizeof(int)));
+	glVertexAttribDivisor(3, 1);
+	
+	glBindVertexArray(0);
+
+
 }
 
 void Chunk::clearGpuData()

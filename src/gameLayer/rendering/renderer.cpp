@@ -545,37 +545,18 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, gl2d::Te
 	glUniform1i(u_typesCount, BlocksCount);	//remove
 	glUniform1f(u_time, std::clock() / 400.f);
 
-	//glBindVertexArray(vao);
-	//glBindVertexArray(0);
-
 	for (auto &chunk : chunkSystem.loadedChunks)
 	{
 		if (chunk)
 		{
 			if (!chunk->dontDrawYet)
 			{
+
 				int facesCount = chunk->elementCountSize;
 
 				if (facesCount)
 				{
-					glBindBuffer(GL_ARRAY_BUFFER, chunk->opaqueGeometryBuffer);
-
-					glEnableVertexAttribArray(0);
-					glVertexAttribIPointer(0, 1, GL_SHORT, 5 * sizeof(int), 0);
-					glVertexAttribDivisor(0, 1);
-
-					glEnableVertexAttribArray(1);
-					glVertexAttribIPointer(1, 1, GL_SHORT, 5 * sizeof(int), (void *)(1 * sizeof(short)));
-					glVertexAttribDivisor(1, 1);
-
-					glEnableVertexAttribArray(2);
-					glVertexAttribIPointer(2, 3, GL_INT, 5 * sizeof(int), (void *)(1 * sizeof(int)));
-					glVertexAttribDivisor(2, 1);
-
-					glEnableVertexAttribArray(3);
-					glVertexAttribIPointer(3, 1, GL_INT, 5 * sizeof(int), (void *)(4 * sizeof(int)));
-					glVertexAttribDivisor(3, 1);
-
+					glBindVertexArray(chunk->vao);
 					glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
 				}
 			}
@@ -585,7 +566,7 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, gl2d::Te
 	}
 
 
-	//glBindVertexArray(0);
+	glBindVertexArray(0);
 
 
 
