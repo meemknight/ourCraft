@@ -31,6 +31,7 @@ void ChunkSystem::createChunks(int viewDistance)
 void ChunkSystem::update(int x, int z, float deltaTime, UndoQueue &undoQueue
 	, LightSystem &lightSystem)
 {
+	//multy player stuff
 	{
 		std::vector < std::unordered_map<glm::ivec2, float>::iterator > toRemove;
 		for (auto i = recentlyRequestedChunks.begin(); i != recentlyRequestedChunks.end(); i++)
@@ -49,16 +50,18 @@ void ChunkSystem::update(int x, int z, float deltaTime, UndoQueue &undoQueue
 		}
 	}
 
+	//index of the chunk
 	x = divideChunk(x);
 	z = divideChunk(z);
 
+	//bottom left most chunk and top right most chunk of my array
 	glm::ivec2 minPos = glm::ivec2(x, z) - glm::ivec2(squareSize / 2, squareSize / 2);
 	glm::ivec2 maxPos = glm::ivec2(x, z) + glm::ivec2(squareSize / 2 + squareSize % 2, squareSize / 2 + squareSize % 2);
 	//exclusive max
 
 	cornerPos = minPos;
 
-#pragma region recieve chunks
+#pragma region recieve chunks by the server
 	auto recievedChunk = getRecievedChunks();
 
 	for (auto &i : recievedChunk)
@@ -108,7 +111,7 @@ void ChunkSystem::update(int x, int z, float deltaTime, UndoQueue &undoQueue
 #pragma endregion
 
 
-#pragma region set chunk borders
+#pragma region set chunk in matrix
 
 	if (!created || lastX != x || lastZ != z)
 	{
@@ -116,6 +119,7 @@ void ChunkSystem::update(int x, int z, float deltaTime, UndoQueue &undoQueue
 		std::vector<Chunk*> newChunkVector;
 		newChunkVector.resize(squareSize * squareSize);
 
+		//copy old chunks from the old chunk vector to the new one if they are kept
 		for (int i = 0; i < squareSize * squareSize; i++)
 		{
 			if (loadedChunks[i] == nullptr) { continue; }
@@ -138,7 +142,8 @@ void ChunkSystem::update(int x, int z, float deltaTime, UndoQueue &undoQueue
 				loadedChunks[i] = nullptr;
 			}
 			else
-			{
+			{	
+				//chunk no longer needed delete it
 				loadedChunks[i]->clearGpuData();
 				delete loadedChunks[i];
 				loadedChunks[i] = nullptr;
@@ -148,6 +153,7 @@ void ChunkSystem::update(int x, int z, float deltaTime, UndoQueue &undoQueue
 		loadedChunks = std::move(newChunkVector);
 	}
 
+	//request new chunks from the server
 	std::vector<Task> chunkTasks;
 	for (int x = 0; x < squareSize; x++)
 		for (int z = 0; z < squareSize; z++)
