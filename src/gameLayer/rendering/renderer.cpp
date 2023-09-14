@@ -8,6 +8,7 @@
 #include <glm/mat3x3.hpp>
 #include <glm/gtx/transform.hpp>
 #include <blocksLoader.h>
+#include <chunkSystem.h>
 
 #define GET_UNIFORM(s, n) n = s.getUniform(#n);
 
@@ -338,7 +339,7 @@ void Renderer::create(BlocksLoader &blocksLoader)
 		glVertexAttribDivisor(2, 1);
 		
 		glEnableVertexAttribArray(3);
-		glVertexAttribIPointer(3, 3, GL_INT, 5 * sizeof(int), (void *)(4 * sizeof(int)));
+		glVertexAttribIPointer(3, 1, GL_INT, 5 * sizeof(int), (void *)(4 * sizeof(int)));
 		glVertexAttribDivisor(3, 1);
 
 	glBindVertexArray(0);
@@ -506,7 +507,7 @@ void Renderer::render(std::vector<int> &data, Camera &c, gl2d::Texture &texture)
 	c.decomposePosition(posFloat, posInt);
 
 	glNamedBufferData(vertexBuffer, sizeof(int) * data.size(), data.data(), GL_STREAM_DRAW);
-	int facesCount = data.size() / 4;
+	int facesCount = data.size() / 5;
 
 	glBindVertexArray(vao);
 	texture.bind(0);
@@ -525,6 +526,69 @@ void Renderer::render(std::vector<int> &data, Camera &c, gl2d::Texture &texture)
 	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
 
 	glBindVertexArray(0);
+
+}
+
+void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, gl2d::Texture &texture)
+{
+	glm::vec3 posFloat = {};
+	glm::ivec3 posInt = {};
+	c.decomposePosition(posFloat, posInt);
+
+	texture.bind(0);
+	defaultShader.bind();
+	auto mvp = c.getProjectionMatrix() * glm::lookAt({0,0,0}, c.viewDirection, c.up);
+
+	glUniformMatrix4fv(u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
+	glUniform3fv(u_positionFloat, 1, &posFloat[0]);
+	glUniform3iv(u_positionInt, 1, &posInt[0]);
+	glUniform1i(u_typesCount, BlocksCount);	//remove
+	glUniform1f(u_time, std::clock() / 400.f);
+
+	//glBindVertexArray(vao);
+	//glBindVertexArray(0);
+
+	for (auto &chunk : chunkSystem.loadedChunks)
+	{
+		if (chunk)
+		{
+			if (!chunk->dontDrawYet)
+			{
+				int facesCount = chunk->elementCountSize;
+
+				if (facesCount)
+				{
+					glBindBuffer(GL_ARRAY_BUFFER, chunk->opaqueGeometryBuffer);
+
+					glEnableVertexAttribArray(0);
+					glVertexAttribIPointer(0, 1, GL_SHORT, 5 * sizeof(int), 0);
+					glVertexAttribDivisor(0, 1);
+
+					glEnableVertexAttribArray(1);
+					glVertexAttribIPointer(1, 1, GL_SHORT, 5 * sizeof(int), (void *)(1 * sizeof(short)));
+					glVertexAttribDivisor(1, 1);
+
+					glEnableVertexAttribArray(2);
+					glVertexAttribIPointer(2, 3, GL_INT, 5 * sizeof(int), (void *)(1 * sizeof(int)));
+					glVertexAttribDivisor(2, 1);
+
+					glEnableVertexAttribArray(3);
+					glVertexAttribIPointer(3, 1, GL_INT, 5 * sizeof(int), (void *)(4 * sizeof(int)));
+					glVertexAttribDivisor(3, 1);
+
+					glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
+				}
+			}
+
+
+		}
+	}
+
+
+	//glBindVertexArray(0);
+
+
+
 
 }
 

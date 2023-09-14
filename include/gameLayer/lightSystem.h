@@ -1,6 +1,9 @@
 #pragma once
 #include <glm/vec3.hpp>
 #include <deque>
+
+bool constexpr dontUpdateLightSystem = 1;
+
 struct ChunkSystem;
 
 struct LightSystem

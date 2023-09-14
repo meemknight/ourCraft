@@ -5,6 +5,12 @@
 
 void LightSystem::update(ChunkSystem &chunkSystem)
 {
+	if (dontUpdateLightSystem)
+	{
+		sunLigtsToRemove.clear();
+		sunLigtsToAdd.clear();
+	}
+
 
 	while (!sunLigtsToRemove.empty())
 	{

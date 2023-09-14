@@ -2,6 +2,7 @@
 #include <memory.h>
 #include <vector>
 #include <stdint.h>
+#include <glad/glad.h>
 
 enum BlockTypes
 {
@@ -127,7 +128,10 @@ struct Chunk
 {
 	ChunkData data;
 	
-	std::vector<int> opaqueGeometry;
+	//std::vector<int> opaqueGeometry;
+	GLuint opaqueGeometryBuffer = 0;
+	size_t elementCountSize = 0;
+
 	char dirty = 1;
 	char neighbourToLeft = 0;
 	char neighbourToRight = 0;
@@ -152,4 +156,8 @@ struct Chunk
 	bool bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back);
 
 	void create(int x, int y);
+
+	void createGpuData();
+
+	void clearGpuData();
 };

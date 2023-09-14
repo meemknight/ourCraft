@@ -6,6 +6,7 @@
 #include <gl2d/gl2d.h>
 
 struct BlocksLoader;
+struct ChunkSystem;
 
 struct Renderer
 {
@@ -23,6 +24,9 @@ struct Renderer
 	void create(BlocksLoader &blocksLoader);
 	void updateDynamicBlocks();
 	void render(std::vector<int> &data, Camera &c, gl2d::Texture &texture);
+
+	void renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, gl2d::Texture &texture);
+
 
 	SkyBoxRenderer skyBoxRenderer;
 

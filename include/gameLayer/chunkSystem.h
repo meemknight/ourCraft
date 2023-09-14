@@ -23,7 +23,7 @@ struct ChunkSystem
 
 	void createChunks(int viewDistance);
 
-	void update(int x, int z, std::vector<int>& data, float deltaTime, UndoQueue &undoQueue, LightSystem &lightSystem);
+	void update(int x, int z, float deltaTime, UndoQueue &undoQueue, LightSystem &lightSystem);
 	int lastX = 0, lastZ = 0, created = 0;
 	glm::ivec2 cornerPos = {};
 

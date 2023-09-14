@@ -2,6 +2,7 @@
 #include "rendering/renderer.h"
 #include "worldGenerator.h"
 #include "blocksLoader.h"
+#include "lightSystem.h"
 
 Block* Chunk::safeGet(int x, int y, int z)
 {
@@ -14,6 +15,8 @@ Block* Chunk::safeGet(int x, int y, int z)
 		return &unsafeGet(x, y, z);
 	}
 }
+
+static std::vector<int> opaqueGeometry;
 
 bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 {
@@ -81,7 +84,16 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 								opaqueGeometry.push_back(y);
 								opaqueGeometry.push_back(z + this->data.z * CHUNK_SIZE);
 								//opaqueGeometry.push_back(15);
-								opaqueGeometry.push_back(b.getSkyLight());
+
+								if (dontUpdateLightSystem)
+								{
+									opaqueGeometry.push_back(15);
+								}
+								else
+								{
+									opaqueGeometry.push_back(b.getSkyLight());
+								}
+
 							}
 
 						}
@@ -99,7 +111,9 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 							{
 								
 								if ((sides[i] != nullptr && !(sides[i])->isOpaque())
-									|| ((i == 3 && y == 0) || (i == 2 && y == CHUNK_HEIGHT - 1)
+									|| (
+										//(i == 3 && y == 0) ||		//display the bottom face
+										(i == 2 && y == CHUNK_HEIGHT - 1)
 									)
 									)
 								{
@@ -121,6 +135,10 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 									opaqueGeometry.push_back(y);
 									opaqueGeometry.push_back(z + this->data.z * CHUNK_SIZE);
 
+									if (dontUpdateLightSystem)
+									{
+										opaqueGeometry.push_back(15);
+									}else
 									if (sides[i] == nullptr && i == 2)
 									{
 										opaqueGeometry.push_back(15);
@@ -156,6 +174,15 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back)
 					}
 				}
 
+		glBindBuffer(GL_ARRAY_BUFFER, opaqueGeometryBuffer);
+		glBufferData(GL_ARRAY_BUFFER, opaqueGeometry.size() * sizeof(opaqueGeometry[0]),
+			opaqueGeometry.data(), GL_STREAM_DRAW);
+
+
+		elementCountSize = opaqueGeometry.size() / 5;
+		
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
 		return true;
 	}
 	else
@@ -174,6 +201,16 @@ void Chunk::create(int x, int z)
 
 	generateChunk(1234, *this);
 
+}
+
+void Chunk::createGpuData()
+{
+	glGenBuffers(1, &opaqueGeometryBuffer);
+}
+
+void Chunk::clearGpuData()
+{
+	glDeleteBuffers(1, &opaqueGeometryBuffer);
 }
 
 void ChunkData::clearLightLevels()

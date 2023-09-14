@@ -28,7 +28,7 @@ void ChunkSystem::createChunks(int viewDistance)
 	loadedChunks.resize(squareSize * squareSize, nullptr);
 }
 
-void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime, UndoQueue &undoQueue
+void ChunkSystem::update(int x, int z, float deltaTime, UndoQueue &undoQueue
 	, LightSystem &lightSystem)
 {
 	{
@@ -49,41 +49,8 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime, 
 		}
 	}
 
-	//{
-	//	std::vector < std::unordered_map<glm::ivec3, GhostBlock>::iterator > toRemove;
-	//	for (auto i = ghostBlocks.begin(); i != ghostBlocks.end(); i++)
-	//	{
-	//		i->second.timer -= deltaTime;
-	//
-	//		if (i->second.timer <= 0)
-	//		{
-	//			toRemove.push_back(i);
-	//
-	//			Chunk *chunk = 0;
-	//			auto b = getBlockSafeAndChunk(i->first.x, i->first.y, i->first.z, chunk);
-	//
-	//			if (b)
-	//			{
-	//				b->type = i->second.prevBlock;
-	//				setChunkAndNeighboursFlagDirtyFromBlockPos(i->first.x, i->first.z);
-	//
-	//			}
-	//		}
-	//	}
-	//
-	//	for (auto i : toRemove)
-	//	{
-	//		ghostBlocks.erase(i);
-	//	}
-	//}
-
-	//x /= CHUNK_SIZE;
-	//z /= CHUNK_SIZE;
-
 	x = divideChunk(x);
 	z = divideChunk(z);
-
-	data.clear();
 
 	glm::ivec2 minPos = glm::ivec2(x, z) - glm::ivec2(squareSize / 2, squareSize / 2);
 	glm::ivec2 maxPos = glm::ivec2(x, z) + glm::ivec2(squareSize / 2 + squareSize % 2, squareSize / 2 + squareSize % 2);
@@ -113,7 +80,8 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime, 
 			}
 			else
 			{
-				permaAssert(loadedChunks[x * squareSize + z] == nullptr);
+				i->createGpuData();
+				//permaAssert(loadedChunks[x * squareSize + z] == nullptr); //no need for assert we check the if above 
 				loadedChunks[x * squareSize + z] = i;
 
 				int xBegin = i->data.x * CHUNK_SIZE;
@@ -171,6 +139,7 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime, 
 			}
 			else
 			{
+				loadedChunks[i]->clearGpuData();
 				delete loadedChunks[i];
 				loadedChunks[i] = nullptr;
 			}
@@ -226,7 +195,7 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime, 
 
 			if (recentlyRequestedChunks.find({t.pos.x, t.pos.z}) == recentlyRequestedChunks.end())
 			{
-				recentlyRequestedChunks[{t.pos.x, t.pos.z}] = 3.f; //time not request again, it can be big since packets are reliable
+				recentlyRequestedChunks[{t.pos.x, t.pos.z}] = 10.f; //time not request again, it can be big since packets are reliable
 				finalTask.push_back(t);
 			}
 		}
@@ -338,21 +307,11 @@ void ChunkSystem::update(int x, int z, std::vector<int>& data, float deltaTime, 
 			auto b = chunk->bake(left, right, front, back);
 		
 			if (b) { currentBaked++; }
-		
-			for (auto i : chunk->opaqueGeometry)
-			{
-				data.push_back(i);
-			}
+			
 		}
 		else
 		{
-			//if (!chunk->dirty)
-			{
-				for (auto i : chunk->opaqueGeometry)
-				{
-					data.push_back(i);
-				}
-			}
+			
 		}
 
 	}

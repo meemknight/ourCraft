@@ -40,7 +40,7 @@ bool initGameplay(ProgramData &programData)
 	gameData = GameData();
 	gameData.c.position = glm::vec3(0, 65, 0);
 
-	gameData.chunkSystem.createChunks(8);
+	gameData.chunkSystem.createChunks(64);
 
 	return true;
 }
@@ -192,16 +192,17 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	gameData.lightSystem.update(gameData.chunkSystem);
 
 	{
-		static std::vector<int> data;
+		//static std::vector<int> data;
 
 		gameData.c.decomposePosition(posFloat, posInt);
 		
 		programData.renderer.updateDynamicBlocks();
 		
-		gameData.chunkSystem.update(posInt.x, posInt.z, data, deltaTime, gameData.undoQueue,
+		gameData.chunkSystem.update(posInt.x, posInt.z, deltaTime, gameData.undoQueue,
 			gameData.lightSystem);
 
-		programData.renderer.render(data, gameData.c, programData.texture);
+		//programData.renderer.render(data, gameData.c, programData.texture);
+		programData.renderer.renderFromBakedData(gameData.chunkSystem, gameData.c, programData.texture);
 
 	}
 
