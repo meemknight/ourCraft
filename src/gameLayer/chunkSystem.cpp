@@ -486,15 +486,32 @@ void ChunkSystem::changeBlockLightStuff(glm::ivec3 pos, int currentLightLevel,
 		};
 
 		checkNeighbour({pos.x+1,pos.y,pos.z}, 1);
-		checkNeighbour({pos.x-1,pos.y,pos.z}, 1);
-		checkNeighbour({pos.x,pos.y+1,pos.z}, 0);
-		checkNeighbour({pos.x,pos.y-1,pos.z}, 1);
-		checkNeighbour({pos.x,pos.y,pos.z+1}, 1);
-		checkNeighbour({pos.x,pos.y,pos.z-1}, 1);
+		if(light < 15)
+			checkNeighbour({pos.x-1,pos.y,pos.z}, 1);
+		if (light < 15)
+			checkNeighbour({pos.x,pos.y+1,pos.z}, 0);
+		if (light < 15)
+			checkNeighbour({pos.x,pos.y-1,pos.z}, 1);
+		if (light < 15)
+			checkNeighbour({pos.x,pos.y,pos.z+1}, 1);
+		if (light < 15)
+			checkNeighbour({pos.x,pos.y,pos.z-1}, 1);
 
 		light = std::max(light, 0);
 
-		lightSystem.addSunLight(*this, pos, light);
+		if (light > 1)
+		{
+			lightSystem.addSunLight(*this, pos, light);
+		}
+		else
+		{
+			auto b = getBlockSafe(pos.x, pos.y, pos.z);
+			if (b)
+			{
+				b->setSkyLevel(light);
+			}
+		}
+
 	}
 
 }

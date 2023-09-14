@@ -30,22 +30,22 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 					sunLigtsToRemove.push_back(l);
 					b2->setSkyLevel(0);
 				}
-				else if(b2Level != 0)
+				else if(b2Level >= currentLightLevel)
 				{
 					//add
 					LightSystem::Light l;
 					l.intensity = b2Level;
 					l.pos = p;
 					sunLigtsToAdd.push_back(l);
-					b2->setSkyLevel(b2Level);
+					//b2->setSkyLevel(b2Level);
 				}
 			}
 		};
 
 		checkNeighbout({element.pos.x - 1, element.pos.y, element.pos.z});
 		checkNeighbout({element.pos.x + 1, element.pos.y, element.pos.z});
+
 		checkNeighbout({element.pos.x, element.pos.y + 1, element.pos.z});
-		
 		checkNeighbout({element.pos.x, element.pos.y - 1, element.pos.z}, true);
 
 		checkNeighbout({element.pos.x, element.pos.y, element.pos.z + 1});
@@ -60,8 +60,7 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 		auto element = sunLigtsToAdd.front();
 		sunLigtsToAdd.pop_front();
 
-		Chunk *c = 0;
-
+		//Chunk *c = 0;
 		//todo optimize and remove this
 		//auto b = chunkSystem.getBlockSafeAndChunk(element.pos.x, element.pos.y, element.pos.z, c);
 		//if (b)

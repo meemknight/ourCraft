@@ -18,7 +18,7 @@
 #include "glui/glui.h"
 #include "gamePlayLogic.h"
 
-#define GPU_ENGINE 0
+#define GPU_ENGINE 1
 extern "C"
 {
 	__declspec(dllexport) unsigned long NvOptimusEnablement = GPU_ENGINE;

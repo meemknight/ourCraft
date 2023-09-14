@@ -40,7 +40,7 @@ bool initGameplay(ProgramData &programData)
 	gameData = GameData();
 	gameData.c.position = glm::vec3(0, 65, 0);
 
-	gameData.chunkSystem.createChunks(32);
+	gameData.chunkSystem.createChunks(8);
 
 	return true;
 }
@@ -269,8 +269,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			ImGui::Text("camera float: %f, %f, %f", posFloat.x, posFloat.y, posFloat.z);
 			ImGui::Text("camera int: %d, %d, %d", posInt.x, posInt.y, posInt.z);
 
-			ImGui::DragScalarN("Point pos", ImGuiDataType_Double, &point[0], 3, 0.01);
+			ImGui::DragScalarN("Point pos", ImGuiDataType_Double, &point[0], 3, 1);
 			ImGui::Checkbox("Render Box", &renderBox);
+
+			auto b = gameData.chunkSystem.getBlockSafe(point);
+			if (b) ImGui::Text("Box Light Value: %d", b->getSkyLight());
+
 
 			ImGui::DragFloat("camera speed", &moveSpeed);
 			ImGui::Text("fps: %d", programData.currentFps);
