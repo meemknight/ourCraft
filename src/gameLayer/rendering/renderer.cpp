@@ -533,6 +533,7 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, gl2d::Te
 {
 	glm::vec3 posFloat = {};
 	glm::ivec3 posInt = {};
+	glm::ivec3 blockPosition = from3DPointToBlock(c.position);
 	c.decomposePosition(posFloat, posInt);
 
 	texture.bind(0);
@@ -545,23 +546,61 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, gl2d::Te
 	glUniform1i(u_typesCount, BlocksCount);	//remove
 	glUniform1f(u_time, std::clock() / 400.f);
 
+	glDisable(GL_BLEND);
+
 	for (auto &chunk : chunkSystem.loadedChunks)
 	{
 		if (chunk)
 		{
 			if (!chunk->dontDrawYet)
 			{
-
 				int facesCount = chunk->elementCountSize;
-
 				if (facesCount)
 				{
 					glBindVertexArray(chunk->vao);
 					glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
 				}
 			}
+		}
+	}
 
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	auto chunkVectorCopy = chunkSystem.loadedChunks;
+
+	std::sort(chunkVectorCopy.begin(), chunkVectorCopy.end(),
+		[x = divideChunk(blockPosition.x), z = divideChunk(blockPosition.z)](Chunk *b, Chunk *a)
+	{
+		if (a == nullptr) { return false; }
+		if (b == nullptr) { return true; }
+
+		int ax = a->data.x - x;
+		int az = a->data.z - z;
+
+		int bx = b->data.x - x;
+		int bz = b->data.z - z;
+
+		unsigned long reza = ax * ax + az * az;
+		unsigned long rezb = bx * bx + bz * bz;
+
+		return reza < rezb;
+	}
+	);
+
+	for (auto &chunk : chunkVectorCopy)
+	{
+		if (chunk)
+		{
+			if (!chunk->dontDrawYet)
+			{
+				int facesCount = chunk->transparentElementCountSize;
+				if (facesCount)
+				{
+					glBindVertexArray(chunk->transparentVao);
+					glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
+				}
+			}
 		}
 	}
 

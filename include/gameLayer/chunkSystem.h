@@ -23,8 +23,11 @@ struct ChunkSystem
 
 	void createChunks(int viewDistance);
 
-	void update(int x, int z, float deltaTime, UndoQueue &undoQueue, LightSystem &lightSystem);
+	void update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQueue &undoQueue, LightSystem &lightSystem);
 	int lastX = 0, lastZ = 0, created = 0;
+
+	glm::ivec3 lastPlayerBlockPosition = {};
+
 	glm::ivec2 cornerPos = {};
 
 	Block *getBlockSafe(int x, int y, int z);

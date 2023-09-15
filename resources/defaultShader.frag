@@ -17,5 +17,5 @@ void main()
 	vec4 textureColor = texture(sampler2D(v_textureSampler), v_uv);
 	
 	if(textureColor.a < 0.1){discard;}
-	out_color = vec4(textureColor.rgb*v_color,1.0);
+	out_color = vec4(textureColor.rgb*v_color,textureColor.a);
 }

@@ -9,7 +9,7 @@
 #include <lightSystem.h>
 #include <platformTools.h>
 
-//todo rename !!!!!!!!!
+//todo rename so I know I use chunk related coordonates!!!!!!!!!
 Chunk* ChunkSystem::getChunkSafe(int x, int z)
 {
 	if (x < 0 || z < 0 || x >= squareSize || z >= squareSize)
@@ -28,7 +28,8 @@ void ChunkSystem::createChunks(int viewDistance)
 	loadedChunks.resize(squareSize * squareSize, nullptr);
 }
 
-void ChunkSystem::update(int x, int z, float deltaTime, UndoQueue &undoQueue
+//x and z are the block positions of the player
+void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQueue &undoQueue
 	, LightSystem &lightSystem)
 {
 	//multy player stuff
@@ -51,8 +52,8 @@ void ChunkSystem::update(int x, int z, float deltaTime, UndoQueue &undoQueue
 	}
 
 	//index of the chunk
-	x = divideChunk(x);
-	z = divideChunk(z);
+	int x = divideChunk(playerBlockPosition.x);
+	int z = divideChunk(playerBlockPosition.z);
 
 	//bottom left most chunk and top right most chunk of my array
 	glm::ivec2 minPos = glm::ivec2(x, z) - glm::ivec2(squareSize / 2, squareSize / 2);
@@ -153,6 +154,29 @@ void ChunkSystem::update(int x, int z, float deltaTime, UndoQueue &undoQueue
 		loadedChunks = std::move(newChunkVector);
 	}
 
+#pragma endregion
+
+	if (lastPlayerBlockPosition != playerBlockPosition)
+	{
+		//player moved sooooo update transparency
+		Chunk *c[9] = {};
+		glm::ivec2 positions[9] = {{0,0},{CHUNK_SIZE,0},{-CHUNK_SIZE,0},{0,CHUNK_SIZE},{0,-CHUNK_SIZE},
+			{-CHUNK_SIZE,CHUNK_SIZE},{CHUNK_SIZE,-CHUNK_SIZE},{CHUNK_SIZE,CHUNK_SIZE},{-CHUNK_SIZE,-CHUNK_SIZE}
+		};
+
+		for (int i = 0; i < 9; i++)
+		{
+			auto c = getChunkSafeFromBlockPos(playerBlockPosition.x + positions[i].x,
+				playerBlockPosition.z + positions[i].y);
+
+			if (c)
+			{
+				c->dirtyTransparency = true;
+			}
+
+		}
+	}
+
 	//request new chunks from the server
 	std::vector<Task> chunkTasks;
 	for (int x = 0; x < squareSize; x++)
@@ -188,7 +212,6 @@ void ChunkSystem::update(int x, int z, float deltaTime, UndoQueue &undoQueue
 			}
 		);
 
-
 		constexpr int maxWaitingSubmisions = 5;
 		std::vector<Task> finalTask;
 		finalTask.reserve(maxWaitingSubmisions);
@@ -211,13 +234,10 @@ void ChunkSystem::update(int x, int z, float deltaTime, UndoQueue &undoQueue
 
 
 
-#pragma endregion
-
-
 	created = 1;
 	lastX = x;
 	lastZ = z;
-
+	lastPlayerBlockPosition = playerBlockPosition;
 
 
 #pragma region place block by server
@@ -271,7 +291,7 @@ void ChunkSystem::update(int x, int z, float deltaTime, UndoQueue &undoQueue
 #pragma region bake
 
 	int currentBaked = 0;
-	const int maxToBake = 3; //this frame
+	const int maxToBake = 10; //this frame
 
 	auto chunkVectorCopy = loadedChunks;
 
@@ -310,10 +330,9 @@ void ChunkSystem::update(int x, int z, float deltaTime, UndoQueue &undoQueue
 			auto front = getChunkSafe(x, z + 1);
 			auto back = getChunkSafe(x, z - 1);
 		
-			auto b = chunk->bake(left, right, front, back);
+			auto b = chunk->bake(left, right, front, back, playerBlockPosition);
 		
 			if (b) { currentBaked++; }
-			
 		}
 		else
 		{

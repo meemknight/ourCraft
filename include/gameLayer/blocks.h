@@ -3,6 +3,7 @@
 #include <vector>
 #include <stdint.h>
 #include <glad/glad.h>
+#include <glm/vec3.hpp>
 
 enum BlockTypes
 {
@@ -39,6 +40,8 @@ bool isCrossMesh(uint16_t type);
 
 bool isOpaque(uint16_t type);
 
+bool isTransparentGeometry(uint16_t type);
+
 bool isGrassMesh(uint16_t type);
 
 struct Block
@@ -57,6 +60,11 @@ struct Block
 	{
 		return
 			type == BlockTypes::leaves;
+	}
+
+	bool isTransparentGeometry()
+	{
+		return ::isTransparentGeometry(type);
 	}
 
 	bool isGrassMesh()
@@ -133,7 +141,12 @@ struct Chunk
 	GLuint vao = 0;
 	size_t elementCountSize = 0;
 
+	GLuint transparentGeometryBuffer = 0;
+	GLuint transparentVao = 0;
+	size_t transparentElementCountSize = 0;
+
 	char dirty = 1;
+	char dirtyTransparency = 1;
 	char neighbourToLeft = 0;
 	char neighbourToRight = 0;
 	char neighbourToFront = 0;
@@ -152,9 +165,10 @@ struct Chunk
 
 	Block* safeGet(int x, int y, int z);
 
-	//todo will use a gpu buffer in the future
-	//returns true if it changed anything
-	bool bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back);
+	//returns true if it changed anything, it will also return true if the newly baked
+	//geometry is 0 because that means that it took very little time.
+	bool bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
+		glm::ivec3 playerPosition);
 
 	void create(int x, int y);
 

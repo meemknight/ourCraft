@@ -40,7 +40,7 @@ bool initGameplay(ProgramData &programData)
 	gameData = GameData();
 	gameData.c.position = glm::vec3(0, 65, 0);
 
-	gameData.chunkSystem.createChunks(64);
+	gameData.chunkSystem.createChunks(6);
 
 	return true;
 }
@@ -189,6 +189,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	glm::ivec3 posInt = {};
 	programData.renderer.skyBoxRenderer.render(gameData.c);
 
+	glm::ivec3 blockPositionPlayer = from3DPointToBlock(gameData.c.position);
+
 	gameData.lightSystem.update(gameData.chunkSystem);
 
 	{
@@ -198,7 +200,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		
 		programData.renderer.updateDynamicBlocks();
 		
-		gameData.chunkSystem.update(posInt.x, posInt.z, deltaTime, gameData.undoQueue,
+		gameData.chunkSystem.update(blockPositionPlayer, deltaTime, gameData.undoQueue,
 			gameData.lightSystem);
 
 		//programData.renderer.render(data, gameData.c, programData.texture);
