@@ -49,69 +49,6 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back, glm::ivec
 
 #pragma region helpers
 
-	auto blockBackeLogic = [&](int x, int y, int z, std::vector<int> *currentVector, Block *sides[6], Block &b)
-	{
-		for (int i = 0; i < 6; i++)
-		{
-
-			if ((sides[i] != nullptr && !(sides[i])->isOpaque())
-				|| (
-				//(i == 3 && y == 0) ||		//display the bottom face
-				(i == 2 && y == CHUNK_HEIGHT - 1)
-				)
-				)
-			{
-				//currentVector->push_back(mergeShorts(i + (int)b.isAnimated() * 10, b.type));
-
-				if (b.isAnimated())
-				{
-					currentVector->push_back(mergeShorts(i + 10,
-						getGpuIdIndexForBlock(b.type, i)));
-				}
-				else
-				{
-					currentVector->push_back(mergeShorts(i,
-						getGpuIdIndexForBlock(b.type, i)));
-				}
-
-
-				currentVector->push_back(x + this->data.x * CHUNK_SIZE);
-				currentVector->push_back(y);
-				currentVector->push_back(z + this->data.z * CHUNK_SIZE);
-
-				if (dontUpdateLightSystem)
-				{
-					currentVector->push_back(15);
-				}
-				else
-					if (sides[i] == nullptr && i == 2)
-					{
-						currentVector->push_back(15);
-					}
-					else if (sides[i] == nullptr && i == 3)
-					{
-						currentVector->push_back(5); //bottom of the world
-					}
-					else if (sides[i] != nullptr)
-					{
-						int val = sides[i]->getSkyLight();
-
-						if (val > 0)
-						{
-							int a = 0;
-						}
-
-						currentVector->push_back(val);
-					}
-					else
-					{
-						currentVector->push_back(0);
-					}
-
-			}
-		}
-	};
-
 	auto getNeighboursLogic = [&](int x, int y, int z, Block *sides[6])
 	{
 		auto bfront = safeGet(x, y, z + 1);
@@ -149,6 +86,134 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back, glm::ivec
 		sides[5] = bright;
 	};
 
+	auto blockBakeLogicForSolidBlocks = [&](int x, int y, int z, 
+		std::vector<int> *currentVector, Block &b, bool isAnimated)
+	{
+		Block *sides[6] = {};
+		getNeighboursLogic(x, y, z, sides);
+
+		for (int i = 0; i < 6; i++)
+		{
+
+			if ((sides[i] != nullptr && !(sides[i])->isOpaque())
+				|| (
+				//(i == 3 && y == 0) ||		//display the bottom face
+				(i == 2 && y == CHUNK_HEIGHT - 1)
+				)
+				)
+			{
+				currentVector->push_back( mergeShorts(i, getGpuIdIndexForBlock(b.type, i)) );
+				currentVector->push_back(x + this->data.x * CHUNK_SIZE);
+				currentVector->push_back(y);
+				currentVector->push_back(z + this->data.z * CHUNK_SIZE);
+
+				if (dontUpdateLightSystem)
+				{
+					currentVector->push_back(15);
+				}
+				else
+				if (sides[i] == nullptr && i == 2)
+				{
+					currentVector->push_back(15);
+				}
+				else if (sides[i] == nullptr && i == 3)
+				{
+					currentVector->push_back(5); //bottom of the world
+				}
+				else if (sides[i] != nullptr)
+				{
+					int val = sides[i]->getSkyLight();
+					currentVector->push_back(val);
+				}
+				else
+				{
+					currentVector->push_back(0);
+				}
+
+			}
+		}
+	};
+
+	auto blockBakeLogicForTransparentBlocks = [&](int x, int y, int z,
+		std::vector<int> *currentVector, Block &b, bool isAnimated)
+	{
+		Block *sides[6] = {};
+		getNeighboursLogic(x, y, z, sides);
+
+		for (int i = 0; i < 6; i++)
+		{
+
+			if ((sides[i] != nullptr 
+				&& (!(sides[i])->isOpaque() && sides[i]->type != b.type)
+				)
+				|| (
+				//(i == 3 && y == 0) ||		//display the bottom face
+				(i == 2 && y == CHUNK_HEIGHT - 1)
+				)
+				)
+			{
+				currentVector->push_back(mergeShorts(i, getGpuIdIndexForBlock(b.type, i)));
+				currentVector->push_back(x + this->data.x * CHUNK_SIZE);
+				currentVector->push_back(y);
+				currentVector->push_back(z + this->data.z * CHUNK_SIZE);
+
+				if (dontUpdateLightSystem)
+				{
+					currentVector->push_back(15);
+				}
+				else
+				if (sides[i] == nullptr && i == 2)
+				{
+					currentVector->push_back(15);
+				}
+				else if (sides[i] == nullptr && i == 3)
+				{
+					currentVector->push_back(5); //bottom of the world
+				}
+				else if (sides[i] != nullptr)
+				{
+					int val = sides[i]->getSkyLight();
+					currentVector->push_back(val);
+				}
+				else
+				{
+					currentVector->push_back(0);
+				}
+
+			}
+		}
+	};
+
+	auto blockBakeLogicForGrassMesh = [&](int x, int y, int z,
+		std::vector<int> *currentVector, Block &b)
+	{
+		Block *sides[6] = {};
+		getNeighboursLogic(x, y, z, sides);
+
+		for (int i = 6; i <= 9; i++)
+		{
+			//opaqueGeometry.push_back(mergeShorts(i, b.type));
+			opaqueGeometry.push_back(mergeShorts(i, getGpuIdIndexForBlock(b.type, 0)));
+
+			opaqueGeometry.push_back(x + this->data.x * CHUNK_SIZE);
+			opaqueGeometry.push_back(y);
+			opaqueGeometry.push_back(z + this->data.z * CHUNK_SIZE);
+			//opaqueGeometry.push_back(15);
+
+			if (dontUpdateLightSystem)
+			{
+				opaqueGeometry.push_back(15);
+			}
+			else
+			{
+				opaqueGeometry.push_back(b.getSkyLight());
+			}
+
+		}
+
+
+	};
+
 	opaqueGeometry.clear();
 	transparentGeometry.clear();
 	transparentCandidates.clear();
@@ -163,7 +228,6 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back, glm::ivec
 		neighbourToFront = (front != nullptr);
 		neighbourToBack = (back != nullptr);
 
-
 		for (int x = 0; x < CHUNK_SIZE; x++)
 			for (int z = 0; z < CHUNK_SIZE; z++)
 				for (int y = 0; y < CHUNK_HEIGHT; y++)
@@ -174,45 +238,19 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back, glm::ivec
 						//todo occlude if all of the blocks
 						if (b.isGrassMesh())
 						{
-							Block *sides[6] = {};
-							getNeighboursLogic(x, y, z, sides);
-
-							for (int i = 6; i <= 9; i++)
-							{
-								//opaqueGeometry.push_back(mergeShorts(i, b.type));
-								opaqueGeometry.push_back(mergeShorts(i, getGpuIdIndexForBlock(b.type, 0)));
-
-								opaqueGeometry.push_back(x + this->data.x * CHUNK_SIZE);
-								opaqueGeometry.push_back(y);
-								opaqueGeometry.push_back(z + this->data.z * CHUNK_SIZE);
-								//opaqueGeometry.push_back(15);
-
-								if (dontUpdateLightSystem)
-								{
-									opaqueGeometry.push_back(15);
-								}
-								else
-								{
-									opaqueGeometry.push_back(b.getSkyLight());
-								}
-
-							}
-
+							blockBakeLogicForGrassMesh(x, y, z, &opaqueGeometry, b);
 						}
 						else
 						{
-							Block *sides[6] = {};
-							getNeighboursLogic(x, y, z, sides);
-
 							if (!b.isTransparentGeometry())
 							{
-								blockBackeLogic(x, y, z, &opaqueGeometry, sides, b);
+								blockBakeLogicForSolidBlocks(x, y, z, &opaqueGeometry, b, b.isAnimated());
 							}
 						}
 					}
 				}
 
-		}
+	}
 
 	if (updateTransparency)
 	{
@@ -246,9 +284,8 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back, glm::ivec
 		for (auto &c : transparentCandidates)
 		{
 			auto &b = unsafeGet(c.position.x, c.position.y, c.position.z);
-			Block *sides[6] = {};
-			getNeighboursLogic(c.position.x, c.position.y, c.position.z, sides);
-			blockBackeLogic(c.position.x, c.position.y, c.position.z, &transparentGeometry, sides, b);
+			blockBakeLogicForTransparentBlocks(c.position.x, c.position.y, c.position.z, &transparentGeometry, b,
+				b.isAnimated());
 		}
 
 	};
