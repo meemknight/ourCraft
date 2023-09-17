@@ -56,7 +56,7 @@ struct Block
 		return ::isOpaque(type);
 	}
 
-	bool isAnimated()
+	bool isAnimatedBlock()
 	{
 		return
 			type == BlockTypes::leaves;
@@ -116,7 +116,11 @@ struct ChunkData
 		memset(blocks, 0, sizeof(blocks));
 	}
 
-	//todo refactor
+	Block *safeGet(glm::ivec3 b)
+	{
+		return safeGet(b.x, b.y, b.z);
+	}
+
 	Block *safeGet(int x, int y, int z)
 	{
 		if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || z >= CHUNK_SIZE || y >= CHUNK_HEIGHT)

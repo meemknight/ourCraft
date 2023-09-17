@@ -1,8 +1,13 @@
 #include "rendering/camera.h"
-
+#include <math.h>
 
 glm::mat4x4 Camera::getProjectionMatrix()
 {
+	if (std::isinf(this->aspectRatio) || std::isnan(this->aspectRatio) || this->aspectRatio == 0)
+	{
+		return glm::mat4x4(1.f);
+	}
+
 	auto mat = glm::perspective(this->fovRadians, this->aspectRatio, this->closePlane,
 		this->farPlane);
 
@@ -17,25 +22,50 @@ glm::mat4x4 Camera::getViewMatrix()
 //todo better rotate function
 void Camera::rotateCamera(const glm::vec2 delta)
 {
-	glm::vec3 rotateYaxe = glm::cross(viewDirection, up);
+//	glm::vec3 rotateYaxe = glm::cross(viewDirection, up);
+//
+//	viewDirection = glm::mat3(glm::rotate(delta.x, up)) * viewDirection;
+//
+//	if (delta.y < 0)
+//	{	//down
+//		if (viewDirection.y < -0.99999)
+//			goto noMove;
+//	}
+//	else
+//	{	//up
+//		if (viewDirection.y > 0.99999)
+//			goto noMove;
+//	}
+//
+//	viewDirection = glm::mat3(glm::rotate(delta.y, rotateYaxe)) * viewDirection;
+//noMove:
+//
+//	viewDirection = glm::normalize(viewDirection);
 
-	viewDirection = glm::mat3(glm::rotate(delta.x, up)) * viewDirection;
+	constexpr float PI = 3.1415926;
 
-	if (delta.y < 0)
-	{	//down
-		if (viewDirection.y < -0.99)
-			goto noMove;
+	yaw += delta.x;
+	pitch += delta.y;
+
+	if (yaw >= 2 * PI)
+	{
+		yaw -= 2 * PI;
 	}
-	else
-	{	//up
-		if (viewDirection.y > 0.99)
-			goto noMove;
+	else if (yaw < 0)
+	{
+		yaw = 2 * PI - yaw;
 	}
 
-	viewDirection = glm::mat3(glm::rotate(delta.y, rotateYaxe)) * viewDirection;
-noMove:
+	if (pitch > PI/2.f - 0.01) { pitch = PI / 2.f - 0.01; }
+	if (pitch < -PI / 2.f + 0.01) { pitch = -PI / 2.f + 0.01; }
 
-	viewDirection = glm::normalize(viewDirection);
+	viewDirection = glm::vec3(0,0,-1);
+
+	viewDirection = glm::mat3(glm::rotate(yaw, up)) * viewDirection;
+
+	glm::vec3 rotatePitchAxe = glm::cross(viewDirection, up);
+	viewDirection = glm::mat3(glm::rotate(pitch, rotatePitchAxe)) * viewDirection;
+
 }
 
 void Camera::moveFPS(glm::vec3 direction)

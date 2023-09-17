@@ -68,6 +68,17 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	for (auto &i : recievedChunk)
 	{
 
+		//remove from recently requested chunks so we can request again
+		//if needed for some reason
+		{
+			auto f = recentlyRequestedChunks.find({i->data.x, i->data.z});
+			if (f != recentlyRequestedChunks.end())
+			{
+				recentlyRequestedChunks.erase(f); 
+					
+			}
+		}
+
 		int x = i->data.x - minPos.x;
 		int z = i->data.z - minPos.y;
 

@@ -1,7 +1,6 @@
 #include <blocksLoader.h>
 #include "blocks.h"
 
-//todo add a default texture as texture 0
 const char *texturesNames[] = {
 	
 	"dirt",				//1
@@ -48,7 +47,7 @@ uint16_t blocksLookupTable[] = {
 	0,0,0,0,0,0,
 
 	//grass
-	3,3,2,1,3,3,
+	0,3,2,1,3,3,
 
 	// dirt
 	1,1,1,1,1,1,
@@ -126,8 +125,39 @@ void BlocksLoader::loadAllTextures()
 	gpuIds.reserve(count + 1);
 	texturesIds.reserve(count+ 1);
 
-	gpuIds.push_back(0);
-	texturesIds.push_back(0); //todo
+	{
+		unsigned char data[16] = {};
+		data[0] = 146;
+		data[1] = 52;
+		data[2] = 235;
+		data[3] = 255;
+
+		data[4] = 0;
+		data[5] = 0;
+		data[6] = 0;
+		data[7] = 255;
+
+		data[8] = 146;
+		data[9] = 52;
+		data[10] = 235;
+		data[11] = 255;
+
+		data[12] = 0;
+		data[13] = 0;
+		data[14] = 0;
+		data[15] = 255;
+
+		gl2d::Texture t;
+		//t.createFromBuffer((char*)data, 2, 2, true, false);
+		t.create1PxSquare();
+
+		auto handle = glGetTextureHandleARB(t.id);
+		glMakeTextureHandleResidentARB(handle);
+		gpuIds.push_back(t.id);
+		texturesIds.push_back(handle);
+	}
+
+	
 
 	std::string path;
 

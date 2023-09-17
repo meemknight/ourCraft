@@ -28,7 +28,7 @@ static std::vector<TransparentCandidate> transparentCandidates;
 static std::vector<int> opaqueGeometry;
 static std::vector<int> transparentGeometry;
 
-//todo a flag to know if I have transparent geometry in this chunk
+//todo a counter to know if I have transparent geometry in this chunk
 bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back, glm::ivec3 playerPosition)
 {
 
@@ -102,7 +102,7 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back, glm::ivec
 				)
 				)
 			{
-				currentVector->push_back( mergeShorts(i, getGpuIdIndexForBlock(b.type, i)) );
+				currentVector->push_back( mergeShorts(i + isAnimated * 10, getGpuIdIndexForBlock(b.type, i)) );
 				currentVector->push_back(x + this->data.x * CHUNK_SIZE);
 				currentVector->push_back(y);
 				currentVector->push_back(z + this->data.z * CHUNK_SIZE);
@@ -152,7 +152,7 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back, glm::ivec
 				)
 				)
 			{
-				currentVector->push_back(mergeShorts(i, getGpuIdIndexForBlock(b.type, i)));
+				currentVector->push_back(mergeShorts(i + isAnimated * 10, getGpuIdIndexForBlock(b.type, i)));
 				currentVector->push_back(x + this->data.x * CHUNK_SIZE);
 				currentVector->push_back(y);
 				currentVector->push_back(z + this->data.z * CHUNK_SIZE);
@@ -189,6 +189,19 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back, glm::ivec
 	{
 		Block *sides[6] = {};
 		getNeighboursLogic(x, y, z, sides);
+		
+		bool ocluded = 1;
+		for (int i = 0; i < 6; i++)
+		{
+			if (sides[i] != nullptr && !sides[i]->isOpaque())
+			{
+				ocluded = 0;
+				break;
+			}
+		}
+
+		if (ocluded)return;
+
 
 		for (int i = 6; i <= 9; i++)
 		{
@@ -210,7 +223,6 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back, glm::ivec
 			}
 
 		}
-
 
 	};
 
@@ -235,7 +247,6 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back, glm::ivec
 					auto &b = unsafeGet(x, y, z);
 					if (!b.air())
 					{
-						//todo occlude if all of the blocks
 						if (b.isGrassMesh())
 						{
 							blockBakeLogicForGrassMesh(x, y, z, &opaqueGeometry, b);
@@ -244,7 +255,7 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back, glm::ivec
 						{
 							if (!b.isTransparentGeometry())
 							{
-								blockBakeLogicForSolidBlocks(x, y, z, &opaqueGeometry, b, b.isAnimated());
+								blockBakeLogicForSolidBlocks(x, y, z, &opaqueGeometry, b, b.isAnimatedBlock());
 							}
 						}
 					}
@@ -285,7 +296,7 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back, glm::ivec
 		{
 			auto &b = unsafeGet(c.position.x, c.position.y, c.position.z);
 			blockBakeLogicForTransparentBlocks(c.position.x, c.position.y, c.position.z, &transparentGeometry, b,
-				b.isAnimated());
+				b.isAnimatedBlock());
 		}
 
 	};

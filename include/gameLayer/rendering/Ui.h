@@ -39,7 +39,6 @@ namespace Ui
 		// 2 yDominant
 		char dimensionsState;
 
-		//todo left percent
 		Box &xDistancePixels(int dist);
 		Box &yDistancePixels(int dist);
 		Box &xCenter(int dist = 0);

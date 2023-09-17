@@ -31,6 +31,8 @@ struct Camera
 	glm::mat4x4 getViewMatrix();
 
 	void rotateCamera(const glm::vec2 delta);
+	float yaw = 0.f;
+	float pitch = 0.f;
 
 	void moveFPS(glm::vec3 direction);
 	void rotateFPS(glm::ivec2 mousePos, float speed, bool shouldMove);
