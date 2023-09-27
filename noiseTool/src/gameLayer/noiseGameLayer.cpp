@@ -55,21 +55,12 @@ bool initGame()
 }
 
 gl2d::Texture noiseT;
+gl2d::Texture peaksValiesT;
+gl2d::Texture finalTexture;
+gl2d::Texture sliceT;
 
-void createFromGrayScale(gl2d::Texture &t, float *data, glm::vec2 s)
+void createFromFloats(gl2d::Texture &t, float *data, glm::ivec2 s)
 {
-
-	float *dataConverted = new float[s.x * s.y * 3];
-	{
-		int j = 0;
-		for (int i = 0; i < s.x * s.y; i++)
-		{
-			dataConverted[j++] = data[i];
-			dataConverted[j++] = data[i];
-			dataConverted[j++] = data[i];
-		}
-	}
-
 	GLuint id = 0;
 
 	glActiveTexture(GL_TEXTURE0);
@@ -79,23 +70,62 @@ void createFromGrayScale(gl2d::Texture &t, float *data, glm::vec2 s)
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	
+
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s.x, s.y, 0, GL_RGB, GL_FLOAT, dataConverted);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, s.x, s.y, 0, GL_RGBA, GL_FLOAT, data);
 
 	t.id = id;
+}
+
+void createFromGrayScale(gl2d::Texture &t, float *data, glm::ivec2 s)
+{
+
+	float *dataConverted = new float[s.x * s.y * 4];
+	{
+		int j = 0;
+		for (int i = 0; i < s.x * s.y; i++)
+		{
+			dataConverted[j++] = data[i];
+			dataConverted[j++] = data[i];
+			dataConverted[j++] = data[i];
+			dataConverted[j++] = 1.f;
+		}
+	}
+
+	createFromFloats(t, dataConverted, s);
 
 	delete[] dataConverted;
 }
 
+constexpr int startLevel = 45;
+constexpr int waterLevel = 65;
+constexpr int maxMountainLevel = 220;
+constexpr int heightDiff = maxMountainLevel - startLevel;
+
 void recreate()
 {
+	float *peaksNoise;
+	{
+		peaksNoise
+			= wg.peaksValiesNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
+
+		for (int i = 0; i < size.x * size.y; i++)
+		{
+			peaksNoise[i] += 1;
+			peaksNoise[i] /= 2;
+			peaksNoise[i] = std::pow(peaksNoise[i], settings.peaksAndValies.power);
+			peaksNoise[i] = applySpline(peaksNoise[i], settings.peaksAndValies.spline);
+		}
+		createFromGrayScale(peaksValiesT, peaksNoise, size);
+
+	};
+
 	
 	float *testNoise
-		= wg.continentalnessNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.x, (1), size.y, 1);
+		= wg.continentalnessNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
 
 	for (int i = 0; i < size.x * size.y; i++)
 	{
@@ -103,13 +133,68 @@ void recreate()
 		testNoise[i] /= 2;
 		testNoise[i] = std::pow(testNoise[i], settings.continentalnessNoiseSettings.power);
 		testNoise[i] = applySpline(testNoise[i], settings.continentalnessNoiseSettings.spline);
-	}
 
+	}
 	createFromGrayScale(noiseT, testNoise, size);
 
+	float *finalNoise = new float[size.x * size.y];
+
+	for (int i = 0; i < size.x * size.y; i++)
+	{
+		finalNoise[i] = lerp(testNoise[i], peaksNoise[i], settings.peaksAndValiesContribution);
+	}
+
+	createFromGrayScale(finalTexture, finalNoise, size);
+
+
+	{
+		glm::vec4 *colorData = new glm::vec4[256 * size.x];
+
+		for (int i = 0; i < size.x; i++)
+		{
+			int height = int(startLevel + finalNoise[i + size.y-1] * heightDiff);
+			
+			for (int y = 256 - 1; y > height; y--)
+			{
+				colorData[y * size.x + i] = glm::vec4(101, 154, 207, 255) / 255.f; //sky
+			}
+
+			if (waterLevel > height)
+			{
+				for (int y = waterLevel; y > height; y--)
+				{
+					colorData[y * size.x + i] = glm::vec4(11, 16, 77, 255) / 255.f; //water
+				}
+
+				for (int y = height; y >= 0; y--)
+				{
+					colorData[y * size.x + i] = glm::vec4(77, 73, 70, 255) / 255.f; //stone
+				}
+			}
+			else
+			{
+				colorData[height * size.x + i] = glm::vec4(10, 84, 18, 255) / 255.f; //grass
+
+				for (int y = height - 1; y > height - 4; y--)
+				{
+					colorData[y * size.x + i] = glm::vec4(120, 66, 26, 255) / 255.f; //dirt
+				}
+
+				for (int y = height - 4; y >= 0; y--)
+				{
+					colorData[y * size.x + i] = glm::vec4(77, 73, 70, 255) / 255.f; //stone
+				}
+			}
+		}
+
+		createFromFloats(sliceT, &colorData->x, {size.x, 256});
+
+		delete[] colorData;
+	}
 
 	FastNoiseSIMD::FreeNoiseSet(testNoise);
-
+	FastNoiseSIMD::FreeNoiseSet(peaksNoise);
+	delete[] finalNoise;
 }
 
 
@@ -120,7 +205,7 @@ void drawNoise(const char *name, gl2d::Texture t)
 	ImGui::Text(name);
 
 	auto cursor = ImGui::GetCursorPos();
-	ImGui::Image((ImTextureID)t.id, {(float)noiseT.GetSize().x, (float)noiseT.GetSize().y},
+	ImGui::Image((ImTextureID)t.id, {(float)t.GetSize().x, (float)t.GetSize().y},
 		{}, {1,1}, {1,1,1,1}, {1,1,1,1});
 
 
@@ -185,37 +270,56 @@ bool gameLogic(float deltaTime)
 		}
 	}
 
-	ImGui::Separator();
-	renderSettingsForOneNoise("Continentalness Noise", settings.continentalnessNoiseSettings);
-	ImGui::Separator();
 
-	ImGui::Table("Test", settings.continentalnessNoiseSettings.spline.points, 
-		settings.continentalnessNoiseSettings.spline.size);
 
-	if (ImGui::Button("Add spline"))
+	auto noiseEditor = [&](NoiseSetting &s, const char *name)
 	{
-		settings.continentalnessNoiseSettings.spline.addSpline();
-	}
+		ImGui::PushID(name);
 
-	ImGui::SameLine();
-	
-	if (ImGui::Button("Remove spline"))
-	{
-		settings.continentalnessNoiseSettings.spline.removeSpline();
-	}
+		ImGui::Separator();
+		renderSettingsForOneNoise(name, s);
+		ImGui::Separator();
 
-	ImGui::SameLine();
+		ImGui::Table("Test", s.spline.points,
+			s.spline.size);
 
-	if (ImGui::Button("Invert"))
-	{
-		for (int i = 0; i < settings.continentalnessNoiseSettings.spline.size; i++)
+		if (ImGui::Button("Add spline"))
 		{
-			auto &s = settings.continentalnessNoiseSettings.spline;
-			s.points[i].y = 1 - s.points[i].y;
+			s.spline.addSpline();
 		}
-	}
 
-	ImGui::Separator();
+		ImGui::SameLine();
+
+		if (ImGui::Button("Remove spline"))
+		{
+			s.spline.removeSpline();
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Invert"))
+		{
+			for (int i = 0; i < s.spline.size; i++)
+			{
+				auto &spl = s.spline;
+				spl.points[i].y = 1 - spl.points[i].y;
+			}
+		}
+
+		ImGui::Separator();
+
+
+		ImGui::PopID();
+	};
+
+
+	noiseEditor(settings.continentalnessNoiseSettings, "Continentalness Noise");
+
+	ImGui::SliderFloat("Peaks and valies contribution: ", &settings.peaksAndValiesContribution, 0, 1);
+	noiseEditor(settings.peaksAndValies, "Peaks And Valies");
+
+
+
 
 	ImGui::End();//		test	//
 
@@ -227,8 +331,16 @@ bool gameLogic(float deltaTime)
 	recreate();
 
 	ImGui::Begin("Noise Viewer");
-	
+
+	ImGui::Text("Slice");
+
+	ImGui::Image((ImTextureID)sliceT.id, {(float)sliceT.GetSize().x, 256},
+		{0,1}, {1,0}, {1,1,1,1}, {1,1,1,1});
+
+	drawNoise("Result", finalTexture);
 	drawNoise("Continentalness", noiseT);
+	drawNoise("PeaksValies", peaksValiesT);
+	
 
 	ImGui::End();
 

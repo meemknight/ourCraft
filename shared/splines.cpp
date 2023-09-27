@@ -57,7 +57,7 @@ void Spline::addSpline()
 
 void Spline::removeSpline()
 {
-	if (size >= MAX_SPLINES_COUNT)
+	if (size > 2)
 	{
 		size--;
 		points[size - 1].x = 1;

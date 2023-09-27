@@ -1,11 +1,10 @@
 seed: 1234;
-peaksAndValiesContribution: 0.150000;
 continentalnessNoise:
 	{
 	scale: 0.131000;
 	type: SimplexFractal;
 	frequency: 0.016000;
-	octaves: 4;
+	octaves: 5;
 	perturbFractalOctaves: 1;
 	power: 1.200000;
 	spline:
@@ -13,7 +12,7 @@ continentalnessNoise:
 		0.000000,0.000000;
 		0.267973,0.062092;
 		0.323529,0.122550;
-		0.428104,0.132353;
+		0.437908,0.145425;
 		0.478758,0.187908;
 		0.495302,0.306373;
 		0.518177,0.390114;
@@ -27,27 +26,5 @@ continentalnessNoise:
 		0.886349,0.765931;
 		0.915761,0.945057;
 		1.000000,1.000000;
-		}
-	}
-peaksAndValies:
-	{
-	scale: 0.060000;
-	type: SimplexFractal;
-	frequency: 0.055000;
-	octaves: 5;
-	perturbFractalOctaves: 0;
-	power: 1.400000;
-	spline:
-		{
-		0.000000,0.496733;
-		0.209151,0.423203;
-		0.243464,0.000000;
-		0.267974,0.000000;
-		0.276144,0.423203;
-		0.352942,0.488562;
-		0.664011,0.493464;
-		0.692146,0.635621;
-		0.797053,1.000000;
-		1.000000,0.640522;
 		}
 	}

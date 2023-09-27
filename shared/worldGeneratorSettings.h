@@ -26,6 +26,8 @@ struct WorldGeneratorSettings
 
 	int seed = 1234;
 	NoiseSetting continentalnessNoiseSettings;
+	NoiseSetting peaksAndValies;
+	float peaksAndValiesContribution = 0.5;
 
 	std::string saveSettings();
 
@@ -40,6 +42,12 @@ struct WorldGenerator
 	FastNoiseSIMD *continentalnessNoise;
 	Spline continentalSplines;
 	float continentalPower = 1.f;
+
+	FastNoiseSIMD *peaksValiesNoise;
+	Spline peaksValiesSplines;
+	float peaksValiesPower = 1.f;
+
+	float peaksAndValiesContribution = 0.5;
 
 	void init();
 	void clear();

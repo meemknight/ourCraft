@@ -6,6 +6,7 @@
 void WorldGenerator::init()
 {
 	continentalnessNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	peaksValiesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
 	WorldGeneratorSettings s;
 	applySettings(s);
@@ -14,6 +15,7 @@ void WorldGenerator::init()
 void WorldGenerator::clear()
 {
 	delete continentalnessNoise;
+	delete peaksValiesNoise;
 }
 
 void WorldGenerator::applySettings(WorldGeneratorSettings &s)
@@ -24,9 +26,18 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	continentalnessNoise->SetFrequency(s.continentalnessNoiseSettings.frequency);
 	continentalnessNoise->SetFractalOctaves(s.continentalnessNoiseSettings.octaves);
 	continentalnessNoise->SetPerturbFractalOctaves(s.continentalnessNoiseSettings.perturbFractalOctaves);
-
 	continentalSplines = s.continentalnessNoiseSettings.spline;
 	continentalPower = s.continentalnessNoiseSettings.power;
+
+	peaksValiesNoise->SetNoiseType((FastNoiseSIMD::NoiseType)s.peaksAndValies.type);
+	peaksValiesNoise->SetAxisScales(s.peaksAndValies.scale, 1, s.peaksAndValies.scale);
+	peaksValiesNoise->SetFrequency(s.peaksAndValies.frequency);
+	peaksValiesNoise->SetFractalOctaves(s.peaksAndValies.octaves);
+	peaksValiesNoise->SetPerturbFractalOctaves(s.peaksAndValies.perturbFractalOctaves);
+	peaksValiesSplines = s.peaksAndValies.spline;
+	peaksValiesPower = s.peaksAndValies.power;
+
+	peaksAndValiesContribution = s.peaksAndValiesContribution;
 }
 
 
@@ -38,11 +49,13 @@ std::string WorldGeneratorSettings::saveSettings()
 
 
 	rez += "seed: "; rez += std::to_string(seed); rez += ";\n";
-
+	rez += "peaksAndValiesContribution: "; rez += std::to_string(peaksAndValiesContribution); rez += ";\n";
 
 	rez += "continentalnessNoise:\n";
-
 	rez += continentalnessNoiseSettings.saveSettings(1);
+
+	rez += "peaksAndValies:\n";
+	rez += peaksAndValies.saveSettings(1);
 
 	return rez;
 }
@@ -424,6 +437,13 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					if (!isNumber()) { return 0; }
 					seed = consumeNumber();
 					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
+				}else 	if (s == "peaksAndValiesContribution")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+					if (!isNumber()) { return 0; }
+					peaksAndValiesContribution = consumeNumber();
+					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
 				}
 				else if (s == "continentalnessNoise")
 				{
@@ -431,6 +451,16 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					if (isEof()) { return 0; }
 
 					if (!consumeNoise(continentalnessNoiseSettings))
+					{
+						return 0;
+					}
+				}
+				else if (s == "peaksAndValies")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(peaksAndValies))
 					{
 						return 0;
 					}

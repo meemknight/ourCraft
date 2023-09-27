@@ -3,7 +3,41 @@
 #include "FastNoise/FastNoise.h"
 #include <cmath>
 
+constexpr int startLevel = 45;
+constexpr int waterLevel = 65;
+constexpr int maxMountainLevel = 220;
+constexpr int heightDiff = maxMountainLevel - startLevel;
 
+void calculateBlockPass1(int height, Block *startPos)
+{
+
+	if (waterLevel > height)
+	{
+		for (int y = waterLevel; y > height; y--)
+		{
+			startPos[y].type = BlockTypes::water;
+		}
+	
+		for (int y = height; y >= 0; y--)
+		{
+			startPos[y].type = BlockTypes::stone;
+		}
+	}
+	else
+	{
+		startPos[height].type = BlockTypes::grassBlock;
+
+		for (int y = height-1; y > height-4; y--)
+		{
+			startPos[y].type = BlockTypes::dirt;
+		}
+
+		for (int y = height - 4; y >= 0; y--)
+		{
+			startPos[y].type = BlockTypes::stone;
+		}
+	}
+}
 
 void generateChunk(int seed, Chunk &c, WorldGenerator &wg)
 {
@@ -18,74 +52,49 @@ void generateChunk(int seed, ChunkData& c, WorldGenerator &wg)
 	int xPadd = c.x * 16;
 	int zPadd = c.z * 16;
 
-	float* testNoise
+	float* continentalness
 		= wg.continentalnessNoise->GetSimplexFractalSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+
+	float *peaksAndValies
+		= wg.peaksValiesNoise->GetSimplexFractalSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
-		testNoise[i] += 1;
-		testNoise[i] /= 2;
-		//testNoise[i] = std::pow(testNoise[i], wg.continentalPower);
-		testNoise[i] = wg.continentalSplines.applySpline(testNoise[i]);
+		continentalness[i] += 1;
+		continentalness[i] /= 2;
+		continentalness[i] = std::pow(continentalness[i], wg.continentalPower);
+		continentalness[i] = wg.continentalSplines.applySpline(continentalness[i]);
 	}
 
-	auto getNoiseVal = [testNoise](int x, int y, int z)
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
-		return testNoise[x * CHUNK_SIZE * (1) + y * CHUNK_SIZE + z];
+		peaksAndValies[i] += 1;
+		peaksAndValies[i] /= 2;
+		peaksAndValies[i] = std::pow(peaksAndValies[i], wg.peaksValiesPower);
+		peaksAndValies[i] = wg.peaksValiesSplines.applySpline(peaksAndValies[i]);
+
+		continentalness[i] = lerp(continentalness[i], peaksAndValies[i], wg.peaksAndValiesContribution);
+	}
+
+	auto getNoiseVal = [continentalness](int x, int y, int z)
+	{
+		return continentalness[x * CHUNK_SIZE * (1) + y * CHUNK_SIZE + z];
 	};
 
-	constexpr int startLevel = 45;
-	constexpr int waterLevel = 65;
 
-	constexpr int maxMountainLevel = 220;
-
-	constexpr int heightDiff = maxMountainLevel - startLevel;
 
 	for (int x = 0; x < CHUNK_SIZE; x++)
 		for (int z = 0; z < CHUNK_SIZE; z++)
 		{
 			int height = int(startLevel + getNoiseVal(x, 0, z) * heightDiff);
-			int y = 0;
-			for (; y < height; y++)
-			{
-				c.unsafeGet(x, y, z).type = BlockTypes::stone;
-			}
-
-			for (; y < waterLevel; y++)
-			{
-				c.unsafeGet(x, y, z).type = BlockTypes::water;
-			}
+		
+			calculateBlockPass1(height, &c.unsafeGet(x, 0, z));
 
 		}
 	
-	FastNoiseSIMD::FreeNoiseSet(testNoise);
+	FastNoiseSIMD::FreeNoiseSet(continentalness);
+	FastNoiseSIMD::FreeNoiseSet(peaksAndValies);
 
-	for (int x = 0; x < CHUNK_SIZE; x++)
-		for (int z = 0; z < CHUNK_SIZE; z++)
-		{
-			int counter = 0;
-			for (int y = CHUNK_HEIGHT - 1; y >= 0; y--)
-			{
-				if (c.unsafeGet(x, y, z).type == water) { break; }
-
-				if (counter == 0)
-				{
-					if (!c.unsafeGet(x, y, z).air())
-					{
-						c.unsafeGet(x, y, z).type = BlockTypes::grassBlock;
-						counter = 1;
-					}
-				}
-				else if (counter < 4)
-				{
-					c.unsafeGet(x, y, z).type = BlockTypes::dirt;
-					counter++;
-				}
-				else
-				{
-				}
-			}
-		}
 
 
 }
