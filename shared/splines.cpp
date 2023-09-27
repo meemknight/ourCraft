@@ -1,4 +1,5 @@
 #include <splines.h>
+#include <glm/glm.hpp>
 
 float lerp(float a, float b, float r)
 {
@@ -57,4 +58,44 @@ void Spline::addSpline()
 float Spline::applySpline(float p)
 {
 	return ::applySpline(p, *this);
+}
+
+std::string Spline::saveSettings(int tabs)
+{
+	std::string rez;
+	rez.reserve(100);
+
+	auto addTabs = [&]() { for (int i = 0; i < tabs; i++) { rez += '\t'; } };
+
+	addTabs();
+	rez += "{\n";
+
+	for (int i = 0; i < std::min(MAX_SPLINES_COUNT, size); i++)
+	{
+		addTabs();
+		rez += std::to_string(points[i].x);
+		rez += ",";
+		rez += std::to_string(points[i].y);
+		rez += ";\n";
+	};
+
+
+	addTabs();
+	rez += "}\n";
+
+
+	return rez;
+}
+
+void Spline::sanitize()
+{
+	for (int i = 0; i < size; ++i)
+	{
+		points[i] = glm::clamp(points[i], {0,0}, {1,1});
+
+		if (i > 0)
+		{
+			points[i] = glm::clamp(points[i], {points[i - 1].x,0}, {1,1});
+		}
+	}
 }

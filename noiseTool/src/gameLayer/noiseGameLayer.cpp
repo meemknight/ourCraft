@@ -10,6 +10,7 @@
 #include <gl2d/gl2d.h>
 #include <worldGeneratorSettings.h>
 #include <bezie.h>
+#include <fstream>
 
 
 gl2d::Renderer2D renderer;
@@ -152,7 +153,33 @@ bool gameLogic(float deltaTime)
 	
 	ImGui::DragInt2("Displacement", &displacement[0], 16);
 
+	if (ImGui::Button("Save"))
+	{
+		std::ofstream f(MINECRAFT_RESOURCES_PATH "gameData/worldGenerator/default.mgenerator");
+		if (f.is_open())
+		{
+			f << settings.saveSettings();
+			f.close();
+		}
+	}
 
+	ImGui::SameLine();
+
+	if (ImGui::Button("Load"))
+	{
+		std::ifstream f(MINECRAFT_RESOURCES_PATH "gameData/worldGenerator/default.mgenerator");
+		if (f.is_open())
+		{
+			std::stringstream buffer;
+			buffer << f.rdbuf();
+			WorldGeneratorSettings s2;
+			if (s2.loadSettings(buffer.str().c_str()))
+			{
+				settings = s2;
+			}
+			f.close();
+		}
+	}
 
 	ImGui::Separator();
 	renderSettingsForOneNoise("Continentalness Noise", settings.continentalnessNoiseSettings);
@@ -167,6 +194,7 @@ bool gameLogic(float deltaTime)
 	//ImGui::ShowDemoWindow();
 	//ImGui::ShowBezierDemo();
 
+	settings.sanitize();
 	wg.applySettings(settings);
 	recreate();
 

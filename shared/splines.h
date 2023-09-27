@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <glm/vec2.hpp>
-
+#include <string>
 
 constexpr static int MAX_SPLINES_COUNT = 16;
 
@@ -14,6 +14,10 @@ struct Spline
 	void addSpline();
 
 	float applySpline(float p);
+
+	std::string saveSettings(int tabs);
+
+	void sanitize();
 };
 
 
