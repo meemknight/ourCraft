@@ -10,7 +10,7 @@ void closeEnetListener();
 struct ServerTask
 {
 	Task t;
-	int32_t cid;
+	CID cid;
 };
 
 struct Client
@@ -26,5 +26,5 @@ void signalWaitingFromServer();
 
 std::vector<ServerTask> waitForTasksServer();
 std::vector<ServerTask> tryForTasksServer();
-Client getClient(int32_t cid);
+Client getClient(CID cid);
 void broadCast(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel);

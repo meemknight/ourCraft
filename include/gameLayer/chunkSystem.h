@@ -17,7 +17,7 @@ struct ChunkSystem
 	std::vector<int> requestedChunks;
 	int squareSize = 3;
 
-	Chunk *getChunkSafe(int x, int z);
+	Chunk *getChunkSafeFromChunkSystemCoordonates(int x, int z);
 	Chunk *getChunkSafeFromBlockPos(int x, int z);
 	void setChunkAndNeighboursFlagDirtyFromBlockPos(int x, int z);
 
@@ -38,14 +38,14 @@ struct ChunkSystem
 		, std::optional<glm::ivec3> &prevBlockForPlace);
 
 	//a client places a block and sends a task to the server for it to be placed
-	void placeBlockByClient(glm::ivec3 pos, int type, UndoQueue &undoQueue, glm::dvec3 playerPos, LightSystem &lightSystem);
+	void placeBlockByClient(glm::ivec3 pos, BlockType type, UndoQueue &undoQueue, glm::dvec3 playerPos, LightSystem &lightSystem);
 
 	//just place the block
-	void placeBlockNoClient(glm::ivec3 pos, int type, LightSystem &lightSystem);
+	void placeBlockNoClient(glm::ivec3 pos, BlockType type, LightSystem &lightSystem);
 
 	//internal use
-	void changeBlockLightStuff(glm::ivec3 pos, int currentLightLevel, uint16_t oldType,
-		uint16_t newType, LightSystem &lightSystem);
+	void changeBlockLightStuff(glm::ivec3 pos, int currentLightLevel, BlockType oldType,
+		BlockType newType, LightSystem &lightSystem);
 
 
 	std::unordered_map<glm::ivec2, float> recentlyRequestedChunks;

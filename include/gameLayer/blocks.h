@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <glad/glad.h>
 #include <glm/vec3.hpp>
+struct WorldGenerator;
 
 enum BlockTypes
 {
@@ -34,19 +35,21 @@ enum BlockTypes
 	BlocksCount
 };
 
-bool isBlockMesh(uint16_t type);
+using BlockType = uint16_t;
 
-bool isCrossMesh(uint16_t type);
+bool isBlockMesh(BlockType type);
 
-bool isOpaque(uint16_t type);
+bool isCrossMesh(BlockType type);
 
-bool isTransparentGeometry(uint16_t type);
+bool isOpaque(BlockType type);
 
-bool isGrassMesh(uint16_t type);
+bool isTransparentGeometry(BlockType type);
+
+bool isGrassMesh(BlockType type);
 
 struct Block
 {
-	uint16_t type;
+	BlockType type;
 	unsigned char lightLevel; //first 4 bytes represent the sun level and bottom 4 bytes the other lights level
 	unsigned char notUsed;
 
@@ -174,7 +177,7 @@ struct Chunk
 	bool bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		glm::ivec3 playerPosition);
 
-	void create(int x, int y);
+	void create(int x, int y, WorldGenerator &wg);
 
 	void createGpuData();
 

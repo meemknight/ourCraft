@@ -33,7 +33,6 @@ namespace Ui
 		}
 	}
 
-	//todo fix frame
 	glm::ivec4 Box::operator()()
 	{
 

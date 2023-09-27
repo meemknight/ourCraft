@@ -330,7 +330,7 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back, glm::ivec
 	
 }
 
-void Chunk::create(int x, int z)
+void Chunk::create(int x, int z, WorldGenerator &wg)
 {
 
 	this->data.x = x;
@@ -338,7 +338,7 @@ void Chunk::create(int x, int z)
 
 	data.clearLightLevels();
 
-	generateChunk(1234, *this);
+	generateChunk(1234, *this, wg);
 
 }
 
@@ -396,17 +396,17 @@ void ChunkData::clearLightLevels()
 
 }
 
-bool isBlockMesh(uint16_t type)
+bool isBlockMesh(BlockType type)
 {
 	return !isBlockMesh(type);
 }
 
-bool isCrossMesh(uint16_t type)
+bool isCrossMesh(BlockType type)
 {
 	return type == grass || type == rose;
 }
 
-bool isOpaque(uint16_t type)
+bool isOpaque(BlockType type)
 {
 	return
 		type != BlockTypes::air
@@ -415,12 +415,12 @@ bool isOpaque(uint16_t type)
 		&& !(isGrassMesh(type));
 }
 
-bool isTransparentGeometry(uint16_t type)
+bool isTransparentGeometry(BlockType type)
 {
 	return type == BlockTypes::ice;
 }
 
-bool isGrassMesh(uint16_t type)
+bool isGrassMesh(BlockType type)
 {
 	return type == BlockTypes::grass
 		|| type == BlockTypes::rose

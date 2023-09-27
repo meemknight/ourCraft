@@ -336,6 +336,24 @@ RECENT REVISION HISTORY:
 //    default this is set to (1 << 24), which is 16777216, but that's still
 //    very big.
 
+#include <memory>
+
+inline void *STBIMAGE_CUSTOM_REALOC(void *p, size_t oldSize, size_t newsz)
+{
+	void* newPtr = new char[newsz];
+
+	std::memcpy(newPtr, p, oldSize);
+
+	delete[] p;
+	return newPtr;
+};
+
+#define STBI_MALLOC(sz)           new char[(sz)]
+#define STBI_REALLOC_SIZED(p, oldsz, newsz) STBIMAGE_CUSTOM_REALOC((p), (oldsz), (newsz))
+#define STBI_FREE(p)              delete[] (p)
+
+
+
 #ifndef STBI_NO_STDIO
 #include <stdio.h>
 #endif // STBI_NO_STDIO
@@ -639,7 +657,7 @@ typedef unsigned char validate_uint32[sizeof(stbi__uint32)==4 ? 1 : -1];
 
 #if defined(STBI_MALLOC) && defined(STBI_FREE) && (defined(STBI_REALLOC) || defined(STBI_REALLOC_SIZED))
 // ok
-#elif !defined(STBI_MALLOC) && !defined(STBI_FREE) && !defined(STBI_REALLOC) && !defined(STBI_REALLOC_SIZED)
+#elif !defined(STBI_MALLOC) && !defined(STBI_FREE) && !defined(STBI_REALLOC_SIZED)
 // ok
 #else
 #error "Must define all or none of STBI_MALLOC, STBI_FREE, and STBI_REALLOC (or STBI_REALLOC_SIZED)."

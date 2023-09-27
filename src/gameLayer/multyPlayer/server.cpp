@@ -72,8 +72,6 @@ bool startServer()
 		}
 
 		serverThread = std::move(std::thread(serverWorkerFunction));
-		
-		//serverThread.detach();
 		return 1;
 	}
 	else
@@ -90,7 +88,7 @@ struct ChunkPriorityCache
 	ListNode *first = nullptr;
 	ListNode *last = nullptr;
 
-	ChunkData *getOrCreateChunk(int posX, int posZ);;
+	ChunkData *getOrCreateChunk(int posX, int posZ, WorldGenerator &wg);
 
 };
 
@@ -162,7 +160,8 @@ bool serverStartupStuff()
 
 void serverWorkerFunction()
 {
-
+	WorldGenerator wg;
+	wg.init();
 
 	while (serverRunning)
 	{
@@ -193,7 +192,7 @@ void serverWorkerFunction()
 
 			if (i.t.type == Task::generateChunk)
 			{
-				auto rez = sd.chunkCache.getOrCreateChunk(i.t.pos.x, i.t.pos.z);
+				auto rez = sd.chunkCache.getOrCreateChunk(i.t.pos.x, i.t.pos.z, wg);
 				
 				Packet packet;
 				packet.cid = i.cid;
@@ -214,7 +213,7 @@ void serverWorkerFunction()
 			{
 				//std::cout << "server recieved place block\n";
 				//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
-				auto chunk = sd.chunkCache.getOrCreateChunk(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z));
+				auto chunk = sd.chunkCache.getOrCreateChunk(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z), wg);
 				int convertedX = modBlockToChunk(i.t.pos.x);
 				int convertedZ = modBlockToChunk(i.t.pos.z);
 				
@@ -306,6 +305,7 @@ void serverWorkerFunction()
 
 	}
 
+	wg.clear();
 }
 
 ServerSettings getServerSettingsCopy()
@@ -330,14 +330,14 @@ void setServerSettings(ServerSettings settings)
 	serverSettingsMutex.unlock();
 }
 
-void addCidToServerSettings(int32_t cid)
+void addCidToServerSettings(CID cid)
 {
 	serverSettingsMutex.lock();
 	sd.settings.perClientSettings.insert({cid, {}});
 	serverSettingsMutex.unlock();
 }
 
-void removeCidFromServerSettings(int32_t cid)
+void removeCidFromServerSettings(CID cid)
 {
 	serverSettingsMutex.lock();
 	sd.settings.perClientSettings.erase(cid);
@@ -346,7 +346,7 @@ void removeCidFromServerSettings(int32_t cid)
 
 
 
-ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ)
+ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerator &wg)
 {
 	glm::ivec2 pos = {posX, posZ};
 	auto foundPos = savedChunks.find(pos);
@@ -413,7 +413,7 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ)
 			chunkToRecycle->chunk.x = pos.x;
 			chunkToRecycle->chunk.z = pos.y;
 
-			generateChunk(1234, chunkToRecycle->chunk);
+			generateChunk(1234, chunkToRecycle->chunk, wg);
 			auto rez = &chunkToRecycle->chunk;
 			//submitChunk(new Chunk(chunkToRecycle->chunk));
 
@@ -442,7 +442,7 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ)
 			c->chunk.x = posX;
 			c->chunk.z = posZ;
 
-			generateChunk(1234, c->chunk);
+			generateChunk(1234, c->chunk, wg);
 			//std::this_thread::sleep_for(std::chrono::milliseconds(1));
 			//submitChunk(new Chunk(c->chunk));
 			auto rez = &c->chunk;

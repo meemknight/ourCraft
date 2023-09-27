@@ -7,7 +7,6 @@
 #include <ctime>
 #include "platformTools.h"
 #include "config.h"
-#include <raudio.h>
 #include "platformInput.h"
 #include "otherPlatformFunctions.h"
 #include "gameLayer.h"
@@ -35,6 +34,7 @@ bool currentFullScreen = 0;
 bool fullScreen = 0;
 
 #pragma endregion
+
 
 
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
@@ -109,6 +109,10 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
 		if (key == GLFW_KEY_LEFT_CONTROL)
 		{
 			platform::internal::setButtonState(platform::Button::LeftCtrl, state);
+		}
+		if (key == GLFW_KEY_TAB)
+		{
+			platform::internal::setButtonState(platform::Button::Tab, state);
 		}
 	}
 	
@@ -202,6 +206,13 @@ namespace platform
 		fullScreen = f;
 	}
 
+	glm::ivec2 getFrameBufferSize()
+	{
+		int x = 0; int y = 0;
+		glfwGetFramebufferSize(wind, &x, &y);
+		return {x, y};
+	}
+
 	glm::ivec2 getRelMousePosition()
 	{
 		double x = 0, y = 0;
@@ -216,6 +227,7 @@ namespace platform
 		return { x, y };
 	}
 
+	//todo test
 	void showMouse(bool show)
 	{
 		if(show)
@@ -229,6 +241,7 @@ namespace platform
 
 	bool isFocused()
 	{
+		
 		return windowFocus;
 	}
 
@@ -293,7 +306,7 @@ int main()
 #pragma region window and opengl
 
 	permaAssertComment(glfwInit(), "err initializing glfw");
-	//glfwWindowHint(GLFW_SAMPLES, 4);
+	glfwWindowHint(GLFW_SAMPLES, 4);
 
 	int w = 500;
 	int h = 500;
@@ -308,7 +321,9 @@ int main()
 	glfwSetCursorPosCallback(wind, cursorPositionCallback);
 	glfwSetCharCallback(wind, characterCallback);
 
-	permaAssertComment(gladLoadGL(), "err initializing glad");
+	//permaAssertComment(gladLoadGL(), "err initializing glad");
+	permaAssertComment(gladLoadGLLoader((GLADloadproc)glfwGetProcAddress), "err initializing glad");
+
 
 #pragma endregion
 
@@ -335,7 +350,7 @@ int main()
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
 			//style.WindowRounding = 0.0f;
-			style.Colors[ImGuiCol_WindowBg].w = 0.f;
+			//style.Colors[ImGuiCol_WindowBg].w = 0.f;
 			style.Colors[ImGuiCol_DockingEmptyBg].w = 0.f;
 		}
 	
@@ -345,13 +360,13 @@ int main()
 #pragma endregion
 
 #pragma region audio
-	InitAudioDevice();
+	//InitAudioDevice();
 
 	//Music m = LoadMusicStream(RESOURCES_PATH "target.ogg");
-	Music m = {};
-	UpdateMusicStream(m);
+	//Music m = {};
+	//UpdateMusicStream(m);
 	//StopMusicStream(m);
-	PlayMusicStream(m);
+	//PlayMusicStream(m);
 
 #pragma endregion
 
@@ -369,8 +384,8 @@ int main()
 
 	while (!glfwWindowShouldClose(wind))
 	{
-		UpdateMusicStream(m);
-		PlayMusicStream(m);
+		//UpdateMusicStream(m);
+		//PlayMusicStream(m);
 
 	#pragma region deltaTime
 
@@ -379,7 +394,7 @@ int main()
 		//lastTime = clock();
 		auto start = std::chrono::high_resolution_clock::now();
 
-		float deltaTime = (std::chrono::duration_cast<std::chrono::microseconds>(start - stop)).count() / 1000000.0f;
+		float deltaTime = (std::chrono::duration_cast<std::chrono::nanoseconds>(start - stop)).count() / 1000000000.0;
 		stop = std::chrono::high_resolution_clock::now();
 
 		float augmentedDeltaTime = deltaTime;
@@ -466,6 +481,7 @@ int main()
 				glfwGetFramebufferSize(wind, &display_w, &display_h);
 				glViewport(0, 0, display_w, display_h);
 				ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+				io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
 				// Update and Render additional Platform Windows
 				// (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.

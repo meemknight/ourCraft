@@ -1,6 +1,7 @@
 #pragma once
 #include <unordered_map>
 
+using CID = int32_t;
 
 bool isServerRunning();
 
@@ -19,7 +20,7 @@ struct PerClientServerSettings
 
 struct ServerSettings
 {
-	std::unordered_map<int32_t, PerClientServerSettings> perClientSettings;
+	std::unordered_map<CID, PerClientServerSettings> perClientSettings;
 
 };
 
@@ -27,6 +28,6 @@ ServerSettings getServerSettingsCopy();
 
 void setServerSettings(ServerSettings settings);
 
-void addCidToServerSettings(int32_t cid);
+void addCidToServerSettings(CID cid);
 
-void removeCidFromServerSettings(int32_t cid);
+void removeCidFromServerSettings(CID cid);

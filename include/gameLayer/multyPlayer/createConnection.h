@@ -16,7 +16,7 @@ struct Task
 
 	glm::ivec3 pos = {};
 	int type = 0;
-	uint16_t blockType = 0;
+	BlockType blockType = 0;
 	EventId eventId = {};
 };
 

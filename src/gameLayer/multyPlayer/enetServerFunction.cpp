@@ -14,7 +14,7 @@
 //todo add to a struct
 ENetHost *server = 0;
 std::mutex connectionsMutex;
-std::unordered_map<int32_t, Client> connections;
+std::unordered_map<CID, Client> connections;
 int pids = 1;
 static std::thread serverThread;
 
@@ -36,8 +36,7 @@ void broadCast(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool r
 	connectionsMutex.unlock();
 }
 
-//todo typedef cid
-Client getClient(int32_t cid)
+Client getClient(CID cid)
 {
 	connectionsMutex.lock();
 	Client rez = connections[cid];
@@ -45,7 +44,7 @@ Client getClient(int32_t cid)
 	return rez;
 }
 
-void createConnection(int32_t cid, Client c)
+void createConnection(CID cid, Client c)
 {
 	connectionsMutex.lock();
 	connections.insert({cid, c});
@@ -238,8 +237,6 @@ void enetServerFunction()
 	}
 
 }
-
-
 
 bool startEnetListener(ENetHost *_server)
 {

@@ -47,7 +47,7 @@ uint16_t blocksLookupTable[] = {
 	0,0,0,0,0,0,
 
 	//grass
-	0,3,2,1,3,3,
+	3,3,2,1,3,3,
 
 	// dirt
 	1,1,1,1,1,1,
@@ -127,38 +127,41 @@ void BlocksLoader::loadAllTextures()
 
 	{
 		unsigned char data[16] = {};
-		data[0] = 146;
-		data[1] = 52;
-		data[2] = 235;
-		data[3] = 255;
 
-		data[4] = 0;
-		data[5] = 0;
-		data[6] = 0;
-		data[7] = 255;
+		{
+			int i = 0;
+			data[i++] = 0;
+			data[i++] = 0;
+			data[i++] = 0;
+			data[i++] = 255;
 
-		data[8] = 146;
-		data[9] = 52;
-		data[10] = 235;
-		data[11] = 255;
+			data[i++] = 146;
+			data[i++] = 52;
+			data[i++] = 235;
+			data[i++] = 255;
 
-		data[12] = 0;
-		data[13] = 0;
-		data[14] = 0;
-		data[15] = 255;
+			data[i++] = 146;
+			data[i++] = 52;
+			data[i++] = 235;
+			data[i++] = 255;
+
+			data[i++] = 0;
+			data[i++] = 0;
+			data[i++] = 0;
+			data[i++] = 255;
+		}
+		
+
 
 		gl2d::Texture t;
-		//t.createFromBuffer((char*)data, 2, 2, true, false);
-		t.create1PxSquare();
-
+		t.createFromBuffer((char*)data, 2, 2, true, false);
+	
+		texturesIds.push_back(t.id);
 		auto handle = glGetTextureHandleARB(t.id);
 		glMakeTextureHandleResidentARB(handle);
-		gpuIds.push_back(t.id);
-		texturesIds.push_back(handle);
+		gpuIds.push_back(handle);
 	}
-
 	
-
 	std::string path;
 
 	for (int i = 0; i < count; i++)

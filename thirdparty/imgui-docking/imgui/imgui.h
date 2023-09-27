@@ -39,6 +39,8 @@ Index of this file:
 // [SECTION] Obsolete functions and types
 
 */
+#define IMGUI_DEFINE_MATH_OPERATORS 1
+
 
 #pragma once
 

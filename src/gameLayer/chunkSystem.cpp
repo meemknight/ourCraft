@@ -9,8 +9,7 @@
 #include <lightSystem.h>
 #include <platformTools.h>
 
-//todo rename so I know I use chunk related coordonates!!!!!!!!!
-Chunk* ChunkSystem::getChunkSafe(int x, int z)
+Chunk* ChunkSystem::getChunkSafeFromChunkSystemCoordonates(int x, int z)
 {
 	if (x < 0 || z < 0 || x >= squareSize || z >= squareSize)
 	{
@@ -336,10 +335,10 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 		if (currentBaked < maxToBake)
 		{
-			auto left = getChunkSafe(x - 1, z);
-			auto right = getChunkSafe(x + 1, z);
-			auto front = getChunkSafe(x, z + 1);
-			auto back = getChunkSafe(x, z - 1);
+			auto left = getChunkSafeFromChunkSystemCoordonates(x - 1, z);
+			auto right = getChunkSafeFromChunkSystemCoordonates(x + 1, z);
+			auto front = getChunkSafeFromChunkSystemCoordonates(x, z + 1);
+			auto back = getChunkSafeFromChunkSystemCoordonates(x, z - 1);
 		
 			auto b = chunk->bake(left, right, front, back, playerBlockPosition);
 		
@@ -361,7 +360,7 @@ Chunk *ChunkSystem::getChunkSafeFromBlockPos(int x, int z)
 	int divideX = divideChunk(x);
 	int divideZ = divideChunk(z);
 
-	auto c = getChunkSafe(divideX - cornerPos.x, divideZ - cornerPos.y);
+	auto c = getChunkSafeFromChunkSystemCoordonates(divideX - cornerPos.x, divideZ - cornerPos.y);
 	return c;
 }
 
@@ -370,7 +369,6 @@ void ChunkSystem::setChunkAndNeighboursFlagDirtyFromBlockPos(int x, int z)
 	const int o = 5;
 	glm::ivec2 offsets[o] = {{0,0}, {-1,0}, {1,0}, {0, -1}, {0, 1}}; 
 
-	//todo optimize, update neighbours only if necessary
 	for (int i = 0; i < o; i++)
 	{
 		auto c = getChunkSafeFromBlockPos(x + offsets[i].x, z + offsets[i].y);
@@ -379,9 +377,7 @@ void ChunkSystem::setChunkAndNeighboursFlagDirtyFromBlockPos(int x, int z)
 			c->dirty = true;
 		}
 	}
-
 }
-
 
 Block* ChunkSystem::getBlockSafe(int x, int y, int z)
 {
@@ -394,7 +390,6 @@ Block *ChunkSystem::getBlockSafe(glm::dvec3 pos)
 	auto p = from3DPointToBlock(pos);
 	return getBlockSafe(p.x, p.y, p.z);
 }
-
 
 
 Block *ChunkSystem::getBlockSafeAndChunk(int x, int y, int z, Chunk *&chunk)
@@ -416,7 +411,8 @@ Block *ChunkSystem::getBlockSafeAndChunk(int x, int y, int z, Chunk *&chunk)
 	return b;
 }
 
-Block *ChunkSystem::rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, float maxDist, std::optional<glm::ivec3> &prevBlockForPlace)
+Block *ChunkSystem::rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos,
+	float maxDist, std::optional<glm::ivec3> &prevBlockForPlace)
 {
 	float deltaMagitude = 0.01f;
 	glm::vec3 delta = glm::normalize(dir) * deltaMagitude;
@@ -452,7 +448,7 @@ Block *ChunkSystem::rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, 
 }
 
 void ChunkSystem::changeBlockLightStuff(glm::ivec3 pos, int currentLightLevel,
-	uint16_t oldType, uint16_t newType, LightSystem &lightSystem)
+	BlockType oldType, BlockType newType, LightSystem &lightSystem)
 {
 	
 	if (!isOpaque(oldType) && isOpaque(newType))
@@ -512,7 +508,7 @@ void ChunkSystem::changeBlockLightStuff(glm::ivec3 pos, int currentLightLevel,
 }
 
 //todo short for type
-void ChunkSystem::placeBlockByClient(glm::ivec3 pos, int type, UndoQueue &undoQueue, glm::dvec3 playerPos
+void ChunkSystem::placeBlockByClient(glm::ivec3 pos, BlockType type, UndoQueue &undoQueue, glm::dvec3 playerPos
 	, LightSystem &lightSystem)
 {
 	//todo were we will check legality locally
@@ -542,7 +538,7 @@ void ChunkSystem::placeBlockByClient(glm::ivec3 pos, int type, UndoQueue &undoQu
 }
 
 //todo refactor and reuse up
-void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, int type, LightSystem &lightSystem)
+void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, BlockType type, LightSystem &lightSystem)
 {
 	//todo were we will check legality locally
 	Chunk *chunk = 0;

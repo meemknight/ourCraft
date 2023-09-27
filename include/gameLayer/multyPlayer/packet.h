@@ -4,6 +4,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <blocks.h>
+#include "server.h"
 
 using EventCounter = unsigned int;
 using RevisionNumber = unsigned int;
@@ -20,7 +21,7 @@ struct EventId
 struct Packet
 {
 	int32_t header = 0;
-	int32_t cid = 0;
+	CID cid = 0;
 	char *getData()
 	{
 		return (char *)((&cid) + 1);
