@@ -55,6 +55,15 @@ void Spline::addSpline()
 	}
 }
 
+void Spline::removeSpline()
+{
+	if (size >= MAX_SPLINES_COUNT)
+	{
+		size--;
+		points[size - 1].x = 1;
+	}
+}
+
 float Spline::applySpline(float p)
 {
 	return ::applySpline(p, *this);

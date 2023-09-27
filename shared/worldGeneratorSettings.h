@@ -36,6 +36,7 @@ struct WorldGenerator
 {
 
 	FastNoiseSIMD *continentalnessNoise;
+	Spline continentalSplines;
 
 	void init();
 	void clear();

@@ -187,6 +187,30 @@ bool gameLogic(float deltaTime)
 
 	ImGui::Table("Test", settings.continentalnessNoiseSettings.spline.points, 
 		settings.continentalnessNoiseSettings.spline.size);
+
+	if (ImGui::Button("Add spline"))
+	{
+		settings.continentalnessNoiseSettings.spline.addSpline();
+	}
+
+	ImGui::SameLine();
+	
+	if (ImGui::Button("Remove spline"))
+	{
+		settings.continentalnessNoiseSettings.spline.removeSpline();
+	}
+
+	ImGui::SameLine();
+
+	if (ImGui::Button("Invert"))
+	{
+		for (int i = 0; i < settings.continentalnessNoiseSettings.spline.size; i++)
+		{
+			auto &s = settings.continentalnessNoiseSettings.spline;
+			s.points[i].y = 1 - s.points[i].y;
+		}
+	}
+
 	ImGui::Separator();
 
 	ImGui::End();//		test	//

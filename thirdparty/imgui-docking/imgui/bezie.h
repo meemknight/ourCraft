@@ -175,7 +175,7 @@ namespace ImGui
 
 	int Table(const char *label, glm::vec2 *points, size_t s)
 	{
-		float tableSize = 256;
+		float tableSize = 512;
 
 		// visuals
 		enum { SMOOTHNESS = 64 }; // curve smoothness: the higher number of segments, the smoother curve

@@ -25,7 +25,7 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	continentalnessNoise->SetFractalOctaves(s.continentalnessNoiseSettings.octaves);
 	continentalnessNoise->SetPerturbFractalOctaves(s.continentalnessNoiseSettings.perturbFractalOctaves);
 
-
+	continentalSplines = s.continentalnessNoiseSettings.spline;
 }
 
 

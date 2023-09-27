@@ -12,6 +12,7 @@ struct Spline
 	int size = 2;
 
 	void addSpline();
+	void removeSpline();
 
 	float applySpline(float p);
 

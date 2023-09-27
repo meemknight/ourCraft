@@ -15,6 +15,8 @@
 #include "multyPlayer/enetServerFunction.h"
 #include <platformTools.h>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 
 struct ListNode;
 
@@ -162,6 +164,23 @@ void serverWorkerFunction()
 {
 	WorldGenerator wg;
 	wg.init();
+
+	std::ifstream f(RESOURCES_PATH "gameData/worldGenerator/default.mgenerator");
+	if (f.is_open())
+	{
+		std::stringstream buffer;
+		buffer << f.rdbuf();
+		WorldGeneratorSettings s;
+		if (s.loadSettings(buffer.str().c_str()))
+		{
+			wg.applySettings(s);
+		}
+		else
+		{
+			exit(0); //todo error out
+		}
+		f.close();
+	}
 
 	while (serverRunning)
 	{
