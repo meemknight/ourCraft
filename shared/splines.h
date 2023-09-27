@@ -3,7 +3,7 @@
 #include <glm/vec2.hpp>
 #include <string>
 
-constexpr static int MAX_SPLINES_COUNT = 16;
+constexpr static int MAX_SPLINES_COUNT = 20;
 
 struct Spline
 {

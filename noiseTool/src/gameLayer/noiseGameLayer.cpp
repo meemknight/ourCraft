@@ -29,9 +29,10 @@ void renderSettingsForOneNoise(const char *name, NoiseSetting &n)
 	ImGui::DragFloat("Scale: ", &n.scale, 0.01);
 	ImGui::Combo("Noise Type", &n.type, 
 		"Value\0ValueFractal\0Perlin\0PerlinFractal\0Simplex\0SimplexFractal\0WhiteNoise\0Cellular\0Cubic\0CubicFractal");
-	ImGui::DragFloat("Frequency: ", &n.frequency, 0.01);
+	ImGui::DragFloat("Frequency: ", &n.frequency, 0.005, 0.0001);
 	ImGui::DragInt("Octaves", &n.octaves, 0.5, 0, 8);
 	ImGui::DragInt("Perturb Fractal Octaves", &n.perturbFractalOctaves, 0.5, 0, 8);
+	ImGui::DragFloat("Power", &n.power, 0.1, 0.1, 10);
 
 	ImGui::PopID();
 }
@@ -92,12 +93,15 @@ void createFromGrayScale(gl2d::Texture &t, float *data, glm::vec2 s)
 
 void recreate()
 {
-
+	
 	float *testNoise
 		= wg.continentalnessNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.x, (1), size.y, 1);
 
 	for (int i = 0; i < size.x * size.y; i++)
 	{
+		testNoise[i] += 1;
+		testNoise[i] /= 2;
+		testNoise[i] = std::pow(testNoise[i], settings.continentalnessNoiseSettings.power);
 		testNoise[i] = applySpline(testNoise[i], settings.continentalnessNoiseSettings.spline);
 	}
 

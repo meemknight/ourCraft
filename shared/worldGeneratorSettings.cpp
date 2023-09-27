@@ -26,6 +26,7 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	continentalnessNoise->SetPerturbFractalOctaves(s.continentalnessNoiseSettings.perturbFractalOctaves);
 
 	continentalSplines = s.continentalnessNoiseSettings.spline;
+	continentalPower = s.continentalnessNoiseSettings.power;
 }
 
 
@@ -71,6 +72,7 @@ std::string NoiseSetting::saveSettings(int tabs)
 	rez += "frequency: "; rez += std::to_string(frequency); rez += ";\n"; addTabs();
 	rez += "octaves: "; rez += std::to_string(octaves); rez += ";\n"; addTabs();
 	rez += "perturbFractalOctaves: "; rez += std::to_string(perturbFractalOctaves); rez += ";\n"; addTabs();
+	rez += "power: "; rez += std::to_string(power); rez += ";\n"; addTabs();
 
 	rez += "spline:\n"; 
 	rez += spline.saveSettings(tabs+1);
@@ -91,6 +93,7 @@ void NoiseSetting::sanitize()
 	frequency = glm::clamp(frequency, 0.001f, 100.f);
 	octaves = glm::clamp(octaves, 0, 8);
 	perturbFractalOctaves = glm::clamp(perturbFractalOctaves, 0, 8);
+	power = glm::clamp(power, 0.1f, 10.f);
 
 	//todo the rest
 
@@ -288,7 +291,7 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					nrB = consumeNumber();
 					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
 
-					if (spline.size >= MAX_SPLINES_COUNT - 1)
+					if (spline.size >= MAX_SPLINES_COUNT)
 					{
 						return 0;
 					}
@@ -342,6 +345,14 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 							if (isEof()) { return 0; }
 							if (!isNumber()) { return 0; }
 							settings.perturbFractalOctaves = consumeNumber();
+							if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
+						}
+						else if (s == "power")
+						{
+							if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+							if (isEof()) { return 0; }
+							if (!isNumber()) { return 0; }
+							settings.power = consumeNumber();
 							if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
 						}
 						else if (s == "type")

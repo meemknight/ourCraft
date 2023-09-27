@@ -398,7 +398,7 @@ void ChunkData::clearLightLevels()
 
 bool isBlockMesh(BlockType type)
 {
-	return !isBlockMesh(type);
+	return !isCrossMesh(type);
 }
 
 bool isCrossMesh(BlockType type)
@@ -417,7 +417,7 @@ bool isOpaque(BlockType type)
 
 bool isTransparentGeometry(BlockType type)
 {
-	return type == BlockTypes::ice;
+	return type == BlockTypes::ice || type == BlockTypes::water;
 }
 
 bool isGrassMesh(BlockType type)

@@ -32,6 +32,7 @@ enum BlockTypes
 	gravel,
 	grass,
 	rose,
+	water,
 	BlocksCount
 };
 

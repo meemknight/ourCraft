@@ -12,6 +12,8 @@ struct NoiseSetting
 	int octaves = 3;
 	int perturbFractalOctaves = 0;
 
+	float power = 1;
+
 	Spline spline;
 
 	std::string saveSettings(int tabs);
@@ -37,6 +39,7 @@ struct WorldGenerator
 
 	FastNoiseSIMD *continentalnessNoise;
 	Spline continentalSplines;
+	float continentalPower = 1.f;
 
 	void init();
 	void clear();

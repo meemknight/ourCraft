@@ -32,6 +32,7 @@ const char *texturesNames[] = {
 	"grass", //herbs	//27
 	"rose",				//28
 	"stone",			//29
+	"water",			//30
 };
 
 //front
@@ -114,6 +115,9 @@ uint16_t blocksLookupTable[] = {
 
 	//rose
 	28,28,28,28,28,28,
+
+	//water
+	30,30,30,30,30,30,
 
 };
 
