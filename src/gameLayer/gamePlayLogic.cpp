@@ -17,6 +17,8 @@
 #include "multyPlayer/undoQueue.h"
 #include <platformTools.h>
 #include <lightSystem.h>
+#include <structure.h>
+#include <safeSave.h>
 
 struct GameData
 {
@@ -221,6 +223,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	}
 
+	static glm::ivec3 point;
+	static glm::ivec3 pointSize;
+	static bool renderBox = 1;
+
 	if (!gameData.escapePressed)
 	{
 		static int blockTypeToPlace = 1;
@@ -229,31 +235,60 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		blockTypeToPlace = glm::clamp(blockTypeToPlace, 1, BlocksCount - 1);
 
-		if (platform::isRMouseReleased())
+		if (platform::isKeyHeld(platform::Button::LeftCtrl))
 		{
-			if (blockToPlace)
-				gameData.chunkSystem.placeBlockByClient(*blockToPlace, blockTypeToPlace,
-				gameData.undoQueue, gameData.c.position, gameData.lightSystem);
+			if (platform::isRMouseReleased())
+			{
+				if (blockToPlace)
+				{
+					point = *blockToPlace;
+				}
+			}
+			else if (platform::isLMouseReleased())
+			{
+				if (blockToPlace)
+				{
+					pointSize = *blockToPlace - point;
+				}
+			}
 		}
-		else if (platform::isLMouseReleased())
+		else
 		{
-			gameData.chunkSystem.placeBlockByClient(rayCastPos, BlockTypes::air,
-				gameData.undoQueue, gameData.c.position, gameData.lightSystem);
+			if (platform::isRMouseReleased())
+			{
+				if (blockToPlace)
+					gameData.chunkSystem.placeBlockByClient(*blockToPlace, blockTypeToPlace,
+					gameData.undoQueue, gameData.c.position, gameData.lightSystem);
+			}
+			else if (platform::isLMouseReleased())
+			{
+				gameData.chunkSystem.placeBlockByClient(rayCastPos, BlockTypes::air,
+					gameData.undoQueue, gameData.c.position, gameData.lightSystem);
+			}
 		}
+
+		
 	};
 
 
 
-	static glm::dvec3 point;
-	static bool renderBox = 1;
+	
 
 	programData.pointDebugRenderer.renderCubePoint(gameData.c, point);
 
 	if (renderBox)
 	{
-		programData.gyzmosRenderer.drawCube(from3DPointToBlock(point));
-	}
+		//programData.gyzmosRenderer.drawCube(from3DPointToBlock(point));
+		programData.gyzmosRenderer.drawCube(point);
 
+		if (pointSize != glm::ivec3{})
+		{
+			programData.gyzmosRenderer.drawCube(from3DPointToBlock(point + glm::ivec3(pointSize)));
+			programData.gyzmosRenderer.drawCube(from3DPointToBlock(point + glm::ivec3(pointSize) - glm::ivec3(1,0,0)));
+			programData.gyzmosRenderer.drawCube(from3DPointToBlock(point + glm::ivec3(pointSize) - glm::ivec3(0,1,0)));
+			programData.gyzmosRenderer.drawCube(from3DPointToBlock(point + glm::ivec3(pointSize) - glm::ivec3(0,0,1)));
+		}
+	}
 
 	programData.gyzmosRenderer.render(gameData.c, posInt, posFloat);
 
@@ -272,8 +307,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			ImGui::Text("camera float: %f, %f, %f", posFloat.x, posFloat.y, posFloat.z);
 			ImGui::Text("camera int: %d, %d, %d", posInt.x, posInt.y, posInt.z);
 
-			ImGui::DragScalarN("Point pos", ImGuiDataType_Double, &point[0], 3, 1);
+			//ImGui::DragScalarN("Point pos", ImGuiDataType_Double, &point[0], 3, 1);
+			ImGui::DragInt3("Point pos", &point[0]);
+			ImGui::DragInt3("Point size",  &pointSize[0]);
 			ImGui::Checkbox("Render Box", &renderBox);
+
+			pointSize = glm::clamp(pointSize, glm::ivec3(0, 0, 0), glm::ivec3(64, 64, 64));
 
 			auto b = gameData.chunkSystem.getBlockSafe(point);
 			if (b) ImGui::Text("Box Light Value: %d", b->getSkyLight());
@@ -285,6 +324,63 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			{
 				terminate = true;
 			}
+
+
+			ImGui::NewLine();
+
+			if (ImGui::Button("Save structure"))
+			{
+				std::vector<unsigned char> data;
+				data.resize(sizeof(StructureData) + sizeof(BlockType) * pointSize.x * pointSize.y * pointSize.z);
+
+				StructureData *s = (StructureData*)data.data();
+
+				s->size = pointSize;
+				s->unused = 0;
+				
+				for (int x = 0; x < pointSize.x; x++)
+					for (int z = 0; z < pointSize.z; z++)
+						for (int y = 0; y < pointSize.y; y++)
+						{
+							glm::ivec3 pos = point + glm::ivec3(x, y, z);
+
+							auto rez = gameData.chunkSystem.getBlockSafe(pos.x, pos.y, pos.z);
+
+							if (rez)
+							{
+								s->unsafeGet(x, y, z) = rez->type;
+							}
+							else
+							{
+								s->unsafeGet(x, y, z) = BlockTypes::air;
+							}
+
+						}
+				sfs::writeEntireFile(s, data.size(), RESOURCES_PATH "gameData/structures/test.structure");
+			}
+
+			if (ImGui::Button("Load structure"))
+			{
+				std::vector<char> data;
+				if (sfs::readEntireFile(data, RESOURCES_PATH "gameData/structures/test.structure") ==
+					sfs::noError)
+				{
+					StructureData *s = (StructureData *)data.data();
+
+					for (int x = 0; x < s->size.x; x++)
+						for (int z = 0; z < s->size.z; z++)
+							for (int y = 0; y < s->size.y; y++)
+							{
+								glm::ivec3 pos = point + glm::ivec3(x, y, z);
+
+								gameData.chunkSystem.placeBlockByClient(pos, s->unsafeGet(x, y, z),
+									gameData.undoQueue, gameData.c.position, gameData.lightSystem);
+							}
+				}
+
+
+			}
+
 		}
 		ImGui::End();
 		ImGui::PopStyleColor();

@@ -106,6 +106,25 @@ oceansAndTerasesContributionSpline:
 	0.727737,0.179739;
 	1.000000,0.192810;
 	}
+vegetationNoise:
+	{
+	scale: 0.080000;
+	type: Simplex;
+	frequency: 0.065000;
+	octaves: 3;
+	perturbFractalOctaves: 0;
+	power: 1.000000;
+	spline:
+		{
+		0.000000,0.919935;
+		0.117647,0.218954;
+		0.140523,0.000000;
+		0.481209,0.000000;
+		0.595180,0.000000;
+		0.676879,0.899510;
+		1.000000,1.000000;
+		}
+	}
 stonetDnoise:
 	{
 	scale: 0.611000;

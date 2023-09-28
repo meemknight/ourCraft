@@ -346,17 +346,17 @@ bool Chunk::shouldBakeOnlyBecauseOfTransparency(Chunk *left, Chunk *right, Chunk
 	return dirtyTransparency;
 }
 
-void Chunk::create(int x, int z, WorldGenerator &wg)
-{
-
-	this->data.x = x;
-	this->data.z = z;
-
-	data.clearLightLevels();
-
-	generateChunk(1234, *this, wg);
-
-}
+//void Chunk::create(int x, int z, WorldGenerator &wg)
+//{
+//
+//	this->data.x = x;
+//	this->data.z = z;
+//
+//	data.clearLightLevels();
+//
+//	generateChunk(*this, wg, );
+//
+//}
 
 void setupVertexAttributes()
 {

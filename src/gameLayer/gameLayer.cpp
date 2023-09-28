@@ -65,6 +65,8 @@ bool initGame()
 		return false;
 	}
 
+	
+
 	//programData.facesCount = blockData.size() / 4;
 
 	//glNamedBufferData(programData.renderer.vertexBuffer, 0, 0, GL_DYNAMIC_DRAW);

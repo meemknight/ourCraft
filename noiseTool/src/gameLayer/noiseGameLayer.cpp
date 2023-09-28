@@ -41,10 +41,11 @@ void recreate();
 
 bool showFinal = 1;
 bool showSlice = 1;
-bool showContinentalness = 1;
-bool showPeaksAndValies = 1;
-bool showOceans = 1;
-bool show3DStone = 1;
+bool showContinentalness = 0;
+bool showPeaksAndValies = 0;
+bool showOceans = 0;
+bool showVegetation = 1;
+bool show3DStone = 0;
 
 
 bool initGame()
@@ -65,6 +66,7 @@ gl2d::Texture finalTexture;
 gl2d::Texture sliceT;
 gl2d::Texture stone3DNoiseT;
 gl2d::Texture oceansAndTerasesT;
+gl2d::Texture vegetationT;
 
 void createFromFloats(gl2d::Texture &t, float *data, glm::ivec2 s)
 {
@@ -171,6 +173,28 @@ void recreate()
 
 		}
 		createFromGrayScale(oceansAndTerasesT, oceansNoise, size);
+
+
+	}
+
+	{
+		float *vegetationNoise;
+
+		vegetationNoise
+			= wg.vegetationNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
+
+		for (int i = 0; i < size.x * size.y; i++)
+		{
+			vegetationNoise[i] += 1;
+			vegetationNoise[i] /= 2;
+			vegetationNoise[i] = std::pow(vegetationNoise[i], settings.vegetationNoise.power);
+			vegetationNoise[i] = applySpline(vegetationNoise[i], settings.vegetationNoise.spline);
+
+		}
+
+		createFromGrayScale(vegetationT, vegetationNoise, size);
+		
+		FastNoiseSIMD::FreeNoiseSet(vegetationNoise);
 
 
 	}
@@ -336,7 +360,7 @@ bool gameLogic(float deltaTime)
 	int w = 0; int h = 0;
 	w = platform::getFrameBufferSizeX(); //window w
 	h = platform::getFrameBufferSizeY(); //window h
-	
+
 	glViewport(0, 0, w, h);
 	glClear(GL_COLOR_BUFFER_BIT); //clear screen
 
@@ -349,7 +373,7 @@ bool gameLogic(float deltaTime)
 	ImGui::DragInt("Size", &size[0]);
 	size[1] = size[0];
 	size = glm::clamp(size, glm::ivec2(1, 1), glm::ivec2(2048, 2048));
-	
+
 	ImGui::DragInt2("Displacement", &displacement[0], 16);
 
 	if (ImGui::Button("Save"))
@@ -413,14 +437,15 @@ bool gameLogic(float deltaTime)
 		ImGui::Separator();
 	};
 
-	auto noiseEditor = [&](NoiseSetting &s, const char *name)
+	auto noiseEditor = [&](NoiseSetting &s, const char *name, bool showSpline = 1)
 	{
 		ImGui::PushID(name);
 
 		ImGui::Separator();
 		renderSettingsForOneNoise(name, s);
-		
-		splineEditor(s.spline, name);
+
+		if (showSpline)
+			splineEditor(s.spline, name);
 
 		ImGui::PopID();
 	};
@@ -429,7 +454,7 @@ bool gameLogic(float deltaTime)
 	{
 		noiseEditor(settings.continentalnessNoiseSettings, "Continentalness Noise");
 	}
-	
+
 	if (showPeaksAndValies)
 	{
 		noiseEditor(settings.peaksAndValies, "Peaks And Valies");
@@ -452,6 +477,13 @@ bool gameLogic(float deltaTime)
 		ImGui::SliderFloat("3D bias power", &settings.densityBiasPower, 0.1, 10);
 	}
 
+	if (showVegetation)
+	{
+		ImGui::Separator();
+
+		noiseEditor(settings.vegetationNoise, "Vegetation");
+	}
+
 	ImGui::End();
 
 	//ImGui::ShowDemoWindow();
@@ -459,7 +491,16 @@ bool gameLogic(float deltaTime)
 
 	settings.sanitize();
 	wg.applySettings(settings);
-	recreate();
+
+	{
+		static int counter = 5;
+		counter--;
+		if (counter <= 0)
+		{
+			recreate();
+			counter = 5;
+		}
+	}
 
 	ImGui::Begin("Noise Viewer");
 
@@ -467,9 +508,10 @@ bool gameLogic(float deltaTime)
 	ImGui::Checkbox("showSlice", &showSlice); ImGui::SameLine();
 	ImGui::Checkbox("showContinentalness", &showContinentalness);
 	ImGui::Checkbox("showPeaksAndValies", &showPeaksAndValies); ImGui::SameLine();
-	ImGui::Checkbox("showOceans", &showOceans); ImGui::SameLine(); ImGui::SameLine();
+	ImGui::Checkbox("showOceans", &showOceans); ImGui::SameLine();
 	ImGui::Checkbox("show3DStone", &show3DStone); ImGui::SameLine();
-	
+	ImGui::Checkbox("showVegetation", &showVegetation); 
+
 	if (show3DStone)
 	{
 		ImGui::Text("3D noise");
@@ -505,6 +547,11 @@ bool gameLogic(float deltaTime)
 	if (showOceans)
 	{
 		drawNoise("Oceans And Terases", oceansAndTerasesT);
+	}
+
+	if (showVegetation)
+	{
+		drawNoise("Vegetation", vegetationT);
 	}
 
 	ImGui::End();

@@ -9,6 +9,7 @@ void WorldGenerator::init()
 	peaksValiesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	oceansAndTerasesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	stone3Dnoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	vegetationNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
 	WorldGeneratorSettings s;
 	applySettings(s);
@@ -20,6 +21,7 @@ void WorldGenerator::clear()
 	delete peaksValiesNoise;
 	delete oceansAndTerasesNoise;
 	delete stone3Dnoise;
+	delete vegetationNoise;
 }
 
 void WorldGenerator::applySettings(WorldGeneratorSettings &s)
@@ -62,6 +64,15 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	oceansAndTerasesPower = s.oceansAndTerases.power;
 	oceansAndTerasesContributionSplines = s.oceansAndTerasesContributionSpline;
 
+	vegetationNoise->SetSeed(s.seed);
+	vegetationNoise->SetNoiseType((FastNoiseSIMD::NoiseType)s.vegetationNoise.type);
+	vegetationNoise->SetAxisScales(s.vegetationNoise.scale, 1, s.vegetationNoise.scale);
+	vegetationNoise->SetFrequency(s.vegetationNoise.frequency);
+	vegetationNoise->SetFractalOctaves(s.vegetationNoise.octaves);
+	vegetationNoise->SetPerturbFractalOctaves(s.vegetationNoise.perturbFractalOctaves);
+	vegetationPower = s.vegetationNoise.power;
+	vegetationSplines = s.vegetationNoise.spline;
+
 	densityBias = s.densityBias;
 	densityBiasPower = s.densityBiasPower;
 }
@@ -89,6 +100,9 @@ std::string WorldGeneratorSettings::saveSettings()
 	rez += "oceansAndTerasesContributionSpline:\n";
 	rez += oceansAndTerasesContributionSpline.saveSettings(1);
 
+	rez += "vegetationNoise:\n";
+	rez += vegetationNoise.saveSettings(1);
+
 	rez += "stonetDnoise:\n";
 	rez += stone3Dnoise.saveSettings(1);
 
@@ -113,7 +127,7 @@ void WorldGeneratorSettings::sanitize()
 }
 
 
-std::string NoiseSetting::saveSettings(int tabs)
+std::string NoiseSetting::saveSettings(int tabs, bool saveSpline)
 {
 	std::string rez;
 	rez.reserve(200);
@@ -130,11 +144,15 @@ std::string NoiseSetting::saveSettings(int tabs)
 	rez += "frequency: "; rez += std::to_string(frequency); rez += ";\n"; addTabs();
 	rez += "octaves: "; rez += std::to_string(octaves); rez += ";\n"; addTabs();
 	rez += "perturbFractalOctaves: "; rez += std::to_string(perturbFractalOctaves); rez += ";\n"; addTabs();
-	rez += "power: "; rez += std::to_string(power); rez += ";\n"; addTabs();
+	rez += "power: "; rez += std::to_string(power); rez += ";\n"; 
 
-	rez += "spline:\n"; 
-	rez += spline.saveSettings(tabs+1);
-
+	if (saveSpline)
+	{
+		addTabs();
+		rez += "spline:\n";
+		rez += spline.saveSettings(tabs + 1);
+	}
+	
 	addTabs();
 	rez += "}\n";
 
@@ -503,6 +521,16 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					if (isEof()) { return 0; }
 
 					if (!consumeNoise(continentalnessNoiseSettings))
+					{
+						return 0;
+					}
+				}
+				else if (s == "vegetationNoise")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(vegetationNoise))
 					{
 						return 0;
 					}

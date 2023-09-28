@@ -17,6 +17,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <structure.h>
 
 struct ListNode;
 
@@ -90,8 +91,11 @@ struct ChunkPriorityCache
 	ListNode *first = nullptr;
 	ListNode *last = nullptr;
 
-	ChunkData *getOrCreateChunk(int posX, int posZ, WorldGenerator &wg);
+	//uses chunk coorodonates
+	ChunkData *getOrCreateChunk(int posX, int posZ, WorldGenerator &wg, StructuresManager &structureManager);
 
+	//uses chunk coorodonates
+	ChunkData *getChunkOrGetNullNotUpdateTable(int posX, int posZ);
 };
 
 std::mutex serverSettingsMutex;
@@ -162,6 +166,13 @@ bool serverStartupStuff()
 
 void serverWorkerFunction()
 {
+	StructuresManager structuresManager;
+
+	if (!structuresManager.loadAllStructures())
+	{
+		exit(0); //todo error out
+	}
+
 	WorldGenerator wg;
 	wg.init();
 
@@ -211,7 +222,7 @@ void serverWorkerFunction()
 
 			if (i.t.type == Task::generateChunk)
 			{
-				auto rez = sd.chunkCache.getOrCreateChunk(i.t.pos.x, i.t.pos.z, wg);
+				auto rez = sd.chunkCache.getOrCreateChunk(i.t.pos.x, i.t.pos.z, wg, structuresManager);
 				
 				Packet packet;
 				packet.cid = i.cid;
@@ -232,7 +243,7 @@ void serverWorkerFunction()
 			{
 				//std::cout << "server recieved place block\n";
 				//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
-				auto chunk = sd.chunkCache.getOrCreateChunk(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z), wg);
+				auto chunk = sd.chunkCache.getOrCreateChunk(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z), wg, structuresManager);
 				int convertedX = modBlockToChunk(i.t.pos.x);
 				int convertedZ = modBlockToChunk(i.t.pos.z);
 				
@@ -325,6 +336,7 @@ void serverWorkerFunction()
 	}
 
 	wg.clear();
+	structuresManager.clear();
 }
 
 ServerSettings getServerSettingsCopy()
@@ -365,7 +377,7 @@ void removeCidFromServerSettings(CID cid)
 
 
 
-ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerator &wg)
+ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerator &wg, StructuresManager &structureManager)
 {
 	glm::ivec2 pos = {posX, posZ};
 	auto foundPos = savedChunks.find(pos);
@@ -415,6 +427,10 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 	}
 	else
 	{
+		std::vector<StructureToGenerate> newStructures;
+		newStructures.reserve(10); //todo cache up
+
+		ChunkData *rez = 0;
 
 		if (savedChunks.size() >= maxSavedChunks)
 		{
@@ -432,8 +448,8 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 			chunkToRecycle->chunk.x = pos.x;
 			chunkToRecycle->chunk.z = pos.y;
 
-			generateChunk(1234, chunkToRecycle->chunk, wg);
-			auto rez = &chunkToRecycle->chunk;
+			generateChunk(chunkToRecycle->chunk, wg, structureManager, newStructures);
+			rez = &chunkToRecycle->chunk;
 			//submitChunk(new Chunk(chunkToRecycle->chunk));
 
 			assert(chunkToRecycle->node == last);
@@ -451,8 +467,6 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 			first = newFirst;
 
 			savedChunks[pos] = chunkToRecycle;
-
-			return rez;
 		}
 		else
 		{
@@ -461,10 +475,8 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 			c->chunk.x = posX;
 			c->chunk.z = posZ;
 
-			generateChunk(1234, c->chunk, wg);
-			//std::this_thread::sleep_for(std::chrono::milliseconds(1));
-			//submitChunk(new Chunk(c->chunk));
-			auto rez = &c->chunk;
+			generateChunk(c->chunk, wg, structureManager, newStructures);
+			rez = &c->chunk;
 
 			ListNode *node = new ListNode;
 			if (last == nullptr) { last = node; }
@@ -482,8 +494,82 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 
 			c->node = node;
 			savedChunks[{posX, posZ}] = c;
-
-			return rez;
 		}
+
+		for (auto &s : newStructures)
+		{
+
+			if (s.type == Structure_Tree)
+			{
+				auto &tree = structureManager.trees[0];
+
+				auto treeSize = tree->size;
+
+				if (s.pos.y + treeSize.y <= CHUNK_HEIGHT)
+				{
+
+					glm::ivec3 startPos = s.pos;
+					startPos.x -= treeSize.x / 2;
+					startPos.z -= treeSize.z / 2;
+
+					glm::ivec3 endPos = startPos + treeSize;
+
+					for (int x = startPos.x; x < endPos.x; x++)
+						for (int z = startPos.z; z < endPos.z; z++)
+						{
+
+							int chunkX = divideChunk(x);
+							int chunkZ = divideChunk(z);
+
+							auto c = getChunkOrGetNullNotUpdateTable(chunkX, chunkZ);
+
+							if (c)
+							{
+								int inChunkX = modBlockToChunk(x);
+								int inChunkZ = modBlockToChunk(z);
+
+								for (int y = startPos.y; y < endPos.y; y++)
+								{
+									
+
+									//todo server side problems for chunks that were already on the client
+
+									auto &b = c->unsafeGet(inChunkX, y, inChunkZ);
+
+									if (b.type == BlockTypes::air)
+									{
+										b.type = tree->unsafeGet(x - startPos.x, y - startPos.y, z - startPos.z);
+									}
+								}
+							}
+							else
+							{
+								//todo ghost blocks or something
+							}
+
+						}
+
+				}
+
+			}
+
+		}
+
+		return rez;
+	}
+}
+
+ChunkData *ChunkPriorityCache::getChunkOrGetNullNotUpdateTable(int posX, int posZ)
+{
+	glm::ivec2 pos = {posX, posZ};
+	auto foundPos = savedChunks.find(pos);
+
+	if (foundPos != savedChunks.end())
+	{
+		return &((*foundPos).second->chunk);
+	}
+	else
+	{
+		return nullptr;
 	}
 }

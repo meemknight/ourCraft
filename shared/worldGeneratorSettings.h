@@ -16,7 +16,7 @@ struct NoiseSetting
 
 	Spline spline;
 
-	std::string saveSettings(int tabs);
+	std::string saveSettings(int tabs, bool saveSpline = true);
 
 	void sanitize();
 };
@@ -31,6 +31,8 @@ struct WorldGeneratorSettings
 	NoiseSetting stone3Dnoise;
 	Spline peaksAndValiesContributionSpline;
 	Spline oceansAndTerasesContributionSpline;
+
+	NoiseSetting vegetationNoise;
 
 	float densityBias = 0.1;
 	float densityBiasPower = 1;
@@ -64,6 +66,11 @@ struct WorldGenerator
 	float stone3Dpower = 1.f;
 	float densityBias = 0.1;
 	float densityBiasPower = 1;
+
+	FastNoiseSIMD *vegetationNoise;
+	float vegetationPower = 1;
+	Spline vegetationSplines;
+
 
 	void init();
 	void clear();

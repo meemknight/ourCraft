@@ -48,13 +48,13 @@ void calculateBlockPass1(int height, Block *startPos)
 
 }
 
-void generateChunk(int seed, Chunk &c, WorldGenerator &wg)
+void generateChunk(Chunk &c, WorldGenerator &wg, StructuresManager &structuresManager, std::vector<StructureToGenerate> &generateStructures)
 {
-	generateChunk(seed, c.data, wg);
+	generateChunk(c.data, wg, structuresManager, generateStructures);
 }
 
 
-void generateChunk(int seed, ChunkData& c, WorldGenerator &wg)
+void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structuresManager, std::vector<StructureToGenerate> &generateStructures)
 {
 	c.clear();
 	
@@ -72,6 +72,17 @@ void generateChunk(int seed, ChunkData& c, WorldGenerator &wg)
 
 	float *densityNoise
 		= wg.stone3Dnoise->GetSimplexFractalSet(xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
+
+	float *vegetationNoise
+		= wg.vegetationNoise->GetSimplexFractalSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		vegetationNoise[i] += 1;
+		vegetationNoise[i] /= 2;
+		vegetationNoise[i] = std::powf(vegetationNoise[i], wg.vegetationPower);
+		vegetationNoise[i] = wg.vegetationSplines.applySpline(vegetationNoise[i]);
+	}
 
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
@@ -120,6 +131,10 @@ void generateChunk(int seed, ChunkData& c, WorldGenerator &wg)
 		return continentalness[x * CHUNK_SIZE * (1) + y * CHUNK_SIZE + z];
 	};
 	
+	auto getVegetationNoiseVal = [vegetationNoise](int x, int z)
+	{
+		return vegetationNoise[x * CHUNK_SIZE + z];
+	};
 
 	auto getDensityNoiseVal = [densityNoise](int x, int y, int z) //todo more cache friendly operation here please
 	{
@@ -160,7 +175,28 @@ void generateChunk(int seed, ChunkData& c, WorldGenerator &wg)
 
 			}
 
+			
 			calculateBlockPass1(firstH, &c.unsafeGet(x, 0, z));
+
+
+			//add trees
+			{
+
+				if (getVegetationNoiseVal(x, z) > 0.5)
+				{
+					if (x % 3 == 0 && z % 3 == 0)
+					{
+						//generate tree
+						StructureToGenerate str;
+						str.type = Structure_Tree;
+						str.pos = {x + xPadd, firstH, z + zPadd};
+
+						generateStructures.push_back(str);
+					}
+				}
+			}
+
+
 		}
 			
 

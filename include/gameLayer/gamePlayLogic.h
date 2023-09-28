@@ -2,6 +2,7 @@
 #include <gl2d/gl2d.h>
 #include "rendering/renderer.h"
 #include "blocksLoader.h"
+#include <structure.h>
 
 struct ProgramData
 {
