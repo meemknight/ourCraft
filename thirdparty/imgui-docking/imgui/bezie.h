@@ -175,6 +175,7 @@ namespace ImGui
 
 	int Table(const char *label, glm::vec2 *points, size_t s)
 	{
+
 		float tableSize = 612;
 
 		// visuals

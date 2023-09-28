@@ -58,6 +58,9 @@ void generateChunk(int seed, ChunkData& c, WorldGenerator &wg)
 	float *peaksAndValies
 		= wg.peaksValiesNoise->GetSimplexFractalSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 
+	float *oceansAndTerases
+		= wg.peaksValiesNoise->GetSimplexFractalSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
 		continentalness[i] += 1;
@@ -71,16 +74,31 @@ void generateChunk(int seed, ChunkData& c, WorldGenerator &wg)
 		peaksAndValies[i] += 1;
 		peaksAndValies[i] /= 2;
 		peaksAndValies[i] = std::pow(peaksAndValies[i], wg.peaksValiesPower);
+
+		float val = peaksAndValies[i];
+
 		peaksAndValies[i] = wg.peaksValiesSplines.applySpline(peaksAndValies[i]);
 
-		continentalness[i] = lerp(continentalness[i], peaksAndValies[i], wg.peaksAndValiesContribution);
+		continentalness[i] = lerp(continentalness[i], peaksAndValies[i], wg.peaksValiesContributionSplines.applySpline(val));
+	}
+
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		oceansAndTerases[i] += 1;
+		oceansAndTerases[i] /= 2;
+		oceansAndTerases[i] = std::pow(oceansAndTerases[i], wg.oceansAndTerasesPower);
+
+		float val = oceansAndTerases[i];
+
+		oceansAndTerases[i] = wg.oceansAndTerasesSplines.applySpline(oceansAndTerases[i]);
+
+		continentalness[i] = lerp(continentalness[i], oceansAndTerases[i], wg.oceansAndTerasesContributionSplines.applySpline(val));
 	}
 
 	auto getNoiseVal = [continentalness](int x, int y, int z)
 	{
 		return continentalness[x * CHUNK_SIZE * (1) + y * CHUNK_SIZE + z];
 	};
-
 
 
 	for (int x = 0; x < CHUNK_SIZE; x++)

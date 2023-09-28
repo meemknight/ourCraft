@@ -39,7 +39,11 @@ void renderSettingsForOneNoise(const char *name, NoiseSetting &n)
 
 void recreate();
 
-
+bool showFinal = 1;
+bool showSlice = 1;
+bool showContinentalness = 1;
+bool showPeaksAndValies = 1;
+bool showOceans = 1;
 
 
 bool initGame()
@@ -58,6 +62,7 @@ gl2d::Texture noiseT;
 gl2d::Texture peaksValiesT;
 gl2d::Texture finalTexture;
 gl2d::Texture sliceT;
+gl2d::Texture oceansAndTerasesT;
 
 void createFromFloats(gl2d::Texture &t, float *data, glm::ivec2 s)
 {
@@ -107,6 +112,24 @@ constexpr int heightDiff = maxMountainLevel - startLevel;
 
 void recreate()
 {
+
+
+	float *finalNoise = new float[size.x * size.y];
+
+	float *testNoise
+		= wg.continentalnessNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
+
+	
+	for (int i = 0; i < size.x * size.y; i++)
+	{
+		testNoise[i] += 1;
+		testNoise[i] /= 2;
+		testNoise[i] = std::pow(testNoise[i], settings.continentalnessNoiseSettings.power);
+		testNoise[i] = applySpline(testNoise[i], settings.continentalnessNoiseSettings.spline);
+	}
+	createFromGrayScale(noiseT, testNoise, size);
+
+	
 	float *peaksNoise;
 	{
 		peaksNoise
@@ -117,32 +140,37 @@ void recreate()
 			peaksNoise[i] += 1;
 			peaksNoise[i] /= 2;
 			peaksNoise[i] = std::pow(peaksNoise[i], settings.peaksAndValies.power);
+			float val = peaksNoise[i];
 			peaksNoise[i] = applySpline(peaksNoise[i], settings.peaksAndValies.spline);
+
+			finalNoise[i] = lerp(testNoise[i], peaksNoise[i], settings.peaksAndValiesContributionSpline.applySpline(val));
+
 		}
 		createFromGrayScale(peaksValiesT, peaksNoise, size);
 
 	};
 
-	
-	float *testNoise
-		= wg.continentalnessNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
-
-	for (int i = 0; i < size.x * size.y; i++)
+	float *oceansNoise;
 	{
-		testNoise[i] += 1;
-		testNoise[i] /= 2;
-		testNoise[i] = std::pow(testNoise[i], settings.continentalnessNoiseSettings.power);
-		testNoise[i] = applySpline(testNoise[i], settings.continentalnessNoiseSettings.spline);
+		oceansNoise
+			= wg.oceansAndTerasesNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
+
+		for (int i = 0; i < size.x * size.y; i++)
+		{
+			oceansNoise[i] += 1;
+			oceansNoise[i] /= 2;
+			oceansNoise[i] = std::pow(oceansNoise[i], settings.oceansAndTerases.power);
+			float val = oceansNoise[i];
+			oceansNoise[i] = applySpline(oceansNoise[i], settings.oceansAndTerases.spline);
+
+			finalNoise[i] = lerp(finalNoise[i], oceansNoise[i], settings.oceansAndTerasesContributionSpline.applySpline(val));
+
+		}
+		createFromGrayScale(oceansAndTerasesT, oceansNoise, size);
+
 
 	}
-	createFromGrayScale(noiseT, testNoise, size);
 
-	float *finalNoise = new float[size.x * size.y];
-
-	for (int i = 0; i < size.x * size.y; i++)
-	{
-		finalNoise[i] = lerp(testNoise[i], peaksNoise[i], settings.peaksAndValiesContribution);
-	}
 
 	createFromGrayScale(finalTexture, finalNoise, size);
 
@@ -194,6 +222,7 @@ void recreate()
 
 	FastNoiseSIMD::FreeNoiseSet(testNoise);
 	FastNoiseSIMD::FreeNoiseSet(peaksNoise);
+	FastNoiseSIMD::FreeNoiseSet(oceansNoise);
 	delete[] finalNoise;
 }
 
@@ -270,7 +299,38 @@ bool gameLogic(float deltaTime)
 		}
 	}
 
+	auto splineEditor = [&](Spline &s, const char *name)
+	{
+		ImGui::Separator();
 
+		ImGui::Table(name, s.points,
+			s.size);
+
+		if (ImGui::Button("Add spline"))
+		{
+			s.addSpline();
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Remove spline"))
+		{
+			s.removeSpline();
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Invert"))
+		{
+			for (int i = 0; i < s.size; i++)
+			{
+				auto &spl = s;
+				spl.points[i].y = 1 - spl.points[i].y;
+			}
+		}
+
+		ImGui::Separator();
+	};
 
 	auto noiseEditor = [&](NoiseSetting &s, const char *name)
 	{
@@ -278,50 +338,32 @@ bool gameLogic(float deltaTime)
 
 		ImGui::Separator();
 		renderSettingsForOneNoise(name, s);
-		ImGui::Separator();
-
-		ImGui::Table("Test", s.spline.points,
-			s.spline.size);
-
-		if (ImGui::Button("Add spline"))
-		{
-			s.spline.addSpline();
-		}
-
-		ImGui::SameLine();
-
-		if (ImGui::Button("Remove spline"))
-		{
-			s.spline.removeSpline();
-		}
-
-		ImGui::SameLine();
-
-		if (ImGui::Button("Invert"))
-		{
-			for (int i = 0; i < s.spline.size; i++)
-			{
-				auto &spl = s.spline;
-				spl.points[i].y = 1 - spl.points[i].y;
-			}
-		}
-
-		ImGui::Separator();
-
+		
+		splineEditor(s.spline, name);
 
 		ImGui::PopID();
 	};
 
+	if (showContinentalness)
+	{
+		noiseEditor(settings.continentalnessNoiseSettings, "Continentalness Noise");
+	}
+	
+	if (showPeaksAndValies)
+	{
+		noiseEditor(settings.peaksAndValies, "Peaks And Valies");
+		splineEditor(settings.peaksAndValiesContributionSpline, "Peaks And Valies spline");
+	}
 
-	noiseEditor(settings.continentalnessNoiseSettings, "Continentalness Noise");
+	if (showOceans)
+	{
+		ImGui::Separator();
 
-	ImGui::SliderFloat("Peaks and valies contribution: ", &settings.peaksAndValiesContribution, 0, 1);
-	noiseEditor(settings.peaksAndValies, "Peaks And Valies");
+		noiseEditor(settings.oceansAndTerases, "Oceans And Terases");
+		splineEditor(settings.oceansAndTerasesContributionSpline, "Oceans And Terases spline");
+	}
 
-
-
-
-	ImGui::End();//		test	//
+	ImGui::End();
 
 	//ImGui::ShowDemoWindow();
 	//ImGui::ShowBezierDemo();
@@ -332,15 +374,39 @@ bool gameLogic(float deltaTime)
 
 	ImGui::Begin("Noise Viewer");
 
-	ImGui::Text("Slice");
+	ImGui::Checkbox("showFinal", &showFinal); ImGui::SameLine();
+	ImGui::Checkbox("showSlice", &showSlice); ImGui::SameLine();
+	ImGui::Checkbox("showContinentalness", &showContinentalness);
+	ImGui::Checkbox("showPeaksAndValies", &showPeaksAndValies); ImGui::SameLine();
+	ImGui::Checkbox("showOceans", &showOceans); ImGui::SameLine();
 
-	ImGui::Image((ImTextureID)sliceT.id, {(float)sliceT.GetSize().x, 256},
-		{0,1}, {1,0}, {1,1,1,1}, {1,1,1,1});
+	if (showSlice)
+	{
+		ImGui::Text("Slice");
 
-	drawNoise("Result", finalTexture);
-	drawNoise("Continentalness", noiseT);
-	drawNoise("PeaksValies", peaksValiesT);
+		ImGui::Image((ImTextureID)sliceT.id, {(float)sliceT.GetSize().x, 256},
+			{0,1}, {1,0}, {1,1,1,1}, {1,1,1,1});
+	}
+
+	if (showFinal)
+	{
+		drawNoise("Result", finalTexture);
+	}
+
+	if (showContinentalness)
+	{
+		drawNoise("Continentalness", noiseT);
+	}
 	
+	if (showPeaksAndValies)
+	{
+		drawNoise("PeaksValies", peaksValiesT);
+	}
+
+	if (showOceans)
+	{
+		drawNoise("Oceans And Terases", oceansAndTerasesT);
+	}
 
 	ImGui::End();
 

@@ -7,6 +7,7 @@ void WorldGenerator::init()
 {
 	continentalnessNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	peaksValiesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	oceansAndTerasesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
 	WorldGeneratorSettings s;
 	applySettings(s);
@@ -16,11 +17,12 @@ void WorldGenerator::clear()
 {
 	delete continentalnessNoise;
 	delete peaksValiesNoise;
+	delete oceansAndTerasesNoise;
 }
 
 void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 {
-
+	continentalnessNoise->SetSeed(s.seed);
 	continentalnessNoise->SetNoiseType((FastNoiseSIMD::NoiseType)s.continentalnessNoiseSettings.type);
 	continentalnessNoise->SetAxisScales(s.continentalnessNoiseSettings.scale, 1, s.continentalnessNoiseSettings.scale);
 	continentalnessNoise->SetFrequency(s.continentalnessNoiseSettings.frequency);
@@ -29,6 +31,7 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	continentalSplines = s.continentalnessNoiseSettings.spline;
 	continentalPower = s.continentalnessNoiseSettings.power;
 
+	peaksValiesNoise->SetSeed(s.seed);
 	peaksValiesNoise->SetNoiseType((FastNoiseSIMD::NoiseType)s.peaksAndValies.type);
 	peaksValiesNoise->SetAxisScales(s.peaksAndValies.scale, 1, s.peaksAndValies.scale);
 	peaksValiesNoise->SetFrequency(s.peaksAndValies.frequency);
@@ -36,8 +39,17 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	peaksValiesNoise->SetPerturbFractalOctaves(s.peaksAndValies.perturbFractalOctaves);
 	peaksValiesSplines = s.peaksAndValies.spline;
 	peaksValiesPower = s.peaksAndValies.power;
+	peaksValiesContributionSplines = s.peaksAndValiesContributionSpline;
 
-	peaksAndValiesContribution = s.peaksAndValiesContribution;
+	oceansAndTerasesNoise->SetSeed(s.seed);
+	oceansAndTerasesNoise->SetNoiseType((FastNoiseSIMD::NoiseType)s.oceansAndTerases.type);
+	oceansAndTerasesNoise->SetAxisScales(s.oceansAndTerases.scale, 1, s.oceansAndTerases.scale);
+	oceansAndTerasesNoise->SetFrequency(s.oceansAndTerases.frequency);
+	oceansAndTerasesNoise->SetFractalOctaves(s.oceansAndTerases.octaves);
+	oceansAndTerasesNoise->SetPerturbFractalOctaves(s.oceansAndTerases.perturbFractalOctaves);
+	oceansAndTerasesSplines = s.oceansAndTerases.spline;
+	oceansAndTerasesPower = s.oceansAndTerases.power;
+	oceansAndTerasesContributionSplines = s.oceansAndTerasesContributionSpline;
 }
 
 
@@ -49,13 +61,19 @@ std::string WorldGeneratorSettings::saveSettings()
 
 
 	rez += "seed: "; rez += std::to_string(seed); rez += ";\n";
-	rez += "peaksAndValiesContribution: "; rez += std::to_string(peaksAndValiesContribution); rez += ";\n";
 
 	rez += "continentalnessNoise:\n";
 	rez += continentalnessNoiseSettings.saveSettings(1);
 
 	rez += "peaksAndValies:\n";
 	rez += peaksAndValies.saveSettings(1);
+	rez += "peaksAndValiesContributionSpline:\n";
+	rez += peaksAndValiesContributionSpline.saveSettings(1);
+
+	rez += "oceansAndTerases:\n";
+	rez += oceansAndTerases.saveSettings(1);
+	rez += "oceansAndTerasesContributionSpline:\n";
+	rez += oceansAndTerasesContributionSpline.saveSettings(1);
 
 	return rez;
 }
@@ -64,7 +82,11 @@ void WorldGeneratorSettings::sanitize()
 {
 
 	continentalnessNoiseSettings.sanitize();
-
+	peaksAndValies.sanitize();
+	oceansAndTerases.sanitize();
+	
+	peaksAndValiesContributionSpline.sanitize();
+	oceansAndTerasesContributionSpline.sanitize();
 }
 
 
@@ -437,13 +459,6 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					if (!isNumber()) { return 0; }
 					seed = consumeNumber();
 					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
-				}else 	if (s == "peaksAndValiesContribution")
-				{
-					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
-					if (isEof()) { return 0; }
-					if (!isNumber()) { return 0; }
-					peaksAndValiesContribution = consumeNumber();
-					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
 				}
 				else if (s == "continentalnessNoise")
 				{
@@ -461,6 +476,36 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					if (isEof()) { return 0; }
 
 					if (!consumeNoise(peaksAndValies))
+					{
+						return 0;
+					}
+				}
+				else if (s == "oceansAndTerases")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(oceansAndTerases))
+					{
+						return 0;
+					}
+				}
+				else if (s == "peaksAndValiesContributionSpline")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeSpline(peaksAndValiesContributionSpline))
+					{
+						return 0;
+					}
+				}
+				else if (s == "oceansAndTerasesContributionSpline")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeSpline(oceansAndTerasesContributionSpline))
 					{
 						return 0;
 					}
