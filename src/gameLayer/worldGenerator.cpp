@@ -12,9 +12,10 @@ void calculateBlockPass1(int height, Block *startPos)
 {
 
 	int y = height;
+	bool noWater = 0;
 
 	//find grass
-	for (; y > waterLevel; y--)
+	for (; y >= waterLevel; y--)
 	{
 		if (startPos[y].type != BlockTypes::air)
 		{
@@ -27,11 +28,12 @@ void calculateBlockPass1(int height, Block *startPos)
 					startPos[y].type = BlockTypes::dirt;
 				}
 			}
-
+			//noWater = true;
 			break;
 		}
 	}
 
+	if(!noWater)
 	for (y = waterLevel; y > 0; y--)
 	{
 		if (startPos[y].type == BlockTypes::air)
@@ -75,7 +77,7 @@ void generateChunk(int seed, ChunkData& c, WorldGenerator &wg)
 	{
 		continentalness[i] += 1;
 		continentalness[i] /= 2;
-		continentalness[i] = std::pow(continentalness[i], wg.continentalPower);
+		continentalness[i] = std::powf(continentalness[i], wg.continentalPower);
 		continentalness[i] = wg.continentalSplines.applySpline(continentalness[i]);
 	}
 
@@ -83,7 +85,7 @@ void generateChunk(int seed, ChunkData& c, WorldGenerator &wg)
 	{
 		peaksAndValies[i] += 1;
 		peaksAndValies[i] /= 2;
-		peaksAndValies[i] = std::pow(peaksAndValies[i], wg.peaksValiesPower);
+		peaksAndValies[i] = std::powf(peaksAndValies[i], wg.peaksValiesPower);
 
 		float val = peaksAndValies[i];
 
@@ -96,7 +98,7 @@ void generateChunk(int seed, ChunkData& c, WorldGenerator &wg)
 	{
 		oceansAndTerases[i] += 1;
 		oceansAndTerases[i] /= 2;
-		oceansAndTerases[i] = std::pow(oceansAndTerases[i], wg.oceansAndTerasesPower);
+		oceansAndTerases[i] = std::powf(oceansAndTerases[i], wg.oceansAndTerasesPower);
 
 		float val = oceansAndTerases[i];
 
@@ -109,7 +111,7 @@ void generateChunk(int seed, ChunkData& c, WorldGenerator &wg)
 	{
 		densityNoise[i] += 1;
 		densityNoise[i] /= 2;
-		densityNoise[i] = std::pow(densityNoise[i], wg.stone3Dpower);
+		densityNoise[i] = std::powf(densityNoise[i], wg.stone3Dpower);
 		densityNoise[i] = wg.stone3DnoiseSplines.applySpline(densityNoise[i]);
 	}
 
@@ -128,9 +130,7 @@ void generateChunk(int seed, ChunkData& c, WorldGenerator &wg)
 		for (int z = 0; z < CHUNK_SIZE; z++)
 		{
 
-
 			constexpr int stoneNoiseStartLevel = 1;
-
 		
 			float heightPercentage = getNoiseVal(x, 0, z);
 			int height = int(startLevel + heightPercentage * heightDiff);
@@ -142,13 +142,16 @@ void generateChunk(int seed, ChunkData& c, WorldGenerator &wg)
 				auto density = getDensityNoiseVal(x, y, z);
 				float bias = (y - stoneNoiseStartLevel) / (height - 1.f - stoneNoiseStartLevel);
 
+				bias = std::powf(bias, wg.densityBiasPower);
+				//density = std::powf(density, wg.densityBiasPower);
+
 				if (y < stoneNoiseStartLevel)
 				{
 					c.unsafeGet(x, y, z).type = BlockTypes::stone;
 				}
 				else
 				{
-					if (density > 0.10 * bias)
+					if (density > wg.densityBias * bias)
 					{
 						firstH = y;
 						c.unsafeGet(x, y, z).type = BlockTypes::stone;

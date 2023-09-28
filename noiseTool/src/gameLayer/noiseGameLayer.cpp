@@ -175,9 +175,8 @@ void recreate()
 
 	}
 
-
+	float *stoneNoise;
 	{
-		float *stoneNoise;
 
 		stoneNoise
 			= wg.stone3Dnoise->GetNoiseSet(displacement.x, 0, displacement.y, 1, 256, size.x, 1);
@@ -191,50 +190,107 @@ void recreate()
 		}
 		createFromGrayScale(stone3DNoiseT, stoneNoise, glm::ivec2{size.x,256});
 
-		FastNoiseSIMD::FreeNoiseSet(stoneNoise);
 	}
 
 
 	createFromGrayScale(finalTexture, finalNoise, size);
 
 	{
-		glm::vec4 *colorData = new glm::vec4[256 * size.x];
 
+		auto getDensityNoiseVal = [&](int x, int y) //todo more cache friendly operation here please
+		{
+			return stoneNoise[y * size.x + x];
+		};
+
+
+		glm::vec4 *colorData = new glm::vec4[256 * size.x]{};
 		for (int i = 0; i < size.x; i++)
 		{
-			int height = int(startLevel + finalNoise[i + size.y-1] * heightDiff);
-			
-			for (int y = 256 - 1; y > height; y--)
+
+			constexpr int stoneNoiseStartLevel = 1;
+
+			float heightPercentage = finalNoise[i + size.y - 1];
+			int height = int(startLevel + heightPercentage * heightDiff);
+
+			float firstH = 1;
+			for (int y = 0; y < height; y++)
 			{
-				colorData[y * size.x + i] = glm::vec4(101, 154, 207, 255) / 255.f; //sky
+
+				auto density = getDensityNoiseVal(i, y);
+				float bias = (y - stoneNoiseStartLevel) / (height - 1.f - stoneNoiseStartLevel);
+
+				bias = std::powf(bias, wg.densityBiasPower);
+				//density = std::powf(density, wg.densityBiasPower);
+
+				if (y < stoneNoiseStartLevel)
+				{
+					colorData[y * size.x + i] = glm::vec4(77, 73, 70, 255) / 255.f; //stone
+				}
+				else
+				{
+					if (density > wg.densityBias * bias)
+					{
+						firstH = y;
+						colorData[y * size.x + i] = glm::vec4(77, 73, 70, 255) / 255.f; //stone
+					}
+					else
+					{
+						colorData[y * size.x + i] = glm::vec4(7, 7, 7, 255) / 255.f; //cave
+					}
+				}
+
 			}
 
-			if (waterLevel > height)
+			int y = 255;
+			for (; y >= 1; y--)
 			{
-				for (int y = waterLevel; y > height; y--)
+			
+				if (colorData[y * size.x + i].r < 9/255.f)
+				{
+					colorData[y * size.x + i] = glm::vec4(101, 154, 207, 255) / 255.f; //sky
+				}
+				else
+				{
+					break;
+				}
+			}
+			
+			if (y >= waterLevel)
+			{
+				if (colorData[y * size.x + i].r > 2 / 255.f)
+				{
+					colorData[y * size.x + i] = glm::vec4(10, 84, 18, 255) / 255.f; //grass
+					y--;
+
+					int start = y;
+					for (; y >= start - 4; y--)
+					{
+						if (colorData[y * size.x + i].r > 2 / 255.f)
+						{
+							colorData[y * size.x + i] = glm::vec4(120, 66, 26, 255) / 255.f; //dirt
+						}
+						else
+						{
+							break;
+						}
+					}
+				}
+			}
+
+		
+			//
+			for (y=waterLevel; y >= 0; y--)
+			{
+				if (colorData[y * size.x + i].b > 200.f / 255.f)
 				{
 					colorData[y * size.x + i] = glm::vec4(11, 16, 77, 255) / 255.f; //water
 				}
-
-				for (int y = height; y >= 0; y--)
+				else
 				{
-					colorData[y * size.x + i] = glm::vec4(77, 73, 70, 255) / 255.f; //stone
+					break;
 				}
 			}
-			else
-			{
-				colorData[height * size.x + i] = glm::vec4(10, 84, 18, 255) / 255.f; //grass
-
-				for (int y = height - 1; y > height - 4; y--)
-				{
-					colorData[y * size.x + i] = glm::vec4(120, 66, 26, 255) / 255.f; //dirt
-				}
-
-				for (int y = height - 4; y >= 0; y--)
-				{
-					colorData[y * size.x + i] = glm::vec4(77, 73, 70, 255) / 255.f; //stone
-				}
-			}
+			
 		}
 
 		createFromFloats(sliceT, &colorData->x, {size.x, 256});
@@ -245,6 +301,8 @@ void recreate()
 	FastNoiseSIMD::FreeNoiseSet(testNoise);
 	FastNoiseSIMD::FreeNoiseSet(peaksNoise);
 	FastNoiseSIMD::FreeNoiseSet(oceansNoise);
+	FastNoiseSIMD::FreeNoiseSet(stoneNoise);
+
 	delete[] finalNoise;
 }
 
@@ -389,6 +447,9 @@ bool gameLogic(float deltaTime)
 	if (show3DStone)
 	{
 		noiseEditor(settings.stone3Dnoise, "3D noise");
+
+		ImGui::SliderFloat("3D bias", &settings.densityBias, 0, 1);
+		ImGui::SliderFloat("3D bias power", &settings.densityBiasPower, 0.1, 10);
 	}
 
 	ImGui::End();

@@ -32,6 +32,9 @@ struct WorldGeneratorSettings
 	Spline peaksAndValiesContributionSpline;
 	Spline oceansAndTerasesContributionSpline;
 
+	float densityBias = 0.1;
+	float densityBiasPower = 1;
+
 	std::string saveSettings();
 
 	void sanitize();
@@ -59,6 +62,8 @@ struct WorldGenerator
 	FastNoiseSIMD *stone3Dnoise;
 	Spline stone3DnoiseSplines;
 	float stone3Dpower = 1.f;
+	float densityBias = 0.1;
+	float densityBiasPower = 1;
 
 	void init();
 	void clear();

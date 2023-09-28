@@ -61,6 +61,9 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	oceansAndTerasesSplines = s.oceansAndTerases.spline;
 	oceansAndTerasesPower = s.oceansAndTerases.power;
 	oceansAndTerasesContributionSplines = s.oceansAndTerasesContributionSpline;
+
+	densityBias = s.densityBias;
+	densityBiasPower = s.densityBiasPower;
 }
 
 
@@ -89,12 +92,14 @@ std::string WorldGeneratorSettings::saveSettings()
 	rez += "stonetDnoise:\n";
 	rez += stone3Dnoise.saveSettings(1);
 
+	rez += "densityBias: "; rez += std::to_string(densityBias); rez += ";\n";
+	rez += "densityBiasPower: "; rez += std::to_string(densityBiasPower); rez += ";\n";
+
 	return rez;
 }
 
 void WorldGeneratorSettings::sanitize()
 {
-
 	continentalnessNoiseSettings.sanitize();
 	peaksAndValies.sanitize();
 	oceansAndTerases.sanitize();
@@ -102,6 +107,9 @@ void WorldGeneratorSettings::sanitize()
 	
 	peaksAndValiesContributionSpline.sanitize();
 	oceansAndTerasesContributionSpline.sanitize();
+
+	densityBias = glm::clamp(densityBias, 0.f, 1.f);
+	densityBiasPower = glm::clamp(densityBiasPower, 0.1f, 10.f);
 }
 
 
@@ -473,6 +481,20 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					if (isEof()) { return 0; }
 					if (!isNumber()) { return 0; }
 					seed = consumeNumber();
+					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
+				}else if (s == "densityBias")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+					if (!isNumber()) { return 0; }
+					densityBias = consumeNumber();
+					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
+				}else if (s == "densityBiasPower")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+					if (!isNumber()) { return 0; }
+					densityBiasPower = consumeNumber();
 					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
 				}
 				else if (s == "continentalnessNoise")
