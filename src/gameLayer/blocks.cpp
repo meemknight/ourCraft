@@ -330,6 +330,22 @@ bool Chunk::bake(Chunk* left, Chunk* right, Chunk* front, Chunk* back, glm::ivec
 	
 }
 
+bool Chunk::shouldBakeOnlyBecauseOfTransparency(Chunk *left, Chunk *right, Chunk *front, Chunk *back)
+{
+	if (
+		dirty
+		|| (!neighbourToLeft && left != nullptr)
+		|| (!neighbourToRight && right != nullptr)
+		|| (!neighbourToFront && front != nullptr)
+		|| (!neighbourToBack && back != nullptr)
+		)
+	{
+		return false;
+	}
+
+	return dirtyTransparency;
+}
+
 void Chunk::create(int x, int z, WorldGenerator &wg)
 {
 

@@ -11,32 +11,39 @@ constexpr int heightDiff = maxMountainLevel - startLevel;
 void calculateBlockPass1(int height, Block *startPos)
 {
 
-	if (waterLevel > height)
+	int y = height;
+
+	//find grass
+	for (; y > waterLevel; y--)
 	{
-		for (int y = waterLevel; y > height; y--)
+		if (startPos[y].type != BlockTypes::air)
+		{
+			startPos[y].type = BlockTypes::grassBlock;
+
+			for (y--; y > height - 4; y--)
+			{
+				if (startPos[y].type != BlockTypes::air)
+				{
+					startPos[y].type = BlockTypes::dirt;
+				}
+			}
+
+			break;
+		}
+	}
+
+	for (y = waterLevel; y > 0; y--)
+	{
+		if (startPos[y].type == BlockTypes::air)
 		{
 			startPos[y].type = BlockTypes::water;
 		}
-	
-		for (int y = height; y >= 0; y--)
+		else
 		{
-			startPos[y].type = BlockTypes::stone;
+			break;
 		}
 	}
-	else
-	{
-		startPos[height].type = BlockTypes::grassBlock;
 
-		for (int y = height-1; y > height-4; y--)
-		{
-			startPos[y].type = BlockTypes::dirt;
-		}
-
-		for (int y = height - 4; y >= 0; y--)
-		{
-			startPos[y].type = BlockTypes::stone;
-		}
-	}
 }
 
 void generateChunk(int seed, Chunk &c, WorldGenerator &wg)
@@ -60,6 +67,9 @@ void generateChunk(int seed, ChunkData& c, WorldGenerator &wg)
 
 	float *oceansAndTerases
 		= wg.peaksValiesNoise->GetSimplexFractalSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+
+	float *densityNoise
+		= wg.stone3Dnoise->GetSimplexFractalSet(xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
 
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
@@ -95,23 +105,67 @@ void generateChunk(int seed, ChunkData& c, WorldGenerator &wg)
 		continentalness[i] = lerp(continentalness[i], oceansAndTerases[i], wg.oceansAndTerasesContributionSplines.applySpline(val));
 	}
 
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
+	{
+		densityNoise[i] += 1;
+		densityNoise[i] /= 2;
+		densityNoise[i] = std::pow(densityNoise[i], wg.stone3Dpower);
+		densityNoise[i] = wg.stone3DnoiseSplines.applySpline(densityNoise[i]);
+	}
+
 	auto getNoiseVal = [continentalness](int x, int y, int z)
 	{
 		return continentalness[x * CHUNK_SIZE * (1) + y * CHUNK_SIZE + z];
 	};
+	
 
+	auto getDensityNoiseVal = [densityNoise](int x, int y, int z) //todo more cache friendly operation here please
+	{
+		return densityNoise[x * CHUNK_SIZE * (CHUNK_HEIGHT) + y * CHUNK_SIZE + z];
+	};
 
 	for (int x = 0; x < CHUNK_SIZE; x++)
 		for (int z = 0; z < CHUNK_SIZE; z++)
 		{
-			int height = int(startLevel + getNoiseVal(x, 0, z) * heightDiff);
-		
-			calculateBlockPass1(height, &c.unsafeGet(x, 0, z));
 
+
+			constexpr int stoneNoiseStartLevel = 1;
+
+		
+			float heightPercentage = getNoiseVal(x, 0, z);
+			int height = int(startLevel + heightPercentage * heightDiff);
+		
+			float firstH = 1;
+			for (int y = 0; y < height; y++)
+			{
+
+				auto density = getDensityNoiseVal(x, y, z);
+				float bias = (y - stoneNoiseStartLevel) / (height - 1.f - stoneNoiseStartLevel);
+
+				if (y < stoneNoiseStartLevel)
+				{
+					c.unsafeGet(x, y, z).type = BlockTypes::stone;
+				}
+				else
+				{
+					if (density > 0.10 * bias)
+					{
+						firstH = y;
+						c.unsafeGet(x, y, z).type = BlockTypes::stone;
+					}
+				}
+
+			}
+
+			calculateBlockPass1(firstH, &c.unsafeGet(x, 0, z));
 		}
+			
+
 	
 	FastNoiseSIMD::FreeNoiseSet(continentalness);
 	FastNoiseSIMD::FreeNoiseSet(peaksAndValies);
+	FastNoiseSIMD::FreeNoiseSet(oceansAndTerases);
+	FastNoiseSIMD::FreeNoiseSet(densityNoise);
 
 
 

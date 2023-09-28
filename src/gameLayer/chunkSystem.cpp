@@ -301,7 +301,9 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 #pragma region bake
 
 	int currentBaked = 0;
-	const int maxToBake = 10; //this frame
+	int currentBakedTransparency = 0;
+	const int maxToBake = 5; //this frame //max to bake
+	const int maxToBakeTransparency = 5; //this frame //max to bake
 
 	auto chunkVectorCopy = loadedChunks;
 
@@ -333,20 +335,34 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 		int x = chunk->data.x - minPos.x;
 		int z = chunk->data.z - minPos.y;
 
-		if (currentBaked < maxToBake)
+
+		if (currentBaked < maxToBake || currentBakedTransparency < maxToBakeTransparency)
 		{
 			auto left = getChunkSafeFromChunkSystemCoordonates(x - 1, z);
 			auto right = getChunkSafeFromChunkSystemCoordonates(x + 1, z);
 			auto front = getChunkSafeFromChunkSystemCoordonates(x, z + 1);
 			auto back = getChunkSafeFromChunkSystemCoordonates(x, z - 1);
-		
-			auto b = chunk->bake(left, right, front, back, playerBlockPosition);
-		
-			if (b) { currentBaked++; }
+
+			if (chunk->shouldBakeOnlyBecauseOfTransparency(left, right, front, back))
+			{
+				if (currentBakedTransparency < maxToBakeTransparency)
+				{
+					auto b = chunk->bake(left, right, front, back, playerBlockPosition);
+					if (b) { currentBakedTransparency++; }
+				}
+			}
+			else
+			{
+				if (currentBaked < maxToBake)
+				{
+					auto b = chunk->bake(left, right, front, back, playerBlockPosition);
+					if (b) { currentBaked++; }
+				}
+			}
 		}
 		else
 		{
-			
+			break;
 		}
 
 	}

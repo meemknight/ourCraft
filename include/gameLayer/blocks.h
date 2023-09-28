@@ -178,6 +178,8 @@ struct Chunk
 	bool bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		glm::ivec3 playerPosition);
 
+	bool shouldBakeOnlyBecauseOfTransparency(Chunk *left, Chunk *right, Chunk *front, Chunk *back);
+
 	void create(int x, int y, WorldGenerator &wg);
 
 	void createGpuData();

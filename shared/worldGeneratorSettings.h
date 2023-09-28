@@ -28,6 +28,7 @@ struct WorldGeneratorSettings
 	NoiseSetting continentalnessNoiseSettings;
 	NoiseSetting peaksAndValies;
 	NoiseSetting oceansAndTerases;
+	NoiseSetting stone3Dnoise;
 	Spline peaksAndValiesContributionSpline;
 	Spline oceansAndTerasesContributionSpline;
 
@@ -54,6 +55,10 @@ struct WorldGenerator
 	Spline oceansAndTerasesSplines;
 	Spline oceansAndTerasesContributionSplines;
 	float oceansAndTerasesPower = 1.f;
+
+	FastNoiseSIMD *stone3Dnoise;
+	Spline stone3DnoiseSplines;
+	float stone3Dpower = 1.f;
 
 	void init();
 	void clear();

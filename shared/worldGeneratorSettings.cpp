@@ -8,6 +8,7 @@ void WorldGenerator::init()
 	continentalnessNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	peaksValiesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	oceansAndTerasesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	stone3Dnoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
 	WorldGeneratorSettings s;
 	applySettings(s);
@@ -18,6 +19,7 @@ void WorldGenerator::clear()
 	delete continentalnessNoise;
 	delete peaksValiesNoise;
 	delete oceansAndTerasesNoise;
+	delete stone3Dnoise;
 }
 
 void WorldGenerator::applySettings(WorldGeneratorSettings &s)
@@ -30,6 +32,15 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	continentalnessNoise->SetPerturbFractalOctaves(s.continentalnessNoiseSettings.perturbFractalOctaves);
 	continentalSplines = s.continentalnessNoiseSettings.spline;
 	continentalPower = s.continentalnessNoiseSettings.power;
+
+	stone3Dnoise->SetSeed(s.seed);
+	stone3Dnoise->SetNoiseType((FastNoiseSIMD::NoiseType)s.stone3Dnoise.type);
+	stone3Dnoise->SetAxisScales(s.stone3Dnoise.scale, 1, s.stone3Dnoise.scale);
+	stone3Dnoise->SetFrequency(s.stone3Dnoise.frequency);
+	stone3Dnoise->SetFractalOctaves(s.stone3Dnoise.octaves);
+	stone3Dnoise->SetPerturbFractalOctaves(s.stone3Dnoise.perturbFractalOctaves);
+	stone3DnoiseSplines = s.stone3Dnoise.spline;
+	stone3Dpower = s.stone3Dnoise.power;
 
 	peaksValiesNoise->SetSeed(s.seed);
 	peaksValiesNoise->SetNoiseType((FastNoiseSIMD::NoiseType)s.peaksAndValies.type);
@@ -75,6 +86,9 @@ std::string WorldGeneratorSettings::saveSettings()
 	rez += "oceansAndTerasesContributionSpline:\n";
 	rez += oceansAndTerasesContributionSpline.saveSettings(1);
 
+	rez += "stonetDnoise:\n";
+	rez += stone3Dnoise.saveSettings(1);
+
 	return rez;
 }
 
@@ -84,6 +98,7 @@ void WorldGeneratorSettings::sanitize()
 	continentalnessNoiseSettings.sanitize();
 	peaksAndValies.sanitize();
 	oceansAndTerases.sanitize();
+	stone3Dnoise.sanitize();
 	
 	peaksAndValiesContributionSpline.sanitize();
 	oceansAndTerasesContributionSpline.sanitize();
@@ -486,6 +501,16 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					if (isEof()) { return 0; }
 
 					if (!consumeNoise(oceansAndTerases))
+					{
+						return 0;
+					}
+				}
+				else if (s == "stonetDnoise")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(stone3Dnoise))
 					{
 						return 0;
 					}

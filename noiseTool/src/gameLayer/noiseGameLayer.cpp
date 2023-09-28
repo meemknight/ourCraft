@@ -44,6 +44,7 @@ bool showSlice = 1;
 bool showContinentalness = 1;
 bool showPeaksAndValies = 1;
 bool showOceans = 1;
+bool show3DStone = 1;
 
 
 bool initGame()
@@ -62,10 +63,13 @@ gl2d::Texture noiseT;
 gl2d::Texture peaksValiesT;
 gl2d::Texture finalTexture;
 gl2d::Texture sliceT;
+gl2d::Texture stone3DNoiseT;
 gl2d::Texture oceansAndTerasesT;
 
 void createFromFloats(gl2d::Texture &t, float *data, glm::ivec2 s)
 {
+	t.cleanup();
+
 	GLuint id = 0;
 
 	glActiveTexture(GL_TEXTURE0);
@@ -172,8 +176,26 @@ void recreate()
 	}
 
 
-	createFromGrayScale(finalTexture, finalNoise, size);
+	{
+		float *stoneNoise;
 
+		stoneNoise
+			= wg.stone3Dnoise->GetNoiseSet(displacement.x, 0, displacement.y, 1, 256, size.x, 1);
+
+		for (int i = 0; i < size.x * 256; i++)
+		{
+			stoneNoise[i] += 1;
+			stoneNoise[i] /= 2;
+			stoneNoise[i] = std::pow(stoneNoise[i], settings.stone3Dnoise.power);
+			stoneNoise[i] = applySpline(stoneNoise[i], settings.stone3Dnoise.spline);
+		}
+		createFromGrayScale(stone3DNoiseT, stoneNoise, glm::ivec2{size.x,256});
+
+		FastNoiseSIMD::FreeNoiseSet(stoneNoise);
+	}
+
+
+	createFromGrayScale(finalTexture, finalNoise, size);
 
 	{
 		glm::vec4 *colorData = new glm::vec4[256 * size.x];
@@ -266,7 +288,8 @@ bool gameLogic(float deltaTime)
 
 	ImGui::Begin("Settings");
 
-	ImGui::InputInt2("Size", &size[0]);
+	ImGui::DragInt("Size", &size[0]);
+	size[1] = size[0];
 	size = glm::clamp(size, glm::ivec2(1, 1), glm::ivec2(2048, 2048));
 	
 	ImGui::DragInt2("Displacement", &displacement[0], 16);
@@ -363,6 +386,11 @@ bool gameLogic(float deltaTime)
 		splineEditor(settings.oceansAndTerasesContributionSpline, "Oceans And Terases spline");
 	}
 
+	if (show3DStone)
+	{
+		noiseEditor(settings.stone3Dnoise, "3D noise");
+	}
+
 	ImGui::End();
 
 	//ImGui::ShowDemoWindow();
@@ -378,7 +406,16 @@ bool gameLogic(float deltaTime)
 	ImGui::Checkbox("showSlice", &showSlice); ImGui::SameLine();
 	ImGui::Checkbox("showContinentalness", &showContinentalness);
 	ImGui::Checkbox("showPeaksAndValies", &showPeaksAndValies); ImGui::SameLine();
-	ImGui::Checkbox("showOceans", &showOceans); ImGui::SameLine();
+	ImGui::Checkbox("showOceans", &showOceans); ImGui::SameLine(); ImGui::SameLine();
+	ImGui::Checkbox("show3DStone", &show3DStone); ImGui::SameLine();
+	
+	if (show3DStone)
+	{
+		ImGui::Text("3D noise");
+
+		ImGui::Image((ImTextureID)stone3DNoiseT.id, {(float)stone3DNoiseT.GetSize().x, 256},
+			{0,1}, {1,0}, {1,1,1,1}, {1,1,1,1});
+	}
 
 	if (showSlice)
 	{
@@ -392,6 +429,7 @@ bool gameLogic(float deltaTime)
 	{
 		drawNoise("Result", finalTexture);
 	}
+
 
 	if (showContinentalness)
 	{
