@@ -10,6 +10,8 @@ void WorldGenerator::init()
 	oceansAndTerasesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	stone3Dnoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	vegetationNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	whiteNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	whiteNoise2 = FastNoiseSIMD::NewFastNoiseSIMD();
 
 	WorldGeneratorSettings s;
 	applySettings(s);
@@ -22,11 +24,19 @@ void WorldGenerator::clear()
 	delete oceansAndTerasesNoise;
 	delete stone3Dnoise;
 	delete vegetationNoise;
+	delete whiteNoise;
+	delete whiteNoise2;
 }
 
 void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 {
-	continentalnessNoise->SetSeed(s.seed);
+	whiteNoise->SetSeed(s.seed);
+	whiteNoise->SetNoiseType(FastNoiseSIMD::NoiseType::WhiteNoise);
+
+	whiteNoise2->SetSeed(s.seed + 1);
+	whiteNoise2->SetNoiseType(FastNoiseSIMD::NoiseType::WhiteNoise);
+
+	continentalnessNoise->SetSeed(s.seed + 2);
 	continentalnessNoise->SetNoiseType((FastNoiseSIMD::NoiseType)s.continentalnessNoiseSettings.type);
 	continentalnessNoise->SetAxisScales(s.continentalnessNoiseSettings.scale, 1, s.continentalnessNoiseSettings.scale);
 	continentalnessNoise->SetFrequency(s.continentalnessNoiseSettings.frequency);
@@ -35,7 +45,7 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	continentalSplines = s.continentalnessNoiseSettings.spline;
 	continentalPower = s.continentalnessNoiseSettings.power;
 
-	stone3Dnoise->SetSeed(s.seed);
+	stone3Dnoise->SetSeed(s.seed + 3);
 	stone3Dnoise->SetNoiseType((FastNoiseSIMD::NoiseType)s.stone3Dnoise.type);
 	stone3Dnoise->SetAxisScales(s.stone3Dnoise.scale, 1, s.stone3Dnoise.scale);
 	stone3Dnoise->SetFrequency(s.stone3Dnoise.frequency);
@@ -44,7 +54,7 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	stone3DnoiseSplines = s.stone3Dnoise.spline;
 	stone3Dpower = s.stone3Dnoise.power;
 
-	peaksValiesNoise->SetSeed(s.seed);
+	peaksValiesNoise->SetSeed(s.seed + 4);
 	peaksValiesNoise->SetNoiseType((FastNoiseSIMD::NoiseType)s.peaksAndValies.type);
 	peaksValiesNoise->SetAxisScales(s.peaksAndValies.scale, 1, s.peaksAndValies.scale);
 	peaksValiesNoise->SetFrequency(s.peaksAndValies.frequency);
@@ -54,7 +64,7 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	peaksValiesPower = s.peaksAndValies.power;
 	peaksValiesContributionSplines = s.peaksAndValiesContributionSpline;
 
-	oceansAndTerasesNoise->SetSeed(s.seed);
+	oceansAndTerasesNoise->SetSeed(s.seed + 5);
 	oceansAndTerasesNoise->SetNoiseType((FastNoiseSIMD::NoiseType)s.oceansAndTerases.type);
 	oceansAndTerasesNoise->SetAxisScales(s.oceansAndTerases.scale, 1, s.oceansAndTerases.scale);
 	oceansAndTerasesNoise->SetFrequency(s.oceansAndTerases.frequency);
@@ -64,7 +74,7 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	oceansAndTerasesPower = s.oceansAndTerases.power;
 	oceansAndTerasesContributionSplines = s.oceansAndTerasesContributionSpline;
 
-	vegetationNoise->SetSeed(s.seed);
+	vegetationNoise->SetSeed(s.seed + 6);
 	vegetationNoise->SetNoiseType((FastNoiseSIMD::NoiseType)s.vegetationNoise.type);
 	vegetationNoise->SetAxisScales(s.vegetationNoise.scale, 1, s.vegetationNoise.scale);
 	vegetationNoise->SetFrequency(s.vegetationNoise.frequency);
@@ -612,3 +622,4 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 
 	return true;
 }
+

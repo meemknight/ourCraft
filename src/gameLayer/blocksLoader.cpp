@@ -1,5 +1,7 @@
 #include <blocksLoader.h>
 #include "blocks.h"
+#include <fstream>
+#include <iostream>
 
 const char *texturesNames[] = {
 	
@@ -121,6 +123,175 @@ uint16_t blocksLookupTable[] = {
 
 };
 
+void fixAlpha(unsigned char *buffer, int w, int h)
+{
+	auto sample = [&](int x, int y) -> glm::ivec4 
+	{
+		glm::ivec4 rez;
+
+		rez.r = buffer[(x + y * w) * 4 + 0];
+		rez.g = buffer[(x + y * w) * 4 + 1];
+		rez.b = buffer[(x + y * w) * 4 + 2];
+		rez.a = buffer[(x + y * w) * 4 + 3];
+
+		return rez;
+	};
+
+	auto set = [&](int x, int y, glm::ivec3 c)
+	{
+		buffer[(x + y * w) * 4 + 0] = c.r;
+		buffer[(x + y * w) * 4 + 1] = c.g;
+		buffer[(x + y * w) * 4 + 2] = c.b;
+	};
+
+	auto sampleA = [&](int x, int y) -> unsigned char
+	{
+		return buffer[(x + y * w) * 4 + 3];
+	};
+
+	for (int y = 0; y < h; y++)
+		for (int x = 0; x < w; x++)
+		{
+
+			if (sampleA(x, y) == 0)
+			{
+
+				if (x < w - 1)
+				{
+					auto c = sample(x + 1, y);
+					if (c.a > 0)
+					{
+						set(x, y, c);
+						continue;
+					}
+				}
+
+				if (y < h - 1)
+				{
+					auto c = sample(x, y + 1);
+					if (c.a > 0)
+					{
+						set(x, y, c);
+						continue;
+					}
+				}
+
+				if (x < w - 1 && y < h - 1)
+				{
+					auto c = sample(x + 1, y + 1);
+					if (c.a > 0)
+					{
+						set(x, y, c);
+						continue;
+					}
+				}
+
+				if (x > 0 && y < h - 1)
+				{
+					auto c = sample(x - 1, y + 1);
+					if (c.a > 0)
+					{
+						set(x, y, c);
+						continue;
+					}
+				}
+
+				if (x > 0)
+				{
+					auto c = sample(x - 1, y);
+					if (c.a > 0)
+					{
+						set(x, y, c);
+						continue;
+					}
+				}
+
+				if (y > 0)
+				{
+					auto c = sample(x, y - 1);
+					if (c.a > 0)
+					{
+						set(x, y, c);
+						continue;
+					}
+				}
+
+				if (x > 0 && y > 0)
+				{
+					auto c = sample(x - 1, y - 1);
+					if (c.a > 0)
+					{
+						set(x, y, c);
+						continue;
+					}
+				}
+
+				if (x < w - 1 && y > 0)
+				{
+					auto c = sample(x + 1, y - 1);
+					if (c.a > 0)
+					{
+						set(x, y, c);
+						continue;
+					}
+				}
+
+			}
+
+		}
+}
+
+void createFromFileDataWithAplhaFixing(gl2d::Texture &t, const unsigned char *image_file_data, 
+	const size_t image_file_size
+	, bool pixelated, bool useMipMaps)
+{
+	stbi_set_flip_vertically_on_load(true);
+
+	int width = 0;
+	int height = 0;
+	int channels = 0;
+
+	unsigned char *decodedImage = stbi_load_from_memory(image_file_data, (int)image_file_size, &width, &height, &channels, 4);
+
+	for (int i = 0; i < 128; i++)
+	{
+		fixAlpha(decodedImage, width, height);
+	}
+	
+
+	t.createFromBuffer((const char *)decodedImage, width, height, pixelated, useMipMaps);
+
+	//Replace stbi allocators
+	free((void *)decodedImage);
+}
+
+void loadFromFileWithAplhaFixing(gl2d::Texture &t, const char *fileName, bool pixelated, bool useMipMaps)
+{
+	std::ifstream file(fileName, std::ios::binary);
+
+	if (!file.is_open())
+	{
+		char c[300] = {0};
+		strcat(c, "error openning: ");
+		strcat(c + strlen(c), fileName);
+		std::cout << c;
+		//errorFunc(c);//todo propper error function
+		return;
+	}
+
+	int fileSize = 0;
+	file.seekg(0, std::ios::end);
+	fileSize = (int)file.tellg();
+	file.seekg(0, std::ios::beg);
+	unsigned char *fileData = new unsigned char[fileSize];
+	file.read((char *)fileData, fileSize);
+	file.close();
+
+	createFromFileDataWithAplhaFixing(t, fileData, fileSize, pixelated, useMipMaps);
+
+	delete[] fileData;
+
+}
 
 void BlocksLoader::loadAllTextures()
 {
@@ -178,7 +349,7 @@ void BlocksLoader::loadAllTextures()
 		path += texturesNames[i];
 		path += ".png";
 
-		t.loadFromFile(path.c_str(), true, false);
+		loadFromFileWithAplhaFixing(t, path.c_str(), true, false);
 		t.bind();
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

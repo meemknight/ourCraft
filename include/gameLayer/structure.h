@@ -14,6 +14,31 @@ struct StructureData
 		return ((BlockType*)(this + 1))[y + z * size.y + x * size.y*size.z];
 	}
 
+	BlockType &unsafeGetRotated(int x, int y, int z, int r)
+	{
+		if (r == 0)
+		{
+			return unsafeGet(x, y, z);
+		}
+		else if (r == 1)
+		{
+			return unsafeGet(size.x - 1 - z, y, x);
+		}
+		else if (r == 2)
+		{
+			return unsafeGet(size.x - x - 1, y, size.z - z - 1);
+		}
+		else if (r == 3)
+		{
+			return unsafeGet(z, y, size.x - x - 1);
+		}
+		else
+		{
+			assert(0);
+		}
+
+	}
+
 	BlockType *safeGet(int x, int y, int z)
 	{
 		if (x < 0 || y < 0 || z < 0 || x >= size.x || y >= size.y || z >= size.z)

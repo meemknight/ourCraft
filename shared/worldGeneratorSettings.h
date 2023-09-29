@@ -71,6 +71,10 @@ struct WorldGenerator
 	float vegetationPower = 1;
 	Spline vegetationSplines;
 
+	FastNoiseSIMD *whiteNoise;
+
+	FastNoiseSIMD *whiteNoise2;
+
 
 	void init();
 	void clear();

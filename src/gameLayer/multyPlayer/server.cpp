@@ -96,6 +96,11 @@ struct ChunkPriorityCache
 
 	//uses chunk coorodonates
 	ChunkData *getChunkOrGetNullNotUpdateTable(int posX, int posZ);
+
+	void generateStructure(StructureToGenerate s, StructuresManager &structureManager);
+	
+	void generateStructure(StructureToGenerate s, StructureData *structure, int rotation);
+
 };
 
 std::mutex serverSettingsMutex;
@@ -376,7 +381,6 @@ void removeCidFromServerSettings(CID cid)
 }
 
 
-
 ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerator &wg, StructuresManager &structureManager)
 {
 	glm::ivec2 pos = {posX, posZ};
@@ -498,61 +502,7 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 
 		for (auto &s : newStructures)
 		{
-
-			if (s.type == Structure_Tree)
-			{
-				auto &tree = structureManager.trees[0];
-
-				auto treeSize = tree->size;
-
-				if (s.pos.y + treeSize.y <= CHUNK_HEIGHT)
-				{
-
-					glm::ivec3 startPos = s.pos;
-					startPos.x -= treeSize.x / 2;
-					startPos.z -= treeSize.z / 2;
-
-					glm::ivec3 endPos = startPos + treeSize;
-
-					for (int x = startPos.x; x < endPos.x; x++)
-						for (int z = startPos.z; z < endPos.z; z++)
-						{
-
-							int chunkX = divideChunk(x);
-							int chunkZ = divideChunk(z);
-
-							auto c = getChunkOrGetNullNotUpdateTable(chunkX, chunkZ);
-
-							if (c)
-							{
-								int inChunkX = modBlockToChunk(x);
-								int inChunkZ = modBlockToChunk(z);
-
-								for (int y = startPos.y; y < endPos.y; y++)
-								{
-									
-
-									//todo server side problems for chunks that were already on the client
-
-									auto &b = c->unsafeGet(inChunkX, y, inChunkZ);
-
-									if (b.type == BlockTypes::air)
-									{
-										b.type = tree->unsafeGet(x - startPos.x, y - startPos.y, z - startPos.z);
-									}
-								}
-							}
-							else
-							{
-								//todo ghost blocks or something
-							}
-
-						}
-
-				}
-
-			}
-
+			generateStructure(s, structureManager);
 		}
 
 		return rez;
@@ -571,5 +521,76 @@ ChunkData *ChunkPriorityCache::getChunkOrGetNullNotUpdateTable(int posX, int pos
 	else
 	{
 		return nullptr;
+	}
+}
+
+void ChunkPriorityCache::generateStructure(StructureToGenerate s, StructuresManager &structureManager)
+{
+
+	auto chooseRandomElement = [](float randVal, int elementCount)
+	{
+		return int(floor(randVal * elementCount));
+	};
+
+
+
+	if (s.type == Structure_Tree)
+	{
+
+		auto tree = structureManager.trees
+			[chooseRandomElement(s.randomNumber1, structureManager.trees.size())];
+
+		generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4) );
+	}
+
+}
+
+void ChunkPriorityCache::generateStructure(StructureToGenerate s, StructureData *structure, int rotation)
+{
+	auto size = structure->size;
+
+	if (s.pos.y + size.y <= CHUNK_HEIGHT)
+	{
+
+		glm::ivec3 startPos = s.pos;
+		startPos.x -= size.x / 2;
+		startPos.z -= size.z / 2;
+		glm::ivec3 endPos = startPos + size;
+		
+		for (int x = startPos.x; x < endPos.x; x++)
+			for (int z = startPos.z; z < endPos.z; z++)
+			{
+
+				int chunkX = divideChunk(x);
+				int chunkZ = divideChunk(z);
+
+				auto c = getChunkOrGetNullNotUpdateTable(chunkX, chunkZ);
+
+				if (c)
+				{
+					int inChunkX = modBlockToChunk(x);
+					int inChunkZ = modBlockToChunk(z);
+
+					for (int y = startPos.y; y < endPos.y; y++)
+					{
+
+						//todo server side problems for chunks that were already on the client
+
+						auto &b = c->unsafeGet(inChunkX, y, inChunkZ);
+
+						if (b.type == BlockTypes::air)
+						{
+							b.type = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z, 
+								rotation);
+						}
+					}
+				}
+				else
+				{
+					//todo ghost blocks or something
+				}
+
+			}
+
 	}
 }

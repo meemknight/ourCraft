@@ -54,7 +54,8 @@ void generateChunk(Chunk &c, WorldGenerator &wg, StructuresManager &structuresMa
 }
 
 
-void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structuresManager, std::vector<StructureToGenerate> &generateStructures)
+void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structuresManager, 
+	std::vector<StructureToGenerate> &generateStructures)
 {
 	c.clear();
 	
@@ -62,19 +63,37 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	int zPadd = c.z * 16;
 
 	float* continentalness
-		= wg.continentalnessNoise->GetSimplexFractalSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+		= wg.continentalnessNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 
 	float *peaksAndValies
-		= wg.peaksValiesNoise->GetSimplexFractalSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+		= wg.peaksValiesNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 
 	float *oceansAndTerases
-		= wg.peaksValiesNoise->GetSimplexFractalSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+		= wg.peaksValiesNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 
 	float *densityNoise
-		= wg.stone3Dnoise->GetSimplexFractalSet(xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
+		= wg.stone3Dnoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
 
 	float *vegetationNoise
-		= wg.vegetationNoise->GetSimplexFractalSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+		= wg.vegetationNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+
+	float *whiteNoise
+		= wg.whiteNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+
+	float *whiteNoise2
+		= wg.whiteNoise2->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE + 1, (1), CHUNK_SIZE + 1, 1);
+
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		whiteNoise[i] += 1;
+		whiteNoise[i] /= 2;
+	}
+
+	for (int i = 0; i < (CHUNK_SIZE+1) * (CHUNK_SIZE+1); i++)
+	{
+		whiteNoise2[i] += 1;
+		whiteNoise2[i] /= 2;
+	}
 
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
@@ -131,6 +150,26 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return continentalness[x * CHUNK_SIZE * (1) + y * CHUNK_SIZE + z];
 	};
 	
+	auto getWhiteNoiseVal = [whiteNoise](int x, int z)
+	{
+		return whiteNoise[x * CHUNK_SIZE + z];
+	};
+
+	auto getWhiteNoise2Val = [whiteNoise2](int x, int z)
+	{
+		return whiteNoise2[x * (CHUNK_SIZE + 1) + z];
+	};
+
+	auto getWhiteNoiseChance = [getWhiteNoiseVal](int x, int z, float chance)
+	{
+		return getWhiteNoiseVal(x, z) < chance;
+	};
+
+	auto getWhiteNoise2Chance = [getWhiteNoise2Val](int x, int z, float chance)
+	{
+		return getWhiteNoise2Val(x, z) < chance;
+	};
+
 	auto getVegetationNoiseVal = [vegetationNoise](int x, int z)
 	{
 		return vegetationNoise[x * CHUNK_SIZE + z];
@@ -178,22 +217,52 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			
 			calculateBlockPass1(firstH, &c.unsafeGet(x, 0, z));
 
-
 			//add trees
+			if(firstH < CHUNK_HEIGHT-1)
 			{
 
-				if (getVegetationNoiseVal(x, z) > 0.5)
+				if (c.unsafeGet(x, firstH, z).type == BlockTypes::grassBlock)
 				{
-					if (x % 3 == 0 && z % 3 == 0)
-					{
-						//generate tree
-						StructureToGenerate str;
-						str.type = Structure_Tree;
-						str.pos = {x + xPadd, firstH, z + zPadd};
+					float currentNoise = getVegetationNoiseVal(x, z);
 
-						generateStructures.push_back(str);
+					if (currentNoise > 0.55)
+					{
+						float chance = linearRemap(currentNoise, 0.5, 1, 0.01, 0.1);
+						float chance2 = linearRemap(currentNoise, 0.5, 1, 0.1, 0.15);
+						
+						if (getWhiteNoiseChance(x, z, chance))
+						{
+							//generate tree
+							StructureToGenerate str;
+							str.type = Structure_Tree;
+							str.pos = {x + xPadd, firstH, z + zPadd};
+							str.randomNumber1 = getWhiteNoise2Val(x, z);
+							str.randomNumber2 = getWhiteNoise2Val(x+1, z);
+							str.randomNumber3 = getWhiteNoise2Val(x+1, z+1);
+							str.randomNumber4 = getWhiteNoise2Val(x, z+1);
+
+							generateStructures.push_back(str);
+						}
+						else
+						{
+							if(getWhiteNoise2Chance(x, z, chance2))
+							{
+								c.unsafeGet(x, firstH, z).type = BlockTypes::grass;
+							}
+						}
+					}
+					else if (currentNoise > 0.3)
+					{
+						float chance = linearRemap(currentNoise, 0.3, 0.55, 0.001, 0.1);
+
+						if (getWhiteNoiseChance(x, z, chance))
+						{
+							c.unsafeGet(x, firstH+1, z).type = BlockTypes::grass;
+						}
 					}
 				}
+
+				
 			}
 
 
