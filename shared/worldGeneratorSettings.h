@@ -29,6 +29,9 @@ struct WorldGeneratorSettings
 	NoiseSetting peaksAndValies;
 	NoiseSetting oceansAndTerases;
 	NoiseSetting stone3Dnoise;
+	NoiseSetting humidityNoise;
+	NoiseSetting temperatureNoise;
+
 	Spline peaksAndValiesContributionSpline;
 	Spline oceansAndTerasesContributionSpline;
 
@@ -66,6 +69,14 @@ struct WorldGenerator
 	float stone3Dpower = 1.f;
 	float densityBias = 0.1;
 	float densityBiasPower = 1;
+	
+	FastNoiseSIMD *temperatureNoise;
+	Spline temperatureSplines;
+	float temperaturePower = 1.f;
+
+	FastNoiseSIMD *humidityNoise;
+	Spline humiditySplines;
+	float humidityPower = 1.f;
 
 	FastNoiseSIMD *vegetationNoise;
 	float vegetationPower = 1;

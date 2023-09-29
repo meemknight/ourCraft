@@ -3,8 +3,9 @@
 #include <enet/enet.h>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
-#include <blocks.h>
+#include <chunk.h>
 #include "server.h"
+
 
 using EventCounter = unsigned int;
 using RevisionNumber = unsigned int;

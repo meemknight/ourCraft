@@ -18,6 +18,7 @@
 #include <fstream>
 #include <sstream>
 #include <structure.h>
+#include <biome.h>
 
 struct ListNode;
 
@@ -92,7 +93,8 @@ struct ChunkPriorityCache
 	ListNode *last = nullptr;
 
 	//uses chunk coorodonates
-	ChunkData *getOrCreateChunk(int posX, int posZ, WorldGenerator &wg, StructuresManager &structureManager);
+	ChunkData *getOrCreateChunk(int posX, int posZ, WorldGenerator &wg, 
+		StructuresManager &structureManager, BiomesManager &biomesManager);
 
 	//uses chunk coorodonates
 	ChunkData *getChunkOrGetNullNotUpdateTable(int posX, int posZ);
@@ -172,8 +174,14 @@ bool serverStartupStuff()
 void serverWorkerFunction()
 {
 	StructuresManager structuresManager;
+	BiomesManager biomesManager;
 
 	if (!structuresManager.loadAllStructures())
+	{
+		exit(0); //todo error out
+	}
+
+	if (!biomesManager.loadAllBiomes())
 	{
 		exit(0); //todo error out
 	}
@@ -227,7 +235,7 @@ void serverWorkerFunction()
 
 			if (i.t.type == Task::generateChunk)
 			{
-				auto rez = sd.chunkCache.getOrCreateChunk(i.t.pos.x, i.t.pos.z, wg, structuresManager);
+				auto rez = sd.chunkCache.getOrCreateChunk(i.t.pos.x, i.t.pos.z, wg, structuresManager, biomesManager);
 				
 				Packet packet;
 				packet.cid = i.cid;
@@ -248,7 +256,8 @@ void serverWorkerFunction()
 			{
 				//std::cout << "server recieved place block\n";
 				//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
-				auto chunk = sd.chunkCache.getOrCreateChunk(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z), wg, structuresManager);
+				auto chunk = sd.chunkCache.getOrCreateChunk(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z), wg, structuresManager
+					,biomesManager);
 				int convertedX = modBlockToChunk(i.t.pos.x);
 				int convertedZ = modBlockToChunk(i.t.pos.z);
 				
@@ -381,7 +390,8 @@ void removeCidFromServerSettings(CID cid)
 }
 
 
-ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerator &wg, StructuresManager &structureManager)
+ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerator &wg, 
+	StructuresManager &structureManager, BiomesManager &biomesManager)
 {
 	glm::ivec2 pos = {posX, posZ};
 	auto foundPos = savedChunks.find(pos);
@@ -452,7 +462,7 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 			chunkToRecycle->chunk.x = pos.x;
 			chunkToRecycle->chunk.z = pos.y;
 
-			generateChunk(chunkToRecycle->chunk, wg, structureManager, newStructures);
+			generateChunk(chunkToRecycle->chunk, wg, structureManager, biomesManager, newStructures);
 			rez = &chunkToRecycle->chunk;
 			//submitChunk(new Chunk(chunkToRecycle->chunk));
 
@@ -479,7 +489,7 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 			c->chunk.x = posX;
 			c->chunk.z = posZ;
 
-			generateChunk(c->chunk, wg, structureManager, newStructures);
+			generateChunk(c->chunk, wg, structureManager, biomesManager, newStructures);
 			rez = &c->chunk;
 
 			ListNode *node = new ListNode;

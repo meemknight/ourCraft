@@ -13,6 +13,9 @@ void WorldGenerator::init()
 	whiteNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	whiteNoise2 = FastNoiseSIMD::NewFastNoiseSIMD();
 
+	temperatureNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	humidityNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+
 	WorldGeneratorSettings s;
 	applySettings(s);
 }
@@ -36,55 +39,50 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	whiteNoise2->SetSeed(s.seed + 1);
 	whiteNoise2->SetNoiseType(FastNoiseSIMD::NoiseType::WhiteNoise);
 
-	continentalnessNoise->SetSeed(s.seed + 2);
-	continentalnessNoise->SetNoiseType((FastNoiseSIMD::NoiseType)s.continentalnessNoiseSettings.type);
-	continentalnessNoise->SetAxisScales(s.continentalnessNoiseSettings.scale, 1, s.continentalnessNoiseSettings.scale);
-	continentalnessNoise->SetFrequency(s.continentalnessNoiseSettings.frequency);
-	continentalnessNoise->SetFractalOctaves(s.continentalnessNoiseSettings.octaves);
-	continentalnessNoise->SetPerturbFractalOctaves(s.continentalnessNoiseSettings.perturbFractalOctaves);
+	auto apply = [&](FastNoiseSIMD *noise, int seed, NoiseSetting &s) 
+	{
+		noise->SetSeed(seed);
+		noise->SetNoiseType((FastNoiseSIMD::NoiseType)s.type);
+		noise->SetAxisScales(s.scale, 1, s.scale);
+		noise->SetFrequency(s.frequency);
+		noise->SetFractalOctaves(s.octaves);
+		noise->SetPerturbFractalOctaves(s.perturbFractalOctaves);
+	};
+
+	apply(continentalnessNoise, s.seed + 2, s.continentalnessNoiseSettings);
 	continentalSplines = s.continentalnessNoiseSettings.spline;
 	continentalPower = s.continentalnessNoiseSettings.power;
 
-	stone3Dnoise->SetSeed(s.seed + 3);
-	stone3Dnoise->SetNoiseType((FastNoiseSIMD::NoiseType)s.stone3Dnoise.type);
-	stone3Dnoise->SetAxisScales(s.stone3Dnoise.scale, 1, s.stone3Dnoise.scale);
-	stone3Dnoise->SetFrequency(s.stone3Dnoise.frequency);
-	stone3Dnoise->SetFractalOctaves(s.stone3Dnoise.octaves);
-	stone3Dnoise->SetPerturbFractalOctaves(s.stone3Dnoise.perturbFractalOctaves);
+	apply(stone3Dnoise, s.seed + 3, s.stone3Dnoise);
 	stone3DnoiseSplines = s.stone3Dnoise.spline;
 	stone3Dpower = s.stone3Dnoise.power;
 
-	peaksValiesNoise->SetSeed(s.seed + 4);
-	peaksValiesNoise->SetNoiseType((FastNoiseSIMD::NoiseType)s.peaksAndValies.type);
-	peaksValiesNoise->SetAxisScales(s.peaksAndValies.scale, 1, s.peaksAndValies.scale);
-	peaksValiesNoise->SetFrequency(s.peaksAndValies.frequency);
-	peaksValiesNoise->SetFractalOctaves(s.peaksAndValies.octaves);
-	peaksValiesNoise->SetPerturbFractalOctaves(s.peaksAndValies.perturbFractalOctaves);
+	apply(peaksValiesNoise, s.seed + 4, s.peaksAndValies);
 	peaksValiesSplines = s.peaksAndValies.spline;
 	peaksValiesPower = s.peaksAndValies.power;
 	peaksValiesContributionSplines = s.peaksAndValiesContributionSpline;
 
-	oceansAndTerasesNoise->SetSeed(s.seed + 5);
-	oceansAndTerasesNoise->SetNoiseType((FastNoiseSIMD::NoiseType)s.oceansAndTerases.type);
-	oceansAndTerasesNoise->SetAxisScales(s.oceansAndTerases.scale, 1, s.oceansAndTerases.scale);
-	oceansAndTerasesNoise->SetFrequency(s.oceansAndTerases.frequency);
-	oceansAndTerasesNoise->SetFractalOctaves(s.oceansAndTerases.octaves);
-	oceansAndTerasesNoise->SetPerturbFractalOctaves(s.oceansAndTerases.perturbFractalOctaves);
+	apply(oceansAndTerasesNoise, s.seed + 5, s.oceansAndTerases);
 	oceansAndTerasesSplines = s.oceansAndTerases.spline;
 	oceansAndTerasesPower = s.oceansAndTerases.power;
 	oceansAndTerasesContributionSplines = s.oceansAndTerasesContributionSpline;
 
-	vegetationNoise->SetSeed(s.seed + 6);
-	vegetationNoise->SetNoiseType((FastNoiseSIMD::NoiseType)s.vegetationNoise.type);
-	vegetationNoise->SetAxisScales(s.vegetationNoise.scale, 1, s.vegetationNoise.scale);
-	vegetationNoise->SetFrequency(s.vegetationNoise.frequency);
-	vegetationNoise->SetFractalOctaves(s.vegetationNoise.octaves);
-	vegetationNoise->SetPerturbFractalOctaves(s.vegetationNoise.perturbFractalOctaves);
+	apply(vegetationNoise, s.seed + 6, s.vegetationNoise);
 	vegetationPower = s.vegetationNoise.power;
 	vegetationSplines = s.vegetationNoise.spline;
 
 	densityBias = s.densityBias;
 	densityBiasPower = s.densityBiasPower;
+
+
+	apply(temperatureNoise, s.seed + 7, s.temperatureNoise);
+	temperaturePower = s.temperatureNoise.power;
+	temperatureSplines = s.temperatureNoise.spline;
+
+	apply(humidityNoise, s.seed + 8, s.humidityNoise);
+	humidityPower = s.humidityNoise.power;
+	humiditySplines = s.humidityNoise.spline;
+
 }
 
 
@@ -116,6 +114,12 @@ std::string WorldGeneratorSettings::saveSettings()
 	rez += "stonetDnoise:\n";
 	rez += stone3Dnoise.saveSettings(1);
 
+	rez += "humidityNoise:\n";
+	rez += humidityNoise.saveSettings(1);
+
+	rez += "temperatureNoise:\n";
+	rez += temperatureNoise.saveSettings(1);
+
 	rez += "densityBias: "; rez += std::to_string(densityBias); rez += ";\n";
 	rez += "densityBiasPower: "; rez += std::to_string(densityBiasPower); rez += ";\n";
 
@@ -128,6 +132,9 @@ void WorldGeneratorSettings::sanitize()
 	peaksAndValies.sanitize();
 	oceansAndTerases.sanitize();
 	stone3Dnoise.sanitize();
+	humidityNoise.sanitize();
+	temperatureNoise.sanitize();
+	vegetationNoise.sanitize();
 	
 	peaksAndValiesContributionSpline.sanitize();
 	oceansAndTerasesContributionSpline.sanitize();
@@ -541,6 +548,26 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					if (isEof()) { return 0; }
 
 					if (!consumeNoise(vegetationNoise))
+					{
+						return 0;
+					}
+				}
+				else if (s == "humidityNoise")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(humidityNoise))
+					{
+						return 0;
+					}
+				}
+				else if (s == "temperatureNoise")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(temperatureNoise))
 					{
 						return 0;
 					}

@@ -5,6 +5,8 @@
 #include <worldGeneratorSettings.h>
 #include <structure.h>
 #include <vector>
+#include <chunk.h>
+#include <biome.h>
 
 enum
 {
@@ -25,6 +27,9 @@ struct StructureToGenerate
 
 };
 
-void generateChunk(Chunk &c, WorldGenerator &wg, StructuresManager &structuresManager, std::vector<StructureToGenerate> &generateStructures);
-void generateChunk(ChunkData &c, WorldGenerator &wg, StructuresManager &structuresManager, std::vector<StructureToGenerate> &generateStructures);
+void generateChunk(Chunk &c, WorldGenerator &wg, StructuresManager &structuresManager, BiomesManager &biomesManager
+	,std::vector<StructureToGenerate> &generateStructures);
+
+void generateChunk(ChunkData &c, WorldGenerator &wg, StructuresManager &structuresManager, BiomesManager &biomesManager
+	,std::vector<StructureToGenerate> &generateStructures);
 

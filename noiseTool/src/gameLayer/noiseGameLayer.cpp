@@ -47,6 +47,8 @@ bool showOceans = 0;
 bool showVegetation = 1;
 bool show3DStone = 0;
 
+bool showHumidityAndTemperature = 1;
+
 
 bool initGame()
 {
@@ -67,6 +69,9 @@ gl2d::Texture sliceT;
 gl2d::Texture stone3DNoiseT;
 gl2d::Texture oceansAndTerasesT;
 gl2d::Texture vegetationT;
+
+gl2d::Texture humidityT;
+gl2d::Texture temperatureT;
 
 void createFromFloats(gl2d::Texture &t, float *data, glm::ivec2 s)
 {
@@ -124,8 +129,6 @@ void recreate()
 
 	float *testNoise
 		= wg.continentalnessNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
-
-	
 	for (int i = 0; i < size.x * size.y; i++)
 	{
 		testNoise[i] += 1;
@@ -134,6 +137,28 @@ void recreate()
 		testNoise[i] = applySpline(testNoise[i], settings.continentalnessNoiseSettings.spline);
 	}
 	createFromGrayScale(noiseT, testNoise, size);
+
+	float *humidityNoise
+		= wg.humidityNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
+	for (int i = 0; i < size.x * size.y; i++)
+	{
+		humidityNoise[i] += 1;
+		humidityNoise[i] /= 2;
+		humidityNoise[i] = std::pow(humidityNoise[i], settings.humidityNoise.power);
+		humidityNoise[i] = applySpline(humidityNoise[i], settings.humidityNoise.spline);
+	}
+	createFromGrayScale(humidityT, humidityNoise, size);
+
+	float *temperatureNoise
+		= wg.temperatureNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
+	for (int i = 0; i < size.x * size.y; i++)
+	{
+		temperatureNoise[i] += 1;
+		temperatureNoise[i] /= 2;
+		temperatureNoise[i] = std::pow(temperatureNoise[i], settings.temperatureNoise.power);
+		temperatureNoise[i] = applySpline(temperatureNoise[i], settings.temperatureNoise.spline);
+	}
+	createFromGrayScale(temperatureT, temperatureNoise, size);
 
 	
 	float *peaksNoise;
@@ -326,6 +351,8 @@ void recreate()
 	FastNoiseSIMD::FreeNoiseSet(peaksNoise);
 	FastNoiseSIMD::FreeNoiseSet(oceansNoise);
 	FastNoiseSIMD::FreeNoiseSet(stoneNoise);
+	FastNoiseSIMD::FreeNoiseSet(humidityNoise);
+	FastNoiseSIMD::FreeNoiseSet(temperatureNoise);
 
 	delete[] finalNoise;
 }
@@ -484,6 +511,17 @@ bool gameLogic(float deltaTime)
 		noiseEditor(settings.vegetationNoise, "Vegetation");
 	}
 
+	if (showHumidityAndTemperature)
+	{
+		ImGui::Separator();
+
+		noiseEditor(settings.temperatureNoise, "Temperature");
+
+		ImGui::Separator();
+
+		noiseEditor(settings.humidityNoise, "Humidity");
+	}
+
 	ImGui::End();
 
 	//ImGui::ShowDemoWindow();
@@ -510,7 +548,8 @@ bool gameLogic(float deltaTime)
 	ImGui::Checkbox("showPeaksAndValies", &showPeaksAndValies); ImGui::SameLine();
 	ImGui::Checkbox("showOceans", &showOceans); ImGui::SameLine();
 	ImGui::Checkbox("show3DStone", &show3DStone); ImGui::SameLine();
-	ImGui::Checkbox("showVegetation", &showVegetation); 
+	ImGui::Checkbox("showVegetation", &showVegetation);
+	ImGui::Checkbox("showHumidityAndTemperature", &showHumidityAndTemperature);
 
 	if (show3DStone)
 	{
@@ -554,8 +593,13 @@ bool gameLogic(float deltaTime)
 		drawNoise("Vegetation", vegetationT);
 	}
 
-	ImGui::End();
+	if (showHumidityAndTemperature)
+	{
+		drawNoise("Temperature", temperatureT);
+		drawNoise("Humidity", humidityT);
+	}
 
+	ImGui::End();
 
 
 

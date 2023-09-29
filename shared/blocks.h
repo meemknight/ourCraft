@@ -1,0 +1,102 @@
+#pragma once
+#include <memory.h>
+#include <vector>
+#include <stdint.h>
+#include <glad/glad.h>
+#include <glm/vec3.hpp>
+
+enum BlockTypes
+{
+	air = 0,
+	grassBlock,
+	dirt,
+	stone,
+	ice,
+	woodLog,
+	wooden_plank,
+	cobblestone,
+	gold_block,
+	bricks,
+	sand,
+	sand_stone,
+	snow_dirt,
+	leaves,
+	gold_ore,
+	coar_ore,
+	stoneBrick,
+	iron_ore,
+	diamond_ore,
+	bookShelf,
+	birch_wood,
+	gravel,
+	grass,
+	rose,
+	water,
+	BlocksCount
+};
+
+using BlockType = uint16_t;
+
+bool isBlockMesh(BlockType type);
+
+bool isCrossMesh(BlockType type);
+
+bool isOpaque(BlockType type);
+
+bool isTransparentGeometry(BlockType type);
+
+bool isGrassMesh(BlockType type);
+
+struct Block
+{
+	BlockType type;
+	unsigned char lightLevel; //first 4 bytes represent the sun level and bottom 4 bytes the other lights level
+	unsigned char notUsed;
+
+	bool air() { return type == 0; }
+	bool isOpaque()
+	{
+		return ::isOpaque(type);
+	}
+
+	bool isAnimatedBlock()
+	{
+		return
+			type == BlockTypes::leaves;
+	}
+
+	bool isTransparentGeometry()
+	{
+		return ::isTransparentGeometry(type);
+	}
+
+	bool isGrassMesh()
+	{
+		return ::isGrassMesh(type);
+	}
+
+	unsigned char getSkyLight()
+	{
+		return (lightLevel >> 4);
+	}
+
+	void setSkyLevel(unsigned char s)
+	{
+		s = s & 0b1111;
+		s <<= 4;
+		lightLevel &= 0b0000'1111;
+		lightLevel |= s;
+	}
+
+	bool isBlockMesh()
+	{
+		return ::isBlockMesh(type);
+	}
+
+	bool isCrossMesh()
+	{
+		return ::isCrossMesh(type);
+	}
+
+};
+

@@ -7,6 +7,7 @@
 #include <glm/vec2.hpp>
 #include <optional>
 #include "multyPlayer/undoQueue.h"
+#include "chunk.h"
 
 struct LightSystem;
 

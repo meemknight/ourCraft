@@ -8,37 +8,35 @@ constexpr int waterLevel = 65;
 constexpr int maxMountainLevel = 220;
 constexpr int heightDiff = maxMountainLevel - startLevel;
 
-void calculateBlockPass1(int height, Block *startPos)
+void calculateBlockPass1(int height, Block *startPos, Biome &biome)
 {
 
 	int y = height;
-	bool noWater = 0;
 
 	//find grass
 	for (; y >= waterLevel; y--)
 	{
 		if (startPos[y].type != BlockTypes::air)
 		{
-			startPos[y].type = BlockTypes::grassBlock;
+			startPos[y].type = biome.surfaceBlock;
 
 			for (y--; y > height - 4; y--)
 			{
 				if (startPos[y].type != BlockTypes::air)
 				{
-					startPos[y].type = BlockTypes::dirt;
+					startPos[y].type = biome.secondaryBlock;
 				}
 			}
-			//noWater = true;
+
 			break;
 		}
 	}
 
-	if(!noWater)
-	for (y = waterLevel; y > 0; y--)
+	for (y = waterLevel; y >= 20; y--)
 	{
 		if (startPos[y].type == BlockTypes::air)
 		{
-			startPos[y].type = BlockTypes::water;
+			startPos[y].type = biome.waterType;
 		}
 		else
 		{
@@ -48,13 +46,14 @@ void calculateBlockPass1(int height, Block *startPos)
 
 }
 
-void generateChunk(Chunk &c, WorldGenerator &wg, StructuresManager &structuresManager, std::vector<StructureToGenerate> &generateStructures)
+void generateChunk(Chunk &c, WorldGenerator &wg, StructuresManager &structuresManager,
+	BiomesManager &biomesManager, std::vector<StructureToGenerate> &generateStructures)
 {
-	generateChunk(c.data, wg, structuresManager, generateStructures);
+	generateChunk(c.data, wg, structuresManager, biomesManager, generateStructures);
 }
 
 
-void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structuresManager, 
+void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structuresManager, BiomesManager &biomesManager,
 	std::vector<StructureToGenerate> &generateStructures)
 {
 	c.clear();
@@ -82,6 +81,27 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 	float *whiteNoise2
 		= wg.whiteNoise2->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE + 1, (1), CHUNK_SIZE + 1, 1);
+
+	float *temperatureNoise
+		= wg.temperatureNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		temperatureNoise[i] += 1;
+		temperatureNoise[i] /= 2;
+		temperatureNoise[i] = std::powf(temperatureNoise[i], wg.temperaturePower);
+		temperatureNoise[i] = wg.temperatureSplines.applySpline(temperatureNoise[i]);
+	}
+
+	float *humidityNoise
+		= wg.humidityNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		humidityNoise[i] += 1;
+		humidityNoise[i] /= 2;
+		humidityNoise[i] = std::powf(humidityNoise[i], wg.humidityPower);
+		humidityNoise[i] = wg.humiditySplines.applySpline(humidityNoise[i]);
+	}
+
 
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
@@ -149,6 +169,16 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	{
 		return continentalness[x * CHUNK_SIZE * (1) + y * CHUNK_SIZE + z];
 	};
+
+	auto getTemperature = [temperatureNoise](int x, int z)
+	{
+		return temperatureNoise[x * CHUNK_SIZE + z];
+	};
+
+	auto getHumidity = [humidityNoise](int x, int z)
+	{
+		return humidityNoise[x * CHUNK_SIZE + z];
+	};
 	
 	auto getWhiteNoiseVal = [whiteNoise](int x, int z)
 	{
@@ -180,9 +210,15 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return densityNoise[x * CHUNK_SIZE * (CHUNK_HEIGHT) + y * CHUNK_SIZE + z];
 	};
 
+
+
 	for (int x = 0; x < CHUNK_SIZE; x++)
 		for (int z = 0; z < CHUNK_SIZE; z++)
 		{
+
+
+			auto &biome = *biomesManager.determineBiome(getTemperature(x, z), getHumidity(x, z));
+
 
 			constexpr int stoneNoiseStartLevel = 1;
 		
@@ -215,22 +251,28 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			}
 
 			
-			calculateBlockPass1(firstH, &c.unsafeGet(x, 0, z));
+			calculateBlockPass1(firstH, &c.unsafeGet(x, 0, z), biome);
 
-			//add trees
+			//add trees and grass
+			if(biome.growTreesOn != BlockTypes::air || biome.growGrassOn != BlockTypes::air)
 			if(firstH < CHUNK_HEIGHT-1)
 			{
+				auto b = c.unsafeGet(x, firstH, z).type;
 
-				if (c.unsafeGet(x, firstH, z).type == BlockTypes::grassBlock)
+
+				if (b == biome.growTreesOn || b == biome.growGrassOn)
 				{
 					float currentNoise = getVegetationNoiseVal(x, z);
 
-					if (currentNoise > 0.55)
+					if (currentNoise > biome.forestTresshold)
 					{
-						float chance = linearRemap(currentNoise, 0.5, 1, 0.01, 0.1);
-						float chance2 = linearRemap(currentNoise, 0.5, 1, 0.2, 0.22);
+						float chance = linearRemap(currentNoise, biome.forestTresshold, 1, 
+							biome.treeChanceRemap.x, biome.treeChanceRemap.y);
+
+						float chance2 = linearRemap(currentNoise, biome.jusGrassTresshold, biome.forestTresshold,
+							biome.grassChanceForestRemap.x, biome.grassChanceForestRemap.y);
 						
-						if (getWhiteNoiseChance(x, z, chance))
+						if (getWhiteNoiseChance(x, z, chance) && b == biome.growTreesOn && biome.growGrassOn != BlockTypes::air)
 						{
 							//generate tree
 							StructureToGenerate str;
@@ -243,21 +285,22 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 							generateStructures.push_back(str);
 						}
-						else
+						else if(b == biome.growGrassOn && biome.growTreesOn != BlockTypes::air)
 						{
 							if(getWhiteNoise2Chance(x, z, chance2))
 							{
-								c.unsafeGet(x, firstH+1, z).type = BlockTypes::grass;
+								c.unsafeGet(x, firstH+1, z).type = biome.grassType;
 							}
 						}
 					}
-					else if (currentNoise > 0.3)
+					else if (currentNoise > biome.jusGrassTresshold)
 					{
-						float chance = linearRemap(currentNoise, 0.3, 0.55, 0.12, 0.2);
+						float chance = linearRemap(currentNoise, biome.jusGrassTresshold, biome.forestTresshold,
+							biome.justGrassChanceRemap.x, biome.justGrassChanceRemap.y);
 
-						if (getWhiteNoiseChance(x, z, chance))
+						if (b == biome.growGrassOn && getWhiteNoiseChance(x, z, chance))
 						{
-							c.unsafeGet(x, firstH+1, z).type = BlockTypes::grass;
+							c.unsafeGet(x, firstH+1, z).type = biome.grassType;;
 						}
 					}
 				}
@@ -274,6 +317,11 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	FastNoiseSIMD::FreeNoiseSet(peaksAndValies);
 	FastNoiseSIMD::FreeNoiseSet(oceansAndTerases);
 	FastNoiseSIMD::FreeNoiseSet(densityNoise);
+	FastNoiseSIMD::FreeNoiseSet(vegetationNoise);
+	FastNoiseSIMD::FreeNoiseSet(whiteNoise);
+	FastNoiseSIMD::FreeNoiseSet(whiteNoise2);
+	FastNoiseSIMD::FreeNoiseSet(humidityNoise);
+	FastNoiseSIMD::FreeNoiseSet(temperatureNoise);
 
 
 
