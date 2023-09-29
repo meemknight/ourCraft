@@ -38,6 +38,12 @@ enum BlockTypes
 	palm_leaves,
 	cactus_bud,
 	dead_bush,
+	jungle_planks,
+	clay,
+	hardened_clay,
+	mud,
+	packed_mud,
+	mud_bricks,
 	BlocksCount
 };
 

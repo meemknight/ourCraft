@@ -220,7 +220,6 @@ void enetServerFunction()
 				{
 					recieveData(server, event);
 
-					enet_packet_destroy(event.packet);
 					break;
 				}
 				case ENET_EVENT_TYPE_DISCONNECT:
@@ -231,6 +230,9 @@ void enetServerFunction()
 					//removeConnection(server, event);
 					break;
 				}
+
+				enet_packet_destroy(event.packet);
+
 			}
 		}
 

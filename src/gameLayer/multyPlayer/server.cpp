@@ -84,7 +84,7 @@ bool startServer()
 	}
 }
 
-const int maxSavedChunks = 2000;
+const int maxSavedChunks = 600;
 
 struct ChunkPriorityCache
 {

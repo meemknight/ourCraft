@@ -135,8 +135,6 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 
 				recieveDataClient(event, validatedEvent, invalidateRevision);
 
-
-				enet_packet_destroy(event.packet);
 				break;
 			}
 
@@ -149,6 +147,9 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 			}
 
 			}
+
+			enet_packet_destroy(event.packet);
+
 		}
 		else
 		{
