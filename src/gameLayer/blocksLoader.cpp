@@ -123,8 +123,10 @@ uint16_t blocksLookupTable[] = {
 
 };
 
-void fixAlpha(unsigned char *buffer, int w, int h)
+bool fixAlpha(unsigned char *buffer, int w, int h)
 {
+
+
 	auto sample = [&](int x, int y) -> glm::ivec4 
 	{
 		glm::ivec4 rez;
@@ -135,6 +137,13 @@ void fixAlpha(unsigned char *buffer, int w, int h)
 		rez.a = buffer[(x + y * w) * 4 + 3];
 
 		return rez;
+	};
+
+	auto notBlack = [&](int x, int y)
+	{
+		auto c = sample(x, y);
+
+		return c.r != 0 && c.g != 0 && c.b != 0;
 	};
 
 	auto set = [&](int x, int y, glm::ivec3 c)
@@ -152,6 +161,15 @@ void fixAlpha(unsigned char *buffer, int w, int h)
 	for (int y = 0; y < h; y++)
 		for (int x = 0; x < w; x++)
 		{
+			if (sampleA(x, y) == 0)
+			{
+				set(x, y, {0,0,0});
+			}
+		}
+
+	for (int y = 0; y < h; y++)
+		for (int x = 0; x < w; x++)
+		{
 
 			if (sampleA(x, y) == 0)
 			{
@@ -159,7 +177,7 @@ void fixAlpha(unsigned char *buffer, int w, int h)
 				if (x < w - 1)
 				{
 					auto c = sample(x + 1, y);
-					if (c.a > 0)
+					if (glm::ivec3(c) != glm::ivec3{0,0,0})
 					{
 						set(x, y, c);
 						continue;
@@ -169,7 +187,7 @@ void fixAlpha(unsigned char *buffer, int w, int h)
 				if (y < h - 1)
 				{
 					auto c = sample(x, y + 1);
-					if (c.a > 0)
+					if (glm::ivec3(c) != glm::ivec3{0,0,0})
 					{
 						set(x, y, c);
 						continue;
@@ -179,7 +197,7 @@ void fixAlpha(unsigned char *buffer, int w, int h)
 				if (x < w - 1 && y < h - 1)
 				{
 					auto c = sample(x + 1, y + 1);
-					if (c.a > 0)
+					if (glm::ivec3(c) != glm::ivec3{0,0,0})
 					{
 						set(x, y, c);
 						continue;
@@ -189,7 +207,7 @@ void fixAlpha(unsigned char *buffer, int w, int h)
 				if (x > 0 && y < h - 1)
 				{
 					auto c = sample(x - 1, y + 1);
-					if (c.a > 0)
+					if (glm::ivec3(c) != glm::ivec3{0,0,0})
 					{
 						set(x, y, c);
 						continue;
@@ -199,7 +217,7 @@ void fixAlpha(unsigned char *buffer, int w, int h)
 				if (x > 0)
 				{
 					auto c = sample(x - 1, y);
-					if (c.a > 0)
+					if (glm::ivec3(c) != glm::ivec3{0,0,0})
 					{
 						set(x, y, c);
 						continue;
@@ -209,7 +227,7 @@ void fixAlpha(unsigned char *buffer, int w, int h)
 				if (y > 0)
 				{
 					auto c = sample(x, y - 1);
-					if (c.a > 0)
+					if (glm::ivec3(c) != glm::ivec3{0,0,0})
 					{
 						set(x, y, c);
 						continue;
@@ -219,7 +237,7 @@ void fixAlpha(unsigned char *buffer, int w, int h)
 				if (x > 0 && y > 0)
 				{
 					auto c = sample(x - 1, y - 1);
-					if (c.a > 0)
+					if (glm::ivec3(c) != glm::ivec3{0,0,0})
 					{
 						set(x, y, c);
 						continue;
@@ -229,7 +247,7 @@ void fixAlpha(unsigned char *buffer, int w, int h)
 				if (x < w - 1 && y > 0)
 				{
 					auto c = sample(x + 1, y - 1);
-					if (c.a > 0)
+					if (glm::ivec3(c) != glm::ivec3{0,0,0})
 					{
 						set(x, y, c);
 						continue;
@@ -239,6 +257,8 @@ void fixAlpha(unsigned char *buffer, int w, int h)
 			}
 
 		}
+
+	return true;
 }
 
 void createFromFileDataWithAplhaFixing(gl2d::Texture &t, const unsigned char *image_file_data, 
@@ -253,7 +273,7 @@ void createFromFileDataWithAplhaFixing(gl2d::Texture &t, const unsigned char *im
 
 	unsigned char *decodedImage = stbi_load_from_memory(image_file_data, (int)image_file_size, &width, &height, &channels, 4);
 
-	for (int i = 0; i < 128; i++)
+	for (int i = 0; i < 64; i++)
 	{
 		fixAlpha(decodedImage, width, height);
 	}
@@ -354,8 +374,8 @@ void BlocksLoader::loadAllTextures()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.f);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 4.f);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 6.f);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 6.f);
 
 		glGenerateMipmap(GL_TEXTURE_2D);
 

@@ -228,7 +228,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 					if (currentNoise > 0.55)
 					{
 						float chance = linearRemap(currentNoise, 0.5, 1, 0.01, 0.1);
-						float chance2 = linearRemap(currentNoise, 0.5, 1, 0.1, 0.15);
+						float chance2 = linearRemap(currentNoise, 0.5, 1, 0.2, 0.22);
 						
 						if (getWhiteNoiseChance(x, z, chance))
 						{
@@ -247,13 +247,13 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 						{
 							if(getWhiteNoise2Chance(x, z, chance2))
 							{
-								c.unsafeGet(x, firstH, z).type = BlockTypes::grass;
+								c.unsafeGet(x, firstH+1, z).type = BlockTypes::grass;
 							}
 						}
 					}
 					else if (currentNoise > 0.3)
 					{
-						float chance = linearRemap(currentNoise, 0.3, 0.55, 0.001, 0.1);
+						float chance = linearRemap(currentNoise, 0.3, 0.55, 0.12, 0.2);
 
 						if (getWhiteNoiseChance(x, z, chance))
 						{

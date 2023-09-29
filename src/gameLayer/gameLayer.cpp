@@ -52,7 +52,6 @@ bool initGame()
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 
-
 	programData.blocksLoader.loadAllTextures();
 	programData.renderer.create(programData.blocksLoader);
 	programData.gyzmosRenderer.create();
