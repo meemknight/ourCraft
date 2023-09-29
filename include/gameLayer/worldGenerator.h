@@ -12,6 +12,8 @@ enum
 {
 	Structure_None = 0,
 	Structure_Tree,
+	Structure_JungleTree,
+	Structure_PalmTree,
 };
 
 //used to report back

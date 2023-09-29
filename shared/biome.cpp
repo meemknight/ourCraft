@@ -12,6 +12,7 @@ bool BiomesManager::loadAllBiomes()
 		plains.color = {0.2,0.7,0.3};
 		plains.surfaceBlock = BlockTypes::grassBlock;
 		plains.secondaryBlock = BlockTypes::dirt;
+		plains.treeType = Biome::treeNormal;
 
 		plains.forestTresshold = 0.55;
 		plains.jusGrassTresshold = 0.3;
@@ -38,16 +39,16 @@ bool BiomesManager::loadAllBiomes()
 		b.secondaryBlock = BlockTypes::sand_stone;
 
 		b.forestTresshold = 0.55;
-		b.jusGrassTresshold = 0.3;
+		b.jusGrassTresshold = 0.1;
 
 		b.treeChanceRemap = {0.01, 0.1};
-		b.grassChanceForestRemap = {0.2, 0.22};
-		b.justGrassChanceRemap = {0.12, 0.2};
+		b.grassChanceForestRemap = {0.01, 0.02};
+		b.justGrassChanceRemap = {0.001, 0.01};
 
 		b.growTreesOn = 0;
 		b.growGrassOn = 0;
 
-		b.grassType = 0; //todo add dead bush here
+		b.grassType = BlockTypes::dead_bush;
 		b.waterType = BlockTypes::sand;
 
 		biomes.push_back(b);
@@ -65,13 +66,13 @@ bool BiomesManager::loadAllBiomes()
 		b.jusGrassTresshold = 0.3;
 
 		b.treeChanceRemap = {0.01, 0.1};
-		b.grassChanceForestRemap = {0.2, 0.22};
-		b.justGrassChanceRemap = {0.12, 0.2};
+		b.grassChanceForestRemap = {0.01, 0.02};
+		b.justGrassChanceRemap = {0.001, 0.01};
 
 		b.growTreesOn = 0;
-		b.growGrassOn = 0;
+		b.growGrassOn = BlockTypes::sand;
 
-		b.grassType = BlockTypes::grass; //todo add dead bush here
+		b.grassType = BlockTypes::dead_bush;
 		b.waterType = BlockTypes::water;
 
 		biomes.push_back(b);
@@ -84,6 +85,7 @@ bool BiomesManager::loadAllBiomes()
 		plains.color = {0.3,0.9,0.35};
 		plains.surfaceBlock = BlockTypes::grassBlock;
 		plains.secondaryBlock = BlockTypes::dirt;
+		plains.treeType = Biome::treeNormal;
 
 		plains.forestTresshold = 0.75;
 		plains.jusGrassTresshold = 0.2;
@@ -108,18 +110,20 @@ bool BiomesManager::loadAllBiomes()
 		b.color = glm::vec3{222, 102, 192} / 255.f;
 		b.surfaceBlock = BlockTypes::grassBlock;
 		b.secondaryBlock = BlockTypes::dirt;
+		b.treeType = Biome::treePalm;
 
-		b.forestTresshold = 0.5;
-		b.jusGrassTresshold = 0.2;
 
-		b.treeChanceRemap = {0.01, 0.05};
-		b.grassChanceForestRemap = {0.2, 0.22};
-		b.justGrassChanceRemap = {0.12, 0.2};
+		b.forestTresshold = 0.3;
+		b.jusGrassTresshold = 0.1;
+
+		b.treeChanceRemap = {0.001, 0.01};
+		b.grassChanceForestRemap = {0.01, 0.03};
+		b.justGrassChanceRemap = {0.01, 0.02};
 
 		b.growTreesOn = BlockTypes::grassBlock;
 		b.growGrassOn = BlockTypes::grassBlock;
 
-		b.grassType = BlockTypes::grass;
+		b.grassType = BlockTypes::cactus_bud;
 		b.waterType = BlockTypes::water;
 
 		biomes.push_back(b);
@@ -132,6 +136,7 @@ bool BiomesManager::loadAllBiomes()
 		b.color = {0.2,0.7,0.3};
 		b.surfaceBlock = BlockTypes::grassBlock;
 		b.secondaryBlock = BlockTypes::dirt;
+		b.treeType = Biome::treeJungle;
 
 		b.forestTresshold = 0.3;
 		b.jusGrassTresshold = 0.1;
@@ -204,6 +209,7 @@ bool BiomesManager::loadAllBiomes()
 		b.color = glm::vec3{199, 199, 199} / 255.f;
 		b.surfaceBlock = BlockTypes::snow_dirt;
 		b.secondaryBlock = BlockTypes::dirt;
+		b.treeType = Biome::treeNormal;
 
 		b.forestTresshold = 0.9;
 		b.jusGrassTresshold = 0.3;
@@ -270,9 +276,9 @@ bool BiomesManager::loadAllBiomes()
 
 		BiomeRange veryWarm;
 		warm.tresshold = 0.9;
+		warm.ids.push_back(4);
 		warm.ids.push_back(1);
 		warm.ids.push_back(2);
-		warm.ids.push_back(4);
 		warm.ids.push_back(5);
 		picker.temperature.push_back(warm);
 	}
@@ -294,10 +300,10 @@ bool BiomesManager::loadAllBiomes()
 
 		BiomeRange mediumOasis;
 		mediumOasis.tresshold = 0.51;
+		mediumOasis.ids.push_back(4);
 		mediumOasis.ids.push_back(8);
 		mediumOasis.ids.push_back(3);
 		mediumOasis.ids.push_back(2);
-		mediumOasis.ids.push_back(4);
 		picker.humidity.push_back(mediumOasis);
 
 		BiomeRange high;

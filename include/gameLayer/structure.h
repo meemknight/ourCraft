@@ -11,6 +11,8 @@ struct StructureData
 
 	BlockType &unsafeGet(int x, int y, int z)
 	{
+		assert(x >= 0 && y >= 0 && z >= 0 && x < size.x && y < size.y && z < size.z);
+
 		return ((BlockType*)(this + 1))[y + z * size.y + x * size.y*size.z];
 	}
 
@@ -22,7 +24,7 @@ struct StructureData
 		}
 		else if (r == 1)
 		{
-			return unsafeGet(size.x - 1 - z, y, x);
+			return unsafeGet(size.z - 1 - z, y, x);
 		}
 		else if (r == 2)
 		{
@@ -57,7 +59,9 @@ struct StructuresManager
 
 	bool loadAllStructures();
 
-	std::vector<StructureData*> trees;
+	std::vector<StructureData *> trees;
+	std::vector<StructureData *> jungleTrees;
+	std::vector<StructureData *> palmTrees;
 
 	void clear();
 };

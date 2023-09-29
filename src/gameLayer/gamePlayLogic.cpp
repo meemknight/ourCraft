@@ -237,6 +237,18 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		if (platform::isKeyHeld(platform::Button::LeftCtrl))
 		{
+			if (blockToPlace)
+			{
+				auto b = gameData.chunkSystem.getBlockSafe(rayCastPos);
+				if (b)
+				{
+					blockTypeToPlace = b->type;
+				}
+			}
+			
+		}else
+		if (platform::isKeyHeld(platform::Button::LeftAlt))
+		{
 			if (platform::isRMouseReleased())
 			{
 				if (blockToPlace)
@@ -327,6 +339,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 			ImGui::NewLine();
+			
+			static char fileBuff[256] = RESOURCES_PATH "gameData/structures/test.structure";
+			ImGui::InputText("File:", fileBuff, sizeof(fileBuff));
 
 			if (ImGui::Button("Save structure"))
 			{
@@ -356,13 +371,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 							}
 
 						}
-				sfs::writeEntireFile(s, data.size(), RESOURCES_PATH "gameData/structures/test.structure");
+				sfs::writeEntireFile(s, data.size(), fileBuff);
 			}
 
 			if (ImGui::Button("Load structure"))
 			{
 				std::vector<char> data;
-				if (sfs::readEntireFile(data, RESOURCES_PATH "gameData/structures/test.structure") ==
+				if (sfs::readEntireFile(data, fileBuff) ==
 					sfs::noError)
 				{
 					StructureData *s = (StructureData *)data.data();
@@ -376,6 +391,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 								gameData.chunkSystem.placeBlockByClient(pos, s->unsafeGet(x, y, z),
 									gameData.undoQueue, gameData.c.position, gameData.lightSystem);
 							}
+
+					pointSize = s->size;
 				}
 
 

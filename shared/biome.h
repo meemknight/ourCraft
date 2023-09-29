@@ -6,12 +6,21 @@
 struct Biome
 {
 
+	enum
+	{
+		treeNone = 0,
+		treeNormal,
+		treeJungle,
+		treePalm,
+	};
+
 	const char *name = "";
 	glm::vec3 color = {};
 
 	BlockType surfaceBlock;
 	BlockType secondaryBlock; //todo add height variation here
 
+	int treeType = 0;
 
 	float forestTresshold = 0; 
 	float jusGrassTresshold = 0;

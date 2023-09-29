@@ -35,6 +35,14 @@ const char *texturesNames[] = {
 	"rose",				//28
 	"stone",			//29
 	"water",			//30
+	"jungle_log",		//31
+	"jungle_log_top",	//32
+	"leaves_jungle",	//33
+	"palm_log",			//34
+	"palm_log_top",		//35
+	"palm_leaves",		//36
+	"cactus_bud",		//37
+	"dead_bush",		//38
 };
 
 //front
@@ -121,6 +129,23 @@ uint16_t blocksLookupTable[] = {
 	//water
 	30,30,30,30,30,30,
 
+	//jungle_logs
+	31,31,32,32,31,31,
+
+	//jungle_leaves
+	33,33,33,33,33,33,
+
+	//palm_log
+	34,34,35,35,34,34,
+
+	//palm_leaves
+	36,36,36,36,36,36,
+
+	//cactus bud
+	37,37,37,37,37,37,
+
+	//dead bush
+	38,38,38,38,38,38,
 };
 
 bool fixAlpha(unsigned char *buffer, int w, int h)

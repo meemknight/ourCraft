@@ -110,6 +110,11 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
 		{
 			platform::internal::setButtonState(platform::Button::LeftCtrl, state);
 		}
+		else
+		if (key == GLFW_KEY_LEFT_ALT)
+		{
+			platform::internal::setButtonState(platform::Button::LeftAlt, state);
+		}
 	}
 	
 };

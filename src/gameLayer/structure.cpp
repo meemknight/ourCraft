@@ -4,37 +4,43 @@
 
 bool StructuresManager::loadAllStructures()
 {
-	auto it = std::filesystem::directory_iterator(RESOURCES_PATH "gameData/structures/trees"); //todo check errors
 
-	for (const auto &entry : it)
+	auto loadFolder = [](const char *path, std::vector<StructureData*> &structures) 
 	{
-		if (entry.is_regular_file())
+		auto it = std::filesystem::directory_iterator(path); //todo check errors
+		for (const auto &entry : it)
 		{
-			size_t s = 0;
-
-			const char *c = entry.path().string().c_str();
-
-			sfs::getFileSize(entry.path().string().c_str(), s);
-
-			if (s < sizeof(StructureData))
+			if (entry.is_regular_file())
 			{
-				return 0;
+				size_t s = 0;
+
+				sfs::getFileSize(entry.path().string().c_str(), s);
+
+				if (s < sizeof(StructureData))
+				{
+					return 0;
+				}
+
+				unsigned char *sData = new unsigned char[s];
+
+				if (sfs::readEntireFile(sData, s, entry.path().string().c_str(), true) != sfs::noError)
+				{
+					return 0;
+				}
+
+				structures.push_back((StructureData *)sData);
 			}
-
-			unsigned char *sData = new unsigned char[s];
-
-			if (sfs::readEntireFile(sData, s, entry.path().string().c_str(), true) != sfs::noError)
-			{
-				return 0;
-			}
-
-			trees.push_back((StructureData*)sData);
-
 		}
+	};
+
+	loadFolder(RESOURCES_PATH "gameData/structures/trees", trees);
+	loadFolder(RESOURCES_PATH "gameData/structures/jungleTrees", jungleTrees);
+	loadFolder(RESOURCES_PATH "gameData/structures/palm", palmTrees);
 	
-	}
 
 	if (trees.empty()) { return 0; }
+	if (jungleTrees.empty()) { return 0; }
+	if (palmTrees.empty()) { return 0; }
 
 	return true;
 }

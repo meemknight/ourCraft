@@ -254,7 +254,9 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			calculateBlockPass1(firstH, &c.unsafeGet(x, 0, z), biome);
 
 			//add trees and grass
-			if(biome.growTreesOn != BlockTypes::air || biome.growGrassOn != BlockTypes::air)
+			bool generateTree = biome.growTreesOn != BlockTypes::air && biome.treeType;
+
+			if(generateTree || biome.growGrassOn != BlockTypes::air)
 			if(firstH < CHUNK_HEIGHT-1)
 			{
 				auto b = c.unsafeGet(x, firstH, z).type;
@@ -272,11 +274,27 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 						float chance2 = linearRemap(currentNoise, biome.jusGrassTresshold, biome.forestTresshold,
 							biome.grassChanceForestRemap.x, biome.grassChanceForestRemap.y);
 						
-						if (getWhiteNoiseChance(x, z, chance) && b == biome.growTreesOn && biome.growGrassOn != BlockTypes::air)
+						if (getWhiteNoiseChance(x, z, chance) && b == biome.growTreesOn && generateTree)
 						{
 							//generate tree
 							StructureToGenerate str;
-							str.type = Structure_Tree;
+							if (biome.treeType == Biome::treeNormal)
+							{
+								str.type = Structure_Tree;
+							}
+							else if (biome.treeType == Biome::treeJungle)
+							{
+								str.type = Structure_JungleTree;
+							}
+							else if (biome.treeType == Biome::treePalm)
+							{
+								str.type = Structure_PalmTree;
+							}
+							else
+							{
+								assert(0);
+							}
+
 							str.pos = {x + xPadd, firstH, z + zPadd};
 							str.randomNumber1 = getWhiteNoise2Val(x, z);
 							str.randomNumber2 = getWhiteNoise2Val(x+1, z);
@@ -285,7 +303,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 							generateStructures.push_back(str);
 						}
-						else if(b == biome.growGrassOn && biome.growTreesOn != BlockTypes::air)
+						else if(b == biome.growGrassOn && biome.growGrassOn != BlockTypes::air)
 						{
 							if(getWhiteNoise2Chance(x, z, chance2))
 							{
@@ -298,7 +316,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 						float chance = linearRemap(currentNoise, biome.jusGrassTresshold, biome.forestTresshold,
 							biome.justGrassChanceRemap.x, biome.justGrassChanceRemap.y);
 
-						if (b == biome.growGrassOn && getWhiteNoiseChance(x, z, chance))
+						if (b == biome.growGrassOn && biome.growGrassOn != BlockTypes::air && getWhiteNoiseChance(x, z, chance))
 						{
 							c.unsafeGet(x, firstH+1, z).type = biome.grassType;;
 						}

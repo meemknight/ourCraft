@@ -32,6 +32,12 @@ enum BlockTypes
 	grass,
 	rose,
 	water,
+	jungle_log,
+	jungle_leaves,
+	palm_log,
+	palm_leaves,
+	cactus_bud,
+	dead_bush,
 	BlocksCount
 };
 
@@ -62,7 +68,7 @@ struct Block
 	bool isAnimatedBlock()
 	{
 		return
-			type == BlockTypes::leaves;
+			type == BlockTypes::leaves || type == BlockTypes::jungle_leaves || type == BlockTypes::palm_leaves;
 	}
 
 	bool isTransparentGeometry()

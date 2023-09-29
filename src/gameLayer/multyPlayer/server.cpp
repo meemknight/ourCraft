@@ -446,8 +446,11 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 
 		ChunkData *rez = 0;
 
+		//auto startTimer = std::chrono::high_resolution_clock::now();
+
 		if (savedChunks.size() >= maxSavedChunks)
 		{
+
 			//std::cout << "bad";
 			glm::ivec2 oldPos = last->chunkPos;
 			auto foundPos = savedChunks.find(oldPos);
@@ -515,6 +518,13 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 			generateStructure(s, structureManager);
 		}
 
+		//auto elapsed = std::chrono::high_resolution_clock::now() - startTimer;
+
+		//long long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(
+		//	elapsed).count();
+
+		//std::cout << "Chunk timer ms: " << milliseconds << "\n";
+
 		return rez;
 	}
 }
@@ -551,6 +561,21 @@ void ChunkPriorityCache::generateStructure(StructureToGenerate s, StructuresMana
 			[chooseRandomElement(s.randomNumber1, structureManager.trees.size())];
 
 		generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4) );
+	}else 
+	if (s.type == Structure_JungleTree)
+	{
+
+		auto tree = structureManager.jungleTrees
+			[chooseRandomElement(s.randomNumber1, structureManager.jungleTrees.size())];
+
+		generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4));
+	}if (s.type == Structure_PalmTree)
+	{
+
+		auto tree = structureManager.palmTrees
+			[chooseRandomElement(s.randomNumber1, structureManager.palmTrees.size())];
+
+		generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4));
 	}
 
 }
@@ -592,6 +617,12 @@ void ChunkPriorityCache::generateStructure(StructureToGenerate s, StructureData 
 						{
 							b.type = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z, 
 								rotation);
+							
+							if (b.type > BlockTypes::jungle_leaves)
+							{
+								int a = 0;
+							}
+
 						}
 					}
 				}
