@@ -35,6 +35,7 @@ enum
 	headerReceiveCIDAndData,
 	headerRequestChunk,
 	headerPlaceBlock,
+	headerPlaceBlocks,
 	headerRecieveChunk,
 	headerValidateEvent,
 	headerInValidateEvent,
@@ -64,12 +65,22 @@ struct Packet_InValidateEvent
 	EventId eventId = {};
 };
 
-struct Packet_PlaceBlock
+//used by the client to talk to the server
+struct Packet_PlaceBlock 
 {
-	uint16_t blockType = {};
 	glm::ivec3 blockPos = {};
-	EventId eventId = {};
+	uint16_t blockType = {};
+	EventId eventId = {}; //event id is used by the player
 };
+
+//the server doesn't have a backend for this !!, sent from the server to the player only
+struct Packet_PlaceBlocks
+{
+	glm::ivec3 blockPos = {};
+	uint16_t blockType = {};
+};
+
+
 
 //first channel connection and chunks
 //second channel blocks

@@ -50,7 +50,6 @@ void submitTaskClient(std::vector<Task> &t)
 }
 
 
-//todo struct here
 static ConnectionData clientData;
 std::vector<Chunk *> getRecievedChunks()
 {
@@ -60,7 +59,7 @@ std::vector<Chunk *> getRecievedChunks()
 	return ret;
 }
 
-std::vector<Packet_PlaceBlock> getRecievedBlocks()
+std::vector<Packet_PlaceBlocks> getRecievedBlocks()
 {
 	//auto ret = std::move(recievedBlocks);
 	auto ret = clientData.recievedBlocks;
@@ -95,7 +94,22 @@ void recieveDataClient(ENetEvent &event, EventCounter &validatedEvent, RevisionN
 
 		case headerPlaceBlock:
 		{
-			clientData.recievedBlocks.push_back(*(Packet_PlaceBlock *)data);
+			Packet_PlaceBlocks b;
+			b.blockPos = ((Packet_PlaceBlock *)data)->blockPos;
+			b.blockType = ((Packet_PlaceBlock *)data)->blockType;
+			clientData.recievedBlocks.push_back(b);
+			break;
+		}
+
+		case headerPlaceBlocks:
+		{
+			for (int i = 0; i < size / sizeof(Packet_PlaceBlocks); i++)
+			{
+				clientData.recievedBlocks.push_back( ((Packet_PlaceBlocks*)data)[i] );
+
+			}
+			std::cout << "Placed blocks..." << size / sizeof(Packet_PlaceBlocks) << "\n";
+
 			break;
 		}
 

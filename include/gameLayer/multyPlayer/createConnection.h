@@ -31,13 +31,13 @@ struct ConnectionData
 	ENetPeer *server = 0;
 	int32_t cid = 0;
 	std::vector<Chunk *> recievedChunks = {};
-	std::vector<Packet_PlaceBlock> recievedBlocks = {};
+	std::vector<Packet_PlaceBlocks> recievedBlocks = {};
 	bool conected = false;
 };
 
 
 std::vector<Chunk *> getRecievedChunks();
-std::vector<Packet_PlaceBlock> getRecievedBlocks();
+std::vector<Packet_PlaceBlocks> getRecievedBlocks();
 ConnectionData getConnectionData();
 bool createConnection();
 void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision);

@@ -276,7 +276,6 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 		}
 		else
 		{
-			//todo possible problems here
 			//ignore message
 		}
 
