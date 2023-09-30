@@ -193,5 +193,25 @@ temperatureNoise:
 		1.000000,1.000000;
 		}
 	}
+spagettiNoise:
+	{
+	scale: 1.310000;
+	type: ValueFractal;
+	frequency: 0.022000;
+	octaves: 3;
+	perturbFractalOctaves: 0;
+	power: 1.000000;
+	spline:
+		{
+		0.000000,1.000000;
+		0.416667,1.000000;
+		0.416667,0.026144;
+		0.463235,0.001634;
+		0.463235,1.000000;
+		1.000000,1.000000;
+		}
+	}
+spagettiBias: 0.036000;
+spagettiBiasPower: 1.251000;
 densityBias: 0.007000;
 densityBiasPower: 0.896000;

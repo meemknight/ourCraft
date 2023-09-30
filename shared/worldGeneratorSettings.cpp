@@ -12,6 +12,7 @@ void WorldGenerator::init()
 	vegetationNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	whiteNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	whiteNoise2 = FastNoiseSIMD::NewFastNoiseSIMD();
+	spagettiNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
 	temperatureNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	humidityNoise = FastNoiseSIMD::NewFastNoiseSIMD();
@@ -29,6 +30,7 @@ void WorldGenerator::clear()
 	delete vegetationNoise;
 	delete whiteNoise;
 	delete whiteNoise2;
+	delete spagettiNoise;
 }
 
 void WorldGenerator::applySettings(WorldGeneratorSettings &s)
@@ -56,30 +58,35 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	apply(stone3Dnoise, s.seed + 3, s.stone3Dnoise);
 	stone3DnoiseSplines = s.stone3Dnoise.spline;
 	stone3Dpower = s.stone3Dnoise.power;
+	densityBias = s.densityBias;
+	densityBiasPower = s.densityBiasPower;
 
-	apply(peaksValiesNoise, s.seed + 4, s.peaksAndValies);
+	apply(spagettiNoise, s.seed + 4, s.spagettiNoise);
+	spagettiNoiseSplines = s.spagettiNoise.spline;
+	spagettiNoisePower = s.spagettiNoise.power;
+	spagettiNoiseBias = s.spagettiBias;
+	spagettiNoiseBiasPower = s.spagettiBiasPower;
+
+	apply(peaksValiesNoise, s.seed + 5, s.peaksAndValies);
 	peaksValiesSplines = s.peaksAndValies.spline;
 	peaksValiesPower = s.peaksAndValies.power;
 	peaksValiesContributionSplines = s.peaksAndValiesContributionSpline;
 
-	apply(oceansAndTerasesNoise, s.seed + 5, s.oceansAndTerases);
+	apply(oceansAndTerasesNoise, s.seed + 6, s.oceansAndTerases);
 	oceansAndTerasesSplines = s.oceansAndTerases.spline;
 	oceansAndTerasesPower = s.oceansAndTerases.power;
 	oceansAndTerasesContributionSplines = s.oceansAndTerasesContributionSpline;
 
-	apply(vegetationNoise, s.seed + 6, s.vegetationNoise);
+	apply(vegetationNoise, s.seed + 7, s.vegetationNoise);
 	vegetationPower = s.vegetationNoise.power;
 	vegetationSplines = s.vegetationNoise.spline;
 
-	densityBias = s.densityBias;
-	densityBiasPower = s.densityBiasPower;
 
-
-	apply(temperatureNoise, s.seed + 7, s.temperatureNoise);
+	apply(temperatureNoise, s.seed + 8, s.temperatureNoise);
 	temperaturePower = s.temperatureNoise.power;
 	temperatureSplines = s.temperatureNoise.spline;
 
-	apply(humidityNoise, s.seed + 8, s.humidityNoise);
+	apply(humidityNoise, s.seed + 9, s.humidityNoise);
 	humidityPower = s.humidityNoise.power;
 	humiditySplines = s.humidityNoise.spline;
 
@@ -120,6 +127,12 @@ std::string WorldGeneratorSettings::saveSettings()
 	rez += "temperatureNoise:\n";
 	rez += temperatureNoise.saveSettings(1);
 
+	rez += "spagettiNoise:\n";
+	rez += spagettiNoise.saveSettings(1);
+	rez += "spagettiBias: "; rez += std::to_string(spagettiBias); rez += ";\n";
+	rez += "spagettiBiasPower: "; rez += std::to_string(spagettiBiasPower); rez += ";\n";
+
+
 	rez += "densityBias: "; rez += std::to_string(densityBias); rez += ";\n";
 	rez += "densityBiasPower: "; rez += std::to_string(densityBiasPower); rez += ";\n";
 
@@ -141,6 +154,12 @@ void WorldGeneratorSettings::sanitize()
 
 	densityBias = glm::clamp(densityBias, 0.f, 1.f);
 	densityBiasPower = glm::clamp(densityBiasPower, 0.1f, 10.f);
+
+
+	spagettiNoise.sanitize();
+	spagettiBias = glm::clamp(spagettiBias, 0.f, 10.f);
+	spagettiBiasPower = glm::clamp(spagettiBiasPower, 0.1f, 10.f);
+
 }
 
 
@@ -601,6 +620,32 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					{
 						return 0;
 					}
+				}
+				else if (s == "spagettiNoise")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(spagettiNoise))
+					{
+						return 0;
+					}
+				}
+				else if (s == "spagettiBias")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+					if (!isNumber()) { return 0; }
+					spagettiBias = consumeNumber();
+					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
+				}
+				else if (s == "spagettiBiasPower")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+					if (!isNumber()) { return 0; }
+					spagettiBiasPower = consumeNumber();
+					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
 				}
 				else if (s == "peaksAndValiesContributionSpline")
 				{

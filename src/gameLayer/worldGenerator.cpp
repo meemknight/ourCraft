@@ -73,6 +73,17 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	float *densityNoise
 		= wg.stone3Dnoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
 
+	float *spagettiNoise
+		= wg.spagettiNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
+
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
+	{
+		spagettiNoise[i] += 1;
+		spagettiNoise[i] /= 2;
+		spagettiNoise[i] = std::powf(spagettiNoise[i], wg.spagettiNoisePower);
+		spagettiNoise[i] = wg.spagettiNoiseSplines.applySpline(spagettiNoise[i]);
+	}
+	
 	float *vegetationNoise
 		= wg.vegetationNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 
@@ -210,6 +221,10 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return densityNoise[x * CHUNK_SIZE * (CHUNK_HEIGHT) + y * CHUNK_SIZE + z];
 	};
 
+	auto getSpagettiNoiseVal = [spagettiNoise](int x, int y, int z) //todo more cache friendly operation here please
+	{
+		return spagettiNoise[x * CHUNK_SIZE * (CHUNK_HEIGHT)+y * CHUNK_SIZE + z];
+	};
 
 
 	for (int x = 0; x < CHUNK_SIZE; x++)
@@ -252,6 +267,30 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 			
 			calculateBlockPass1(firstH, &c.unsafeGet(x, 0, z), biome);
+
+			for (int y = 1; y < firstH; y++)
+			{
+				auto density = getSpagettiNoiseVal(x, y, z);
+				float bias = (y - 1) / (256 - 1.f - 1);
+				bias = glm::clamp(bias, 0.f, 1.f);
+				bias = 1.f - bias;
+
+				bias = std::powf(bias, wg.spagettiNoiseBiasPower);
+
+				if (density > wg.spagettiNoiseBias * bias)
+				{
+					//stone
+				}
+				else
+				{
+					if (c.unsafeGet(x, y, z).type != BlockTypes::water)
+					{
+						c.unsafeGet(x, y, z).type = BlockTypes::air;
+					}
+				}
+
+			}
+
 
 			//add trees and grass
 			bool generateTree = biome.growTreesOn != BlockTypes::air && biome.treeType;
@@ -340,6 +379,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	FastNoiseSIMD::FreeNoiseSet(whiteNoise2);
 	FastNoiseSIMD::FreeNoiseSet(humidityNoise);
 	FastNoiseSIMD::FreeNoiseSet(temperatureNoise);
+	FastNoiseSIMD::FreeNoiseSet(spagettiNoise);
 
 
 

@@ -29,7 +29,7 @@ void renderSettingsForOneNoise(const char *name, NoiseSetting &n)
 	ImGui::DragFloat("Scale: ", &n.scale, 0.01);
 	ImGui::Combo("Noise Type", &n.type, 
 		"Value\0ValueFractal\0Perlin\0PerlinFractal\0Simplex\0SimplexFractal\0WhiteNoise\0Cellular\0Cubic\0CubicFractal");
-	ImGui::DragFloat("Frequency: ", &n.frequency, 0.005, 0.0001);
+	ImGui::DragFloat("Frequency: ", &n.frequency, 0.0001, 0.0001);
 	ImGui::DragInt("Octaves", &n.octaves, 0.5, 0, 8);
 	ImGui::DragInt("Perturb Fractal Octaves", &n.perturbFractalOctaves, 0.5, 0, 8);
 	ImGui::DragFloat("Power", &n.power, 0.1, 0.1, 10);
@@ -46,6 +46,7 @@ bool showPeaksAndValies = 0;
 bool showOceans = 0;
 bool showVegetation = 1;
 bool show3DStone = 0;
+bool showSpagetti = 0;
 
 bool showHumidityAndTemperature = 1;
 
@@ -69,6 +70,7 @@ gl2d::Texture sliceT;
 gl2d::Texture stone3DNoiseT;
 gl2d::Texture oceansAndTerasesT;
 gl2d::Texture vegetationT;
+gl2d::Texture spagettiT;
 
 gl2d::Texture humidityT;
 gl2d::Texture temperatureT;
@@ -241,6 +243,24 @@ void recreate()
 
 	}
 
+	float *spagettiNoise;
+	{
+		spagettiNoise
+			= wg.spagettiNoise->GetNoiseSet(displacement.x, 0, displacement.y, 1, 256, size.x, 1);
+
+		for (int i = 0; i < size.x * 256; i++)
+		{
+			spagettiNoise[i] += 1;
+			spagettiNoise[i] /= 2;
+			spagettiNoise[i] = std::pow(spagettiNoise[i], settings.spagettiNoise.power);
+			spagettiNoise[i] = applySpline(spagettiNoise[i], settings.spagettiNoise.spline);
+		}
+
+		if (showSpagetti)
+		{
+			createFromGrayScale(spagettiT, spagettiNoise, glm::ivec2{size.x,256});
+		}
+	}
 
 	createFromGrayScale(finalTexture, finalNoise, size);
 
@@ -249,6 +269,11 @@ void recreate()
 		auto getDensityNoiseVal = [&](int x, int y) //todo more cache friendly operation here please
 		{
 			return stoneNoise[y * size.x + x];
+		};
+
+		auto getSpagettiNoiseVal = [&](int x, int y) //todo more cache friendly operation here please
+		{
+			return spagettiNoise[y * size.x + x];
 		};
 
 
@@ -326,7 +351,6 @@ void recreate()
 				}
 			}
 
-		
 			//
 			for (y=waterLevel; y >= 0; y--)
 			{
@@ -340,6 +364,30 @@ void recreate()
 				}
 			}
 			
+			
+			for (int y = 0; y < firstH; y++)
+			{
+				auto density = getSpagettiNoiseVal(i, y);
+				float bias = (y - 1) / (256 - 1.f - 1);
+				bias = glm::clamp(bias, 0.f, 1.f);
+				bias = 1.f - bias;
+
+				bias = std::powf(bias, wg.spagettiNoiseBiasPower);
+
+				if (density > wg.spagettiNoiseBias * bias)
+				{
+					//stone
+				}
+				else
+				{
+					if (colorData[y * size.x + i] != glm::vec4(11, 16, 77, 255) / 255.f) //not water
+					{
+						colorData[y * size.x + i] = glm::vec4(7, 7, 7, 255) / 255.f; //cave
+					}
+				}
+
+			}
+
 		}
 
 		createFromFloats(sliceT, &colorData->x, {size.x, 256});
@@ -353,6 +401,8 @@ void recreate()
 	FastNoiseSIMD::FreeNoiseSet(stoneNoise);
 	FastNoiseSIMD::FreeNoiseSet(humidityNoise);
 	FastNoiseSIMD::FreeNoiseSet(temperatureNoise);
+	FastNoiseSIMD::FreeNoiseSet(spagettiNoise);
+
 
 	delete[] finalNoise;
 }
@@ -501,7 +551,15 @@ bool gameLogic(float deltaTime)
 		noiseEditor(settings.stone3Dnoise, "3D noise");
 
 		ImGui::SliderFloat("3D bias", &settings.densityBias, 0, 1);
-		ImGui::SliderFloat("3D bias power", &settings.densityBiasPower, 0.1, 10);
+		ImGui::SliderFloat("3D noise bias power", &settings.densityBiasPower, 0.1, 10);
+	}
+
+	if (showSpagetti)
+	{
+		noiseEditor(settings.spagettiNoise, "Spagetti noise");
+
+		ImGui::SliderFloat("Spagetti noise bias", &settings.spagettiBias, 0, 10);
+		ImGui::SliderFloat("Spagetti noise bias power", &settings.spagettiBiasPower, 0.1, 10);
 	}
 
 	if (showVegetation)
@@ -549,13 +607,22 @@ bool gameLogic(float deltaTime)
 	ImGui::Checkbox("showOceans", &showOceans); ImGui::SameLine();
 	ImGui::Checkbox("show3DStone", &show3DStone); ImGui::SameLine();
 	ImGui::Checkbox("showVegetation", &showVegetation);
-	ImGui::Checkbox("showHumidityAndTemperature", &showHumidityAndTemperature);
+	ImGui::Checkbox("showHumidityAndTemperature", &showHumidityAndTemperature); ImGui::SameLine();
+	ImGui::Checkbox("showSpagetti", &showSpagetti);
 
 	if (show3DStone)
 	{
 		ImGui::Text("3D noise");
 
 		ImGui::Image((ImTextureID)stone3DNoiseT.id, {(float)stone3DNoiseT.GetSize().x, 256},
+			{0,1}, {1,0}, {1,1,1,1}, {1,1,1,1});
+	}
+
+	if (showSpagetti)
+	{
+		ImGui::Text("Spagetti noise");
+
+		ImGui::Image((ImTextureID)spagettiT.id, {(float)spagettiT.GetSize().x, 256},
 			{0,1}, {1,0}, {1,1,1,1}, {1,1,1,1});
 	}
 

@@ -31,6 +31,7 @@ struct WorldGeneratorSettings
 	NoiseSetting stone3Dnoise;
 	NoiseSetting humidityNoise;
 	NoiseSetting temperatureNoise;
+	NoiseSetting spagettiNoise;
 
 	Spline peaksAndValiesContributionSpline;
 	Spline oceansAndTerasesContributionSpline;
@@ -39,6 +40,10 @@ struct WorldGeneratorSettings
 
 	float densityBias = 0.1;
 	float densityBiasPower = 1;
+
+	float spagettiBias = 0.1;
+	float spagettiBiasPower = 1;
+
 
 	std::string saveSettings();
 
@@ -70,6 +75,12 @@ struct WorldGenerator
 	float densityBias = 0.1;
 	float densityBiasPower = 1;
 	
+	FastNoiseSIMD *spagettiNoise;
+	Spline spagettiNoiseSplines;
+	float spagettiNoisePower = 1.f;
+	float spagettiNoiseBias = 0.1;
+	float spagettiNoiseBiasPower = 1;
+
 	FastNoiseSIMD *temperatureNoise;
 	Spline temperatureSplines;
 	float temperaturePower = 1.f;
