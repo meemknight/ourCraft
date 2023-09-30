@@ -749,9 +749,11 @@ void ChunkPriorityCache::generateStructure(StructureToGenerate s, StructureData 
 					//todo server should know what chunks can the player see to corectly send him the data
 					//even if the chunk is not loaded in the server side
 					//std::cout << "Updating chunk info to player\n";
-
 					sendDataToPlayers = true;
+
 				}
+				sendDataToPlayers = true;
+
 
 				if (c)
 				{
