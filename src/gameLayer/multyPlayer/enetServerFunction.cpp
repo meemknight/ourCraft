@@ -94,16 +94,16 @@ void recieveData(ENetHost *server, ENetEvent &event)
 	auto data = parsePacket(event, p, size);
 
 	//validate data
-	//no need for mutex here fortunatelly todo why?
-	connectionsMutex.lock();
+	//no need for mutex here fortunatelly because this thread is the one that modifies the connections?
+	//connectionsMutex.lock();
 	if (connections[p.cid].peer != event.peer)
 	{
-		connectionsMutex.unlock();
+		//connectionsMutex.unlock();
 
 		std::cout << "invalid data!\n";
 		return;
 	}
-	connectionsMutex.unlock();
+	//connectionsMutex.unlock();
 
 
 	ServerTask serverTask = {};
