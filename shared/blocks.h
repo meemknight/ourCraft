@@ -44,6 +44,10 @@ enum BlockTypes
 	mud,
 	packed_mud,
 	mud_bricks,
+	control1,
+	control2,
+	control3,
+	control4,
 	BlocksCount
 };
 
