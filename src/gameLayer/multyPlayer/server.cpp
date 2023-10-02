@@ -711,6 +711,13 @@ void ChunkPriorityCache::generateStructure(StructureToGenerate s, StructuresMana
 			[chooseRandomElement(s.randomNumber1, structureManager.palmTrees.size())];
 
 		generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers);
+	}if (s.type == Structure_TreeHouse)
+	{
+
+		auto tree = structureManager.treeHouses
+			[chooseRandomElement(s.randomNumber1, structureManager.treeHouses.size())];
+
+		generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers);
 	}
 
 }

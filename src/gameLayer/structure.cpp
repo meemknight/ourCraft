@@ -36,11 +36,12 @@ bool StructuresManager::loadAllStructures()
 	loadFolder(RESOURCES_PATH "gameData/structures/trees", trees);
 	loadFolder(RESOURCES_PATH "gameData/structures/jungleTrees", jungleTrees);
 	loadFolder(RESOURCES_PATH "gameData/structures/palm", palmTrees);
-	
+	loadFolder(RESOURCES_PATH "gameData/structures/treeHouses", treeHouses);
 
 	if (trees.empty()) { return 0; }
 	if (jungleTrees.empty()) { return 0; }
 	if (palmTrees.empty()) { return 0; }
+	if (treeHouses.empty()) { return 0; }
 
 	return true;
 }
@@ -50,6 +51,24 @@ void StructuresManager::clear()
 	for (auto &i : trees)
 	{
 		unsigned char *d = (unsigned char*)i;
+		delete[] d;
+	}
+
+	for (auto &i : jungleTrees)
+	{
+		unsigned char *d = (unsigned char *)i;
+		delete[] d;
+	}
+
+	for (auto &i : palmTrees)
+	{
+		unsigned char *d = (unsigned char *)i;
+		delete[] d;
+	}
+
+	for (auto &i : treeHouses)
+	{
+		unsigned char *d = (unsigned char *)i;
 		delete[] d;
 	}
 

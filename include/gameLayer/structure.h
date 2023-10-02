@@ -62,6 +62,7 @@ struct StructuresManager
 	std::vector<StructureData *> trees;
 	std::vector<StructureData *> jungleTrees;
 	std::vector<StructureData *> palmTrees;
+	std::vector<StructureData *> treeHouses;
 
 	void clear();
 };
