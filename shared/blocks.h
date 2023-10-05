@@ -57,6 +57,8 @@ bool isBlockMesh(BlockType type);
 
 bool isCrossMesh(BlockType type);
 
+bool isControlBlock(BlockType type);
+
 bool isOpaque(BlockType type);
 
 bool isTransparentGeometry(BlockType type);

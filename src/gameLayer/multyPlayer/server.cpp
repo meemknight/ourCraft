@@ -109,14 +109,18 @@ struct ChunkPriorityCache
 		,std::vector<SendBlocksBack> &sendNewBlocksToPlayers, bool generateGhostAndStructures, 
 			std::vector<StructureToGenerate> *newStructuresToAdd);
 
+	Block *tryGetBlockIfChunkExistsNoChecks(glm::ivec3 pos);
+
 	//uses chunk coorodonates
 	ChunkData *getChunkOrGetNullNotUpdateTable(int posX, int posZ);
 
 	bool generateStructure(StructureToGenerate s, StructuresManager &structureManager,
-		std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks, std::vector<SendBlocksBack> &sendNewBlocksToPlayers);
+		std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks, std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
+		std::vector<glm::ivec3> *controlBlocks);
 	
 	bool generateStructure(StructureToGenerate s, StructureData *structure, int rotation,
-		std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks, std::vector<SendBlocksBack> &sendNewBlocksToPlayers
+		std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks, std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
+		std::vector<glm::ivec3> *controlBlocks
 		);
 
 	void placeGhostBlocksForChunk(int posX, int posZ, ChunkData &c);
@@ -590,7 +594,8 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 			int metaChunkX = divideMetaChunk(posX);
 			int metaChunkZ = divideMetaChunk(posZ);
 				
-			auto generateTreeHouse = [&](glm::ivec2 rootChunk, glm::ivec2 inChunkPos) -> bool
+			auto generateTreeHouse = [&](glm::ivec2 rootChunk, glm::ivec2 inChunkPos,
+				std::vector<glm::ivec3> *controllBlocks) -> bool
 			{
 				getOrCreateChunk(rootChunk.x + 1, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
 				getOrCreateChunk(rootChunk.x - 1, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
@@ -656,7 +661,7 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 
 
 					if (generateStructure(s,
-						structureManager, newCreatedChunksSet, sendNewBlocksToPlayers))
+						structureManager, newCreatedChunksSet, sendNewBlocksToPlayers, controllBlocks))
 					{
 						std::cout << "Generated a jungle tree! : " << s.pos.x << " " << s.pos.y << "\n";
 						return true;
@@ -687,7 +692,6 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 				}
 				else
 				{
-
 					auto tryGenerateTreeHouseChild = [&](glm::ivec2 rootChunk) -> bool
 					{
 						glm::ivec2 inChunkPos = {8,8};
@@ -698,9 +702,12 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 
 						if (newC->unsafeGetCachedBiome(inChunkPos.x, inChunkPos.y) == 5)
 						{
-							if (generateTreeHouse(rootChunk, inChunkPos))
+							std::vector<glm::ivec3> rootControllBlocks;
+
+							if (generateTreeHouse(rootChunk, inChunkPos, &rootControllBlocks))
 							{
 
+								
 
 								return true;
 							}
@@ -709,36 +716,132 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 						return 0;
 					};
 
-
 					glm::ivec2 inChunkPos = {8,8};
 
 					auto newC = getOrCreateChunk(rootChunk.x, rootChunk.y, wg,
 						structureManager, biomesManager, sendNewBlocksToPlayers, false, &newStructures);
 					newCreatedChunks.push_back(rootChunk);
 
+					auto fillControllBlocksWithLeaves = [&](glm::ivec3 pos)
+					{
+						auto b = tryGetBlockIfChunkExistsNoChecks(pos);
+						assert(b);
+
+						if (isControlBlock(b->type))
+						{
+							b->type = BlockTypes::jungle_leaves;
+
+							auto bUp = tryGetBlockIfChunkExistsNoChecks(pos + glm::ivec3(0, 1, 0));
+
+							bUp->type = BlockTypes::jungle_leaves;
+
+							auto b2 = tryGetBlockIfChunkExistsNoChecks({pos.x,pos.y,pos.z - 1});
+							auto b3 = tryGetBlockIfChunkExistsNoChecks({pos.x,pos.y,pos.z + 1});
+							auto b4 = tryGetBlockIfChunkExistsNoChecks({pos.x - 1,pos.y,pos.z});
+							auto b5 = tryGetBlockIfChunkExistsNoChecks({pos.x + 1,pos.y,pos.z});
+
+							if (b2 && isControlBlock(b2->type))
+							{
+								b2->type = BlockTypes::jungle_leaves;
+								auto bUp = tryGetBlockIfChunkExistsNoChecks(pos + glm::ivec3(0, 1, -1));
+								bUp->type = BlockTypes::jungle_leaves;
+
+							}
+							else
+							if (b3 && isControlBlock(b3->type))
+							{
+								b3->type = BlockTypes::jungle_leaves;
+								auto bUp = tryGetBlockIfChunkExistsNoChecks(pos + glm::ivec3(0, 1, +1));
+								bUp->type = BlockTypes::jungle_leaves;
+							}
+							else
+							if (b4 && isControlBlock(b4->type))
+							{
+								b4->type = BlockTypes::jungle_leaves;
+								auto bUp = tryGetBlockIfChunkExistsNoChecks(pos + glm::ivec3(-1, 1, 0));
+								bUp->type = BlockTypes::jungle_leaves;
+							}
+							else
+							if (b5 && isControlBlock(b5->type))
+							{
+								b5->type = BlockTypes::jungle_leaves;
+								auto bUp = tryGetBlockIfChunkExistsNoChecks(pos + glm::ivec3(+1, 1, 0));
+								bUp->type = BlockTypes::jungle_leaves;
+							}
+						}
+					};
+
 					if (newC->unsafeGetCachedBiome(inChunkPos.x, inChunkPos.y) == 5)
 					{
-						if (generateTreeHouse(rootChunk, inChunkPos))
+						std::vector<glm::ivec3> rootControllBlocks;
+
+						if (generateTreeHouse(rootChunk, inChunkPos, &rootControllBlocks))
 						{
-							if (tryGenerateTreeHouseChild({rootChunk.x - 2, rootChunk.y}))
+							if (rootControllBlocks.size())
 							{
+								glm::ivec3 front = rootControllBlocks[0];
+								glm::ivec3 back = rootControllBlocks[0];
+								glm::ivec3 left = rootControllBlocks[0];
+								glm::ivec3 right = rootControllBlocks[0];
 
+								for (auto c : rootControllBlocks)
+								{
+									if (c.x > front.x)
+									{
+										front = c;
+									}
+									if (c.x < back.x)
+									{
+										back = c;
+									}
+									if (c.z > right.z)
+									{
+										right = c;
+									}
+									if (c.z < left.z)
+									{
+										left = c;
+									}
+								}
+
+								if (tryGenerateTreeHouseChild({rootChunk.x - 2, rootChunk.y}))
+								{
+									
+								}
+								else
+								{
+									fillControllBlocksWithLeaves(back);
+								}
+
+								if (tryGenerateTreeHouseChild({rootChunk.x + 2, rootChunk.y}))
+								{
+
+								}
+								else
+								{
+									fillControllBlocksWithLeaves(front);
+								}
+
+								if (tryGenerateTreeHouseChild({rootChunk.x, rootChunk.y - 2}))
+								{
+
+								}
+								else
+								{
+									fillControllBlocksWithLeaves(left);
+								}
+
+								if (tryGenerateTreeHouseChild({rootChunk.x, rootChunk.y + 2}))
+								{
+
+								}
+								else
+								{
+									fillControllBlocksWithLeaves(right);
+								}
 							}
 
-							if (tryGenerateTreeHouseChild({rootChunk.x + 2, rootChunk.y}))
-							{
-
-							}
-
-							if (tryGenerateTreeHouseChild({rootChunk.x, rootChunk.y - 2}))
-							{
-
-							}
-
-							if (tryGenerateTreeHouseChild({rootChunk.x, rootChunk.y + 2}))
-							{
-
-							}
+							
 
 							std::cout << "Generated village\n";
 						}
@@ -777,7 +880,7 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 			//trees
 			for (auto &s : newStructures)
 			{
-				generateStructure(s, structureManager, newCreatedChunksSet, sendNewBlocksToPlayers);
+				generateStructure(s, structureManager, newCreatedChunksSet, sendNewBlocksToPlayers, 0);
 			}
 
 		}
@@ -804,6 +907,18 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 	}
 }
 
+Block *ChunkPriorityCache::tryGetBlockIfChunkExistsNoChecks(glm::ivec3 pos)
+{
+	auto c = getChunkOrGetNullNotUpdateTable(divideChunk(pos.x), divideChunk(pos.z));
+
+	if (c)
+	{
+		return &c->unsafeGet(modBlockToChunk(pos.x), pos.y, modBlockToChunk(pos.z));
+	}
+
+	return nullptr;
+}
+
 ChunkData *ChunkPriorityCache::getChunkOrGetNullNotUpdateTable(int posX, int posZ)
 {
 	glm::ivec2 pos = {posX, posZ};
@@ -820,7 +935,8 @@ ChunkData *ChunkPriorityCache::getChunkOrGetNullNotUpdateTable(int posX, int pos
 }
 
 bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructuresManager &structureManager,
-	std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks, std::vector<SendBlocksBack> &sendNewBlocksToPlayers)
+	std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks, std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
+	std::vector<glm::ivec3> *controlBlocks)
 {
 	auto chooseRandomElement = [](float randVal, int elementCount)
 	{
@@ -834,7 +950,7 @@ bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructuresMana
 		auto tree = structureManager.trees
 			[chooseRandomElement(s.randomNumber1, structureManager.trees.size())];
 
-		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers);
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
 	}
 	else 
 	if (s.type == Structure_JungleTree)
@@ -843,28 +959,29 @@ bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructuresMana
 		auto tree = structureManager.jungleTrees
 			[chooseRandomElement(s.randomNumber1, structureManager.jungleTrees.size())];
 
-		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers);
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
 	}if (s.type == Structure_PalmTree)
 	{
 
 		auto tree = structureManager.palmTrees
 			[chooseRandomElement(s.randomNumber1, structureManager.palmTrees.size())];
 
-		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers);
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
 	}if (s.type == Structure_TreeHouse)
 	{
 
 		auto tree = structureManager.treeHouses
 			[chooseRandomElement(s.randomNumber1, structureManager.treeHouses.size())];
 
-		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers);
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
 	}
 
 	return 0;
 }
 
 bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructureData *structure, int rotation, 
-	std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks, std::vector<SendBlocksBack> &sendNewBlocksToPlayers)
+	std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks, std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
+	std::vector<glm::ivec3> *controlBlocks)
 {
 	auto size = structure->size;
 
@@ -904,7 +1021,7 @@ bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructureData 
 				//}
 				sendDataToPlayers = true;
 
-
+			
 				if (c)
 				{
 			
@@ -928,6 +1045,14 @@ bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructureData 
 									sendB.pos = {x,y,z};
 									sendB.block = newB;
 									sendNewBlocksToPlayers.push_back(sendB);
+								}
+
+								if (controlBlocks)
+								{
+									if (isControlBlock(newB))
+									{
+										controlBlocks->push_back({x,y,z});
+									}
 								}
 							}
 
@@ -963,6 +1088,14 @@ bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructureData 
 								sendB.block = b;
 								sendNewBlocksToPlayers.push_back(sendB);
 							}
+
+							if (controlBlocks)
+							{
+								if (isControlBlock(b))
+								{
+									controlBlocks->push_back({x,y,z});
+								}
+							}
 						}
 
 						ghostBlocks[{chunkX, chunkZ}] = rez;
@@ -992,6 +1125,14 @@ bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructureData 
 									sendB.block = b;
 									sendNewBlocksToPlayers.push_back(sendB);
 								}
+
+								if (controlBlocks)
+								{
+									if (isControlBlock(b))
+									{
+										controlBlocks->push_back({x,y,z});
+									}
+								}
 							}
 							else
 							{
@@ -1006,8 +1147,18 @@ bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructureData 
 										sendB.block = b;
 										sendNewBlocksToPlayers.push_back(sendB);
 									}
+
+									if (controlBlocks)
+									{
+										if (isControlBlock(b))
+										{
+											controlBlocks->push_back({x,y,z});
+										}
+									}
 								}
 							}
+
+
 						}
 					}
 				

@@ -11,6 +11,15 @@ bool isCrossMesh(BlockType type)
 	return isGrassMesh(type);
 }
 
+bool isControlBlock(BlockType type)
+{
+	return 
+		type == BlockTypes::control1 || 
+		type == BlockTypes::control2 || 
+		type == BlockTypes::control3 || 
+		type == BlockTypes::control4;
+}
+
 bool isOpaque(BlockType type)
 {
 	return
