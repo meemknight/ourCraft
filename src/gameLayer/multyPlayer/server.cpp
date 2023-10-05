@@ -589,11 +589,88 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 		{
 			int metaChunkX = divideMetaChunk(posX);
 			int metaChunkZ = divideMetaChunk(posZ);
-		
+				
+			auto generateTreeHouse = [&](glm::ivec2 rootChunk, glm::ivec2 inChunkPos) -> bool
+			{
+				getOrCreateChunk(rootChunk.x + 1, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+				getOrCreateChunk(rootChunk.x - 1, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+				getOrCreateChunk(rootChunk.x + 1, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+				getOrCreateChunk(rootChunk.x - 1, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+				getOrCreateChunk(rootChunk.x + 1, rootChunk.y, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+				getOrCreateChunk(rootChunk.x - 1, rootChunk.y, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+				getOrCreateChunk(rootChunk.x, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+				getOrCreateChunk(rootChunk.x, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+
+				newCreatedChunks.push_back({rootChunk.x + 1, rootChunk.y + 1});
+				newCreatedChunks.push_back({rootChunk.x - 1, rootChunk.y - 1});
+				newCreatedChunks.push_back({rootChunk.x + 1, rootChunk.y - 1});
+				newCreatedChunks.push_back({rootChunk.x - 1, rootChunk.y + 1});
+				newCreatedChunks.push_back({rootChunk.x + 1, rootChunk.y});
+				newCreatedChunks.push_back({rootChunk.x - 1, rootChunk.y});
+				newCreatedChunks.push_back({rootChunk.x, rootChunk.y + 1});
+				newCreatedChunks.push_back({rootChunk.x, rootChunk.y - 1});
+
+
+
+				//std::cout << "Generated root chunk: " << rootChunk.x << " " << rootChunk.y << "\n";
+
+				auto newC = getOrCreateChunk(rootChunk.x, rootChunk.y, wg,
+					structureManager, biomesManager, sendNewBlocksToPlayers, false, &newStructures);
+
+				int y;
+				for (y = CHUNK_HEIGHT - 20; y > 40; y--)
+				{
+					auto b = newC->unsafeGet(inChunkPos.x, y, inChunkPos.y);
+
+					if (b.type == BlockTypes::grassBlock)
+					{
+						y++;
+						break;
+					}
+					else if (b.type == BlockTypes::air || b.type == BlockTypes::grass)
+					{
+
+					}
+					else
+					{
+						y = 0;
+						break;
+					}
+				}
+
+				if (y > 40)
+				{
+					//todo fill this
+					std::unordered_set<glm::ivec2, Ivec2Hash> newCreatedChunksSet;
+
+					StructureToGenerate s;
+					s.pos.x = rootChunk.x * CHUNK_SIZE + inChunkPos.x;
+					s.pos.z = rootChunk.y * CHUNK_SIZE + inChunkPos.y;
+					s.pos.y = y;
+					s.randomNumber1 = 0.5; //todo
+					s.randomNumber2 = 0.5; //todo
+					s.randomNumber3 = 0.5; //todo
+					s.randomNumber4 = 0.5; //todo
+					s.replaceBlocks = true;
+					s.type = Structure_TreeHouse;
+
+
+					if (generateStructure(s,
+						structureManager, newCreatedChunksSet, sendNewBlocksToPlayers))
+					{
+						std::cout << "Generated a jungle tree! : " << s.pos.x << " " << s.pos.y << "\n";
+						return true;
+					}
+
+
+				}
+
+				return 0;
+			};
+
 			//todo random chance
 			if (true)
 			{
-		
 				
 				glm::ivec2 offset{2};
 		
@@ -610,103 +687,69 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 				}
 				else
 				{
-					
-					getOrCreateChunk(rootChunk.x+1, rootChunk.y+1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-					getOrCreateChunk(rootChunk.x-1, rootChunk.y-1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-					getOrCreateChunk(rootChunk.x+1, rootChunk.y-1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-					getOrCreateChunk(rootChunk.x-1, rootChunk.y+1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-					getOrCreateChunk(rootChunk.x+1, rootChunk.y  , wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-					getOrCreateChunk(rootChunk.x-1, rootChunk.y  , wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-					getOrCreateChunk(rootChunk.x, rootChunk.y+1  , wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-					getOrCreateChunk(rootChunk.x, rootChunk.y-1  , wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
 
-					newCreatedChunks.push_back({rootChunk.x + 1, rootChunk.y + 1});
-					newCreatedChunks.push_back({rootChunk.x - 1, rootChunk.y - 1});
-					newCreatedChunks.push_back({rootChunk.x + 1, rootChunk.y - 1});
-					newCreatedChunks.push_back({rootChunk.x - 1, rootChunk.y + 1});
-					newCreatedChunks.push_back({rootChunk.x + 1, rootChunk.y});
-					newCreatedChunks.push_back({rootChunk.x - 1, rootChunk.y});
-					newCreatedChunks.push_back({rootChunk.x, rootChunk.y + 1});
-					newCreatedChunks.push_back({rootChunk.x, rootChunk.y - 1});
-
-					newCreatedChunks.push_back(rootChunk);
-
-
-					std::cout << "Generated root chunk: " << rootChunk.x << " " << rootChunk.y << "\n";
-		
-					auto newC = getOrCreateChunk(rootChunk.x, rootChunk.y, wg,
-						structureManager, biomesManager, sendNewBlocksToPlayers, false, &newStructures);
-
-					//
+					auto tryGenerateTreeHouseChild = [&](glm::ivec2 rootChunk) -> bool
 					{
 						glm::ivec2 inChunkPos = {8,8};
 
-						//todo enum for biomes types
+						auto newC = getOrCreateChunk(rootChunk.x, rootChunk.y, wg,
+							structureManager, biomesManager, sendNewBlocksToPlayers, false, &newStructures);
+						newCreatedChunks.push_back(rootChunk);
+
 						if (newC->unsafeGetCachedBiome(inChunkPos.x, inChunkPos.y) == 5)
 						{
-
-							int y;
-							for (y = CHUNK_HEIGHT - 20; y > 40; y--)
+							if (generateTreeHouse(rootChunk, inChunkPos))
 							{
-								auto b = newC->unsafeGet(inChunkPos.x, y, inChunkPos.y);
 
-								if (b.type == BlockTypes::grassBlock)
-								{
-									y++;
-									break;
-								}
-								else if (b.type == BlockTypes::air || b.type == BlockTypes::grass)
-								{
 
-								}
-								else
-								{
-									y = 0;
-									break;
-								}
+								return true;
+							}
+						}
+
+						return 0;
+					};
+
+
+					glm::ivec2 inChunkPos = {8,8};
+
+					auto newC = getOrCreateChunk(rootChunk.x, rootChunk.y, wg,
+						structureManager, biomesManager, sendNewBlocksToPlayers, false, &newStructures);
+					newCreatedChunks.push_back(rootChunk);
+
+					if (newC->unsafeGetCachedBiome(inChunkPos.x, inChunkPos.y) == 5)
+					{
+						if (generateTreeHouse(rootChunk, inChunkPos))
+						{
+							if (tryGenerateTreeHouseChild({rootChunk.x - 2, rootChunk.y}))
+							{
+
 							}
 
-							if (y > 40)
+							if (tryGenerateTreeHouseChild({rootChunk.x + 2, rootChunk.y}))
 							{
-								//todo fill this
-								std::unordered_set<glm::ivec2, Ivec2Hash> newCreatedChunksSet;
-
-								StructureToGenerate s;
-								s.pos.x = rootChunk.x * CHUNK_SIZE + inChunkPos.x;
-								s.pos.z = rootChunk.y * CHUNK_SIZE + inChunkPos.y;
-								s.pos.y = y;
-								s.randomNumber1 = 0.5; //todo
-								s.randomNumber2 = 0.5; //todo
-								s.randomNumber3 = 0.5; //todo
-								s.randomNumber4 = 0.5; //todo
-								s.replaceBlocks = true;
-								s.type = Structure_TreeHouse;
-
-
-								if (generateStructure(s,
-									structureManager, newCreatedChunksSet, sendNewBlocksToPlayers))
-								{
-									std::cout << "Generated a jungle tree! : " << s.pos.x << " " << s.pos.y << "\n";
-								}
-
 
 							}
-							
 
+							if (tryGenerateTreeHouseChild({rootChunk.x, rootChunk.y - 2}))
+							{
+
+							}
+
+							if (tryGenerateTreeHouseChild({rootChunk.x, rootChunk.y + 2}))
+							{
+
+							}
+
+							std::cout << "Generated village\n";
 						}
 
 
 					}
 
-					//todo check if this can happen. maybe do some asserts
-					//recreate data in case the data structure was invalidated;
-					//c = getChunkOrGetNullNotUpdateTable(rootChunk.x, rootChunk.y);
-					//rez = getChunkOrGetNullNotUpdateTable(pos.x, pos.y);
 				}
-		
-		
 				
 			}
+
 		}
 
 
