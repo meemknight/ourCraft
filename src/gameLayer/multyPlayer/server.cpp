@@ -1,4 +1,4 @@
-#include "multyPlayer/server.h"
+﻿#include "multyPlayer/server.h"
 #include <glm/vec3.hpp>
 #include "chunkSystem.h"
 #include "threadStuff.h"
@@ -582,7 +582,8 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 
 
 		//generate big structures
-		std::vector<ChunkData *> newCreatedChunks;
+		std::vector<glm::ivec2> newCreatedChunks;
+		newCreatedChunks.push_back({posX, posZ});
 
 		if(generateGhostAndStructures)
 		{
@@ -593,6 +594,7 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 			if (true)
 			{
 		
+				
 				glm::ivec2 offset{2};
 		
 				glm::ivec2 rootChunk = glm::ivec2(metaChunkX, metaChunkZ) * META_CHUNK_SIZE;
@@ -609,14 +611,25 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 				else
 				{
 					
-					newCreatedChunks.push_back(getOrCreateChunk(rootChunk.x+1, rootChunk.y+1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures));
-					newCreatedChunks.push_back(getOrCreateChunk(rootChunk.x-1, rootChunk.y-1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures));
-					newCreatedChunks.push_back(getOrCreateChunk(rootChunk.x+1, rootChunk.y-1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures));
-					newCreatedChunks.push_back(getOrCreateChunk(rootChunk.x-1, rootChunk.y+1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures));
-					newCreatedChunks.push_back(getOrCreateChunk(rootChunk.x+1, rootChunk.y  , wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures));
-					newCreatedChunks.push_back(getOrCreateChunk(rootChunk.x-1, rootChunk.y  , wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures));
-					newCreatedChunks.push_back(getOrCreateChunk(rootChunk.x, rootChunk.y+1  , wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures));
-					newCreatedChunks.push_back(getOrCreateChunk(rootChunk.x, rootChunk.y-1  , wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures));
+					getOrCreateChunk(rootChunk.x+1, rootChunk.y+1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+					getOrCreateChunk(rootChunk.x-1, rootChunk.y-1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+					getOrCreateChunk(rootChunk.x+1, rootChunk.y-1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+					getOrCreateChunk(rootChunk.x-1, rootChunk.y+1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+					getOrCreateChunk(rootChunk.x+1, rootChunk.y  , wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+					getOrCreateChunk(rootChunk.x-1, rootChunk.y  , wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+					getOrCreateChunk(rootChunk.x, rootChunk.y+1  , wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+					getOrCreateChunk(rootChunk.x, rootChunk.y-1  , wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+
+					newCreatedChunks.push_back({rootChunk.x + 1, rootChunk.y + 1});
+					newCreatedChunks.push_back({rootChunk.x - 1, rootChunk.y - 1});
+					newCreatedChunks.push_back({rootChunk.x + 1, rootChunk.y - 1});
+					newCreatedChunks.push_back({rootChunk.x - 1, rootChunk.y + 1});
+					newCreatedChunks.push_back({rootChunk.x + 1, rootChunk.y});
+					newCreatedChunks.push_back({rootChunk.x - 1, rootChunk.y});
+					newCreatedChunks.push_back({rootChunk.x, rootChunk.y + 1});
+					newCreatedChunks.push_back({rootChunk.x, rootChunk.y - 1});
+
+					newCreatedChunks.push_back(rootChunk);
 
 
 					std::cout << "Generated root chunk: " << rootChunk.x << " " << rootChunk.y << "\n";
@@ -687,9 +700,8 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 
 					//todo check if this can happen. maybe do some asserts
 					//recreate data in case the data structure was invalidated;
-					c = getChunkOrGetNullNotUpdateTable(rootChunk.x, rootChunk.y);
-					rez = getChunkOrGetNullNotUpdateTable(pos.x, pos.y);
-					newCreatedChunks.push_back(c);
+					//c = getChunkOrGetNullNotUpdateTable(rootChunk.x, rootChunk.y);
+					//rez = getChunkOrGetNullNotUpdateTable(pos.x, pos.y);
 				}
 		
 		
@@ -699,17 +711,24 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 
 
 
-		newCreatedChunks.push_back(rez);
 	
 		if (generateGhostAndStructures)
 		{
 			std::unordered_set<glm::ivec2, Ivec2Hash> newCreatedChunksSet;
 
 			//ghost blocks
-			for (auto &c : newCreatedChunks)
+			for (auto &cp : newCreatedChunks)
 			{
-				placeGhostBlocksForChunk(c->x, c->z, *c);
-				newCreatedChunksSet.insert({c->x, c->z});
+				auto c = getChunkOrGetNullNotUpdateTable(cp.x, cp.y);
+
+				assert(c);
+
+				if (c)
+				{
+					placeGhostBlocksForChunk(c->x, c->z, *c);
+					newCreatedChunksSet.insert({c->x, c->z});
+				}
+				
 			}
 
 			//trees
