@@ -232,9 +232,11 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		{
 
 
-			auto &biome = *biomesManager.determineBiome(getTemperature(x, z), getHumidity(x, z));
+			auto biomeIndex = biomesManager.determineBiomeIndex(getTemperature(x, z), getHumidity(x, z));
+			auto &biome = biomesManager.biomes[biomeIndex];
 
-
+			c.unsafeGetCachedBiome(x, z) = biomeIndex;
+				
 			constexpr int stoneNoiseStartLevel = 1;
 		
 			float heightPercentage = getNoiseVal(x, 0, z);
@@ -335,6 +337,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 							}
 
 							str.pos = {x + xPadd, firstH, z + zPadd};
+							str.replaceBlocks = true;
 							str.randomNumber1 = getWhiteNoise2Val(x, z);
 							str.randomNumber2 = getWhiteNoise2Val(x+1, z);
 							str.randomNumber3 = getWhiteNoise2Val(x+1, z+1);

@@ -45,6 +45,7 @@ struct BiomesManager
 	bool loadAllBiomes();
 
 	Biome *determineBiome(float t, float h);
+	int determineBiomeIndex(float t, float h);
 
 	struct BiomeRange
 	{
@@ -61,6 +62,5 @@ struct BiomesManager
 	};
 
 	Picker picker;
-
 };
 

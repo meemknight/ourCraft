@@ -106,15 +106,16 @@ struct ChunkPriorityCache
 	//uses chunk coorodonates
 	ChunkData *getOrCreateChunk(int posX, int posZ, WorldGenerator &wg, 
 		StructuresManager &structureManager, BiomesManager &biomesManager
-		,std::vector<SendBlocksBack> &sendNewBlocksToPlayers, bool generateGhostAndStructures);
+		,std::vector<SendBlocksBack> &sendNewBlocksToPlayers, bool generateGhostAndStructures, 
+			std::vector<StructureToGenerate> *newStructuresToAdd);
 
 	//uses chunk coorodonates
 	ChunkData *getChunkOrGetNullNotUpdateTable(int posX, int posZ);
 
-	void generateStructure(StructureToGenerate s, StructuresManager &structureManager,
+	bool generateStructure(StructureToGenerate s, StructuresManager &structureManager,
 		std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks, std::vector<SendBlocksBack> &sendNewBlocksToPlayers);
 	
-	void generateStructure(StructureToGenerate s, StructureData *structure, int rotation,
+	bool generateStructure(StructureToGenerate s, StructureData *structure, int rotation,
 		std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks, std::vector<SendBlocksBack> &sendNewBlocksToPlayers
 		);
 
@@ -260,7 +261,7 @@ void serverWorkerFunction()
 			if (i.t.type == Task::generateChunk)
 			{
 				auto rez = sd.chunkCache.getOrCreateChunk(i.t.pos.x, i.t.pos.z, wg, structuresManager, biomesManager,
-					sendNewBlocksToPlayers, true);
+					sendNewBlocksToPlayers, true, nullptr);
 				
 				Packet packet;
 				packet.cid = i.cid;
@@ -282,7 +283,7 @@ void serverWorkerFunction()
 				//std::cout << "server recieved place block\n";
 				//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
 				auto chunk = sd.chunkCache.getOrCreateChunk(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z), wg, structuresManager
-					,biomesManager, sendNewBlocksToPlayers, true);
+					,biomesManager, sendNewBlocksToPlayers, true, nullptr);
 				int convertedX = modBlockToChunk(i.t.pos.x);
 				int convertedZ = modBlockToChunk(i.t.pos.z);
 				
@@ -454,7 +455,8 @@ void removeCidFromServerSettings(CID cid)
 
 ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerator &wg, 
 	StructuresManager &structureManager, BiomesManager &biomesManager,
-	std::vector<SendBlocksBack> &sendNewBlocksToPlayers, bool generateGhostAndStructures)
+	std::vector<SendBlocksBack> &sendNewBlocksToPlayers, bool generateGhostAndStructures,
+	std::vector<StructureToGenerate> *newStructuresToAdd)
 {
 	glm::ivec2 pos = {posX, posZ};
 	auto foundPos = savedChunks.find(pos);
@@ -582,43 +584,118 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 		//generate big structures
 		std::vector<ChunkData *> newCreatedChunks;
 
-		//if(generateGhostAndStructures)
-		//{
-		//	int metaChunkX = divideMetaChunk(posX);
-		//	int metaChunkZ = divideMetaChunk(posZ);
-		//
-		//	//todo random chance
-		//	if (true)
-		//	{
-		//
-		//		glm::ivec2 offset{2};
-		//
-		//		glm::ivec2 rootChunk = glm::ivec2(metaChunkX, metaChunkZ) * META_CHUNK_SIZE;
-		//		rootChunk += offset;
-		//
-		//		//todo or load it
-		//		auto *c = getChunkOrGetNullNotUpdateTable(rootChunk.x, rootChunk.y);
-		//
-		//		if (c)
-		//		{
-		//			//no need to generate structures, they were already generated.
-		//		}
-		//		else
-		//		{
-		//			std::cout << "Generated root chunk: " << rootChunk.x << " " << rootChunk.y << "\n";
-		//
-		//			getOrCreateChunk(rootChunk.x, rootChunk.y, wg,
-		//				structureManager, biomesManager, sendNewBlocksToPlayers, false);
-		//		}
-		//
-		//
-		//		//recreate data in case the data structure was invalidated;
-		//		c = getChunkOrGetNullNotUpdateTable(rootChunk.x, rootChunk.y);
-		//		rez = getChunkOrGetNullNotUpdateTable(pos.x, pos.y);
-		//
-		//		newCreatedChunks.push_back(c);
-		//	}
-		//}
+		if(generateGhostAndStructures)
+		{
+			int metaChunkX = divideMetaChunk(posX);
+			int metaChunkZ = divideMetaChunk(posZ);
+		
+			//todo random chance
+			if (true)
+			{
+		
+				glm::ivec2 offset{2};
+		
+				glm::ivec2 rootChunk = glm::ivec2(metaChunkX, metaChunkZ) * META_CHUNK_SIZE;
+				rootChunk += offset;
+		
+				//todo or load it
+				auto *c = getChunkOrGetNullNotUpdateTable(rootChunk.x, rootChunk.y);
+				
+
+				if (c)
+				{
+					//no need to generate structures, they were already generated.
+				}
+				else
+				{
+					
+					newCreatedChunks.push_back(getOrCreateChunk(rootChunk.x+1, rootChunk.y+1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures));
+					newCreatedChunks.push_back(getOrCreateChunk(rootChunk.x-1, rootChunk.y-1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures));
+					newCreatedChunks.push_back(getOrCreateChunk(rootChunk.x+1, rootChunk.y-1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures));
+					newCreatedChunks.push_back(getOrCreateChunk(rootChunk.x-1, rootChunk.y+1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures));
+					newCreatedChunks.push_back(getOrCreateChunk(rootChunk.x+1, rootChunk.y  , wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures));
+					newCreatedChunks.push_back(getOrCreateChunk(rootChunk.x-1, rootChunk.y  , wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures));
+					newCreatedChunks.push_back(getOrCreateChunk(rootChunk.x, rootChunk.y+1  , wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures));
+					newCreatedChunks.push_back(getOrCreateChunk(rootChunk.x, rootChunk.y-1  , wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures));
+
+
+					std::cout << "Generated root chunk: " << rootChunk.x << " " << rootChunk.y << "\n";
+		
+					auto newC = getOrCreateChunk(rootChunk.x, rootChunk.y, wg,
+						structureManager, biomesManager, sendNewBlocksToPlayers, false, &newStructures);
+
+					//
+					{
+						glm::ivec2 inChunkPos = {8,8};
+
+						//todo enum for biomes types
+						if (newC->unsafeGetCachedBiome(inChunkPos.x, inChunkPos.y) == 5)
+						{
+
+							int y;
+							for (y = CHUNK_HEIGHT - 20; y > 40; y--)
+							{
+								auto b = newC->unsafeGet(inChunkPos.x, y, inChunkPos.y);
+
+								if (b.type == BlockTypes::grassBlock)
+								{
+									y++;
+									break;
+								}
+								else if (b.type == BlockTypes::air || b.type == BlockTypes::grass)
+								{
+
+								}
+								else
+								{
+									y = 0;
+									break;
+								}
+							}
+
+							if (y > 40)
+							{
+								//todo fill this
+								std::unordered_set<glm::ivec2, Ivec2Hash> newCreatedChunksSet;
+
+								StructureToGenerate s;
+								s.pos.x = rootChunk.x * CHUNK_SIZE + inChunkPos.x;
+								s.pos.z = rootChunk.y * CHUNK_SIZE + inChunkPos.y;
+								s.pos.y = y;
+								s.randomNumber1 = 0.5; //todo
+								s.randomNumber2 = 0.5; //todo
+								s.randomNumber3 = 0.5; //todo
+								s.randomNumber4 = 0.5; //todo
+								s.replaceBlocks = true;
+								s.type = Structure_TreeHouse;
+
+
+								if (generateStructure(s,
+									structureManager, newCreatedChunksSet, sendNewBlocksToPlayers))
+								{
+									std::cout << "Generated a jungle tree! : " << s.pos.x << " " << s.pos.y << "\n";
+								}
+
+
+							}
+							
+
+						}
+
+
+					}
+
+					//todo check if this can happen. maybe do some asserts
+					//recreate data in case the data structure was invalidated;
+					c = getChunkOrGetNullNotUpdateTable(rootChunk.x, rootChunk.y);
+					rez = getChunkOrGetNullNotUpdateTable(pos.x, pos.y);
+					newCreatedChunks.push_back(c);
+				}
+		
+		
+				
+			}
+		}
 
 
 
@@ -641,6 +718,16 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 				generateStructure(s, structureManager, newCreatedChunksSet, sendNewBlocksToPlayers);
 			}
 
+		}
+		else
+		{
+			if (newStructuresToAdd)
+			{
+				for (auto &s : newStructures)
+				{
+					newStructuresToAdd->push_back(s);
+				}
+			}
 		}
 		
 
@@ -670,7 +757,7 @@ ChunkData *ChunkPriorityCache::getChunkOrGetNullNotUpdateTable(int posX, int pos
 	}
 }
 
-void ChunkPriorityCache::generateStructure(StructureToGenerate s, StructuresManager &structureManager,
+bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructuresManager &structureManager,
 	std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks, std::vector<SendBlocksBack> &sendNewBlocksToPlayers)
 {
 	auto chooseRandomElement = [](float randVal, int elementCount)
@@ -685,7 +772,7 @@ void ChunkPriorityCache::generateStructure(StructureToGenerate s, StructuresMana
 		auto tree = structureManager.trees
 			[chooseRandomElement(s.randomNumber1, structureManager.trees.size())];
 
-		generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers);
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers);
 	}
 	else 
 	if (s.type == Structure_JungleTree)
@@ -694,26 +781,27 @@ void ChunkPriorityCache::generateStructure(StructureToGenerate s, StructuresMana
 		auto tree = structureManager.jungleTrees
 			[chooseRandomElement(s.randomNumber1, structureManager.jungleTrees.size())];
 
-		generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers);
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers);
 	}if (s.type == Structure_PalmTree)
 	{
 
 		auto tree = structureManager.palmTrees
 			[chooseRandomElement(s.randomNumber1, structureManager.palmTrees.size())];
 
-		generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers);
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers);
 	}if (s.type == Structure_TreeHouse)
 	{
 
 		auto tree = structureManager.treeHouses
 			[chooseRandomElement(s.randomNumber1, structureManager.treeHouses.size())];
 
-		generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers);
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers);
 	}
 
+	return 0;
 }
 
-void ChunkPriorityCache::generateStructure(StructureToGenerate s, StructureData *structure, int rotation, 
+bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructureData *structure, int rotation, 
 	std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks, std::vector<SendBlocksBack> &sendNewBlocksToPlayers)
 {
 	auto size = structure->size;
@@ -733,6 +821,8 @@ void ChunkPriorityCache::generateStructure(StructureToGenerate s, StructureData 
 				int chunkX = divideChunk(x);
 				int chunkZ = divideChunk(z);
 
+				//todo this will be replaced with also a check if the
+				//chunk was created in the past
 				auto c = getChunkOrGetNullNotUpdateTable(chunkX, chunkZ);
 
 				int inChunkX = modBlockToChunk(x);
@@ -802,7 +892,7 @@ void ChunkPriorityCache::generateStructure(StructureToGenerate s, StructureData 
 							ghostBlock.type = b;
 							ghostBlock.replaceAnything = replaceAnything;
 
-							rez[{inChunkX, y, inChunkZ}] = ghostBlock;
+							rez[{inChunkX, y, inChunkZ}] = ghostBlock; //todo either ghost either send
 
 							if (sendDataToPlayers)
 							{
@@ -864,7 +954,10 @@ void ChunkPriorityCache::generateStructure(StructureToGenerate s, StructureData 
 
 			}
 
+		return true;
 	}
+
+	return 0;
 }
 
 void ChunkPriorityCache::placeGhostBlocksForChunk(int posX, int posZ, ChunkData &c)

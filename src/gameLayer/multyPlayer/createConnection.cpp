@@ -144,21 +144,21 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 		{
 			switch (event.type)
 			{
-			case ENET_EVENT_TYPE_RECEIVE:
-			{
+				case ENET_EVENT_TYPE_RECEIVE:
+				{
 
-				recieveDataClient(event, validatedEvent, invalidateRevision);
+					recieveDataClient(event, validatedEvent, invalidateRevision);
 
-				break;
-			}
+					break;
+				}
 
-			case ENET_EVENT_TYPE_DISCONNECT:
-			{
-				std::cout << "Disconected from server\n";
-				exit(0);
+				case ENET_EVENT_TYPE_DISCONNECT:
+				{
+					std::cout << "Disconected from server\n";
+					exit(0);
 
-				break;
-			}
+					break;
+				}
 
 			}
 

@@ -1,6 +1,5 @@
 #include "biome.h"
 
-
 bool BiomesManager::loadAllBiomes()
 {
 	*this = {};
@@ -320,6 +319,11 @@ bool BiomesManager::loadAllBiomes()
 
 Biome *BiomesManager::determineBiome(float t, float h)
 {
+	return &this->biomes[determineBiomeIndex(t, h)];
+}
+
+int BiomesManager::determineBiomeIndex(float t, float h)
+{
 	//return &biomes[2];
 
 	std::vector<int> biomes;
@@ -349,14 +353,14 @@ Biome *BiomesManager::determineBiome(float t, float h)
 				{
 					if (id == b)
 					{
-						return &this->biomes[id];
+						return id;
 					}
 				}
 			}
 		}
 	}
 
-	_CrtDbgBreak();
+	assert(0);
 
-	return nullptr;
+	return -1;
 }

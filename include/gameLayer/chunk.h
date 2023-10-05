@@ -7,12 +7,21 @@ constexpr int CHUNK_HEIGHT = 256;
 
 struct ChunkData
 {
+
 	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_HEIGHT];
+
+	unsigned char cachedBiomes[CHUNK_SIZE][CHUNK_SIZE];
+
 	int x, z;
 
 	Block &unsafeGet(int x, int y, int z)
 	{
 		return blocks[x][z][y];
+	}
+
+	unsigned char &unsafeGetCachedBiome(int x, int z)
+	{
+		return cachedBiomes[x][z];
 	}
 
 	void clear()
