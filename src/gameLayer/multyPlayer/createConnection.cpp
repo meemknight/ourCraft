@@ -108,7 +108,7 @@ void recieveDataClient(ENetEvent &event, EventCounter &validatedEvent, RevisionN
 				clientData.recievedBlocks.push_back( ((Packet_PlaceBlocks*)data)[i] );
 
 			}
-			std::cout << "Placed blocks..." << size / sizeof(Packet_PlaceBlocks) << "\n";
+			//std::cout << "Placed blocks..." << size / sizeof(Packet_PlaceBlocks) << "\n";
 
 			break;
 		}

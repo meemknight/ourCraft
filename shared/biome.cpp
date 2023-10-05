@@ -320,6 +320,7 @@ bool BiomesManager::loadAllBiomes()
 
 Biome *BiomesManager::determineBiome(float t, float h)
 {
+	//return &biomes[2];
 
 	std::vector<int> biomes;
 	biomes.reserve(5);

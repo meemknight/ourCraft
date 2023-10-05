@@ -169,6 +169,9 @@ bool gameLogic(float deltaTime)
 			ImGui::PushStyleColor(ImGuiCol_WindowBg, {26 / 255.f,26 / 255.f,26 / 255.f,0.5f});
 			ImGui::Begin("Server window");
 
+			ImGui::Text("Server Chunk Capacity: %d", getChunkCapacity());
+
+
 			for (auto &c : s.perClientSettings)
 			{
 				ImGui::PushID(c.first);

@@ -318,6 +318,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			ImGui::Text("camera float: %f, %f, %f", posFloat.x, posFloat.y, posFloat.z);
 			ImGui::Text("camera int: %d, %d, %d", posInt.x, posInt.y, posInt.z);
+			ImGui::Text("Chunk: %d, %d" , divideChunk(posInt.x), divideChunk(posInt.z));
+
 
 			//ImGui::DragScalarN("Point pos", ImGuiDataType_Double, &point[0], 3, 1);
 			ImGui::DragInt3("Point pos", &point[0]);

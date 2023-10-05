@@ -54,3 +54,5 @@ struct ChunkSystem
 
 int modBlockToChunk(int x);
 int divideChunk(int x);
+
+int divideMetaChunk(int chunkPos);

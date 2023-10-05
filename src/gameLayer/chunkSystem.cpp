@@ -588,3 +588,8 @@ int divideChunk(int x)
 {
 	return (int)floor((float)x / (float)CHUNK_SIZE);
 };
+
+int divideMetaChunk(int chunkPos)
+{
+	return (int)floor((float)chunkPos / (float)META_CHUNK_SIZE);
+}

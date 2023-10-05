@@ -2,6 +2,7 @@
 #include "blocks.h"
 
 constexpr int CHUNK_SIZE = 16;
+constexpr int META_CHUNK_SIZE = 32;
 constexpr int CHUNK_HEIGHT = 256;
 
 struct ChunkData

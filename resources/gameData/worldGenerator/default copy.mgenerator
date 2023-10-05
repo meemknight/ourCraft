@@ -29,6 +29,13 @@ continentalnessNoise:
 		1.000000,1.000000;
 		}
 	}
+seed: 1234;
+seed: 1234;
+seed: 1234;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+seed: 1234;
+seed: 1234;
+seed: 1234;
+
 peaksAndValies:
 	{
 	scale: 0.060000;
@@ -153,7 +160,7 @@ stonetDnoise:
 	}
 humidityNoise:
 	{
-	scale: 0.240000;
+	scale: 0.610000;
 	type: ValueFractal;
 	frequency: 0.015000;
 	octaves: 3;
@@ -164,10 +171,10 @@ humidityNoise:
 		0.000000,0.016340;
 		0.328431,0.014706;
 		0.331699,0.303921;
-		0.419117,0.306372;
-		0.420751,0.580474;
-		0.564134,0.584354;
-		0.564134,0.307700;
+		0.425653,0.306372;
+		0.428921,0.580474;
+		0.562500,0.584354;
+		0.562500,0.307700;
 		0.668505,0.310713;
 		0.668505,0.756664;
 		1.000000,0.758170;
@@ -175,7 +182,7 @@ humidityNoise:
 	}
 temperatureNoise:
 	{
-	scale: 0.070000;
+	scale: 0.460000;
 	type: ValueFractal;
 	frequency: 0.015000;
 	octaves: 3;
@@ -186,18 +193,18 @@ temperatureNoise:
 		0.000000,0.031046;
 		0.331699,0.026144;
 		0.338235,0.352941;
-		0.607026,0.353759;
-		0.607026,0.610702;
-		0.741422,0.608762;
-		0.741422,1.000000;
+		0.662582,0.355393;
+		0.662582,0.607434;
+		0.831291,0.608762;
+		0.831291,1.000000;
 		1.000000,1.000000;
 		}
 	}
 spagettiNoise:
 	{
-	scale: 0.940000;
+	scale: 1.310000;
 	type: ValueFractal;
-	frequency: 0.032000;
+	frequency: 0.022000;
 	octaves: 3;
 	perturbFractalOctaves: 0;
 	power: 1.000000;
@@ -211,7 +218,7 @@ spagettiNoise:
 		1.000000,1.000000;
 		}
 	}
-spagettiBias: 0.102000;
-spagettiBiasPower: 0.752000;
+spagettiBias: 0.036000;
+spagettiBiasPower: 1.251000;
 densityBias: 0.007000;
 densityBiasPower: 0.896000;
