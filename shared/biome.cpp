@@ -84,7 +84,7 @@ bool BiomesManager::loadAllBiomes()
 		plains.color = {0.3,0.9,0.35};
 		plains.surfaceBlock = BlockTypes::grassBlock;
 		plains.secondaryBlock = BlockTypes::dirt;
-		plains.treeType = Biome::treeNormal;
+		plains.treeType = Biome::treeBirch;
 
 		plains.forestTresshold = 0.75;
 		plains.jusGrassTresshold = 0.2;
@@ -96,7 +96,7 @@ bool BiomesManager::loadAllBiomes()
 		plains.growTreesOn = BlockTypes::grassBlock;
 		plains.growGrassOn = BlockTypes::grassBlock;
 
-		plains.grassType = BlockTypes::grass;
+		plains.grassType = BlockTypes::rose;
 		plains.waterType = BlockTypes::water;
 
 		biomes.push_back(plains);
@@ -140,7 +140,7 @@ bool BiomesManager::loadAllBiomes()
 		b.forestTresshold = 0.3;
 		b.jusGrassTresshold = 0.1;
 
-		b.treeChanceRemap = {0.01, 0.1};
+		b.treeChanceRemap = {0.006, 0.07};
 		b.grassChanceForestRemap = {0.2, 0.22};
 		b.justGrassChanceRemap = {0.12, 0.2};
 

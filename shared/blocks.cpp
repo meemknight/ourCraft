@@ -22,11 +22,14 @@ bool isControlBlock(BlockType type)
 
 bool isOpaque(BlockType type)
 {
+	//todo all leaves ?
+
 	return
 		type != BlockTypes::air
 		&& type != BlockTypes::leaves
 		&& type != BlockTypes::jungle_leaves
 		&& type != BlockTypes::palm_leaves
+		&& type != BlockTypes::birch_leaves
 		&& !(isTransparentGeometry(type))
 		&& !(isGrassMesh(type));
 }

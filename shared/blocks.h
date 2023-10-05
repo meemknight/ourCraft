@@ -48,6 +48,8 @@ enum BlockTypes
 	control2,
 	control3,
 	control4,
+	snow_block,
+	birch_leaves,
 	BlocksCount
 };
 
@@ -77,10 +79,12 @@ struct Block
 		return ::isOpaque(type);
 	}
 
+	//rename is animated leaves
 	bool isAnimatedBlock()
 	{
 		return
-			type == BlockTypes::leaves || type == BlockTypes::jungle_leaves || type == BlockTypes::palm_leaves;
+			type == BlockTypes::leaves || type == BlockTypes::jungle_leaves 
+			|| type == BlockTypes::palm_leaves || type == BlockTypes::birch_leaves;
 	}
 
 	bool isTransparentGeometry()

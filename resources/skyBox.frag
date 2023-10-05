@@ -14,7 +14,7 @@ layout(location = 0) out vec4 outColor;
 in vec3 v_vsViewDirection;
 out vec3 fragColor;
 
-vec3 u_skyColor = vec3(0.255, 0.425, 0.441);
+vec3 u_skyColor = vec3(98, 131, 156)/255.0;
 vec3 u_sunColor = vec3(0.098, 0.091, 0.014);
 float u_g = 0.65;
 vec3 u_lightPos = normalize(vec3(-1, 0.84, -1));

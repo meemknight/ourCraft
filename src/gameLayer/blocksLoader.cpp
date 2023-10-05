@@ -53,6 +53,7 @@ const char *texturesNames[] = {
 	"controll2",		//46
 	"controll3",		//47
 	"controll4",		//48
+	"leaves_birch",		//49
 };
 
 //front
@@ -186,6 +187,12 @@ uint16_t blocksLookupTable[] = {
 
 	//control4
 	48, 48, 48, 48, 48, 48,
+
+	//snow_block
+	16,16,16,16,16,16,
+
+	//birch_leaves
+	49, 49, 49, 49, 49, 49,
 };
 
 bool fixAlpha(unsigned char *buffer, int w, int h)

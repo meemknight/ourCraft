@@ -594,6 +594,14 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 			int metaChunkX = divideMetaChunk(posX);
 			int metaChunkZ = divideMetaChunk(posZ);
 				
+			auto randValues = wg.whiteNoise->GetNoiseSet(metaChunkX, 0, metaChunkZ, 8, 1, 8);
+			for (int i = 0; i < 8 * 8; i++)
+			{
+				randValues[i] += 1;
+				randValues[i] /= 2;
+			}
+			int randomIndex = 0;
+
 			auto generateTreeHouse = [&](glm::ivec2 rootChunk, glm::ivec2 inChunkPos,
 				std::vector<glm::ivec3> *controllBlocks) -> bool
 			{
@@ -652,10 +660,10 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 					s.pos.x = rootChunk.x * CHUNK_SIZE + inChunkPos.x;
 					s.pos.z = rootChunk.y * CHUNK_SIZE + inChunkPos.y;
 					s.pos.y = y;
-					s.randomNumber1 = 0.5; //todo
-					s.randomNumber2 = 0.5; //todo
-					s.randomNumber3 = 0.5; //todo
-					s.randomNumber4 = 0.5; //todo
+					s.randomNumber1 = randValues[randomIndex++]; //todo
+					s.randomNumber2 = randValues[randomIndex++]; //todo
+					s.randomNumber3 = randValues[randomIndex++]; //todo
+					s.randomNumber4 = randValues[randomIndex++]; //todo
 					s.replaceBlocks = true;
 					s.type = Structure_TreeHouse;
 
@@ -663,15 +671,15 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 					if (generateStructure(s,
 						structureManager, newCreatedChunksSet, sendNewBlocksToPlayers, controllBlocks))
 					{
-						std::cout << "Generated a jungle tree! : " << s.pos.x << " " << s.pos.y << "\n";
+						std::cout << "Generated a jungle tree! : " << s.pos.x << " " << s.pos.z << "\n";
 						return true;
 					}
-
 
 				}
 
 				return 0;
 			};
+
 
 			//todo random chance
 			if (true)
@@ -807,7 +815,7 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 
 						glm::dvec3 delta = glm::dvec3(from - to) * (1.0/steps);
 
-						for (int i = 0; i <= steps; i++)
+						for (int i = 0; i < steps; i++)
 						{
 							auto b = tryGetBlockIfChunkExistsNoChecks(pos);
 							if (b)
@@ -815,6 +823,12 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 								b->type = BlockTypes::jungle_planks;
 							}
 							pos += delta;
+						}
+
+						auto b = tryGetBlockIfChunkExistsNoChecks(from);
+						if (b)
+						{
+							b->type = BlockTypes::jungle_planks;
 						}
 					};
 
@@ -849,8 +863,8 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 						drawBridge(neighbour1, neighbour2);
 					};
 
-
-					if (newC->unsafeGetCachedBiome(inChunkPos.x, inChunkPos.y) == 5)
+					auto biome = newC->unsafeGetCachedBiome(inChunkPos.x, inChunkPos.y);
+					if (biome == 5)
 					{
 						std::vector<glm::ivec3> rootControllBlocks;
 
@@ -964,15 +978,150 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 
 							
 
-							std::cout << "Generated village\n";
+							std::cout << "Generated village" << rootChunk.x * CHUNK_SIZE << " " << rootChunk.y * CHUNK_SIZE << "\n";
 						}
 
 
 					}
+					else if(biome == 2 || biome == 1)
+					{
+						getOrCreateChunk(rootChunk.x + 1, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+						getOrCreateChunk(rootChunk.x - 1, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+						getOrCreateChunk(rootChunk.x + 1, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+						getOrCreateChunk(rootChunk.x - 1, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+						getOrCreateChunk(rootChunk.x + 1, rootChunk.y, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+						getOrCreateChunk(rootChunk.x - 1, rootChunk.y, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+						getOrCreateChunk(rootChunk.x, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+						getOrCreateChunk(rootChunk.x, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
 
+						newCreatedChunks.push_back({rootChunk.x + 1, rootChunk.y + 1});
+						newCreatedChunks.push_back({rootChunk.x - 1, rootChunk.y - 1});
+						newCreatedChunks.push_back({rootChunk.x + 1, rootChunk.y - 1});
+						newCreatedChunks.push_back({rootChunk.x - 1, rootChunk.y + 1});
+						newCreatedChunks.push_back({rootChunk.x + 1, rootChunk.y});
+						newCreatedChunks.push_back({rootChunk.x - 1, rootChunk.y});
+						newCreatedChunks.push_back({rootChunk.x, rootChunk.y + 1});
+						newCreatedChunks.push_back({rootChunk.x, rootChunk.y - 1});
+
+						int y;
+						for (y = CHUNK_HEIGHT - 20; y > 40; y--)
+						{
+							auto b = newC->unsafeGet(inChunkPos.x, y, inChunkPos.y);
+
+							if (b.type == BlockTypes::sand || b.type == BlockTypes::sand_stone)
+							{
+								y-= 7 * randValues[randomIndex];
+								break;
+							}
+							else if (b.type == BlockTypes::air || b.type == BlockTypes::grass)
+							{
+
+							}
+							else
+							{
+								y = 0;
+								break;
+							}
+						}
+
+						if (y > 40)
+						{
+							//todo fill this
+							std::unordered_set<glm::ivec2, Ivec2Hash> newCreatedChunksSet;
+
+							StructureToGenerate s;
+							s.pos.x = rootChunk.x * CHUNK_SIZE + inChunkPos.x;
+							s.pos.z = rootChunk.y * CHUNK_SIZE + inChunkPos.y;
+							s.pos.y = y;
+							s.randomNumber1 = randValues[randomIndex++];
+							s.randomNumber2 = randValues[randomIndex++];
+							s.randomNumber3 = randValues[randomIndex++];
+							s.randomNumber4 = randValues[randomIndex++];
+							s.replaceBlocks = true;
+							s.type = Structure_Pyramid;
+
+							if (generateStructure(s,
+								structureManager, newCreatedChunksSet, sendNewBlocksToPlayers, 0))
+							{
+								std::cout << "Generated a pyrmid: " << s.pos.x << " " << s.pos.z << "\n";
+							}
+
+
+						}
+						
+					}
+					else if (biome == 8)
+					{
+						
+						getOrCreateChunk(rootChunk.x + 1, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+						getOrCreateChunk(rootChunk.x - 1, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+						getOrCreateChunk(rootChunk.x + 1, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+						getOrCreateChunk(rootChunk.x - 1, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+						getOrCreateChunk(rootChunk.x + 1, rootChunk.y, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+						getOrCreateChunk(rootChunk.x - 1, rootChunk.y, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+						getOrCreateChunk(rootChunk.x, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+						getOrCreateChunk(rootChunk.x, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+
+						newCreatedChunks.push_back({rootChunk.x + 1, rootChunk.y + 1});
+						newCreatedChunks.push_back({rootChunk.x - 1, rootChunk.y - 1});
+						newCreatedChunks.push_back({rootChunk.x + 1, rootChunk.y - 1});
+						newCreatedChunks.push_back({rootChunk.x - 1, rootChunk.y + 1});
+						newCreatedChunks.push_back({rootChunk.x + 1, rootChunk.y});
+						newCreatedChunks.push_back({rootChunk.x - 1, rootChunk.y});
+						newCreatedChunks.push_back({rootChunk.x, rootChunk.y + 1});
+						newCreatedChunks.push_back({rootChunk.x, rootChunk.y - 1});
+
+						int y;
+						for (y = CHUNK_HEIGHT - 20; y > 40; y--)
+						{
+							auto b = newC->unsafeGet(inChunkPos.x, y, inChunkPos.y);
+
+							if (b.type == BlockTypes::snow_block)
+							{
+								break;
+							}
+							else if (b.type == BlockTypes::air || b.type == BlockTypes::grass)
+							{
+
+							}
+							else
+							{
+								y = 0;
+								break;
+							}
+						}
+
+						if (y > 40)
+						{
+							//todo fill this
+							std::unordered_set<glm::ivec2, Ivec2Hash> newCreatedChunksSet;
+
+							StructureToGenerate s;
+							s.pos.x = rootChunk.x * CHUNK_SIZE + inChunkPos.x;
+							s.pos.z = rootChunk.y * CHUNK_SIZE + inChunkPos.y;
+							s.pos.y = y;
+							s.randomNumber1 = randValues[randomIndex++];
+							s.randomNumber2 = randValues[randomIndex++];
+							s.randomNumber3 = randValues[randomIndex++];
+							s.randomNumber4 = randValues[randomIndex++];
+							s.replaceBlocks = true;
+							s.type = Structure_Pyramid;
+
+							if (generateStructure(s,
+								structureManager, newCreatedChunksSet, sendNewBlocksToPlayers, 0))
+							{
+								std::cout << "Generated an igloo: " << s.pos.x << " " << s.pos.z << "\n";
+							}
+
+
+						}
+						
+					}
 				}
 				
 			}
+
+			FastNoiseSIMD::FreeNoiseSet(randValues);
 
 		}
 
@@ -1095,7 +1244,22 @@ bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructuresMana
 			[chooseRandomElement(s.randomNumber1, structureManager.treeHouses.size())];
 
 		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+	}if (s.type == Structure_Pyramid)
+	{
+
+		auto tree = structureManager.smallPyramids
+			[chooseRandomElement(s.randomNumber1, structureManager.smallPyramids.size())];
+
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+	}if (s.type == Structure_BirchTree)
+	{
+
+		auto tree = structureManager.birchTrees
+			[chooseRandomElement(s.randomNumber1, structureManager.birchTrees.size())];
+
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
 	}
+	
 
 	return 0;
 }

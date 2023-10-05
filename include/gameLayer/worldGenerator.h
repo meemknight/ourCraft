@@ -15,6 +15,8 @@ enum
 	Structure_JungleTree,
 	Structure_PalmTree,
 	Structure_TreeHouse,
+	Structure_Pyramid,
+	Structure_BirchTree,
 };
 
 //used to report back

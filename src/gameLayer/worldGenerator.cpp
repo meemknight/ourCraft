@@ -331,6 +331,10 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 							{
 								str.type = Structure_PalmTree;
 							}
+							else if (biome.treeType == Biome::treeBirch)
+							{
+								str.type = Structure_BirchTree;
+							}
 							else
 							{
 								assert(0);
