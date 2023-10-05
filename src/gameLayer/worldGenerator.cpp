@@ -337,7 +337,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 							}
 
 							str.pos = {x + xPadd, firstH, z + zPadd};
-							str.replaceBlocks = true;
+							str.replaceBlocks = false;
 							str.randomNumber1 = getWhiteNoise2Val(x, z);
 							str.randomNumber2 = getWhiteNoise2Val(x+1, z);
 							str.randomNumber3 = getWhiteNoise2Val(x+1, z+1);

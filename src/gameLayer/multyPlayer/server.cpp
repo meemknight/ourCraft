@@ -692,7 +692,7 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 				}
 				else
 				{
-					auto tryGenerateTreeHouseChild = [&](glm::ivec2 rootChunk) -> bool
+					auto tryGenerateTreeHouseChild = [&](glm::ivec2 rootChunk, std::vector<glm::ivec3> *controllBlocks) -> bool
 					{
 						glm::ivec2 inChunkPos = {8,8};
 
@@ -702,9 +702,8 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 
 						if (newC->unsafeGetCachedBiome(inChunkPos.x, inChunkPos.y) == 5)
 						{
-							std::vector<glm::ivec3> rootControllBlocks;
 
-							if (generateTreeHouse(rootChunk, inChunkPos, &rootControllBlocks))
+							if (generateTreeHouse(rootChunk, inChunkPos, controllBlocks))
 							{
 
 								
@@ -771,6 +770,86 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 						}
 					};
 
+					auto getSides = [&](std::vector<glm::ivec3> &rootControllBlocks,
+						glm::ivec3 &front, glm::ivec3 &back, glm::ivec3 &left, glm::ivec3 &right)
+					{
+						front = rootControllBlocks[0];
+						back = rootControllBlocks[0];
+						left = rootControllBlocks[0];
+						right = rootControllBlocks[0];
+
+						for (auto c : rootControllBlocks)
+						{
+							if (c.x > front.x)
+							{
+								front = c;
+							}
+							if (c.x < back.x)
+							{
+								back = c;
+							}
+							if (c.z > right.z)
+							{
+								right = c;
+							}
+							if (c.z < left.z)
+							{
+								left = c;
+							}
+						}
+					};
+
+					auto drawBridge = [&](glm::ivec3 to, glm::ivec3 from)
+					{
+						glm::dvec3 pos = to;
+
+						int steps = 100;
+
+						glm::dvec3 delta = glm::dvec3(from - to) * (1.0/steps);
+
+						for (int i = 0; i <= steps; i++)
+						{
+							auto b = tryGetBlockIfChunkExistsNoChecks(pos);
+							if (b)
+							{
+								b->type = BlockTypes::jungle_planks;
+							}
+							pos += delta;
+						}
+					};
+
+					auto drawDoubleBridge = [&](glm::ivec3 to, glm::ivec3 from)
+					{
+
+						glm::ivec3 neighbour1 = to;
+						glm::ivec3 neighbour2 = from;
+
+						auto tryNeighbour = [this](glm::ivec3 pos)
+						{
+							auto b = tryGetBlockIfChunkExistsNoChecks(pos);
+							if (b && isControlBlock(b->type))
+							{
+								return true;
+							}
+
+							return false;
+						};
+
+						if (tryNeighbour(to + glm::ivec3(0, 0, 1))) { neighbour1 = to + glm::ivec3(0, 0, 1); }
+						if (tryNeighbour(to + glm::ivec3(0, 0, -1))) { neighbour1 = to + glm::ivec3(0, 0, -1); }
+						if (tryNeighbour(to + glm::ivec3(1, 0, 0))) { neighbour1 = to + glm::ivec3(1, 0, 0); }
+						if (tryNeighbour(to + glm::ivec3(-1, 0, 0))) { neighbour1 = to + glm::ivec3(-1, 0, 0); }
+						
+						if (tryNeighbour(from + glm::ivec3(0, 0, 1))) { neighbour2 = from + glm::ivec3(0, 0, 1); }
+						if (tryNeighbour(from + glm::ivec3(0, 0, -1))) { neighbour2 = from + glm::ivec3(0, 0, -1); }
+						if (tryNeighbour(from + glm::ivec3(1, 0, 0))) { neighbour2 = from + glm::ivec3(1, 0, 0); }
+						if (tryNeighbour(from + glm::ivec3(-1, 0, 0))) { neighbour2 = from + glm::ivec3(-1, 0, 0); }
+
+						drawBridge(to, from);
+						drawBridge(neighbour1, neighbour2);
+					};
+
+
 					if (newC->unsafeGetCachedBiome(inChunkPos.x, inChunkPos.y) == 5)
 					{
 						std::vector<glm::ivec3> rootControllBlocks;
@@ -779,65 +858,107 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 						{
 							if (rootControllBlocks.size())
 							{
-								glm::ivec3 front = rootControllBlocks[0];
-								glm::ivec3 back = rootControllBlocks[0];
-								glm::ivec3 left = rootControllBlocks[0];
-								glm::ivec3 right = rootControllBlocks[0];
+								glm::ivec3 front = {};
+								glm::ivec3 back = {};
+								glm::ivec3 left = {};
+								glm::ivec3 right = {};
 
-								for (auto c : rootControllBlocks)
+								getSides(rootControllBlocks, front, back, left, right);
+
 								{
-									if (c.x > front.x)
+									std::vector<glm::ivec3> childControlBlocks;
+									if (tryGenerateTreeHouseChild({rootChunk.x - 2, rootChunk.y}, &childControlBlocks))
 									{
-										front = c;
+										glm::ivec3 cfront = {};
+										glm::ivec3 cback = {};
+										glm::ivec3 cleft = {};
+										glm::ivec3 cright = {};
+
+										getSides(childControlBlocks, cfront, cback, cleft, cright);
+
+										//front
+										fillControllBlocksWithLeaves(cback);
+										fillControllBlocksWithLeaves(cleft);
+										fillControllBlocksWithLeaves(cright);
+
+										drawDoubleBridge(cfront, back);
 									}
-									if (c.x < back.x)
+									else
 									{
-										back = c;
+										fillControllBlocksWithLeaves(back);
 									}
-									if (c.z > right.z)
+								}
+
+								{
+									std::vector<glm::ivec3> childControlBlocks;
+									if (tryGenerateTreeHouseChild({rootChunk.x + 2, rootChunk.y}, &childControlBlocks))
 									{
-										right = c;
+										glm::ivec3 cfront = {};
+										glm::ivec3 cback = {};
+										glm::ivec3 cleft = {};
+										glm::ivec3 cright = {};
+
+										getSides(childControlBlocks, cfront, cback, cleft, cright);
+
+										//back
+										fillControllBlocksWithLeaves(cfront);
+										fillControllBlocksWithLeaves(cleft);
+										fillControllBlocksWithLeaves(cright);
+
+										drawDoubleBridge(front, cback);
 									}
-									if (c.z < left.z)
+									else
 									{
-										left = c;
+										fillControllBlocksWithLeaves(front);
 									}
 								}
 
-								if (tryGenerateTreeHouseChild({rootChunk.x - 2, rootChunk.y}))
 								{
-									
-								}
-								else
-								{
-									fillControllBlocksWithLeaves(back);
+									std::vector<glm::ivec3> childControlBlocks;
+									if (tryGenerateTreeHouseChild({rootChunk.x, rootChunk.y - 2}, &childControlBlocks))
+									{
+										glm::ivec3 cfront = {};
+										glm::ivec3 cback = {};
+										glm::ivec3 cleft = {};
+										glm::ivec3 cright = {};
+
+										getSides(childControlBlocks, cfront, cback, cleft, cright);
+
+										//right
+										fillControllBlocksWithLeaves(cfront);
+										fillControllBlocksWithLeaves(cleft);
+										fillControllBlocksWithLeaves(cback);
+
+										drawDoubleBridge(left, cright);
+									}
+									else
+									{
+										fillControllBlocksWithLeaves(left);
+									}
 								}
 
-								if (tryGenerateTreeHouseChild({rootChunk.x + 2, rootChunk.y}))
 								{
+									std::vector<glm::ivec3> childControlBlocks;
+									if (tryGenerateTreeHouseChild({rootChunk.x, rootChunk.y + 2}, &childControlBlocks))
+									{
+										glm::ivec3 cfront = {};
+										glm::ivec3 cback = {};
+										glm::ivec3 cleft = {};
+										glm::ivec3 cright = {};
 
-								}
-								else
-								{
-									fillControllBlocksWithLeaves(front);
-								}
+										getSides(childControlBlocks, cfront, cback, cleft, cright);
 
-								if (tryGenerateTreeHouseChild({rootChunk.x, rootChunk.y - 2}))
-								{
+										//left
+										fillControllBlocksWithLeaves(cfront);
+										fillControllBlocksWithLeaves(cright);
+										fillControllBlocksWithLeaves(cback);
 
-								}
-								else
-								{
-									fillControllBlocksWithLeaves(left);
-								}
-
-								if (tryGenerateTreeHouseChild({rootChunk.x, rootChunk.y + 2}))
-								{
-
-								}
-								else
-								{
-									fillControllBlocksWithLeaves(right);
+										drawDoubleBridge(cleft, right);
+									}
+									else
+									{
+										fillControllBlocksWithLeaves(right);
+									}
 								}
 							}
 
