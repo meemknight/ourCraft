@@ -16,7 +16,9 @@ enum
 	Structure_PalmTree,
 	Structure_TreeHouse,
 	Structure_Pyramid,
+	Structure_Igloo,
 	Structure_BirchTree,
+	Structure_Spruce,
 };
 
 //used to report back

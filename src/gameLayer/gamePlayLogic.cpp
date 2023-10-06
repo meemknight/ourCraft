@@ -42,7 +42,7 @@ bool initGameplay(ProgramData &programData)
 	gameData = GameData();
 	gameData.c.position = glm::vec3(0, 65, 0);
 
-	gameData.chunkSystem.createChunks(32);
+	gameData.chunkSystem.createChunks(64);
 
 	return true;
 }
@@ -176,7 +176,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		bool rotate = !gameData.escapePressed;
 		if (platform::isRMouseHeld()) { rotate = true; }
-		gameData.c.rotateFPS(platform::getRelMousePosition(), 0.3f * deltaTime, rotate);
+		gameData.c.rotateFPS(platform::getRelMousePosition(), 0.25f * deltaTime, rotate);
 
 		if (!gameData.escapePressed)
 		{
@@ -413,7 +413,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma endregion
 
 #pragma region ui
-	{
+	if(0)
+	{	
 		Ui::Frame f({0,0, w, h});
 
 		programData.renderer2d.renderRectangle(

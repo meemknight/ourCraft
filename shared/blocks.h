@@ -50,6 +50,9 @@ enum BlockTypes
 	control4,
 	snow_block,
 	birch_leaves,
+	spruce_log,
+	spruce_leaves,
+	spruce_leaves_red,
 	BlocksCount
 };
 
@@ -84,7 +87,8 @@ struct Block
 	{
 		return
 			type == BlockTypes::leaves || type == BlockTypes::jungle_leaves 
-			|| type == BlockTypes::palm_leaves || type == BlockTypes::birch_leaves;
+			|| type == BlockTypes::palm_leaves || type == BlockTypes::birch_leaves
+		|| type == BlockTypes::spruce_leaves || type == BlockTypes::spruce_leaves_red;
 	}
 
 	bool isTransparentGeometry()

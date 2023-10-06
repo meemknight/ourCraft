@@ -13,6 +13,7 @@ struct Biome
 		treeJungle,
 		treePalm,
 		treeBirch,
+		treeSpruce,
 	};
 
 	const char *name = "";

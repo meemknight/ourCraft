@@ -120,7 +120,7 @@ struct ChunkPriorityCache
 	
 	bool generateStructure(StructureToGenerate s, StructureData *structure, int rotation,
 		std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks, std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
-		std::vector<glm::ivec3> *controlBlocks
+		std::vector<glm::ivec3> *controlBlocks, bool replace = 0, BlockType from = 0, BlockType to = 0
 		);
 
 	void placeGhostBlocksForChunk(int posX, int posZ, ChunkData &c);
@@ -1010,7 +1010,7 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 
 							if (b.type == BlockTypes::sand || b.type == BlockTypes::sand_stone)
 							{
-								y-= 7 * randValues[randomIndex];
+								y-= 6 * randValues[randomIndex++];
 								break;
 							}
 							else if (b.type == BlockTypes::air || b.type == BlockTypes::grass)
@@ -1050,7 +1050,7 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 						}
 						
 					}
-					else if (biome == 8)
+					else if (biome == 8 || biome == 9)
 					{
 						
 						getOrCreateChunk(rootChunk.x + 1, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
@@ -1105,7 +1105,7 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 							s.randomNumber3 = randValues[randomIndex++];
 							s.randomNumber4 = randValues[randomIndex++];
 							s.replaceBlocks = true;
-							s.type = Structure_Pyramid;
+							s.type = Structure_Igloo;
 
 							if (generateStructure(s,
 								structureManager, newCreatedChunksSet, sendNewBlocksToPlayers, 0))
@@ -1220,7 +1220,9 @@ bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructuresMana
 		auto tree = structureManager.trees
 			[chooseRandomElement(s.randomNumber1, structureManager.trees.size())];
 
-		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+		return generateStructure(s, tree, 
+			chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers, 
+			controlBlocks);
 	}
 	else 
 	if (s.type == Structure_JungleTree)
@@ -1236,42 +1238,88 @@ bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructuresMana
 		auto tree = structureManager.palmTrees
 			[chooseRandomElement(s.randomNumber1, structureManager.palmTrees.size())];
 
-		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks,
+			sendNewBlocksToPlayers, controlBlocks);
+
 	}if (s.type == Structure_TreeHouse)
 	{
 
 		auto tree = structureManager.treeHouses
 			[chooseRandomElement(s.randomNumber1, structureManager.treeHouses.size())];
 
-		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks,
+			sendNewBlocksToPlayers, controlBlocks);
+
 	}if (s.type == Structure_Pyramid)
 	{
 
 		auto tree = structureManager.smallPyramids
 			[chooseRandomElement(s.randomNumber1, structureManager.smallPyramids.size())];
 
-		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks,
+			sendNewBlocksToPlayers, controlBlocks);
+
 	}if (s.type == Structure_BirchTree)
 	{
-
 		auto tree = structureManager.birchTrees
 			[chooseRandomElement(s.randomNumber1, structureManager.birchTrees.size())];
 
-		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), 
+			newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+
+	}if (s.type == Structure_Igloo)
+	{
+		auto tree = structureManager.igloos
+			[chooseRandomElement(s.randomNumber1, structureManager.igloos.size())];
+
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
+			newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+
+	}
+	if (s.type == Structure_Spruce)
+	{
+		auto tree = structureManager.spruceTrees
+			[chooseRandomElement(s.randomNumber1, structureManager.spruceTrees.size())];
+
+		if (s.randomNumber3 > 0.5)
+		{
+			return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
+				newCreatedChunks, sendNewBlocksToPlayers, controlBlocks, true,
+				BlockTypes::spruce_leaves, BlockTypes::spruce_leaves_red);
+		}
+		else
+		{
+			return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
+				newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+		}
+		
 	}
 	
 
 	return 0;
 }
 
-bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructureData *structure, int rotation, 
+bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructureData *structure, int rotation,
 	std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks, std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
-	std::vector<glm::ivec3> *controlBlocks)
+	std::vector<glm::ivec3> *controlBlocks, bool replace, BlockType from, BlockType to)
 {
 	auto size = structure->size;
 
+	auto replaceB = [&](BlockType &b)
+	{
+		if (replace)
+		{
+			if (b == from)
+			{
+				b = to;
+			}
+		}
+	};
+
 	if (s.pos.y + size.y <= CHUNK_HEIGHT)
 	{
+
+		
 
 		glm::ivec3 startPos = s.pos;
 		startPos.x -= size.x / 2;
@@ -1320,6 +1368,8 @@ bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructureData 
 							auto newB = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z,
 								rotation);
 
+							replaceB(newB);
+
 							if (newB != BlockTypes::air)
 							{
 								b.type = newB;
@@ -1359,6 +1409,8 @@ bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructureData 
 						{
 							auto b = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z,
 								rotation);
+							
+							replaceB(b);
 
 							GhostBlock ghostBlock;
 							ghostBlock.type = b;
@@ -1392,6 +1444,8 @@ bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructureData 
 						{
 							auto b = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z,
 								rotation);
+
+							replaceB(b);
 
 							GhostBlock ghostBlock;
 							ghostBlock.type = b;

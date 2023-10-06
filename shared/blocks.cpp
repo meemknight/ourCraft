@@ -30,6 +30,8 @@ bool isOpaque(BlockType type)
 		&& type != BlockTypes::jungle_leaves
 		&& type != BlockTypes::palm_leaves
 		&& type != BlockTypes::birch_leaves
+		&& type != BlockTypes::spruce_leaves
+		&& type != BlockTypes::spruce_leaves_red
 		&& !(isTransparentGeometry(type))
 		&& !(isGrassMesh(type));
 }

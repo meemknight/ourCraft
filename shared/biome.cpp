@@ -208,16 +208,16 @@ bool BiomesManager::loadAllBiomes()
 		b.color = glm::vec3{199, 199, 199} / 255.f;
 		b.surfaceBlock = BlockTypes::snow_dirt;
 		b.secondaryBlock = BlockTypes::dirt;
-		b.treeType = Biome::treeNormal;
+		b.treeType = Biome::treeSpruce;
 
 		b.forestTresshold = 0.9;
 		b.jusGrassTresshold = 0.3;
 
-		b.treeChanceRemap = {0.02, 0.12};
+		b.treeChanceRemap = {0.01, 0.06};
 		b.grassChanceForestRemap = {0.4, 0.6};
 		b.justGrassChanceRemap = {0.12, 0.4};
 
-		b.growTreesOn = 0;
+		b.growTreesOn = BlockTypes::snow_dirt;
 		b.growGrassOn = BlockTypes::snow_dirt;
 
 		b.grassType = 0;
@@ -233,6 +233,8 @@ bool BiomesManager::loadAllBiomes()
 		b.color = glm::vec3{184, 201, 159} / 255.f;
 		b.surfaceBlock = BlockTypes::snow_dirt;
 		b.secondaryBlock = BlockTypes::dirt;
+
+		b.treeType = Biome::treeSpruce;
 
 		b.forestTresshold = 0.7;
 		b.jusGrassTresshold = 0.3;
@@ -332,7 +334,7 @@ int BiomesManager::determineBiomeIndex(float t, float h)
 	size_t size = picker.temperature.size();
 	for (int i = size - 1; i >= 0; i--)
 	{
-		if (t > picker.temperature[i].tresshold)
+		if (t >= picker.temperature[i].tresshold)
 		{
 			for (auto b : picker.temperature[i].ids)
 			{
@@ -345,7 +347,7 @@ int BiomesManager::determineBiomeIndex(float t, float h)
 	size = picker.humidity.size();
 	for (int i = size - 1; i >= 0; i--)
 	{
-		if (h > picker.humidity[i].tresshold)
+		if (h >= picker.humidity[i].tresshold)
 		{
 			for (auto b : picker.humidity[i].ids)
 			{
