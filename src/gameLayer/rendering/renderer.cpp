@@ -9,6 +9,7 @@
 #include <glm/gtx/transform.hpp>
 #include <blocksLoader.h>
 #include <chunkSystem.h>
+#include <gamePlayLogic.h>
 
 #define GET_UNIFORM(s, n) n = s.getUniform(#n);
 
@@ -295,6 +296,7 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	GET_UNIFORM(defaultShader, u_positionFloat);
 	GET_UNIFORM(defaultShader, u_texture);
 	GET_UNIFORM(defaultShader, u_time);
+	GET_UNIFORM(defaultShader, u_showLightLevels);
 
 	u_vertexData = getStorageBlockIndex(defaultShader.id, "u_vertexData");
 	glShaderStorageBlockBinding(defaultShader.id, u_vertexData, 1);
@@ -499,44 +501,46 @@ void Renderer::updateDynamicBlocks()
 
 }
 
-void Renderer::render(std::vector<int> &data, Camera &c, gl2d::Texture &texture)
-{
+//void Renderer::render(std::vector<int> &data, Camera &c, gl2d::Texture &texture)
+//{
+//
+//	glm::vec3 posFloat = {};
+//	glm::ivec3 posInt = {};
+//	c.decomposePosition(posFloat, posInt);
+//
+//	glNamedBufferData(vertexBuffer, sizeof(int) * data.size(), data.data(), GL_STREAM_DRAW);
+//	int facesCount = data.size() / 5;
+//
+//	glBindVertexArray(vao);
+//	texture.bind(0);
+//
+//	defaultShader.bind();
+//
+//	auto mvp = c.getProjectionMatrix() * glm::lookAt({0,0,0}, c.viewDirection, c.up);
+//
+//	glUniformMatrix4fv(u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
+//
+//	glUniform3fv(u_positionFloat, 1, &posFloat[0]);
+//	glUniform3iv(u_positionInt, 1, &posInt[0]);
+//	glUniform1i(u_typesCount, BlocksCount);	//remove
+//	glUniform1f(u_time, std::clock() / 400.f);
+//
+//	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
+//
+//	glBindVertexArray(0);
+//
+//}
 
-	glm::vec3 posFloat = {};
-	glm::ivec3 posInt = {};
-	c.decomposePosition(posFloat, posInt);
-
-	glNamedBufferData(vertexBuffer, sizeof(int) * data.size(), data.data(), GL_STREAM_DRAW);
-	int facesCount = data.size() / 5;
-
-	glBindVertexArray(vao);
-	texture.bind(0);
-
-	defaultShader.bind();
-
-	auto mvp = c.getProjectionMatrix() * glm::lookAt({0,0,0}, c.viewDirection, c.up);
-
-	glUniformMatrix4fv(u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
-
-	glUniform3fv(u_positionFloat, 1, &posFloat[0]);
-	glUniform3iv(u_positionInt, 1, &posInt[0]);
-	glUniform1i(u_typesCount, BlocksCount);	//remove
-	glUniform1f(u_time, std::clock() / 400.f);
-
-	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
-
-	glBindVertexArray(0);
-
-}
-
-void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, gl2d::Texture &texture)
+void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramData &programData
+	, bool showLightLevels)
 {
 	glm::vec3 posFloat = {};
 	glm::ivec3 posInt = {};
 	glm::ivec3 blockPosition = from3DPointToBlock(c.position);
 	c.decomposePosition(posFloat, posInt);
 
-	texture.bind(0);
+	programData.texture.bind(0);
+	programData.numbersTexture.bind(1);
 	defaultShader.bind();
 	auto mvp = c.getProjectionMatrix() * glm::lookAt({0,0,0}, c.viewDirection, c.up);
 
@@ -545,6 +549,7 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, gl2d::Te
 	glUniform3iv(u_positionInt, 1, &posInt[0]);
 	glUniform1i(u_typesCount, BlocksCount);	//remove
 	glUniform1f(u_time, std::clock() / 400.f);
+	glUniform1i(u_showLightLevels, showLightLevels);
 
 	glDisable(GL_BLEND);
 

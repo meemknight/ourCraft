@@ -25,8 +25,10 @@ struct GameData
 	Camera c;
 	ChunkSystem chunkSystem;
 	bool escapePressed = 0;
+	bool showLightLevels = 0;
 	UndoQueue undoQueue;
 	LightSystem lightSystem;
+
 
 }gameData;
 
@@ -42,7 +44,7 @@ bool initGameplay(ProgramData &programData)
 	gameData = GameData();
 	gameData.c.position = glm::vec3(0, 65, 0);
 
-	gameData.chunkSystem.createChunks(64);
+	gameData.chunkSystem.createChunks(16);
 
 	return true;
 }
@@ -206,7 +208,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.lightSystem);
 
 		//programData.renderer.render(data, gameData.c, programData.texture);
-		programData.renderer.renderFromBakedData(gameData.chunkSystem, gameData.c, programData.texture);
+		programData.renderer.renderFromBakedData(gameData.chunkSystem, gameData.c, programData,
+			gameData.showLightLevels);
 
 	}
 
@@ -282,8 +285,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		
 	};
 
-
-
 	
 
 	programData.pointDebugRenderer.renderCubePoint(gameData.c, point);
@@ -325,6 +326,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			ImGui::DragInt3("Point pos", &point[0]);
 			ImGui::DragInt3("Point size",  &pointSize[0]);
 			ImGui::Checkbox("Render Box", &renderBox);
+			ImGui::Checkbox("showLightLevels", &gameData.showLightLevels);
+			
 
 			pointSize = glm::clamp(pointSize, glm::ivec3(0, 0, 0), glm::ivec3(64, 64, 64));
 

@@ -15,6 +15,7 @@ struct ProgramData
 	gl2d::Font font;
 	gl2d::Texture texture;
 	gl2d::Texture uiTexture;
+	gl2d::Texture numbersTexture;
 	gl2d::TextureAtlas uiAtlas{6, 1};
 	int currentFps = 0;
 };

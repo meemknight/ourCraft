@@ -11,7 +11,6 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 		sunLigtsToAdd.clear();
 	}
 
-
 	while (!sunLigtsToRemove.empty())
 	{
 		auto element = sunLigtsToRemove.front();
@@ -43,16 +42,17 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 					l.intensity = b2Level;
 					l.pos = p;
 					sunLigtsToAdd.push_back(l);
-					//b2->setSkyLevel(b2Level);
+					//b2->setSkyLevel(b2Level); //it already is
 				}
 			}
 		};
+
+		checkNeighbout({element.pos.x, element.pos.y - 1, element.pos.z}, true);
 
 		checkNeighbout({element.pos.x - 1, element.pos.y, element.pos.z});
 		checkNeighbout({element.pos.x + 1, element.pos.y, element.pos.z});
 
 		checkNeighbout({element.pos.x, element.pos.y + 1, element.pos.z});
-		checkNeighbout({element.pos.x, element.pos.y - 1, element.pos.z}, true);
 
 		checkNeighbout({element.pos.x, element.pos.y, element.pos.z + 1});
 		checkNeighbout({element.pos.x, element.pos.y, element.pos.z - 1});
@@ -93,10 +93,6 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 				}
 			};
 
-			checkNeighbout({element.pos.x - 1, element.pos.y, element.pos.z}, currentLightLevel - 1);
-			checkNeighbout({element.pos.x + 1, element.pos.y, element.pos.z}, currentLightLevel - 1);
-			checkNeighbout({element.pos.x, element.pos.y + 1, element.pos.z}, currentLightLevel - 1);
-
 			if (currentLightLevel == 15)
 			{
 				checkNeighbout({element.pos.x, element.pos.y - 1, element.pos.z}, currentLightLevel);
@@ -105,6 +101,10 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 			{
 				checkNeighbout({element.pos.x, element.pos.y - 1, element.pos.z}, currentLightLevel - 1);
 			}
+
+			checkNeighbout({element.pos.x - 1, element.pos.y, element.pos.z}, currentLightLevel - 1);
+			checkNeighbout({element.pos.x + 1, element.pos.y, element.pos.z}, currentLightLevel - 1);
+			checkNeighbout({element.pos.x, element.pos.y + 1, element.pos.z}, currentLightLevel - 1);
 
 			checkNeighbout({element.pos.x, element.pos.y, element.pos.z + 1}, currentLightLevel - 1);
 			checkNeighbout({element.pos.x, element.pos.y, element.pos.z - 1}, currentLightLevel - 1);

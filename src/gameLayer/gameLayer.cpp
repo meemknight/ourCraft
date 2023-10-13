@@ -39,7 +39,8 @@ bool initGame()
 	programData.font.createFromFile(RESOURCES_PATH "roboto_black.ttf");
 	programData.texture.loadFromFile(RESOURCES_PATH "blocks.png", true, false);
 	programData.uiTexture.loadFromFile(RESOURCES_PATH "ui0.png", true, true);
-
+	programData.numbersTexture.loadFromFile(RESOURCES_PATH "numbers.png", true, true);
+	
 
 	{
 		programData.texture.bind();

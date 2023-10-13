@@ -67,11 +67,16 @@ readonly restrict layout(std430) buffer u_textureSamplerers
 
 out vec2 v_uv;
 out float v_color;
+out flat int v_skyLight;
 
 out flat uvec2 v_textureSampler;
 
 void main()
 {
+
+	v_skyLight = in_skyLight;
+
+
 	ivec3 intPosition = in_facePosition - u_positionInt;
 	vec3 floatPosition = intPosition - u_positionFloat;
 	
@@ -130,7 +135,7 @@ void main()
 
 	gl_Position = pos;
 	
-	v_color = vertexColor[in_faceOrientation] * (in_skyLight/15.f);
+	v_color = (vertexColor[in_faceOrientation] * (in_skyLight/15.f)) * 0.9 + 0.1;
 	//v_color = vertexColor[in_faceOrientation];
 
 

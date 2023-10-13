@@ -110,23 +110,23 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 					currentVector->push_back(15);
 				}
 				else
-					if (sides[i] == nullptr && i == 2)
-					{
-						currentVector->push_back(15);
-					}
-					else if (sides[i] == nullptr && i == 3)
-					{
-						currentVector->push_back(5); //bottom of the world
-					}
-					else if (sides[i] != nullptr)
-					{
-						int val = sides[i]->getSkyLight();
-						currentVector->push_back(val);
-					}
-					else
-					{
-						currentVector->push_back(0);
-					}
+				if (i == 2 && y == CHUNK_HEIGHT - 1)
+				{
+					currentVector->push_back(15);
+				}
+				else if (y == 0 && i == 3)
+				{
+					currentVector->push_back(5); //bottom of the world
+				}
+				else if (sides[i] != nullptr)
+				{
+					int val = sides[i]->getSkyLight();
+					currentVector->push_back(val);
+				}
+				else
+				{
+					currentVector->push_back(0);
+				}
 
 			}
 		}
