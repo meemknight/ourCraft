@@ -66,6 +66,12 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 		auto element = sunLigtsToAdd.front();
 		sunLigtsToAdd.pop_front();
 
+		auto b = chunkSystem.getBlockSafe(element.pos.x, element.pos.y, element.pos.z);
+		if (!b || b->getSkyLight() != element.intensity)
+		{
+			continue;
+		}
+
 		//Chunk *c = 0;
 		//todo optimize and remove this
 		//auto b = chunkSystem.getBlockSafeAndChunk(element.pos.x, element.pos.y, element.pos.z, c);

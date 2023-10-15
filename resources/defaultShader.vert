@@ -10,6 +10,7 @@ uniform mat4 u_viewProjection;
 uniform ivec3 u_positionInt;
 uniform vec3 u_positionFloat;
 uniform float u_time;
+uniform int u_skyLightIntensity;
 
 float vertexColor[] = float[](
 		
@@ -74,7 +75,9 @@ out flat uvec2 v_textureSampler;
 void main()
 {
 
-	v_skyLight = in_skyLight;
+	int ambientLight = max(in_skyLight - (15 - u_skyLightIntensity), 0);
+
+	v_skyLight = ambientLight;
 
 
 	ivec3 intPosition = in_facePosition - u_positionInt;
@@ -135,7 +138,7 @@ void main()
 
 	gl_Position = pos;
 	
-	v_color = (vertexColor[in_faceOrientation] * (in_skyLight/15.f)) * 0.9 + 0.1;
+	v_color = (vertexColor[in_faceOrientation] * (ambientLight/15.f)) * 0.9 + 0.1;
 	//v_color = vertexColor[in_faceOrientation];
 
 

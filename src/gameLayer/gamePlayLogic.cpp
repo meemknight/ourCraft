@@ -28,7 +28,7 @@ struct GameData
 	bool showLightLevels = 0;
 	UndoQueue undoQueue;
 	LightSystem lightSystem;
-
+	int skyLightIntensity = 15;
 
 }gameData;
 
@@ -209,7 +209,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		//programData.renderer.render(data, gameData.c, programData.texture);
 		programData.renderer.renderFromBakedData(gameData.chunkSystem, gameData.c, programData,
-			gameData.showLightLevels);
+			gameData.showLightLevels, gameData.skyLightIntensity);
 
 	}
 
@@ -327,7 +327,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			ImGui::DragInt3("Point size",  &pointSize[0]);
 			ImGui::Checkbox("Render Box", &renderBox);
 			ImGui::Checkbox("showLightLevels", &gameData.showLightLevels);
-			
+			ImGui::SliderInt("skyLightIntensity", &gameData.skyLightIntensity, 0, 15);
 
 			pointSize = glm::clamp(pointSize, glm::ivec3(0, 0, 0), glm::ivec3(64, 64, 64));
 

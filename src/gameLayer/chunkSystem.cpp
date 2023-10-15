@@ -9,6 +9,7 @@
 #include <lightSystem.h>
 #include <platformTools.h>
 
+
 Chunk* ChunkSystem::getChunkSafeFromChunkSystemCoordonates(int x, int z)
 {
 	if (x < 0 || z < 0 || x >= squareSize || z >= squareSize)
@@ -64,6 +65,9 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 #pragma region recieve chunks by the server
 	auto recievedChunk = getRecievedChunks();
 
+	//chunksToAddLight is in chunk system coordonates space
+	std::vector<glm::ivec2> chunksToAddLight;
+
 	for (auto &i : recievedChunk)
 	{
 
@@ -101,17 +105,13 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 				int xBegin = i->data.x * CHUNK_SIZE;
 				int zBegin = i->data.z * CHUNK_SIZE;
 
+				if(!dontUpdateLightSystem)
 				{
-					for (int xPos = xBegin; xPos < xBegin + CHUNK_SIZE; xPos++)
-						for (int zPos = zBegin; zPos < zBegin + CHUNK_SIZE; zPos++)
-						{
-							if (!i->unsafeGet(xPos - xBegin, CHUNK_HEIGHT - 1, zPos - zBegin).isOpaque())
-							{
-								lightSystem.addSunLight(*this, {xPos, CHUNK_HEIGHT - 1, zPos}, 15);
-							}
-						}
-
 					i->dontDrawYet = true;
+
+					//c is in chunk system coordonates space, not chunk space!
+					chunksToAddLight.push_back({x, z});
+
 				}
 
 			}
@@ -165,6 +165,107 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	}
 
 #pragma endregion
+
+#pragma region add lights
+
+	if (!dontUpdateLightSystem)
+	{
+
+		//c is in chunk system coordonates space
+		for (auto &c : chunksToAddLight)
+		{
+			auto chunk = getChunkSafeFromChunkSystemCoordonates(c.x, c.y);
+			assert(chunk);
+			
+			int xStart = chunk->data.x * CHUNK_SIZE;
+			int ZStart = chunk->data.z * CHUNK_SIZE;
+
+			for (int xPos = xStart; xPos < xStart + CHUNK_SIZE; xPos++)
+				for (int zPos = ZStart; zPos < ZStart + CHUNK_SIZE; zPos++)
+				{
+					if (!chunk->unsafeGet(xPos - xStart, CHUNK_HEIGHT - 1, zPos - ZStart).isOpaque())
+					{
+						lightSystem.addSunLight(*this, {xPos, CHUNK_HEIGHT - 1, zPos}, 15);
+					}
+				}
+
+			auto leftNeighbour = getChunkSafeFromChunkSystemCoordonates(c.x - 1, c.y);
+			auto rightNeighbour = getChunkSafeFromChunkSystemCoordonates(c.x + 1, c.y);
+			auto frontNeighbour = getChunkSafeFromChunkSystemCoordonates(c.x, c.y + 1);
+			auto backNeighbour = getChunkSafeFromChunkSystemCoordonates(c.x, c.y - 1);
+
+			auto propagateLight = [&](Chunk *neighbour, glm::ivec3 secondBlock, glm::ivec3 firstBlock,
+				glm::ivec3 absolutPositionPropagate)
+			{
+				auto &b = chunk->unsafeGet(firstBlock.x, firstBlock.y, firstBlock.z);
+				if (b.getSkyLight() > 1)
+				{
+					auto &b2 = neighbour->unsafeGet(secondBlock.x, secondBlock.y, secondBlock.z);
+					if (!b2.isOpaque())
+					{
+						lightSystem.addSunLight(*this, {absolutPositionPropagate.x, absolutPositionPropagate.y, 
+							absolutPositionPropagate.z},
+							b.getSkyLight() - 1);
+					}
+				}
+			};
+
+			if (leftNeighbour)
+			{
+				for (int z = 0; z < CHUNK_SIZE; z++)
+				{
+					for (int y = 0; y < CHUNK_HEIGHT - 2; y++)
+					{
+						propagateLight(leftNeighbour, {CHUNK_SIZE - 1, y, z}, {0, y, z},
+							{xStart - 1, y, ZStart + z});
+					}
+				}
+			}
+
+			if (rightNeighbour)
+			{
+				for (int z = 0; z < CHUNK_SIZE; z++)
+				{
+					for (int y = 0; y < CHUNK_HEIGHT - 2; y++)
+					{
+						propagateLight(rightNeighbour, {0, y, z}, {CHUNK_SIZE - 1, y, z}, 
+							{xStart + CHUNK_SIZE, y, ZStart + z}
+							);
+					}
+				}
+			}
+			
+			if (frontNeighbour)
+			{
+				for (int x = 0; x < CHUNK_SIZE; x++)
+				{
+					for (int y = 0; y < CHUNK_HEIGHT - 2; y++)
+					{
+						propagateLight(frontNeighbour, {x, y, 0}, {x, y, CHUNK_SIZE - 1},
+							{xStart + x, y, CHUNK_SIZE + ZStart});
+					}
+				}
+			}
+
+			if (backNeighbour)
+			{
+				for (int x = 0; x < CHUNK_SIZE; x++)
+				{
+					for (int y = 0; y < CHUNK_HEIGHT - 2; y++)
+					{
+						propagateLight(backNeighbour, {x, y, CHUNK_SIZE - 1}, {x, y, 0},
+							{xStart + x, y, ZStart - 1});
+					}
+				}
+			}
+
+		}
+
+
+	}
+
+#pragma endregion
+
 
 	if (lastPlayerBlockPosition != playerBlockPosition)
 	{

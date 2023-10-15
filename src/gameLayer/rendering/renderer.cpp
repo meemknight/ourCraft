@@ -297,6 +297,7 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	GET_UNIFORM(defaultShader, u_texture);
 	GET_UNIFORM(defaultShader, u_time);
 	GET_UNIFORM(defaultShader, u_showLightLevels);
+	GET_UNIFORM(defaultShader, u_skyLightIntensity);
 
 	u_vertexData = getStorageBlockIndex(defaultShader.id, "u_vertexData");
 	glShaderStorageBlockBinding(defaultShader.id, u_vertexData, 1);
@@ -532,7 +533,7 @@ void Renderer::updateDynamicBlocks()
 //}
 
 void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramData &programData
-	, bool showLightLevels)
+	, bool showLightLevels, int skyLightIntensity)
 {
 	glm::vec3 posFloat = {};
 	glm::ivec3 posInt = {};
@@ -550,6 +551,7 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 	glUniform1i(u_typesCount, BlocksCount);	//remove
 	glUniform1f(u_time, std::clock() / 400.f);
 	glUniform1i(u_showLightLevels, showLightLevels);
+	glUniform1i(u_skyLightIntensity, skyLightIntensity);
 
 	glDisable(GL_BLEND);
 

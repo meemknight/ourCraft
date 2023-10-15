@@ -19,6 +19,7 @@ struct Renderer
 	GLint u_texture = -1;
 	GLint u_time = -1;
 	GLint u_showLightLevels = -1;
+	GLint u_skyLightIntensity = -1;
 	GLuint u_vertexData = GL_INVALID_INDEX;
 	GLuint u_vertexUV = GL_INVALID_INDEX;
 	GLuint u_textureSamplerers = GL_INVALID_INDEX;
@@ -28,7 +29,7 @@ struct Renderer
 	//void render(std::vector<int> &data, Camera &c, gl2d::Texture &texture);
 
 	void renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, 
-		ProgramData &programData, bool showLightLevels);
+		ProgramData &programData, bool showLightLevels, int skyLightIntensity);
 
 
 	SkyBoxRenderer skyBoxRenderer;
