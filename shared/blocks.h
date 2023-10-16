@@ -67,6 +67,8 @@ bool isControlBlock(BlockType type);
 
 bool isOpaque(BlockType type);
 
+bool isLightEmitor(BlockType type);
+
 bool isTransparentGeometry(BlockType type);
 
 bool isGrassMesh(BlockType type);
@@ -107,12 +109,24 @@ struct Block
 		return (lightLevel >> 4);
 	}
 
+	unsigned char getLight()
+	{
+		return lightLevel & 0b1111;
+	}
+
 	void setSkyLevel(unsigned char s)
 	{
 		s = s & 0b1111;
 		s <<= 4;
 		lightLevel &= 0b0000'1111;
 		lightLevel |= s;
+	}
+
+	void setLightLevel(unsigned char l)
+	{
+		l = l & 0b1111;
+		lightLevel &= 0b1111'0000;
+		lightLevel |= l;
 	}
 
 	bool isBlockMesh()

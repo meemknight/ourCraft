@@ -564,62 +564,118 @@ Block *ChunkSystem::rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos,
 	return nullptr;
 }
 
-void ChunkSystem::changeBlockLightStuff(glm::ivec3 pos, int currentLightLevel,
+void ChunkSystem::changeBlockLightStuff(glm::ivec3 pos, int currentSkyLightLevel, 
+	int currentNormalLightLevel,
 	BlockType oldType, BlockType newType, LightSystem &lightSystem)
 {
-	
+
 	if (!isOpaque(oldType) && isOpaque(newType))
 	{
 		//remove light
-		lightSystem.removeSunLight(*this, pos, currentLightLevel);
+		lightSystem.removeSunLight(*this, pos, currentSkyLightLevel);
+
+		lightSystem.removeLight(*this, pos, currentNormalLightLevel);
 	}
 	else if (isOpaque(oldType) && !isOpaque(newType))
 	{
 		//add light
-		int light = 0;
-		auto checkNeighbour = [&](glm::ivec3 pos2, int decrease)
+		//sky light
 		{
-			auto b = getBlockSafe(pos2.x, pos2.y, pos2.z);
-			if (b && !b->isOpaque())
+			int light = 0;
+			auto checkNeighbour = [&](glm::ivec3 pos2, int decrease)
 			{
-				if (!decrease && b->getSkyLight() == 15)
+				auto b = getBlockSafe(pos2.x, pos2.y, pos2.z);
+				if (b && !b->isOpaque())
 				{
-					light = 15;
+					if (!decrease && b->getSkyLight() == 15)
+					{
+						light = 15;
+					}
+					else
+					{
+						light = std::max(light, b->getSkyLight() - 1);
+					}
 				}
-				else
+			};
+
+			checkNeighbour({pos.x + 1,pos.y,pos.z}, 1);
+			if (light < 15)
+				checkNeighbour({pos.x - 1,pos.y,pos.z}, 1);
+			if (light < 15)
+				checkNeighbour({pos.x,pos.y + 1,pos.z}, 0);
+			if (light < 15)
+				checkNeighbour({pos.x,pos.y - 1,pos.z}, 1);
+			if (light < 15)
+				checkNeighbour({pos.x,pos.y,pos.z + 1}, 1);
+			if (light < 15)
+				checkNeighbour({pos.x,pos.y,pos.z - 1}, 1);
+
+			light = std::max(light, 0);
+
+			if (light > 1)
+			{
+				lightSystem.addSunLight(*this, pos, light);
+			}
+			else
+			{
+				auto b = getBlockSafe(pos.x, pos.y, pos.z);
+				if (b)
 				{
-					light = std::max(light, b->getSkyLight() - 1);
+					b->setSkyLevel(light);
 				}
 			}
-		};
-
-		checkNeighbour({pos.x+1,pos.y,pos.z}, 1);
-		if(light < 15)
-			checkNeighbour({pos.x-1,pos.y,pos.z}, 1);
-		if (light < 15)
-			checkNeighbour({pos.x,pos.y+1,pos.z}, 0);
-		if (light < 15)
-			checkNeighbour({pos.x,pos.y-1,pos.z}, 1);
-		if (light < 15)
-			checkNeighbour({pos.x,pos.y,pos.z+1}, 1);
-		if (light < 15)
-			checkNeighbour({pos.x,pos.y,pos.z-1}, 1);
-
-		light = std::max(light, 0);
-
-		if (light > 1)
-		{
-			lightSystem.addSunLight(*this, pos, light);
 		}
-		else
+
+		//normal light
 		{
-			auto b = getBlockSafe(pos.x, pos.y, pos.z);
-			if (b)
+			int light = 0;
+			auto checkNeighbour = [&](glm::ivec3 pos2)
 			{
-				b->setSkyLevel(light);
+				auto b = getBlockSafe(pos2.x, pos2.y, pos2.z);
+				if (b && !b->isOpaque())
+				{
+					light = std::max(light, b->getLight() - 1);
+				}
+			};
+
+			checkNeighbour({pos.x + 1,pos.y,pos.z});
+			if (light < 14)
+				checkNeighbour({pos.x - 1,pos.y,pos.z});
+			if (light < 14)
+				checkNeighbour({pos.x,pos.y + 1,pos.z});
+			if (light < 14)
+				checkNeighbour({pos.x,pos.y - 1,pos.z});
+			if (light < 14)
+				checkNeighbour({pos.x,pos.y,pos.z + 1});
+			if (light < 14)
+				checkNeighbour({pos.x,pos.y,pos.z - 1});
+
+			light = std::max(light, 0);
+
+			if (light > 1)
+			{
+				lightSystem.addLight(*this, pos, light);
+			}
+			else
+			{
+				auto b = getBlockSafe(pos.x, pos.y, pos.z);
+				if (b)
+				{
+					b->setLightLevel(0);
+				}
 			}
 		}
 
+	}
+
+	if (isLightEmitor(oldType) && !isLightEmitor(newType))
+	{
+		//remove light
+		lightSystem.removeLight(*this, pos, currentNormalLightLevel);
+	}
+	else if (!isLightEmitor(oldType) && isLightEmitor(newType))
+	{
+		lightSystem.addLight(*this, pos, 15);
 	}
 
 }
@@ -643,7 +699,7 @@ void ChunkSystem::placeBlockByClient(glm::ivec3 pos, BlockType type, UndoQueue &
 
 		undoQueue.addPlaceBlockEvent(pos, b->type, type, playerPos);
 
-		changeBlockLightStuff(pos, b->getSkyLight(), b->type, type, lightSystem);
+		changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->type, type, lightSystem);
 
 		b->type = type;
 		if (b->isOpaque()) { b->lightLevel = 0; }
@@ -663,7 +719,7 @@ void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, BlockType type, LightSystem
 
 	if (b != nullptr)
 	{
-		changeBlockLightStuff(pos, b->getSkyLight(), b->type, type, lightSystem);
+		changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->type, type, lightSystem);
 
 		b->type = type;
 		if (b->isOpaque()) { b->lightLevel = 0; }

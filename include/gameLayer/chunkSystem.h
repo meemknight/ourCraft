@@ -45,7 +45,8 @@ struct ChunkSystem
 	void placeBlockNoClient(glm::ivec3 pos, BlockType type, LightSystem &lightSystem);
 
 	//internal use
-	void changeBlockLightStuff(glm::ivec3 pos, int currentLightLevel, BlockType oldType,
+	void changeBlockLightStuff(glm::ivec3 pos, int currentSkyLightLevel, int currentNormalLightLevel,
+		BlockType oldType,
 		BlockType newType, LightSystem &lightSystem);
 
 

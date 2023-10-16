@@ -109,7 +109,10 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 				{
 					currentVector->push_back(15);
 				}
-				else
+				else if (isLightEmitor(b.type))
+				{
+					currentVector->push_back(15);
+				}else
 				if (i == 2 && y == CHUNK_HEIGHT - 1)
 				{
 					currentVector->push_back(15);
@@ -120,7 +123,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 				}
 				else if (sides[i] != nullptr)
 				{
-					int val = sides[i]->getSkyLight();
+					int val = std::max(sides[i]->getSkyLight(), sides[i]->getLight());
 					currentVector->push_back(val);
 				}
 				else
@@ -170,7 +173,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 					}
 					else if (sides[i] != nullptr)
 					{
-						int val = sides[i]->getSkyLight();
+						int val = std::max(sides[i]->getSkyLight(), sides[i]->getLight());
 						currentVector->push_back(val);
 					}
 					else
@@ -217,7 +220,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 			}
 			else
 			{
-				opaqueGeometry.push_back(b.getSkyLight());
+				opaqueGeometry.push_back( std::max(b.getSkyLight(), b.getLight()));
 			}
 
 		}

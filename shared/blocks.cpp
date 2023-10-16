@@ -37,6 +37,11 @@ bool isOpaque(BlockType type)
 		&& !(isGrassMesh(type));
 }
 
+bool isLightEmitor(BlockType type)
+{
+	return type == BlockTypes::glowstone;
+}
+
 bool isTransparentGeometry(BlockType type)
 {
 	return type == BlockTypes::ice || type == BlockTypes::water;

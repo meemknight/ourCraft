@@ -9,6 +9,8 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 	{
 		sunLigtsToRemove.clear();
 		sunLigtsToAdd.clear();
+		ligtsToRemove.clear();
+		ligtsToAdd.clear();
 	}
 
 	while (!sunLigtsToRemove.empty())
@@ -121,6 +123,109 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 
 	}
 
+	//...
+
+	while (!ligtsToRemove.empty())
+	{
+		auto element = ligtsToRemove.front();
+		ligtsToRemove.pop_front();
+
+		char currentLightLevel = element.intensity;
+
+		auto checkNeighbout = [&](glm::ivec3 p)
+		{
+			auto b2 = chunkSystem.getBlockSafe(p.x, p.y, p.z);
+
+			if (b2 && !b2->isOpaque())
+			{
+				int b2Level = b2->getLight();
+
+				if (b2Level != 0 && b2Level < currentLightLevel)
+				{
+					//remove
+					LightSystem::Light l;
+					l.intensity = b2Level;
+					l.pos = p;
+					ligtsToRemove.push_back(l);
+					b2->setLightLevel(0);
+				}
+				else if (b2Level >= currentLightLevel)
+				{
+					//add
+					LightSystem::Light l;
+					l.intensity = b2Level;
+					l.pos = p;
+					ligtsToAdd.push_back(l);
+					//b2->setlightLevel(b2Level); //it already is
+				}
+			}
+		};
+
+		checkNeighbout({element.pos.x, element.pos.y - 1, element.pos.z});
+
+		checkNeighbout({element.pos.x - 1, element.pos.y, element.pos.z});
+		checkNeighbout({element.pos.x + 1, element.pos.y, element.pos.z});
+
+		checkNeighbout({element.pos.x, element.pos.y + 1, element.pos.z});
+
+		checkNeighbout({element.pos.x, element.pos.y, element.pos.z + 1});
+		checkNeighbout({element.pos.x, element.pos.y, element.pos.z - 1});
+
+		chunkSystem.setChunkAndNeighboursFlagDirtyFromBlockPos(element.pos.x, element.pos.z);
+	}
+
+	while (!ligtsToAdd.empty())
+	{
+		auto element = ligtsToAdd.front();
+		ligtsToAdd.pop_front();
+
+		auto b = chunkSystem.getBlockSafe(element.pos.x, element.pos.y, element.pos.z);
+		if (!b || b->getLight() != element.intensity)
+		{
+			continue;
+		}
+
+		//Chunk *c = 0;
+		//todo optimize and remove this
+		//auto b = chunkSystem.getBlockSafeAndChunk(element.pos.x, element.pos.y, element.pos.z, c);
+		//if (b)
+		{
+			//c->dontDrawYet = false; 
+
+			//char currentLightLevel = b->getSkyLight();
+			char currentLightLevel = element.intensity;
+
+			auto checkNeighbout = [&](glm::ivec3 p, char newLightLevel)
+			{
+				auto b2 = chunkSystem.getBlockSafe(p.x, p.y, p.z);
+
+				if (b2)
+				{
+					if (!b2->isOpaque() && b2->getLight() < newLightLevel)
+					{
+						LightSystem::Light l;
+						l.intensity = newLightLevel;
+						l.pos = p;
+						ligtsToAdd.push_back(l);
+						b2->setLightLevel(newLightLevel);
+					}
+				}
+			};
+
+			checkNeighbout({element.pos.x, element.pos.y - 1, element.pos.z}, currentLightLevel - 1);
+
+			checkNeighbout({element.pos.x - 1, element.pos.y, element.pos.z}, currentLightLevel - 1);
+			checkNeighbout({element.pos.x + 1, element.pos.y, element.pos.z}, currentLightLevel - 1);
+			checkNeighbout({element.pos.x, element.pos.y + 1, element.pos.z}, currentLightLevel - 1);
+
+			checkNeighbout({element.pos.x, element.pos.y, element.pos.z + 1}, currentLightLevel - 1);
+			checkNeighbout({element.pos.x, element.pos.y, element.pos.z - 1}, currentLightLevel - 1);
+
+			chunkSystem.setChunkAndNeighboursFlagDirtyFromBlockPos(element.pos.x, element.pos.z);
+
+		}
+
+	}
 
 }
 
@@ -136,7 +241,6 @@ void LightSystem::addSunLight(ChunkSystem &chunkSystem, glm::ivec3 pos, char int
 
 void LightSystem::removeSunLight(ChunkSystem &chunkSystem, glm::ivec3 pos, char oldVal)
 {
-
 	auto b = chunkSystem.getBlockSafe(pos.x, pos.y, pos.z);
 	if (b)
 	{
@@ -144,6 +248,25 @@ void LightSystem::removeSunLight(ChunkSystem &chunkSystem, glm::ivec3 pos, char 
 	}
 
 	sunLigtsToRemove.push_back({pos, oldVal});
+}
 
+void LightSystem::addLight(ChunkSystem &chunkSystem, glm::ivec3 pos, char intensity)
+{
+	auto b = chunkSystem.getBlockSafe(pos.x, pos.y, pos.z);
+	if (b)
+	{
+		b->setLightLevel(intensity);
+	}
+	ligtsToAdd.push_back({pos, intensity});
+}
 
+void LightSystem::removeLight(ChunkSystem &chunkSystem, glm::ivec3 pos, char oldVal)
+{
+	auto b = chunkSystem.getBlockSafe(pos.x, pos.y, pos.z);
+	if (b)
+	{
+		b->setLightLevel(0);
+	}
+
+	ligtsToRemove.push_back({pos, oldVal});
 }
