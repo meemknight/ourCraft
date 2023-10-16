@@ -89,8 +89,9 @@ vec2 calculateUVs(int vertexId)
 vec3 calculateVertexPos(int vertexId)
 {
 
-	vec3 pos = fragmentPositionF.xyz;
-	vec3 vertexShape;
+	//vec3 pos = fragmentPositionF.xyz;
+	vec3 pos = vec3(0);
+	vec3 vertexShape = vec3(0);
 
 
 	vertexShape.x = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 0];
@@ -146,11 +147,16 @@ void main()
 
 	v_skyLight = ambientLight;
 
-	fragmentPositionI = in_facePosition - u_positionInt;
-	fragmentPositionF = fragmentPositionI - u_positionFloat;
+	vec3 diffI = in_facePosition - u_positionInt;
+	vec3 diffF = diffI - u_positionFloat;
 	
-	vec4 pos = vec4(calculateVertexPos(gl_VertexID),1);
+
+	fragmentPositionF = calculateVertexPos(gl_VertexID);
+	fragmentPositionI = in_facePosition;
 	
+	vec4 posView = vec4(fragmentPositionF + diffF,1);
+	
+
 	v_uv = calculateUVs(gl_VertexID);
 
 	//calculate normals	
@@ -161,21 +167,21 @@ void main()
 	
 		if(gl_VertexID == 0 || gl_VertexID == 3)
 		{
-			pos1 = pos.xyz;
-			pos2 = calculateVertexPos(gl_VertexID + 1);
-			pos3 = calculateVertexPos(gl_VertexID + 2);
+			pos1 = posView.xyz;
+			pos2 = calculateVertexPos(gl_VertexID + 1) + diffF;
+			pos3 = calculateVertexPos(gl_VertexID + 2) + diffF;
 	
 			
 		}else if(gl_VertexID == 1 || gl_VertexID == 4)
 		{
-			pos1 = calculateVertexPos(gl_VertexID - 1);
-			pos2 = pos.xyz;
-			pos3 = calculateVertexPos(gl_VertexID + 1);
+			pos1 = calculateVertexPos(gl_VertexID - 1) + diffF;
+			pos2 = posView.xyz;
+			pos3 = calculateVertexPos(gl_VertexID + 1) + diffF;
 		}else if(gl_VertexID == 2 || gl_VertexID == 5)
 		{
-			pos1 = calculateVertexPos(gl_VertexID - 2);
-			pos2 = calculateVertexPos(gl_VertexID - 1);
-			pos3 = pos.xyz;
+			pos1 = calculateVertexPos(gl_VertexID - 2) + diffF;
+			pos2 = calculateVertexPos(gl_VertexID - 1) + diffF;
+			pos3 = posView.xyz;
 		}
 		
 		vec3 a = (pos3-pos2);
@@ -184,9 +190,9 @@ void main()
 	}
 
 
-	pos = u_viewProjection * pos;
+	posView = u_viewProjection * posView;
 
-	gl_Position = pos;
+	gl_Position = posView;
 	
 	v_color = (vertexColor[in_faceOrientation] * (ambientLight/15.f)) * 0.7 + 0.3;
 	//v_color = vertexColor[in_faceOrientation];

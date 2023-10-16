@@ -39,6 +39,14 @@ vec3 compute(ivec3 destI, vec3 destF, ivec3 sourceI, vec3 sourceF)
 	return floatPart + vec3(intPart);
 }
 
+float atenuationFunction(float dist)
+{
+	float maxDist = 16;
+	float a = 1;
+
+	return max(0, (maxDist-dist)/(dist*dist*a+maxDist));
+}
+
 void main()
 {
 	vec4 textureColor = texture(sampler2D(v_textureSampler), v_uv);
@@ -47,10 +55,14 @@ void main()
 	float light = 0;	
 	vec3 N = v_normal;
 
-	//for(int i=0; i< u_lightsCount; i++)
+	for(int i=0; i< u_lightsCount; i++)
 	{
-		//vec3 L = normalize(compute(lights[i].rgb, vec3(0), fragmentPositionI, fragmentPositionF));
-		vec3 L = normalize(compute(u_pointPosI, u_pointPosF, fragmentPositionI, fragmentPositionF));
+		vec3 L = compute(lights[i].rgb, vec3(0), fragmentPositionI, fragmentPositionF);
+		//vec3 L =compute(u_pointPosI, u_pointPosF, fragmentPositionI, fragmentPositionF);
+
+		float LightDist = length(L);
+		L = normalize(L);		
+
 		vec3 V    = normalize(compute(u_positionInt, u_positionFloat, fragmentPositionI, fragmentPositionF));
 		vec3 H = normalize(L + V);
 			
@@ -59,9 +71,9 @@ void main()
 		float diffuse = max(dot(L, N), 0.0); 	
 	
 		//light += spec + diffuse;
-		light += diffuse;
+		light += diffuse * atenuationFunction(LightDist);
 	}
-	light = 0;
+	//light = 0;
 
 
 	out_color = vec4(textureColor.rgb*(v_color+light),textureColor.a);
