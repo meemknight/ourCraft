@@ -416,7 +416,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma endregion
 
 #pragma region ui
-	if(0)
+	if(1)
 	{	
 		Ui::Frame f({0,0, w, h});
 

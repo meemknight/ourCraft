@@ -194,18 +194,19 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 			auto frontNeighbour = getChunkSafeFromChunkSystemCoordonates(c.x, c.y + 1);
 			auto backNeighbour = getChunkSafeFromChunkSystemCoordonates(c.x, c.y - 1);
 
-			auto propagateLight = [&](Chunk *neighbour, glm::ivec3 secondBlock, glm::ivec3 firstBlock,
-				glm::ivec3 absolutPositionPropagate)
+			auto propagateLight = [&](Chunk *neighbour, glm::ivec3 darkBlock,
+				glm::ivec3 lightBlock,
+				glm::ivec3 absolutPositionLight)
 			{
-				auto &b = chunk->unsafeGet(firstBlock.x, firstBlock.y, firstBlock.z);
+				auto &b = neighbour->unsafeGet(lightBlock.x, lightBlock.y, lightBlock.z);
 				if (b.getSkyLight() > 1)
 				{
-					auto &b2 = neighbour->unsafeGet(secondBlock.x, secondBlock.y, secondBlock.z);
+					auto &b2 = chunk->unsafeGet(darkBlock.x, darkBlock.y, darkBlock.z);
 					if (!b2.isOpaque())
 					{
-						lightSystem.addSunLight(*this, {absolutPositionPropagate.x, absolutPositionPropagate.y, 
-							absolutPositionPropagate.z},
-							b.getSkyLight() - 1);
+						lightSystem.addSunLight(*this, 
+							{absolutPositionLight.x, absolutPositionLight.y, absolutPositionLight.z},
+							b.getSkyLight());
 					}
 				}
 			};
@@ -216,7 +217,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 				{
 					for (int y = 0; y < CHUNK_HEIGHT - 2; y++)
 					{
-						propagateLight(leftNeighbour, {CHUNK_SIZE - 1, y, z}, {0, y, z},
+						propagateLight(leftNeighbour, {0, y, z}, {CHUNK_SIZE - 1, y, z},
 							{xStart - 1, y, ZStart + z});
 					}
 				}
@@ -228,7 +229,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 				{
 					for (int y = 0; y < CHUNK_HEIGHT - 2; y++)
 					{
-						propagateLight(rightNeighbour, {0, y, z}, {CHUNK_SIZE - 1, y, z}, 
+						propagateLight(rightNeighbour, {CHUNK_SIZE - 1, y, z}, {0, y, z},
 							{xStart + CHUNK_SIZE, y, ZStart + z}
 							);
 					}
@@ -241,7 +242,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 				{
 					for (int y = 0; y < CHUNK_HEIGHT - 2; y++)
 					{
-						propagateLight(frontNeighbour, {x, y, 0}, {x, y, CHUNK_SIZE - 1},
+						propagateLight(frontNeighbour, {x, y, CHUNK_SIZE - 1}, {x, y, 0},
 							{xStart + x, y, CHUNK_SIZE + ZStart});
 					}
 				}
@@ -253,7 +254,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 				{
 					for (int y = 0; y < CHUNK_HEIGHT - 2; y++)
 					{
-						propagateLight(backNeighbour, {x, y, CHUNK_SIZE - 1}, {x, y, 0},
+						propagateLight(backNeighbour, {x, y, 0}, {x, y, CHUNK_SIZE - 1},
 							{xStart + x, y, ZStart - 1});
 					}
 				}
