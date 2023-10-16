@@ -3,7 +3,7 @@
 layout(location = 0) in int in_faceOrientation; //up down left etc
 layout(location = 1) in int in_textureIndex; //dirt grass stone etc
 layout(location = 2) in ivec3 in_facePosition; // int x y z
-layout(location = 3) in int in_skyLight; 
+layout(location = 3) in int in_skyAndNormalLights; 
 
 
 uniform mat4 u_viewProjection;
@@ -69,12 +69,15 @@ readonly restrict layout(std430) buffer u_textureSamplerers
 
 out vec2 v_uv;
 out float v_color;
-out flat int v_skyLight;
+out flat int v_ambientLight;
 
 out flat uvec2 v_textureSampler;
 
 out flat ivec3 fragmentPositionI;
 out vec3 fragmentPositionF;
+
+out flat int v_skyLight;
+out flat int v_normalLight;
 
 out flat vec3 v_normal;
 
@@ -143,9 +146,12 @@ vec3 calculateVertexPos(int vertexId)
 void main()
 {
 
-	int ambientLight = max(in_skyLight - (15 - u_skyLightIntensity), 0);
+	v_skyLight = (in_skyAndNormalLights & 0xf0) >> 4;
+	v_normalLight = (in_skyAndNormalLights & 0xf);
 
-	v_skyLight = ambientLight;
+	v_skyLight = max(v_skyLight - (15 - u_skyLightIntensity), 0);
+
+	v_ambientLight = max(v_skyLight, v_normalLight);
 
 	vec3 diffI = in_facePosition - u_positionInt;
 	vec3 diffF = diffI - u_positionFloat;
@@ -194,7 +200,7 @@ void main()
 
 	gl_Position = posView;
 	
-	v_color = (vertexColor[in_faceOrientation] * (ambientLight/15.f)) * 0.7 + 0.3;
+	v_color = (vertexColor[in_faceOrientation] * (v_ambientLight/15.f)) * 0.7 + 0.3;
 	//v_color = vertexColor[in_faceOrientation];
 
 

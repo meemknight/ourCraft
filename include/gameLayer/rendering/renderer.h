@@ -97,3 +97,15 @@ constexpr int mergeShorts(short a, short b)
 	((short*)&rez)[1] = b;
 	return rez;
 }
+
+constexpr unsigned char merge4bits(unsigned char a, unsigned char b)
+{
+	unsigned char rez = b & 0b1111;
+
+	a = a & 0b1111;
+	a <<= 4;
+
+	rez |= a;
+
+	return rez;
+}

@@ -10,7 +10,10 @@ in vec2 v_uv;
 in float v_color;
 
 in flat uvec2 v_textureSampler;
+in flat int v_ambientLight;
+
 in flat int v_skyLight;
+in flat int v_normalLight;
 
 uniform int u_showLightLevels;
 
@@ -41,8 +44,11 @@ vec3 compute(ivec3 destI, vec3 destF, ivec3 sourceI, vec3 sourceF)
 
 float atenuationFunction(float dist)
 {
-	float maxDist = 16;
-	float a = 1;
+	float maxDist = 15;
+	float a = 0.1;
+
+	//if(dist >= maxDist)return 0;
+	//return 1;
 
 	return max(0, (maxDist-dist)/(dist*dist*a+maxDist));
 }
@@ -59,19 +65,23 @@ void main()
 	{
 		vec3 L = compute(lights[i].rgb, vec3(0), fragmentPositionI, fragmentPositionF);
 		//vec3 L =compute(u_pointPosI, u_pointPosF, fragmentPositionI, fragmentPositionF);
+		
+		float menhetanDistance = dot((abs(fragmentPositionI-lights[i].rgb)),vec3(1));
 
 		float LightDist = length(L);
+
+		if((15-menhetanDistance) + 0.1 > v_normalLight){continue;}
+
 		L = normalize(L);		
 
 		vec3 V    = normalize(compute(u_positionInt, u_positionFloat, fragmentPositionI, fragmentPositionF));
 		vec3 H = normalize(L + V);
 			
 		float shininess = 16;
-		//float spec = pow(max(dot(N, H), 0.0), shininess);
+		float spec = pow(max(dot(N, H), 0.0), shininess);
 		float diffuse = max(dot(L, N), 0.0); 	
 	
-		//light += spec + diffuse;
-		light += diffuse * atenuationFunction(LightDist);
+		light += (spec + diffuse) * atenuationFunction(LightDist)*2.f;
 	}
 	//light = 0;
 
@@ -81,7 +91,7 @@ void main()
 
 	if(u_showLightLevels != 0)
 	{
-		vec4 numbersColor = texture(u_numbers, vec2(v_uv.x / 16.0 + (1/16.0)*v_skyLight, v_uv.y));
+		vec4 numbersColor = texture(u_numbers, vec2(v_uv.x / 16.0 + (1/16.0)*v_ambientLight, v_uv.y));
 		if(numbersColor.a > 0.1)
 		{out_color.rgb = mix(numbersColor.rgb, out_color.rgb, 0.5);}
 	}

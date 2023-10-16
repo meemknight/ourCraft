@@ -108,23 +108,23 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 
 				if (dontUpdateLightSystem)
 				{
-					currentVector->push_back(15);
+					currentVector->push_back(merge4bits(15,15));
 				}
 				else if (isLightEmitor(b.type))
 				{
-					currentVector->push_back(15);
+					currentVector->push_back(merge4bits(b.getSkyLight(),15)); //todo transparent block should emit internal light
 				}else
 				if (i == 2 && y == CHUNK_HEIGHT - 1)
 				{
-					currentVector->push_back(15);
+					currentVector->push_back(merge4bits(15, b.getLight()));
 				}
 				else if (y == 0 && i == 3)
 				{
-					currentVector->push_back(5); //bottom of the world
+					currentVector->push_back(merge4bits(5, b.getLight())); //bottom of the world
 				}
 				else if (sides[i] != nullptr)
 				{
-					int val = std::max(sides[i]->getSkyLight(), sides[i]->getLight());
+					int val = merge4bits(sides[i]->getSkyLight(), sides[i]->getLight());
 					currentVector->push_back(val);
 				}
 				else
@@ -159,22 +159,28 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 				currentVector->push_back(y);
 				currentVector->push_back(z + this->data.z * CHUNK_SIZE);
 
+
+
 				if (dontUpdateLightSystem)
 				{
-					currentVector->push_back(15);
+					currentVector->push_back(merge4bits(15, 15));
 				}
 				else
 					if (sides[i] == nullptr && i == 2)
 					{
-						currentVector->push_back(15);
+						currentVector->push_back(merge4bits(15, b.getLight()));
 					}
 					else if (sides[i] == nullptr && i == 3)
 					{
-						currentVector->push_back(5); //bottom of the world
+						currentVector->push_back(merge4bits(5, b.getLight())); //bottom of the world
 					}
 					else if (sides[i] != nullptr)
 					{
-						int val = std::max(sides[i]->getSkyLight(), sides[i]->getLight());
+						int val = merge4bits(
+							std::max(b.getSkyLight(),sides[i]->getSkyLight()), 
+							std::max(b.getLight(),sides[i]->getLight())
+						);
+
 						currentVector->push_back(val);
 					}
 					else
@@ -221,7 +227,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 			}
 			else
 			{
-				opaqueGeometry.push_back( std::max(b.getSkyLight(), b.getLight()));
+				opaqueGeometry.push_back( merge4bits(b.getSkyLight(), b.getLight()) );
 			}
 
 		}
