@@ -104,6 +104,11 @@ struct Block
 		return ::isGrassMesh(type);
 	}
 
+	bool isLightEmitor()
+	{
+		return ::isLightEmitor(type);
+	}
+
 	unsigned char getSkyLight()
 	{
 		return (lightLevel >> 4);

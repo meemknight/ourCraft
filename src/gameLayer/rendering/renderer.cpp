@@ -298,7 +298,11 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	GET_UNIFORM(defaultShader, u_time);
 	GET_UNIFORM(defaultShader, u_showLightLevels);
 	GET_UNIFORM(defaultShader, u_skyLightIntensity);
+	GET_UNIFORM(defaultShader, u_lightsCount);
+	GET_UNIFORM(defaultShader, u_pointPosF);
+	GET_UNIFORM(defaultShader, u_pointPosI);
 
+	
 	u_vertexData = getStorageBlockIndex(defaultShader.id, "u_vertexData");
 	glShaderStorageBlockBinding(defaultShader.id, u_vertexData, 1);
 	glGenBuffers(1, &vertexDataBuffer);
@@ -319,6 +323,23 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, textureSamplerersBuffer);
 	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint64) * blocksLoader.gpuIds.size(), blocksLoader.gpuIds.data(), 0);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, textureSamplerersBuffer);
+
+	//normals
+	{
+
+
+
+	}
+
+
+	u_lights = getStorageBlockIndex(defaultShader.id, "u_lights");
+	glShaderStorageBlockBinding(defaultShader.id, u_lights, 4);
+	//glGenBuffers(1, &textureSamplerersBuffer);
+	//glBindBuffer(GL_SHADER_STORAGE_BUFFER, textureSamplerersBuffer);
+	//glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint64) * blocksLoader.gpuIds.size(), blocksLoader.gpuIds.data(), 0);
+	//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, textureSamplerersBuffer);
+
+	
 
 
 	glCreateBuffers(1, &vertexBuffer);
@@ -502,47 +523,36 @@ void Renderer::updateDynamicBlocks()
 
 }
 
-//void Renderer::render(std::vector<int> &data, Camera &c, gl2d::Texture &texture)
-//{
-//
-//	glm::vec3 posFloat = {};
-//	glm::ivec3 posInt = {};
-//	c.decomposePosition(posFloat, posInt);
-//
-//	glNamedBufferData(vertexBuffer, sizeof(int) * data.size(), data.data(), GL_STREAM_DRAW);
-//	int facesCount = data.size() / 5;
-//
-//	glBindVertexArray(vao);
-//	texture.bind(0);
-//
-//	defaultShader.bind();
-//
-//	auto mvp = c.getProjectionMatrix() * glm::lookAt({0,0,0}, c.viewDirection, c.up);
-//
-//	glUniformMatrix4fv(u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
-//
-//	glUniform3fv(u_positionFloat, 1, &posFloat[0]);
-//	glUniform3iv(u_positionInt, 1, &posInt[0]);
-//	glUniform1i(u_typesCount, BlocksCount);	//remove
-//	glUniform1f(u_time, std::clock() / 400.f);
-//
-//	glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
-//
-//	glBindVertexArray(0);
-//
-//}
-
 void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramData &programData
-	, bool showLightLevels, int skyLightIntensity)
+	, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos)
 {
+
 	glm::vec3 posFloat = {};
 	glm::ivec3 posInt = {};
 	glm::ivec3 blockPosition = from3DPointToBlock(c.position);
 	c.decomposePosition(posFloat, posInt);
 
+
 	programData.texture.bind(0);
 	programData.numbersTexture.bind(1);
 	defaultShader.bind();
+
+#pragma region lights
+	{
+		auto c = chunkSystem.getChunkSafeFromBlockPos(posInt.x, posInt.z);
+
+		if (c)
+		{
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, c->lightsBuffer);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, c->lightsBuffer);
+			glUniform1i(u_lightsCount, c->lightsElementCountSize);
+		}
+	}
+#pragma endregion
+
+
+
+
 	auto mvp = c.getProjectionMatrix() * glm::lookAt({0,0,0}, c.viewDirection, c.up);
 
 	glUniformMatrix4fv(u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
@@ -552,6 +562,16 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 	glUniform1f(u_time, std::clock() / 400.f);
 	glUniform1i(u_showLightLevels, showLightLevels);
 	glUniform1i(u_skyLightIntensity, skyLightIntensity);
+	
+	{
+		glm::ivec3 i;
+		glm::vec3 f;
+		decomposePosition(pointPos, f, i);
+
+		glUniform3fv(u_pointPosF, 1, &f[0]);
+		glUniform3iv(u_pointPosI, 1, &i[0]);
+	}
+
 
 	glDisable(GL_BLEND);
 

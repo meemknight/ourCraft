@@ -62,6 +62,9 @@ struct Chunk
 	GLuint transparentVao = 0;
 	size_t transparentElementCountSize = 0;
 
+	GLuint lightsBuffer = 0;
+	size_t lightsElementCountSize = 0;
+
 	char dirty = 1;
 	char dirtyTransparency = 1;
 	char neighbourToLeft = 0;

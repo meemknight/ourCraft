@@ -20,16 +20,21 @@ struct Renderer
 	GLint u_time = -1;
 	GLint u_showLightLevels = -1;
 	GLint u_skyLightIntensity = -1;
+	GLint u_lightsCount = -1;
+	GLint u_pointPosF = -1;
+	GLint u_pointPosI = -1;
 	GLuint u_vertexData = GL_INVALID_INDEX;
 	GLuint u_vertexUV = GL_INVALID_INDEX;
 	GLuint u_textureSamplerers = GL_INVALID_INDEX;
+	GLuint u_normalsData = GL_INVALID_INDEX;
+	GLuint u_lights = GL_INVALID_INDEX;
 
 	void create(BlocksLoader &blocksLoader);
 	void updateDynamicBlocks();
 	//void render(std::vector<int> &data, Camera &c, gl2d::Texture &texture);
 
-	void renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, 
-		ProgramData &programData, bool showLightLevels, int skyLightIntensity);
+	void renderFromBakedData(ChunkSystem &chunkSystem, Camera &c,
+		ProgramData &programData, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos);
 
 
 	SkyBoxRenderer skyBoxRenderer;

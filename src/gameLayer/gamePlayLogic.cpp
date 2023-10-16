@@ -189,6 +189,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	}
 #pragma endregion
 
+	static glm::ivec3 point;
+	static glm::ivec3 pointSize;
+	static bool renderBox = 1;
+
 	glm::vec3 posFloat = {};
 	glm::ivec3 posInt = {};
 	programData.renderer.skyBoxRenderer.render(gameData.c);
@@ -209,8 +213,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		//programData.renderer.render(data, gameData.c, programData.texture);
 		programData.renderer.renderFromBakedData(gameData.chunkSystem, gameData.c, programData,
-			gameData.showLightLevels, gameData.skyLightIntensity);
-
+			gameData.showLightLevels, gameData.skyLightIntensity, point);
 	}
 
 	glm::ivec3 rayCastPos = {};
@@ -226,13 +229,11 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	}
 
-	static glm::ivec3 point;
-	static glm::ivec3 pointSize;
-	static bool renderBox = 1;
+
 
 	if (!gameData.escapePressed)
 	{
-		static int blockTypeToPlace = 1;
+		static int blockTypeToPlace = BlockTypes::glowstone;
 		if (platform::isKeyReleased(platform::Button::Z)) { blockTypeToPlace--; }
 		if (platform::isKeyReleased(platform::Button::X)) { blockTypeToPlace++; }
 

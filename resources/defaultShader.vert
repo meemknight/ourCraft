@@ -66,32 +66,36 @@ readonly restrict layout(std430) buffer u_textureSamplerers
 	uvec2 textureSamplerers[];
 };
 
+
 out vec2 v_uv;
 out float v_color;
 out flat int v_skyLight;
 
 out flat uvec2 v_textureSampler;
 
-void main()
+out flat ivec3 fragmentPositionI;
+out vec3 fragmentPositionF;
+
+out flat vec3 v_normal;
+
+vec2 calculateUVs(int vertexId)
+{	
+	vec2 uvs;
+	uvs.x = vertexUV[(in_faceOrientation) * 2 * 6 + vertexId * 2 + 0];
+	uvs.y = vertexUV[(in_faceOrientation) * 2 * 6 + vertexId * 2 + 1];
+	return uvs;
+}
+
+vec3 calculateVertexPos(int vertexId)
 {
 
-	int ambientLight = max(in_skyLight - (15 - u_skyLightIntensity), 0);
-
-	v_skyLight = ambientLight;
-
-
-	ivec3 intPosition = in_facePosition - u_positionInt;
-	vec3 floatPosition = intPosition - u_positionFloat;
-	
-	vec4 pos = vec4(floatPosition.xyz,1);
+	vec3 pos = fragmentPositionF.xyz;
 	vec3 vertexShape;
 
-	v_uv.x = vertexUV[(in_faceOrientation) * 2 * 6 + gl_VertexID * 2 + 0];
-	v_uv.y = vertexUV[(in_faceOrientation) * 2 * 6 + gl_VertexID * 2 + 1];
 
-	vertexShape.x = vertexData[in_faceOrientation * 3 * 6 + gl_VertexID * 3 + 0];
-	vertexShape.y = vertexData[in_faceOrientation * 3 * 6 + gl_VertexID * 3 + 1];
-	vertexShape.z = vertexData[in_faceOrientation * 3 * 6 + gl_VertexID * 3 + 2];
+	vertexShape.x = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 0];
+	vertexShape.y = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 1];
+	vertexShape.z = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 2];
 
 
 	if(in_faceOrientation >= 10) //animated
@@ -104,9 +108,9 @@ void main()
 			//v_uv.x = 1.f-v_uv.x;
 		}
 
-		vertexShape.x += vertexData[(in_faceOrientation-10) * 3 * 6 + gl_VertexID * 3 + 0];
-		vertexShape.y += vertexData[(in_faceOrientation-10) * 3 * 6 + gl_VertexID * 3 + 1];
-		vertexShape.z += vertexData[(in_faceOrientation-10) * 3 * 6 + gl_VertexID * 3 + 2];
+		vertexShape.x += vertexData[(in_faceOrientation-10) * 3 * 6 + vertexId * 3 + 0];
+		vertexShape.y += vertexData[(in_faceOrientation-10) * 3 * 6 + vertexId * 3 + 1];
+		vertexShape.z += vertexData[(in_faceOrientation-10) * 3 * 6 + vertexId * 3 + 2];
 
 		//if(in_faceOrientation == 6)
 		//{//front
@@ -130,15 +134,61 @@ void main()
 		//vertexShape *= 0.8+((sin(u_time)+1)/2.f)*0.2;
 	}
 
-	
-
 	pos.xyz += vertexShape;
+
+	return pos;
+}
+
+void main()
+{
+
+	int ambientLight = max(in_skyLight - (15 - u_skyLightIntensity), 0);
+
+	v_skyLight = ambientLight;
+
+	fragmentPositionI = in_facePosition - u_positionInt;
+	fragmentPositionF = fragmentPositionI - u_positionFloat;
+	
+	vec4 pos = vec4(calculateVertexPos(gl_VertexID),1);
+	
+	v_uv = calculateUVs(gl_VertexID);
+
+	//calculate normals	
+	{
+		vec3 pos1;
+		vec3 pos2;
+		vec3 pos3;
+	
+		if(gl_VertexID == 0 || gl_VertexID == 3)
+		{
+			pos1 = pos.xyz;
+			pos2 = calculateVertexPos(gl_VertexID + 1);
+			pos3 = calculateVertexPos(gl_VertexID + 2);
+	
+			
+		}else if(gl_VertexID == 1 || gl_VertexID == 4)
+		{
+			pos1 = calculateVertexPos(gl_VertexID - 1);
+			pos2 = pos.xyz;
+			pos3 = calculateVertexPos(gl_VertexID + 1);
+		}else if(gl_VertexID == 2 || gl_VertexID == 5)
+		{
+			pos1 = calculateVertexPos(gl_VertexID - 2);
+			pos2 = calculateVertexPos(gl_VertexID - 1);
+			pos3 = pos.xyz;
+		}
+		
+		vec3 a = (pos3-pos2);
+		vec3 b = (pos1-pos2);
+		v_normal = normalize(cross(a, b));
+	}
+
 
 	pos = u_viewProjection * pos;
 
 	gl_Position = pos;
 	
-	v_color = (vertexColor[in_faceOrientation] * (ambientLight/15.f)) * 0.9 + 0.1;
+	v_color = (vertexColor[in_faceOrientation] * (ambientLight/15.f)) * 0.7 + 0.3;
 	//v_color = vertexColor[in_faceOrientation];
 
 

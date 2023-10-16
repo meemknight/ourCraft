@@ -112,6 +112,22 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 					//c is in chunk system coordonates space, not chunk space!
 					chunksToAddLight.push_back({x, z});
 
+					for (int x = 0; x < CHUNK_SIZE; x++)
+						for (int z = 0; z < CHUNK_SIZE; z++)
+							for (int y = 0; y < CHUNK_SIZE; y++)
+							{
+
+								auto &b = i->unsafeGet(x, y, z);
+
+								if (isLightEmitor(b.type))
+								{
+									lightSystem.addLight(*this,
+										{i->data.x * CHUNK_SIZE + x, y, i->data.z * CHUNK_SIZE + z},
+										15);
+								}
+
+							}
+
 				}
 
 			}

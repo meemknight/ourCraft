@@ -25,6 +25,7 @@ struct TransparentCandidate
 static std::vector<TransparentCandidate> transparentCandidates;
 static std::vector<int> opaqueGeometry;
 static std::vector<int> transparentGeometry;
+static std::vector<glm::ivec4> lights;
 
 //todo a counter to know if I have transparent geometry in this chunk
 bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec3 playerPosition)
@@ -230,6 +231,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 	opaqueGeometry.clear();
 	transparentGeometry.clear();
 	transparentCandidates.clear();
+	lights.clear();
 
 #pragma endregion
 
@@ -258,6 +260,11 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 							{
 								blockBakeLogicForSolidBlocks(x, y, z, &opaqueGeometry, b, b.isAnimatedBlock());
 							}
+						}
+
+						if (b.isLightEmitor())
+						{
+							lights.push_back({x + data.x * CHUNK_SIZE, y, z + data.z * CHUNK_SIZE,0});
 						}
 					}
 				}
@@ -308,6 +315,11 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 		glBufferData(GL_ARRAY_BUFFER, opaqueGeometry.size() * sizeof(opaqueGeometry[0]),
 			opaqueGeometry.data(), GL_STREAM_DRAW);
 		elementCountSize = opaqueGeometry.size() / 5;
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsBuffer);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, lights.size() * sizeof(lights[0]),
+			lights.data(), GL_STREAM_DRAW);
+		lightsElementCountSize = lights.size();
 	}
 
 	if (updateTransparency)
@@ -381,11 +393,18 @@ void Chunk::createGpuData()
 	setupVertexAttributes();
 
 	glBindVertexArray(0);
+
+	glGenBuffers(1, &lightsBuffer);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsBuffer);
+
+
 }
 
 void Chunk::clearGpuData()
 {
 	glDeleteBuffers(1, &opaqueGeometryBuffer);
+	glDeleteBuffers(1, &transparentGeometryBuffer);
+	glDeleteBuffers(1, &lightsBuffer);
 }
 
 void ChunkData::clearLightLevels()

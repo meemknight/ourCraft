@@ -14,19 +14,65 @@ in flat int v_skyLight;
 
 uniform int u_showLightLevels;
 
+uniform vec3 u_pointPosF;
+uniform ivec3 u_pointPosI;
+
+readonly restrict layout(std430) buffer u_lights
+{
+	ivec4 lights[];
+};
+
+uniform int u_lightsCount;
+
+uniform ivec3 u_positionInt;
+uniform vec3 u_positionFloat;
+
+in flat ivec3 fragmentPositionI;
+in vec3 fragmentPositionF;
+in flat vec3 v_normal;
+
+vec3 compute(ivec3 destI, vec3 destF, ivec3 sourceI, vec3 sourceF)
+{
+	ivec3 intPart = destI - sourceI;
+	vec3 floatPart = destF - sourceF;
+
+	return floatPart + vec3(intPart);
+}
+
 void main()
 {
-	//vec4 textureColor = texture(u_texture, v_uv);
-	
 	vec4 textureColor = texture(sampler2D(v_textureSampler), v_uv);
-	vec4 numbersColor = texture(u_numbers, vec2(v_uv.x / 16.0 + (1/16.0)*v_skyLight, v_uv.y));
-	
 	if(textureColor.a < 0.1){discard;}
-	out_color = vec4(textureColor.rgb*v_color,textureColor.a);
+
+	float light = 0;	
+	vec3 N = v_normal;
+
+	//for(int i=0; i< u_lightsCount; i++)
+	{
+		//vec3 L = normalize(compute(lights[i].rgb, vec3(0), fragmentPositionI, fragmentPositionF));
+		vec3 L = normalize(compute(u_pointPosI, u_pointPosF, fragmentPositionI, fragmentPositionF));
+		vec3 V    = normalize(compute(u_positionInt, u_positionFloat, fragmentPositionI, fragmentPositionF));
+		vec3 H = normalize(L + V);
+			
+		float shininess = 16;
+		//float spec = pow(max(dot(N, H), 0.0), shininess);
+		float diffuse = max(dot(L, N), 0.0); 	
+	
+		//light += spec + diffuse;
+		light += diffuse;
+	}
+	light = 0;
+
+
+	out_color = vec4(textureColor.rgb*(v_color+light),textureColor.a);
+		
 
 	if(u_showLightLevels != 0)
 	{
+		vec4 numbersColor = texture(u_numbers, vec2(v_uv.x / 16.0 + (1/16.0)*v_skyLight, v_uv.y));
 		if(numbersColor.a > 0.1)
 		{out_color.rgb = mix(numbersColor.rgb, out_color.rgb, 0.5);}
 	}
+
+	out_color = clamp(out_color, vec4(0), vec4(1));
 }
