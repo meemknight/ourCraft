@@ -32,8 +32,11 @@ struct Renderer
 
 	GLuint u_metallic = GL_INVALID_INDEX;
 	GLuint u_roughness = GL_INVALID_INDEX;
-	GLuint u_exposure  = GL_INVALID_INDEX;
-
+	GLuint u_exposure = GL_INVALID_INDEX;
+	GLuint u_fogDistance = GL_INVALID_INDEX;
+	GLuint u_underWater = GL_INVALID_INDEX;
+	GLuint u_waterColor = GL_INVALID_INDEX;
+	
 	float metallic = 0;
 	float roughness = 0.5;
 	float exposure = 1.7;
@@ -44,7 +47,8 @@ struct Renderer
 	//void render(std::vector<int> &data, Camera &c, gl2d::Texture &texture);
 
 	void renderFromBakedData(ChunkSystem &chunkSystem, Camera &c,
-		ProgramData &programData, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos);
+		ProgramData &programData, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos,
+		bool underWater);
 
 	GLuint lightBuffer = 0;
 	size_t lightsBufferCount = 0;

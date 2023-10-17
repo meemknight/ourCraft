@@ -26,6 +26,26 @@ uniform vec3 u_sunDirection;
 uniform float u_metallic;
 uniform float u_roughness;
 uniform float u_exposure;
+uniform int u_underWater;
+
+uniform float u_fogDistance = 10 * 16 / 2;
+const float fogGradient = 32;
+const float fogGradientUnderWater = 2;
+
+uniform vec3 u_waterColor;
+
+float computeFog(float dist)
+{
+	float rez = exp(-pow(dist*(1/u_fogDistance), fogGradient));
+	if(rez > 0.9){return 1;};
+	return rez;
+}
+
+float computeFogUnderWater(float dist)
+{
+	float rez = exp(-pow(dist*(1/u_fogDistance), fogGradientUnderWater));
+	return pow(rez,4);
+}
 
 readonly restrict layout(std430) buffer u_lights
 {
@@ -324,13 +344,16 @@ void main()
 
 
 	vec3 finalColor = vec3(0);
-		
+
 	vec3 N = applyNormalMap(v_normal);
-	vec3 V = normalize(compute(u_positionInt, u_positionFloat, fragmentPositionI, fragmentPositionF));
+	vec3 V = compute(u_positionInt, u_positionFloat, fragmentPositionI, fragmentPositionF);
+	float viewLength = length(V);
+	V /= viewLength;
 
 	vec3 F0 = vec3(0.04); 
 	F0 = mix(F0, textureColor.rgb, vec3(metallic));
 	
+
 	for(int i=0; i< u_lightsCount; i++)
 	{
 		vec3 L = compute(lights[i].rgb, vec3(0), fragmentPositionI, fragmentPositionF);
@@ -380,6 +403,13 @@ void main()
 	out_color.rgb = ACESFitted(out_color.rgb * u_exposure);
 	out_color.rgb = pow(out_color.rgb, vec3(1/2.2));
 	
+
+	if(u_underWater != 0)
+	{
+		out_color.rgb = mix(u_waterColor.rgb, out_color.rgb, vec3(computeFogUnderWater(viewLength)));
+	}
+
+	out_color.a = computeFog(viewLength);
 	//out_color.r = 1-roughness;
 	//out_color.g = metallic;
 	//out_color.b = 0;

@@ -44,7 +44,7 @@ bool initGameplay(ProgramData &programData)
 	gameData = GameData();
 	gameData.c.position = glm::vec3(0, 65, 0);
 
-	gameData.chunkSystem.createChunks(10);
+	gameData.chunkSystem.createChunks(16);
 
 	return true;
 }
@@ -193,9 +193,20 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	static glm::ivec3 pointSize;
 	static bool renderBox = 1;
 
+	bool underWater = 0;
+
+	auto inBlock = gameData.chunkSystem.getBlockSafe(from3DPointToBlock(gameData.c.position));
+	if (inBlock)
+	{
+		if (inBlock->type == BlockTypes::water)
+		{
+			underWater = 1;
+		}
+	}
+
 	glm::vec3 posFloat = {};
 	glm::ivec3 posInt = {};
-	programData.renderer.skyBoxRenderer.render(gameData.c);
+	programData.renderer.skyBoxRenderer.render(gameData.c, underWater);
 
 	glm::ivec3 blockPositionPlayer = from3DPointToBlock(gameData.c.position);
 
@@ -213,7 +224,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		//programData.renderer.render(data, gameData.c, programData.texture);
 		programData.renderer.renderFromBakedData(gameData.chunkSystem, gameData.c, programData,
-			gameData.showLightLevels, gameData.skyLightIntensity, point);
+			gameData.showLightLevels, gameData.skyLightIntensity, point, underWater);
 	}
 
 	glm::ivec3 rayCastPos = {};
@@ -334,6 +345,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			ImGui::SliderFloat("exposure", &programData.renderer.exposure, 0.001, 10);
 
 			ImGui::SliderFloat3("Sky pos", &programData.renderer.skyBoxRenderer.sunPos[0], -1, 1);
+			
+			ImGui::ColorPicker3("Underwater color", &programData.renderer.skyBoxRenderer.waterColor[0]);
+
 			if (glm::length(programData.renderer.skyBoxRenderer.sunPos[0]) != 0)
 			{
 				programData.renderer.skyBoxRenderer.sunPos = glm::normalize(programData.renderer.skyBoxRenderer.sunPos);

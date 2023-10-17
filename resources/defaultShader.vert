@@ -196,6 +196,7 @@ void main()
 		vec3 a = (pos3-pos2);
 		vec3 b = (pos1-pos2);
 		v_normal = normalize(cross(a, b));
+
 	}
 
 

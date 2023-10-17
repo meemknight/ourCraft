@@ -16,8 +16,11 @@ out vec3 fragColor;
 
 vec3 u_skyColor = vec3(98, 131, 156)/255.0;
 vec3 u_sunColor = vec3(0.098, 0.091, 0.024) * 0.6;
+uniform vec3 u_waterColor = vec3(24, 85, 217) /255.f * 0.6;
 float u_g = 0.75;
 uniform vec3 u_sunPos;
+uniform int u_underWater;
+
 
 void main (void)
 {
@@ -54,10 +57,15 @@ void main (void)
 	//{
 	//	float a = min(max(fCosEarth/0.02,0), 1);
 	//	a*=a*a;
-	//	fragColor.rgb = mix(computedGroundColor.rgb, computedSkyColor.rgb, vec3(a));	
+	//	fragColor.rgb = mix(u_waterColor.rgb, computedSkyColor.rgb, vec3(a));	
 	//}else
 	{
 		fragColor.rgb =  computedSkyColor;
+	}
+
+	if(u_underWater != 0)
+	{
+		fragColor.rgb = mix(u_waterColor.rgb, computedSkyColor.rgb, vec3(0.5));	
 	}
 
 	//fragColor.rgb =  firstColor + vec3(fCos);

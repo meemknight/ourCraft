@@ -306,7 +306,11 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	GET_UNIFORM(defaultShader, u_metallic);
 	GET_UNIFORM(defaultShader, u_roughness);
 	GET_UNIFORM(defaultShader, u_exposure);
+	GET_UNIFORM(defaultShader, u_fogDistance);
+	GET_UNIFORM(defaultShader, u_underWater);
+	GET_UNIFORM(defaultShader, u_waterColor);
 	
+
 	u_vertexData = getStorageBlockIndex(defaultShader.id, "u_vertexData");
 	glShaderStorageBlockBinding(defaultShader.id, u_vertexData, 1);
 	glGenBuffers(1, &vertexDataBuffer);
@@ -526,7 +530,7 @@ void Renderer::updateDynamicBlocks()
 }
 
 void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramData &programData
-	, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos)
+	, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos, bool underWater)
 {
 
 	glm::vec3 posFloat = {};
@@ -612,8 +616,11 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 	glUniform1f(u_metallic, metallic);
 	glUniform1f(u_roughness, roughness);
 	glUniform1f(u_exposure, exposure);
+	glUniform1f(u_fogDistance, (chunkSystem.squareSize / 2.f) * CHUNK_SIZE - CHUNK_SIZE);
+	glUniform1i(u_underWater, underWater);
+	glUniform3fv(u_waterColor, 1, &skyBoxRenderer.waterColor[0]);
 
-	
+
 	{
 		glm::ivec3 i;
 		glm::vec3 f;
@@ -624,7 +631,8 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 	}
 
 
-	glDisable(GL_BLEND);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	for (auto &chunk : chunkSystem.loadedChunks)
 	{
@@ -642,30 +650,31 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 		}
 	}
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	auto chunkVectorCopy = chunkSystem.loadedChunks;
 
-	std::sort(chunkVectorCopy.begin(), chunkVectorCopy.end(),
-		[x = divideChunk(blockPosition.x), z = divideChunk(blockPosition.z)](Chunk *b, Chunk *a)
 	{
-		if (a == nullptr) { return false; }
-		if (b == nullptr) { return true; }
+		std::sort(chunkVectorCopy.begin(), chunkVectorCopy.end(),
+			[x = divideChunk(blockPosition.x), z = divideChunk(blockPosition.z)](Chunk *b, Chunk *a)
+		{
+			if (a == nullptr) { return false; }
+			if (b == nullptr) { return true; }
 
-		int ax = a->data.x - x;
-		int az = a->data.z - z;
+			int ax = a->data.x - x;
+			int az = a->data.z - z;
 
-		int bx = b->data.x - x;
-		int bz = b->data.z - z;
+			int bx = b->data.x - x;
+			int bz = b->data.z - z;
 
-		unsigned long reza = ax * ax + az * az;
-		unsigned long rezb = bx * bx + bz * bz;
+			unsigned long reza = ax * ax + az * az;
+			unsigned long rezb = bx * bx + bz * bz;
 
-		return reza < rezb;
+			return reza < rezb;
+		}
+		);
 	}
-	);
 
+	glDisable(GL_CULL_FACE); //todo change
 	for (auto &chunk : chunkVectorCopy)
 	{
 		if (chunk)
@@ -683,11 +692,9 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 	}
 
 
+	glEnable(GL_CULL_FACE);
+	glDisable(GL_BLEND);
 	glBindVertexArray(0);
-
-
-
-
 }
 
 float cubePositions[] = {

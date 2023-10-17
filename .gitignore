@@ -4,3 +4,4 @@ build/
 /.vs
 .idea/
 CMakeSettings.json
+/ourcmake
