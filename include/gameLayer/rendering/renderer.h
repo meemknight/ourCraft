@@ -23,6 +23,7 @@ struct Renderer
 	GLint u_lightsCount = -1;
 	GLint u_pointPosF = -1;
 	GLint u_pointPosI = -1;
+	GLint u_sunDirection = -1;
 	GLuint u_vertexData = GL_INVALID_INDEX;
 	GLuint u_vertexUV = GL_INVALID_INDEX;
 	GLuint u_textureSamplerers = GL_INVALID_INDEX;
@@ -36,6 +37,8 @@ struct Renderer
 	void renderFromBakedData(ChunkSystem &chunkSystem, Camera &c,
 		ProgramData &programData, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos);
 
+	GLuint lightBuffer = 0;
+	size_t lightsBufferCount = 0;
 
 	SkyBoxRenderer skyBoxRenderer;
 

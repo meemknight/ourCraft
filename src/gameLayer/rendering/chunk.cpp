@@ -324,7 +324,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsBuffer);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, lights.size() * sizeof(lights[0]),
-			lights.data(), GL_STREAM_DRAW);
+			lights.data(), GL_STREAM_READ);
 		lightsElementCountSize = lights.size();
 	}
 
@@ -402,6 +402,7 @@ void Chunk::createGpuData()
 
 	glGenBuffers(1, &lightsBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsBuffer);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 
 }

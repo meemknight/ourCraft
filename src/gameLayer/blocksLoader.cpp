@@ -374,7 +374,7 @@ void createFromFileDataWithAplhaFixing(gl2d::Texture &t, const unsigned char *im
 	free((void *)decodedImage);
 }
 
-void loadFromFileWithAplhaFixing(gl2d::Texture &t, const char *fileName, bool pixelated, bool useMipMaps)
+bool loadFromFileWithAplhaFixing(gl2d::Texture &t, const char *fileName, bool pixelated, bool useMipMaps)
 {
 	std::ifstream file(fileName, std::ios::binary);
 
@@ -383,9 +383,9 @@ void loadFromFileWithAplhaFixing(gl2d::Texture &t, const char *fileName, bool pi
 		char c[300] = {0};
 		strcat(c, "error openning: ");
 		strcat(c + strlen(c), fileName);
-		std::cout << c;
+		std::cout << c << "\n";
 		//errorFunc(c);//todo propper error function
-		return;
+		return 0;
 	}
 
 	int fileSize = 0;
@@ -400,6 +400,7 @@ void loadFromFileWithAplhaFixing(gl2d::Texture &t, const char *fileName, bool pi
 
 	delete[] fileData;
 
+	return 1;
 }
 
 void BlocksLoader::loadAllTextures()
@@ -409,6 +410,7 @@ void BlocksLoader::loadAllTextures()
 	gpuIds.reserve(count + 1);
 	texturesIds.reserve(count+ 1);
 
+	//default texture
 	{
 		unsigned char data[16] = {};
 
@@ -434,8 +436,6 @@ void BlocksLoader::loadAllTextures()
 			data[i++] = 0;
 			data[i++] = 255;
 		}
-		
-
 
 		gl2d::Texture t;
 		t.createFromBuffer((char*)data, 2, 2, true, false);
@@ -445,20 +445,37 @@ void BlocksLoader::loadAllTextures()
 		glMakeTextureHandleResidentARB(handle);
 		gpuIds.push_back(handle);
 	}
+
+	//default normal
+	{
+		unsigned char data[4] = {};
+
+		{
+			int i = 0;
+			data[i++] = 127;
+			data[i++] = 127;
+			data[i++] = 255;
+			data[i++] = 255;
+		}
+
+		gl2d::Texture t;
+		t.createFromBuffer((char *)data, 1, 1, true, false);
+
+		texturesIds.push_back(t.id);
+		auto handle = glGetTextureHandleARB(t.id);
+		glMakeTextureHandleResidentARB(handle);
+		gpuIds.push_back(handle);
+	}
+
 	
 	std::string path;
 
-	for (int i = 0; i < count; i++)
+	auto addTexture = [&](std::string path) -> bool
 	{
+
 		gl2d::Texture t;
-		path.clear();
-
-		path += RESOURCES_PATH;
-		path += "pbr/block/";
-		path += texturesNames[i];
-		path += ".png";
-
-		loadFromFileWithAplhaFixing(t, path.c_str(), true, false);
+		
+		if (!loadFromFileWithAplhaFixing(t, path.c_str(), true, false)) { return 0; }
 		t.bind();
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -474,6 +491,30 @@ void BlocksLoader::loadAllTextures()
 		glMakeTextureHandleResidentARB(handle);
 
 		gpuIds.push_back(handle);
+
+		return 1;
+	};
+
+	for (int i = 0; i < count; i++)
+	{
+		
+		path.clear();
+
+		path += RESOURCES_PATH;
+		path += "pbr/block/";
+		path += texturesNames[i];
+
+		if (!addTexture(path + ".png"))
+		{
+			texturesIds.push_back(texturesIds[0]);
+			gpuIds.push_back(gpuIds[0]);
+		}
+		
+		if(!addTexture(path + "_n.png"))
+		{
+			texturesIds.push_back(texturesIds[1]);
+			gpuIds.push_back(gpuIds[1]);
+		}
 	}
 
 
@@ -481,5 +522,5 @@ void BlocksLoader::loadAllTextures()
 
 uint16_t getGpuIdIndexForBlock(short type, int face)
 {
-	return blocksLookupTable[type * 6 + face];
+	return blocksLookupTable[type * 6 + face] * 2;
 }

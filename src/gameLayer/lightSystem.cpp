@@ -252,6 +252,7 @@ void LightSystem::removeSunLight(ChunkSystem &chunkSystem, glm::ivec3 pos, char 
 
 void LightSystem::addLight(ChunkSystem &chunkSystem, glm::ivec3 pos, char intensity)
 {
+	chunkSystem.shouldUpdateLights = true;
 	auto b = chunkSystem.getBlockSafe(pos.x, pos.y, pos.z);
 	if (b)
 	{
@@ -262,6 +263,7 @@ void LightSystem::addLight(ChunkSystem &chunkSystem, glm::ivec3 pos, char intens
 
 void LightSystem::removeLight(ChunkSystem &chunkSystem, glm::ivec3 pos, char oldVal)
 {
+	chunkSystem.shouldUpdateLights = true;
 	auto b = chunkSystem.getBlockSafe(pos.x, pos.y, pos.z);
 	if (b)
 	{

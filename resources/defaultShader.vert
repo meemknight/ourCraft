@@ -72,6 +72,7 @@ out float v_color;
 out flat int v_ambientLight;
 
 out flat uvec2 v_textureSampler;
+out flat uvec2 v_normalSampler;
 
 out flat ivec3 fragmentPositionI;
 out vec3 fragmentPositionF;
@@ -206,5 +207,6 @@ void main()
 
 
 	v_textureSampler = textureSamplerers[in_textureIndex];
+	v_normalSampler = textureSamplerers[in_textureIndex+1];
 
 }

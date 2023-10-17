@@ -330,6 +330,16 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			ImGui::Checkbox("showLightLevels", &gameData.showLightLevels);
 			ImGui::SliderInt("skyLightIntensity", &gameData.skyLightIntensity, 0, 15);
 
+			ImGui::SliderFloat3("Sky pos", &programData.renderer.skyBoxRenderer.sunPos[0], -1, 1);
+			if (glm::length(programData.renderer.skyBoxRenderer.sunPos[0]) != 0)
+			{
+				programData.renderer.skyBoxRenderer.sunPos = glm::normalize(programData.renderer.skyBoxRenderer.sunPos);
+			}
+			else
+			{
+				programData.renderer.skyBoxRenderer.sunPos = glm::vec3(0, -1, 0);
+			}
+
 			pointSize = glm::clamp(pointSize, glm::ivec3(0, 0, 0), glm::ivec3(64, 64, 64));
 
 			auto b = gameData.chunkSystem.getBlockSafe(point);

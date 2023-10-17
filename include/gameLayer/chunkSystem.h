@@ -14,6 +14,8 @@ struct LightSystem;
 struct ChunkSystem
 {
 
+	bool shouldUpdateLights = 0;
+
 	std::vector<Chunk*> loadedChunks;
 	std::vector<int> requestedChunks;
 	int squareSize = 3;

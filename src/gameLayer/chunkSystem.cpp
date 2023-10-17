@@ -98,6 +98,8 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 			}
 			else
 			{
+				shouldUpdateLights = true;
+
 				i->createGpuData();
 				//permaAssert(loadedChunks[x * squareSize + z] == nullptr); //no need for assert we check the if above 
 				loadedChunks[x * squareSize + z] = i;
@@ -142,6 +144,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 	if (!created || lastX != x || lastZ != z)
 	{
+		shouldUpdateLights = true;
 
 		std::vector<Chunk*> newChunkVector;
 		newChunkVector.resize(squareSize * squareSize);

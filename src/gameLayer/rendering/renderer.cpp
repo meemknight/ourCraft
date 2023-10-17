@@ -10,6 +10,7 @@
 #include <blocksLoader.h>
 #include <chunkSystem.h>
 #include <gamePlayLogic.h>
+#include <iostream>
 
 #define GET_UNIFORM(s, n) n = s.getUniform(#n);
 
@@ -301,7 +302,7 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	GET_UNIFORM(defaultShader, u_lightsCount);
 	GET_UNIFORM(defaultShader, u_pointPosF);
 	GET_UNIFORM(defaultShader, u_pointPosI);
-
+	GET_UNIFORM(defaultShader, u_sunDirection);
 	
 	u_vertexData = getStorageBlockIndex(defaultShader.id, "u_vertexData");
 	glShaderStorageBlockBinding(defaultShader.id, u_vertexData, 1);
@@ -324,12 +325,10 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint64) * blocksLoader.gpuIds.size(), blocksLoader.gpuIds.data(), 0);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, textureSamplerersBuffer);
 
-	//normals
-	{
-
-
-
-	}
+	
+	glGenBuffers(1, &lightBuffer);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightBuffer);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 
 	u_lights = getStorageBlockIndex(defaultShader.id, "u_lights");
@@ -539,14 +538,58 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 
 #pragma region lights
 	{
-		auto c = chunkSystem.getChunkSafeFromBlockPos(posInt.x, posInt.z);
 
-		if (c)
+		if (chunkSystem.shouldUpdateLights)
 		{
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, c->lightsBuffer);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, c->lightsBuffer);
-			glUniform1i(u_lightsCount, c->lightsElementCountSize);
-		}
+			chunkSystem.shouldUpdateLights = 0;
+
+			//std::cout << "Updated lights\n";
+
+			lightsBufferCount = 0;
+
+			for (auto c : chunkSystem.loadedChunks)
+			{
+				if (c)
+				{
+					lightsBufferCount += c->lightsElementCountSize;
+				}
+			}
+
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightBuffer);
+			glBufferData(GL_SHADER_STORAGE_BUFFER, lightsBufferCount * sizeof(glm::ivec4), NULL, GL_STREAM_COPY);
+
+			glBindBuffer(GL_COPY_WRITE_BUFFER, lightBuffer);
+
+			size_t offset = 0;
+			for (auto c : chunkSystem.loadedChunks)
+			{
+
+				if (c)
+				{
+					glBindBuffer(GL_COPY_READ_BUFFER, c->lightsBuffer);
+
+					// Copy data from the first existing SSBO to the new SSBO
+					glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset,
+						c->lightsElementCountSize * sizeof(glm::ivec4));
+
+					offset += c->lightsElementCountSize * sizeof(glm::ivec4);
+				}
+			}
+
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightBuffer);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, lightBuffer);
+		};
+
+		glUniform1i(u_lightsCount, lightsBufferCount);
+
+		//auto c = chunkSystem.getChunkSafeFromBlockPos(posInt.x, posInt.z);
+		//
+		//if (c)
+		//{
+		//	glBindBuffer(GL_SHADER_STORAGE_BUFFER, c->lightsBuffer);
+		//	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, c->lightsBuffer);
+		//	glUniform1i(u_lightsCount, c->lightsElementCountSize);
+		//}
 	}
 #pragma endregion
 
@@ -562,6 +605,8 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 	glUniform1f(u_time, std::clock() / 400.f);
 	glUniform1i(u_showLightLevels, showLightLevels);
 	glUniform1i(u_skyLightIntensity, skyLightIntensity);
+	glUniform3fv(u_sunDirection, 1, &skyBoxRenderer.sunPos[0]);
+	
 	
 	{
 		glm::ivec3 i;

@@ -15,9 +15,9 @@ in vec3 v_vsViewDirection;
 out vec3 fragColor;
 
 vec3 u_skyColor = vec3(98, 131, 156)/255.0;
-vec3 u_sunColor = vec3(0.098, 0.091, 0.014);
-float u_g = 0.65;
-vec3 u_lightPos = normalize(vec3(-1, 0.84, -1));
+vec3 u_sunColor = vec3(0.098, 0.091, 0.024) * 0.6;
+float u_g = 0.75;
+uniform vec3 u_sunPos;
 
 void main (void)
 {
@@ -26,7 +26,7 @@ void main (void)
 	vec3 sunColor = u_sunColor*0.5;
 
 	vec3 localPos = normalize(v_vsViewDirection);
-	vec3 lightPos = normalize(u_lightPos);
+	vec3 lightPos = normalize(u_sunPos);
 
 	vec3 upVector = vec3(0,1,0);
 	float fCosEarth = max(dot(localPos, upVector),0);
