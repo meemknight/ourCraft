@@ -13,7 +13,10 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 		ligtsToAdd.clear();
 	}
 
-	while (!sunLigtsToRemove.empty())
+	const int maxUpperBound = 100000;
+
+	int upperBound = maxUpperBound;
+	while (!sunLigtsToRemove.empty() && (upperBound--) > 0)
 	{
 		auto element = sunLigtsToRemove.front();
 		sunLigtsToRemove.pop_front();
@@ -63,7 +66,8 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 
 	}
 
-	while (!sunLigtsToAdd.empty())
+	upperBound = maxUpperBound;
+	while (!sunLigtsToAdd.empty() && (upperBound--) > 0)
 	{
 		auto element = sunLigtsToAdd.front();
 		sunLigtsToAdd.pop_front();
@@ -125,7 +129,8 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 
 	//...
 
-	while (!ligtsToRemove.empty())
+	upperBound = maxUpperBound;
+	while (!ligtsToRemove.empty() && (upperBound--) > 0)
 	{
 		auto element = ligtsToRemove.front();
 		ligtsToRemove.pop_front();
@@ -174,7 +179,8 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 		chunkSystem.setChunkAndNeighboursFlagDirtyFromBlockPos(element.pos.x, element.pos.z);
 	}
 
-	while (!ligtsToAdd.empty())
+	upperBound = maxUpperBound;
+	while (!ligtsToAdd.empty() && (upperBound--) > 0)
 	{
 		auto element = ligtsToAdd.front();
 		ligtsToAdd.pop_front();
