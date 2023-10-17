@@ -68,11 +68,12 @@ readonly restrict layout(std430) buffer u_textureSamplerers
 
 
 out vec2 v_uv;
-out float v_color;
-out flat int v_ambientLight;
+out float v_ambient;
+out flat int v_ambientInt;
 
 out flat uvec2 v_textureSampler;
 out flat uvec2 v_normalSampler;
+out flat uvec2 v_materialSampler;
 
 out flat ivec3 fragmentPositionI;
 out vec3 fragmentPositionF;
@@ -144,6 +145,7 @@ vec3 calculateVertexPos(int vertexId)
 	return pos;
 }
 
+
 void main()
 {
 
@@ -152,7 +154,7 @@ void main()
 
 	v_skyLight = max(v_skyLight - (15 - u_skyLightIntensity), 0);
 
-	v_ambientLight = max(v_skyLight, v_normalLight);
+	v_ambientInt = max(v_skyLight, v_normalLight);
 
 	vec3 diffI = in_facePosition - u_positionInt;
 	vec3 diffF = diffI - u_positionFloat;
@@ -168,9 +170,9 @@ void main()
 
 	//calculate normals	
 	{
-		vec3 pos1;
-		vec3 pos2;
-		vec3 pos3;
+		vec3 pos1 = vec3(0);
+		vec3 pos2 = vec3(0);
+		vec3 pos3 = vec3(0);
 	
 		if(gl_VertexID == 0 || gl_VertexID == 3)
 		{
@@ -201,12 +203,13 @@ void main()
 
 	gl_Position = posView;
 	
-	v_color = (vertexColor[in_faceOrientation] * (v_ambientLight/15.f)) * 0.7 + 0.3;
+	v_ambient = (vertexColor[in_faceOrientation] * (v_ambientInt/15.f)) * 0.8 + 0.2;
 	//v_color = vertexColor[in_faceOrientation];
 
 
 
 	v_textureSampler = textureSamplerers[in_textureIndex];
 	v_normalSampler = textureSamplerers[in_textureIndex+1];
+	v_materialSampler = textureSamplerers[in_textureIndex+2];
 
 }

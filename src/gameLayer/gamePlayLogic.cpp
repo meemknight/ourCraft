@@ -44,7 +44,7 @@ bool initGameplay(ProgramData &programData)
 	gameData = GameData();
 	gameData.c.position = glm::vec3(0, 65, 0);
 
-	gameData.chunkSystem.createChunks(16);
+	gameData.chunkSystem.createChunks(10);
 
 	return true;
 }
@@ -329,6 +329,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			ImGui::Checkbox("Render Box", &renderBox);
 			ImGui::Checkbox("showLightLevels", &gameData.showLightLevels);
 			ImGui::SliderInt("skyLightIntensity", &gameData.skyLightIntensity, 0, 15);
+			ImGui::SliderFloat("metallic", &programData.renderer.metallic, 0, 1);
+			ImGui::SliderFloat("roughness", &programData.renderer.roughness, 0, 1);
+			ImGui::SliderFloat("exposure", &programData.renderer.exposure, 0.001, 10);
 
 			ImGui::SliderFloat3("Sky pos", &programData.renderer.skyBoxRenderer.sunPos[0], -1, 1);
 			if (glm::length(programData.renderer.skyBoxRenderer.sunPos[0]) != 0)

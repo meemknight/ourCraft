@@ -30,6 +30,15 @@ struct Renderer
 	GLuint u_normalsData = GL_INVALID_INDEX;
 	GLuint u_lights = GL_INVALID_INDEX;
 
+	GLuint u_metallic = GL_INVALID_INDEX;
+	GLuint u_roughness = GL_INVALID_INDEX;
+	GLuint u_exposure  = GL_INVALID_INDEX;
+
+	float metallic = 0;
+	float roughness = 0.5;
+	float exposure = 1.7;
+
+
 	void create(BlocksLoader &blocksLoader);
 	void updateDynamicBlocks();
 	//void render(std::vector<int> &data, Camera &c, gl2d::Texture &texture);

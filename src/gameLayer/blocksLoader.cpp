@@ -403,6 +403,7 @@ bool loadFromFileWithAplhaFixing(gl2d::Texture &t, const char *fileName, bool pi
 	return 1;
 }
 
+//textureloader texture loader
 void BlocksLoader::loadAllTextures()
 {
 	size_t count = sizeof(texturesNames) / sizeof(char *);
@@ -467,6 +468,26 @@ void BlocksLoader::loadAllTextures()
 		gpuIds.push_back(handle);
 	}
 
+	//default material
+	{
+		unsigned char data[4] = {};
+
+		{
+			int i = 0;
+			data[i++] = 0;
+			data[i++] = 0;
+			data[i++] = 0;
+			data[i++] = 255;
+		}
+
+		gl2d::Texture t;
+		t.createFromBuffer((char *)data, 1, 1, true, false);
+
+		texturesIds.push_back(t.id);
+		auto handle = glGetTextureHandleARB(t.id);
+		glMakeTextureHandleResidentARB(handle);
+		gpuIds.push_back(handle);
+	}
 	
 	std::string path;
 
@@ -515,6 +536,12 @@ void BlocksLoader::loadAllTextures()
 			texturesIds.push_back(texturesIds[1]);
 			gpuIds.push_back(gpuIds[1]);
 		}
+
+		if (!addTexture(path + "_s.png"))
+		{
+			texturesIds.push_back(texturesIds[2]);
+			gpuIds.push_back(gpuIds[2]);
+		}
 	}
 
 
@@ -522,5 +549,5 @@ void BlocksLoader::loadAllTextures()
 
 uint16_t getGpuIdIndexForBlock(short type, int face)
 {
-	return blocksLookupTable[type * 6 + face] * 2;
+	return blocksLookupTable[type * 6 + face] * 3;
 }

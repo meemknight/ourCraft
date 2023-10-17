@@ -303,6 +303,9 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	GET_UNIFORM(defaultShader, u_pointPosF);
 	GET_UNIFORM(defaultShader, u_pointPosI);
 	GET_UNIFORM(defaultShader, u_sunDirection);
+	GET_UNIFORM(defaultShader, u_metallic);
+	GET_UNIFORM(defaultShader, u_roughness);
+	GET_UNIFORM(defaultShader, u_exposure);
 	
 	u_vertexData = getStorageBlockIndex(defaultShader.id, "u_vertexData");
 	glShaderStorageBlockBinding(defaultShader.id, u_vertexData, 1);
@@ -606,7 +609,10 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 	glUniform1i(u_showLightLevels, showLightLevels);
 	glUniform1i(u_skyLightIntensity, skyLightIntensity);
 	glUniform3fv(u_sunDirection, 1, &skyBoxRenderer.sunPos[0]);
-	
+	glUniform1f(u_metallic, metallic);
+	glUniform1f(u_roughness, roughness);
+	glUniform1f(u_exposure, exposure);
+
 	
 	{
 		glm::ivec3 i;
