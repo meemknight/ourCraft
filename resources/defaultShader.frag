@@ -31,6 +31,7 @@ uniform int u_underWater;
 uniform float u_fogDistance = 10 * 16 / 2;
 const float fogGradient = 32;
 const float fogGradientUnderWater = 2;
+const float fogUnderWaterMaxDistance = 20;
 
 uniform vec3 u_waterColor;
 
@@ -43,7 +44,7 @@ float computeFog(float dist)
 
 float computeFogUnderWater(float dist)
 {
-	float rez = exp(-pow(dist*(1/u_fogDistance), fogGradientUnderWater));
+	float rez = exp(-pow(dist*(1/fogUnderWaterMaxDistance), fogGradientUnderWater));
 	return pow(rez,4);
 }
 
@@ -406,10 +407,15 @@ void main()
 
 	if(u_underWater != 0)
 	{
-		out_color.rgb = mix(u_waterColor.rgb, out_color.rgb, vec3(computeFogUnderWater(viewLength)));
+		out_color.rgb = mix(u_waterColor.rgb, out_color.rgb, 
+							vec3(computeFogUnderWater(viewLength)) * 0.5 + 0.5
+						);
 	}
 
-	out_color.a = computeFog(viewLength);
+	{
+		out_color.a *= computeFog(viewLength);	
+	}
+
 	//out_color.r = 1-roughness;
 	//out_color.g = metallic;
 	//out_color.b = 0;

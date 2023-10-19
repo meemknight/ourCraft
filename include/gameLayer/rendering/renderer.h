@@ -11,6 +11,8 @@ struct ProgramData;
 
 struct Renderer
 {
+
+
 	Shader defaultShader;
 	GLint u_viewProjection = -1;
 	GLint u_typesCount = -1;
