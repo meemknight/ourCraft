@@ -311,7 +311,10 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	GET_UNIFORM2(defaultShader, u_fogDistance);
 	GET_UNIFORM2(defaultShader, u_underWater);
 	GET_UNIFORM2(defaultShader, u_waterColor);
-	
+	GET_UNIFORM2(defaultShader, u_depthPeelwaterPass);
+	GET_UNIFORM2(defaultShader, u_depthTexture);
+	GET_UNIFORM2(defaultShader, u_hasPeelInformation);
+	GET_UNIFORM2(defaultShader, u_PeelTexture);
 
 	defaultShader.u_vertexData = getStorageBlockIndex(defaultShader.shader.id, "u_vertexData");
 	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_vertexData, 1);
@@ -350,15 +353,14 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	
 #pragma region zpass
 	{
-		glColorMask(0, 0, 0, 0);
-
 		zpassShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "zpass.vert", RESOURCES_PATH "zpass.frag");
 		zpassShader.shader.bind();
 
 		GET_UNIFORM2(zpassShader, u_viewProjection);
 		GET_UNIFORM2(zpassShader, u_positionInt);
 		GET_UNIFORM2(zpassShader, u_positionFloat);
-		
+		GET_UNIFORM2(zpassShader, u_renderOnlyWater);
+
 		zpassShader.u_vertexData = getStorageBlockIndex(zpassShader.shader.id, "u_vertexData");
 		glShaderStorageBlockBinding(zpassShader.shader.id, zpassShader.u_vertexData, 1);
 
@@ -369,9 +371,6 @@ void Renderer::create(BlocksLoader &blocksLoader)
 		glShaderStorageBlockBinding(zpassShader.shader.id, zpassShader.u_textureSamplerers, 3);
 	}
 #pragma endregion
-
-	glColorMask(1, 1, 1, 1);
-
 
 	//todo remove?
 	glCreateBuffers(1, &vertexBuffer);
@@ -581,7 +580,8 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 		glUniformMatrix4fv(zpassShader.u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
 		glUniform3fv(zpassShader.u_positionFloat, 1, &posFloat[0]);
 		glUniform3iv(zpassShader.u_positionInt, 1, &posInt[0]);
-
+		glUniform1i(zpassShader.u_renderOnlyWater, 0);
+		
 
 		programData.texture.bind(0);
 		programData.numbersTexture.bind(1);
@@ -602,6 +602,8 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 		glUniform1f(defaultShader.u_fogDistance, (chunkSystem.squareSize / 2.f) * CHUNK_SIZE - CHUNK_SIZE);
 		glUniform1i(defaultShader.u_underWater, underWater);
 		glUniform3fv(defaultShader.u_waterColor, 1, &skyBoxRenderer.waterColor[0]);
+		glUniform1i(defaultShader.u_depthPeelwaterPass, 0);
+		glUniform1i(defaultShader.u_hasPeelInformation, 0);
 
 		{
 			glm::ivec3 i;
@@ -695,10 +697,27 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 
 	auto renderStaticGeometry = [&]()
 	{
-		int s = chunkVectorCopy.size();
-		for (int i = s - 1; s >= 0; s--)
+		//todo??????????
+		//int s = chunkVectorCopy.size();
+		//for (int i = s - 1; s >= 0; s--)
+		//{
+		//	auto &chunk = chunkVectorCopy[s];
+		//	if (chunk)
+		//	{
+		//		if (!chunk->dontDrawYet)
+		//		{
+		//			int facesCount = chunk->elementCountSize;
+		//			if (facesCount)
+		//			{
+		//				glBindVertexArray(chunk->vao);
+		//				glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
+		//			}
+		//		}
+		//	}
+		//}
+
+		for (auto &chunk : chunkVectorCopy)
 		{
-			auto &chunk = chunkVectorCopy[s];
 			if (chunk)
 			{
 				if (!chunk->dontDrawYet)
@@ -714,10 +733,29 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 		}
 	};
 
+	auto renderTransparentGeometry = [&]()
+	{
+		for (auto &chunk : chunkVectorCopy)
+		{
+			if (chunk)
+			{
+				if (!chunk->dontDrawYet)
+				{
+					int facesCount = chunk->transparentElementCountSize;
+					if (facesCount)
+					{
+						glBindVertexArray(chunk->transparentVao);
+						glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
+					}
+				}
+			}
+		}
+	};
 
 #pragma region depth pre pass
 	{
 		glDepthFunc(GL_LESS);
+		glColorMask(0, 0, 0, 0);
 		zpassShader.shader.bind();
 		renderStaticGeometry();
 
@@ -725,6 +763,7 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 #pragma endregion
 
 #pragma region solid pass
+	glColorMask(1, 1, 1, 1);
 	glDepthFunc(GL_EQUAL);
 	defaultShader.shader.bind();
 	glEnable(GL_BLEND);
@@ -732,26 +771,57 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 	renderStaticGeometry();
 #pragma endregion
 
+#pragma region copy depth
 	fboCoppy.copyDepthFromMainFBO(screenX, screenY);
+#pragma endregion
 
+#pragma region render only water geometry to depth
+	glDepthFunc(GL_LESS);
+	zpassShader.shader.bind();
+	glUniform1i(zpassShader.u_renderOnlyWater, 1);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glColorMask(0, 0, 0, 0);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, fboCoppy.fbo);
+	renderTransparentGeometry();
+#pragma endregion
+
+#pragma region render with depth peel first part of the transparent of the geometry
+	defaultShader.shader.bind();
+	glColorMask(1, 1, 1, 1);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glUniform1i(defaultShader.u_depthPeelwaterPass, true);
+
+	glActiveTexture(GL_TEXTURE0 + 2);
+	glBindTexture(GL_TEXTURE_2D, fboCoppy.depth);
+	glUniform1i(defaultShader.u_depthTexture, 2);
 
 	glDepthFunc(GL_LESS);
 	glDisable(GL_CULL_FACE); //todo change
-	for (auto &chunk : chunkVectorCopy)
-	{
-		if (chunk)
-		{
-			if (!chunk->dontDrawYet)
-			{
-				int facesCount = chunk->transparentElementCountSize;
-				if (facesCount)
-				{
-					glBindVertexArray(chunk->transparentVao);
-					glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
-				}
-			}
-		}
-	}
+	renderTransparentGeometry();
+#pragma endregion
+
+#pragma region copy color buffer
+	fboCoppy.copyColorFromMainFBO(screenX, screenY);
+#pragma endregion
+
+#pragma region render transparent geometry last phaze
+	defaultShader.shader.bind();
+	glColorMask(1, 1, 1, 1);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glUniform1i(defaultShader.u_depthPeelwaterPass, 0);
+	glUniform1i(defaultShader.u_hasPeelInformation, 1);
+	
+	glActiveTexture(GL_TEXTURE0 + 3);
+	glBindTexture(GL_TEXTURE_2D, fboCoppy.color);
+	glUniform1i(defaultShader.u_PeelTexture, 3);
+	
+	glDepthFunc(GL_LESS);
+	glDisable(GL_CULL_FACE); //todo change
+	renderTransparentGeometry();
+#pragma endregion
+
 
 
 	glEnable(GL_CULL_FACE);
@@ -984,7 +1054,6 @@ void Renderer::FBO::updateSize(int x, int y)
 
 void Renderer::FBO::copyDepthFromMainFBO(int w, int h)
 {
-
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 	glBindTexture(GL_TEXTURE_2D, depth);
 
@@ -992,6 +1061,20 @@ void Renderer::FBO::copyDepthFromMainFBO(int w, int h)
 		0, 0, w, h,  // Source rectangle (usually the whole screen)
 		0, 0, w, h,  // Destination rectangle (the size of your texture)
 		GL_DEPTH_BUFFER_BIT, GL_NEAREST// You can adjust the filter mode as needed
+	);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Renderer::FBO::copyColorFromMainFBO(int w, int h)
+{
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+
+	glBlitFramebuffer(
+		0, 0, w, h,  // Source rectangle (usually the whole screen)
+		0, 0, w, h,  // Destination rectangle (the size of your texture)
+		GL_COLOR_BUFFER_BIT, GL_NEAREST// You can adjust the filter mode as needed
 	);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

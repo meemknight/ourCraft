@@ -14,6 +14,8 @@ uniform vec3 u_positionFloat;
 out vec2 v_uv;
 out flat uvec2 v_textureSampler;
 
+uniform int u_renderOnlyWater;
+
 //geometry
 readonly restrict layout(std430) buffer u_vertexData
 {
@@ -72,6 +74,13 @@ vec2 calculateUVs(int vertexId)
 
 void main()
 {
+
+	if((u_renderOnlyWater != 0) && ((in_flags & 1) == 0))
+	{
+		gl_Position = vec4(0,0,0,1);
+		v_textureSampler = uvec2(0,0);
+		return;
+	}
 
 	vec3 diffI = in_facePosition - u_positionInt;
 	vec3 diffF = diffI - u_positionFloat;

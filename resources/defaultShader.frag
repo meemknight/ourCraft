@@ -28,12 +28,22 @@ uniform float u_roughness;
 uniform float u_exposure;
 uniform int u_underWater;
 
+in vec4 v_fragPos;
+
 uniform float u_fogDistance = 10 * 16 / 2;
 const float fogGradient = 32;
 const float fogGradientUnderWater = 2;
 const float fogUnderWaterMaxDistance = 20;
 
 uniform vec3 u_waterColor;
+
+uniform sampler2D u_depthTexture;
+uniform int u_depthPeelwaterPass = 0;
+uniform int u_hasPeelInformation = 0;
+
+uniform sampler2D u_PeelTexture;
+
+in flat int v_flags;
 
 float computeFog(float dist)
 {
@@ -318,6 +328,19 @@ float firstGama(float a)
 
 void main()
 {
+
+	if(u_depthPeelwaterPass != 0)
+	{
+		vec2 p = v_fragPos.xy / v_fragPos.w;
+		p += 1;
+		p/=2;
+
+		if (gl_FragCoord.z <= texture(u_depthTexture, p).x + 0.000001) 
+			discard; //Manually performing the GL_GREATER depth test for each pixel
+
+	}
+
+
 	//load albedo
 	vec4 textureColor;
 	{
@@ -414,6 +437,22 @@ void main()
 
 	{
 		out_color.a *= computeFog(viewLength);	
+	}
+	
+	if(u_hasPeelInformation != 0 && ((v_flags & 1) != 0))
+	{
+		vec3 currentColor = out_color.rgb;
+
+		vec2 p = v_fragPos.xy / v_fragPos.w;
+		p += 1;
+		p/=2;
+		
+		vec3 peelTextur = texture(u_PeelTexture, p).rgb;
+		
+		out_color.rgb = mix(currentColor, peelTextur, 0.8);
+	
+
+		out_color.a = 1;
 	}
 
 	//out_color.r = 1-roughness;

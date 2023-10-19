@@ -26,6 +26,8 @@ struct Renderer
 
 		void copyDepthFromMainFBO(int w, int h);
 
+		void copyColorFromMainFBO(int w, int h);
+
 		void clearFBO();
 	};
 
@@ -56,6 +58,11 @@ struct Renderer
 		GLint u_fogDistance = -1;
 		GLint u_underWater = -1;
 		GLint u_waterColor = -1;
+		GLint u_depthPeelwaterPass = -1;
+		GLint u_hasPeelInformation = -1;
+		GLint u_depthTexture = -1;
+		GLint u_PeelTexture = -1;
+		
 	}defaultShader;
 
 	struct ZpassShader
@@ -67,6 +74,7 @@ struct Renderer
 		GLuint u_vertexUV;
 		GLuint u_vertexData = GL_INVALID_INDEX;
 		GLuint u_textureSamplerers;
+		GLuint u_renderOnlyWater;
 	}zpassShader;
 	
 	float metallic = 0;

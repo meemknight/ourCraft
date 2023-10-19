@@ -84,6 +84,10 @@ out flat int v_normalLight;
 
 out flat vec3 v_normal;
 
+out vec4 v_fragPos;
+
+out flat int v_flags;
+
 vec2 calculateUVs(int vertexId)
 {	
 	vec2 uvs;
@@ -98,7 +102,7 @@ vec3 calculateVertexPos(int vertexId)
 	//vec3 pos = fragmentPositionF.xyz;
 	vec3 pos = vec3(0);
 	vec3 vertexShape = vec3(0);
-
+	v_flags = in_flags;
 
 	vertexShape.x = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 0];
 	vertexShape.y = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 1];
@@ -204,7 +208,8 @@ void main()
 	posView = u_viewProjection * posView;
 
 	gl_Position = posView;
-	
+	v_fragPos = gl_Position;
+
 	v_ambient = (vertexColor[in_faceOrientation] * (v_ambientInt/15.f)) * 0.8 + 0.2;
 	//v_color = vertexColor[in_faceOrientation];
 

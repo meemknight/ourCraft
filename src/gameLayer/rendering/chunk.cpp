@@ -48,6 +48,18 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 
 #pragma region helpers
 
+	auto pushFlag = [](std::vector<int> &vect, bool isWater)
+	{
+		int rez = 0;
+
+		if (isWater)
+		{
+			rez |= 0b1;
+		}
+
+		vect.push_back(rez);
+	};
+
 	auto getNeighboursLogic = [&](int x, int y, int z, Block *sides[6])
 	{
 		auto bfront = safeGet(x, y, z + 1);
@@ -132,7 +144,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 					currentVector->push_back(0);
 				}
 
-				currentVector->push_back(0); //flags
+				pushFlag(*currentVector, 0);
 			}
 		}
 	};
@@ -189,7 +201,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 						currentVector->push_back(0);
 					}
 
-				currentVector->push_back(0); //flags
+				pushFlag(*currentVector, b.type == BlockTypes::water);
 			}
 		}
 	};
@@ -232,7 +244,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 				opaqueGeometry.push_back( merge4bits(b.getSkyLight(), b.getLight()) );
 			}
 
-			opaqueGeometry.push_back(0); //flags
+			pushFlag(opaqueGeometry, 0);
 
 		}
 
