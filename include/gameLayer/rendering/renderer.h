@@ -62,6 +62,11 @@ struct Renderer
 		GLint u_hasPeelInformation = -1;
 		GLint u_depthTexture = -1;
 		GLint u_PeelTexture = -1;
+		GLint u_dudv = -1;
+		GLint u_dudvNormal = -1;
+		GLint u_waterMove = -1;
+		GLint u_near = -1;
+		GLint u_far = -1;
 		
 	}defaultShader;
 
@@ -89,7 +94,9 @@ struct Renderer
 
 	void renderFromBakedData(ChunkSystem &chunkSystem, Camera &c,
 		ProgramData &programData, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos,
-		bool underWater, int screenX, int screenY);
+		bool underWater, int screenX, int screenY, float deltaTime);
+
+	float waterTimer = 0;
 
 	GLuint lightBuffer = 0;
 	size_t lightsBufferCount = 0;

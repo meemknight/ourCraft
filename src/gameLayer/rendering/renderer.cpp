@@ -315,6 +315,12 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	GET_UNIFORM2(defaultShader, u_depthTexture);
 	GET_UNIFORM2(defaultShader, u_hasPeelInformation);
 	GET_UNIFORM2(defaultShader, u_PeelTexture);
+	GET_UNIFORM2(defaultShader, u_dudv);
+	GET_UNIFORM2(defaultShader, u_dudvNormal);
+	GET_UNIFORM2(defaultShader, u_waterMove);
+	GET_UNIFORM2(defaultShader, u_near);
+	GET_UNIFORM2(defaultShader, u_far);
+	
 
 	defaultShader.u_vertexData = getStorageBlockIndex(defaultShader.shader.id, "u_vertexData");
 	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_vertexData, 1);
@@ -559,7 +565,8 @@ void Renderer::updateDynamicBlocks()
 }
 
 void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramData &programData
-	, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos, bool underWater, int screenX, int screenY)
+	, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos, bool underWater, int screenX, int screenY, 
+	float deltaTime)
 {
 
 	fboCoppy.updateSize(screenX, screenY);
@@ -581,7 +588,7 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 		glUniform3fv(zpassShader.u_positionFloat, 1, &posFloat[0]);
 		glUniform3iv(zpassShader.u_positionInt, 1, &posInt[0]);
 		glUniform1i(zpassShader.u_renderOnlyWater, 0);
-		
+
 
 		programData.texture.bind(0);
 		programData.numbersTexture.bind(1);
@@ -604,6 +611,16 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 		glUniform3fv(defaultShader.u_waterColor, 1, &skyBoxRenderer.waterColor[0]);
 		glUniform1i(defaultShader.u_depthPeelwaterPass, 0);
 		glUniform1i(defaultShader.u_hasPeelInformation, 0);
+		glUniform1f(defaultShader.u_waterMove, waterTimer);
+		glUniform1f(defaultShader.u_near, c.closePlane);
+		glUniform1f(defaultShader.u_far, c.farPlane);
+
+		waterTimer += deltaTime * 0.09;
+		if (waterTimer > 20)
+		{
+			waterTimer -= 20;
+		}
+		
 
 		{
 			glm::ivec3 i;
@@ -798,12 +815,13 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 	glUniform1i(defaultShader.u_depthTexture, 2);
 
 	glDepthFunc(GL_LESS);
-	glDisable(GL_CULL_FACE); //todo change
+	//glDisable(GL_CULL_FACE); //todo change
 	renderTransparentGeometry();
 #pragma endregion
 
-#pragma region copy color buffer
+#pragma region copy color buffer and last depth for later use
 	fboCoppy.copyColorFromMainFBO(screenX, screenY);
+	fboCoppy.copyDepthFromMainFBO(screenX, screenY);
 #pragma endregion
 
 #pragma region render transparent geometry last phaze
@@ -815,13 +833,21 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 	
 	glActiveTexture(GL_TEXTURE0 + 3);
 	glBindTexture(GL_TEXTURE_2D, fboCoppy.color);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glUniform1i(defaultShader.u_PeelTexture, 3);
-	
+
+	programData.dudv.bind(4);
+	glUniform1i(defaultShader.u_dudv, 4);
+
+	programData.dudvNormal.bind(5);
+	glUniform1i(defaultShader.u_dudvNormal, 5);
+
+
 	glDepthFunc(GL_LESS);
-	glDisable(GL_CULL_FACE); //todo change
+	//glDisable(GL_CULL_FACE); //todo change
 	renderTransparentGeometry();
 #pragma endregion
-
 
 
 	glEnable(GL_CULL_FACE);

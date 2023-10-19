@@ -40,7 +40,14 @@ bool initGame()
 	programData.texture.loadFromFile(RESOURCES_PATH "blocks.png", true, false);
 	programData.uiTexture.loadFromFile(RESOURCES_PATH "ui0.png", true, true);
 	programData.numbersTexture.loadFromFile(RESOURCES_PATH "numbers.png", true, true);
-	
+	//programData.dudv.loadFromFile(RESOURCES_PATH "otherTextures/test.jpg", true, true);
+	programData.dudv.loadFromFile(RESOURCES_PATH "otherTextures/waterDUDV.png", false, true);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	programData.dudvNormal.loadFromFile(RESOURCES_PATH "otherTextures/normal.png", false, true);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 	{
 		programData.texture.bind();

@@ -224,7 +224,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		//programData.renderer.render(data, gameData.c, programData.texture);
 		programData.renderer.renderFromBakedData(gameData.chunkSystem, gameData.c, programData,
-			gameData.showLightLevels, gameData.skyLightIntensity, point, underWater, w, h);
+			gameData.showLightLevels, gameData.skyLightIntensity, point, underWater, w, h, deltaTime);
 	}
 
 	glm::ivec3 rayCastPos = {};

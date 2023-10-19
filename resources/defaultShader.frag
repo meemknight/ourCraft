@@ -29,6 +29,7 @@ uniform float u_exposure;
 uniform int u_underWater;
 
 in vec4 v_fragPos;
+in flat ivec3 v_blockPos;
 
 uniform float u_fogDistance = 10 * 16 / 2;
 const float fogGradient = 32;
@@ -42,6 +43,10 @@ uniform int u_depthPeelwaterPass = 0;
 uniform int u_hasPeelInformation = 0;
 
 uniform sampler2D u_PeelTexture;
+uniform sampler2D u_dudv;
+uniform sampler2D u_dudvNormal;
+
+uniform float u_waterMove;
 
 in flat int v_flags;
 
@@ -172,9 +177,47 @@ mat3x3 NormalToRotation(in vec3 normal)
 	//return ColumnVectorsToMatrix(tangent0, tangent1, normal);
 }
 
+
+vec2 getDudvCoords()
+{
+	vec2 samplingPoint = - v_blockPos.zx + vec2(v_uv.x + u_waterMove, v_uv.y + u_waterMove/2);
+	return samplingPoint * 0.1;
+}
+
+vec2 getDudvCoords2()
+{
+	vec2 samplingPoint = - v_blockPos.zx + vec2(-v_uv.x + u_waterMove + 3, v_uv.y + u_waterMove/2 + 5);
+	return samplingPoint * 0.1;
+}
+
+uniform float u_near;
+uniform float u_far;
+
+float linearizeDepth(float d)
+{
+	return 2 * u_near * u_far / (u_far + u_near - (2*d-1.f) * (u_far - u_near) );
+}
+
+float getLastDepthLiniarized(vec2 p)
+{
+	float lastDepth = texture(u_depthTexture, p).x;
+	float linear = linearizeDepth(lastDepth);
+	return lastDepth;	
+}
+
 vec3 applyNormalMap(vec3 inNormal)
 {
-	vec3 normal = texture(sampler2D(v_normalSampler), v_uv).rgb;
+	vec3 normal;
+	if(u_hasPeelInformation != 0 && ((v_flags & 1) != 0))
+	{
+		normal = texture(sampler2D(u_dudvNormal), getDudvCoords()).rgb;
+		normal += texture(sampler2D(u_dudvNormal), getDudvCoords2()).rgb;
+		normal = normalize(normal);
+	}else
+	{
+		normal = texture(sampler2D(v_normalSampler), v_uv).rgb;
+	}
+
 
 	normal = normalize(2*normal - 1.f);
 	mat3 rotMat = NormalToRotation(inNormal);
@@ -441,18 +484,43 @@ void main()
 	
 	if(u_hasPeelInformation != 0 && ((v_flags & 1) != 0))
 	{
+		
 		vec3 currentColor = out_color.rgb;
+		
+	
+	
+		vec2 dudv = texture(sampler2D(u_dudv), getDudvCoords()).rg;
+		dudv += texture(sampler2D(u_dudv), getDudvCoords2()).rg;
+		
+		vec2 dudvConv = (dudv * 2) - 1;
+		vec2 distorsionCoord = dudvConv * 0.009;
+				
 
 		vec2 p = v_fragPos.xy / v_fragPos.w;
 		p += 1;
 		p/=2;
 		
-		vec3 peelTextur = texture(u_PeelTexture, p).rgb;
+		vec3 peelTextur = texture(u_PeelTexture, p + distorsionCoord).rgb;
 		
-		out_color.rgb = mix(currentColor, peelTextur, 0.8);
+
+		float currentDepth = linearizeDepth(gl_FragCoord.z);		
+		float lastDepth = getLastDepthLiniarized(p);
+
+		float waterDepth = lastDepth - currentDepth ;
 	
+		out_color.rgb = mix(currentColor, peelTextur, 0.5);
+	
+		//out_color.rg = dudv.rg;
+		//out_color.b = 0;
 
 		out_color.a = 1;
+		//out_color.a = clamp(waterDepth/5,0,1);
+		//out_color.r = clamp(waterDepth/5,0,1);
+		//out_color.g = clamp(waterDepth/5,0,1);
+		//out_color.b = clamp(waterDepth/5,0,1);
+	}else if((v_flags & 1) != 0)
+	{
+		out_color.a = 0.5;
 	}
 
 	//out_color.r = 1-roughness;

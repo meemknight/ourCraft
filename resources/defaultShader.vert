@@ -13,6 +13,8 @@ uniform vec3 u_positionFloat;
 uniform float u_time;
 uniform int u_skyLightIntensity;
 
+out flat ivec3 v_blockPos;
+
 float vertexColor[] = float[](
 		
 	//front
@@ -103,6 +105,7 @@ vec3 calculateVertexPos(int vertexId)
 	vec3 pos = vec3(0);
 	vec3 vertexShape = vec3(0);
 	v_flags = in_flags;
+	v_blockPos = in_facePosition;	
 
 	vertexShape.x = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 0];
 	vertexShape.y = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 1];
