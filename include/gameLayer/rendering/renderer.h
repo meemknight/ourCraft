@@ -11,6 +11,24 @@ struct ProgramData;
 
 struct Renderer
 {
+
+	struct FBO
+	{
+		void create(bool addColor, bool addDepth);
+
+		void updateSize(int x, int y);
+
+		glm::ivec2 size = {};
+		GLuint fbo = 0;
+
+		GLuint color = 0;
+		GLuint depth = 0;
+
+		void copyDepthFromMainFBO(int w, int h);
+
+		void clearFBO();
+	};
+
 	struct DefaultShader
 	{
 		Shader shader;
@@ -55,6 +73,7 @@ struct Renderer
 	float roughness = 0.5;
 	float exposure = 1.7;
 
+	FBO fboCoppy;
 
 	void create(BlocksLoader &blocksLoader);
 	void updateDynamicBlocks();
@@ -62,7 +81,7 @@ struct Renderer
 
 	void renderFromBakedData(ChunkSystem &chunkSystem, Camera &c,
 		ProgramData &programData, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos,
-		bool underWater);
+		bool underWater, int screenX, int screenY);
 
 	GLuint lightBuffer = 0;
 	size_t lightsBufferCount = 0;

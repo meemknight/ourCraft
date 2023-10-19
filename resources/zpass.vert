@@ -3,7 +3,9 @@
 layout(location = 0) in int in_faceOrientation; //up down left etc
 layout(location = 1) in int in_textureIndex; //dirt grass stone etc
 layout(location = 2) in ivec3 in_facePosition; // int x y z
-layout(location = 3) in int in_skyAndNormalLights; 
+layout(location = 3) in int in_skyAndNormalLights;
+layout(location = 4) in int in_flags; 
+
 
 uniform mat4 u_viewProjection;
 uniform ivec3 u_positionInt;
