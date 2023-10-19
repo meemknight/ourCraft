@@ -8,7 +8,9 @@ layout(location = 3) in int in_skyAndNormalLights;
 uniform mat4 u_viewProjection;
 uniform ivec3 u_positionInt;
 uniform vec3 u_positionFloat;
-uniform float u_time;
+
+out vec2 v_uv;
+out flat uvec2 v_textureSampler;
 
 //geometry
 readonly restrict layout(std430) buffer u_vertexData
@@ -58,6 +60,13 @@ vec3 calculateVertexPos(int vertexId)
 	return pos;
 }
 
+vec2 calculateUVs(int vertexId)
+{	
+	vec2 uvs;
+	uvs.x = vertexUV[(in_faceOrientation) * 2 * 6 + vertexId * 2 + 0];
+	uvs.y = vertexUV[(in_faceOrientation) * 2 * 6 + vertexId * 2 + 1];
+	return uvs;
+}
 
 void main()
 {
@@ -71,10 +80,12 @@ void main()
 	
 	vec4 posView = vec4(fragmentPositionF + diffF,1);
 	
+	v_uv = calculateUVs(gl_VertexID);
+
 	posView = u_viewProjection * posView;
 
 	gl_Position = posView;
 	
 
-
+	v_textureSampler = textureSamplerers[in_textureIndex];
 }

@@ -11,33 +11,45 @@ struct ProgramData;
 
 struct Renderer
 {
+	struct DefaultShader
+	{
+		Shader shader;
+		GLint u_viewProjection = -1;
+		GLint u_typesCount = -1;
+		GLint u_positionInt = -1;
+		GLint u_positionFloat = -1;
+		GLint u_texture = -1;
+		GLint u_time = -1;
+		GLint u_showLightLevels = -1;
+		GLint u_skyLightIntensity = -1;
+		GLint u_lightsCount = -1;
+		GLint u_pointPosF = -1;
+		GLint u_pointPosI = -1;
+		GLint u_sunDirection = -1;
+		GLuint u_vertexData = GL_INVALID_INDEX;
+		GLuint u_vertexUV = GL_INVALID_INDEX;
+		GLuint u_textureSamplerers = GL_INVALID_INDEX;
+		GLuint u_normalsData = GL_INVALID_INDEX;
+		GLuint u_lights = GL_INVALID_INDEX;
 
+		GLint u_metallic = -1;
+		GLint u_roughness = -1;
+		GLint u_exposure = -1;
+		GLint u_fogDistance = -1;
+		GLint u_underWater = -1;
+		GLint u_waterColor = -1;
+	}defaultShader;
 
-	Shader defaultShader;
-	GLint u_viewProjection = -1;
-	GLint u_typesCount = -1;
-	GLint u_positionInt = -1;
-	GLint u_positionFloat = -1;
-	GLint u_texture = -1;
-	GLint u_time = -1;
-	GLint u_showLightLevels = -1;
-	GLint u_skyLightIntensity = -1;
-	GLint u_lightsCount = -1;
-	GLint u_pointPosF = -1;
-	GLint u_pointPosI = -1;
-	GLint u_sunDirection = -1;
-	GLuint u_vertexData = GL_INVALID_INDEX;
-	GLuint u_vertexUV = GL_INVALID_INDEX;
-	GLuint u_textureSamplerers = GL_INVALID_INDEX;
-	GLuint u_normalsData = GL_INVALID_INDEX;
-	GLuint u_lights = GL_INVALID_INDEX;
-
-	GLuint u_metallic = GL_INVALID_INDEX;
-	GLuint u_roughness = GL_INVALID_INDEX;
-	GLuint u_exposure = GL_INVALID_INDEX;
-	GLuint u_fogDistance = GL_INVALID_INDEX;
-	GLuint u_underWater = GL_INVALID_INDEX;
-	GLuint u_waterColor = GL_INVALID_INDEX;
+	struct ZpassShader
+	{
+		Shader shader;
+		GLuint u_viewProjection;
+		GLuint u_positionInt;
+		GLuint u_positionFloat;
+		GLuint u_vertexUV;
+		GLuint u_vertexData = GL_INVALID_INDEX;
+		GLuint u_textureSamplerers;
+	}zpassShader;
 	
 	float metallic = 0;
 	float roughness = 0.5;

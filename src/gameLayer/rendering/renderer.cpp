@@ -13,6 +13,7 @@
 #include <iostream>
 
 #define GET_UNIFORM(s, n) n = s.getUniform(#n);
+#define GET_UNIFORM2(s, n) s. n = s.shader.getUniform(#n);
 
 
 //data format:
@@ -288,45 +289,45 @@ void Renderer::create(BlocksLoader &blocksLoader)
 
 	skyBoxRenderer.create();
 
-	defaultShader.loadShaderProgramFromFile(RESOURCES_PATH "defaultShader.vert", RESOURCES_PATH "defaultShader.frag");
-	defaultShader.bind();
+	defaultShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "defaultShader.vert", RESOURCES_PATH "defaultShader.frag");
+	defaultShader.shader.bind();
 
-	GET_UNIFORM(defaultShader, u_viewProjection);
-	GET_UNIFORM(defaultShader, u_typesCount);
-	GET_UNIFORM(defaultShader, u_positionInt);
-	GET_UNIFORM(defaultShader, u_positionFloat);
-	GET_UNIFORM(defaultShader, u_texture);
-	GET_UNIFORM(defaultShader, u_time);
-	GET_UNIFORM(defaultShader, u_showLightLevels);
-	GET_UNIFORM(defaultShader, u_skyLightIntensity);
-	GET_UNIFORM(defaultShader, u_lightsCount);
-	GET_UNIFORM(defaultShader, u_pointPosF);
-	GET_UNIFORM(defaultShader, u_pointPosI);
-	GET_UNIFORM(defaultShader, u_sunDirection);
-	GET_UNIFORM(defaultShader, u_metallic);
-	GET_UNIFORM(defaultShader, u_roughness);
-	GET_UNIFORM(defaultShader, u_exposure);
-	GET_UNIFORM(defaultShader, u_fogDistance);
-	GET_UNIFORM(defaultShader, u_underWater);
-	GET_UNIFORM(defaultShader, u_waterColor);
+	GET_UNIFORM2(defaultShader, u_viewProjection);
+	GET_UNIFORM2(defaultShader, u_typesCount);
+	GET_UNIFORM2(defaultShader, u_positionInt);
+	GET_UNIFORM2(defaultShader, u_positionFloat);
+	GET_UNIFORM2(defaultShader, u_texture);
+	GET_UNIFORM2(defaultShader, u_time);
+	GET_UNIFORM2(defaultShader, u_showLightLevels);
+	GET_UNIFORM2(defaultShader, u_skyLightIntensity);
+	GET_UNIFORM2(defaultShader, u_lightsCount);
+	GET_UNIFORM2(defaultShader, u_pointPosF);
+	GET_UNIFORM2(defaultShader, u_pointPosI);
+	GET_UNIFORM2(defaultShader, u_sunDirection);
+	GET_UNIFORM2(defaultShader, u_metallic);
+	GET_UNIFORM2(defaultShader, u_roughness);
+	GET_UNIFORM2(defaultShader, u_exposure);
+	GET_UNIFORM2(defaultShader, u_fogDistance);
+	GET_UNIFORM2(defaultShader, u_underWater);
+	GET_UNIFORM2(defaultShader, u_waterColor);
 	
 
-	u_vertexData = getStorageBlockIndex(defaultShader.id, "u_vertexData");
-	glShaderStorageBlockBinding(defaultShader.id, u_vertexData, 1);
+	defaultShader.u_vertexData = getStorageBlockIndex(defaultShader.shader.id, "u_vertexData");
+	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_vertexData, 1);
 	glGenBuffers(1, &vertexDataBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexDataBuffer);
 	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(vertexData), vertexData, GL_DYNAMIC_STORAGE_BIT);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vertexDataBuffer);
 
-	u_vertexUV = getStorageBlockIndex(defaultShader.id, "u_vertexUV");
-	glShaderStorageBlockBinding(defaultShader.id, u_vertexUV, 2);
+	defaultShader.u_vertexUV = getStorageBlockIndex(defaultShader.shader.id, "u_vertexUV");
+	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_vertexUV, 2);
 	glGenBuffers(1, &vertexUVBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexUVBuffer);
 	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(vertexUV), vertexUV, 0);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, vertexUVBuffer);
 
-	u_textureSamplerers = getStorageBlockIndex(defaultShader.id, "u_textureSamplerers");
-	glShaderStorageBlockBinding(defaultShader.id, u_textureSamplerers, 3);
+	defaultShader.u_textureSamplerers = getStorageBlockIndex(defaultShader.shader.id, "u_textureSamplerers");
+	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_textureSamplerers, 3);
 	glGenBuffers(1, &textureSamplerersBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, textureSamplerersBuffer);
 	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint64) * blocksLoader.gpuIds.size(), blocksLoader.gpuIds.data(), 0);
@@ -338,14 +339,36 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 
-	u_lights = getStorageBlockIndex(defaultShader.id, "u_lights");
-	glShaderStorageBlockBinding(defaultShader.id, u_lights, 4);
+	defaultShader.u_lights = getStorageBlockIndex(defaultShader.shader.id, "u_lights");
+	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_lights, 4);
 	//glGenBuffers(1, &textureSamplerersBuffer);
 	//glBindBuffer(GL_SHADER_STORAGE_BUFFER, textureSamplerersBuffer);
 	//glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint64) * blocksLoader.gpuIds.size(), blocksLoader.gpuIds.data(), 0);
 	//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, textureSamplerersBuffer);
 
 	
+#pragma region zpass
+	{
+
+		zpassShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "zpass.vert", RESOURCES_PATH "zpass.frag");
+		zpassShader.shader.bind();
+
+		GET_UNIFORM2(zpassShader, u_viewProjection);
+		GET_UNIFORM2(zpassShader, u_positionInt);
+		GET_UNIFORM2(zpassShader, u_positionFloat);
+		
+		zpassShader.u_vertexData = getStorageBlockIndex(zpassShader.shader.id, "u_vertexData");
+		glShaderStorageBlockBinding(zpassShader.shader.id, zpassShader.u_vertexData, 1);
+
+		zpassShader.u_vertexUV = getStorageBlockIndex(zpassShader.shader.id, "u_vertexUV");
+		glShaderStorageBlockBinding(zpassShader.shader.id, zpassShader.u_vertexUV, 2);
+		
+		zpassShader.u_textureSamplerers = getStorageBlockIndex(zpassShader.shader.id, "u_textureSamplerers");
+		glShaderStorageBlockBinding(zpassShader.shader.id, zpassShader.u_textureSamplerers, 3);
+	}
+#pragma endregion
+
+
 
 
 	glCreateBuffers(1, &vertexBuffer);
@@ -538,10 +561,51 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 	glm::ivec3 blockPosition = from3DPointToBlock(c.position);
 	c.decomposePosition(posFloat, posInt);
 
+	auto mvp = c.getProjectionMatrix() * glm::lookAt({0,0,0}, c.viewDirection, c.up);
+
+
+	auto renderStaticGeometry = [&]()
+	{
+		for (auto &chunk : chunkSystem.loadedChunks)
+		{
+			if (chunk)
+			{
+				if (!chunk->dontDrawYet)
+				{
+					int facesCount = chunk->elementCountSize;
+					if (facesCount)
+					{
+						glBindVertexArray(chunk->vao);
+						glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
+					}
+				}
+			}
+		}
+
+	};
+
+
+#pragma region depth pre pass
+	{
+		glDepthFunc(GL_LESS);
+		zpassShader.shader.bind();
+
+		glUniformMatrix4fv(zpassShader.u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
+		glUniform3fv(zpassShader.u_positionFloat, 1, &posFloat[0]);
+		glUniform3iv(zpassShader.u_positionInt, 1, &posInt[0]);
+
+		renderStaticGeometry();
+
+	}
+#pragma endregion
+
+
+	glDepthFunc(GL_EQUAL);
+
 
 	programData.texture.bind(0);
 	programData.numbersTexture.bind(1);
-	defaultShader.bind();
+	defaultShader.shader.bind();
 
 #pragma region lights
 	{
@@ -587,7 +651,7 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, lightBuffer);
 		};
 
-		glUniform1i(u_lightsCount, lightsBufferCount);
+		glUniform1i(defaultShader.u_lightsCount, lightsBufferCount);
 
 		//auto c = chunkSystem.getChunkSafeFromBlockPos(posInt.x, posInt.z);
 		//
@@ -603,22 +667,20 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 
 
 
-	auto mvp = c.getProjectionMatrix() * glm::lookAt({0,0,0}, c.viewDirection, c.up);
-
-	glUniformMatrix4fv(u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
-	glUniform3fv(u_positionFloat, 1, &posFloat[0]);
-	glUniform3iv(u_positionInt, 1, &posInt[0]);
-	glUniform1i(u_typesCount, BlocksCount);	//remove
-	glUniform1f(u_time, std::clock() / 400.f);
-	glUniform1i(u_showLightLevels, showLightLevels);
-	glUniform1i(u_skyLightIntensity, skyLightIntensity);
-	glUniform3fv(u_sunDirection, 1, &skyBoxRenderer.sunPos[0]);
-	glUniform1f(u_metallic, metallic);
-	glUniform1f(u_roughness, roughness);
-	glUniform1f(u_exposure, exposure);
-	glUniform1f(u_fogDistance, (chunkSystem.squareSize / 2.f) * CHUNK_SIZE - CHUNK_SIZE);
-	glUniform1i(u_underWater, underWater);
-	glUniform3fv(u_waterColor, 1, &skyBoxRenderer.waterColor[0]);
+	glUniformMatrix4fv(defaultShader.u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
+	glUniform3fv(defaultShader.u_positionFloat, 1, &posFloat[0]);
+	glUniform3iv(defaultShader.u_positionInt, 1, &posInt[0]);
+	glUniform1i(defaultShader.u_typesCount, BlocksCount);	//remove
+	glUniform1f(defaultShader.u_time, std::clock() / 400.f);
+	glUniform1i(defaultShader.u_showLightLevels, showLightLevels);
+	glUniform1i(defaultShader.u_skyLightIntensity, skyLightIntensity);
+	glUniform3fv(defaultShader.u_sunDirection, 1, &skyBoxRenderer.sunPos[0]);
+	glUniform1f(defaultShader.u_metallic, metallic);
+	glUniform1f(defaultShader.u_roughness, roughness);
+	glUniform1f(defaultShader.u_exposure, exposure);
+	glUniform1f(defaultShader.u_fogDistance, (chunkSystem.squareSize / 2.f) * CHUNK_SIZE - CHUNK_SIZE);
+	glUniform1i(defaultShader.u_underWater, underWater);
+	glUniform3fv(defaultShader.u_waterColor, 1, &skyBoxRenderer.waterColor[0]);
 
 
 	{
@@ -626,30 +688,15 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 		glm::vec3 f;
 		decomposePosition(pointPos, f, i);
 
-		glUniform3fv(u_pointPosF, 1, &f[0]);
-		glUniform3iv(u_pointPosI, 1, &i[0]);
+		glUniform3fv(defaultShader.u_pointPosF, 1, &f[0]);
+		glUniform3iv(defaultShader.u_pointPosI, 1, &i[0]);
 	}
 
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	for (auto &chunk : chunkSystem.loadedChunks)
-	{
-		if (chunk)
-		{
-			if (!chunk->dontDrawYet)
-			{
-				int facesCount = chunk->elementCountSize;
-				if (facesCount)
-				{
-					glBindVertexArray(chunk->vao);
-					glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
-				}
-			}
-		}
-	}
-
+	renderStaticGeometry();
 
 	auto chunkVectorCopy = chunkSystem.loadedChunks;
 
@@ -674,6 +721,7 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 		);
 	}
 
+	glDepthFunc(GL_LESS);
 	glDisable(GL_CULL_FACE); //todo change
 	for (auto &chunk : chunkVectorCopy)
 	{
