@@ -47,6 +47,7 @@ uniform sampler2D u_dudv;
 uniform sampler2D u_dudvNormal;
 
 uniform float u_waterMove;
+uniform sampler2D u_caustics;
 
 in flat int v_flags;
 
@@ -186,7 +187,8 @@ vec2 getDudvCoords()
 
 vec2 getDudvCoords2()
 {
-	vec2 samplingPoint = - v_blockPos.zx + vec2(-v_uv.x + u_waterMove + 3, v_uv.y + u_waterMove/2 + 5);
+	vec2 samplingPoint = - v_blockPos.zx + vec2(v_uv.x + u_waterMove + 3, v_uv.y + u_waterMove/2 + 5);
+	samplingPoint.y = -samplingPoint.y;
 	return samplingPoint * 0.1;
 }
 
@@ -378,12 +380,12 @@ void main()
 		p += 1;
 		p/=2;
 
-		if (gl_FragCoord.z <= texture(u_depthTexture, p).x + 0.000001) 
+		if (gl_FragCoord.z <= texture(u_depthTexture, p).x + 0.00000001) 
 			discard; //Manually performing the GL_GREATER depth test for each pixel
 
 	}
 
-
+	
 	//load albedo
 	vec4 textureColor;
 	{
@@ -393,6 +395,24 @@ void main()
 		textureColor.rgb = firstGama(textureColor.rgb);
 	}
 	
+	bool isInWater = ((v_flags & 2) != 0);
+
+	vec3 causticsColor = vec3(1);
+	
+	if(isInWater)
+	{
+		vec2 coords = getDudvCoords() * 0.5;
+
+		causticsColor.r = texture(u_caustics, coords + vec2(0,0)).r * 3;
+		causticsColor.g = texture(u_caustics, coords + vec2(0.001,0.001)).g * 3;
+		causticsColor.b = texture(u_caustics, coords + vec2(0.002,0.002)).b * 3;
+
+		//out_color.rgb = texture(u_caustics, coords).rgb;
+		//out_color.a = 1;
+		//return ;
+	}
+	
+
 	//load material
 	float metallic = 0;
 	float roughness = 0;
@@ -434,7 +454,7 @@ void main()
 		L = normalize(L);		
 
 		//light += computeLight(N,L,V) * atenuationFunction(LightDist)*1.f;
-		finalColor += computePointLightSource(L, metallic, roughness, vec3(0.9,0.9,0.9), V, 
+		finalColor += computePointLightSource(L, metallic, roughness, vec3(0.9,0.9,0.9) * causticsColor, V, 
 			textureColor.rgb, N, F0) * atenuationFunction(LightDist);
 			
 	}
@@ -445,7 +465,7 @@ void main()
 	{
 		vec3 L = u_sunDirection;
 		//light += computeLight(N,L,V) * 1.f;
-		finalColor += computePointLightSource(L, metallic, roughness, vec3(0.9,0.9,0.9), V, 
+		finalColor += computePointLightSource(L, metallic, roughness, vec3(0.9,0.9,0.9) * causticsColor, V, 
 			textureColor.rgb, N, F0);
 	}
 
@@ -454,7 +474,13 @@ void main()
 	out_color = vec4(finalColor,textureColor.a);
 		
 	//ambient
-	out_color.rgb += textureColor.rgb * firstGama(v_ambient);
+	float computedAmbient = firstGama(v_ambient);
+	if(isInWater)
+	{
+		computedAmbient *= 0.9;
+	}
+
+	out_color.rgb += textureColor.rgb * computedAmbient ;
 	
 	
 	if(u_showLightLevels != 0)
@@ -482,46 +508,66 @@ void main()
 		out_color.a *= computeFog(viewLength);	
 	}
 	
-	if(u_hasPeelInformation != 0 && ((v_flags & 1) != 0))
+	//is water	
+	if(((v_flags & 1) != 0))
 	{
-		
-		vec3 currentColor = out_color.rgb;
-		
-	
-	
-		vec2 dudv = texture(sampler2D(u_dudv), getDudvCoords()).rg;
-		dudv += texture(sampler2D(u_dudv), getDudvCoords2()).rg;
-		
-		vec2 dudvConv = (dudv * 2) - 1;
-		vec2 distorsionCoord = dudvConv * 0.009;
+		//float reflectivity = dot(V, N);
+		float reflectivity = 0.5;
+
+		if(u_hasPeelInformation != 0)
+		{
+			vec2 p = v_fragPos.xy / v_fragPos.w;
+			p += 1;
+			p/=2;
+			float currentDepth = linearizeDepth(gl_FragCoord.z);		
+			float lastDepth = getLastDepthLiniarized(p);
+			float waterDepth = lastDepth - currentDepth;
+			
+			vec2 dudv = vec2(0);
+			dudv += texture(sampler2D(u_dudv), getDudvCoords()).rg;
+			dudv += texture(sampler2D(u_dudv), getDudvCoords2()).rg;
+			vec2 dudvConv = (dudv * 2) - 1;
+			vec2 distorsionCoord = dudvConv * 0.009;	
+
+			float distortDepth = getLastDepthLiniarized(p + distorsionCoord);
+
+			vec3 currentColor = out_color.rgb;
+
+			if(distortDepth > currentDepth)
+			{
+				//geometry in front of water
+				//todo
+			}else
+			{
+				
+						
+
+				
+				
+				vec3 peelTextur = texture(u_PeelTexture, p + distorsionCoord).rgb;
 				
 
-		vec2 p = v_fragPos.xy / v_fragPos.w;
-		p += 1;
-		p/=2;
 		
-		vec3 peelTextur = texture(u_PeelTexture, p + distorsionCoord).rgb;
 		
+				out_color.rgb = mix(peelTextur, currentColor, reflectivity);
+		
+				//out_color.rg = dudv.rg;
+				//out_color.b = 0;
+			}
 
-		float currentDepth = linearizeDepth(gl_FragCoord.z);		
-		float lastDepth = getLastDepthLiniarized(p);
-
-		float waterDepth = lastDepth - currentDepth ;
+			out_color.a = 1;
+			//out_color.a = clamp(waterDepth/5,0,1);
+			//out_color.r = clamp(waterDepth/5,0,1);
+			//out_color.g = clamp(waterDepth/5,0,1);
+			//out_color.b = clamp(waterDepth/5,0,1);
+		}else
+		{
+			out_color.a = reflectivity;
+		}
 	
-		out_color.rgb = mix(currentColor, peelTextur, 0.5);
-	
-		//out_color.rg = dudv.rg;
-		//out_color.b = 0;
 
-		out_color.a = 1;
-		//out_color.a = clamp(waterDepth/5,0,1);
-		//out_color.r = clamp(waterDepth/5,0,1);
-		//out_color.g = clamp(waterDepth/5,0,1);
-		//out_color.b = clamp(waterDepth/5,0,1);
-	}else if((v_flags & 1) != 0)
-	{
-		out_color.a = 0.5;
 	}
+
 
 	//out_color.r = 1-roughness;
 	//out_color.g = metallic;

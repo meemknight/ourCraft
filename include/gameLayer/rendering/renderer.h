@@ -67,6 +67,7 @@ struct Renderer
 		GLint u_waterMove = -1;
 		GLint u_near = -1;
 		GLint u_far = -1;
+		GLint u_caustics = -1;
 		
 	}defaultShader;
 

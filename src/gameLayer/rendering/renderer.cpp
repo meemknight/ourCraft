@@ -320,8 +320,9 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	GET_UNIFORM2(defaultShader, u_waterMove);
 	GET_UNIFORM2(defaultShader, u_near);
 	GET_UNIFORM2(defaultShader, u_far);
+	GET_UNIFORM2(defaultShader, u_caustics);
 	
-
+	
 	defaultShader.u_vertexData = getStorageBlockIndex(defaultShader.shader.id, "u_vertexData");
 	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_vertexData, 1);
 	glGenBuffers(1, &vertexDataBuffer);
@@ -614,6 +615,10 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 		glUniform1f(defaultShader.u_waterMove, waterTimer);
 		glUniform1f(defaultShader.u_near, c.closePlane);
 		glUniform1f(defaultShader.u_far, c.farPlane);
+
+		programData.causticsTexture.bind(6);
+		glUniform1i(defaultShader.u_caustics, 6);
+
 
 		waterTimer += deltaTime * 0.09;
 		if (waterTimer > 20)

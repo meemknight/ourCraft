@@ -48,13 +48,18 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 
 #pragma region helpers
 
-	auto pushFlag = [](std::vector<int> &vect, bool isWater)
+	auto pushFlag = [](std::vector<int> &vect, bool isWater, bool isInWater)
 	{
 		int rez = 0;
 
 		if (isWater)
 		{
 			rez |= 0b1;
+		}
+
+		if (isInWater)
+		{
+			rez |= 0b10;
 		}
 
 		vect.push_back(rez);
@@ -143,8 +148,10 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 				{
 					currentVector->push_back(0);
 				}
+				
+				bool isInWater = (sides[i] != nullptr) && sides[i]->type == BlockTypes::water;
 
-				pushFlag(*currentVector, 0);
+				pushFlag(*currentVector, 0, isInWater);
 			}
 		}
 	};
@@ -201,7 +208,9 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 						currentVector->push_back(0);
 					}
 
-				pushFlag(*currentVector, b.type == BlockTypes::water);
+				bool isInWater = (sides[i] != nullptr) && sides[i]->type == BlockTypes::water;
+
+				pushFlag(*currentVector, b.type == BlockTypes::water, isInWater);
 			}
 		}
 	};
@@ -244,7 +253,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 				opaqueGeometry.push_back( merge4bits(b.getSkyLight(), b.getLight()) );
 			}
 
-			pushFlag(opaqueGeometry, 0);
+			pushFlag(opaqueGeometry, 0, 0);
 
 		}
 

@@ -16,6 +16,7 @@ struct ProgramData
 	gl2d::Texture texture;
 	gl2d::Texture uiTexture;
 	gl2d::Texture numbersTexture;
+	gl2d::Texture causticsTexture;
 	gl2d::Texture dudv;
 	gl2d::Texture dudvNormal;
 	gl2d::TextureAtlas uiAtlas{6, 1};
