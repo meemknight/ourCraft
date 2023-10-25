@@ -625,6 +625,12 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 		{
 			waterTimer -= 20;
 		}
+
+		//waterTimer += deltaTime * 0.4;
+		//if (waterTimer > 1)
+		//{
+		//	waterTimer -= 1;
+		//}
 		
 
 		{
@@ -841,6 +847,10 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glUniform1i(defaultShader.u_PeelTexture, 3);
+
+	glActiveTexture(GL_TEXTURE0 + 2);
+	glBindTexture(GL_TEXTURE_2D, fboCoppy.depth);
+	glUniform1i(defaultShader.u_depthTexture, 2);
 
 	programData.dudv.bind(4);
 	glUniform1i(defaultShader.u_dudv, 4);
@@ -1085,6 +1095,9 @@ void Renderer::FBO::updateSize(int x, int y)
 
 void Renderer::FBO::copyDepthFromMainFBO(int w, int h)
 {
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glClear(GL_DEPTH_BUFFER_BIT);
+
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 	glBindTexture(GL_TEXTURE_2D, depth);
 

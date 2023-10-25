@@ -99,6 +99,7 @@ float atenuationFunction(float dist)
 	return max(0, (maxDist-dist)/(dist*dist*a+maxDist));
 }
 
+
 //
 
 //https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl
@@ -182,7 +183,7 @@ mat3x3 NormalToRotation(in vec3 normal)
 vec2 getDudvCoords()
 {
 	vec2 samplingPoint = - v_blockPos.zx + vec2(v_uv.x + u_waterMove, v_uv.y + u_waterMove/2);
-	return samplingPoint * 0.1;
+	return samplingPoint * (1/20.f);
 }
 
 vec2 getDudvCoords2()
@@ -204,7 +205,7 @@ float getLastDepthLiniarized(vec2 p)
 {
 	float lastDepth = texture(u_depthTexture, p).x;
 	float linear = linearizeDepth(lastDepth);
-	return lastDepth;	
+	return linear;	
 }
 
 vec3 applyNormalMap(vec3 inNormal)
@@ -374,13 +375,14 @@ float firstGama(float a)
 void main()
 {
 
+	//depth peel for underwater stuff
 	if(u_depthPeelwaterPass != 0)
 	{
 		vec2 p = v_fragPos.xy / v_fragPos.w;
 		p += 1;
 		p/=2;
 
-		if (gl_FragCoord.z <= texture(u_depthTexture, p).x + 0.00000001) 
+		if (gl_FragCoord.z <= texture(u_depthTexture, p).x + 0.0000001) 
 			discard; //Manually performing the GL_GREATER depth test for each pixel
 
 	}
@@ -396,20 +398,25 @@ void main()
 	}
 	
 	bool isInWater = ((v_flags & 2) != 0);
-
-	vec3 causticsColor = vec3(1);
 	
+	//caustics
+	vec3 causticsColor = vec3(1);
 	if(isInWater)
 	{
 		vec2 coords = getDudvCoords() * 0.5;
+		
+		float offset = 0.001;	
 
-		causticsColor.r = texture(u_caustics, coords + vec2(0,0)).r * 3;
-		causticsColor.g = texture(u_caustics, coords + vec2(0.001,0.001)).g * 3;
-		causticsColor.b = texture(u_caustics, coords + vec2(0.002,0.002)).b * 3;
+		float lightMultiplyer = 5;	
+
+		causticsColor.r = texture(u_caustics, coords + vec2(0,0)).r * lightMultiplyer;
+		causticsColor.g = texture(u_caustics, coords + vec2(offset,offset)).g * lightMultiplyer;
+		causticsColor.b = texture(u_caustics, coords + vec2(offset,offset)*2.0).b * lightMultiplyer;
 
 		//out_color.rgb = texture(u_caustics, coords).rgb;
 		//out_color.a = 1;
 		//return ;
+		//todo water uvs so the texture is continuous on all sides
 	}
 	
 
@@ -465,7 +472,8 @@ void main()
 	{
 		vec3 L = u_sunDirection;
 		//light += computeLight(N,L,V) * 1.f;
-		finalColor += computePointLightSource(L, metallic, roughness, vec3(0.9,0.9,0.9) * causticsColor, V, 
+		finalColor += computePointLightSource(L, 
+			metallic, roughness, vec3(0.9,0.9,0.9) * causticsColor, V, 
 			textureColor.rgb, N, F0);
 	}
 
@@ -492,17 +500,18 @@ void main()
 	
 	out_color = clamp(out_color, vec4(0), vec4(1));
 
-	//gamma correction
-	out_color.rgb = ACESFitted(out_color.rgb * u_exposure);
-	out_color.rgb = pow(out_color.rgb, vec3(1/2.2));
-	
-
 	if(u_underWater != 0)
 	{
 		out_color.rgb = mix(u_waterColor.rgb, out_color.rgb, 
 							vec3(computeFogUnderWater(viewLength)) * 0.5 + 0.5
 						);
 	}
+
+	//gamma correction + HDR
+	out_color.rgb = ACESFitted(out_color.rgb * u_exposure);
+	out_color.rgb = pow(out_color.rgb, vec3(1/2.2));
+	
+
 
 	{
 		out_color.a *= computeFog(viewLength);	
@@ -519,6 +528,8 @@ void main()
 			vec2 p = v_fragPos.xy / v_fragPos.w;
 			p += 1;
 			p/=2;
+
+
 			float currentDepth = linearizeDepth(gl_FragCoord.z);		
 			float lastDepth = getLastDepthLiniarized(p);
 			float waterDepth = lastDepth - currentDepth;
@@ -530,30 +541,38 @@ void main()
 			vec2 distorsionCoord = dudvConv * 0.009;	
 
 			float distortDepth = getLastDepthLiniarized(p + distorsionCoord);
+			float distortWaterDepth = distortDepth - currentDepth;
 
 			vec3 currentColor = out_color.rgb;
 
-			if(distortDepth > currentDepth)
+			vec3 peelTexture = vec3(1,0.5,0.5);
+			float finalDepth = 0;			
+			if(distortDepth < currentDepth)
 			{
 				//geometry in front of water
-				//todo
+				//keep original texture
+				peelTexture = texture(u_PeelTexture, p).rgb;
+				finalDepth = waterDepth;
 			}else
 			{
-				
-						
-
-				
-				
-				vec3 peelTextur = texture(u_PeelTexture, p + distorsionCoord).rgb;
-				
-
-		
-		
-				out_color.rgb = mix(peelTextur, currentColor, reflectivity);
-		
-				//out_color.rg = dudv.rg;
-				//out_color.b = 0;
+				peelTexture = texture(u_PeelTexture, p + distorsionCoord).rgb;
+				finalDepth = distortWaterDepth;
 			}
+
+			peelTexture = mix(peelTexture, u_waterColor, 0.6 * clamp(pow(finalDepth/20.0,2),0,1));
+
+			
+			//darken deep stuff
+
+			out_color.rgb = mix(peelTexture, currentColor, reflectivity);
+			
+
+			//out_color.rgb = vec3(waterDepth/20);
+			//out_color.r = (currentDepth) / 10;
+			//out_color.g = (lastDepth) / 10;
+			//out_color.b = (lastDepth) / 10;
+			//out_color.rg = dudv.rg;
+			//out_color.b = 0;
 
 			out_color.a = 1;
 			//out_color.a = clamp(waterDepth/5,0,1);
