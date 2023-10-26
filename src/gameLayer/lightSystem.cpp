@@ -48,7 +48,10 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 	int upperBound = maxUpperBound;
 	while (!sunLigtsToRemove.empty() && (upperBound--) > 0)
 	{
-		sunLightsRemoveTimer.counter++;
+		sunLightsRemoveTimer.counter++; 
+
+		//todo add this here
+		//if(b->getSkyLight() != 0)continue;
 
 		auto element = sunLigtsToRemove.front();
 		sunLigtsToRemove.pop_front();
@@ -111,12 +114,16 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 		auto element = sunLigtsToAdd.front();
 		sunLigtsToAdd.pop_front();
 
-		auto b = chunkSystem.getBlockSafe(element.pos.x, element.pos.y, element.pos.z);
+		Block *b, *front, *back, *top, *bottom, *left, *right;
+
+		chunkSystem.getBlockSafeWithNeigbhoursStopIfCenterFails(element.pos.x, element.pos.y, element.pos.z,
+			b, front, back, top, bottom, left, right);
+
+		//auto b = chunkSystem.getBlockSafe(element.pos.x, element.pos.y, element.pos.z);
 		if (!b || b->getSkyLight() != element.intensity)
 		{
 			continue;
 		}
-
 		
 		{
 			//c->dontDrawYet = false; 
@@ -124,38 +131,43 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 			//char currentLightLevel = b->getSkyLight();
 			char currentLightLevel = element.intensity;
 
-			auto checkNeighbout = [&](glm::ivec3 p, char newLightLevel)
+			auto checkNeighbout = [&](glm::ivec3 p, Block *b2, char newLightLevel)
 			{
-				auto b2 = chunkSystem.getBlockSafe(p.x, p.y, p.z);
-
-				if (b2)
+				if (!b2->isOpaque() && b2->getSkyLight() < newLightLevel)
 				{
-					if (!b2->isOpaque() && b2->getSkyLight() < newLightLevel)
-					{
-						LightSystem::Light l;
-						l.intensity = newLightLevel;
-						l.pos = p;
-						sunLigtsToAdd.push_back(l);
-						b2->setSkyLevel(newLightLevel);
-					}
+					LightSystem::Light l;
+					l.intensity = newLightLevel;
+					l.pos = p;
+					sunLigtsToAdd.push_back(l);
+					b2->setSkyLevel(newLightLevel);
 				}
 			};
 
 			if (currentLightLevel == 15)
 			{
-				checkNeighbout({element.pos.x, element.pos.y - 1, element.pos.z}, currentLightLevel);
+				if(bottom)
+					checkNeighbout({element.pos.x, element.pos.y - 1, element.pos.z}, bottom, currentLightLevel);
 			}
 			else
 			{
-				checkNeighbout({element.pos.x, element.pos.y - 1, element.pos.z}, currentLightLevel - 1);
+				if (bottom)
+					checkNeighbout({element.pos.x, element.pos.y - 1, element.pos.z}, bottom, currentLightLevel - 1);
 			}
 
-			checkNeighbout({element.pos.x - 1, element.pos.y, element.pos.z}, currentLightLevel - 1);
-			checkNeighbout({element.pos.x + 1, element.pos.y, element.pos.z}, currentLightLevel - 1);
-			checkNeighbout({element.pos.x, element.pos.y + 1, element.pos.z}, currentLightLevel - 1);
+			if (back)
+				checkNeighbout({element.pos.x - 1, element.pos.y, element.pos.z}, back, currentLightLevel - 1);
+			
+			if(front)
+				checkNeighbout({element.pos.x + 1, element.pos.y, element.pos.z}, front, currentLightLevel - 1);
+			
+			if(top)
+			checkNeighbout({element.pos.x, element.pos.y + 1, element.pos.z}, top, currentLightLevel - 1);
 
-			checkNeighbout({element.pos.x, element.pos.y, element.pos.z + 1}, currentLightLevel - 1);
-			checkNeighbout({element.pos.x, element.pos.y, element.pos.z - 1}, currentLightLevel - 1);
+			if(right)
+				checkNeighbout({element.pos.x, element.pos.y, element.pos.z + 1}, right, currentLightLevel - 1);
+			
+			if(left)
+				checkNeighbout({element.pos.x, element.pos.y, element.pos.z - 1}, left, currentLightLevel - 1);
 
 			chunkSystem.setChunkAndNeighboursFlagDirtyFromBlockPos(element.pos.x, element.pos.z);
 

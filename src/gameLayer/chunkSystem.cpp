@@ -551,12 +551,135 @@ void ChunkSystem::getBlockSafeWithNeigbhours(int x, int y, int z,
 	Block *&center, Block *&front, Block *&back,
 	Block *&top, Block *&bottom, Block *&left, Block *&right)
 {
-	if (y < -1 || y >= CHUNK_HEIGHT+1) { return; }
 
+	if (y < -1 || y >= CHUNK_HEIGHT+1) 
+	{ 
+		center = 0;
+		front = 0;
+		back = 0;
+		top = 0;
+		bottom = 0;
+		left = 0;
+		right = 0;
+		return; 
+	}
 	
 	int centerChunkX = divideChunk(x);
 	int centerChunkZ = divideChunk(z);
 	auto centerChunk = getChunkSafeFromChunkSystemCoordonates(centerChunkX - cornerPos.x, 
+		centerChunkZ - cornerPos.y);
+
+	//front = getBlockSafe(x + 1, y, z);
+	//back = getBlockSafe(x - 1, y, z);
+	//left = getBlockSafe(x, y, z - 1);
+	//right = getBlockSafe(x - 1, y, z + 1);
+	//top = getBlockSafe(x, y + 1, z);
+	//bottom = getBlockSafe(x, y - 1, z);
+	//center = getBlockSafe(x, y, z);
+	//return;
+
+	if (centerChunk) //[[likely]]
+	{
+		int centerInChunkPosX = modBlockToChunk(x);
+		int centerInChunkPosZ = modBlockToChunk(z);
+
+		if (y > 0)
+		{
+			bottom = &centerChunk->unsafeGet(centerInChunkPosX, y-1, centerInChunkPosZ);
+		}
+		else
+		{
+			bottom = nullptr;
+		}
+
+		if (y < CHUNK_SIZE - 1)
+		{
+			top = &centerChunk->unsafeGet(centerInChunkPosX, y + 1, centerInChunkPosZ);
+		}
+		else
+		{
+			top = nullptr;
+		}
+
+		if (y >= 0 && y < CHUNK_SIZE)
+		{
+			center = &centerChunk->unsafeGet(centerInChunkPosX, y, centerInChunkPosZ);
+
+			if (centerInChunkPosX < CHUNK_SIZE - 1)
+			{
+				front = &centerChunk->unsafeGet(centerInChunkPosX + 1, y, centerInChunkPosZ);
+			}
+			else
+			{
+				front = getBlockSafe(x + 1, y, z);
+			}
+
+			if (centerInChunkPosX > 0)
+			{
+				back = &centerChunk->unsafeGet(centerInChunkPosX - 1, y, centerInChunkPosZ);
+			}
+			else
+			{
+				back = getBlockSafe(x - 1, y, z);
+			}
+
+			if (centerInChunkPosZ > 0)
+			{
+				left = &centerChunk->unsafeGet(centerInChunkPosX, y, centerInChunkPosZ - 1);
+			}else
+			{
+				left = getBlockSafe(x, y, z - 1);
+			}
+
+			if (centerInChunkPosZ < CHUNK_SIZE - 1)
+			{
+				right = &centerChunk->unsafeGet(centerInChunkPosX, y, centerInChunkPosZ + 1);
+			}
+			else
+			{
+				right = getBlockSafe(x, y, z + 1);
+			}
+		}
+		else
+		{
+			front = 0;
+			back = 0;
+			left = 0;
+			right = 0;
+			center = 0;
+		}
+		
+	}
+	else
+	{
+		center = getBlockSafe(x, y, z);
+		top = getBlockSafe(x, y + 1, z);
+		bottom = getBlockSafe(x, y - 1, z);
+		front = getBlockSafe(x + 1, y, z);
+		back = getBlockSafe(x - 1, y, z);
+		left = getBlockSafe(x, y, z - 1);
+		right = getBlockSafe(x - 1, y, z + 1);
+	}
+}
+
+void ChunkSystem::getBlockSafeWithNeigbhoursStopIfCenterFails(int x, int y, int z, Block *&center,
+	Block *&front, Block *&back, Block *&top, Block *&bottom, Block *&left, Block *&right)
+{
+	if (y < 0 || y >= CHUNK_HEIGHT)
+	{
+		center = 0;
+		front = 0;
+		back = 0;
+		top = 0;
+		bottom = 0;
+		left = 0;
+		right = 0;
+		return;
+	}
+
+	int centerChunkX = divideChunk(x);
+	int centerChunkZ = divideChunk(z);
+	auto centerChunk = getChunkSafeFromChunkSystemCoordonates(centerChunkX - cornerPos.x,
 		centerChunkZ - cornerPos.y);
 
 	if (centerChunk) //[[likely]]
@@ -564,22 +687,112 @@ void ChunkSystem::getBlockSafeWithNeigbhours(int x, int y, int z,
 		int centerInChunkPosX = modBlockToChunk(x);
 		int centerInChunkPosZ = modBlockToChunk(z);
 
-		center = centerChunk->safeGet(centerInChunkPosX, y, centerInChunkPosZ);
-		top = centerChunk->safeGet(centerInChunkPosX, y + 1, centerInChunkPosZ);
-		bottom = centerChunk->safeGet(centerInChunkPosX, y - 1, centerInChunkPosZ);
+		if (y > 0)
+		{
+			bottom = &centerChunk->unsafeGet(centerInChunkPosX, y - 1, centerInChunkPosZ);
+		}
+		else
+		{
+			bottom = nullptr;
+		}
 
-		//todo
-		front = getBlockSafe(x + 1, y, z);
-		back = getBlockSafe(x - 1, y, z);
-		left = getBlockSafe(x, y, z - 1);
-		right = getBlockSafe(x - 1, y, z + 1);
+		if (y < CHUNK_SIZE - 1)
+		{
+			top = &centerChunk->unsafeGet(centerInChunkPosX, y + 1, centerInChunkPosZ);
+		}
+		else
+		{
+			top = nullptr;
+		}
+
+		
+		center = &centerChunk->unsafeGet(centerInChunkPosX, y, centerInChunkPosZ);
+
+		if (centerInChunkPosX < CHUNK_SIZE - 1)
+		{
+			front = &centerChunk->unsafeGet(centerInChunkPosX + 1, y, centerInChunkPosZ);
+		}
+		else
+		{
+			auto frontChunk = getChunkSafeFromChunkSystemCoordonates(centerChunkX - cornerPos.x + 1,
+				centerChunkZ - cornerPos.y);
+			if (frontChunk)
+			{
+				front = &frontChunk->unsafeGet(0, y, centerInChunkPosZ);
+			}
+			else
+			{
+				front = 0;
+			}
+		}
+
+		if (centerInChunkPosX > 0)
+		{
+			back = &centerChunk->unsafeGet(centerInChunkPosX - 1, y, centerInChunkPosZ);
+		}
+		else
+		{
+			auto backChunk = getChunkSafeFromChunkSystemCoordonates(centerChunkX - cornerPos.x - 1,
+				centerChunkZ - cornerPos.y);
+			if (backChunk)
+			{
+				back = &backChunk->unsafeGet(CHUNK_SIZE - 1, y, centerInChunkPosZ);
+			}
+			else
+			{
+				back = 0;
+			}
+		}
+
+		if (centerInChunkPosZ > 0)
+		{
+			left = &centerChunk->unsafeGet(centerInChunkPosX, y, centerInChunkPosZ - 1);
+		}
+		else
+		{
+			auto leftChunk = getChunkSafeFromChunkSystemCoordonates(centerChunkX - cornerPos.x,
+				centerChunkZ - cornerPos.y - 1);
+			if (leftChunk)
+			{
+				left = &leftChunk->unsafeGet(centerInChunkPosX, y, CHUNK_SIZE - 1);
+			}
+			else
+			{
+				left = 0;
+			}
+
+		}
+
+		if (centerInChunkPosZ < CHUNK_SIZE - 1)
+		{
+			right = &centerChunk->unsafeGet(centerInChunkPosX, y, centerInChunkPosZ + 1);
+		}
+		else
+		{
+			auto rightChunk = getChunkSafeFromChunkSystemCoordonates(centerChunkX - cornerPos.x,
+				centerChunkZ - cornerPos.y + 1);
+			if (rightChunk)
+			{
+				right = &rightChunk->unsafeGet(centerInChunkPosX, y, 0);
+			}
+			else
+			{
+				right = 0;
+			}
+		}
+		
+
 	}
 	else
 	{
-		front = getBlockSafe(x + 1, y, z);
-		back = getBlockSafe(x - 1, y, z);
-		left = getBlockSafe(x, y, z - 1);
-		right = getBlockSafe(x - 1, y, z + 1);
+		center = 0;
+		front = 0;
+		back = 0;
+		top = 0;
+		bottom = 0;
+		left = 0;
+		right = 0;
+		return;
 	}
 }
 
