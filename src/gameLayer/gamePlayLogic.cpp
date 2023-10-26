@@ -115,6 +115,25 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			gameData.undoQueue.currentEventId.revision++;
 		}
+
+		//send player position
+		{
+
+			static float timer = 1;
+			timer -= deltaTime;
+			if (timer <= 0)
+			{
+				timer = 1;
+					
+				Packer_SendPlayerData data;
+				data.playerData.position = gameData.c.position;
+				data.playerData.chunkDistance = gameData.chunkSystem.squareSize;
+
+				//todo enum for channel
+				sendPacket(getServer(), formatPacket(headerSendPlayerData), (char*)&data, sizeof(data), 0, 1);
+			}
+
+		}
 	}
 #pragma endregion
 

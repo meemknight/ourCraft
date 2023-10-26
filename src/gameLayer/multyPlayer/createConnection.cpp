@@ -2,8 +2,8 @@
 #include "enet/enet.h"
 #include "multyPlayer/packet.h"
 #include <iostream>
+static ConnectionData clientData;
 
-//todo rename task client
 void submitTaskClient(Task &t)
 {
 	auto data = getConnectionData();
@@ -49,8 +49,20 @@ void submitTaskClient(std::vector<Task> &t)
 	}
 }
 
+Packet formatPacket(int header)
+{
+	Packet p;
+	p.cid = clientData.cid;
+	p.header = header;
+	return p;
+}
 
-static ConnectionData clientData;
+ENetPeer *getServer()
+{
+	return clientData.server;
+}
+
+
 std::vector<Chunk *> getRecievedChunks()
 {
 	//auto ret = std::move(recievedChunks);

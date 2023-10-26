@@ -23,6 +23,10 @@ struct Task
 void submitTaskClient(Task &t);
 void submitTaskClient(std::vector<Task> &t);
 
+Packet formatPacket(int header);
+ENetPeer *getServer();
+
+
 struct Chunk;
 
 struct ConnectionData

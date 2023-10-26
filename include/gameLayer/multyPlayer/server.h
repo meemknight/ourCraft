@@ -1,6 +1,7 @@
 #pragma once
 #include <unordered_map>
 #include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 
 using CID = int32_t;
 
@@ -17,7 +18,7 @@ struct PerClientServerSettings
 
 	bool validateStuff = true;
 
-
+	glm::dvec3 outPlayerPos;
 };
 
 struct ServerSettings

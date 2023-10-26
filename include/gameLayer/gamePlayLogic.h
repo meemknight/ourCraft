@@ -23,6 +23,12 @@ struct ProgramData
 	int currentFps = 0;
 };
 
+struct PlayerData 
+{
+	int chunkDistance = 10;
+	glm::dvec3 position = {};
+	//...
+};
 
 bool initGameplay(ProgramData &programData);
 

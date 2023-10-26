@@ -5,7 +5,7 @@
 #include <glm/vec3.hpp>
 #include <chunk.h>
 #include "server.h"
-
+#include "gamePlayLogic.h"
 
 using EventCounter = unsigned int;
 using RevisionNumber = unsigned int;
@@ -39,6 +39,7 @@ enum
 	headerRecieveChunk,
 	headerValidateEvent,
 	headerInValidateEvent,
+	headerSendPlayerData,
 };
 
 struct Packet_ReceiveCIDAndData
@@ -63,6 +64,11 @@ struct Packet_ValidateEvent
 struct Packet_InValidateEvent
 {
 	EventId eventId = {};
+};
+
+struct Packer_SendPlayerData
+{
+	PlayerData playerData = {};
 };
 
 //used by the client to talk to the server

@@ -49,6 +49,8 @@ uniform sampler2D u_dudvNormal;
 uniform float u_waterMove;
 uniform sampler2D u_caustics;
 
+uniform mat4 u_inverseProjMat;
+
 in flat int v_flags;
 
 float computeFog(float dist)
@@ -201,9 +203,10 @@ float linearizeDepth(float d)
 	return 2 * u_near * u_far / (u_far + u_near - (2*d-1.f) * (u_far - u_near) );
 }
 
-float getLastDepthLiniarized(vec2 p)
+float getLastDepthLiniarized(vec2 p, out float nonLinear)
 {
 	float lastDepth = texture(u_depthTexture, p).x;
+	nonLinear = lastDepth;
 	float linear = linearizeDepth(lastDepth);
 	return linear;	
 }
@@ -529,9 +532,9 @@ void main()
 			p += 1;
 			p/=2;
 
-
+			float nonLinear;
 			float currentDepth = linearizeDepth(gl_FragCoord.z);		
-			float lastDepth = getLastDepthLiniarized(p);
+			float lastDepth = getLastDepthLiniarized(p, nonLinear);
 			float waterDepth = lastDepth - currentDepth;
 			
 			vec2 dudv = vec2(0);
@@ -540,14 +543,19 @@ void main()
 			vec2 dudvConv = (dudv * 2) - 1;
 			vec2 distorsionCoord = dudvConv * 0.009;	
 
-			float distortDepth = getLastDepthLiniarized(p + distorsionCoord);
+			float distortDepth = getLastDepthLiniarized(p + distorsionCoord, nonLinear);
 			float distortWaterDepth = distortDepth - currentDepth;
 
 			vec3 currentColor = out_color.rgb;
-
+			
+			//v_fragPos
+			vec3 perturbedFragPos = (u_inverseProjMat * vec4(p + distorsionCoord, nonLinear, 1)).rgb;
+			vec3 direction = perturbedFragPos - v_fragPos.xyz;
+			
 			vec3 peelTexture = vec3(1,0.5,0.5);
 			float finalDepth = 0;			
-			if(distortDepth < currentDepth + 0.1)
+			//if(distortDepth < currentDepth + 0.1)
+			if(dot(direction, v_normal) > 0 || distortDepth < currentDepth + 0.1)
 			{
 				//geometry in front of water
 				//keep original texture

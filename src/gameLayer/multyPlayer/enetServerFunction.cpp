@@ -133,6 +133,32 @@ void recieveData(ENetHost *server, ENetEvent &event)
 			break;
 		}
 
+		case headerSendPlayerData:
+		{
+			Packer_SendPlayerData packetData = *(Packer_SendPlayerData *)data;
+
+			connectionsMutex.lock();
+			
+			auto it = connections.find(p.cid);
+			if (it == connections.end())
+			{
+				std::cout << "invalid cid error";
+			}
+			else
+			{
+				it->second.playerData = packetData.playerData;
+
+				//todo something better here...
+				auto s = getServerSettingsCopy();
+				s.perClientSettings[p.cid].outPlayerPos = packetData.playerData.position;
+				setServerSettings(s);
+			}
+
+			connectionsMutex.unlock();
+
+		}
+
+
 		default:
 
 		break;

@@ -3,6 +3,7 @@
 #include "threadStuff.h"
 #include "packet.h"
 #include "createConnection.h"
+#include "gamePlayLogic.h"
 
 bool startEnetListener(ENetHost *_server);
 void closeEnetListener();
@@ -20,6 +21,8 @@ struct Client
 	//bool changed = 1;
 	//char clientName[56] = {};
 	RevisionNumber revisionNumber = 1;
+
+	PlayerData playerData;
 };
 
 void signalWaitingFromServer();

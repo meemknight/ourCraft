@@ -190,6 +190,8 @@ bool gameLogic(float deltaTime)
 			{
 				ImGui::PushID(c.first);
 				ImGui::Text("%d", c.first);
+				ImGui::Text("Position: %lf %lf %lf", c.second.outPlayerPos.x,
+					c.second.outPlayerPos.y, c.second.outPlayerPos.z);
 				ImGui::Checkbox("Allow validate moves", &c.second.validateStuff);
 				ImGui::Separator();
 				ImGui::PopID();
