@@ -37,6 +37,10 @@ struct ChunkSystem
 	Block *getBlockSafe(glm::dvec3 pos);
 	Block* getBlockSafeAndChunk(int x, int y, int z, Chunk* &chunk);
 
+	void getBlockSafeWithNeigbhours(int x, int y, int z,
+		Block *&center, Block *&front, Block *&back, Block *&top, Block *&bottom, 
+		Block *&left, Block *&right);
+
 	Block *rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, float maxDist
 		, std::optional<glm::ivec3> &prevBlockForPlace);
 

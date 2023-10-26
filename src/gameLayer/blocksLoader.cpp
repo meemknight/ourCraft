@@ -256,6 +256,7 @@ bool fixAlpha(unsigned char *buffer, int w, int h)
 			}
 		}
 
+	bool changed = 0;
 	for (int y = 0; y < h; y++)
 		for (int x = 0; x < w; x++)
 		{
@@ -269,6 +270,7 @@ bool fixAlpha(unsigned char *buffer, int w, int h)
 					if (glm::ivec3(c) != glm::ivec3{0,0,0})
 					{
 						set(x, y, c);
+						changed = true;
 						continue;
 					}
 				}
@@ -279,6 +281,7 @@ bool fixAlpha(unsigned char *buffer, int w, int h)
 					if (glm::ivec3(c) != glm::ivec3{0,0,0})
 					{
 						set(x, y, c);
+						changed = true;
 						continue;
 					}
 				}
@@ -289,6 +292,7 @@ bool fixAlpha(unsigned char *buffer, int w, int h)
 					if (glm::ivec3(c) != glm::ivec3{0,0,0})
 					{
 						set(x, y, c);
+						changed = true;
 						continue;
 					}
 				}
@@ -299,6 +303,7 @@ bool fixAlpha(unsigned char *buffer, int w, int h)
 					if (glm::ivec3(c) != glm::ivec3{0,0,0})
 					{
 						set(x, y, c);
+						changed = true;
 						continue;
 					}
 				}
@@ -309,6 +314,7 @@ bool fixAlpha(unsigned char *buffer, int w, int h)
 					if (glm::ivec3(c) != glm::ivec3{0,0,0})
 					{
 						set(x, y, c);
+						changed = true;
 						continue;
 					}
 				}
@@ -319,6 +325,7 @@ bool fixAlpha(unsigned char *buffer, int w, int h)
 					if (glm::ivec3(c) != glm::ivec3{0,0,0})
 					{
 						set(x, y, c);
+						changed = true;
 						continue;
 					}
 				}
@@ -329,6 +336,7 @@ bool fixAlpha(unsigned char *buffer, int w, int h)
 					if (glm::ivec3(c) != glm::ivec3{0,0,0})
 					{
 						set(x, y, c);
+						changed = true;
 						continue;
 					}
 				}
@@ -339,6 +347,7 @@ bool fixAlpha(unsigned char *buffer, int w, int h)
 					if (glm::ivec3(c) != glm::ivec3{0,0,0})
 					{
 						set(x, y, c);
+						changed = true;
 						continue;
 					}
 				}
@@ -347,7 +356,7 @@ bool fixAlpha(unsigned char *buffer, int w, int h)
 
 		}
 
-	return true;
+	return changed;
 }
 
 void createFromFileDataWithAplhaFixing(gl2d::Texture &t, const unsigned char *image_file_data, 
@@ -490,6 +499,7 @@ void BlocksLoader::loadAllTextures()
 	}
 	
 	std::string path;
+	std::string path2;
 
 	auto addTexture = [&](std::string path) -> bool
 	{
@@ -520,27 +530,43 @@ void BlocksLoader::loadAllTextures()
 	{
 		
 		path.clear();
+		path2.clear();
 
 		path += RESOURCES_PATH;
-		path += "pbr/block/";
+		path2 += RESOURCES_PATH;
+		
+		path2 += "pbr/block/";
+		//path += "pbr3/";
+		path += "pbr/block/"; //original
+		
 		path += texturesNames[i];
+		path2 += texturesNames[i];
 
 		if (!addTexture(path + ".png"))
 		{
-			texturesIds.push_back(texturesIds[0]);
-			gpuIds.push_back(gpuIds[0]);
+			if (!addTexture(path2 + ".png"))
+			{
+				texturesIds.push_back(texturesIds[0]);
+				gpuIds.push_back(gpuIds[0]);
+			}
 		}
 		
 		if(!addTexture(path + "_n.png"))
 		{
-			texturesIds.push_back(texturesIds[1]);
-			gpuIds.push_back(gpuIds[1]);
+			if (!addTexture(path2 + "_n.png"))
+			{
+				texturesIds.push_back(texturesIds[1]);
+				gpuIds.push_back(gpuIds[1]);
+			}
 		}
 
 		if (!addTexture(path + "_s.png"))
 		{
-			texturesIds.push_back(texturesIds[2]);
-			gpuIds.push_back(gpuIds[2]);
+			if (!addTexture(path2 + "_s.png"))
+			{
+				texturesIds.push_back(texturesIds[2]);
+				gpuIds.push_back(gpuIds[2]);
+			}
 		}
 	}
 

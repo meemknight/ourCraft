@@ -1,7 +1,31 @@
 #include <lightSystem.h>
 #include <chunkSystem.h>
 #include <iostream>
+#include <chrono>
 
+struct Timer
+{
+	std::chrono::steady_clock::time_point begin;
+	std::chrono::steady_clock::time_point endp;
+
+	int counter = 0;
+
+	void start()
+	{
+		begin = std::chrono::steady_clock::now();
+	}
+
+	void end()
+	{
+		endp = std::chrono::steady_clock::now();
+	}
+
+	float getTimerInMiliseconds()
+	{
+		return 
+			std::chrono::duration_cast<std::chrono::nanoseconds> (endp - begin).count() / 1'000'000.f;
+	}
+};
 
 void LightSystem::update(ChunkSystem &chunkSystem)
 {
@@ -14,10 +38,18 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 	}
 
 	const int maxUpperBound = 100000;
+	
+	
+
+	Timer sunLightsRemoveTimer;
+
+	sunLightsRemoveTimer.start();
 
 	int upperBound = maxUpperBound;
 	while (!sunLigtsToRemove.empty() && (upperBound--) > 0)
 	{
+		sunLightsRemoveTimer.counter++;
+
 		auto element = sunLigtsToRemove.front();
 		sunLigtsToRemove.pop_front();
 
@@ -65,10 +97,17 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 		chunkSystem.setChunkAndNeighboursFlagDirtyFromBlockPos(element.pos.x, element.pos.z);
 
 	}
+	sunLightsRemoveTimer.end();
+
+
+	Timer sunLightsAddTimer;
+	sunLightsAddTimer.start();
 
 	upperBound = maxUpperBound;
 	while (!sunLigtsToAdd.empty() && (upperBound--) > 0)
 	{
+		sunLightsAddTimer.counter++;
+
 		auto element = sunLigtsToAdd.front();
 		sunLigtsToAdd.pop_front();
 
@@ -78,10 +117,7 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 			continue;
 		}
 
-		//Chunk *c = 0;
-		//todo optimize and remove this
-		//auto b = chunkSystem.getBlockSafeAndChunk(element.pos.x, element.pos.y, element.pos.z, c);
-		//if (b)
+		
 		{
 			//c->dontDrawYet = false; 
 
@@ -125,7 +161,10 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 
 		}
 
+
 	}
+
+	sunLightsAddTimer.end();
 
 	//...
 
@@ -231,6 +270,14 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 
 		}
 
+	}
+
+
+	if (sunLightsAddTimer.counter > 1000)
+	{
+		std::cout << "Added: " << sunLightsAddTimer.counter << " in: " <<
+			sunLightsAddTimer.getTimerInMiliseconds() << " ms,   " <<
+			sunLightsAddTimer.getTimerInMiliseconds() / sunLightsAddTimer.counter << " ms per light\n";
 	}
 
 }

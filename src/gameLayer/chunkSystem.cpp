@@ -547,6 +547,42 @@ Block *ChunkSystem::getBlockSafeAndChunk(int x, int y, int z, Chunk *&chunk)
 	return b;
 }
 
+void ChunkSystem::getBlockSafeWithNeigbhours(int x, int y, int z, 
+	Block *&center, Block *&front, Block *&back,
+	Block *&top, Block *&bottom, Block *&left, Block *&right)
+{
+	if (y < -1 || y >= CHUNK_HEIGHT+1) { return; }
+
+	
+	int centerChunkX = divideChunk(x);
+	int centerChunkZ = divideChunk(z);
+	auto centerChunk = getChunkSafeFromChunkSystemCoordonates(centerChunkX - cornerPos.x, 
+		centerChunkZ - cornerPos.y);
+
+	if (centerChunk) //[[likely]]
+	{
+		int centerInChunkPosX = modBlockToChunk(x);
+		int centerInChunkPosZ = modBlockToChunk(z);
+
+		center = centerChunk->safeGet(centerInChunkPosX, y, centerInChunkPosZ);
+		top = centerChunk->safeGet(centerInChunkPosX, y + 1, centerInChunkPosZ);
+		bottom = centerChunk->safeGet(centerInChunkPosX, y - 1, centerInChunkPosZ);
+
+		//todo
+		front = getBlockSafe(x + 1, y, z);
+		back = getBlockSafe(x - 1, y, z);
+		left = getBlockSafe(x, y, z - 1);
+		right = getBlockSafe(x - 1, y, z + 1);
+	}
+	else
+	{
+		front = getBlockSafe(x + 1, y, z);
+		back = getBlockSafe(x - 1, y, z);
+		left = getBlockSafe(x, y, z - 1);
+		right = getBlockSafe(x - 1, y, z + 1);
+	}
+}
+
 Block *ChunkSystem::rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos,
 	float maxDist, std::optional<glm::ivec3> &prevBlockForPlace)
 {

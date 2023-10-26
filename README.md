@@ -22,14 +22,19 @@ Features and todos:
 	- [x] Lights
 	- [ ] Sky Box reflection
 	- [ ] SSR
-	- [ ] HBAO / SSAO
+	- [ ] HBAO / SSAO / or even better SSDO
 	- [x] HDR, ACES tonemapping
 	- [ ] Bloom
 	- [ ] Automatic exposure
 	- [ ] Lens flare
 	- [ ] Color grading
-	- [ ] Fog
-	- [ ] Underwater fog
+	- [x] Fog
+	- [x] Underwater fog -(todo improve)
+	- [ ] Sun Shadows (cascaded shadow maps)
+	- [ ] God rays	
+	- [x] Fake Shadows for all light types (todo improve)
+	- [ ] Depth of field (maybe blur far stuff)
+	- [ ] world curvature maybe?
 
 - [x] Chunk system
 
