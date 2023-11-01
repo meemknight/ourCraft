@@ -554,8 +554,8 @@ void main()
 			
 			vec3 peelTexture = vec3(1,0.5,0.5);
 			float finalDepth = 0;			
-			//if(distortDepth < currentDepth + 0.1)
-			if(dot(direction, v_normal) > 0 || distortDepth < currentDepth + 0.1)
+			if(distortDepth < currentDepth + 0.1)
+			//if(dot(direction, v_normal) > 0 || distortDepth < currentDepth + 0.1)
 			{
 				//geometry in front of water
 				//keep original texture
