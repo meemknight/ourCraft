@@ -924,8 +924,8 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 
 	float near_plane = 1.0f, far_plane = 260.f;
 	glm::mat4 lightProjection = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, near_plane, far_plane);
-	auto mvp = lightProjection * glm::lookAt(glm::vec3(posInt),
-		-skyBoxRenderer.sunPos + glm::vec3(posInt), glm::vec3(0, 1, 0));
+	auto mvp = lightProjection * glm::lookAt({},
+		-skyBoxRenderer.sunPos, glm::vec3(0, 1, 0));
 
 	//auto mvp = lightProjection * glm::lookAt(glm::vec3(posInt),
 	//	glm::vec3(0, 1,0) + glm::vec3(posInt), glm::vec3(0, 1, 0));
@@ -938,8 +938,8 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 		zpassShader.shader.bind();
 		glUniformMatrix4fv(zpassShader.u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
 		glUniform3fv(zpassShader.u_positionFloat, 1, &posFloat[0]);
-		//glUniform3iv(zpassShader.u_positionInt, 1, &posInt[0]);
-		glUniform3i(zpassShader.u_positionInt, 0,0,0);
+		glUniform3iv(zpassShader.u_positionInt, 1, &posInt[0]);
+		//glUniform3i(zpassShader.u_positionInt, 0,0,0);
 		glUniform1i(zpassShader.u_renderOnlyWater, 0);
 	}
 #pragma endregion

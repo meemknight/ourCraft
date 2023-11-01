@@ -221,7 +221,7 @@ void main()
 	gl_Position = posView;
 	v_fragPos = posView;
 
-	v_fragPosLightSpace = u_lightSpaceMatrix * vec4(fragmentPositionI + fragmentPositionF, 1);
+	v_fragPosLightSpace = u_lightSpaceMatrix * vec4((fragmentPositionI - u_lightPos) + fragmentPositionF, 1);
 	//v_fragPosLightSpace.xyz -= u_lightPos;
 
 

@@ -378,12 +378,16 @@ float firstGama(float a)
 	return pow(a, float(2.2));
 }
 
-float shadowCalc()
+float shadowCalc(float dotLightNormal)
 {
 	vec3 pos = v_fragPosLightSpace.xyz * 0.5 + 0.5;
-	float depth = texture(u_sunShadowTexture, pos.xy).r;
+	pos.z = min(pos.z, 1.0);
 	
-	return (depth+0.01) < pos.z ? 0.0 : 1.0;	
+	float depth = texture(u_sunShadowTexture, pos.xy).r;
+		
+	float bias = max(0.001, 0.05 * (1.f - dotLightNormal));
+
+	return (depth+bias) < pos.z ? 0.0 : 1.0;	
 }
 
 void main()
@@ -486,7 +490,7 @@ void main()
 	{
 		vec3 L = u_sunDirection;
 		//light += computeLight(N,L,V) * 1.f;
-		finalColor += shadowCalc() * computePointLightSource(L, 
+		finalColor += shadowCalc(dot(L, N)) * computePointLightSource(L, 
 			metallic, roughness, vec3(0.9,0.9,0.9) * causticsColor, V, 
 			textureColor.rgb, N, F0);
 	}
@@ -494,6 +498,7 @@ void main()
 		
 	out_color = vec4(finalColor,textureColor.a);
 		
+	//preview shadow
 	//if(shadowCalc() < 0.5)
 	//{
 	//	out_color.rgb = mix(out_color.rgb, vec3(1,0.5,0.7), 0.3);
