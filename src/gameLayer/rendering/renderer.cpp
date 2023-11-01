@@ -887,6 +887,278 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	glBindVertexArray(0);
 }
 
+//https://www.youtube.com/watch?v=lUo7s-i9Gy4&ab_channel=OREONENGINE
+void computeFrustumDimensions(
+	glm::vec3 position, glm::vec3 viewDirection,
+	float fovRadians, float aspectRatio, float nearPlane, float farPlane,
+	glm::vec2 &nearDimensions, glm::vec2 &farDimensions, glm::vec3 &centerNear, glm::vec3 &centerFar)
+{
+	float tanFov2 = tan(fovRadians) * 2;
+
+	nearDimensions.y = tanFov2 * nearPlane;			//hNear
+	nearDimensions.x = nearDimensions.y * aspectRatio;	//wNear
+
+	farDimensions.y = tanFov2 * farPlane;			//hNear
+	farDimensions.x = farDimensions.y * aspectRatio;	//wNear
+
+	centerNear = position + viewDirection * farPlane;
+	centerFar = position + viewDirection * farPlane;
+
+}
+
+void generateTangentSpace(glm::vec3 v, glm::vec3 &outUp, glm::vec3 &outRight)
+{
+	glm::vec3 up(0, 1, 0);
+	if (v == up)
+	{
+		outRight = glm::vec3(1, 0, 0);
+	}
+	else
+	{
+		outRight = normalize(glm::cross(v, up));
+	}
+	outUp = normalize(cross(outRight, v));
+}
+
+//https://www.youtube.com/watch?v=lUo7s-i9Gy4&ab_channel=OREONENGINE
+void computeFrustumSplitCorners(glm::vec3 directionVector,
+	glm::vec2 nearDimensions, glm::vec2 farDimensions, glm::vec3 centerNear, glm::vec3 centerFar,
+	glm::vec3 &nearTopLeft, glm::vec3 &nearTopRight, glm::vec3 &nearBottomLeft, glm::vec3 &nearBottomRight,
+	glm::vec3 &farTopLeft, glm::vec3 &farTopRight, glm::vec3 &farBottomLeft, glm::vec3 &farBottomRight)
+{
+
+	glm::vec3 rVector = {};
+	glm::vec3 upVectpr = {};
+
+	generateTangentSpace(directionVector, upVectpr, rVector);
+
+	nearTopLeft = centerNear + upVectpr * nearDimensions.y / 2.f - rVector * nearDimensions.x / 2.f;
+	nearTopRight = centerNear + upVectpr * nearDimensions.y / 2.f + rVector * nearDimensions.x / 2.f;
+	nearBottomLeft = centerNear - upVectpr * nearDimensions.y / 2.f - rVector * nearDimensions.x / 2.f;
+	nearBottomRight = centerNear - upVectpr * nearDimensions.y / 2.f + rVector * nearDimensions.x / 2.f;
+
+	farTopLeft = centerNear + upVectpr * farDimensions.y / 2.f - rVector * farDimensions.x / 2.f;
+	farTopRight = centerNear + upVectpr * farDimensions.y / 2.f + rVector * farDimensions.x / 2.f;
+	farBottomLeft = centerNear - upVectpr * farDimensions.y / 2.f - rVector * farDimensions.x / 2.f;
+	farBottomRight = centerNear - upVectpr * farDimensions.y / 2.f + rVector * farDimensions.x / 2.f;
+
+}
+
+glm::mat4 lookAtSafe(glm::vec3 const &eye, glm::vec3 const &center, glm::vec3 const &upVec)
+{
+	glm::vec3 up = glm::normalize(upVec);
+
+	glm::vec3 f;
+	glm::vec3 s;
+	glm::vec3 u;
+
+	f = (normalize(center - eye));
+	if (f == up || f == -up)
+	{
+		s = glm::vec3(up.z, up.x, up.y);
+		u = (cross(s, f));
+
+	}
+	else
+	{
+		s = (normalize(cross(f, up)));
+		u = (cross(s, f));
+	}
+
+	glm::mat4 Result(1);
+	Result[0][0] = s.x;
+	Result[1][0] = s.y;
+	Result[2][0] = s.z;
+	Result[0][1] = u.x;
+	Result[1][1] = u.y;
+	Result[2][1] = u.z;
+	Result[0][2] = -f.x;
+	Result[1][2] = -f.y;
+	Result[2][2] = -f.z;
+	Result[3][0] = -dot(s, eye);
+	Result[3][1] = -dot(u, eye);
+	Result[3][2] = dot(f, eye);
+	return Result;
+}
+
+glm::mat4 calculateLightProjectionMatrix(Camera &camera, glm::vec3 lightDir,
+	float nearPlane, float farPlane,
+	float zOffset)
+{
+	glm::vec3 direction = lightDir;
+	glm::vec3 eye = camera.position - glm::dvec3(direction);
+	glm::vec3 center = eye + direction;
+
+	glm::mat4 lightView = lookAtSafe(eye, center, {0.f,1.f,0.f});//todo option to add a custom vector direction
+
+	glm::vec3 rVector = {};
+	glm::vec3 upVectpr = {};
+	generateTangentSpace(lightDir, upVectpr, rVector);
+
+	glm::vec2 nearDimensions{};
+	glm::vec2 farDimensions{};
+	glm::vec3 centerNear{};
+	glm::vec3 centerFar{};
+
+	computeFrustumDimensions(camera.position, camera.viewDirection, camera.fovRadians, camera.aspectRatio,
+		nearPlane, farPlane, nearDimensions, farDimensions, centerNear, centerFar);
+
+	glm::vec3 nearTopLeft{};
+	glm::vec3 nearTopRight{};
+	glm::vec3 nearBottomLeft{};
+	glm::vec3 nearBottomRight{};
+	glm::vec3 farTopLeft{};
+	glm::vec3 farTopRight{};
+	glm::vec3 farBottomLeft{};
+	glm::vec3 farBottomRight{};
+
+	computeFrustumSplitCorners(camera.viewDirection, nearDimensions, farDimensions, centerNear, centerFar,
+		nearTopLeft,
+		nearTopRight,
+		nearBottomLeft,
+		nearBottomRight,
+		farTopLeft,
+		farTopRight,
+		farBottomLeft,
+		farBottomRight
+	);
+
+
+	glm::vec3 corners[] =
+	{
+		nearTopLeft,
+		nearTopRight,
+		nearBottomLeft,
+		nearBottomRight,
+		farTopLeft,
+		farTopRight,
+		farBottomLeft,
+		farBottomRight,
+	};
+
+	float longestDiagonal = glm::distance(nearTopLeft, farBottomRight);
+
+	glm::vec3 minVal{};
+	glm::vec3 maxVal{};
+
+	for (int i = 0; i < 8; i++)
+	{
+		glm::vec4 corner(corners[i], 1);
+
+		glm::vec4 lightViewCorner = lightView * corner;
+
+		if (i == 0)
+		{
+			minVal = lightViewCorner;
+			maxVal = lightViewCorner;
+		}
+		else
+		{
+			if (lightViewCorner.x < minVal.x) { minVal.x = lightViewCorner.x; }
+			if (lightViewCorner.y < minVal.y) { minVal.y = lightViewCorner.y; }
+			if (lightViewCorner.z < minVal.z) { minVal.z = lightViewCorner.z; }
+
+			if (lightViewCorner.x > maxVal.x) { maxVal.x = lightViewCorner.x; }
+			if (lightViewCorner.y > maxVal.y) { maxVal.y = lightViewCorner.y; }
+			if (lightViewCorner.z > maxVal.z) { maxVal.z = lightViewCorner.z; }
+
+		}
+
+	}
+
+	//keep them square and the same size:
+	//https://www.youtube.com/watch?v=u0pk1LyLKYQ&t=99s&ab_channel=WesleyLaFerriere
+	if (1)
+	{
+		float firstSize = maxVal.x - minVal.x;
+		float secondSize = maxVal.y - minVal.y;
+		float thirdSize = maxVal.z - minVal.z;
+
+		{
+			float ratio = longestDiagonal / firstSize;
+
+			glm::vec2 newVecValues = {minVal.x, maxVal.x};
+			float dimension = firstSize;
+			float dimensionOver2 = dimension / 2.f;
+
+			newVecValues -= glm::vec2(minVal.x + dimensionOver2, minVal.x + dimensionOver2);
+			newVecValues *= ratio;
+			newVecValues += glm::vec2(minVal.x + dimensionOver2, minVal.x + dimensionOver2);
+
+			minVal.x = newVecValues.x;
+			maxVal.x = newVecValues.y;
+		}
+
+		{
+			float ratio = longestDiagonal / secondSize;
+
+			glm::vec2 newVecValues = {minVal.y, maxVal.y};
+			float dimension = secondSize;
+			float dimensionOver2 = dimension / 2.f;
+
+			newVecValues -= glm::vec2(minVal.y + dimensionOver2, minVal.y + dimensionOver2);
+			newVecValues *= ratio;
+			newVecValues += glm::vec2(minVal.y + dimensionOver2, minVal.y + dimensionOver2);
+
+			minVal.y = newVecValues.x;
+			maxVal.y = newVecValues.y;
+		}
+
+		{//todo this size probably can be far-close
+			float ratio = longestDiagonal / thirdSize;
+
+			glm::vec2 newVecValues = {minVal.z, maxVal.z};
+			float dimension = thirdSize;
+			float dimensionOver2 = dimension / 2.f;
+
+			newVecValues -= glm::vec2(minVal.z + dimensionOver2, minVal.z + dimensionOver2);
+			newVecValues *= ratio;
+			newVecValues += glm::vec2(minVal.z + dimensionOver2, minVal.z + dimensionOver2);
+
+			minVal.z = newVecValues.x;
+			maxVal.z = newVecValues.y;
+		}
+
+	}
+
+	float near_plane = minVal.z - zOffset;
+	float far_plane = maxVal.z;
+
+
+	glm::vec2 ortoMin = {minVal.x, minVal.y};
+	glm::vec2 ortoMax = {maxVal.x, maxVal.y};
+
+	//remove shadow flicker
+	if (1)
+	{
+		glm::vec2 shadowMapSize(2048, 2048);
+		glm::vec2 worldUnitsPerTexel = (ortoMax - ortoMin) / shadowMapSize;
+
+		ortoMin /= worldUnitsPerTexel;
+		ortoMin = glm::floor(ortoMin);
+		ortoMin *= worldUnitsPerTexel;
+
+		ortoMax /= worldUnitsPerTexel;
+		ortoMax = glm::floor(ortoMax);
+		ortoMax *= worldUnitsPerTexel;
+
+		float zWorldUnitsPerTexel = (far_plane - near_plane) / 2048;
+
+		near_plane /= zWorldUnitsPerTexel;
+		far_plane /= zWorldUnitsPerTexel;
+		near_plane = glm::floor(near_plane);
+		far_plane = glm::floor(far_plane);
+		near_plane *= zWorldUnitsPerTexel;
+		far_plane *= zWorldUnitsPerTexel;
+
+	}
+
+	glm::mat4 lightProjection = glm::ortho(ortoMin.x, ortoMax.x, ortoMin.y, ortoMax.y, near_plane, far_plane);
+
+	return lightProjection * lightView;
+
+};
+
 
 void Renderer::renderShadow(SunShadow &sunShadow,
 	ChunkSystem &chunkSystem, Camera &c, ProgramData &programData)
@@ -900,16 +1172,15 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 
 
 	glm::ivec3 newPos = c.position;
-	newPos.y = 260;
 
 	{
 		glm::vec3 moveDir = skyBoxRenderer.sunPos;
-		moveDir.y = 0;
+
 		float l = glm::length(moveDir);
 		if (l > 0.0001)
 		{
 			moveDir /= l;
-			newPos += moveDir * (float)CHUNK_SIZE * 3.f;
+			newPos += moveDir * (float)CHUNK_SIZE * 12.f;
 		}
 	}
 
@@ -927,19 +1198,20 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 	auto mvp = lightProjection * glm::lookAt({},
 		-skyBoxRenderer.sunPos, glm::vec3(0, 1, 0));
 
-	//auto mvp = lightProjection * glm::lookAt(glm::vec3(posInt),
-	//	glm::vec3(0, 1,0) + glm::vec3(posInt), glm::vec3(0, 1, 0));
+	//auto mat = calculateLightProjectionMatrix(c, -skyBoxRenderer.sunPos, 1, 260, 25);
 
 	sunShadow.lightSpaceMatrix = mvp;
-	sunShadow.lightSpacePosition = newPos;
+	sunShadow.lightSpacePosition = posInt;
+	
+	//sunShadow.lightSpaceMatrix = mat;
+	//sunShadow.lightSpacePosition = {};
 
 #pragma region setup uniforms and stuff
 	{
 		zpassShader.shader.bind();
-		glUniformMatrix4fv(zpassShader.u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
+		glUniformMatrix4fv(zpassShader.u_viewProjection, 1, GL_FALSE, &sunShadow.lightSpaceMatrix[0][0]);
 		glUniform3fv(zpassShader.u_positionFloat, 1, &posFloat[0]);
-		glUniform3iv(zpassShader.u_positionInt, 1, &posInt[0]);
-		//glUniform3i(zpassShader.u_positionInt, 0,0,0);
+		glUniform3iv(zpassShader.u_positionInt, 1, &sunShadow.lightSpacePosition[0]);
 		glUniform1i(zpassShader.u_renderOnlyWater, 0);
 	}
 #pragma endregion

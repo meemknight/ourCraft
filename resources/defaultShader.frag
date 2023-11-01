@@ -488,10 +488,11 @@ void main()
 	//sun light
 	if(v_skyLight > 0)
 	{
+		vec3 sunLightColor = vec3(1.5);
 		vec3 L = u_sunDirection;
 		//light += computeLight(N,L,V) * 1.f;
-		finalColor += shadowCalc(dot(L, N)) * computePointLightSource(L, 
-			metallic, roughness, vec3(0.9,0.9,0.9) * causticsColor, V, 
+		finalColor += shadowCalc(dot(L, v_normal)) * computePointLightSource(L, 
+			metallic, roughness, sunLightColor * causticsColor, V, 
 			textureColor.rgb, N, F0);
 	}
 	
@@ -499,7 +500,7 @@ void main()
 	out_color = vec4(finalColor,textureColor.a);
 		
 	//preview shadow
-	//if(shadowCalc() < 0.5)
+	//if(shadowCalc(dot(u_sunDirection, v_normal)) < 0.5)
 	//{
 	//	out_color.rgb = mix(out_color.rgb, vec3(1,0.5,0.7), 0.3);
 	//}
