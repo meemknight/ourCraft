@@ -8,6 +8,7 @@
 struct BlocksLoader;
 struct ChunkSystem;
 struct ProgramData;
+struct SunShadow;
 
 struct Renderer
 {
@@ -69,7 +70,11 @@ struct Renderer
 		GLint u_far = -1;
 		GLint u_caustics = -1;
 		GLint u_inverseProjMat = -1;
-		
+		GLint u_lightSpaceMatrix = -1;
+		GLint u_lightPos = -1;
+		GLint u_sunShadowTexture = -1;
+		GLint u_viewMatrix = -1;
+
 	}defaultShader;
 
 	struct ZpassShader
@@ -94,9 +99,12 @@ struct Renderer
 	void updateDynamicBlocks();
 	//void render(std::vector<int> &data, Camera &c, gl2d::Texture &texture);
 
-	void renderFromBakedData(ChunkSystem &chunkSystem, Camera &c,
+	void renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSystem, Camera &c,
 		ProgramData &programData, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos,
 		bool underWater, int screenX, int screenY, float deltaTime);
+	
+	void renderShadow(SunShadow &sunShadow,
+		ChunkSystem &chunkSystem, Camera &c, ProgramData &programData);
 
 	float waterTimer = 0;
 

@@ -13,6 +13,9 @@ uniform vec3 u_positionFloat;
 uniform float u_time;
 uniform int u_skyLightIntensity;
 
+uniform mat4 u_lightSpaceMatrix;
+uniform ivec3 u_lightPos;
+
 out flat ivec3 v_blockPos;
 
 float vertexColor[] = float[](
@@ -78,6 +81,7 @@ out flat uvec2 v_textureSampler;
 out flat uvec2 v_normalSampler;
 out flat uvec2 v_materialSampler;
 
+//in world space
 out flat ivec3 fragmentPositionI;
 out vec3 fragmentPositionF;
 
@@ -86,7 +90,11 @@ out flat int v_normalLight;
 
 out flat vec3 v_normal;
 
+//in view space
 out vec4 v_fragPos;
+
+out vec4 v_fragPosLightSpace;
+
 
 out flat int v_flags;
 
@@ -211,7 +219,11 @@ void main()
 	posView = u_viewProjection * posView;
 
 	gl_Position = posView;
-	v_fragPos = gl_Position;
+	v_fragPos = posView;
+
+	v_fragPosLightSpace = u_lightSpaceMatrix * vec4(fragmentPositionI + fragmentPositionF, 1);
+	//v_fragPosLightSpace.xyz -= u_lightPos;
+
 
 	v_ambient = (vertexColor[in_faceOrientation] * (v_ambientInt/15.f)) * 0.8 + 0.2;
 	//v_color = vertexColor[in_faceOrientation];

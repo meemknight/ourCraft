@@ -11,6 +11,7 @@
 #include <chunkSystem.h>
 #include <gamePlayLogic.h>
 #include <iostream>
+#include <rendering/sunShadow.h>
 
 #define GET_UNIFORM(s, n) n = s.getUniform(#n);
 #define GET_UNIFORM2(s, n) s. n = s.shader.getUniform(#n);
@@ -322,7 +323,12 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	GET_UNIFORM2(defaultShader, u_far);
 	GET_UNIFORM2(defaultShader, u_caustics);
 	GET_UNIFORM2(defaultShader, u_inverseProjMat);
-	
+	GET_UNIFORM2(defaultShader, u_lightSpaceMatrix);
+	GET_UNIFORM2(defaultShader, u_lightPos);
+	GET_UNIFORM2(defaultShader, u_sunShadowTexture);
+	GET_UNIFORM2(defaultShader, u_viewMatrix);
+
+
 	defaultShader.u_vertexData = getStorageBlockIndex(defaultShader.shader.id, "u_vertexData");
 	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_vertexData, 1);
 	glGenBuffers(1, &vertexDataBuffer);
@@ -565,10 +571,11 @@ void Renderer::updateDynamicBlocks()
 
 }
 
-void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramData &programData
+void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSystem, Camera &c, ProgramData &programData
 	, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos, bool underWater, int screenX, int screenY, 
 	float deltaTime)
 {
+	glViewport(0, 0, screenX, screenY);
 
 	fboCoppy.updateSize(screenX, screenY);
 	fboCoppy.clearFBO();
@@ -597,6 +604,7 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 
 		defaultShader.shader.bind();
 		glUniformMatrix4fv(defaultShader.u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
+		glUniformMatrix4fv(defaultShader.u_viewMatrix, 1, GL_FALSE, &glm::lookAt({0,0,0}, c.viewDirection, c.up)[0][0]);
 		glUniform3fv(defaultShader.u_positionFloat, 1, &posFloat[0]);
 		glUniform3iv(defaultShader.u_positionInt, 1, &posInt[0]);
 		glUniform1i(defaultShader.u_typesCount, BlocksCount);	//remove
@@ -616,11 +624,17 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 		glUniform1f(defaultShader.u_near, c.closePlane);
 		glUniform1f(defaultShader.u_far, c.farPlane);
 		glUniformMatrix4fv(defaultShader.u_inverseProjMat, 1, 0,
-			&glm::inverse(c.getProjectionMatrix())[0][0]);
-		
+		&glm::inverse(c.getProjectionMatrix())[0][0]);
+		glUniformMatrix4fv(defaultShader.u_lightSpaceMatrix, 1, 0,
+			&sunShadow.lightSpaceMatrix[0][0]);
+		glUniform3iv(defaultShader.u_lightPos, 1, &sunShadow.lightSpacePosition[0]);
 
 		programData.causticsTexture.bind(6);
 		glUniform1i(defaultShader.u_caustics, 6);
+
+		glActiveTexture(GL_TEXTURE0 + 7);
+		glBindTexture(GL_TEXTURE_2D, sunShadow.shadowMap.depth);
+		glUniform1i(defaultShader.u_sunShadowTexture, 7);
 
 
 		waterTimer += deltaTime * 0.09;
@@ -732,7 +746,7 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 		//int s = chunkVectorCopy.size();
 		//for (int i = s - 1; s >= 0; s--)
 		//{
-		//	auto &chunk = chunkVectorCopy[s];
+		//	auto chunk = chunkVectorCopy[s];
 		//	if (chunk)
 		//	{
 		//		if (!chunk->dontDrawYet)
@@ -871,6 +885,84 @@ void Renderer::renderFromBakedData(ChunkSystem &chunkSystem, Camera &c, ProgramD
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
 	glBindVertexArray(0);
+}
+
+
+void Renderer::renderShadow(SunShadow &sunShadow,
+	ChunkSystem &chunkSystem, Camera &c, ProgramData &programData)
+{
+	glEnable(GL_DEPTH_TEST);
+	glColorMask(0, 0, 0, 0);
+
+	glViewport(0, 0, 2048, 2048);
+	glBindFramebuffer(GL_FRAMEBUFFER, sunShadow.shadowMap.fbo);
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+
+	glm::ivec3 newPos = c.position;
+	newPos.y = 260;
+
+	{
+		glm::vec3 moveDir = skyBoxRenderer.sunPos;
+		moveDir.y = 0;
+		float l = glm::length(moveDir);
+		if (l > 0.0001)
+		{
+			moveDir /= l;
+			newPos += moveDir * (float)CHUNK_SIZE * 3.f;
+		}
+	}
+
+	//glm::vec3 posFloat = {};
+	//glm::ivec3 posInt = {};
+	//c.decomposePosition(posFloat, posInt);
+
+	glm::vec3 posFloat = {};
+	glm::ivec3 posInt = newPos;
+	
+	//posInt += glm::vec3(0, 0, 10);
+
+	float near_plane = 1.0f, far_plane = 260.f;
+	glm::mat4 lightProjection = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, near_plane, far_plane);
+	auto mvp = lightProjection * glm::lookAt(glm::vec3(posInt),
+		-skyBoxRenderer.sunPos + glm::vec3(posInt), glm::vec3(0, 1, 0));
+
+	//auto mvp = lightProjection * glm::lookAt(glm::vec3(posInt),
+	//	glm::vec3(0, 1,0) + glm::vec3(posInt), glm::vec3(0, 1, 0));
+
+	sunShadow.lightSpaceMatrix = mvp;
+	sunShadow.lightSpacePosition = newPos;
+
+#pragma region setup uniforms and stuff
+	{
+		zpassShader.shader.bind();
+		glUniformMatrix4fv(zpassShader.u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
+		glUniform3fv(zpassShader.u_positionFloat, 1, &posFloat[0]);
+		//glUniform3iv(zpassShader.u_positionInt, 1, &posInt[0]);
+		glUniform3i(zpassShader.u_positionInt, 0,0,0);
+		glUniform1i(zpassShader.u_renderOnlyWater, 0);
+	}
+#pragma endregion
+
+	for (auto &chunk : chunkSystem.loadedChunks)
+	{
+		if (chunk)
+		{
+			if (!chunk->dontDrawYet)
+			{
+				int facesCount = chunk->elementCountSize;
+				if (facesCount)
+				{
+					glBindVertexArray(chunk->vao);
+					glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
+				}
+			}
+		}
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glColorMask(1, 1, 1, 1);
+
 }
 
 float cubePositions[] = {
@@ -1066,6 +1158,12 @@ void Renderer::FBO::create(bool addColor, bool addDepth)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+
+		if (!addColor)
+		{
+			glDrawBuffer(GL_NONE);
+			glReadBuffer(GL_NONE);
+		}
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth, 0);
 	}

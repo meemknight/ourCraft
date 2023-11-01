@@ -19,6 +19,7 @@
 #include <lightSystem.h>
 #include <structure.h>
 #include <safeSave.h>
+#include <rendering/sunShadow.h>
 
 struct GameData
 {
@@ -30,6 +31,7 @@ struct GameData
 	LightSystem lightSystem;
 	int skyLightIntensity = 15;
 
+	SunShadow sunShadow;
 }gameData;
 
 
@@ -45,6 +47,8 @@ bool initGameplay(ProgramData &programData)
 	gameData.c.position = glm::vec3(0, 65, 0);
 
 	gameData.chunkSystem.createChunks(16);
+
+	gameData.sunShadow.init();
 
 	return true;
 }
@@ -241,9 +245,18 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		gameData.chunkSystem.update(blockPositionPlayer, deltaTime, gameData.undoQueue,
 			gameData.lightSystem);
 
+
+		gameData.sunShadow.update();
+
+		programData.renderer.renderShadow(gameData.sunShadow,
+			gameData.chunkSystem, gameData.c, programData);
+
+		gameData.sunShadow.renderShadowIntoTexture(gameData.c);
+
 		//programData.renderer.render(data, gameData.c, programData.texture);
-		programData.renderer.renderFromBakedData(gameData.chunkSystem, gameData.c, programData,
-			gameData.showLightLevels, gameData.skyLightIntensity, point, underWater, w, h, deltaTime);
+		programData.renderer.renderFromBakedData(gameData.sunShadow,gameData.chunkSystem, 
+			gameData.c, programData, gameData.showLightLevels, 
+			gameData.skyLightIntensity, point, underWater, w, h, deltaTime);
 	}
 
 	glm::ivec3 rayCastPos = {};
@@ -344,7 +357,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		bool terminate = false;
 		//if (ImGui::Begin("camera controll", &gameData.escapePressed))
 		ImGui::PushStyleColor(ImGuiCol_WindowBg, {26/255.f,26/255.f,26/255.f,0.5f});
-		if (ImGui::Begin("camera controll"))
+		if (ImGui::Begin("client controll"))
 		{
 			ImGui::DragScalarN("camera pos", ImGuiDataType_Double, &gameData.c.position[0], 3, 0.01);
 
@@ -357,30 +370,33 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			ImGui::DragInt3("Point pos", &point[0]);
 			ImGui::DragInt3("Point size",  &pointSize[0]);
 			ImGui::Checkbox("Render Box", &renderBox);
-			ImGui::Checkbox("showLightLevels", &gameData.showLightLevels);
-			ImGui::SliderInt("skyLightIntensity", &gameData.skyLightIntensity, 0, 15);
-			ImGui::SliderFloat("metallic", &programData.renderer.metallic, 0, 1);
-			ImGui::SliderFloat("roughness", &programData.renderer.roughness, 0, 1);
-			ImGui::SliderFloat("exposure", &programData.renderer.exposure, 0.001, 10);
-
-			ImGui::SliderFloat3("Sky pos", &programData.renderer.skyBoxRenderer.sunPos[0], -1, 1);
-			
-			ImGui::ColorPicker3("Underwater color", &programData.renderer.skyBoxRenderer.waterColor[0]);
-
-			if (glm::length(programData.renderer.skyBoxRenderer.sunPos[0]) != 0)
-			{
-				programData.renderer.skyBoxRenderer.sunPos = glm::normalize(programData.renderer.skyBoxRenderer.sunPos);
-			}
-			else
-			{
-				programData.renderer.skyBoxRenderer.sunPos = glm::vec3(0, -1, 0);
-			}
-
 			pointSize = glm::clamp(pointSize, glm::ivec3(0, 0, 0), glm::ivec3(64, 64, 64));
+
+			if (ImGui::CollapsingHeader("Light Stuff",
+				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+			{
+				ImGui::Checkbox("showLightLevels", &gameData.showLightLevels);
+				ImGui::SliderInt("skyLightIntensity", &gameData.skyLightIntensity, 0, 15);
+				ImGui::SliderFloat("metallic", &programData.renderer.metallic, 0, 1);
+				ImGui::SliderFloat("roughness", &programData.renderer.roughness, 0, 1);
+				ImGui::SliderFloat("exposure", &programData.renderer.exposure, 0.001, 10);
+
+				ImGui::SliderFloat3("Sky pos", &programData.renderer.skyBoxRenderer.sunPos[0], -1, 1);
+
+				ImGui::ColorPicker3("Underwater color", &programData.renderer.skyBoxRenderer.waterColor[0]);
+
+				if (glm::length(programData.renderer.skyBoxRenderer.sunPos[0]) != 0)
+				{
+					programData.renderer.skyBoxRenderer.sunPos = glm::normalize(programData.renderer.skyBoxRenderer.sunPos);
+				}
+				else
+				{
+					programData.renderer.skyBoxRenderer.sunPos = glm::vec3(0, -1, 0);
+				}
+			}
 
 			auto b = gameData.chunkSystem.getBlockSafe(point);
 			if (b) ImGui::Text("Box Light Value: %d", b->getSkyLight());
-
 
 			ImGui::DragFloat("camera speed", &moveSpeed);
 			ImGui::Text("fps: %d", programData.currentFps);
@@ -395,60 +411,75 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			static char fileBuff[256] = RESOURCES_PATH "gameData/structures/test.structure";
 			ImGui::InputText("File:", fileBuff, sizeof(fileBuff));
 
-			if (ImGui::Button("Save structure"))
+			if (ImGui::CollapsingHeader("Load Save Stuff",
+				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
 			{
-				std::vector<unsigned char> data;
-				data.resize(sizeof(StructureData) + sizeof(BlockType) * pointSize.x * pointSize.y * pointSize.z);
-
-				StructureData *s = (StructureData*)data.data();
-
-				s->size = pointSize;
-				s->unused = 0;
-				
-				for (int x = 0; x < pointSize.x; x++)
-					for (int z = 0; z < pointSize.z; z++)
-						for (int y = 0; y < pointSize.y; y++)
-						{
-							glm::ivec3 pos = point + glm::ivec3(x, y, z);
-
-							auto rez = gameData.chunkSystem.getBlockSafe(pos.x, pos.y, pos.z);
-
-							if (rez)
-							{
-								s->unsafeGet(x, y, z) = rez->type;
-							}
-							else
-							{
-								s->unsafeGet(x, y, z) = BlockTypes::air;
-							}
-
-						}
-				sfs::writeEntireFile(s, data.size(), fileBuff);
-			}
-
-			if (ImGui::Button("Load structure"))
-			{
-				std::vector<char> data;
-				if (sfs::readEntireFile(data, fileBuff) ==
-					sfs::noError)
+				if (ImGui::Button("Save structure"))
 				{
+					std::vector<unsigned char> data;
+					data.resize(sizeof(StructureData) + sizeof(BlockType) * pointSize.x * pointSize.y * pointSize.z);
+
 					StructureData *s = (StructureData *)data.data();
 
-					for (int x = 0; x < s->size.x; x++)
-						for (int z = 0; z < s->size.z; z++)
-							for (int y = 0; y < s->size.y; y++)
+					s->size = pointSize;
+					s->unused = 0;
+
+					for (int x = 0; x < pointSize.x; x++)
+						for (int z = 0; z < pointSize.z; z++)
+							for (int y = 0; y < pointSize.y; y++)
 							{
 								glm::ivec3 pos = point + glm::ivec3(x, y, z);
 
-								gameData.chunkSystem.placeBlockByClient(pos, s->unsafeGet(x, y, z),
-									gameData.undoQueue, gameData.c.position, gameData.lightSystem);
-							}
+								auto rez = gameData.chunkSystem.getBlockSafe(pos.x, pos.y, pos.z);
 
-					pointSize = s->size;
+								if (rez)
+								{
+									s->unsafeGet(x, y, z) = rez->type;
+								}
+								else
+								{
+									s->unsafeGet(x, y, z) = BlockTypes::air;
+								}
+
+							}
+					sfs::writeEntireFile(s, data.size(), fileBuff);
 				}
 
+				if (ImGui::Button("Load structure"))
+				{
+					std::vector<char> data;
+					if (sfs::readEntireFile(data, fileBuff) ==
+						sfs::noError)
+					{
+						StructureData *s = (StructureData *)data.data();
 
+						for (int x = 0; x < s->size.x; x++)
+							for (int z = 0; z < s->size.z; z++)
+								for (int y = 0; y < s->size.y; y++)
+								{
+									glm::ivec3 pos = point + glm::ivec3(x, y, z);
+
+									gameData.chunkSystem.placeBlockByClient(pos, s->unsafeGet(x, y, z),
+										gameData.undoQueue, gameData.c.position, gameData.lightSystem);
+								}
+
+						pointSize = s->size;
+					}
+
+
+				}
 			}
+
+
+			ImGui::NewLine();
+
+			if (ImGui::CollapsingHeader("Sun Shadow Map",
+				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+			{
+				ImGui::Image((void *)gameData.sunShadow.shadowTexturePreview.color, {256, 256}, 
+					{0, 1}, {1, 0});
+			}
+
 
 		}
 		ImGui::End();

@@ -287,9 +287,9 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 
 	if (sunLightsAddTimer.counter > 1000)
 	{
-		std::cout << "Added: " << sunLightsAddTimer.counter << " in: " <<
-			sunLightsAddTimer.getTimerInMiliseconds() << " ms,   " <<
-			sunLightsAddTimer.getTimerInMiliseconds() / sunLightsAddTimer.counter << " ms per light\n";
+		//std::cout << "Added: " << sunLightsAddTimer.counter << " in: " <<
+		//	sunLightsAddTimer.getTimerInMiliseconds() << " ms,   " <<
+		//	sunLightsAddTimer.getTimerInMiliseconds() / sunLightsAddTimer.counter << " ms per light\n";
 	}
 
 }

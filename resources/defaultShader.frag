@@ -29,7 +29,10 @@ uniform float u_exposure;
 uniform int u_underWater;
 
 in vec4 v_fragPos;
+in vec4 v_fragPosLightSpace;
 in flat ivec3 v_blockPos;
+
+uniform sampler2D u_sunShadowTexture;
 
 uniform float u_fogDistance = 10 * 16 / 2;
 const float fogGradient = 32;
@@ -375,6 +378,14 @@ float firstGama(float a)
 	return pow(a, float(2.2));
 }
 
+float shadowCalc()
+{
+	vec3 pos = v_fragPosLightSpace.xyz * 0.5 + 0.5;
+	float depth = texture(u_sunShadowTexture, pos.xy).r;
+	
+	return (depth+0.01) < pos.z ? 0.0 : 1.0;	
+}
+
 void main()
 {
 
@@ -475,15 +486,19 @@ void main()
 	{
 		vec3 L = u_sunDirection;
 		//light += computeLight(N,L,V) * 1.f;
-		finalColor += computePointLightSource(L, 
+		finalColor += shadowCalc() * computePointLightSource(L, 
 			metallic, roughness, vec3(0.9,0.9,0.9) * causticsColor, V, 
 			textureColor.rgb, N, F0);
 	}
-
-
-	//out_color = vec4(textureColor.rgb*(v_color+light),textureColor.a);
+	
+		
 	out_color = vec4(finalColor,textureColor.a);
 		
+	//if(shadowCalc() < 0.5)
+	//{
+	//	out_color.rgb = mix(out_color.rgb, vec3(1,0.5,0.7), 0.3);
+	//}
+
 	//ambient
 	float computedAmbient = firstGama(v_ambient);
 	if(isInWater)
