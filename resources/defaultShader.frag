@@ -388,6 +388,115 @@ float shadowCalc(float dotLightNormal)
 	float bias = max(0.001, 0.05 * (1.f - dotLightNormal));
 
 	return (depth+bias) < pos.z ? 0.0 : 1.0;	
+	//return (depth) != 1.f ? 0.0 : 1.0;	
+}
+
+//https://www.gamedev.net/tutorials/programming/graphics/contact-hardening-soft-shadows-made-fast-r4906/
+float InterleavedGradientNoise(vec2 position_screen)
+{
+  vec3 magic = vec3(0.06711056f, 0.00583715f, 52.9829189f);
+  return fract(magic.z * fract(dot(position_screen, magic.xy)));
+}
+
+//https://developer.download.nvidia.com/cg/sincos.html
+void sincos(float a, out float s, out float c)
+{
+	s = sin(a);
+	c = cos(a);
+}
+
+//https://www.gamedev.net/tutorials/programming/graphics/contact-hardening-soft-shadows-made-fast-r4906/
+vec2 vogelDiskSample(int sampleIndex, int samplesCount, float phi)
+{
+  float GoldenAngle = 2.4f;
+
+  float r = sqrt(sampleIndex + 0.5f) / sqrt(samplesCount);
+  float theta = sampleIndex * GoldenAngle + phi;
+
+  float sine, cosine;
+  sincos(theta, sine, cosine);
+  
+  return vec2(r * cosine, r * sine);
+}
+
+float testShadowValue(float dotLightNormal, vec3 pos)
+{
+	//float closestDepth = texture(map, coords).r; 
+	//return  (currentDepth - bias) < closestDepth  ? 1.0 : 0.0;
+	float depth = texture(u_sunShadowTexture, pos.xy).r;
+	float bias = max(0.001, 0.05 * (1.f - dotLightNormal));
+	return (depth+bias) < pos.z ? 0.0 : 1.0;
+}
+
+float shadowCalc2(float dotLightNormal)
+{
+
+	vec3 projCoords = v_fragPosLightSpace.xyz * 0.5 + 0.5;
+	projCoords.z = min(projCoords.z, 1.0);
+
+	// keep the shadow at 1.0 when outside or close to the far_plane region of the light's frustum.
+	if(projCoords.z > 0.99995)
+		return 1.f;
+	//if(projCoords.z < 0)
+	//	return 1.f;
+
+	//float closestDepth = texture(shadowMap, projCoords.xy).r; 
+	float currentDepth = projCoords.z;
+
+	//todo move
+	vec2 texelSize = 1.0 / textureSize(u_sunShadowTexture, 0).xy;
+	float shadow = 0.0;
+
+	bool fewSamples = false;
+	int kernelHalf = 1;
+	int kernelSize = kernelHalf*2 + 1;
+	int kernelSize2 = kernelSize*kernelSize;
+
+	//float receiverDepth = currentDepth;
+	//float averageBlockerDepth = texture(sampler2DArray(shadowMap), vec3(projCoords.xy, index)).r;
+	//float penumbraSize = 4.f * (receiverDepth - averageBlockerDepth) / averageBlockerDepth;
+	float penumbraSize = 1.f;
+
+	//standard implementation
+	
+	{
+	
+		int sampleSize = 9;
+		int checkSampleSize = 5;
+		float size = 1.5;
+
+		float noise = InterleavedGradientNoise(gl_FragCoord.xy) * 2 * PI;
+
+		for(int i=sampleSize-1; i>=sampleSize-checkSampleSize; i--)
+		{
+			vec2 offset = vogelDiskSample(i, sampleSize, noise);
+			vec2 finalOffset = offset * texelSize * size;
+			
+			float s = testShadowValue(dotLightNormal, projCoords + vec3(finalOffset,0));
+			shadow += s;
+		}
+
+		//optimization
+		if(true && (shadow == 0 || shadow == checkSampleSize))
+		{
+			shadow /= checkSampleSize;
+		}else
+		{
+			for(int i=sampleSize-checkSampleSize-1; i>=0; i--)
+			{
+				vec2 offset = vogelDiskSample(i, sampleSize, noise);
+				vec2 finalOffset = offset * texelSize * size;
+				
+				float s = testShadowValue(dotLightNormal, projCoords + vec3(finalOffset,0));
+				shadow += s;
+			}
+
+			shadow /= sampleSize;
+		}
+
+	}
+	
+	return pow(clamp(shadow, 0, 1), 2);
 }
 
 void main()
@@ -491,7 +600,7 @@ void main()
 		vec3 sunLightColor = vec3(1.5);
 		vec3 L = u_sunDirection;
 		//light += computeLight(N,L,V) * 1.f;
-		finalColor += shadowCalc(dot(L, v_normal)) * computePointLightSource(L, 
+		finalColor += shadowCalc2(dot(L, v_normal)) * computePointLightSource(L, 
 			metallic, roughness, sunLightColor * causticsColor, V, 
 			textureColor.rgb, N, F0);
 	}
@@ -506,6 +615,7 @@ void main()
 	//}
 
 	//ambient
+	//todo light sub scatter
 	float computedAmbient = firstGama(v_ambient);
 	if(isInWater)
 	{

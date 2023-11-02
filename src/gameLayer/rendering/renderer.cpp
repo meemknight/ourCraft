@@ -1174,6 +1174,8 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 	glm::ivec3 newPos = c.position;
 
 	{
+		newPos.y = 120;
+
 		glm::vec3 moveDir = skyBoxRenderer.sunPos;
 
 		float l = glm::length(moveDir);
@@ -1191,12 +1193,24 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 	glm::vec3 posFloat = {};
 	glm::ivec3 posInt = newPos;
 	
+	glm::ivec3 playerPos = c.position;
+
+	glm::vec3 vectorToPlayer = glm::normalize(glm::vec3(playerPos - newPos));
+
 	//posInt += glm::vec3(0, 0, 10);
 
+	float projectSize = 50;
+
 	float near_plane = 1.0f, far_plane = 260.f;
-	glm::mat4 lightProjection = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, near_plane, far_plane);
+	glm::mat4 lightProjection = glm::ortho(-projectSize, projectSize, -projectSize, projectSize,
+		near_plane, far_plane);
+	//auto mvp = lightProjection * glm::lookAt({},
+	//	-skyBoxRenderer.sunPos, glm::vec3(0, 1, 0));
+
 	auto mvp = lightProjection * glm::lookAt({},
-		-skyBoxRenderer.sunPos, glm::vec3(0, 1, 0));
+		vectorToPlayer, glm::vec3(0, 1, 0));
+
+	
 
 	//auto mat = calculateLightProjectionMatrix(c, -skyBoxRenderer.sunPos, 1, 260, 25);
 
