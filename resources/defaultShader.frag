@@ -428,8 +428,15 @@ float testShadowValue(float dotLightNormal, vec3 pos)
 	return (depth+bias) < pos.z ? 0.0 : 1.0;
 }
 
+float getShadowDistance(vec3 pos)
+{
+	float depth = texture(u_sunShadowTexture, pos.xy).r;
+	return max(depth - pos.z, 0.f);
+}
+
 float shadowCalc2(float dotLightNormal)
 {
+
 
 	vec3 projCoords = v_fragPosLightSpace.xyz * 0.5 + 0.5;
 	projCoords.z = min(projCoords.z, 1.0);
@@ -439,6 +446,10 @@ float shadowCalc2(float dotLightNormal)
 		return 1.f;
 	//if(projCoords.z < 0)
 	//	return 1.f;
+
+	//float shadowDistance = getShadowDistance(projCoords);
+	//shadowDistance /= 10;
+	//shadowDistance = min(shadowDistance, 1);
 
 	//float closestDepth = texture(shadowMap, projCoords.xy).r; 
 	float currentDepth = projCoords.z;
@@ -458,7 +469,6 @@ float shadowCalc2(float dotLightNormal)
 	float penumbraSize = 1.f;
 
 	//standard implementation
-	
 	{
 	
 		int sampleSize = 9;
@@ -496,7 +506,11 @@ float shadowCalc2(float dotLightNormal)
 
 	}
 	
-	return pow(clamp(shadow, 0, 1), 2);
+	
+	//float shadowPower = mix(32,1.f,shadowDistance);
+	float shadowPower = 2;
+
+	return pow(clamp(shadow, 0, 1), shadowPower);
 }
 
 void main()
