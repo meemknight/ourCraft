@@ -491,10 +491,10 @@ void BlocksLoader::loadAllTextures()
 
 		gl2d::Texture t;
 		t.createFromBuffer((char *)data, 1, 1, true, false);
-
 		texturesIds.push_back(t.id);
 		auto handle = glGetTextureHandleARB(t.id);
 		glMakeTextureHandleResidentARB(handle);
+		
 		gpuIds.push_back(handle);
 	}
 	
@@ -569,7 +569,7 @@ void BlocksLoader::loadAllTextures()
 			}
 		}
 	}
-
+	
 
 }
 

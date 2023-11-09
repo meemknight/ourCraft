@@ -93,9 +93,17 @@ void main()
 	
 	v_uv = calculateUVs(gl_VertexID);
 
-	posView = u_viewProjection * posView;
+	//apply curvature
+	if(false)	
+	{
+		float fragmentDist = length(posView.xyz);
+		float curved = posView.y - 0.001f * fragmentDist * fragmentDist;
+		posView.y = curved;
+	}
 
-	gl_Position = posView;
+	vec4 posProjection = u_viewProjection * posView;	
+
+	gl_Position = posProjection;
 	
 
 	v_textureSampler = textureSamplerers[in_textureIndex];

@@ -67,6 +67,7 @@ readonly restrict layout(std430) buffer u_vertexUV
 	float vertexUV[];
 };
 
+//todo change and send directly the texture's id
 readonly restrict layout(std430) buffer u_textureSamplerers
 {
 	uvec2 textureSamplerers[];
@@ -108,7 +109,6 @@ vec2 calculateUVs(int vertexId)
 
 vec3 calculateVertexPos(int vertexId)
 {
-
 	//vec3 pos = fragmentPositionF.xyz;
 	vec3 pos = vec3(0);
 	vec3 vertexShape = vec3(0);
@@ -216,10 +216,18 @@ void main()
 	}
 
 
-	posView = u_viewProjection * posView;
+	//apply curvature
+	if(false)	
+	{
+		float fragmentDist = length(posView.xyz);
+		float curved = posView.y - 0.001f * fragmentDist * fragmentDist;
+		posView.y = curved;
+	}
 
-	gl_Position = posView;
-	v_fragPos = posView;
+	vec4 posProjection = u_viewProjection * posView;
+
+	gl_Position = posProjection;
+	v_fragPos = posProjection;
 
 	v_fragPosLightSpace = u_lightSpaceMatrix * vec4((fragmentPositionI - u_lightPos) + fragmentPositionF, 1);
 	//v_fragPosLightSpace.xyz -= u_lightPos;
