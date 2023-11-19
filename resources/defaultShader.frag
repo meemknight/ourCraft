@@ -167,6 +167,68 @@ vec3 ACESFilmSimple(vec3 x)
 }
 //
 
+
+// https://advances.realtimerendering.com/s2021/jpatry_advances2021/index.html
+// https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.40.9608&rep=rep1&type=pdf
+vec4 rgb_to_lmsr(vec3 c)
+{
+	const mat4x3 m = mat4x3(
+		0.31670331, 0.70299344, 0.08120592, 
+		0.10129085, 0.72118661, 0.12041039, 
+		0.01451538, 0.05643031, 0.53416779, 
+		0.01724063, 0.60147464, 0.40056206);
+	return c * m;
+}
+vec3 lms_to_rgb(vec3 c)
+{
+	const mat3 m = mat3(
+		 4.57829597, -4.48749114,  0.31554848, 
+		-0.63342362,  2.03236026, -0.36183302, 
+		-0.05749394, -0.09275939,  1.90172089);
+	return c * m;
+}
+
+// https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2630540/pdf/nihms80286.pdf
+vec3 purkineShift(vec3 c)
+{
+	const vec3 m = vec3(0.63721, 0.39242, 1.6064);
+	const float K = 45.0;
+	const float S = 10.0;
+	const float k3 = 0.6;
+	const float k5 = 0.2;
+	const float k6 = 0.29;
+	const float rw = 0.139;
+	const float p = 0.6189;
+	
+	vec4 lmsr = rgb_to_lmsr(c);
+	
+	vec3 g = vec3(1.0) / sqrt(vec3(1.0) + (vec3(0.33) / m) * (lmsr.xyz + vec3(k5, k5, k6) * lmsr.w));
+	
+	float rc_gr = (K / S) * ((1.0 + rw * k3) * g.y / m.y - (k3 + rw) * g.x / m.x) * k5 * lmsr.w;
+	float rc_by = (K / S) * (k6 * g.z / m.z - k3 * (p * k5 * g.x / m.x + (1.0 - p) * k5 * g.y / m.y)) * lmsr.w;
+	float rc_lm = K * (p * g.x / m.x + (1.0 - p) * g.y / m.y) * k5 * lmsr.w;
+	
+	vec3 lms_gain = vec3(-0.5 * rc_gr + 0.5 * rc_lm, 0.5 * rc_gr + 0.5 * rc_lm, rc_by + rc_lm);
+	vec3 rgb_gain = lms_to_rgb(lms_gain);
+	
+	return c + rgb_gain;
+}
+
+float luminance(vec3 c)
+{
+	return dot(c, vec3(0.2126390059, 0.7151686788, 0.0721923154));
+}
+
+vec3 linear_to_srgb(vec3 c)
+{
+	const float yb = pow(0.055 * 2.4 / ((2.4 - 1.0) * (1.0 + 0.055)), 2.4);
+	const float rs = pow((2.4 - 1.0) / 0.055, 2.4 - 1.0) * pow((1.0 + 0.055) / 2.4, 2.4);
+	return vec3(
+		(c.x >= yb) ? ((1.0 + 0.055) * pow(c.x, 1.0 / 2.4) - 0.055) : (c.x * rs),
+		(c.y >= yb) ? ((1.0 + 0.055) * pow(c.y, 1.0 / 2.4) - 0.055) : (c.y * rs),
+		(c.z >= yb) ? ((1.0 + 0.055) * pow(c.z, 1.0 / 2.4) - 0.055) : (c.z * rs));
+}
+
 //https://gamedev.stackexchange.com/questions/22204/from-normal-to-rotation-matrix#:~:text=Therefore%2C%20if%20you%20want%20to,the%20first%20and%20second%20columns.
 mat3x3 NormalToRotation(in vec3 normal)
 {
@@ -656,10 +718,14 @@ void main()
 	}
 
 	//gamma correction + HDR
-	out_color.rgb = ACESFitted(out_color.rgb * u_exposure);
-	out_color.rgb = pow(out_color.rgb, vec3(1/2.2));
+	out_color.rgb *= u_exposure;
+	vec3 purkine = purkineShift(out_color.rgb);
 	
+	out_color.rgb = mix(out_color.rgb, purkine, 0.05);
 
+	out_color.rgb = ACESFitted(out_color.rgb);
+	out_color.rgb = pow(out_color.rgb, vec3(1/2.2));
+	//out_color.rgb = linear_to_srgb(out_color.rgb);
 
 	{
 		out_color.a *= computeFog(viewLength);	

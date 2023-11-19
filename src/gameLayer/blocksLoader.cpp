@@ -59,6 +59,7 @@ const char *texturesNames[] = {
 	"spruce_log",		//52
 	"spruce_log_top",	//53
 	"glowstone",		//54
+	"glass",			//55
 };
 
 //front
@@ -210,6 +211,9 @@ uint16_t blocksLookupTable[] = {
 
 	//glowstone
 	54, 54, 54, 54, 54, 54,
+
+	//glass
+	55, 55, 55, 55, 55, 55,
 };
 
 bool fixAlpha(unsigned char *buffer, int w, int h)
@@ -364,7 +368,7 @@ void createFromFileDataWithAplhaFixing(gl2d::Texture &t, const unsigned char *im
 	, bool pixelated, bool useMipMaps)
 {
 	stbi_set_flip_vertically_on_load(true);
-
+	
 	int width = 0;
 	int height = 0;
 	int channels = 0;
@@ -373,7 +377,10 @@ void createFromFileDataWithAplhaFixing(gl2d::Texture &t, const unsigned char *im
 
 	for (int i = 0; i < 64; i++)
 	{
-		fixAlpha(decodedImage, width, height);
+		if (!fixAlpha(decodedImage, width, height))
+		{
+			break;
+		}
 	}
 	
 

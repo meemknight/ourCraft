@@ -88,11 +88,11 @@ void main()
 
 	vec3 fragmentPositionF = calculateVertexPos(gl_VertexID);
 	ivec3 fragmentPositionI = in_facePosition;
+	v_uv = calculateUVs(gl_VertexID);
 	
+
 	vec4 posView = vec4(fragmentPositionF + diffF,1);
 	
-	v_uv = calculateUVs(gl_VertexID);
-
 	//apply curvature
 	if(false)	
 	{
@@ -102,6 +102,8 @@ void main()
 	}
 
 	vec4 posProjection = u_viewProjection * posView;	
+
+
 
 	gl_Position = posProjection;
 	

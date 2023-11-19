@@ -54,6 +54,7 @@ enum BlockTypes
 	spruce_leaves,
 	spruce_leaves_red,
 	glowstone,
+	glass,
 	BlocksCount
 };
 
