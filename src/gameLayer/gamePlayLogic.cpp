@@ -20,6 +20,8 @@
 #include <structure.h>
 #include <safeSave.h>
 #include <rendering/sunShadow.h>
+#include <multiPlot.h>
+#include <profiler.h>
 
 struct GameData
 {
@@ -32,6 +34,10 @@ struct GameData
 	int skyLightIntensity = 15;
 
 	SunShadow sunShadow;
+
+
+	Profiler gameplayFrameProfiler;
+
 }gameData;
 
 
@@ -56,6 +62,9 @@ bool initGameplay(ProgramData &programData)
 
 bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 {
+
+	gameData.gameplayFrameProfiler.startFrame();
+
 
 	gameData.c.aspectRatio = (float)w / h;
 
@@ -266,13 +275,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	//if (gameData.c.position.x >= 0){cameraRayPos.x += 0.5;}else{cameraRayPos.x -= 0.5;}
 	//if (gameData.c.position.z >= 0){cameraRayPos.z += 0.5;}else{cameraRayPos.z -= 0.5;}
 
+#pragma region place blocks
+
 	if (gameData.chunkSystem.rayCast(cameraRayPos, gameData.c.viewDirection, rayCastPos, 20, blockToPlace))
 	{
 		programData.gyzmosRenderer.drawCube(rayCastPos);
 
 	}
-
-
 
 	if (!gameData.escapePressed)
 	{
@@ -329,8 +338,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		
 	};
 
-	
+#pragma endregion
 
+	
+#pragma region debug and gyzmos stuff
 	programData.pointDebugRenderer.renderCubePoint(gameData.c, point);
 
 	if (renderBox)
@@ -348,7 +359,15 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	}
 
 	programData.gyzmosRenderer.render(gameData.c, posInt, posFloat);
+#pragma endregion
 
+
+
+
+	gameData.gameplayFrameProfiler.endFrame();
+
+
+	ImGui::ShowDemoWindow();
 
 #pragma region imgui
 
@@ -483,6 +502,17 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		}
 		ImGui::End();
+
+
+		if (ImGui::Begin("Profiler"))
+		{
+			ImGui::Text("profiler");
+
+			gameData.gameplayFrameProfiler.displayPlot();
+
+		}
+		ImGui::End();
+
 		ImGui::PopStyleColor();
 
 		if (terminate)

@@ -721,7 +721,7 @@ void main()
 	out_color.rgb *= u_exposure;
 	vec3 purkine = purkineShift(out_color.rgb);
 	
-	out_color.rgb = mix(out_color.rgb, purkine, 0.05);
+	//out_color.rgb = mix(out_color.rgb, purkine, 0.05);
 
 	out_color.rgb = ACESFitted(out_color.rgb);
 	out_color.rgb = pow(out_color.rgb, vec3(1/2.2));
