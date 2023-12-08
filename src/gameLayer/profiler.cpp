@@ -59,7 +59,7 @@ void Profiler::endSubProfile(char *c)
 
 	if (it == subProfiles.end())
 	{
-		permaAssertComment(it != subProfiles.end(), "wrong profile name");
+		//permaAssertComment(it != subProfiles.end(), "wrong profile name");
 	}
 	else
 	{

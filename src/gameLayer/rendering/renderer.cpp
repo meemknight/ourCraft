@@ -755,7 +755,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		//			if (facesCount)
 		//			{
 		//				glBindVertexArray(chunk->vao);
-		//				glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
+		//				glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
 		//			}
 		//		}
 		//	}
@@ -771,7 +771,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 					if (facesCount)
 					{
 						glBindVertexArray(chunk->vao);
-						glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
+						glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
 					}
 				}
 			}
@@ -790,7 +790,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 					if (facesCount)
 					{
 						glBindVertexArray(chunk->transparentVao);
-						glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
+						glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
+
 					}
 				}
 			}
@@ -1240,7 +1241,7 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 				if (facesCount)
 				{
 					glBindVertexArray(chunk->vao);
-					glDrawArraysInstanced(GL_TRIANGLES, 0, 6, facesCount);
+					glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
 				}
 			}
 		}

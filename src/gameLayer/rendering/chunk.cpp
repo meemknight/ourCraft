@@ -415,16 +415,24 @@ void setupVertexAttributes()
 
 void Chunk::createGpuData()
 {
+	unsigned char winding[4] = {0,1,2,4};
+
 	glGenBuffers(1, &opaqueGeometryBuffer);
+	glGenBuffers(1, &opaqueGeometryIndex);
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 	glBindBuffer(GL_ARRAY_BUFFER, opaqueGeometryBuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opaqueGeometryIndex);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(winding), winding, GL_STATIC_DRAW);
 	setupVertexAttributes();
 
 	glGenBuffers(1, &transparentGeometryBuffer);
+	glGenBuffers(1, &transparentGeometryIndex);
 	glGenVertexArrays(1, &transparentVao);
 	glBindVertexArray(transparentVao);
 	glBindBuffer(GL_ARRAY_BUFFER, transparentGeometryBuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, transparentGeometryIndex);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(winding), winding, GL_STATIC_DRAW);
 	setupVertexAttributes();
 
 	glBindVertexArray(0);
@@ -439,8 +447,12 @@ void Chunk::createGpuData()
 void Chunk::clearGpuData()
 {
 	glDeleteBuffers(1, &opaqueGeometryBuffer);
+	glGenBuffers(1, &opaqueGeometryIndex);
 	glDeleteBuffers(1, &transparentGeometryBuffer);
+	glDeleteBuffers(1, &transparentGeometryIndex);
 	glDeleteBuffers(1, &lightsBuffer);
+	glDeleteVertexArrays(1, &vao);
+	glDeleteVertexArrays(1, &transparentVao);
 }
 
 void ChunkData::clearLightLevels()

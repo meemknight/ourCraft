@@ -63,8 +63,7 @@ bool initGameplay(ProgramData &programData)
 
 bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 {
-
-	gameData.gameplayFrameProfiler.startFrame();
+	gameData.gameplayFrameProfiler.endSubProfile("swap chain and others");
 
 
 	gameData.c.aspectRatio = (float)w / h;
@@ -559,6 +558,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma endregion
 
 	gameData.gameplayFrameProfiler.endFrame();
+	gameData.gameplayFrameProfiler.startFrame();
+	gameData.gameplayFrameProfiler.startSubProfile("swap chain and others");
 
 
 	return true;

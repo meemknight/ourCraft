@@ -55,10 +55,12 @@ struct Chunk
 
 	//std::vector<int> opaqueGeometry;
 	GLuint opaqueGeometryBuffer = 0;
+	GLuint opaqueGeometryIndex = 0;
 	GLuint vao = 0;
 	size_t elementCountSize = 0;
 
 	GLuint transparentGeometryBuffer = 0;
+	GLuint transparentGeometryIndex = 0;
 	GLuint transparentVao = 0;
 	size_t transparentElementCountSize = 0;
 
