@@ -55,7 +55,7 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 
 		auto element = sunLigtsToRemove.front();
 		sunLigtsToRemove.pop_front();
-
+		
 		char currentLightLevel = element.intensity;
 
 		auto checkNeighbout = [&](glm::ivec3 p, bool down = 0)

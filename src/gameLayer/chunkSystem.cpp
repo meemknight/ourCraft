@@ -286,7 +286,6 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 #pragma endregion
 
-
 	if (lastPlayerBlockPosition != playerBlockPosition)
 	{
 		//player moved sooooo update transparency

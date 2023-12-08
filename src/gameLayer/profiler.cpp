@@ -108,12 +108,12 @@ void Profiler::displayPlot(const char *mainPlotName)
 	const ImColor colors[10] = {
 		{1.0f, 1.0f, 1.0f, 1.0f},
 		{1.0f, 1.0f, 0.5f, 1.0f},
-		{0.7f, 1.0f, 1.0f, 1.0f},
+		{0.3f, 0.1f, 0.4f, 1.0f},
 		{0.0f, 1.0f, 0.0f, 1.0f},
 		{0.2f, 0.1f, 1.0f, 1.0f},
 		{0.6f, 0.0f, 0.3f, 1.0f},
 		{0.9f, 0.1f, 0.0f, 1.0f},
-		{0.0f, 1.0f, 1.0f, 1.0f},
+		{0.0f, 0.5f, 0.5f, 1.0f},
 		{1.0f, 0.0f, 1.0f, 1.0f},
 		{1.0f, 0.0f, 0.0f, 1.0f},
 	}; //todo
@@ -145,7 +145,7 @@ void Profiler::displayPlot(const char *mainPlotName)
 		}
 		average /= history.size();
 
-		ImGui::ColorButton("X", colors[index]);
+		ImGui::ColorButton("X", colors[index], ImGuiColorEditFlags_NoInputs);
 		ImGui::SameLine();
 		ImGui::Text("%s: %f ms", names[index], average);
 	}
