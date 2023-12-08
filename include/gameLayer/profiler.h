@@ -17,10 +17,12 @@ struct CharEquals
 
 struct Profiler
 {
+	bool pause = 0;
 
 	struct SavedData
 	{
 		float dataMs[10];
+		float dataMsReal[10];
 	};
 
 
@@ -35,9 +37,9 @@ struct Profiler
 
 	void setSubProfileManually(char *c, PL::ProfileRezults rezults);
 
-	std::unordered_map<char *, PL::Profiler> subProfiles;
+	std::unordered_map<std::string, PL::Profiler> subProfiles;
 
-	void displayPlot();
+	void displayPlot(const char *mainPlotName);
 
 	std::deque<SavedData> history;
 

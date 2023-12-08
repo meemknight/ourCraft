@@ -22,6 +22,7 @@
 #include <rendering/sunShadow.h>
 #include <multiPlot.h>
 #include <profiler.h>
+#include <thread>
 
 struct GameData
 {
@@ -68,8 +69,11 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	gameData.c.aspectRatio = (float)w / h;
 
+
 #pragma region server stuff
 	{
+		gameData.gameplayFrameProfiler.startSubProfile("server");
+
 		EventCounter validateEvent = 0;
 		RevisionNumber inValidateRevision = 0;
 
@@ -147,6 +151,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			}
 
 		}
+
+		gameData.gameplayFrameProfiler.endSubProfile("server");
 	}
 #pragma endregion
 
@@ -236,24 +242,33 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 	}
 
+
 	glm::vec3 posFloat = {};
 	glm::ivec3 posInt = {};
 	programData.renderer.skyBoxRenderer.render(gameData.c, underWater);
 
 	glm::ivec3 blockPositionPlayer = from3DPointToBlock(gameData.c.position);
 
+	gameData.gameplayFrameProfiler.startSubProfile("lightsSystem");
 	gameData.lightSystem.update(gameData.chunkSystem);
+	gameData.gameplayFrameProfiler.endSubProfile("lightsSystem");
 
 	{
-		//static std::vector<int> data;
 
+		//static std::vector<int> data;
+		
 		gameData.c.decomposePosition(posFloat, posInt);
 		
 		programData.renderer.updateDynamicBlocks();
 		
+		gameData.gameplayFrameProfiler.startSubProfile("chunkSystem");
 		gameData.chunkSystem.update(blockPositionPlayer, deltaTime, gameData.undoQueue,
 			gameData.lightSystem);
+		gameData.gameplayFrameProfiler.endSubProfile("chunkSystem");
 
+
+
+		gameData.gameplayFrameProfiler.startSubProfile("rendering");
 
 		gameData.sunShadow.update();
 
@@ -266,6 +281,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		programData.renderer.renderFromBakedData(gameData.sunShadow,gameData.chunkSystem, 
 			gameData.c, programData, gameData.showLightLevels, 
 			gameData.skyLightIntensity, point, underWater, w, h, deltaTime);
+
+		gameData.gameplayFrameProfiler.endSubProfile("rendering");
 	}
 
 	glm::ivec3 rayCastPos = {};
@@ -361,18 +378,19 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	programData.gyzmosRenderer.render(gameData.c, posInt, posFloat);
 #pragma endregion
 
+	//gameData.gameplayFrameProfiler.startSubProfile("sleep");
+	//std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	//gameData.gameplayFrameProfiler.endSubProfile("sleep");
 
 
-
-	gameData.gameplayFrameProfiler.endFrame();
-
-
-	ImGui::ShowDemoWindow();
 
 #pragma region imgui
 
 	//if (gameData.escapePressed)
 	{
+		gameData.gameplayFrameProfiler.startSubProfile("imgui");
+
+
 		bool terminate = false;
 		//if (ImGui::Begin("camera controll", &gameData.escapePressed))
 		ImGui::PushStyleColor(ImGuiCol_WindowBg, {26/255.f,26/255.f,26/255.f,0.5f});
@@ -508,7 +526,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		{
 			ImGui::Text("profiler");
 
-			gameData.gameplayFrameProfiler.displayPlot();
+			gameData.gameplayFrameProfiler.displayPlot("Gameplay Frame");
 
 		}
 		ImGui::End();
@@ -519,6 +537,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		{
 			return false;
 		}
+
+		gameData.gameplayFrameProfiler.endSubProfile("imgui");
 	}
 
 #pragma endregion
@@ -526,15 +546,20 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma region ui
 	if(1)
 	{	
+		gameData.gameplayFrameProfiler.startSubProfile("ui");
+
 		Ui::Frame f({0,0, w, h});
 
 		programData.renderer2d.renderRectangle(
 			Ui::Box().xCenter().yCenter().xDimensionPixels(30).yAspectRatio(1.f), {}, 0,
 			programData.uiTexture, programData.uiAtlas.get(2, 0)
 		);
-
+		gameData.gameplayFrameProfiler.endSubProfile("ui");
 	}
 #pragma endregion
+
+	gameData.gameplayFrameProfiler.endFrame();
+
 
 	return true;
 }
