@@ -9,7 +9,9 @@ ImU32 ImGui::InvertColorU32(ImU32 in)
     return GetColorU32(in4);
 }
 
-void ImGui::PlotMultiEx(ImGuiPlotType plot_type, const char *label, int num_datas, const char **names, const ImColor *colors, float(*getter)(const void *data, int idx), const void *const *datas, int values_count, float scale_min, float scale_max, ImVec2 graph_size)
+void ImGui::PlotMultiEx(ImGuiPlotType plot_type, const char *label, int num_datas, const char **names, const ImColor *colors,
+    float(*getter)(const void *data, int idx, int tableIndex), const void *datas,
+    int values_count, float scale_min, float scale_max, ImVec2 graph_size)
 {
     const int values_offset = 0;
 
@@ -42,7 +44,7 @@ void ImGui::PlotMultiEx(ImGuiPlotType plot_type, const char *label, int num_data
         {
             for (int i = 0; i < values_count; i++)
             {
-                const float v = getter( ((void*)((size_t*)datas)[data_idx]), i);
+                const float v = getter( datas, i, data_idx);
                 v_min = ImMin(v_min, v);
                 v_max = ImMax(v_max, v);
             }
@@ -75,8 +77,8 @@ void ImGui::PlotMultiEx(ImGuiPlotType plot_type, const char *label, int num_data
             Text("%8d %8d | Name", v_idx, v_idx + 1);
             for (int dataIdx = 0; dataIdx < num_datas; ++dataIdx)
             {
-                const float v0 = getter(((void*)((size_t *)datas)[dataIdx]), idx0);
-                const float v1 = getter(((void*)((size_t *)datas)[dataIdx]), idx1);
+                const float v0 = getter(datas, idx0, dataIdx);
+                const float v1 = getter(datas, idx1, dataIdx);
                 TextColored(colors[dataIdx], "%8.4g %8.4g | %s", v0, v1, names[dataIdx]);
             }
         }
@@ -84,7 +86,7 @@ void ImGui::PlotMultiEx(ImGuiPlotType plot_type, const char *label, int num_data
         {
             for (int dataIdx = 0; dataIdx < num_datas; ++dataIdx)
             {
-                const float v0 = getter(((void *)((size_t *)datas)[dataIdx]), idx0);
+                const float v0 = getter(datas, idx0, dataIdx);
                 TextColored(colors[dataIdx], "%d: %8.4g | %s", v_idx, v0, names[dataIdx]);
             }
         }
@@ -96,7 +98,7 @@ void ImGui::PlotMultiEx(ImGuiPlotType plot_type, const char *label, int num_data
     {
         const float t_step = 1.0f / (float)res_w;
 
-        float v0 = getter(((void *)((size_t *)datas)[data_idx]), (0 + values_offset) % values_count);
+        float v0 = getter(datas, (0 + values_offset) % values_count, data_idx);
         float t0 = 0.0f;
         ImVec2 tp0 = ImVec2(t0, 1.0f - ImSaturate((v0 - scale_min) / (scale_max - scale_min)));    // Point in the normalized space of our target rectangle
 
@@ -111,7 +113,7 @@ void ImGui::PlotMultiEx(ImGuiPlotType plot_type, const char *label, int num_data
             const float t1 = t0 + t_step;
             const int v1_idx = (int)(t0 * item_count + 0.5f);
             IM_ASSERT(v1_idx >= 0 && v1_idx < values_count);
-            const float v1 = getter(((void *)((size_t *)datas)[data_idx]), (v1_idx + values_offset + 1) % values_count);
+            const float v1 = getter(datas, (v1_idx + values_offset + 1) % values_count, data_idx);
             const ImVec2 tp1 = ImVec2(t1, 1.0f - ImSaturate((v1 - scale_min) / (scale_max - scale_min)));
 
             // NB: Draw calls are merged together by the DrawList system. Still, we should render our batch are lower level to save a bit of CPU.
@@ -136,12 +138,16 @@ void ImGui::PlotMultiEx(ImGuiPlotType plot_type, const char *label, int num_data
     RenderText(ImVec2(frame_bb.Max.x + style.ItemInnerSpacing.x, inner_bb.Min.y), label);
 }
 
-void ImGui::PlotMultiLines(const char *label, int num_datas, const char **names, const ImColor *colors, float(*getter)(const void *data, int idx), const void *const *datas, int values_count, float scale_min, float scale_max, ImVec2 graph_size)
+void ImGui::PlotMultiLines(const char *label, int num_datas, const char **names,
+    const ImColor *colors, float(*getter)(const void *data, int idx, int tableIndex),
+    const void *datas, int values_count, float scale_min, float scale_max, ImVec2 graph_size)
 {
     PlotMultiEx(ImGuiPlotType_Lines, label, num_datas, names, colors, getter, datas, values_count, scale_min, scale_max, graph_size);
 }
 
-void ImGui::PlotMultiHistograms(const char *label, int num_hists, const char **names, const ImColor *colors, float(*getter)(const void *data, int idx), const void *const *datas, int values_count, float scale_min, float scale_max, ImVec2 graph_size)
+void ImGui::PlotMultiHistograms(const char *label, int num_hists, const char **names,
+    const ImColor *colors, float(*getter)(const void *data, int idx, int tableIndex),
+    const void *datas, int values_count, float scale_min, float scale_max, ImVec2 graph_size)
 {
     PlotMultiEx(ImGuiPlotType_Histogram, label, num_hists, names, colors, getter, datas, values_count, scale_min, scale_max, graph_size);
 }

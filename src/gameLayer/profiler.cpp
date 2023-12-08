@@ -12,7 +12,7 @@ void Profiler::endFrame()
 
 	SavedData data;
 	int index = 0;
-	data.dataMs[index++] = mainProfiler.rezult.timeSeconds / 1000.f;
+	data.dataMs[index++] = mainProfiler.rezult.timeSeconds * 1000.f;
 
 	float accumulatedData = 0;
 
@@ -20,7 +20,7 @@ void Profiler::endFrame()
 	{
 		float accumulated = 0;
 		permaAssert(index != (sizeof(data.dataMs) / sizeof(data.dataMs[0])) );
-		data.dataMs[index++] = i.second.end().timeSeconds / 1000.f + accumulated;
+		data.dataMs[index++] = i.second.end().timeSeconds * 1000.f + accumulated;
 		accumulated = data.dataMs[index++];
 	}
 
@@ -64,40 +64,49 @@ void Profiler::setSubProfileManually(char *c, PL::ProfileRezults rezults)
 	subProfiles[c].rezult = rezults;
 }
 
-float plotGetter(const void *data, int index)
+float plotGetter(const void *data, int index, int tableIndex)
 {
-	return ((float*)data)[index];
+	std::deque<Profiler::SavedData> *history = (std::deque<Profiler::SavedData>*)data;
+
+	return ((*history)[index]).dataMs[tableIndex];
+
+	//float *tableData = ((float**)data)[tableIndex];
+	//return tableData[index];
 }
 
 void Profiler::displayPlot()
 {
 
-	void *datas[10] = {};
-	static_assert( (sizeof(datas)/sizeof(datas[0])) == (sizeof(SavedData::dataMs) / sizeof(SavedData::dataMs[0])) );
 
-	datas[0] = 
-	for (int i = 1; i < subProfiles.size() + i; i++)
-	{
-		
-	}
+	//for (int i = 1; i < subProfiles.size() + i; i++)
+	//{
+	//	
+	//}
 	
 
-	float data1[10] = {0.4,0.5,0.6,0.7,0.6,0.5,0.4,0.5,0.6,0.7};
-	float data2[10] = {0.3,0.3,0.2,0.2,0.3,0.3,0.2,0.2,0.3,0.3};
+	//float data1[10] = {0.4,0.5,0.6,0.7,0.6,0.5,0.4,0.5,0.6,0.7};
+	//float data2[10] = {0.3,0.3,0.2,0.2,0.3,0.3,0.2,0.2,0.3,0.3};
 
 	//void *datas[2] = {data1, data2};
 
-	const char *names[2] = {"table1", "table2"};
-	const ImColor colors[2] = {{1.0f, 1.0f, 0.5f, 1.0f}, {0.7f, 1.0f, 1.0f, 1.0f}};
+	const char *names[4] = {"Main Table", "table2","table3","table4"}; //todo
+
+	const ImColor colors[4] = {{1.0f, 1.0f, 0.5f, 1.0f}, 
+		{0.7f, 1.0f, 1.0f, 1.0f},
+		{0.0f, 1.0f, 0.0f, 1.0f},
+		{0.2f, 0.1f, 1.0f, 1.0f},
+	}; //todo
+
+
 	ImGui::PlotMultiHistograms("nice plot",  // label
-		2,            // num_hists,
-		names,        // names,
+		subProfiles.size() + 1,	// num_hists,
+		names,					// names,
 		colors,       // colors,
 		plotGetter, // getter
-		datas,		// datas,
-		10,           // values_count,
-		FLT_MAX,      // scale_min,
-		FLT_MAX,      // scale_max,
+		&history,		// datas,
+		history.size(),           // values_count,
+		0.f,      // scale_min,
+		32.f,      // scale_max,
 		ImVec2(256.0, 17.0f)  // graph_size
 	);
 
