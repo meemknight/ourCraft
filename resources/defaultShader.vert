@@ -107,60 +107,125 @@ vec2 calculateUVs(int vertexId)
 	return uvs;
 }
 
+uniform float u_timeGrass;
+
+uint grassMask[] =
+{
+	//grass
+	1,
+	1,
+	0,
+	0,
+	0,
+	1,
+
+	0,
+	1,
+	1,
+	1,
+	0,
+	0,
+
+	1,
+	1,
+	0,
+	0,
+	0,
+	1,
+
+	0,
+	0,
+	1,
+	1,
+	1,
+	0
+};
+
+float biasUp(float a)
+{
+	return (a + 0.75)/1.75;
+}
+
+float biasUp2(float a)
+{
+	return ((a + 1)/2.f)/2.0 + 0.5;
+}
+
 vec3 calculateVertexPos(int vertexId)
 {
-	//vec3 pos = fragmentPositionF.xyz;
+
 	vec3 pos = vec3(0);
 	vec3 vertexShape = vec3(0);
-	v_flags = in_flags;
-	v_blockPos = in_facePosition;	
-
-	vertexShape.x = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 0];
-	vertexShape.y = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 1];
-	vertexShape.z = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 2];
 
 
-	if(in_faceOrientation >= 10) //animated
+	if(in_faceOrientation >= 10) //animated trees
 	{
-
-		if(in_facePosition.y % 2 == 0)
-		{
-			vertexShape.x = -vertexShape.x;
-			vertexShape.z = -vertexShape.z;
-			//v_uv.x = 1.f-v_uv.x;
-		}
+		//vertexShape.x = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 0];
+		//vertexShape.y = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 1];
+		//vertexShape.z = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 2];
+		//
+		//if(in_facePosition.y % 2 == 0)
+		//{
+		//	vertexShape.x = -vertexShape.x;
+		//	vertexShape.z = -vertexShape.z;
+		//	//v_uv.x = 1.f-v_uv.x;
+		//}
 
 		vertexShape.x += vertexData[(in_faceOrientation-10) * 3 * 6 + vertexId * 3 + 0];
 		vertexShape.y += vertexData[(in_faceOrientation-10) * 3 * 6 + vertexId * 3 + 1];
 		vertexShape.z += vertexData[(in_faceOrientation-10) * 3 * 6 + vertexId * 3 + 2];
+		
+		vec3 offset = vec3(0);		
 
-		//if(in_faceOrientation == 6)
-		//{//front
-		//
-		//}else if(in_faceOrientation == 7)
-		//{//back
-		//
-		//}else if(in_faceOrientation == 8)
-		//{//top
-		//
-		//}else if(in_faceOrientation == 9)
-		//{//bottom
-		//
-		//}else if(in_faceOrientation == 10)
-		//{//left
-		//
-		//}else if(in_faceOrientation == 11)
-		//{//right
-		//
-		//}
-		//vertexShape *= 0.8+((sin(u_time)+1)/2.f)*0.2;
+		offset.y = 0.01*sin((u_timeGrass/0.2 )+vertexShape.x+in_facePosition.x);
+		offset.y += 0.04*sin((u_timeGrass/1.0 )+vertexShape.z+in_facePosition.z);
+		offset.xz = 0.05*sin((u_timeGrass/2.0 )+vertexShape.xz+in_facePosition.xz);
+
+		offset.y += 0.010*cos((u_timeGrass/1.0 )+vertexShape.x+in_facePosition.x);
+		offset.y += 0.02*cos((u_timeGrass/2.0 )+vertexShape.z+in_facePosition.z);
+		offset.xz += 0.02*cos((u_timeGrass/3.0 )+vertexShape.xz+in_facePosition.xz);
+
+		vertexShape += offset;
+
+	}else if(in_faceOrientation >= 6)
+	{
+		uint mask = grassMask[(in_faceOrientation-6)*6+vertexId];
+
+		//grass
+		vec2 dir = normalize(vec2(0.5,1));		
+		float SPEED = 2.f;		
+		float FREQUENCY = 2.5f;		
+		float AMPLITUDE = 0.15f;		
+
+		float SPEED2 = 1.f;		
+		float FREQUENCY2 = 2.0f;		
+		float AMPLITUDE2 = 0.9f;		
+		vec2 dir2 = normalize(vec2(0.9,1));		
+
+		float offset = biasUp(cos((in_facePosition.x * dir.x + 
+		in_facePosition.z * dir.y - u_timeGrass * SPEED) * FREQUENCY)) * AMPLITUDE;		
+	
+		float offset2 = biasUp2(sin((in_facePosition.x * dir2.x +
+			in_facePosition.z * dir2.y - u_timeGrass * SPEED) * FREQUENCY)) * AMPLITUDE;		
+
+		vertexShape.x = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 0];
+		vertexShape.y = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 1];
+		vertexShape.z = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 2];
+		
+		vertexShape.x += mask * (offset * dir.x + offset2 * dir.x);
+		vertexShape.z += mask * (offset * dir.y + offset2 * dir.y);
+
+	}else
+	{
+		vertexShape.x = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 0];
+		vertexShape.y = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 1];
+		vertexShape.z = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 2];
 	}
 
 	pos.xyz += vertexShape;
 
 	return pos;
 }
-
 
 void main()
 {
@@ -175,6 +240,8 @@ void main()
 	vec3 diffI = in_facePosition - u_positionInt;
 	vec3 diffF = diffI - u_positionFloat;
 	
+	v_flags = in_flags;
+	v_blockPos = in_facePosition;
 
 	fragmentPositionF = calculateVertexPos(gl_VertexID);
 	fragmentPositionI = in_facePosition;

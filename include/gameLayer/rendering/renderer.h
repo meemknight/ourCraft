@@ -52,6 +52,8 @@ struct Renderer
 		GLuint u_textureSamplerers = GL_INVALID_INDEX;
 		GLuint u_normalsData = GL_INVALID_INDEX;
 		GLuint u_lights = GL_INVALID_INDEX;
+		GLuint u_timeGrass;
+
 
 		GLint u_metallic = -1;
 		GLint u_roughness = -1;
@@ -87,6 +89,7 @@ struct Renderer
 		GLuint u_vertexData = GL_INVALID_INDEX;
 		GLuint u_textureSamplerers;
 		GLuint u_renderOnlyWater;
+		GLuint u_timeGrass;
 	}zpassShader;
 	
 	float metallic = 0;

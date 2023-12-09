@@ -285,6 +285,8 @@ float vertexUV[] = {
 	1, 1
 };
 
+
+
 void Renderer::create(BlocksLoader &blocksLoader)
 {
 
@@ -327,6 +329,7 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	GET_UNIFORM2(defaultShader, u_lightPos);
 	GET_UNIFORM2(defaultShader, u_sunShadowTexture);
 	GET_UNIFORM2(defaultShader, u_viewMatrix);
+	GET_UNIFORM2(defaultShader, u_timeGrass);
 
 
 	defaultShader.u_vertexData = getStorageBlockIndex(defaultShader.shader.id, "u_vertexData");
@@ -349,6 +352,7 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, textureSamplerersBuffer);
 	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint64) * blocksLoader.gpuIds.size(), blocksLoader.gpuIds.data(), 0);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, textureSamplerersBuffer);
+	
 
 	
 	glGenBuffers(1, &lightBuffer);
@@ -358,10 +362,7 @@ void Renderer::create(BlocksLoader &blocksLoader)
 
 	defaultShader.u_lights = getStorageBlockIndex(defaultShader.shader.id, "u_lights");
 	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_lights, 4);
-	//glGenBuffers(1, &textureSamplerersBuffer);
-	//glBindBuffer(GL_SHADER_STORAGE_BUFFER, textureSamplerersBuffer);
-	//glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint64) * blocksLoader.gpuIds.size(), blocksLoader.gpuIds.data(), 0);
-	//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, textureSamplerersBuffer);
+
 
 	
 #pragma region zpass
@@ -373,6 +374,7 @@ void Renderer::create(BlocksLoader &blocksLoader)
 		GET_UNIFORM2(zpassShader, u_positionInt);
 		GET_UNIFORM2(zpassShader, u_positionFloat);
 		GET_UNIFORM2(zpassShader, u_renderOnlyWater);
+		GET_UNIFORM2(zpassShader, u_timeGrass);
 
 		zpassShader.u_vertexData = getStorageBlockIndex(zpassShader.shader.id, "u_vertexData");
 		glShaderStorageBlockBinding(zpassShader.shader.id, zpassShader.u_vertexData, 1);
@@ -382,6 +384,7 @@ void Renderer::create(BlocksLoader &blocksLoader)
 		
 		zpassShader.u_textureSamplerers = getStorageBlockIndex(zpassShader.shader.id, "u_textureSamplerers");
 		glShaderStorageBlockBinding(zpassShader.shader.id, zpassShader.u_textureSamplerers, 3);
+
 	}
 #pragma endregion
 
@@ -456,8 +459,8 @@ void Renderer::updateDynamicBlocks()
 	glm::vec2 offsetVector = {1, 0};
 	offsetVector = {c * offsetVector.x - s * offsetVector.y, s * offsetVector.x + c * offsetVector.y};
 	offsetVector = glm::normalize(offsetVector) * 0.06f * std::abs(cos(prelucratedTime * 2.f));
+	//offsetVector = glm::normalize(offsetVector) * 0.07f * sin(prelucratedTime * 20.f);
 	
-
 	for (int i = 0; i < 4; i++)
 	{
 		topFaces[i]->x += offsetVector.x;
@@ -467,13 +470,13 @@ void Renderer::updateDynamicBlocks()
 		bottomFaces[i]->z -= offsetVector.y;
 
 
-		topFacesGrass[i]->x += offsetVector.x;
-		topFacesGrass[i]->z += offsetVector.y;
+		//topFacesGrass[i]->x += offsetVector.x;
+		//topFacesGrass[i]->z += offsetVector.y;
 
-		bottomFacesGrass[i]->x -= offsetVector.x;
-		bottomFacesGrass[i]->z -= offsetVector.y;
+		//bottomFacesGrass[i]->x -= offsetVector.x;
+		//bottomFacesGrass[i]->z -= offsetVector.y;
 	}
-
+	//sin((worldPos.x * DIRECTIONX + worldPos.z * DIRECTIONZ - time * SPEED) * FREQUENCY) * AMPLITUDE
 
 	float newData[] =
 	{
@@ -588,6 +591,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	auto mvp = c.getProjectionMatrix() * glm::lookAt({0,0,0}, c.viewDirection, c.up);
 	auto chunkVectorCopy = chunkSystem.loadedChunks;
 
+	float timeGrass = std::clock() / 1000.f;
 
 #pragma region setup uniforms and stuff
 	{
@@ -596,6 +600,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform3fv(zpassShader.u_positionFloat, 1, &posFloat[0]);
 		glUniform3iv(zpassShader.u_positionInt, 1, &posInt[0]);
 		glUniform1i(zpassShader.u_renderOnlyWater, 0);
+		glUniform1f(zpassShader.u_timeGrass, timeGrass);
 
 
 		programData.texture.bind(0);
@@ -635,6 +640,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glActiveTexture(GL_TEXTURE0 + 7);
 		glBindTexture(GL_TEXTURE_2D, sunShadow.shadowMap.depth);
 		glUniform1i(defaultShader.u_sunShadowTexture, 7);
+		glUniform1f(defaultShader.u_timeGrass, timeGrass);
 
 
 		waterTimer += deltaTime * 0.09;
