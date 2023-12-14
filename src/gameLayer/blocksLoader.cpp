@@ -216,9 +216,32 @@ uint16_t blocksLookupTable[] = {
 	55, 55, 55, 55, 55, 55,
 };
 
-bool fixAlpha(unsigned char *buffer, int w, int h)
+void fixAlphaForNormals(unsigned char *buffer, int w, int h)
 {
+	auto set = [&](int x, int y, glm::ivec3 c)
+	{
+		buffer[(x + y * w) * 4 + 0] = c.r;
+		buffer[(x + y * w) * 4 + 1] = c.g;
+		buffer[(x + y * w) * 4 + 2] = c.b;
+	};
 
+	auto sampleA = [&](int x, int y) -> unsigned char
+	{
+		return buffer[(x + y * w) * 4 + 3];
+	};
+
+	for (int y = 0; y < h; y++)
+		for (int x = 0; x < w; x++)
+		{
+			if (sampleA(x, y) <= 0)
+			{
+				set(x, y, {127,127,255});
+			}
+		}
+}
+
+bool fixAlpha(unsigned char *buffer, int w, int h, bool firstTime)
+{
 
 	auto sample = [&](int x, int y) -> glm::ivec4 
 	{
@@ -251,10 +274,11 @@ bool fixAlpha(unsigned char *buffer, int w, int h)
 		return buffer[(x + y * w) * 4 + 3];
 	};
 
+	if(firstTime)
 	for (int y = 0; y < h; y++)
 		for (int x = 0; x < w; x++)
 		{
-			if (sampleA(x, y) == 0)
+			if (sampleA(x, y) <= 0)
 			{
 				set(x, y, {0,0,0});
 			}
@@ -264,8 +288,8 @@ bool fixAlpha(unsigned char *buffer, int w, int h)
 	for (int y = 0; y < h; y++)
 		for (int x = 0; x < w; x++)
 		{
-
-			if (sampleA(x, y) == 0)
+			auto s = sample(x, y);
+			if ( s.a == 0 && (glm::ivec3(s) == glm::ivec3{0,0,0}) )
 			{
 
 				if (x < w - 1)
@@ -360,12 +384,13 @@ bool fixAlpha(unsigned char *buffer, int w, int h)
 
 		}
 
+
 	return changed;
 }
 
 void createFromFileDataWithAplhaFixing(gl2d::Texture &t, const unsigned char *image_file_data, 
 	const size_t image_file_size
-	, bool pixelated, bool useMipMaps)
+	, bool pixelated, bool useMipMaps, bool isNormalMap)
 {
 	stbi_set_flip_vertically_on_load(true);
 	
@@ -375,13 +400,22 @@ void createFromFileDataWithAplhaFixing(gl2d::Texture &t, const unsigned char *im
 
 	unsigned char *decodedImage = stbi_load_from_memory(image_file_data, (int)image_file_size, &width, &height, &channels, 4);
 
-	for (int i = 0; i < 64; i++)
+	if (isNormalMap)
 	{
-		if (!fixAlpha(decodedImage, width, height))
+		fixAlphaForNormals(decodedImage, width, height);
+	}
+	else
+	{
+		for (int i = 0; i < 256; i++)
 		{
-			break;
+			if (!fixAlpha(decodedImage, width, height, i == 0))
+			{
+				break;
+			}
 		}
 	}
+
+	
 	
 
 	t.createFromBuffer((const char *)decodedImage, width, height, pixelated, useMipMaps);
@@ -390,7 +424,8 @@ void createFromFileDataWithAplhaFixing(gl2d::Texture &t, const unsigned char *im
 	free((void *)decodedImage);
 }
 
-bool loadFromFileWithAplhaFixing(gl2d::Texture &t, const char *fileName, bool pixelated, bool useMipMaps)
+bool loadFromFileWithAplhaFixing(gl2d::Texture &t, 
+	const char *fileName, bool pixelated, bool useMipMaps, bool isNormalMap)
 {
 	std::ifstream file(fileName, std::ios::binary);
 
@@ -412,7 +447,7 @@ bool loadFromFileWithAplhaFixing(gl2d::Texture &t, const char *fileName, bool pi
 	file.read((char *)fileData, fileSize);
 	file.close();
 
-	createFromFileDataWithAplhaFixing(t, fileData, fileSize, pixelated, useMipMaps);
+	createFromFileDataWithAplhaFixing(t, fileData, fileSize, pixelated, useMipMaps, isNormalMap);
 
 	delete[] fileData;
 
@@ -508,12 +543,12 @@ void BlocksLoader::loadAllTextures()
 	std::string path;
 	std::string path2;
 
-	auto addTexture = [&](std::string path) -> bool
+	auto addTexture = [&](std::string path, bool isNormalMap = 0) -> bool
 	{
 
 		gl2d::Texture t;
 		
-		if (!loadFromFileWithAplhaFixing(t, path.c_str(), true, false)) { return 0; }
+		if (!loadFromFileWithAplhaFixing(t, path.c_str(), true, false, isNormalMap)) { return 0; }
 		t.bind();
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -558,9 +593,9 @@ void BlocksLoader::loadAllTextures()
 			}
 		}
 		
-		if(!addTexture(path + "_n.png"))
+		if(!addTexture(path + "_n.png", true))
 		{
-			if (!addTexture(path2 + "_n.png"))
+			if (!addTexture(path2 + "_n.png", true))
 			{
 				texturesIds.push_back(texturesIds[1]);
 				gpuIds.push_back(gpuIds[1]);
