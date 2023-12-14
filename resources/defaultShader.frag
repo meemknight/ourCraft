@@ -596,12 +596,27 @@ void main()
 
 	}
 
-	
+	//load material
+	float metallic = 0;
+	float roughness = 0;
+	{
+		vec2 materialColor = texture(sampler2D(v_materialSampler), v_uv).rg;
+		
+		roughness = pow((1 - materialColor.r),2);
+		metallic =pow((materialColor.g),0.5);
+		
+		//roughness = u_roughness;
+		//metallic = u_metallic;
+
+		roughness = clamp(roughness, 0.09, 0.99);
+		metallic = clamp(metallic, 0.0, 0.98);
+	}
+
 	//load albedo
 	vec4 textureColor;
 	{
 		textureColor = texture(sampler2D(v_textureSampler), v_uv);
-		if(textureColor.a < 0.1){discard;}
+		if(textureColor.a <= 0){discard;}
 		//gamma correction
 		textureColor.rgb = firstGama(textureColor.rgb);
 	}
@@ -628,23 +643,6 @@ void main()
 		//todo water uvs so the texture is continuous on all sides
 	}
 	
-
-	//load material
-	float metallic = 0;
-	float roughness = 0;
-	{
-		vec2 materialColor = texture(sampler2D(v_materialSampler), v_uv).rg;
-		
-		roughness = pow((1 - materialColor.r),2);
-		metallic =pow((materialColor.g),0.5);
-		
-		//roughness = u_roughness;
-		//metallic = u_metallic;
-
-		roughness = clamp(roughness, 0.09, 0.99);
-		metallic = clamp(metallic, 0.0, 0.98);
-	}
-
 
 	vec3 finalColor = vec3(0);
 
@@ -732,10 +730,11 @@ void main()
 	out_color.rgb = ACESFitted(out_color.rgb);
 	out_color.rgb = pow(out_color.rgb, vec3(1/2.2));
 	//out_color.rgb = linear_to_srgb(out_color.rgb);
-
-	{
-		out_color.a *= computeFog(viewLength);	
-	}
+	
+	//fog
+	//{
+	//	out_color.a *= computeFog(viewLength);	
+	//}
 	
 	//is water	
 	if(((v_flags & 1) != 0))

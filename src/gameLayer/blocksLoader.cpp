@@ -269,6 +269,11 @@ bool fixAlpha(unsigned char *buffer, int w, int h, bool firstTime)
 		buffer[(x + y * w) * 4 + 2] = c.b;
 	};
 
+	auto setA = [&](int x, int y, unsigned a)
+	{
+		buffer[(x + y * w) * 4 + 3] = a;
+	};
+
 	auto sampleA = [&](int x, int y) -> unsigned char
 	{
 		return buffer[(x + y * w) * 4 + 3];
@@ -281,8 +286,12 @@ bool fixAlpha(unsigned char *buffer, int w, int h, bool firstTime)
 			if (sampleA(x, y) <= 0)
 			{
 				set(x, y, {0,0,0});
+				//setA(x, y, 255);
 			}
 		}
+
+	//todo fix
+	return false;
 
 	bool changed = 0;
 	for (int y = 0; y < h; y++)
@@ -415,10 +424,8 @@ void createFromFileDataWithAplhaFixing(gl2d::Texture &t, const unsigned char *im
 		}
 	}
 
-	
-	
-
 	t.createFromBuffer((const char *)decodedImage, width, height, pixelated, useMipMaps);
+	
 
 	//Replace stbi allocators
 	free((void *)decodedImage);
@@ -550,9 +557,10 @@ void BlocksLoader::loadAllTextures()
 		
 		if (!loadFromFileWithAplhaFixing(t, path.c_str(), true, false, isNormalMap)) { return 0; }
 		t.bind();
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
+		
+		//todo compare
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 6.f);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 6.f);
 
@@ -593,14 +601,24 @@ void BlocksLoader::loadAllTextures()
 			}
 		}
 		
-		if(!addTexture(path + "_n.png", true))
+		if (1) //no normals
 		{
-			if (!addTexture(path2 + "_n.png", true))
+			texturesIds.push_back(texturesIds[1]);
+			gpuIds.push_back(gpuIds[1]);
+		}
+		else
+		{
+			if (!addTexture(path + "_n.png", true))
 			{
-				texturesIds.push_back(texturesIds[1]);
-				gpuIds.push_back(gpuIds[1]);
+				if (!addTexture(path2 + "_n.png", true))
+				{
+					texturesIds.push_back(texturesIds[1]);
+					gpuIds.push_back(gpuIds[1]);
+				}
 			}
 		}
+
+		
 
 		if (!addTexture(path + "_s.png"))
 		{

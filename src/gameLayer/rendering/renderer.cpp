@@ -818,8 +818,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	glColorMask(1, 1, 1, 1);
 	glDepthFunc(GL_EQUAL);
 	defaultShader.shader.bind();
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_BLEND);
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	renderStaticGeometry();
 #pragma endregion
 
@@ -861,6 +862,10 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 #pragma region render transparent geometry last phaze
 	defaultShader.shader.bind();
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	glColorMask(1, 1, 1, 1);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glUniform1i(defaultShader.u_depthPeelwaterPass, 0);

@@ -10,7 +10,7 @@ void main()
 	vec4 textureColor;
 	{
 		float a = texture(sampler2D(v_textureSampler), v_uv).a;
-		if(a < 0.1){discard;}
+		if(a <= 0){discard;}
 	}
 
 }
