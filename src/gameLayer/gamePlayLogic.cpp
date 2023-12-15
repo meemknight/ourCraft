@@ -246,7 +246,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	glm::ivec3 posInt = {};
 	//programData.renderer.skyBoxRenderer.render(gameData.c, underWater);
 	programData.renderer.skyBoxLoaderAndDrawer.drawBefore(gameData.c.getProjectionMatrix() *gameData.c.getViewMatrix(),
-		programData.renderer.defaultSkyBox);
+		programData.renderer.defaultSkyBox, programData.renderer.sunTexture, 
+		programData.renderer.skyBoxRenderer.sunPos);
 
 
 	glm::ivec3 blockPositionPlayer = from3DPointToBlock(gameData.c.position);

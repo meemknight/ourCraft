@@ -94,6 +94,7 @@ void SkyBoxLoaderAndDrawer::createGpuData()
 
 	normalSkyBox.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/skyBox/skyBox.vert", RESOURCES_PATH "shaders/skyBox/skyBox.frag");
 	normalSkyBox.modelViewUniformLocation = getUniform(normalSkyBox.shader.id, "u_viewProjection");
+	normalSkyBox.u_sunPos = getUniform(normalSkyBox.shader.id, "u_sunPos");
 
 	hdrtoCubeMap.shader.loadShaderProgramFromFile(RESOURCES_PATH  "shaders/skyBox/hdrToCubeMap.vert", RESOURCES_PATH  "shaders/skyBox/hdrToCubeMap.frag");
 	hdrtoCubeMap.u_equirectangularMap = getUniform(hdrtoCubeMap.shader.id, "u_equirectangularMap");
@@ -551,17 +552,22 @@ void SkyBoxLoaderAndDrawer::createConvolutedAndPrefilteredTextureData(SkyBox &sk
 	
 }
 
-void SkyBoxLoaderAndDrawer::drawBefore(const glm::mat4 &viewProjMat, SkyBox &skyBox)
+void SkyBoxLoaderAndDrawer::drawBefore(const glm::mat4 &viewProjMat, SkyBox &skyBox, gl2d::Texture &sunTexture,
+	glm::vec3 sunPos)
 {
 	glBindVertexArray(vertexArray);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skyBox.texture);
 
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, sunTexture.id);
+
 	normalSkyBox.shader.bind();
 	
 
 	glUniformMatrix4fv(normalSkyBox.modelViewUniformLocation, 1, GL_FALSE, &viewProjMat[0][0]);
+	glUniform3fv(normalSkyBox.u_sunPos, 1, glm::value_ptr(sunPos));
 
 
 	glDisable(GL_DEPTH_TEST);

@@ -4,6 +4,7 @@
 #include "rendering/shader.h"
 #include <glm/vec3.hpp>
 #include "rendering/camera.h"
+#include <gl2d/gl2d.h>
 
 //todo big refactor
 struct SkyBoxRenderer
@@ -48,6 +49,7 @@ struct SkyBoxLoaderAndDrawer
 	{
 		Shader shader;
 		GLuint modelViewUniformLocation;
+		GLuint u_sunPos;
 
 	}normalSkyBox;
 
@@ -95,11 +97,13 @@ struct SkyBoxLoaderAndDrawer
 	void createConvolutedAndPrefilteredTextureData(SkyBox &skyBox,
 		float sampleQuality = 0.025, unsigned int specularSamples = 1024);
 
-	void drawBefore(const glm::mat4 &viewProjMat, SkyBox &skyBox);
+	void drawBefore(const glm::mat4 &viewProjMat, SkyBox &skyBox, gl2d::Texture &sunTexture,
+		glm::vec3 sunPos);
 
 
 	void clear();
 };
+
 
 /*
 
