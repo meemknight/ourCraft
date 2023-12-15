@@ -115,6 +115,8 @@ struct Renderer
 	size_t lightsBufferCount = 0;
 
 	SkyBoxRenderer skyBoxRenderer;
+	SkyBoxLoaderAndDrawer skyBoxLoaderAndDrawer;
+	SkyBox defaultSkyBox;
 
 	GLuint vao = 0;
 	GLuint vertexBuffer = 0;

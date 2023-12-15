@@ -292,6 +292,9 @@ void Renderer::create(BlocksLoader &blocksLoader)
 
 	fboCoppy.create(true, true);
 	skyBoxRenderer.create();
+	skyBoxLoaderAndDrawer.createGpuData();
+	skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "skybox.png", defaultSkyBox);
+
 
 	defaultShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "defaultShader.vert", RESOURCES_PATH "defaultShader.frag");
 	defaultShader.shader.bind();

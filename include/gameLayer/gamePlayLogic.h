@@ -11,6 +11,7 @@ struct ProgramData
 	GyzmosRenderer gyzmosRenderer;
 	PointDebugRenderer pointDebugRenderer;
 	BlocksLoader blocksLoader;
+	
 
 	gl2d::Font font;
 	gl2d::Texture texture;
