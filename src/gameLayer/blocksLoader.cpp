@@ -291,7 +291,7 @@ bool fixAlpha(unsigned char *buffer, int w, int h, bool firstTime)
 		}
 
 	//todo fix
-	return false;
+	//return false;
 
 	bool changed = 0;
 	for (int y = 0; y < h; y++)
@@ -393,6 +393,18 @@ bool fixAlpha(unsigned char *buffer, int w, int h, bool firstTime)
 
 		}
 
+	//preview
+	//if (!changed)
+	//{
+	//	for (int y = 0; y < h; y++)
+	//		for (int x = 0; x < w; x++)
+	//		{
+	//			if (sampleA(x, y) <= 0)
+	//			{
+	//				setA(x, y, 255);
+	//			}
+	//		}	
+	//}
 
 	return changed;
 }
@@ -422,6 +434,7 @@ void createFromFileDataWithAplhaFixing(gl2d::Texture &t, const unsigned char *im
 				break;
 			}
 		}
+
 	}
 
 	t.createFromBuffer((const char *)decodedImage, width, height, pixelated, useMipMaps);
