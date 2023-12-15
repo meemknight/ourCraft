@@ -293,7 +293,9 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	fboCoppy.create(true, true);
 	skyBoxRenderer.create();
 	skyBoxLoaderAndDrawer.createGpuData();
-	skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/skybox.png", defaultSkyBox);
+	//skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/skybox.png", defaultSkyBox);
+	//skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/nightsky.png", defaultSkyBox);
+	skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/twilightsky.png", defaultSkyBox);
 	sunTexture.loadFromFile(RESOURCES_PATH "sky/sun.png", false, false);
 
 	defaultShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "defaultShader.vert", RESOURCES_PATH "defaultShader.frag");

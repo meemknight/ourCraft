@@ -528,6 +528,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		if (ImGui::Begin("Profiler"))
 		{
 			ImGui::Text("profiler");
+			ImGui::Text("fps: %d", programData.currentFps);
 
 			gameData.gameplayFrameProfiler.displayPlot("Gameplay Frame");
 

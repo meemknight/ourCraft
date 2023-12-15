@@ -598,8 +598,9 @@ void BlocksLoader::loadAllTextures()
 		path += RESOURCES_PATH;
 		path2 += RESOURCES_PATH;
 		
-		path2 += "pbr/block/";
-		//path += "pbr3/";
+		path2 += "pbr/block/"; //default
+		
+		//path += "pbr2/";
 		path += "pbr/block/"; //original
 		
 		path += texturesNames[i];

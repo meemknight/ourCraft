@@ -340,8 +340,8 @@ int main()
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
 			//style.WindowRounding = 0.0f;
-			style.Colors[ImGuiCol_WindowBg].w = 0.f;
-			style.Colors[ImGuiCol_DockingEmptyBg].w = 0.f;
+			style.Colors[ImGuiCol_WindowBg].w = 0.f; //always
+			style.Colors[ImGuiCol_DockingEmptyBg].w = 0.f; //always
 		}
 	
 		ImGui_ImplGlfw_InitForOpenGL(wind, true);

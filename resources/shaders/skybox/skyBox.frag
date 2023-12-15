@@ -11,7 +11,7 @@ uniform vec3 u_sunPos;
 
 float remapFunction(float x)
 {
-	float a = 0.97;
+	float a = 0.98;
 
 	return (0.5/(1-a))*x  + (-0.5*a/(1-a));
 }
@@ -21,15 +21,21 @@ vec2 mapDirectionToUV()
 
 	vec3 view = normalize(v_viewDirection);	
 	float sunDot = dot(u_sunPos, view);
-
-
 	float sampleX = max(sunDot,0);
 	sampleX	= remapFunction(sampleX);
+	
+	//todo
+	//vec3 deltaVector = normalize(view - u_sunPos);
+	//vec3 topVector = normalize(cross(deltaVector, view));	
 
+	vec3 view2 = view;
+	float sunDot2 = dot(u_sunPos, view2);
+	float sampleY = max(sunDot2,0);
+	sampleY	= remapFunction(sampleY);
 	//sampleX -= 0.5;	
 	
 	//todo
-	return vec2(sampleX, sampleX);
+	return vec2(sampleX, sampleY);
 }
 
 void main() 
@@ -51,6 +57,8 @@ void main()
 
 	// Apply screen blend mode
 	a_outColor.rgb = vec3(1.0) - (vec3(1.0) - skyColor.rgb) * (vec3(1.0) - sunColor);
+	
+	//a_outColor.rgb += mix(skyColor.rgb, sunColor.rgb, sunColor.a);
 
 	// Ensure that the alpha channel is 1.0
 	a_outColor.a = 1.0;

@@ -679,10 +679,14 @@ void main()
 	{
 		vec3 sunLightColor = vec3(1.5);
 		vec3 L = u_sunDirection;
-		//light += computeLight(N,L,V) * 1.f;
-		finalColor += shadowCalc2(dot(L, v_normal)) * computePointLightSource(L, 
-			metallic, roughness, sunLightColor * causticsColor, V, 
-			textureColor.rgb, N, F0);
+
+		if(dot(u_sunDirection, vec3(0,1,0))> -0.2)
+		{
+			//light += computeLight(N,L,V) * 1.f;
+			finalColor += shadowCalc2(dot(L, v_normal)) * computePointLightSource(L, 
+				metallic, roughness, sunLightColor * causticsColor, V, 
+				textureColor.rgb, N, F0);
+		}
 	}
 	
 		
