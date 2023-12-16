@@ -40,15 +40,14 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 	const int maxUpperBound = 100000;
 	
 	
+	//Timer sunLightsRemoveTimer;
 
-	Timer sunLightsRemoveTimer;
-
-	sunLightsRemoveTimer.start();
+	//sunLightsRemoveTimer.start();
 
 	int upperBound = maxUpperBound;
 	while (!sunLigtsToRemove.empty() && (upperBound--) > 0)
 	{
-		sunLightsRemoveTimer.counter++; 
+		//sunLightsRemoveTimer.counter++; 
 
 		//todo add this here
 		//if(b->getSkyLight() != 0)continue;
@@ -100,16 +99,16 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 		chunkSystem.setChunkAndNeighboursFlagDirtyFromBlockPos(element.pos.x, element.pos.z);
 
 	}
-	sunLightsRemoveTimer.end();
+	//sunLightsRemoveTimer.end();
 
 
-	Timer sunLightsAddTimer;
-	sunLightsAddTimer.start();
+	//Timer sunLightsAddTimer;
+	//sunLightsAddTimer.start();
 
 	upperBound = maxUpperBound;
 	while (!sunLigtsToAdd.empty() && (upperBound--) > 0)
 	{
-		sunLightsAddTimer.counter++;
+		//sunLightsAddTimer.counter++;
 
 		auto element = sunLigtsToAdd.front();
 		sunLigtsToAdd.pop_front();
@@ -176,7 +175,7 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 
 	}
 
-	sunLightsAddTimer.end();
+	//sunLightsAddTimer.end();
 
 	//...
 
@@ -285,12 +284,12 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 	}
 
 
-	if (sunLightsAddTimer.counter > 1000)
-	{
-		//std::cout << "Added: " << sunLightsAddTimer.counter << " in: " <<
-		//	sunLightsAddTimer.getTimerInMiliseconds() << " ms,   " <<
-		//	sunLightsAddTimer.getTimerInMiliseconds() / sunLightsAddTimer.counter << " ms per light\n";
-	}
+	//if (sunLightsAddTimer.counter > 1000)
+	//{
+	//	//std::cout << "Added: " << sunLightsAddTimer.counter << " in: " <<
+	//	//	sunLightsAddTimer.getTimerInMiliseconds() << " ms,   " <<
+	//	//	sunLightsAddTimer.getTimerInMiliseconds() / sunLightsAddTimer.counter << " ms per light\n";
+	//}
 
 }
 

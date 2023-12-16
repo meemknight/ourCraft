@@ -116,7 +116,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 					for (int x = 0; x < CHUNK_SIZE; x++)
 						for (int z = 0; z < CHUNK_SIZE; z++)
-							for (int y = 0; y < CHUNK_SIZE; y++)
+							for (int y = 0; y < CHUNK_HEIGHT; y++)
 							{
 
 								auto &b = i->unsafeGet(x, y, z);
@@ -976,6 +976,9 @@ void ChunkSystem::placeBlockByClient(glm::ivec3 pos, BlockType type, UndoQueue &
 	}
 	
 }
+
+//todo add place block by server that will be forced
+//or rename this as place block by server or something
 
 //todo refactor and reuse up
 void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, BlockType type, LightSystem &lightSystem)

@@ -39,6 +39,11 @@ struct GameData
 
 	Profiler gameplayFrameProfiler;
 
+	//debug stuff
+	glm::ivec3 point = {};
+	glm::ivec3 pointSize = {};//todo move
+	bool renderBox = 1;
+
 }gameData;
 
 
@@ -65,13 +70,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 {
 	gameData.gameplayFrameProfiler.endSubProfile("swap chain and others");
 
-
 	gameData.c.aspectRatio = (float)w / h;
+	glViewport(0, 0, w, h);
 
 
 #pragma region server stuff
 	{
-		gameData.gameplayFrameProfiler.startSubProfile("server");
+		gameData.gameplayFrameProfiler.startSubProfile("server messages");
 
 		EventCounter validateEvent = 0;
 		RevisionNumber inValidateRevision = 0;
@@ -151,9 +156,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		}
 
-		gameData.gameplayFrameProfiler.endSubProfile("server");
+		gameData.gameplayFrameProfiler.endSubProfile("server messages");
 	}
 #pragma endregion
+
 
 #pragma region input
 
@@ -226,76 +232,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	}
 #pragma endregion
 
-	static glm::ivec3 point;
-	static glm::ivec3 pointSize;
-	static bool renderBox = 1;
 
-	bool underWater = 0;
-
-	auto inBlock = gameData.chunkSystem.getBlockSafe(from3DPointToBlock(gameData.c.position));
-	if (inBlock)
-	{
-		if (inBlock->type == BlockTypes::water)
-		{
-			underWater = 1;
-		}
-	}
-
-
-	glm::vec3 posFloat = {};
-	glm::ivec3 posInt = {};
-	//programData.renderer.skyBoxRenderer.render(gameData.c, underWater);
-	programData.renderer.skyBoxLoaderAndDrawer.drawBefore(gameData.c.getProjectionMatrix() *gameData.c.getViewMatrix(),
-		programData.renderer.defaultSkyBox, programData.renderer.sunTexture, 
-		programData.renderer.skyBoxRenderer.sunPos);
-
-
-	glm::ivec3 blockPositionPlayer = from3DPointToBlock(gameData.c.position);
-
-	gameData.gameplayFrameProfiler.startSubProfile("lightsSystem");
-	gameData.lightSystem.update(gameData.chunkSystem);
-	gameData.gameplayFrameProfiler.endSubProfile("lightsSystem");
-
-	{
-
-		//static std::vector<int> data;
-		
-		gameData.c.decomposePosition(posFloat, posInt);
-		
-		programData.renderer.updateDynamicBlocks();
-		
-		gameData.gameplayFrameProfiler.startSubProfile("chunkSystem");
-		gameData.chunkSystem.update(blockPositionPlayer, deltaTime, gameData.undoQueue,
-			gameData.lightSystem);
-		gameData.gameplayFrameProfiler.endSubProfile("chunkSystem");
-
-
-
-		gameData.gameplayFrameProfiler.startSubProfile("rendering");
-
-		gameData.sunShadow.update();
-
-		programData.renderer.renderShadow(gameData.sunShadow,
-			gameData.chunkSystem, gameData.c, programData);
-
-		gameData.sunShadow.renderShadowIntoTexture(gameData.c);
-
-		//programData.renderer.render(data, gameData.c, programData.texture);
-		programData.renderer.renderFromBakedData(gameData.sunShadow,gameData.chunkSystem, 
-			gameData.c, programData, gameData.showLightLevels, 
-			gameData.skyLightIntensity, point, underWater, w, h, deltaTime);
-
-		gameData.gameplayFrameProfiler.endSubProfile("rendering");
-	}
+#pragma region place blocks
 
 	glm::ivec3 rayCastPos = {};
 	std::optional<glm::ivec3> blockToPlace = std::nullopt;
-
 	glm::dvec3 cameraRayPos = gameData.c.position;
-	//if (gameData.c.position.x >= 0){cameraRayPos.x += 0.5;}else{cameraRayPos.x -= 0.5;}
-	//if (gameData.c.position.z >= 0){cameraRayPos.z += 0.5;}else{cameraRayPos.z -= 0.5;}
-
-#pragma region place blocks
 
 	if (gameData.chunkSystem.rayCast(cameraRayPos, gameData.c.viewDirection, rayCastPos, 20, blockToPlace))
 	{
@@ -321,70 +263,139 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					blockTypeToPlace = b->type;
 				}
 			}
-			
-		}else
-		if (platform::isKeyHeld(platform::Button::LeftAlt))
-		{
-			if (platform::isRMouseReleased())
-			{
-				if (blockToPlace)
-				{
-					point = *blockToPlace;
-				}
-			}
-			else if (platform::isLMouseReleased())
-			{
-				if (blockToPlace)
-				{
-					pointSize = *blockToPlace - point;
-				}
-			}
+
 		}
 		else
-		{
-			if (platform::isRMouseReleased())
+			if (platform::isKeyHeld(platform::Button::LeftAlt))
 			{
-				if (blockToPlace)
-					gameData.chunkSystem.placeBlockByClient(*blockToPlace, blockTypeToPlace,
-					gameData.undoQueue, gameData.c.position, gameData.lightSystem);
+				if (platform::isRMouseReleased())
+				{
+					if (blockToPlace)
+					{
+						gameData.point = *blockToPlace;
+					}
+				}
+				else if (platform::isLMouseReleased())
+				{
+					if (blockToPlace)
+					{
+						gameData.pointSize = *blockToPlace - gameData.point;
+					}
+				}
 			}
-			else if (platform::isLMouseReleased())
+			else
 			{
-				gameData.chunkSystem.placeBlockByClient(rayCastPos, BlockTypes::air,
-					gameData.undoQueue, gameData.c.position, gameData.lightSystem);
+				if (platform::isRMouseReleased())
+				{
+					if (blockToPlace)
+						gameData.chunkSystem.placeBlockByClient(*blockToPlace, blockTypeToPlace,
+						gameData.undoQueue, gameData.c.position, gameData.lightSystem);
+				}
+				else if (platform::isLMouseReleased())
+				{
+					gameData.chunkSystem.placeBlockByClient(rayCastPos, BlockTypes::air,
+						gameData.undoQueue, gameData.c.position, gameData.lightSystem);
+				}
 			}
-		}
 
-		
+
 	};
 
 #pragma endregion
 
 	
-#pragma region debug and gyzmos stuff
-	programData.pointDebugRenderer.renderCubePoint(gameData.c, point);
+#pragma region get player positions and stuff
 
-	if (renderBox)
+	glm::ivec3 blockPositionPlayer = from3DPointToBlock(gameData.c.position);
+	bool underWater = 0;
+	auto inBlock = gameData.chunkSystem.getBlockSafe(blockPositionPlayer);
+	if (inBlock)
+	{
+		if (inBlock->type == BlockTypes::water)
+		{
+			underWater = 1;
+		}
+	}
+
+	glm::vec3 posFloat = {};
+	glm::ivec3 posInt = {};
+	gameData.c.decomposePosition(posFloat, posInt);
+
+#pragma endregion
+
+
+#pragma region render sky box
+
+	programData.renderer.skyBoxLoaderAndDrawer.drawBefore(gameData.c.getProjectionMatrix() *gameData.c.getViewMatrix(),
+		programData.renderer.defaultSkyBox, programData.renderer.sunTexture, 
+		programData.renderer.skyBoxRenderer.sunPos);
+
+#pragma endregion
+
+
+#pragma region update lights
+
+	gameData.gameplayFrameProfiler.startSubProfile("lightsSystem");
+	gameData.lightSystem.update(gameData.chunkSystem);
+	gameData.gameplayFrameProfiler.endSubProfile("lightsSystem");
+
+#pragma endregion
+
+
+#pragma region chunks and rendering
+	{
+
+		//static std::vector<int> data;
+		
+		
+		programData.renderer.updateDynamicBlocks();
+		
+		gameData.gameplayFrameProfiler.startSubProfile("chunkSystem");
+		gameData.chunkSystem.update(blockPositionPlayer, deltaTime, gameData.undoQueue,
+			gameData.lightSystem);
+		gameData.gameplayFrameProfiler.endSubProfile("chunkSystem");
+
+
+
+		gameData.gameplayFrameProfiler.startSubProfile("rendering");
+
+		gameData.sunShadow.update();
+
+		programData.renderer.renderShadow(gameData.sunShadow,
+			gameData.chunkSystem, gameData.c, programData);
+
+		gameData.sunShadow.renderShadowIntoTexture(gameData.c);
+
+		//programData.renderer.render(data, gameData.c, programData.texture);
+		programData.renderer.renderFromBakedData(gameData.sunShadow,gameData.chunkSystem, 
+			gameData.c, programData, gameData.showLightLevels, 
+			gameData.skyLightIntensity, gameData.point, underWater, w, h, deltaTime);
+
+		gameData.gameplayFrameProfiler.endSubProfile("rendering");
+	}
+#pragma endregion
+
+	
+	
+#pragma region debug and gyzmos stuff
+	programData.pointDebugRenderer.renderCubePoint(gameData.c, gameData.point);
+
+	if (gameData.renderBox)
 	{
 		//programData.gyzmosRenderer.drawCube(from3DPointToBlock(point));
-		programData.gyzmosRenderer.drawCube(point);
+		programData.gyzmosRenderer.drawCube(gameData.point);
 
-		if (pointSize != glm::ivec3{})
+		if (gameData.pointSize != glm::ivec3{})
 		{
-			programData.gyzmosRenderer.drawCube(from3DPointToBlock(point + glm::ivec3(pointSize)));
-			programData.gyzmosRenderer.drawCube(from3DPointToBlock(point + glm::ivec3(pointSize) - glm::ivec3(1,0,0)));
-			programData.gyzmosRenderer.drawCube(from3DPointToBlock(point + glm::ivec3(pointSize) - glm::ivec3(0,1,0)));
-			programData.gyzmosRenderer.drawCube(from3DPointToBlock(point + glm::ivec3(pointSize) - glm::ivec3(0,0,1)));
+			programData.gyzmosRenderer.drawCube(from3DPointToBlock(gameData.point + glm::ivec3(gameData.pointSize)));
+			programData.gyzmosRenderer.drawCube(from3DPointToBlock(gameData.point + glm::ivec3(gameData.pointSize) - glm::ivec3(1,0,0)));
+			programData.gyzmosRenderer.drawCube(from3DPointToBlock(gameData.point + glm::ivec3(gameData.pointSize) - glm::ivec3(0,1,0)));
+			programData.gyzmosRenderer.drawCube(from3DPointToBlock(gameData.point + glm::ivec3(gameData.pointSize) - glm::ivec3(0,0,1)));
 		}
 	}
 
 	programData.gyzmosRenderer.render(gameData.c, posInt, posFloat);
 #pragma endregion
-
-	//gameData.gameplayFrameProfiler.startSubProfile("sleep");
-	//std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	//gameData.gameplayFrameProfiler.endSubProfile("sleep");
-
 
 
 #pragma region imgui
@@ -407,10 +418,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 			//ImGui::DragScalarN("Point pos", ImGuiDataType_Double, &point[0], 3, 1);
-			ImGui::DragInt3("Point pos", &point[0]);
-			ImGui::DragInt3("Point size",  &pointSize[0]);
-			ImGui::Checkbox("Render Box", &renderBox);
-			pointSize = glm::clamp(pointSize, glm::ivec3(0, 0, 0), glm::ivec3(64, 64, 64));
+			ImGui::DragInt3("Point pos", &gameData.point[0]);
+			ImGui::DragInt3("Point size",  &gameData.pointSize[0]);
+			ImGui::Checkbox("Render Box", &gameData.renderBox);
+			gameData.pointSize = glm::clamp(gameData.pointSize, glm::ivec3(0, 0, 0), glm::ivec3(64, 64, 64));
 
 			if (ImGui::CollapsingHeader("Light Stuff",
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
@@ -435,7 +446,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				}
 			}
 
-			auto b = gameData.chunkSystem.getBlockSafe(point);
+			auto b = gameData.chunkSystem.getBlockSafe(gameData.point);
 			if (b) ImGui::Text("Box Light Value: %d", b->getSkyLight());
 
 			ImGui::DragFloat("camera speed", &moveSpeed);
@@ -457,18 +468,18 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				if (ImGui::Button("Save structure"))
 				{
 					std::vector<unsigned char> data;
-					data.resize(sizeof(StructureData) + sizeof(BlockType) * pointSize.x * pointSize.y * pointSize.z);
+					data.resize(sizeof(StructureData) + sizeof(BlockType) * gameData.pointSize.x * gameData.pointSize.y * gameData.pointSize.z);
 
 					StructureData *s = (StructureData *)data.data();
 
-					s->size = pointSize;
+					s->size = gameData.pointSize;
 					s->unused = 0;
 
-					for (int x = 0; x < pointSize.x; x++)
-						for (int z = 0; z < pointSize.z; z++)
-							for (int y = 0; y < pointSize.y; y++)
+					for (int x = 0; x < gameData.pointSize.x; x++)
+						for (int z = 0; z < gameData.pointSize.z; z++)
+							for (int y = 0; y < gameData.pointSize.y; y++)
 							{
-								glm::ivec3 pos = point + glm::ivec3(x, y, z);
+								glm::ivec3 pos = gameData.point + glm::ivec3(x, y, z);
 
 								auto rez = gameData.chunkSystem.getBlockSafe(pos.x, pos.y, pos.z);
 
@@ -497,13 +508,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 							for (int z = 0; z < s->size.z; z++)
 								for (int y = 0; y < s->size.y; y++)
 								{
-									glm::ivec3 pos = point + glm::ivec3(x, y, z);
+									glm::ivec3 pos = gameData.point + glm::ivec3(x, y, z);
 
 									gameData.chunkSystem.placeBlockByClient(pos, s->unsafeGet(x, y, z),
 										gameData.undoQueue, gameData.c.position, gameData.lightSystem);
 								}
 
-						pointSize = s->size;
+						gameData.pointSize = s->size;
 					}
 
 
@@ -547,6 +558,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma endregion
 
+
 #pragma region ui
 	if(1)
 	{	
@@ -562,6 +574,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	}
 #pragma endregion
 
+	
 	gameData.gameplayFrameProfiler.endFrame();
 	gameData.gameplayFrameProfiler.startFrame();
 	gameData.gameplayFrameProfiler.startSubProfile("swap chain and others");

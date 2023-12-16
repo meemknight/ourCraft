@@ -56,6 +56,16 @@ uniform mat4 u_inverseProjMat;
 
 in flat int v_flags;
 
+
+///
+const float pointLightColor = 2.f;
+const float atenuationFactor = 0.5f;
+const float causticsTextureScale = 3.f;
+const float causticsChromaticAberationStrength = 0.004;	
+const float waterSpeed = 5.f;
+///
+
+
 float computeFog(float dist)
 {
 	float rez = exp(-pow(dist*(1/u_fogDistance), fogGradient));
@@ -96,12 +106,11 @@ vec3 compute(ivec3 destI, vec3 destF, ivec3 sourceI, vec3 sourceF)
 float atenuationFunction(float dist)
 {
 	float maxDist = 15;
-	float a = 0.1;
 
 	//if(dist >= maxDist)return 0;
 	//return 1;
 
-	return max(0, (maxDist-dist)/(dist*dist*a+maxDist));
+	return max(0, (maxDist-dist)/(dist*dist*atenuationFactor+maxDist));
 }
 
 
@@ -247,15 +256,35 @@ mat3x3 NormalToRotation(in vec3 normal)
 }
 
 
-vec2 getDudvCoords()
+vec2 getDudvCoordsStatic()
 {
-	vec2 samplingPoint = - v_blockPos.zx + vec2(v_uv.x + u_waterMove, v_uv.y + u_waterMove/2);
+	vec2 samplingPoint = - v_blockPos.zx + vec2(v_uv.x, v_uv.y);
 	return samplingPoint * (1/20.f);
 }
 
-vec2 getDudvCoords2()
+vec2 getDudvCoords(float speed)
 {
-	vec2 samplingPoint = - v_blockPos.zx + vec2(v_uv.x + u_waterMove + 3, v_uv.y + u_waterMove/2 + 5);
+	vec2 samplingPoint = - v_blockPos.zx + vec2(v_uv.x + u_waterMove*speed, v_uv.y + u_waterMove*speed/2);
+	return samplingPoint * (1/20.f);
+}
+
+vec2 getDudvCoords2(float speed)
+{
+	vec2 samplingPoint = - v_blockPos.zx + vec2(v_uv.x + u_waterMove*speed + 3, v_uv.y + u_waterMove*speed/2 + 5);
+	samplingPoint.y = -samplingPoint.y;
+	return samplingPoint * 0.1;
+}
+
+vec2 getDudvCoords3(float speed)
+{
+	vec2 samplingPoint = - v_blockPos.zx + vec2(v_uv.x - u_waterMove*speed, v_uv.y - u_waterMove*speed/3);
+	samplingPoint.y = -samplingPoint.y;
+	return samplingPoint * 0.1;
+}
+
+vec2 getDudvCoords4(float speed)
+{
+	vec2 samplingPoint = - v_blockPos.zx + vec2(v_uv.x + u_waterMove*speed, v_uv.y - u_waterMove*speed*2);
 	samplingPoint.y = -samplingPoint.y;
 	return samplingPoint * 0.1;
 }
@@ -281,8 +310,13 @@ vec3 applyNormalMap(vec3 inNormal)
 	vec3 normal;
 	if(u_hasPeelInformation != 0 && ((v_flags & 1) != 0))
 	{
-		normal = texture(sampler2D(u_dudvNormal), getDudvCoords()).rgb;
-		normal += texture(sampler2D(u_dudvNormal), getDudvCoords2()).rgb;
+		//vec2 firstDudv = texture(sampler2D(u_dudvNormal), getDudvCoords3(5)).rg;
+		//normal = texture(sampler2D(u_dudvNormal), getDudvCoords(5)+firstDudv*0.1 ).rgb*1;
+
+		normal = texture(sampler2D(u_dudvNormal), getDudvCoords(waterSpeed)).rgb*1;
+		//normal += texture(sampler2D(u_dudvNormal), getDudvCoords2(10)).rgb;
+		normal += texture(sampler2D(u_dudvNormal), getDudvCoords3(waterSpeed)).rgb*0.5;
+
 		normal = normalize(normal);
 	}else
 	{
@@ -581,6 +615,7 @@ float shadowCalc2(float dotLightNormal)
 	return pow(clamp(shadow, 0, 1), shadowPower);
 }
 
+
 void main()
 {
 
@@ -627,15 +662,19 @@ void main()
 	vec3 causticsColor = vec3(1);
 	if(isInWater)
 	{
-		vec2 coords = getDudvCoords() * 0.5;
+		vec2 dudv = vec2(0);
+		dudv += texture(sampler2D(u_dudv), getDudvCoords(waterSpeed/2)).rg;
+		//dudv += texture(sampler2D(u_dudv), getDudvCoords2(1)).rg;
+		dudv += texture(sampler2D(u_dudv), getDudvCoords3(waterSpeed/2)).rg*1;
+
+		vec2 coords = getDudvCoords(1) * causticsTextureScale + dudv / 10;
 		
-		float offset = 0.001;	
 
 		float lightMultiplyer = 5;	
 
 		causticsColor.r = texture(u_caustics, coords + vec2(0,0)).r * lightMultiplyer;
-		causticsColor.g = texture(u_caustics, coords + vec2(offset,offset)).g * lightMultiplyer;
-		causticsColor.b = texture(u_caustics, coords + vec2(offset,offset)*2.0).b * lightMultiplyer;
+		causticsColor.g = texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)).g * lightMultiplyer;
+		causticsColor.b = texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)*2.0).b * lightMultiplyer;
 
 		//out_color.rgb = texture(u_caustics, coords).rgb;
 		//out_color.a = 1;
@@ -668,7 +707,7 @@ void main()
 		L = normalize(L);		
 
 		//light += computeLight(N,L,V) * atenuationFunction(LightDist)*1.f;
-		finalColor += computePointLightSource(L, metallic, roughness, vec3(0.9,0.9,0.9) * causticsColor, V, 
+		finalColor += computePointLightSource(L, metallic, roughness, vec3(pointLightColor,pointLightColor,pointLightColor)	* causticsColor, V, 
 			textureColor.rgb, N, F0) * atenuationFunction(LightDist);
 			
 	}
@@ -700,10 +739,10 @@ void main()
 
 	//ambient
 	//todo light sub scatter
-	float computedAmbient = firstGama(v_ambient);
+	vec3 computedAmbient = vec3(firstGama(v_ambient));
 	if(isInWater)
 	{
-		computedAmbient *= 0.9;
+		computedAmbient *= vec3(0.4,0.4,0.41);
 	}
 
 	out_color.rgb += textureColor.rgb * computedAmbient ;
@@ -743,8 +782,8 @@ void main()
 	//is water	
 	if(((v_flags & 1) != 0))
 	{
-		//float reflectivity = dot(V, N);
-		float reflectivity = 0.5;
+		float reflectivity = dot(V, N);
+		//float reflectivity = 0.5;
 
 		if(u_hasPeelInformation != 0)
 		{
@@ -757,9 +796,15 @@ void main()
 			float lastDepth = getLastDepthLiniarized(p, nonLinear);
 			float waterDepth = lastDepth - currentDepth;
 			
+			//visualize dudv
+			//out_color.rgb = texture(sampler2D(u_dudv), getDudvCoords3(1)).rgb;
+			//out_color.a = 1;
+			//return;
+
 			vec2 dudv = vec2(0);
-			dudv += texture(sampler2D(u_dudv), getDudvCoords()).rg;
-			dudv += texture(sampler2D(u_dudv), getDudvCoords2()).rg;
+			dudv += texture(sampler2D(u_dudv), getDudvCoords(waterSpeed)).rg;
+			//dudv += texture(sampler2D(u_dudv), getDudvCoords2(1)).rg;
+			//dudv += texture(sampler2D(u_dudv), getDudvCoords3(1)).rg;
 			vec2 dudvConv = (dudv * 2) - 1;
 			vec2 distorsionCoord = dudvConv * 0.009;	
 
@@ -787,12 +832,12 @@ void main()
 				finalDepth = distortWaterDepth;
 			}
 
-			peelTexture = mix(peelTexture, u_waterColor, 0.6 * clamp(pow(finalDepth/20.0,2),0,1));
+			peelTexture = mix(peelTexture, u_waterColor, 0.6 * clamp(pow(finalDepth/18.0,2),0,1) );
 
 			
 			//darken deep stuff
 
-			out_color.rgb = mix(peelTexture, currentColor, reflectivity);
+			out_color.rgb = mix(currentColor, peelTexture, reflectivity);
 			
 
 			//out_color.rgb = vec3(waterDepth/20);
