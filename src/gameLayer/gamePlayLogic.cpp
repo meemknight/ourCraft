@@ -404,6 +404,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			ImGui::Text("camera float: %f, %f, %f", posFloat.x, posFloat.y, posFloat.z);
 			ImGui::Text("camera int: %d, %d, %d", posInt.x, posInt.y, posInt.z);
+			ImGui::Text("camera view: %f, %f, %f", gameData.c.viewDirection.x, gameData.c.viewDirection.y, gameData.c.viewDirection.z);
+
 			ImGui::Text("Chunk: %d, %d" , divideChunk(posInt.x), divideChunk(posInt.z));
 
 
@@ -527,6 +529,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
 			{
 				ImGui::Image((void *)programData.renderer.fboMain.secondaryColor, {256, 256},
+					{0, 1}, {1, 0});
+			}
+
+			if (ImGui::CollapsingHeader("Last frame color",
+				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+			{
+				ImGui::Image((void *)programData.renderer.fboLastFrame.color, {256, 256},
 					{0, 1}, {1, 0});
 			}
 

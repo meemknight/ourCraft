@@ -227,6 +227,8 @@ vec3 calculateVertexPos(int vertexId)
 	return pos;
 }
 
+out vec3 v_viewSpacePos;
+
 void main()
 {
 
@@ -282,7 +284,6 @@ void main()
 
 	}
 
-
 	//apply curvature
 	if(false)	
 	{
@@ -291,6 +292,7 @@ void main()
 		posView.y = curved;
 	}
 
+	v_viewSpacePos = posView.xyz;
 	vec4 posProjection = u_viewProjection * posView;
 
 	gl_Position = posProjection;

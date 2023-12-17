@@ -609,7 +609,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	glm::ivec3 blockPosition = from3DPointToBlock(c.position);
 	c.decomposePosition(posFloat, posInt);
 
-	auto mvp = c.getProjectionMatrix() * glm::lookAt({0,0,0}, c.viewDirection, c.up);
+	auto vp = c.getProjectionMatrix() * glm::lookAt({0,0,0}, c.viewDirection, c.up);
 	auto chunkVectorCopy = chunkSystem.loadedChunks;
 
 	float timeGrass = std::clock() / 1000.f;
@@ -629,7 +629,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 #pragma region setup uniforms and stuff
 	{
 		zpassShader.shader.bind();
-		glUniformMatrix4fv(zpassShader.u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
+		glUniformMatrix4fv(zpassShader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
 		glUniform3fv(zpassShader.u_positionFloat, 1, &posFloat[0]);
 		glUniform3iv(zpassShader.u_positionInt, 1, &posInt[0]);
 		glUniform1i(zpassShader.u_renderOnlyWater, 0);
@@ -641,7 +641,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 
 		defaultShader.shader.bind();
-		glUniformMatrix4fv(defaultShader.u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
+		glUniformMatrix4fv(defaultShader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
 		glUniformMatrix4fv(defaultShader.u_viewMatrix, 1, GL_FALSE, &glm::lookAt({0,0,0}, c.viewDirection, c.up)[0][0]);
 		glUniform3fv(defaultShader.u_positionFloat, 1, &posFloat[0]);
 		glUniform3iv(defaultShader.u_positionInt, 1, &posInt[0]);

@@ -10,6 +10,7 @@ layout(binding = 1) uniform sampler2D u_numbers;
 
 in vec2 v_uv;
 in float v_ambient;
+in vec3 v_viewSpacePos;
 
 in flat uvec2 v_textureSampler;
 in flat uvec2 v_normalSampler;
@@ -625,7 +626,7 @@ float shadowCalc2(float dotLightNormal)
 	return pow(clamp(shadow, 0, 1), shadowPower);
 }
 
-vec3 SSR(vec3 viewPos, vec3 N, float metallic, vec3 F, 
+vec3 SSR(out bool success,vec3 viewPos, vec3 N, float metallic, vec3 F, 
 	out float mixFactor, float roughness, vec3 wp, vec3 viewDir, vec3 viewSpaceNormal, vec2 rezolution);
 
 void main()
@@ -669,13 +670,17 @@ void main()
 	}
 	
 	vec3 N = applyNormalMap(v_normal);
-	vec3 ViewSpacePosition = compute(u_positionInt, u_positionFloat, fragmentPositionI, fragmentPositionF);
-	float viewLength = length(ViewSpacePosition);
-	vec3 V = ViewSpacePosition / viewLength;
+	//vec3 ViewSpaceVector = compute(u_positionInt, u_positionFloat, fragmentPositionI, fragmentPositionF);
+	//float viewLength = length(ViewSpaceVector);
+	//vec3 V = ViewSpaceVector / viewLength;
+	
+	float viewLength = length(v_viewSpacePos);
+	vec3 V = -v_viewSpacePos / viewLength;
 
 	//if(u_writeScreenSpacePositions != 0)
 	{
-		out_screenSpacePositions.xyz = ViewSpacePosition;
+		////out_screenSpacePositions.xyz = -ViewSpaceVector; 
+		out_screenSpacePositions.xyz = (u_view * vec4(v_viewSpacePos,1)).xyz; //this is good
 		//out_screenSpacePositions.a = 1;
 	}
 		
@@ -802,20 +807,18 @@ void main()
 		
 		vec3 posViewSpace = texture(u_lastFramePositionViewSpace, fragCoord).xyz;
 		vec3 pos = vec3(u_inverseView * vec4(posViewSpace,1));
-		pos += u_pointPosI;
-		pos += u_pointPosF;
 
 		vec3 viewSpaceNormal = normalize( vec3(transpose(inverse(mat3(u_view))) * N));
 
 		float mixFactor = 0;
 		//vec3 ssr = SSR(posViewSpace, N, metallic, F, mixFactor, roughness, pos, V, viewSpaceNormal, 
 		//	textureSize(u_lastFramePositionViewSpace, 0).xy);
-
-		vec3 ssr = SSR(posViewSpace, N, metallic, F, mixFactor, 0, pos, V, viewSpaceNormal, 
+		bool success = false;
+		vec3 ssr = SSR(success, posViewSpace, N, metallic, F, mixFactor, 0, pos, V, viewSpaceNormal, 
 			textureSize(u_lastFramePositionViewSpace, 0).xy);
-
+		
 		//out_color.rgb = mix(ssr, out_color.rgb, dotNVClamped);
-		//out_color.rgb = ssr;
+		if(success)out_color.rgb = ssr;
 		
 	}
 	
@@ -1073,10 +1076,11 @@ vec3 computeJitt(vec3 wp, vec2 Resolution, vec3 viewNormal, float Roughness)
 	return vec3(jitt);
 }
 
-vec3 SSR(vec3 viewPos, vec3 N, float metallic, vec3 F, 
+vec3 SSR(out bool success, vec3 viewPos, vec3 N, float metallic, vec3 F, 
 	out float mixFactor, float roughness, vec3 wp, vec3 viewDir, vec3 viewSpaceNormal, vec2 rezolution)
 {
 	mixFactor = 0;
+	success = false;
 
 	// Reflection vector
 	vec3 reflected = normalize(reflect(normalize(viewPos), viewSpaceNormal));
@@ -1094,8 +1098,8 @@ vec3 SSR(vec3 viewPos, vec3 N, float metallic, vec3 F,
 	//vec3 jitt = mix(vec3(0.0), vec3(hash(wp)), spec);
 	
 	//todo test
-	vec3 jitt = computeJitt(wp, rezolution, viewSpaceNormal, roughness); //use roughness for specular factor
-	//vec3 jitt = vec3(0.0);
+	//vec3 jitt = computeJitt(wp, rezolution, viewSpaceNormal, roughness); //use roughness for specular factor
+	vec3 jitt = vec3(0.0);
 
 	vec2 coords = RayMarch( normalize((vec3(jitt) + reflected) *
 		max(SSR_minRayStep, -viewPos.z)), hitPos, dDepth,
@@ -1124,6 +1128,7 @@ vec3 SSR(vec3 viewPos, vec3 N, float metallic, vec3 F,
 
 	mixFactor = clamp(ReflectionMultiplier, 0.0, 1.f);  
 
+	success = true;
 	return SSR;
 }
 
