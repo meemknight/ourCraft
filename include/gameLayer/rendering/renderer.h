@@ -15,19 +15,30 @@ struct Renderer
 
 	struct FBO
 	{
-		void create(bool addColor, bool addDepth);
+		void create(GLint addColor, bool addDepth, GLint addSecondaryRenderTarger = 0);
 
 		void updateSize(int x, int y);
 
 		glm::ivec2 size = {};
 		GLuint fbo = 0;
+		GLuint fboOnlyFirstTarget = 0;
+		GLuint fboOnlySecondTarget = 0;
 
 		GLuint color = 0;
+		GLuint secondaryColor = 0;
 		GLuint depth = 0;
 
-		void copyDepthFromMainFBO(int w, int h);
+		GLint colorFormat = 0;
+		GLint secondaryColorFormat = 0;
 
+		void copyDepthFromMainFBO(int w, int h);
 		void copyColorFromMainFBO(int w, int h);
+
+		void copyDepthFromOtherFBO(GLuint other, int w, int h);
+		void copyColorFromOtherFBO(GLuint other, int w, int h);
+		void copyDepthAndColorFromOtherFBO(GLuint other, int w, int h);
+
+		void writeAllToOtherFbo(GLuint other, int w, int h);
 
 		void clearFBO();
 	};
@@ -52,8 +63,13 @@ struct Renderer
 		GLuint u_textureSamplerers = GL_INVALID_INDEX;
 		GLuint u_normalsData = GL_INVALID_INDEX;
 		GLuint u_lights = GL_INVALID_INDEX;
-		GLuint u_timeGrass;
-
+		GLint u_timeGrass = -1;
+		GLint u_writeScreenSpacePositions = -1;
+		GLint u_lastFrameColor = -1;
+		GLint u_lastFramePositionViewSpace = -1;
+		GLint u_cameraProjection = -1;
+		GLint u_inverseView = -1;
+		GLint u_view = -1;
 
 		GLint u_metallic = -1;
 		GLint u_roughness = -1;
@@ -96,7 +112,10 @@ struct Renderer
 	float roughness = 0.5;
 	float exposure = 1.7;
 
+	FBO fboMain;
 	FBO fboCoppy;
+	FBO fboLastFrame;
+	FBO fboLastFramePositions;
 
 	void create(BlocksLoader &blocksLoader);
 	void updateDynamicBlocks();

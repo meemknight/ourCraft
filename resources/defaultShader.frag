@@ -2,6 +2,8 @@
 #extension GL_ARB_bindless_texture: require
 
 layout (location = 0) out vec4 out_color;
+layout (location = 1) out vec4 out_screenSpacePositions;
+
 
 layout(binding = 0) uniform sampler2D u_texture;
 layout(binding = 1) uniform sampler2D u_numbers;
@@ -27,6 +29,7 @@ uniform float u_metallic;
 uniform float u_roughness;
 uniform float u_exposure;
 uniform int u_underWater;
+uniform int u_writeScreenSpacePositions;
 
 in vec4 v_fragPos;
 in vec4 v_fragPosLightSpace;
@@ -54,8 +57,14 @@ uniform sampler2D u_caustics;
 
 uniform mat4 u_inverseProjMat;
 
+uniform mat4 u_cameraProjection;
+uniform mat4 u_inverseView;
+uniform mat4 u_view;
+
 in flat int v_flags;
 
+uniform sampler2D u_lastFrameColor;
+uniform sampler2D u_lastFramePositionViewSpace;
 
 ///
 const float pointLightColor = 2.f;
@@ -616,6 +625,8 @@ float shadowCalc2(float dotLightNormal)
 	return pow(clamp(shadow, 0, 1), shadowPower);
 }
 
+vec3 SSR(vec3 viewPos, vec3 N, float metallic, vec3 F, 
+	out float mixFactor, float roughness, vec3 wp, vec3 viewDir, vec3 viewSpaceNormal, vec2 rezolution);
 
 void main()
 {
@@ -657,11 +668,23 @@ void main()
 		textureColor.rgb = firstGama(textureColor.rgb);
 	}
 	
-	bool isInWater = ((v_flags & 2) != 0);
+	vec3 N = applyNormalMap(v_normal);
+	vec3 ViewSpacePosition = compute(u_positionInt, u_positionFloat, fragmentPositionI, fragmentPositionF);
+	float viewLength = length(ViewSpacePosition);
+	vec3 V = ViewSpacePosition / viewLength;
+
+	//if(u_writeScreenSpacePositions != 0)
+	{
+		out_screenSpacePositions.xyz = ViewSpacePosition;
+		//out_screenSpacePositions.a = 1;
+	}
+		
+
+	bool blockIsInWater = ((v_flags & 2) != 0);
 	
 	//caustics
 	vec3 causticsColor = vec3(1);
-	if(isInWater)
+	if(blockIsInWater)
 	{
 		vec2 dudv = vec2(0);
 		dudv += texture(sampler2D(u_dudv), getDudvCoords(waterSpeed/2)).rg;
@@ -685,10 +708,7 @@ void main()
 
 	vec3 finalColor = vec3(0);
 
-	vec3 N = applyNormalMap(v_normal);
-	vec3 V = compute(u_positionInt, u_positionFloat, fragmentPositionI, fragmentPositionF);
-	float viewLength = length(V);
-	V /= viewLength;
+	
 
 	vec3 F0 = vec3(0.04); 
 	F0 = mix(F0, textureColor.rgb, vec3(metallic));
@@ -741,7 +761,7 @@ void main()
 	//ambient
 	//todo light sub scatter
 	vec3 computedAmbient = vec3(firstGama(v_ambient));
-	if(isInWater)
+	if(blockIsInWater)
 	{
 		computedAmbient *= vec3(0.4,0.4,0.41);
 	}
@@ -773,6 +793,32 @@ void main()
 
 	out_color.rgb = ACESFitted(out_color.rgb);
 	out_color.rgb = pow(out_color.rgb, vec3(1/2.2));
+
+	{
+		vec2 fragCoord = gl_FragCoord.xy / textureSize(u_lastFramePositionViewSpace, 0).xy;
+
+		float dotNVClamped = clamp(dot(N, V), 0.0, 0.99);
+		vec3 F = fresnelSchlickRoughness(dotNVClamped, F0, roughness);
+		
+		vec3 posViewSpace = texture(u_lastFramePositionViewSpace, fragCoord).xyz;
+		vec3 pos = vec3(u_inverseView * vec4(posViewSpace,1));
+		pos += u_pointPosI;
+		pos += u_pointPosF;
+
+		vec3 viewSpaceNormal = normalize( vec3(transpose(inverse(mat3(u_view))) * N));
+
+		float mixFactor = 0;
+		//vec3 ssr = SSR(posViewSpace, N, metallic, F, mixFactor, roughness, pos, V, viewSpaceNormal, 
+		//	textureSize(u_lastFramePositionViewSpace, 0).xy);
+
+		vec3 ssr = SSR(posViewSpace, N, metallic, F, mixFactor, 0, pos, V, viewSpaceNormal, 
+			textureSize(u_lastFramePositionViewSpace, 0).xy);
+
+		//out_color.rgb = mix(ssr, out_color.rgb, dotNVClamped);
+		//out_color.rgb = ssr;
+		
+	}
+	
 	//out_color.rgb = linear_to_srgb(out_color.rgb);
 	
 	//fog
@@ -867,3 +913,219 @@ void main()
 	//out_color.b = 0;
 	//out_color.a = 1;
 }
+
+
+//////////////////////////////////////////////
+//https://imanolfotia.com/blog/1
+//https://github.com/ImanolFotia/Epsilon-Engine/blob/master/bin/Release/shaders/SSR.glsl
+//SSR
+
+
+//vec3 PositionFromDepth(float depth) {
+//    float z = depth * 2.0 - 1.0;
+//
+//    vec4 clipSpacePosition = vec4(TexCoords * 2.0 - 1.0, z, 1.0);
+//    vec4 viewSpacePosition = invprojection * clipSpacePosition;
+//
+//    // Perspective division
+//    viewSpacePosition /= viewSpacePosition.w;
+//
+//    return viewSpacePosition.xyz;
+//}
+
+const float INFINITY = 1.f/0.f;
+const float SSR_minRayStep = 0.4;
+const int SSR_maxSteps = 40;
+const int	SSR_numBinarySearchSteps = 5;
+const float SSR_maxRayStep = 1.2;
+const float SSR_maxRayDelta = 0.6;
+
+vec2 BinarySearch(inout vec3 dir, inout vec3 hitCoord, 
+inout float dDepth, vec2 oldValue)
+{
+	float depth;
+
+	vec4 projectedCoord;
+	
+	vec2 foundProjectedCoord = oldValue;
+
+	for(int i = 0; i < SSR_numBinarySearchSteps; i++)
+	{
+
+		projectedCoord = u_cameraProjection * vec4(hitCoord, 1.0);
+		projectedCoord.xy /= projectedCoord.w;
+		projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;
+ 
+		//depth = textureLod(gPosition, projectedCoord.xy, 2).z;
+		depth = texture(u_lastFramePositionViewSpace, projectedCoord.xy).z;
+ 
+		if(depth < -1000) //-INFINITY
+			continue;
+
+		foundProjectedCoord = projectedCoord.xy;
+
+		dDepth = hitCoord.z - depth;
+
+		dir *= 0.5;
+		if(dDepth > 0.0)
+			hitCoord += dir;
+		else
+			hitCoord -= dir;    
+	}
+
+		projectedCoord = u_cameraProjection * vec4(hitCoord, 1.0);
+		projectedCoord.xy /= projectedCoord.w;
+		projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;
+		
+		depth = texture(u_lastFramePositionViewSpace, projectedCoord.xy).z;
+	
+	if(!(depth < -1000))
+	{
+		foundProjectedCoord = projectedCoord.xy;
+	}
+
+	return foundProjectedCoord.xy;
+}
+
+vec2 RayMarch(vec3 dir, inout vec3 hitCoord, out float dDepth, vec3 worldNormal, vec3 viewDir)
+{
+	dir *= mix(SSR_minRayStep, SSR_maxRayStep, abs(dot(worldNormal, viewDir)));//maxRayStep;
+ 
+	float depth;
+	vec4 projectedCoord;
+ 
+	for(int i = 0; i < SSR_maxSteps; i++)
+	{
+		hitCoord += dir;
+ 
+		projectedCoord = u_cameraProjection * vec4(hitCoord, 1.0);
+		projectedCoord.xy /= projectedCoord.w;
+		projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;
+		
+		if(projectedCoord.x > 1.f || projectedCoord.y > 1.f
+			||projectedCoord.x < -1.f || projectedCoord.y < -1.f
+		)
+		{
+			break;
+		}
+
+		//depth = textureLod(gPosition, projectedCoord.xy, 2).z;
+		depth = texture(u_lastFramePositionViewSpace, projectedCoord.xy).z;
+
+		if(depth > 1000.0)
+			continue;
+		
+		if(depth < -1000) //-INFINITY
+			continue;
+
+		dDepth = hitCoord.z - depth;
+
+		if((dir.z - dDepth) < SSR_maxRayStep && dDepth <= 0.0)
+		{
+			vec2 Result;
+			Result = BinarySearch(dir, hitCoord, dDepth, projectedCoord.xy);
+			//Result = projectedCoord.xy;
+
+			if(dDepth < -SSR_maxRayDelta)
+			{
+				break; //fail //project to infinity :(((
+			}
+			
+			depth = texture(u_lastFramePositionViewSpace, Result.xy).z;
+			if(depth < -10000)
+				{break;}//fail
+
+			return Result;
+		}
+		
+	}
+ 
+	//signal fail	
+	dDepth = -INFINITY;
+	return vec2(0,0);
+}
+
+
+uvec3 murmurHash33(uvec3 src) {
+	const uint M = 0x5bd1e995u;
+	uvec3 h = uvec3(1190494759u, 2147483647u, 3559788179u);
+	src *= M; src ^= src>>24u; src *= M;
+	h *= M; h ^= src.x; h *= M; h ^= src.y; h *= M; h ^= src.z;
+	h ^= h>>13u; h *= M; h ^= h>>15u;
+	return h;
+}
+
+// 3 outputs, 3 inputs
+vec3 hash33(vec3 src) {
+	uvec3 h = murmurHash33(floatBitsToUint(src));
+	return uintBitsToFloat(h & 0x007fffffu | 0x3f800000u) - 1.0;
+}
+
+vec3 computeJitt(vec3 wp, vec2 Resolution, vec3 viewNormal, float Roughness)
+{
+	vec2 NoiseScale = Resolution / 4.0;
+	//vec3 random = hash33(wp + iTime);//vec3(texture(noiseTexture, (TexCoords.xy*10.0) + (1.0 - iTime)).rgb);
+	vec3 random = hash33(wp);//vec3(texture(noiseTexture, (TexCoords.xy*10.0) + (1.0 - iTime)).rgb);
+	random = dot(random, viewNormal) > 0.0 ? random : -random;
+	float factor = Roughness*0.20;
+	vec3 hs = random * 2.0 - 1.0;
+	vec3 jitt = hs * factor;
+	return vec3(jitt);
+}
+
+vec3 SSR(vec3 viewPos, vec3 N, float metallic, vec3 F, 
+	out float mixFactor, float roughness, vec3 wp, vec3 viewDir, vec3 viewSpaceNormal, vec2 rezolution)
+{
+	mixFactor = 0;
+
+	// Reflection vector
+	vec3 reflected = normalize(reflect(normalize(viewPos), viewSpaceNormal));
+	//vec3 reflected = R; //todo check
+	
+	//found = true;
+	//return viewPos;
+
+	if(reflected.z > 0){return vec3(0,0,0);}
+
+	vec3 hitPos = viewPos;
+	float dDepth;
+
+	//vec3 wp = vec3(vec4(viewPos, 1.0) * invView);
+	//vec3 jitt = mix(vec3(0.0), vec3(hash(wp)), spec);
+	
+	//todo test
+	vec3 jitt = computeJitt(wp, rezolution, viewSpaceNormal, roughness); //use roughness for specular factor
+	//vec3 jitt = vec3(0.0);
+
+	vec2 coords = RayMarch( normalize((vec3(jitt) + reflected) *
+		max(SSR_minRayStep, -viewPos.z)), hitPos, dDepth,
+	N, viewDir);
+	
+	if(dDepth < -1000){return vec3(0);}
+
+
+	vec2 dCoords = smoothstep(0.2, 0.6, abs(vec2(0.5, 0.5) - coords.xy));
+ 
+	float screenEdgefactor = clamp(1.0 - (dCoords.x + dCoords.y), 0.0, 1.0);
+
+	float ReflectionMultiplier = 
+			screenEdgefactor * 
+			-reflected.z;
+ 
+	if(ReflectionMultiplier <= 0.001)
+	{
+		return vec3(0.f);
+	}
+
+	// Get color
+	vec3 lastFrameColor = textureLod(u_lastFrameColor, coords.xy, 0).rgb;
+	//vec3 SSR = lastFrameColor * clamp(ReflectionMultiplier, 0.0, 0.9) * F;  
+	vec3 SSR = lastFrameColor;
+
+	mixFactor = clamp(ReflectionMultiplier, 0.0, 1.f);  
+
+	return SSR;
+}
+
+////////////////////////////////////////////
+

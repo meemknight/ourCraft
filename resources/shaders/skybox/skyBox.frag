@@ -1,6 +1,6 @@
 #version 430
 
-out vec4 a_outColor;
+layout(location = 0) out vec4 a_outColor;
 
 in vec3 v_viewDirection;
 

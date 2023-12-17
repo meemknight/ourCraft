@@ -14,6 +14,13 @@
 #include <fstream>
 #include <chrono>
 
+#define GPU_ENGINE 1
+extern "C"
+{
+	__declspec(dllexport) unsigned long NvOptimusEnablement = GPU_ENGINE;
+	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = GPU_ENGINE;
+}
+
 #define REMOVE_IMGUI 0
 
 #if REMOVE_IMGUI == 0

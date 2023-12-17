@@ -12,6 +12,7 @@
 #include <gamePlayLogic.h>
 #include <iostream>
 #include <rendering/sunShadow.h>
+#include <platformTools.h>
 
 #define GET_UNIFORM(s, n) n = s.getUniform(#n);
 #define GET_UNIFORM2(s, n) s. n = s.shader.getUniform(#n);
@@ -286,11 +287,14 @@ float vertexUV[] = {
 };
 
 
-
 void Renderer::create(BlocksLoader &blocksLoader)
 {
 
 	fboCoppy.create(true, true);
+	fboMain.create(true, true, GL_RGB16F);
+	fboLastFrame.create(true, false);
+	fboLastFramePositions.create(GL_RGB16F, false);
+
 	skyBoxRenderer.create();
 	skyBoxLoaderAndDrawer.createGpuData();
 	//skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/skybox.png", defaultSkyBox);
@@ -335,8 +339,14 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	GET_UNIFORM2(defaultShader, u_sunShadowTexture);
 	GET_UNIFORM2(defaultShader, u_viewMatrix);
 	GET_UNIFORM2(defaultShader, u_timeGrass);
-
-
+	GET_UNIFORM2(defaultShader, u_writeScreenSpacePositions);
+	GET_UNIFORM2(defaultShader, u_lastFrameColor);
+	GET_UNIFORM2(defaultShader, u_lastFramePositionViewSpace);
+	GET_UNIFORM2(defaultShader, u_cameraProjection);
+	GET_UNIFORM2(defaultShader, u_inverseView);
+	GET_UNIFORM2(defaultShader, u_view);
+	
+	
 	defaultShader.u_vertexData = getStorageBlockIndex(defaultShader.shader.id, "u_vertexData");
 	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_vertexData, 1);
 	glGenBuffers(1, &vertexDataBuffer);
@@ -584,9 +594,15 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	float deltaTime)
 {
 	glViewport(0, 0, screenX, screenY);
-
+	
 	fboCoppy.updateSize(screenX, screenY);
 	fboCoppy.clearFBO();
+
+	fboMain.updateSize(screenX, screenY);
+	fboMain.clearFBO();
+
+	fboLastFrame.updateSize(screenX, screenY);
+	fboLastFramePositions.updateSize(screenX, screenY);
 
 	glm::vec3 posFloat = {};
 	glm::ivec3 posInt = {};
@@ -597,6 +613,18 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	auto chunkVectorCopy = chunkSystem.loadedChunks;
 
 	float timeGrass = std::clock() / 1000.f;
+
+
+#pragma region render sky box 0
+
+	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fboOnlyFirstTarget);
+
+	programData.renderer.skyBoxLoaderAndDrawer.drawBefore(c.getProjectionMatrix() * c.getViewMatrix(),
+		programData.renderer.defaultSkyBox, programData.renderer.sunTexture,
+		programData.renderer.skyBoxRenderer.sunPos);
+
+#pragma endregion
+
 
 #pragma region setup uniforms and stuff
 	{
@@ -638,6 +666,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniformMatrix4fv(defaultShader.u_lightSpaceMatrix, 1, 0,
 			&sunShadow.lightSpaceMatrix[0][0]);
 		glUniform3iv(defaultShader.u_lightPos, 1, &sunShadow.lightSpacePosition[0]);
+		glUniform1i(defaultShader.u_writeScreenSpacePositions, 1);//todo remove
 
 		programData.causticsTexture.bind(6);
 		glUniform1i(defaultShader.u_caustics, 6);
@@ -647,6 +676,22 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform1i(defaultShader.u_sunShadowTexture, 7);
 		glUniform1f(defaultShader.u_timeGrass, timeGrass);
 
+		glActiveTexture(GL_TEXTURE0 + 8);
+		glBindTexture(GL_TEXTURE_2D, fboLastFrame.color);
+		glUniform1i(defaultShader.u_lastFrameColor, 8);
+
+		glActiveTexture(GL_TEXTURE0 + 9);
+		glBindTexture(GL_TEXTURE_2D, fboLastFramePositions.color);
+		glUniform1i(defaultShader.u_lastFramePositionViewSpace, 9);
+
+		glUniformMatrix4fv(defaultShader.u_cameraProjection, 1, GL_FALSE, glm::value_ptr(c.getProjectionMatrix()));
+
+		glUniformMatrix4fv(defaultShader.u_inverseView, 1, GL_FALSE, 
+			glm::value_ptr( glm::inverse(c.getViewMatrix())) );
+
+		glUniformMatrix4fv(defaultShader.u_view, 1, GL_FALSE,
+			glm::value_ptr(c.getViewMatrix()));
+		
 
 		waterTimer += deltaTime * 0.09;
 		if (waterTimer > 20)
@@ -809,9 +854,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		}
 	};
 
-#pragma region depth pre pass
+#pragma region depth pre pass 1
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
 		glDepthFunc(GL_LESS);
 		glColorMask(0, 0, 0, 0);
 		zpassShader.shader.bind();
@@ -820,7 +865,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	}
 #pragma endregion
 
-#pragma region solid pass
+#pragma region solid pass 2
+	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
 	glColorMask(1, 1, 1, 1);
 	glDepthFunc(GL_EQUAL);
 	defaultShader.shader.bind();
@@ -830,11 +876,12 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	renderStaticGeometry();
 #pragma endregion
 
-#pragma region copy depth
-	fboCoppy.copyDepthFromMainFBO(screenX, screenY);
+#pragma region copy depth 3
+	fboCoppy.copyDepthFromOtherFBO(fboMain.fbo, screenX, screenY);
 #pragma endregion
 
-#pragma region render only water geometry to depth
+#pragma region render only water geometry to depth 4
+	glBindFramebuffer(GL_FRAMEBUFFER, fboCoppy.fbo);
 	glDepthFunc(GL_LESS);
 	zpassShader.shader.bind();
 	glUniform1i(zpassShader.u_renderOnlyWater, 1);
@@ -842,14 +889,13 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glColorMask(0, 0, 0, 0);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, fboCoppy.fbo);
 	renderTransparentGeometry();
 #pragma endregion
 
-#pragma region render with depth peel first part of the transparent of the geometry
+#pragma region render with depth peel first part of the transparent of the geometry 5
+	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
 	defaultShader.shader.bind();
 	glColorMask(1, 1, 1, 1);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glUniform1i(defaultShader.u_depthPeelwaterPass, true);
 
 	glActiveTexture(GL_TEXTURE0 + 2);
@@ -861,19 +907,18 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	renderTransparentGeometry();
 #pragma endregion
 
-#pragma region copy color buffer and last depth for later use
-	fboCoppy.copyColorFromMainFBO(screenX, screenY);
-	fboCoppy.copyDepthFromMainFBO(screenX, screenY);
+#pragma region copy color buffer and last depth for later use 6
+	fboCoppy.copyDepthAndColorFromOtherFBO(fboMain.fbo, screenX, screenY);
 #pragma endregion
 
-#pragma region render transparent geometry last phaze
+#pragma region render transparent geometry last phaze 7
+	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
 	defaultShader.shader.bind();
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glColorMask(1, 1, 1, 1);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glUniform1i(defaultShader.u_depthPeelwaterPass, 0);
 	glUniform1i(defaultShader.u_hasPeelInformation, 1);
 	
@@ -898,6 +943,15 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	//glDisable(GL_CULL_FACE); //todo change
 	renderTransparentGeometry();
 #pragma endregion
+
+#pragma region copy to main fbo 8
+
+	fboMain.writeAllToOtherFbo(0, screenX, screenY);
+	fboLastFrame.copyColorFromOtherFBO(fboMain.fboOnlyFirstTarget, screenX, screenY);
+	fboLastFramePositions.copyColorFromOtherFBO(fboMain.fboOnlySecondTarget, screenX, screenY);
+
+#pragma endregion
+
 
 
 	glEnable(GL_CULL_FACE);
@@ -1431,8 +1485,18 @@ void PointDebugRenderer::renderCubePoint(Camera &c, glm::dvec3 point)
 
 #undef GET_UNIFORM
 
-void Renderer::FBO::create(bool addColor, bool addDepth)
+void Renderer::FBO::create(GLint addColor, bool addDepth, GLint addSecondaryRenderTarger)
 {
+	if (addColor == 1) { addColor = GL_RGBA8; }
+	if (addSecondaryRenderTarger == 1) { addSecondaryRenderTarger = GL_RGBA8; }
+
+	colorFormat = addColor;
+	secondaryColorFormat = addSecondaryRenderTarger;
+
+
+	permaAssert(!(addColor == 0 && addSecondaryRenderTarger == 1));
+
+
 	glGenFramebuffers(1, &fbo);
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
@@ -1441,7 +1505,7 @@ void Renderer::FBO::create(bool addColor, bool addDepth)
 	{
 		glGenTextures(1, &color);
 		glBindTexture(GL_TEXTURE_2D, color);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 0, 0
+		glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, 1, 1
 			, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -1451,11 +1515,31 @@ void Renderer::FBO::create(bool addColor, bool addDepth)
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color, 0);
 	}
 
+	if (addSecondaryRenderTarger)
+	{
+		glGenTextures(1, &secondaryColor);
+		glBindTexture(GL_TEXTURE_2D, secondaryColor);
+		// Set the width and height of your texture (e.g., 1024x1024)
+		glTexImage2D(GL_TEXTURE_2D, 0, secondaryColorFormat, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		// Attach the secondary color texture to the framebuffer
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, secondaryColor, 0);
+
+		unsigned int attachments[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+		glDrawBuffers(2, attachments);
+	}
+
+	
+
 	if (addDepth)
 	{
 		glGenTextures(1, &depth);
 		glBindTexture(GL_TEXTURE_2D, depth);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, 0, 0,
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, 1, 1,
 			0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -1472,8 +1556,71 @@ void Renderer::FBO::create(bool addColor, bool addDepth)
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth, 0);
 	}
 
+	// Check for framebuffer completeness
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		std::cout << "Framebuffer Error!!!\n";
+	}
+
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	if (addSecondaryRenderTarger)
+	{
+		glGenFramebuffers(1, &fboOnlyFirstTarget);
+		glBindFramebuffer(GL_FRAMEBUFFER, fboOnlyFirstTarget);
+
+		if (addColor)
+		{
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color, 0);
+		}
+
+		if (addDepth)
+		{
+			if (!addColor)
+			{
+				glDrawBuffer(GL_NONE);
+				glReadBuffer(GL_NONE);
+			}
+
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth, 0);
+		}
+
+		// Check for framebuffer completeness
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		{
+			std::cout << "Framebuffer Error!!!\n";
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	if (addSecondaryRenderTarger)
+	{
+		glGenFramebuffers(1, &fboOnlySecondTarget);
+		glBindFramebuffer(GL_FRAMEBUFFER, fboOnlySecondTarget);
+
+		if (addColor)
+		{
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, secondaryColor, 0);
+		}
+
+		if (addDepth)
+		{
+			if (!addColor)
+			{
+				glDrawBuffer(GL_NONE);
+				glReadBuffer(GL_NONE);
+			}
+
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth, 0);
+		}
+
+		// Check for framebuffer completeness
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		{
+			std::cout << "Framebuffer Error!!!\n";
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
 }
 
 void Renderer::FBO::updateSize(int x, int y)
@@ -1483,7 +1630,14 @@ void Renderer::FBO::updateSize(int x, int y)
 		if (color)
 		{
 			glBindTexture(GL_TEXTURE_2D, color);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, x, y,
+			glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, x, y,
+				0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+		}
+
+		if (secondaryColor)
+		{
+			glBindTexture(GL_TEXTURE_2D, secondaryColor);
+			glTexImage2D(GL_TEXTURE_2D, 0, secondaryColorFormat, x, y,
 				0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 		}
 		
@@ -1500,10 +1654,20 @@ void Renderer::FBO::updateSize(int x, int y)
 
 void Renderer::FBO::copyDepthFromMainFBO(int w, int h)
 {
+	copyDepthFromOtherFBO(0, w, h);
+}
+
+void Renderer::FBO::copyColorFromMainFBO(int w, int h)
+{
+	copyColorFromOtherFBO(0, w, h);
+}
+
+void Renderer::FBO::copyDepthFromOtherFBO(GLuint other, int w, int h)
+{
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, other);
 	glBindTexture(GL_TEXTURE_2D, depth);
 
 	glBlitFramebuffer(
@@ -1515,15 +1679,43 @@ void Renderer::FBO::copyDepthFromMainFBO(int w, int h)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Renderer::FBO::copyColorFromMainFBO(int w, int h)
+void Renderer::FBO::copyColorFromOtherFBO(GLuint other, int w, int h)
 {
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, other);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 
 	glBlitFramebuffer(
 		0, 0, w, h,  // Source rectangle (usually the whole screen)
 		0, 0, w, h,  // Destination rectangle (the size of your texture)
 		GL_COLOR_BUFFER_BIT, GL_NEAREST// You can adjust the filter mode as needed
+	);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Renderer::FBO::copyDepthAndColorFromOtherFBO(GLuint other, int w, int h)
+{
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, other);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+
+	glBlitFramebuffer(
+		0, 0, w, h,  // Source rectangle (usually the whole screen)
+		0, 0, w, h,  // Destination rectangle (the size of your texture)
+		GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST// You can adjust the filter mode as needed
+	);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Renderer::FBO::writeAllToOtherFbo(GLuint other, int w, int h)
+{
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, other);
+
+	glBlitFramebuffer(
+		0, 0, w, h,  // Source rectangle (usually the whole screen)
+		0, 0, w, h,  // Destination rectangle (the size of your texture)
+		GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST// You can adjust the filter mode as needed
 	);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1547,6 +1739,11 @@ void Renderer::FBO::clearFBO()
 		glClear(GL_COLOR_BUFFER_BIT);
 	}
 
+	if (secondaryColor)
+	{
+		const float clearColor2[] = {0.0f, 0.0f, 0.0f, 0.0f};
+		glClearBufferfv(GL_COLOR, 1, clearColor2);
+	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

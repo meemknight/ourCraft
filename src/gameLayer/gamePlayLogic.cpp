@@ -323,16 +323,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma endregion
 
-
-#pragma region render sky box
-
-	programData.renderer.skyBoxLoaderAndDrawer.drawBefore(gameData.c.getProjectionMatrix() *gameData.c.getViewMatrix(),
-		programData.renderer.defaultSkyBox, programData.renderer.sunTexture, 
-		programData.renderer.skyBoxRenderer.sunPos);
-
-#pragma endregion
-
-
 #pragma region update lights
 
 	gameData.gameplayFrameProfiler.startSubProfile("lightsSystem");
@@ -531,6 +521,14 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					{0, 1}, {1, 0});
 			}
 
+			ImGui::NewLine();
+
+			if (ImGui::CollapsingHeader("Screen space pos",
+				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+			{
+				ImGui::Image((void *)programData.renderer.fboMain.secondaryColor, {256, 256},
+					{0, 1}, {1, 0});
+			}
 
 		}
 		ImGui::End();
