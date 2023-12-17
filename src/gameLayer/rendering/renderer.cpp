@@ -811,6 +811,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 #pragma region depth pre pass
 	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glDepthFunc(GL_LESS);
 		glColorMask(0, 0, 0, 0);
 		zpassShader.shader.bind();

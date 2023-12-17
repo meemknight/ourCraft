@@ -14,7 +14,7 @@ in flat uvec2 v_normalSampler;
 in flat uvec2 v_materialSampler;
 in flat int v_ambientInt;
 
-in flat int v_skyLight;
+in flat int v_skyLight; //ambient sun value
 in flat int v_normalLight;
 
 uniform int u_showLightLevels;
@@ -63,6 +63,7 @@ const float atenuationFactor = 0.5f;
 const float causticsTextureScale = 3.f;
 const float causticsChromaticAberationStrength = 0.004;	
 const float waterSpeed = 5.f;
+const float causticsLightPower = 3;	
 ///
 
 
@@ -310,12 +311,12 @@ vec3 applyNormalMap(vec3 inNormal)
 	vec3 normal;
 	if(u_hasPeelInformation != 0 && ((v_flags & 1) != 0))
 	{
-		//vec2 firstDudv = texture(sampler2D(u_dudvNormal), getDudvCoords3(5)).rg;
-		//normal = texture(sampler2D(u_dudvNormal), getDudvCoords(5)+firstDudv*0.1 ).rgb*1;
+		vec2 firstDudv = texture(sampler2D(u_dudvNormal), getDudvCoords3(waterSpeed/5.f)).rg;
+		normal = texture(sampler2D(u_dudvNormal), getDudvCoords(waterSpeed)+firstDudv*0.1 ).rgb*1;
 
-		normal = texture(sampler2D(u_dudvNormal), getDudvCoords(waterSpeed)).rgb*1;
-		//normal += texture(sampler2D(u_dudvNormal), getDudvCoords2(10)).rgb;
-		normal += texture(sampler2D(u_dudvNormal), getDudvCoords3(waterSpeed)).rgb*0.5;
+		//normal = texture(sampler2D(u_dudvNormal), getDudvCoords(waterSpeed)).rgb*1;
+		////normal += texture(sampler2D(u_dudvNormal), getDudvCoords2(10)).rgb;
+		//normal += texture(sampler2D(u_dudvNormal), getDudvCoords3(waterSpeed)).rgb*0.5;
 
 		normal = normalize(normal);
 	}else
@@ -670,11 +671,10 @@ void main()
 		vec2 coords = getDudvCoords(1) * causticsTextureScale + dudv / 10;
 		
 
-		float lightMultiplyer = 5;	
 
-		causticsColor.r = texture(u_caustics, coords + vec2(0,0)).r * lightMultiplyer;
-		causticsColor.g = texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)).g * lightMultiplyer;
-		causticsColor.b = texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)*2.0).b * lightMultiplyer;
+		causticsColor.r = texture(u_caustics, coords + vec2(0,0)).r * causticsLightPower;
+		causticsColor.g = texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)).g * causticsLightPower;
+		causticsColor.b = texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)*2.0).b * causticsLightPower;
 
 		//out_color.rgb = texture(u_caustics, coords).rgb;
 		//out_color.a = 1;
@@ -714,14 +714,15 @@ void main()
 	//light = 0;
 
 	//sun light
-	if(v_skyLight > 0)
+	if(v_skyLight > 5)
 	{
 		vec3 sunLightColor = vec3(1.5);
+		sunLightColor *= 1-((15-v_skyLight)/9.f);
+
 		vec3 L = u_sunDirection;
 
 		if(dot(u_sunDirection, vec3(0,1,0))> -0.2)
 		{
-			//light += computeLight(N,L,V) * 1.f;
 			finalColor += shadowCalc2(dot(L, v_normal)) * computePointLightSource(L, 
 				metallic, roughness, sunLightColor * causticsColor, V, 
 				textureColor.rgb, N, F0);
