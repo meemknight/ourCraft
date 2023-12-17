@@ -626,7 +626,7 @@ float shadowCalc2(float dotLightNormal)
 	return pow(clamp(shadow, 0, 1), shadowPower);
 }
 
-vec3 SSR(out bool success,vec3 viewPos, vec3 N, float metallic, vec3 F, 
+vec3 SSR(out bool success,vec3 viewPos, vec3 N, 
 	out float mixFactor, float roughness, vec3 wp, vec3 viewDir, vec3 viewSpaceNormal, vec2 rezolution);
 
 void main()
@@ -669,7 +669,8 @@ void main()
 		textureColor.rgb = firstGama(textureColor.rgb);
 	}
 	
-	vec3 N = applyNormalMap(v_normal);
+	//vec3 N = applyNormalMap(v_normal);
+	vec3 N = v_normal;
 	//vec3 ViewSpaceVector = compute(u_positionInt, u_positionFloat, fragmentPositionI, fragmentPositionF);
 	//float viewLength = length(ViewSpaceVector);
 	//vec3 V = ViewSpaceVector / viewLength;
@@ -681,7 +682,7 @@ void main()
 	{
 		////out_screenSpacePositions.xyz = -ViewSpaceVector; 
 		out_screenSpacePositions.xyz = (u_view * vec4(v_viewSpacePos,1)).xyz; //this is good
-		//out_screenSpacePositions.a = 1;
+		out_screenSpacePositions.a = 1;
 	}
 		
 
@@ -754,9 +755,12 @@ void main()
 		}
 	}
 	
+	float dotNV = dot(N, V);
 		
 	out_color = vec4(finalColor,textureColor.a);
-		
+	out_color.a = 1-out_color.a;
+	out_color.a *= dotNV;
+	out_color.a = 1-out_color.a;
 	//preview shadow
 	//if(shadowCalc(dot(u_sunDirection, v_normal)) < 0.5)
 	//{
@@ -802,8 +806,7 @@ void main()
 	{
 		vec2 fragCoord = gl_FragCoord.xy / textureSize(u_lastFramePositionViewSpace, 0).xy;
 
-		float dotNVClamped = clamp(dot(N, V), 0.0, 0.99);
-		vec3 F = fresnelSchlickRoughness(dotNVClamped, F0, roughness);
+		float dotNVClamped = clamp(dotNV, 0.0, 0.99);
 		
 		vec3 posViewSpace = texture(u_lastFramePositionViewSpace, fragCoord).xyz;
 		vec3 pos = vec3(u_inverseView * vec4(posViewSpace,1));
@@ -814,11 +817,21 @@ void main()
 		//vec3 ssr = SSR(posViewSpace, N, metallic, F, mixFactor, roughness, pos, V, viewSpaceNormal, 
 		//	textureSize(u_lastFramePositionViewSpace, 0).xy);
 		bool success = false;
-		vec3 ssr = SSR(success, posViewSpace, N, metallic, F, mixFactor, 0, pos, V, viewSpaceNormal, 
+		vec3 ssr = SSR(success, posViewSpace, N, mixFactor, 0, pos, V, viewSpaceNormal, 
 			textureSize(u_lastFramePositionViewSpace, 0).xy);
 		
-		//out_color.rgb = mix(ssr, out_color.rgb, dotNVClamped);
-		if(success)out_color.rgb = ssr;
+		
+		//if is water just reflect 100% because we deal with it later
+		//if(((v_flags & 1) != 0))
+		//{
+		//	if(success)out_color.rgb = ssr;
+		//	out_color.a = 1;
+		//}else
+		{
+			if(success) {out_color.rgb = mix(ssr, out_color.rgb, dotNVClamped);}	
+			//else{ out_color.rgb/=2;};
+		}
+		//if(success)out_color.rgb = ssr;
 		
 	}
 	
@@ -830,10 +843,11 @@ void main()
 	//}
 	
 	//is water	
+	if(false)
 	if(((v_flags & 1) != 0))
 	{
-		float reflectivity = dot(V, N);
-		//float reflectivity = 0.5;
+		//float reflectivity = dotNV;
+		float reflectivity = 0;
 
 		if(u_hasPeelInformation != 0)
 		{
@@ -861,7 +875,6 @@ void main()
 			float distortDepth = getLastDepthLiniarized(p + distorsionCoord, nonLinear);
 			float distortWaterDepth = distortDepth - currentDepth;
 
-			vec3 currentColor = out_color.rgb;
 			
 			//v_fragPos
 			vec3 perturbedFragPos = (u_inverseProjMat * vec4(p + distorsionCoord, nonLinear, 1)).rgb;
@@ -887,7 +900,7 @@ void main()
 			
 			//darken deep stuff
 
-			out_color.rgb = mix(currentColor, peelTexture, reflectivity);
+			out_color.rgb = mix(out_color.rgb, peelTexture, reflectivity);
 			
 
 			//out_color.rgb = vec3(waterDepth/20);
@@ -914,7 +927,7 @@ void main()
 	//out_color.r = 1-roughness;
 	//out_color.g = metallic;
 	//out_color.b = 0;
-	//out_color.a = 1;
+	out_color.a = 1;
 }
 
 
@@ -1076,7 +1089,7 @@ vec3 computeJitt(vec3 wp, vec2 Resolution, vec3 viewNormal, float Roughness)
 	return vec3(jitt);
 }
 
-vec3 SSR(out bool success, vec3 viewPos, vec3 N, float metallic, vec3 F, 
+vec3 SSR(out bool success, vec3 viewPos, vec3 N, 
 	out float mixFactor, float roughness, vec3 wp, vec3 viewDir, vec3 viewSpaceNormal, vec2 rezolution)
 {
 	mixFactor = 0;

@@ -858,12 +858,14 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
 		glDepthFunc(GL_LESS);
+		glDisable(GL_BLEND);
 		glColorMask(0, 0, 0, 0);
 		zpassShader.shader.bind();
 		renderStaticGeometry();
 
 	}
 #pragma endregion
+
 
 #pragma region solid pass 2
 	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
@@ -885,8 +887,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	glDepthFunc(GL_LESS);
 	zpassShader.shader.bind();
 	glUniform1i(zpassShader.u_renderOnlyWater, 1);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnablei(GL_BLEND, 0);
+	glBlendFunci(0, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisablei(GL_BLEND, 1);
 	glColorMask(0, 0, 0, 0);
 
 	renderTransparentGeometry();
@@ -915,8 +918,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
 	defaultShader.shader.bind();
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnablei(GL_BLEND, 0);
+	glBlendFunci(0, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisablei(GL_BLEND, 1);
 
 	glColorMask(1, 1, 1, 1);
 	glUniform1i(defaultShader.u_depthPeelwaterPass, 0);
@@ -951,7 +955,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	fboLastFramePositions.copyColorFromOtherFBO(fboMain.fboOnlySecondTarget, screenX, screenY);
 
 #pragma endregion
-
 
 
 	glEnable(GL_CULL_FACE);
