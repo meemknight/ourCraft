@@ -337,7 +337,6 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	GET_UNIFORM2(defaultShader, u_lightSpaceMatrix);
 	GET_UNIFORM2(defaultShader, u_lightPos);
 	GET_UNIFORM2(defaultShader, u_sunShadowTexture);
-	GET_UNIFORM2(defaultShader, u_viewMatrix);
 	GET_UNIFORM2(defaultShader, u_timeGrass);
 	GET_UNIFORM2(defaultShader, u_writeScreenSpacePositions);
 	GET_UNIFORM2(defaultShader, u_lastFrameColor);
@@ -345,6 +344,7 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	GET_UNIFORM2(defaultShader, u_cameraProjection);
 	GET_UNIFORM2(defaultShader, u_inverseView);
 	GET_UNIFORM2(defaultShader, u_view);
+	GET_UNIFORM2(defaultShader, u_tonemapper);
 	
 	
 	defaultShader.u_vertexData = getStorageBlockIndex(defaultShader.shader.id, "u_vertexData");
@@ -639,10 +639,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		programData.texture.bind(0);
 		programData.numbersTexture.bind(1);
 
-
 		defaultShader.shader.bind();
 		glUniformMatrix4fv(defaultShader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
-		glUniformMatrix4fv(defaultShader.u_viewMatrix, 1, GL_FALSE, &glm::lookAt({0,0,0}, c.viewDirection, c.up)[0][0]);
 		glUniform3fv(defaultShader.u_positionFloat, 1, &posFloat[0]);
 		glUniform3iv(defaultShader.u_positionInt, 1, &posInt[0]);
 		glUniform1i(defaultShader.u_typesCount, BlocksCount);	//remove
@@ -668,6 +666,12 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform3iv(defaultShader.u_lightPos, 1, &sunShadow.lightSpacePosition[0]);
 		glUniform1i(defaultShader.u_writeScreenSpacePositions, 1);//todo remove
 
+		programData.dudv.bind(4);
+		glUniform1i(defaultShader.u_dudv, 4);
+
+		programData.dudvNormal.bind(5);
+		glUniform1i(defaultShader.u_dudvNormal, 5);
+
 		programData.causticsTexture.bind(6);
 		glUniform1i(defaultShader.u_caustics, 6);
 
@@ -691,6 +695,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		glUniformMatrix4fv(defaultShader.u_view, 1, GL_FALSE,
 			glm::value_ptr(c.getViewMatrix()));
+
+		glUniform1i(defaultShader.u_tonemapper, tonemapper);
 		
 
 		waterTimer += deltaTime * 0.09;
@@ -898,6 +904,11 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 #pragma region render with depth peel first part of the transparent of the geometry 5
 	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
 	defaultShader.shader.bind();
+
+	glEnablei(GL_BLEND, 0);
+	glBlendFunci(0, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisablei(GL_BLEND, 1);
+
 	glColorMask(1, 1, 1, 1);
 	glUniform1i(defaultShader.u_depthPeelwaterPass, true);
 
@@ -907,6 +918,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	glDepthFunc(GL_LESS);
 	//glDisable(GL_CULL_FACE); //todo change
+	//todo disable ssr for this step?
 	renderTransparentGeometry();
 #pragma endregion
 
@@ -928,19 +940,11 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	
 	glActiveTexture(GL_TEXTURE0 + 3);
 	glBindTexture(GL_TEXTURE_2D, fboCoppy.color);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glUniform1i(defaultShader.u_PeelTexture, 3);
 
 	glActiveTexture(GL_TEXTURE0 + 2);
 	glBindTexture(GL_TEXTURE_2D, fboCoppy.depth);
 	glUniform1i(defaultShader.u_depthTexture, 2);
-
-	programData.dudv.bind(4);
-	glUniform1i(defaultShader.u_dudv, 4);
-
-	programData.dudvNormal.bind(5);
-	glUniform1i(defaultShader.u_dudvNormal, 5);
 
 
 	glDepthFunc(GL_LESS);

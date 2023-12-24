@@ -70,6 +70,7 @@ struct Renderer
 		GLint u_cameraProjection = -1;
 		GLint u_inverseView = -1;
 		GLint u_view = -1;
+		GLint u_tonemapper = -1;
 
 		GLint u_metallic = -1;
 		GLint u_roughness = -1;
@@ -91,7 +92,6 @@ struct Renderer
 		GLint u_lightSpaceMatrix = -1;
 		GLint u_lightPos = -1;
 		GLint u_sunShadowTexture = -1;
-		GLint u_viewMatrix = -1;
 
 	}defaultShader;
 
@@ -111,6 +111,7 @@ struct Renderer
 	float metallic = 0;
 	float roughness = 0.5;
 	float exposure = 1.7;
+	int tonemapper = 0;
 
 	FBO fboMain;
 	FBO fboCoppy;

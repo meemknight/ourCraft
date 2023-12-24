@@ -423,6 +423,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				ImGui::SliderFloat("metallic", &programData.renderer.metallic, 0, 1);
 				ImGui::SliderFloat("roughness", &programData.renderer.roughness, 0, 1);
 				ImGui::SliderFloat("exposure", &programData.renderer.exposure, 0.001, 10);
+				ImGui::Combo("Tonemapper", &programData.renderer.tonemapper, "ACES\0AgX\0ZCAM\0");
 
 				ImGui::SliderFloat3("Sky pos", &programData.renderer.skyBoxRenderer.sunPos[0], -1, 1);
 

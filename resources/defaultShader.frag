@@ -76,6 +76,7 @@ const float waterSpeed = 5.f;
 const float causticsLightPower = 3;	
 ///
 
+uniform int u_tonemapper;
 
 float computeFog(float dist)
 {
@@ -248,6 +249,259 @@ vec3 linear_to_srgb(vec3 c)
 		(c.y >= yb) ? ((1.0 + 0.055) * pow(c.y, 1.0 / 2.4) - 0.055) : (c.y * rs),
 		(c.z >= yb) ? ((1.0 + 0.055) * pow(c.z, 1.0 / 2.4) - 0.055) : (c.z * rs));
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+//^aces^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/////////////////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+//agx
+//https://www.shadertoy.com/view/cd3XWr
+//https://www.shadertoy.com/view/dlcfRX
+/////////////////////////////////////////////////////////////////////////////////////////
+
+#define AGX_LOOK 2
+
+vec3 toLinearAXG(vec3 sRGB) {
+  bvec3 cutoff = lessThan(sRGB, vec3(0.04045));
+  vec3 higher = pow((sRGB + vec3(0.055))/vec3(1.055), vec3(2.4));
+  vec3 lower = sRGB/vec3(12.92);
+  
+  return mix(higher, lower, cutoff);
+}
+
+float toLinearAXG(float sRGB) {
+
+  bool cutoff = (sRGB < 0.04045f);
+
+  float higher = pow((sRGB + float(0.055))/float(1.055), float(2.4));
+  float lower = sRGB/float(12.92);
+  
+  return mix(higher, lower, cutoff);
+}
+
+vec3 AGX(vec3 col)
+{
+	col = mat3(.842, .0423, .0424, .0784, .878, .0784, .0792, .0792, .879) * col;
+	// Log2 space encoding
+	col = clamp((log2(col) + 12.47393) / 16.5, vec3(0), vec3(1));
+	// Apply sigmoid function approximation
+	col = .5 + .5 * sin(((-3.11 * col + 6.42) * col - .378) * col - 1.44);
+	// AgX look (optional)
+	#if AGX_LOOK == 1
+	// Golden
+	col = mix(vec3(dot(col, vec3(.216,.7152,.0722))), col * vec3(1.,.9,.5), .8);
+	#elif AGX_LOOK == 2
+	// Punchy
+	col = mix(vec3(dot(col, vec3(.216,.7152,.0722))), pow(col,vec3(1.35)), 1.4);
+	#endif
+	
+	return col;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+//^agx^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+//ZCAM
+//https://www.shadertoy.com/view/dlGBDD
+//VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+/////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+// eotf_pq parameters
+const float Zcam_Lp = 10000.0;
+const float Zcam_m1 = 2610.0 / 16384.0;
+const float Zcam_m2 = 1.7 * 2523.0 / 32.0;
+const float Zcam_c1 = 107.0 / 128.0;
+const float Zcam_c2 = 2413.0 / 128.0;
+const float Zcam_c3 = 2392.0 / 128.0;
+
+vec3 eotf_pq(vec3 x)
+{
+	x = sign(x) * pow(abs(x), vec3(1.0 / Zcam_m2));
+	x = sign(x) * pow((abs(x) - Zcam_c1) / (Zcam_c2 - Zcam_c3 * abs(x)), vec3(1.0 / Zcam_m1)) * Zcam_Lp;
+	return x;
+}
+
+vec3 eotf_pq_inverse(vec3 x)
+{
+	x /= Zcam_Lp;
+	x = sign(x) * pow(abs(x), vec3(Zcam_m1));
+	x = sign(x) * pow((Zcam_c1 + Zcam_c2 * abs(x)) / (1.0 + Zcam_c3 * abs(x)), vec3(Zcam_m2));
+	return x;
+}
+
+// XYZ <-> ICh parameters
+const float Zcam_W = 140.0;
+const float Zcam_b = 1.15;
+const float Zcam_g = 0.66;
+
+vec3 XYZ_to_ICh(vec3 XYZ)
+{
+	XYZ *= Zcam_W;
+	XYZ.xy = vec2(Zcam_b, Zcam_g) * XYZ.xy - (vec2(Zcam_b, Zcam_g) - 1.0) * XYZ.zx;
+	
+	const mat3 XYZ_to_LMS = transpose(mat3(
+		 0.41479,   0.579999, 0.014648,
+		-0.20151,   1.12065,  0.0531008,
+		-0.0166008, 0.2648,   0.66848));
+	
+	vec3 LMS = XYZ_to_LMS * XYZ;
+	LMS = eotf_pq_inverse(LMS);
+	
+	const mat3 LMS_to_Iab = transpose(mat3(
+		0.0,       1.0,      0.0,
+		3.524,    -4.06671,  0.542708,
+		0.199076,  1.0968,  -1.29588));
+	
+	vec3 Iab = LMS_to_Iab * LMS;
+	
+	float I = eotf_pq(vec3(Iab.x)).x / Zcam_W;
+	float C = length(Iab.yz);
+	float h = atan(Iab.z, Iab.y);
+	return vec3(I, C, h);
+}
+
+vec3 ICh_to_XYZ(vec3 ICh)
+{
+	vec3 Iab;
+	Iab.x = eotf_pq_inverse(vec3(ICh.x * Zcam_W)).x;
+	Iab.y = ICh.y * cos(ICh.z);
+	Iab.z = ICh.y * sin(ICh.z);
+	
+	const mat3 Iab_to_LMS = transpose(mat3(
+		1.0, 0.2772,  0.1161,
+		1.0, 0.0,     0.0,
+		1.0, 0.0426, -0.7538));
+	
+	vec3 LMS = Iab_to_LMS * Iab;
+	LMS = eotf_pq(LMS);
+	
+	const mat3 LMS_to_XYZ = transpose(mat3(
+		 1.92423, -1.00479,  0.03765,
+		 0.35032,  0.72648, -0.06538,
+		-0.09098, -0.31273,  1.52277));
+	
+	vec3 XYZ = LMS_to_XYZ * LMS;
+	XYZ.x = (XYZ.x + (Zcam_b - 1.0) * XYZ.z) / Zcam_b;
+	XYZ.y = (XYZ.y + (Zcam_g - 1.0) * XYZ.x) / Zcam_g;
+	return XYZ / Zcam_W;
+}
+
+const mat3 XYZ_to_sRGB = transpose(mat3(
+	 3.2404542, -1.5371385, -0.4985314,
+	-0.9692660,  1.8760108,  0.0415560,
+	 0.0556434, -0.2040259,  1.0572252));
+
+const mat3 sRGB_to_XYZ = transpose(mat3(
+	0.4124564, 0.3575761, 0.1804375,
+	0.2126729, 0.7151522, 0.0721750,
+	0.0193339, 0.1191920, 0.9503041));
+
+bool in_sRGB_gamut(vec3 ICh)
+{
+	vec3 sRGB = XYZ_to_sRGB * ICh_to_XYZ(ICh);
+	return all(greaterThanEqual(sRGB, vec3(0.0))) && all(lessThanEqual(sRGB, vec3(1.0)));
+}
+
+vec3 Zcam_tonemap(vec3 sRGB)
+{	
+	vec3 ICh = XYZ_to_ICh(sRGB_to_XYZ * sRGB);
+	
+	const float s0 = 0.71;
+	const float s1 = 1.04;
+	const float p = 1.40;
+	const float t0 = 0.01;
+	float n = s1 * pow(ICh.x / (ICh.x + s0), p);
+	ICh.x = clamp(n * n / (n + t0), 0.0, 1.0);
+	
+	if (!in_sRGB_gamut(ICh))
+	{
+		float C = ICh.y;
+		ICh.y -= 0.5 * C;
+		
+		for (float i = 0.25; i >= 1.0 / 256.0; i *= 0.5)
+		{
+			ICh.y += (in_sRGB_gamut(ICh) ? i : -i) * C;
+		}
+	}
+	
+	return XYZ_to_sRGB * ICh_to_XYZ(ICh);
+}
+
+vec3 Zcam_gamma_correct(vec3 linear)
+{
+	bvec3 cutoff = lessThan(linear, vec3(0.0031308));
+	vec3 higher = 1.055 * pow(linear, vec3(1.0 / 2.4)) - 0.055;
+	vec3 lower = linear * 12.92;
+	return mix(higher, lower, cutoff);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+//^ZCAM^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+float toLinear(float a)
+{
+	if(u_tonemapper == 0)
+	{
+		return pow(a, float(2.2));
+	}else if(u_tonemapper == 1)
+	{
+		return toLinearAXG(a);
+	}else if(u_tonemapper == 2)
+	{
+		return pow(a, float(2.2));
+	}
+
+}
+
+vec3 toLinear(vec3 a)
+{
+	return vec3(toLinear(a.r),toLinear(a.g),toLinear(a.b));
+}
+
+vec3 tonemapFunction(vec3 c)
+{
+	if(u_tonemapper == 0)
+	{
+		return ACESFitted(c);
+	}else if(u_tonemapper == 1)
+	{
+		return AGX(c);
+	}else if(u_tonemapper == 2)
+	{
+		return Zcam_tonemap(c);
+	}
+
+}
+
+//(to screen)
+vec3 toGammaSpace(vec3 a)
+{
+
+	if(u_tonemapper == 0)
+	{
+		return pow(a, vec3(1.f/2.2));
+	}else if(u_tonemapper == 1)
+	{
+		return a;
+	}else if(u_tonemapper == 2)
+	{
+		return Zcam_gamma_correct(a);
+	}
+}
+
 
 //https://gamedev.stackexchange.com/questions/22204/from-normal-to-rotation-matrix#:~:text=Therefore%2C%20if%20you%20want%20to,the%20first%20and%20second%20columns.
 mat3x3 NormalToRotation(in vec3 normal)
@@ -481,15 +735,8 @@ float computeLight(vec3 N, vec3 L, vec3 V)
 	return spec + diffuse;
 }
 
-vec3 firstGama(vec3 a)
-{
-	return pow(a, vec3(2.2));
-}
 
-float firstGama(float a)
-{
-	return pow(a, float(2.2));
-}
+
 
 float shadowCalc(float dotLightNormal)
 {
@@ -666,11 +913,11 @@ void main()
 		textureColor = texture(sampler2D(v_textureSampler), v_uv);
 		if(textureColor.a <= 0){discard;}
 		//gamma correction
-		textureColor.rgb = firstGama(textureColor.rgb);
+		textureColor.rgb = toLinear(textureColor.rgb);
 	}
 	
-	//vec3 N = applyNormalMap(v_normal);
-	vec3 N = v_normal;
+	vec3 N = applyNormalMap(v_normal);
+	//vec3 N = v_normal;
 	//vec3 ViewSpaceVector = compute(u_positionInt, u_positionFloat, fragmentPositionI, fragmentPositionF);
 	//float viewLength = length(ViewSpaceVector);
 	//vec3 V = ViewSpaceVector / viewLength;
@@ -680,9 +927,9 @@ void main()
 
 	//if(u_writeScreenSpacePositions != 0)
 	{
-		////out_screenSpacePositions.xyz = -ViewSpaceVector; 
+		////out_screenSpacePositions.xyz = u_view* -ViewSpaceVector; 
 		out_screenSpacePositions.xyz = (u_view * vec4(v_viewSpacePos,1)).xyz; //this is good
-		out_screenSpacePositions.a = 1;
+		//out_screenSpacePositions.a = 1;
 	}
 		
 
@@ -699,7 +946,6 @@ void main()
 
 		vec2 coords = getDudvCoords(1) * causticsTextureScale + dudv / 10;
 		
-
 
 		causticsColor.r = texture(u_caustics, coords + vec2(0,0)).r * causticsLightPower;
 		causticsColor.g = texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)).g * causticsLightPower;
@@ -769,7 +1015,7 @@ void main()
 
 	//ambient
 	//todo light sub scatter
-	vec3 computedAmbient = vec3(firstGama(v_ambient));
+	vec3 computedAmbient = vec3(toLinear(v_ambient));
 	if(blockIsInWater)
 	{
 		computedAmbient *= vec3(0.4,0.4,0.41);
@@ -782,10 +1028,9 @@ void main()
 	{
 		vec4 numbersColor = texture(u_numbers, vec2(v_uv.x / 16.0 + (1/16.0)*v_ambientInt, v_uv.y));
 		if(numbersColor.a > 0.1)
-		{out_color.rgb = mix(firstGama(numbersColor.rgb), out_color.rgb, 0.5);}
+		{out_color.rgb = mix(toLinear(numbersColor.rgb), out_color.rgb, 0.5);}
 	}
 	
-	out_color = clamp(out_color, vec4(0), vec4(1));
 
 	if(u_underWater != 0)
 	{
@@ -800,13 +1045,16 @@ void main()
 	
 	//out_color.rgb = mix(out_color.rgb, purkine, 0.05);
 
-	out_color.rgb = ACESFitted(out_color.rgb);
-	out_color.rgb = pow(out_color.rgb, vec3(1/2.2));
+	out_color.rgb = tonemapFunction(out_color.rgb);
+	out_color.rgb = toGammaSpace(out_color.rgb);
 
+	out_color = clamp(out_color, vec4(0), vec4(1));
+	
+	if(false)
 	{
 		vec2 fragCoord = gl_FragCoord.xy / textureSize(u_lastFramePositionViewSpace, 0).xy;
 
-		float dotNVClamped = clamp(dotNV, 0.0, 0.99);
+		//float dotNVClamped = clamp(dotNV, 0.0, 0.99);
 		
 		vec3 posViewSpace = texture(u_lastFramePositionViewSpace, fragCoord).xyz;
 		vec3 pos = vec3(u_inverseView * vec4(posViewSpace,1));
@@ -821,6 +1069,7 @@ void main()
 			textureSize(u_lastFramePositionViewSpace, 0).xy);
 		
 		
+		
 		//if is water just reflect 100% because we deal with it later
 		//if(((v_flags & 1) != 0))
 		//{
@@ -828,8 +1077,8 @@ void main()
 		//	out_color.a = 1;
 		//}else
 		{
-			if(success) {out_color.rgb = mix(ssr, out_color.rgb, dotNVClamped);}	
-			//else{ out_color.rgb/=2;};
+			if(success) {out_color.rgb = mix(ssr, out_color.rgb, dotNV);}	
+			else{ out_color.rgb/=2;};
 		}
 		//if(success)out_color.rgb = ssr;
 		
@@ -843,11 +1092,11 @@ void main()
 	//}
 	
 	//is water	
-	if(false)
+	//if(false)
 	if(((v_flags & 1) != 0))
 	{
-		//float reflectivity = dotNV;
-		float reflectivity = 0;
+		float reflectivity = dotNV;
+		//float reflectivity = 0;
 
 		if(u_hasPeelInformation != 0)
 		{
@@ -927,7 +1176,7 @@ void main()
 	//out_color.r = 1-roughness;
 	//out_color.g = metallic;
 	//out_color.b = 0;
-	out_color.a = 1;
+	//out_color.a = 1;
 }
 
 
