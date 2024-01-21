@@ -88,6 +88,7 @@ out vec3 fragmentPositionF;
 
 out flat int v_skyLight;
 out flat int v_normalLight;
+out flat int v_skyLightUnchanged;
 
 out flat vec3 v_normal;
 
@@ -234,6 +235,7 @@ void main()
 
 	v_skyLight = (in_skyAndNormalLights & 0xf0) >> 4;
 	v_normalLight = (in_skyAndNormalLights & 0xf);
+	v_skyLightUnchanged = v_skyLight;
 
 	v_skyLight = max(v_skyLight - (15 - u_skyLightIntensity), 0);
 

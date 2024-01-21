@@ -38,6 +38,7 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 	}
 
 	const int maxUpperBound = 100000;
+	//const int maxUpperBound = 1000;
 	
 	
 	//Timer sunLightsRemoveTimer;

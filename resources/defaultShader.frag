@@ -18,6 +18,7 @@ in flat uvec2 v_materialSampler;
 in flat int v_ambientInt;
 
 in flat int v_skyLight; //ambient sun value
+in flat int v_skyLightUnchanged;
 in flat int v_normalLight;
 
 uniform int u_showLightLevels;
@@ -435,14 +436,6 @@ vec3 Zcam_tonemap(vec3 sRGB)
 	return XYZ_to_sRGB * ICh_to_XYZ(ICh);
 }
 
-vec3 Zcam_gamma_correct(vec3 linear)
-{
-	bvec3 cutoff = lessThan(linear, vec3(0.0031308));
-	vec3 higher = 1.055 * pow(linear, vec3(1.0 / 2.4)) - 0.055;
-	vec3 lower = linear * 12.92;
-	return mix(higher, lower, cutoff);
-}
-
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //^ZCAM^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -450,18 +443,56 @@ vec3 Zcam_gamma_correct(vec3 linear)
 
 
 
+//https://www.shadertoy.com/view/4tXcWr
+//srgb
+vec3 fromLinearSRGB(vec3 linearRGB)
+{
+	bvec3 cutoff = lessThan(linearRGB, vec3(0.0031308));
+	vec3 higher = vec3(1.055)*pow(linearRGB, vec3(1.0/2.4)) - vec3(0.055);
+	vec3 lower = linearRGB * vec3(12.92);
+
+	return mix(higher, lower, cutoff);
+}
+
+float fromLinearSRGB(float linearRGB)
+{
+	bool cutoff = linearRGB < float(0.0031308);
+	float higher = float(1.055)*pow(linearRGB, float(1.0/2.4)) - float(0.055);
+	float lower = linearRGB * float(12.92);
+
+	return mix(higher, lower, cutoff);
+}
+
+vec4 toLinearSRGB(vec4 sRGB)
+{
+	bvec4 cutoff = lessThan(sRGB, vec4(0.04045));
+	vec4 higher = pow((sRGB + vec4(0.055))/vec4(1.055), vec4(2.4));
+	vec4 lower = sRGB/vec4(12.92);
+	return mix(higher, lower, cutoff);
+}
+
+float toLinearSRGB(float sRGB)
+{
+	bool cutoff = sRGB < float(0.04045);
+	float higher = pow((sRGB + float(0.055))/float(1.055), float(2.4));
+	float lower = sRGB/float(12.92);
+	return mix(higher, lower, cutoff);
+}
+
+
 
 float toLinear(float a)
 {
 	if(u_tonemapper == 0)
 	{
-		return pow(a, float(2.2));
+		//return pow(a, float(2.2));
+		return toLinearSRGB(a);
 	}else if(u_tonemapper == 1)
 	{
 		return toLinearAXG(a);
 	}else if(u_tonemapper == 2)
 	{
-		return pow(a, float(2.2));
+		return toLinearSRGB(a);
 	}
 
 }
@@ -492,13 +523,14 @@ vec3 toGammaSpace(vec3 a)
 
 	if(u_tonemapper == 0)
 	{
-		return pow(a, vec3(1.f/2.2));
+		//return pow(a, vec3(1.f/2.2));
+		return fromLinearSRGB(a);
 	}else if(u_tonemapper == 1)
 	{
 		return a;
 	}else if(u_tonemapper == 2)
 	{
-		return Zcam_gamma_correct(a);
+		return fromLinearSRGB(a);
 	}
 }
 
@@ -986,10 +1018,10 @@ void main()
 	//light = 0;
 
 	//sun light
-	if(v_skyLight > 5)
+	if(v_skyLightUnchanged > 5)
 	{
 		vec3 sunLightColor = vec3(1.5);
-		sunLightColor *= 1-((15-v_skyLight)/9.f);
+		sunLightColor *= 1-((15-v_skyLightUnchanged)/9.f);
 
 		vec3 L = u_sunDirection;
 

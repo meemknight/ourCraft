@@ -14,7 +14,7 @@
 #include <fstream>
 #include <chrono>
 
-#define GPU_ENGINE 1
+#define GPU_ENGINE 0
 extern "C"
 {
 	__declspec(dllexport) unsigned long NvOptimusEnablement = GPU_ENGINE;
@@ -230,12 +230,25 @@ namespace platform
 
 	void showMouse(bool show)
 	{
+		static bool lastValue = true;
 		if(show)
 		{
-			glfwSetInputMode(wind, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			if (!lastValue)
+			{
+				glfwSetInputMode(wind, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+				glfwSetInputMode(wind, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
+			}
+			lastValue = true;
 		}else
 		{
-			glfwSetInputMode(wind, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+			if (lastValue)
+			{
+				//glfwSetInputMode(wind, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+				glfwSetInputMode(wind, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+				glfwSetInputMode(wind, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+			}
+
+			lastValue = false;
 		}
 	}
 
@@ -311,7 +324,7 @@ int main()
 	int h = 500;
 	wind = glfwCreateWindow(w, h, "geam", nullptr, nullptr);
 	glfwMakeContextCurrent(wind);
-	glfwSwapInterval(1);
+	//glfwSwapInterval(1);
 
 	glfwSetKeyCallback(wind, keyCallback);
 	glfwSetMouseButtonCallback(wind, mouseCallback);
