@@ -63,7 +63,7 @@ uniform mat4 u_cameraProjection;
 uniform mat4 u_inverseView;
 uniform mat4 u_view;
 
-in flat int v_flags;
+in flat int v_flags; //todo no need to have a flag to specify if the block is water, just use the texture id or something
 
 uniform sampler2D u_lastFrameColor;
 uniform sampler2D u_lastFramePositionViewSpace;
@@ -615,6 +615,10 @@ vec3 applyNormalMap(vec3 inNormal)
 		//normal += texture(sampler2D(u_dudvNormal), getDudvCoords3(waterSpeed)).rgb*0.5;
 
 		normal = normalize(normal);
+
+		//normal = normalize(normal * vec3(1.0, 0.2, 1.0));
+		//normal = normalize(2*normal - 1.f);
+		//return normal;
 	}else
 	{
 		normal = texture(sampler2D(v_normalSampler), v_uv).rgb;
@@ -1082,6 +1086,7 @@ void main()
 
 	out_color = clamp(out_color, vec4(0), vec4(1));
 	
+	//ssr
 	if(false)
 	{
 		vec2 fragCoord = gl_FragCoord.xy / textureSize(u_lastFramePositionViewSpace, 0).xy;
@@ -1179,11 +1184,13 @@ void main()
 			peelTexture = mix(peelTexture, u_waterColor, 0.6 * clamp(pow(finalDepth/18.0,2),0,1) );
 
 			
-			//darken deep stuff
 
-			out_color.rgb = mix(out_color.rgb, peelTexture, reflectivity);
+			//out_color.rgb = mix(out_color.rgb, peelTexture, reflectivity);
+			//out_color.rgb = mix(peelTexture, out_color.rgb, pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1 );
+			out_color.rgb = mix(peelTexture, u_waterColor*out_color.rgb, pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1 );
 			
 
+			//darken deep stuff, todo reenable and use final depth
 			//out_color.rgb = vec3(waterDepth/20);
 			//out_color.r = (currentDepth) / 10;
 			//out_color.g = (lastDepth) / 10;

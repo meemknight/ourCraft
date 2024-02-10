@@ -369,6 +369,9 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	lastZ = z;
 	lastPlayerBlockPosition = playerBlockPosition;
 
+	//todo extra asserts to check if chunk messages are not called when the chunk system is in build
+
+
 
 #pragma region place block by server
 	auto recievedBLocks = getRecievedBlocks();
@@ -384,14 +387,16 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 		{
 			//process block placement
 
-			Chunk *c = 0;
-			auto rez = getBlockSafeAndChunk(message.blockPos.x, message.blockPos.y, message.blockPos.z, c);
+			placeBlockNoClient(message.blockPos, message.blockType, lightSystem);
 
-			if (rez)
-			{
-				setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
-				rez->type = message.blockType;
-			}
+			//Chunk *c = 0;
+			//auto rez = getBlockSafeAndChunk(message.blockPos.x, message.blockPos.y, message.blockPos.z, c);
+			//
+			//if (rez)
+			//{
+			//	setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
+			//	rez->type = message.blockType;
+			//}
 	
 		}
 		else

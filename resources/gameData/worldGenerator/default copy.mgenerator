@@ -164,6 +164,9 @@ humidityNoise:
 	type: ValueFractal;
 	frequency: 0.015000;
 	octaves: 3;
+octaves: 3;
+
+octaves: 3;
 	perturbFractalOctaves: 0;
 	power: 1.000000;
 	spline:
