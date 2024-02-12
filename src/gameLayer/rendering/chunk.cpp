@@ -447,7 +447,7 @@ void Chunk::createGpuData()
 void Chunk::clearGpuData()
 {
 	glDeleteBuffers(1, &opaqueGeometryBuffer);
-	glGenBuffers(1, &opaqueGeometryIndex);
+	glDeleteBuffers(1, &opaqueGeometryIndex);
 	glDeleteBuffers(1, &transparentGeometryBuffer);
 	glDeleteBuffers(1, &transparentGeometryIndex);
 	glDeleteBuffers(1, &lightsBuffer);

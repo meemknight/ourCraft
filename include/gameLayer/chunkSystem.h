@@ -17,11 +17,17 @@ struct ChunkSystem
 	bool shouldUpdateLights = 0;
 
 	std::vector<Chunk*> loadedChunks;
-	std::vector<int> requestedChunks;
 	int squareSize = 3;
 
-	Chunk *getChunkSafeFromChunkSystemCoordonates(int x, int z);
+	//[0 -> squareSize)
+	Chunk *getChunksInMatrixSpaceUnsafe(int x, int z);
+
+	Chunk *getChunkSafeFromMatrixSpace(int x, int z);
 	Chunk *getChunkSafeFromBlockPos(int x, int z);
+
+	glm::ivec2 fromBlockPosToMatrixSpace(int x, int z);
+	glm::ivec2 fromMatrixSpaceToChunkSpace(int x, int z);
+
 	void setChunkAndNeighboursFlagDirtyFromBlockPos(int x, int z);
 
 	void createChunks(int viewDistance);
@@ -58,6 +64,15 @@ struct ChunkSystem
 	void changeBlockLightStuff(glm::ivec3 pos, int currentSkyLightLevel, int currentNormalLightLevel,
 		BlockType oldType,
 		BlockType newType, LightSystem &lightSystem);
+
+	//unloads all loaded chunks
+	void dropAllChunks();
+	
+	//unloads a chunk atn the specified index in the matrix vector,
+	//ASSUMES THE CHUNK IS LOADED AND HAS GPU DATA
+	void dropChunkAtIndexUnsafe(int index);
+
+	void dropChunkAtIndexSafe(int index);
 
 
 	std::unordered_map<glm::ivec2, float> recentlyRequestedChunks;

@@ -10,7 +10,12 @@
 #include <platformTools.h>
 
 
-Chunk* ChunkSystem::getChunkSafeFromChunkSystemCoordonates(int x, int z)
+Chunk *ChunkSystem::getChunksInMatrixSpaceUnsafe(int x, int z)
+{
+	return loadedChunks[x * squareSize + z];
+}
+
+Chunk* ChunkSystem::getChunkSafeFromMatrixSpace(int x, int z)
 {
 	if (x < 0 || z < 0 || x >= squareSize || z >= squareSize)
 	{
@@ -18,7 +23,7 @@ Chunk* ChunkSystem::getChunkSafeFromChunkSystemCoordonates(int x, int z)
 	}
 	else
 	{
-		return loadedChunks[x * squareSize + z];
+		return getChunksInMatrixSpaceUnsafe(x, z);
 	}
 }
 
@@ -174,9 +179,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 			else
 			{	
 				//chunk no longer needed delete it
-				loadedChunks[i]->clearGpuData();
-				delete loadedChunks[i];
-				loadedChunks[i] = nullptr;
+				dropChunkAtIndexUnsafe(i);
 			}
 		}
 
@@ -193,7 +196,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 		//c is in chunk system coordonates space
 		for (auto &c : chunksToAddLight)
 		{
-			auto chunk = getChunkSafeFromChunkSystemCoordonates(c.x, c.y);
+			auto chunk = getChunkSafeFromMatrixSpace(c.x, c.y);
 			assert(chunk);
 			
 			int xStart = chunk->data.x * CHUNK_SIZE;
@@ -208,10 +211,10 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 					}
 				}
 
-			auto leftNeighbour = getChunkSafeFromChunkSystemCoordonates(c.x - 1, c.y);
-			auto rightNeighbour = getChunkSafeFromChunkSystemCoordonates(c.x + 1, c.y);
-			auto frontNeighbour = getChunkSafeFromChunkSystemCoordonates(c.x, c.y + 1);
-			auto backNeighbour = getChunkSafeFromChunkSystemCoordonates(c.x, c.y - 1);
+			auto leftNeighbour = getChunkSafeFromMatrixSpace(c.x - 1, c.y);
+			auto rightNeighbour = getChunkSafeFromMatrixSpace(c.x + 1, c.y);
+			auto frontNeighbour = getChunkSafeFromMatrixSpace(c.x, c.y + 1);
+			auto backNeighbour = getChunkSafeFromMatrixSpace(c.x, c.y - 1);
 
 			auto propagateLight = [&](Chunk *neighbour, glm::ivec3 darkBlock,
 				glm::ivec3 lightBlock,
@@ -462,10 +465,10 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 		if (currentBaked < maxToBake || currentBakedTransparency < maxToBakeTransparency)
 		{
-			auto left = getChunkSafeFromChunkSystemCoordonates(x - 1, z);
-			auto right = getChunkSafeFromChunkSystemCoordonates(x + 1, z);
-			auto front = getChunkSafeFromChunkSystemCoordonates(x, z + 1);
-			auto back = getChunkSafeFromChunkSystemCoordonates(x, z - 1);
+			auto left = getChunkSafeFromMatrixSpace(x - 1, z);
+			auto right = getChunkSafeFromMatrixSpace(x + 1, z);
+			auto front = getChunkSafeFromMatrixSpace(x, z + 1);
+			auto back = getChunkSafeFromMatrixSpace(x, z - 1);
 
 			if (chunk->shouldBakeOnlyBecauseOfTransparency(left, right, front, back))
 			{
@@ -497,11 +500,23 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 Chunk *ChunkSystem::getChunkSafeFromBlockPos(int x, int z)
 {
+	auto p = fromBlockPosToMatrixSpace(x, z);
+
+	auto c = getChunkSafeFromMatrixSpace(p.x, p.y);
+	return c;
+}
+
+glm::ivec2 ChunkSystem::fromBlockPosToMatrixSpace(int x, int z)
+{
 	int divideX = divideChunk(x);
 	int divideZ = divideChunk(z);
 
-	auto c = getChunkSafeFromChunkSystemCoordonates(divideX - cornerPos.x, divideZ - cornerPos.y);
-	return c;
+	return{divideX - cornerPos.x, divideZ - cornerPos.y};
+}
+
+glm::ivec2 ChunkSystem::fromMatrixSpaceToChunkSpace(int x, int z)
+{
+	return glm::ivec2(x + cornerPos.x, z + cornerPos.y);
 }
 
 void ChunkSystem::setChunkAndNeighboursFlagDirtyFromBlockPos(int x, int z)
@@ -568,10 +583,9 @@ void ChunkSystem::getBlockSafeWithNeigbhours(int x, int y, int z,
 		return; 
 	}
 	
-	int centerChunkX = divideChunk(x);
-	int centerChunkZ = divideChunk(z);
-	auto centerChunk = getChunkSafeFromChunkSystemCoordonates(centerChunkX - cornerPos.x, 
-		centerChunkZ - cornerPos.y);
+	auto centerChunkPos = fromBlockPosToMatrixSpace(x, z);
+	auto centerChunk = getChunkSafeFromMatrixSpace(centerChunkPos.x,
+		centerChunkPos.y);
 
 	//front = getBlockSafe(x + 1, y, z);
 	//back = getBlockSafe(x - 1, y, z);
@@ -683,7 +697,7 @@ void ChunkSystem::getBlockSafeWithNeigbhoursStopIfCenterFails(int x, int y, int 
 
 	int centerChunkX = divideChunk(x);
 	int centerChunkZ = divideChunk(z);
-	auto centerChunk = getChunkSafeFromChunkSystemCoordonates(centerChunkX - cornerPos.x,
+	auto centerChunk = getChunkSafeFromMatrixSpace(centerChunkX - cornerPos.x,
 		centerChunkZ - cornerPos.y);
 
 	if (centerChunk) //[[likely]]
@@ -718,7 +732,7 @@ void ChunkSystem::getBlockSafeWithNeigbhoursStopIfCenterFails(int x, int y, int 
 		}
 		else
 		{
-			auto frontChunk = getChunkSafeFromChunkSystemCoordonates(centerChunkX - cornerPos.x + 1,
+			auto frontChunk = getChunkSafeFromMatrixSpace(centerChunkX - cornerPos.x + 1,
 				centerChunkZ - cornerPos.y);
 			if (frontChunk)
 			{
@@ -736,7 +750,7 @@ void ChunkSystem::getBlockSafeWithNeigbhoursStopIfCenterFails(int x, int y, int 
 		}
 		else
 		{
-			auto backChunk = getChunkSafeFromChunkSystemCoordonates(centerChunkX - cornerPos.x - 1,
+			auto backChunk = getChunkSafeFromMatrixSpace(centerChunkX - cornerPos.x - 1,
 				centerChunkZ - cornerPos.y);
 			if (backChunk)
 			{
@@ -754,7 +768,7 @@ void ChunkSystem::getBlockSafeWithNeigbhoursStopIfCenterFails(int x, int y, int 
 		}
 		else
 		{
-			auto leftChunk = getChunkSafeFromChunkSystemCoordonates(centerChunkX - cornerPos.x,
+			auto leftChunk = getChunkSafeFromMatrixSpace(centerChunkX - cornerPos.x,
 				centerChunkZ - cornerPos.y - 1);
 			if (leftChunk)
 			{
@@ -773,7 +787,7 @@ void ChunkSystem::getBlockSafeWithNeigbhoursStopIfCenterFails(int x, int y, int 
 		}
 		else
 		{
-			auto rightChunk = getChunkSafeFromChunkSystemCoordonates(centerChunkX - cornerPos.x,
+			auto rightChunk = getChunkSafeFromMatrixSpace(centerChunkX - cornerPos.x,
 				centerChunkZ - cornerPos.y + 1);
 			if (rightChunk)
 			{
@@ -950,6 +964,30 @@ void ChunkSystem::changeBlockLightStuff(glm::ivec3 pos, int currentSkyLightLevel
 		lightSystem.addLight(*this, pos, 15);
 	}
 
+}
+
+void ChunkSystem::dropAllChunks()
+{
+	for (int i = 0; i < loadedChunks.size(); i++)
+	{
+		dropChunkAtIndexSafe(i);
+	}
+}
+
+void ChunkSystem::dropChunkAtIndexUnsafe(int index)
+{
+	loadedChunks[index]->clearGpuData();
+	delete loadedChunks[index];
+	loadedChunks[index] = nullptr;
+
+}
+
+void ChunkSystem::dropChunkAtIndexSafe(int index)
+{
+	if (loadedChunks[index] != nullptr)
+	{
+		dropChunkAtIndexUnsafe(index);
+	}
 }
 
 //todo short for type

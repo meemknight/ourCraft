@@ -368,6 +368,7 @@ void serverWorkerFunction()
 
 			sd.waitingTasks.erase(sd.waitingTasks.begin());
 
+			//we generate only one chunk per loop
 			if (i.t.type == Task::generateChunk)
 			{
 				break;

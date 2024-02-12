@@ -540,6 +540,78 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					{0, 1}, {1, 0});
 			}
 
+			if (ImGui::CollapsingHeader("Chunk system",
+				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+			{
+
+				static int blockSize = 25;
+
+				ImGui::SliderInt("Size", &blockSize, 10, 100);
+
+				ImVec4 colNotLoaded = {0.2f,0.2f,0.2f,1.f};
+				ImVec4 colLoaded = {0.2f,0.9f,0.2f,1.f};
+				ImVec4 colrequested = {0.2f,0.2f,0.9f,1.f};
+
+				if (ImGui::Button("Drop all chunks"))
+				{
+					gameData.chunkSystem.dropAllChunks();
+				}
+				
+				ImGui::ColorButton("##1", colNotLoaded, ImGuiColorEditFlags_NoInputs, ImVec2(25, 25));
+				ImGui::SameLine();
+				ImGui::Text("Not loaded."); 
+
+				ImGui::ColorButton("##2", colLoaded, ImGuiColorEditFlags_NoInputs, ImVec2(25, 25));
+				ImGui::SameLine();
+				ImGui::Text("Not Loaded.");
+
+				ImGui::ColorButton("##2", colrequested, ImGuiColorEditFlags_NoInputs, ImVec2(25, 25));
+				ImGui::SameLine();
+				ImGui::Text("Not Loaded.");
+
+				ImGui::Separator();
+
+				for (int z = 0; z < gameData.chunkSystem.squareSize; z++)
+					for (int x = 0; x < gameData.chunkSystem.squareSize; x++)
+					{
+
+						auto c = gameData.chunkSystem.getChunksInMatrixSpaceUnsafe(x, z);
+
+						auto currentColor = colNotLoaded;
+
+						if (c != nullptr)
+						{
+							currentColor = colLoaded;
+						}
+						else
+						{
+							auto pos = gameData.chunkSystem.
+								fromMatrixSpaceToChunkSpace(x, z);
+
+							if (gameData.chunkSystem.recentlyRequestedChunks.find(pos)
+								!= gameData.chunkSystem.recentlyRequestedChunks.end()
+								)
+							{
+								currentColor = colrequested;
+							}
+						}
+
+						if (x > 0)
+							ImGui::SameLine();
+
+						ImGui::PushID(z *gameData.chunkSystem.squareSize + x);
+						if (ImGui::ColorButton("##chunkb", currentColor,
+							ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoTooltip
+							, ImVec2(blockSize, blockSize)))
+						{
+
+						}
+						ImGui::PopID();
+
+
+					}
+
+			}
 		}
 		ImGui::End();
 
@@ -566,6 +638,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma endregion
 
+	ImGui::ShowDemoWindow();
 
 #pragma region ui
 	if(1)
