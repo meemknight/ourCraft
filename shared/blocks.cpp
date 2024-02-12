@@ -55,3 +55,14 @@ bool isGrassMesh(BlockType type)
 		|| type == BlockTypes::dead_bush
 		;
 }
+
+bool isColidable(BlockType type)
+{
+	return
+		type != BlockTypes::air &&
+		type != BlockTypes::grass &&
+		type != BlockTypes::rose &&
+		type != BlockTypes::cactus_bud &&
+		type != BlockTypes::dead_bush &&
+		type != BlockTypes::water;
+}

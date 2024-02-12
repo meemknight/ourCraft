@@ -253,19 +253,21 @@ void serverWorkerFunction()
 		//auto clientsCopy = getAllClients();
 		//todo this could fail? if the client disconected?
 
-		std::vector<ServerTask> tasks;
-		if (sd.waitingTasks.empty())
 		{
-			tasks = waitForTasksServer(); //nothing to do we can wait.
-		}
-		else
-		{
-			tasks = tryForTasksServer(); //already things to do, we just grab more if ready and wating.
-		}
+			std::vector<ServerTask> tasks;
+			if (sd.waitingTasks.empty())
+			{
+				tasks = waitForTasksServer(); //nothing to do we can wait.
+			}
+			else
+			{
+				tasks = tryForTasksServer(); //already things to do, we just grab more if ready and wating.
+			}
 
-		for (auto i : tasks)
-		{
-			sd.waitingTasks.push_back(i);
+			for (auto i : tasks)
+			{
+				sd.waitingTasks.push_back(i);
+			}
 		}
 
 		std::sort(sd.waitingTasks.begin(), sd.waitingTasks.end(),
@@ -274,7 +276,7 @@ void serverWorkerFunction()
 		std::vector<ChunkPriorityCache::SendBlocksBack> sendNewBlocksToPlayers;
 
 		int count = sd.waitingTasks.size();
-		for (int taskIndex = 0; taskIndex < std::min(count, 3); taskIndex++)
+		for (int taskIndex = 0; taskIndex < std::min(count, 5); taskIndex++)
 		{
 			auto &i = sd.waitingTasks.front();
 
@@ -302,12 +304,11 @@ void serverWorkerFunction()
 					packet.cid = i.cid;
 					packet.header = headerRecieveChunk;
 
-					Packet_RecieveChunk *packetData = new Packet_RecieveChunk(); //todo ring buffer here
+					Packet_RecieveChunk_Optimized *packetData = new Packet_RecieveChunk_Optimized(); //todo ring buffer here
 
 					packetData->chunk = *rez;
 
-					
-					sendPacket(client.peer, packet, (char *)packetData,
+					sendPacketOptimized(client.peer, packet, (char *)packetData,
 						sizeof(Packet_RecieveChunk), true, channelChunksAndBlocks);
 
 					delete packetData;
@@ -413,10 +414,10 @@ void serverWorkerFunction()
 			sd.waitingTasks.erase(sd.waitingTasks.begin());
 
 			//we generate only one chunk per loop
-			//if (i.t.type == Task::generateChunk)
-			//{
-			//	break;
-			//}
+			if (i.t.type == Task::generateChunk)
+			{
+				break;
+			}
 		}
 
 		//this are blocks created by new chunks so everyone needs them
@@ -1174,8 +1175,6 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 			FastNoiseSIMD::FreeNoiseSet(randValues);
 
 		}
-
-
 
 	
 		if (generateGhostAndStructures)

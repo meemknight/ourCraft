@@ -511,6 +511,12 @@ Chunk *ChunkSystem::getChunkSafeFromBlockPos(int x, int z)
 	return c;
 }
 
+Chunk *ChunkSystem::getChunkSafeFromChunkPos(int x, int z)
+{
+	auto c = getChunkSafeFromMatrixSpace(x - cornerPos.x, z - cornerPos.y);
+	return c;
+}
+
 glm::ivec2 ChunkSystem::fromBlockPosToMatrixSpace(int x, int z)
 {
 	int divideX = divideChunk(x);
@@ -1068,7 +1074,16 @@ glm::ivec2 fromBlockPosToChunkPos(glm::ivec3 blockPos)
 {
 	return glm::ivec2(divideChunk(blockPos.x), divideChunk(blockPos.z));
 }
-;
+glm::ivec2 fromBlockPosToChunkPos(int x, int z)
+{
+	return glm::ivec2(divideChunk(x), divideChunk(z));
+}
+glm::ivec3 fromBlockPosToBlockPosInChunk(glm::ivec3 blockPos)
+{
+	int modX = modBlockToChunk(blockPos.x);
+	int modZ = modBlockToChunk(blockPos.z);
+	return {modX, blockPos.y, modZ};
+}
 
 int divideMetaChunk(int chunkPos)
 {

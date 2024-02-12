@@ -2,6 +2,26 @@
 #include <algorithm>
 
 
+void sendPacketOptimized(ENetPeer *to, Packet p, char *data,
+	size_t sizeWithoutPacket, bool reliable, int channel)
+{
+	size_t flag = 0;
+
+	memcpy(data, &p, sizeof(Packet));
+
+	if (reliable)
+	{
+		flag = ENET_PACKET_FLAG_RELIABLE;
+	}
+	else
+	{
+		flag = ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT;
+	}
+
+	ENetPacket *packet = enet_packet_create(data, sizeWithoutPacket + sizeof(packet), flag);
+	enet_peer_send(to, channel, packet);
+}
+
 void sendPacket(ENetPeer *to, Packet p, const char *data, size_t size, bool reliable, int channel)
 {
 

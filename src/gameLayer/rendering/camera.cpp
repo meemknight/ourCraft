@@ -104,7 +104,6 @@ void Camera::rotateFPS(glm::ivec2 mousePos, float speed, bool shouldMove)
 	{
 		lastMousePos = mousePos;
 	}
-
 }
 
 void Camera::decomposePosition(glm::vec3& floatPart, glm::ivec3& intPart)

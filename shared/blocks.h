@@ -74,6 +74,8 @@ bool isTransparentGeometry(BlockType type);
 
 bool isGrassMesh(BlockType type);
 
+bool isColidable(BlockType type);
+
 struct Block
 {
 	BlockType type;
@@ -143,6 +145,11 @@ struct Block
 	bool isCrossMesh()
 	{
 		return ::isCrossMesh(type);
+	}
+
+	bool isColidable()
+	{
+		return ::isColidable(type);
 	}
 
 };

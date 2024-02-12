@@ -23,6 +23,7 @@
 #include <multiPlot.h>
 #include <profiler.h>
 #include <thread>
+#include <gameplay/physics.h>
 
 struct GameData
 {
@@ -36,7 +37,6 @@ struct GameData
 
 	SunShadow sunShadow;
 
-
 	Profiler gameplayFrameProfiler;
 
 	//debug stuff
@@ -44,6 +44,11 @@ struct GameData
 	glm::ivec3 pointSize = {};//todo move
 	bool renderBox = 0;
 	bool renderPlayerPos = 0;
+	
+	bool colidable = 0;
+
+	Player player;
+	
 
 }gameData;
 
@@ -58,6 +63,11 @@ bool initGameplay(ProgramData &programData)
 	
 	gameData = GameData();
 	gameData.c.position = glm::vec3(0, 65, 0);
+
+	gameData.player.body.pos = glm::vec3(0, 105, 0);
+	gameData.player.body.lastPos = glm::vec3(0, 105, 0);
+	gameData.player.body.colliderSize = glm::vec3(1,1,1);
+	
 
 	gameData.chunkSystem.createChunks(16);
 
@@ -174,6 +184,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	platform::showMouse(gameData.escapePressed);
 
+	//move
 	{
 		float speed = moveSpeed * deltaTime;
 		glm::vec3 moveDir = {};
@@ -219,17 +230,47 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			moveDir.y += speed;
 		}
 
-		gameData.c.moveFPS(moveDir);
+		//gameData.c.moveFPS(moveDir);
+		gameData.player.moveFPS(moveDir);
+
 
 		bool rotate = !gameData.escapePressed;
 		if (platform::isRMouseHeld()) { rotate = true; }
 		gameData.c.rotateFPS(platform::getRelMousePosition(), 0.25f * deltaTime, rotate);
-
+		gameData.player.lookDirection = gameData.c.viewDirection;
+		
 		if (!gameData.escapePressed)
 		{
 			platform::setRelMousePosition(w / 2, h / 2);
 			gameData.c.lastMousePos = {w / 2, h / 2};
 		}
+
+	}
+#pragma endregion
+
+#pragma region collisions
+	{
+			
+		auto chunkGetter = [](glm::ivec2 pos) -> ChunkData*
+		{
+			auto c = gameData.chunkSystem.getChunkSafeFromChunkPos(pos.x, pos.y);
+			if (c)
+			{
+				return &c->data;
+			}
+			else
+			{
+				return nullptr;
+			}
+		};
+
+		if (gameData.colidable)
+		{
+			gameData.player.body.resolveConstrains(chunkGetter);
+		}
+
+		gameData.player.body.updateMove();
+		gameData.c.position = gameData.player.body.pos;
 
 	}
 #pragma endregion
@@ -416,6 +457,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			if (ImGui::CollapsingHeader("Camera stuff",
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
 			{
+				ImGui::Checkbox("Colidable", &gameData.colidable);
+
 				ImGui::DragScalarN("camera pos", ImGuiDataType_Double, &gameData.c.position[0], 3, 0.01);
 
 				ImGui::Text("camera float: %f, %f, %f", posFloat.x, posFloat.y, posFloat.z);
@@ -432,6 +475,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 				ImGui::DragFloat("camera speed", &moveSpeed);
+
 			}
 
 		
