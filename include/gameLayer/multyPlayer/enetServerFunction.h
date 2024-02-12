@@ -30,4 +30,6 @@ void signalWaitingFromServer();
 std::vector<ServerTask> waitForTasksServer();
 std::vector<ServerTask> tryForTasksServer();
 Client getClient(CID cid);
+std::unordered_map<CID, Client> getAllClients();
+
 void broadCast(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel);

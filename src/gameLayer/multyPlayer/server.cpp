@@ -107,7 +107,7 @@ struct ChunkPriorityCache
 	ChunkData *getOrCreateChunk(int posX, int posZ, WorldGenerator &wg, 
 		StructuresManager &structureManager, BiomesManager &biomesManager
 		,std::vector<SendBlocksBack> &sendNewBlocksToPlayers, bool generateGhostAndStructures, 
-			std::vector<StructureToGenerate> *newStructuresToAdd);
+			std::vector<StructureToGenerate> *newStructuresToAdd, bool *wasGenerated = 0);
 
 	Block *tryGetBlockIfChunkExistsNoChecks(glm::ivec3 pos);
 
@@ -198,6 +198,20 @@ bool serverStartupStuff()
 	return true;
 }
 
+bool checkIfPlayerShouldGetChunk(glm::ivec3 playerPos, glm::ivec2 chunkPos, int playerSquareDistance)
+{
+	glm::ivec2 playerChunk = fromBlockPosToChunkPos(playerPos);
+	float dist = glm::length(glm::vec2(playerChunk - chunkPos));
+	if (dist > (playerSquareDistance / 2.f) * std::sqrt(2.f) + 1)
+	{
+		return 0;
+	}
+	else
+	{
+		return 1;
+	}
+}
+
 void serverWorkerFunction()
 {
 	StructuresManager structuresManager;
@@ -236,6 +250,8 @@ void serverWorkerFunction()
 	while (serverRunning)
 	{
 		auto settings = getServerSettingsCopy();
+		//auto clientsCopy = getAllClients();
+		//todo this could fail? if the client disconected?
 
 		std::vector<ServerTask> tasks;
 		if (sd.waitingTasks.empty())
@@ -264,30 +280,45 @@ void serverWorkerFunction()
 
 			if (i.t.type == Task::generateChunk)
 			{
-				auto rez = sd.chunkCache.getOrCreateChunk(i.t.pos.x, i.t.pos.z, wg, structuresManager, biomesManager,
-					sendNewBlocksToPlayers, true, nullptr);
-				
-				Packet packet;
-				packet.cid = i.cid;
-				packet.header = headerRecieveChunk;
-
-				Packet_RecieveChunk *packetData = new Packet_RecieveChunk(); //todo ring buffer here
-
-				packetData->chunk = *rez;
-
 				auto client = getClient(i.cid); //todo this could fail when players leave so return pointer and check
 
-				sendPacket(client.peer, packet, (char *)packetData, sizeof(Packet_RecieveChunk), true, 0);
+				//if (checkIfPlayerShouldGetChunk(client.playerData.position, 
+				//	{i.t.pos.x, i.t.pos.z}, client.playerData.chunkDistance))
+				{
+					bool wasGenerated = 0;
+					auto rez = sd.chunkCache.getOrCreateChunk(i.t.pos.x, i.t.pos.z, wg, structuresManager, biomesManager,
+						sendNewBlocksToPlayers, true, nullptr, &wasGenerated);
 
-				delete packetData;
+					Packet packet;
+					packet.cid = i.cid;
+					packet.header = headerRecieveChunk;
+
+					Packet_RecieveChunk *packetData = new Packet_RecieveChunk(); //todo ring buffer here
+
+					packetData->chunk = *rez;
+
+					
+					sendPacket(client.peer, packet, (char *)packetData,
+						sizeof(Packet_RecieveChunk), true, channelChunksAndBlocks);
+
+					delete packetData;
+				}
+				//else
+				//{
+				//	std::cout << "Chunk rejected because player too far: " <<
+				//		i.t.pos.x << i.t.pos.z << "\n";
+				//}
+
+				
 			}
 			else
 			if (i.t.type == Task::placeBlock)
 			{
+				bool wasGenerated = 0;
 				//std::cout << "server recieved place block\n";
 				//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
 				auto chunk = sd.chunkCache.getOrCreateChunk(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z), wg, structuresManager
-					,biomesManager, sendNewBlocksToPlayers, true, nullptr);
+					,biomesManager, sendNewBlocksToPlayers, true, nullptr, &wasGenerated);
 				int convertedX = modBlockToChunk(i.t.pos.x);
 				int convertedZ = modBlockToChunk(i.t.pos.z);
 				
@@ -333,7 +364,8 @@ void serverWorkerFunction()
 						packetData.blockPos = i.t.pos;
 						packetData.blockType = i.t.blockType;
 
-						broadCast(packet, &packetData, sizeof(Packet_PlaceBlocks), client.peer, true, 0);
+						broadCast(packet, &packetData, sizeof(Packet_PlaceBlocks), 
+							client.peer, true, channelChunksAndBlocks);
 					}
 
 					{
@@ -345,7 +377,9 @@ void serverWorkerFunction()
 						Packet_ValidateEvent packetData;
 						packetData.eventId = i.t.eventId;
 
-						sendPacket(client.peer, packet, (char *)&packetData, sizeof(Packet_ValidateEvent), true, 0);
+						sendPacket(client.peer, packet,
+							(char *)&packetData, sizeof(Packet_ValidateEvent), 
+							true, channelChunksAndBlocks);
 					}
 
 
@@ -361,7 +395,8 @@ void serverWorkerFunction()
 
 					client.revisionNumber++;
 
-					sendPacket(client.peer, packet, (char *)&packetData, sizeof(Packet_ValidateEvent), true, 0);
+					sendPacket(client.peer, packet, (char *)&packetData,
+						sizeof(Packet_ValidateEvent), true, channelChunksAndBlocks);
 				}
 
 			}
@@ -369,12 +404,13 @@ void serverWorkerFunction()
 			sd.waitingTasks.erase(sd.waitingTasks.begin());
 
 			//we generate only one chunk per loop
-			if (i.t.type == Task::generateChunk)
-			{
-				break;
-			}
+			//if (i.t.type == Task::generateChunk)
+			//{
+			//	break;
+			//}
 		}
 
+		//this are blocks created by new chunks so everyone needs them
 		if (!sendNewBlocksToPlayers.empty())
 		{
 			Packet_PlaceBlocks *newBlocks = new Packet_PlaceBlocks[sendNewBlocksToPlayers.size()];
@@ -397,7 +433,7 @@ void serverWorkerFunction()
 				//packetData.blockPos = b.pos;
 				//packetData.blockType = b.block;
 				//
-				//broadCast(packet, &packetData, sizeof(Packet_PlaceBlock), nullptr, true, 0);
+				//broadCast(packet, &packetData, sizeof(Packet_PlaceBlock), nullptr, true, channelChunksAndBlocks);
 					
 				newBlocks[i].blockPos = b.pos;
 				newBlocks[i].blockType = b.block;
@@ -406,7 +442,8 @@ void serverWorkerFunction()
 			}
 
 			broadCast(packet, newBlocks, 
-				sizeof(Packet_PlaceBlocks) *sendNewBlocksToPlayers.size(), nullptr, true, 0);
+				sizeof(Packet_PlaceBlocks) *sendNewBlocksToPlayers.size(), 
+				nullptr, true, channelChunksAndBlocks);
 
 
 			delete[] newBlocks;
@@ -461,8 +498,10 @@ void removeCidFromServerSettings(CID cid)
 ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerator &wg, 
 	StructuresManager &structureManager, BiomesManager &biomesManager,
 	std::vector<SendBlocksBack> &sendNewBlocksToPlayers, bool generateGhostAndStructures,
-	std::vector<StructureToGenerate> *newStructuresToAdd)
+	std::vector<StructureToGenerate> *newStructuresToAdd, bool *wasGenerated)
 {
+	if(wasGenerated){ *wasGenerated = false; }
+
 	glm::ivec2 pos = {posX, posZ};
 	auto foundPos = savedChunks.find(pos);
 	if (foundPos != savedChunks.end())
@@ -512,6 +551,7 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 	else 
 	{
 		//create new chunk!
+		if (wasGenerated) { *wasGenerated = true; }
 
 		std::vector<StructureToGenerate> newStructures;
 		newStructures.reserve(10); //todo cache up

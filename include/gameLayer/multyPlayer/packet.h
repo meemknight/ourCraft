@@ -42,6 +42,15 @@ enum
 	headerSendPlayerData,
 };
 
+enum 
+{
+	channelChunksAndBlocks,
+	channelPlayerPositions,
+	channelHandleConnections,
+	SERVER_CHANNELS
+
+};
+
 struct Packet_ReceiveCIDAndData
 {
 };
@@ -87,10 +96,6 @@ struct Packet_PlaceBlocks
 };
 
 
-
-//first channel connection and chunks
-//second channel blocks
-constexpr static int SERVER_CHANNELS = 2;
 
 void sendPacket(ENetPeer *to, Packet p, const char *data, size_t size, bool reliable, int channel);
 char *parsePacket(ENetEvent &event, Packet &p, size_t &dataSize);

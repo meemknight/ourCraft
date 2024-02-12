@@ -150,8 +150,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				data.playerData.position = gameData.c.position;
 				data.playerData.chunkDistance = gameData.chunkSystem.squareSize;
 
-				//todo enum for channel
-				sendPacket(getServer(), formatPacket(headerSendPlayerData), (char*)&data, sizeof(data), 0, 1);
+				sendPacket(getServer(),
+					formatPacket(headerSendPlayerData), (char*)&data, sizeof(data), 0,
+					channelPlayerPositions);
 			}
 
 		}

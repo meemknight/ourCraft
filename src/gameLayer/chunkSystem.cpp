@@ -38,6 +38,8 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	, LightSystem &lightSystem)
 {
 	//multy player stuff
+
+	//timeout recenrly requested chunks
 	{
 		std::vector < std::unordered_map<glm::ivec2, float>::iterator > toRemove;
 		for (auto i = recentlyRequestedChunks.begin(); i != recentlyRequestedChunks.end(); i++)
@@ -289,6 +291,8 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 #pragma endregion
 
+	glm::ivec2 playerChunkPos = fromBlockPosToChunkPos(playerBlockPosition);
+
 	if (lastPlayerBlockPosition != playerBlockPosition)
 	{
 		//player moved sooooo update transparency
@@ -345,13 +349,14 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 			}
 		);
 
-		constexpr int maxWaitingSubmisions = 5;
-		std::vector<Task> finalTask;
-		finalTask.reserve(maxWaitingSubmisions);
 
-		for (int i = 0; i < maxWaitingSubmisions; i++)
+
+		std::vector<Task> finalTask;
+		finalTask.reserve(chunkSystemSettings.maxWaitingSubmisions);
+
+		for (int i = 0; i < chunkSystemSettings.maxWaitingSubmisions; i++)
 		{
-			if (chunkTasks.size() <= i) { break; }
+			if (chunkTasks.size() <= i) { break; /*we managed to request all needed chunls*/ }
 
 			auto &t = chunkTasks[i];
 
@@ -1058,7 +1063,12 @@ int modBlockToChunk(int x)
 int divideChunk(int x)
 {
 	return (int)std::floor((float)x / (float)CHUNK_SIZE);
-};
+}
+glm::ivec2 fromBlockPosToChunkPos(glm::ivec3 blockPos)
+{
+	return glm::ivec2(divideChunk(blockPos.x), divideChunk(blockPos.z));
+}
+;
 
 int divideMetaChunk(int chunkPos)
 {

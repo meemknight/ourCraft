@@ -14,6 +14,16 @@ struct LightSystem;
 struct ChunkSystem
 {
 
+	struct ChunkSystemSettings
+	{
+
+		//max number of chunks the client can be waiting for at a time.
+		//note that this number is not a hard limit, if the player moves or teleports it will always be able to request
+		//more chunks, this is a hard limit only when the player s
+		int maxWaitingSubmisions = 15;
+
+	}chunkSystemSettings;
+
 	bool shouldUpdateLights = 0;
 
 	std::vector<Chunk*> loadedChunks;
@@ -80,5 +90,6 @@ struct ChunkSystem
 
 int modBlockToChunk(int x);
 int divideChunk(int x);
+glm::ivec2 fromBlockPosToChunkPos(glm::ivec3 blockPos);
 
 int divideMetaChunk(int chunkPos);

@@ -19,7 +19,8 @@ void submitTaskClient(Task &t)
 		Packet_RequestChunk packetData = {};
 		packetData.chunkPosition = {t.pos.x, t.pos.z};
 
-		sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1, 0);
+		sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1, 
+			channelChunksAndBlocks);
 		break;
 	}
 	case Task::placeBlock:
@@ -30,7 +31,8 @@ void submitTaskClient(Task &t)
 		packetData.blockType = t.blockType;
 		packetData.eventId = t.eventId;
 
-		sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1, 1);
+		sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1, 
+			channelChunksAndBlocks);
 		break;
 	}
 	default:
@@ -230,7 +232,7 @@ bool createConnection()
 
 	//see if we got events by server
 	//client, event, ms to wait(0 means that we don't wait)
-	if (enet_host_service(clientData.client, &event, 3000) > 0
+	if (enet_host_service(clientData.client, &event, 4000) > 0
 		&& event.type == ENET_EVENT_TYPE_CONNECT)
 	{
 		std::cout << "client connected\n";
@@ -245,7 +247,7 @@ bool createConnection()
 	
 	#pragma region handshake
 	
-	if (enet_host_service(clientData.client, &event, 5000) > 0
+	if (enet_host_service(clientData.client, &event, 2500) > 0
 		&& event.type == ENET_EVENT_TYPE_RECEIVE)
 	{
 		Packet p = {};

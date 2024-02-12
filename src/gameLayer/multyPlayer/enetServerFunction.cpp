@@ -44,6 +44,14 @@ Client getClient(CID cid)
 	return rez;
 }
 
+std::unordered_map<CID, Client> getAllClients()
+{
+	connectionsMutex.lock();
+	auto rez = connections;
+	connectionsMutex.unlock();
+	return rez;
+}
+
 void createConnection(CID cid, Client c)
 {
 	connectionsMutex.lock();
@@ -78,7 +86,8 @@ void addConnection(ENetHost *server, ENetEvent &event)
 	Packet_ReceiveCIDAndData packetToSend = {};
 
 	//send own cid
-	sendPacket(event.peer, p, (const char *)&packetToSend, sizeof(packetToSend), true, 0);
+	sendPacket(event.peer, p, (const char *)&packetToSend, 
+		sizeof(packetToSend), true, channelHandleConnections);
 
 	//todo send info of other players to this new connection
 
