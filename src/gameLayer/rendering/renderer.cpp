@@ -1368,6 +1368,13 @@ unsigned int cubeIndicesData[] = {
 
 void GyzmosRenderer::create()
 {
+
+
+	gyzmosLineShader.loadShaderProgramFromFile(RESOURCES_PATH "gyzmosLinesShader.vert",
+		RESOURCES_PATH "gyzmosCubeShader.frag");
+	GET_UNIFORM(gyzmosLineShader, u_gyzmosLineShaderViewProjection);
+
+
 	gyzmosCubeShader.loadShaderProgramFromFile(RESOURCES_PATH "gyzmosCubeShader.vert",
 		RESOURCES_PATH "gyzmosCubeShader.frag");
 
@@ -1397,36 +1404,84 @@ void GyzmosRenderer::create()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubeIndices);
 	glBufferStorage(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeIndicesData), (void*)cubeIndicesData, 0);
 
+
+
+
+	glCreateVertexArrays(1, &vaoLines);
+	glBindVertexArray(vaoLines);
+
+	glCreateBuffers(1, &vertexDataBufferLines);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexDataBufferLines);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
 	glBindVertexArray(0);
+
 }
 
 
 void GyzmosRenderer::render(Camera &c, glm::ivec3 posInt, glm::vec3 posFloat)
 {
 
-	if (cubes.empty()) { return; }
 
-	glNamedBufferData(blockPositionBuffer, cubes.size() * sizeof(CubeData), cubes.data(), GL_STREAM_DRAW);
+	if (!cubes.empty()) 
+	{
+		auto mvp = c.getProjectionMatrix() * glm::lookAt({0,0,0}, c.viewDirection, c.up);
+
+		glDisable(GL_CULL_FACE);
+
+		glNamedBufferData(blockPositionBuffer, cubes.size() * sizeof(CubeData), cubes.data(), GL_STREAM_DRAW);
+
+		gyzmosCubeShader.bind();
+
+		glDepthFunc(GL_LEQUAL);
+		glBindVertexArray(vao);
+
+		glUniformMatrix4fv(u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
+		glUniform3fv(u_positionFloat, 1, &posFloat[0]);
+		glUniform3iv(u_positionInt, 1, &posInt[0]);
+
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, cubes.size());
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+		glBindVertexArray(0);
+		glDepthFunc(GL_LESS);
+
+		glEnable(GL_CULL_FACE);
 	
-	gyzmosCubeShader.bind();
-	
-	glDepthFunc(GL_LEQUAL);
-	glBindVertexArray(vao);
-	
-	auto mvp = c.getProjectionMatrix() * glm::lookAt({0,0,0}, c.viewDirection, c.up);
+		cubes.clear();
 
-	glUniformMatrix4fv(u_viewProjection, 1, GL_FALSE, &mvp[0][0]);
-	glUniform3fv(u_positionFloat, 1, &posFloat[0]);
-	glUniform3iv(u_positionInt, 1, &posInt[0]);
+	}
 
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, cubes.size());
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	if (!lines.empty())
+	{
+		glLineWidth(10);
 
-	glBindVertexArray(0);
-	glDepthFunc(GL_LESS);
+		auto mvp = c.getProjectionMatrix() * 
+			glm::lookAt( glm::vec3(c.position), glm::vec3(c.position)
+			+ c.viewDirection, c.up);
 
-	cubes.clear();
+
+		glNamedBufferData(vertexDataBufferLines, lines.size() * 
+			sizeof(LinesData), lines.data(), GL_STREAM_DRAW);
+
+		gyzmosLineShader.bind();
+
+		glDepthFunc(GL_LEQUAL);
+		glBindVertexArray(vaoLines);
+
+
+		glUniformMatrix4fv(u_gyzmosLineShaderViewProjection, 1, GL_FALSE, &mvp[0][0]);
+
+		glDrawArrays(GL_LINES, 0, lines.size()*2);
+
+		glBindVertexArray(0);
+		glDepthFunc(GL_LESS);
+
+
+		lines.clear();
+	}
+
 }
 
 

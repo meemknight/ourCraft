@@ -20,7 +20,7 @@
 #include <structure.h>
 #include <biome.h>
 #include <unordered_set>
-
+#include <profilerLib.h>
 
 bool operator==(const BlockInChunkPos &a, const BlockInChunkPos &b)
 {
@@ -285,9 +285,18 @@ void serverWorkerFunction()
 				//if (checkIfPlayerShouldGetChunk(client.playerData.position, 
 				//	{i.t.pos.x, i.t.pos.z}, client.playerData.chunkDistance))
 				{
+					PL::Profiler profiler;
+
+					profiler.start();
 					bool wasGenerated = 0;
 					auto rez = sd.chunkCache.getOrCreateChunk(i.t.pos.x, i.t.pos.z, wg, structuresManager, biomesManager,
 						sendNewBlocksToPlayers, true, nullptr, &wasGenerated);
+					profiler.end();
+
+					//if (wasGenerated)
+					//{
+					//	std::cout << "Generated ChunK: " << profiler.rezult.timeSeconds / 1000.f << "ms\n";
+					//}
 
 					Packet packet;
 					packet.cid = i.cid;

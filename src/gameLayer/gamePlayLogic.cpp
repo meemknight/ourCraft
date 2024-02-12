@@ -42,7 +42,8 @@ struct GameData
 	//debug stuff
 	glm::ivec3 point = {};
 	glm::ivec3 pointSize = {};//todo move
-	bool renderBox = 1;
+	bool renderBox = 0;
+	bool renderPlayerPos = 0;
 
 }gameData;
 
@@ -385,7 +386,18 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 	}
 
+	
+	programData.gyzmosRenderer.drawLine(
+		gameData.point,
+		glm::vec3(gameData.point) + glm::vec3(gameData.pointSize));
+
+	if (gameData.renderPlayerPos)
+	{
+		programData.gyzmosRenderer.drawCube(blockPositionPlayer);
+	}
+
 	programData.gyzmosRenderer.render(gameData.c, posInt, posFloat);
+
 #pragma endregion
 
 
@@ -401,19 +413,30 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		ImGui::PushStyleColor(ImGuiCol_WindowBg, {26/255.f,26/255.f,26/255.f,0.5f});
 		if (ImGui::Begin("client controll"))
 		{
-			ImGui::DragScalarN("camera pos", ImGuiDataType_Double, &gameData.c.position[0], 3, 0.01);
+			if (ImGui::CollapsingHeader("Camera stuff",
+				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+			{
+				ImGui::DragScalarN("camera pos", ImGuiDataType_Double, &gameData.c.position[0], 3, 0.01);
 
-			ImGui::Text("camera float: %f, %f, %f", posFloat.x, posFloat.y, posFloat.z);
-			ImGui::Text("camera int: %d, %d, %d", posInt.x, posInt.y, posInt.z);
-			ImGui::Text("camera view: %f, %f, %f", gameData.c.viewDirection.x, gameData.c.viewDirection.y, gameData.c.viewDirection.z);
+				ImGui::Text("camera float: %f, %f, %f", posFloat.x, posFloat.y, posFloat.z);
+				ImGui::Text("camera int: %d, %d, %d", posInt.x, posInt.y, posInt.z);
+				ImGui::Text("camera view: %f, %f, %f", gameData.c.viewDirection.x, gameData.c.viewDirection.y, gameData.c.viewDirection.z);
 
-			ImGui::Text("Chunk: %d, %d" , divideChunk(posInt.x), divideChunk(posInt.z));
+				ImGui::Text("Chunk: %d, %d", divideChunk(posInt.x), divideChunk(posInt.z));
+
+				//ImGui::DragScalarN("Point pos", ImGuiDataType_Double, &point[0], 3, 1);
+				ImGui::DragInt3("Point pos", &gameData.point[0]);
+				ImGui::DragInt3("Point size", &gameData.pointSize[0]);
+				ImGui::Checkbox("Render Box", &gameData.renderBox);
+				ImGui::Checkbox("Render Player Pos", &gameData.renderPlayerPos);
 
 
-			//ImGui::DragScalarN("Point pos", ImGuiDataType_Double, &point[0], 3, 1);
-			ImGui::DragInt3("Point pos", &gameData.point[0]);
-			ImGui::DragInt3("Point size",  &gameData.pointSize[0]);
-			ImGui::Checkbox("Render Box", &gameData.renderBox);
+				ImGui::DragFloat("camera speed", &moveSpeed);
+			}
+
+		
+			ImGui::NewLine();
+
 			gameData.pointSize = glm::clamp(gameData.pointSize, glm::ivec3(0, 0, 0), glm::ivec3(64, 64, 64));
 
 			if (ImGui::CollapsingHeader("Light Stuff",
@@ -443,22 +466,22 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			auto b = gameData.chunkSystem.getBlockSafe(gameData.point);
 			if (b) ImGui::Text("Box Light Value: %d", b->getSkyLight());
 
-			ImGui::DragFloat("camera speed", &moveSpeed);
+			
 			ImGui::Text("fps: %d", programData.currentFps);
 			if (ImGui::Button("Exit game"))
 			{
 				terminate = true;
 			}
 
-
 			ImGui::NewLine();
-			
-			static char fileBuff[256] = RESOURCES_PATH "gameData/structures/test.structure";
-			ImGui::InputText("File:", fileBuff, sizeof(fileBuff));
 
+			
 			if (ImGui::CollapsingHeader("Load Save Stuff",
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
 			{
+				static char fileBuff[256] = RESOURCES_PATH "gameData/structures/test.structure";
+				ImGui::InputText("File:", fileBuff, sizeof(fileBuff));
+
 				if (ImGui::Button("Save structure"))
 				{
 					std::vector<unsigned char> data;
@@ -638,8 +661,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	}
 
 #pragma endregion
-
-	ImGui::ShowDemoWindow();
 
 #pragma region ui
 	if(1)

@@ -155,6 +155,17 @@ struct GyzmosRenderer
 		int x=0, y=0, z=0;
 	};
 
+
+	struct LinesData
+	{
+		glm::vec3 a = {};
+		glm::vec3 b = {};
+	};
+
+	Shader gyzmosLineShader;
+	GLint u_gyzmosLineShaderViewProjection = -1;
+
+
 	void create();
 	Shader gyzmosCubeShader;
 	GLint u_viewProjection = -1;
@@ -165,10 +176,17 @@ struct GyzmosRenderer
 	GLuint blockPositionBuffer = 0;
 	GLuint cubeIndices = 0;
 
+	GLuint vaoLines = 0;
+	GLuint vertexDataBufferLines = 0;
+
 	std::vector<CubeData> cubes;
+	std::vector<LinesData> lines;
 
 	void drawCube(int x, int y, int z) { cubes.push_back({x, y, z}); };
 	void drawCube(glm::ivec3 pos) { drawCube(pos.x, pos.y, pos.z); };
+
+	//todo not working at far distances rn
+	void drawLine(glm::dvec3 a, glm::dvec3 b) { lines.push_back({a, b}); }
 	void render(Camera &c, glm::ivec3 posInt, glm::vec3 posFloat);
 
 };
