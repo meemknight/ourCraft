@@ -60,12 +60,7 @@ struct Packet_RequestChunk
 	glm::ivec2 chunkPosition = {};
 };
 
-struct Packet_RecieveChunk_Optimized
-{
-	Packet packet = {};
-	ChunkData chunk = {};
-};
-
+//modifying this will trigger an ssert!
 struct Packet_RecieveChunk
 {
 	ChunkData chunk = {};
@@ -102,10 +97,6 @@ struct Packet_PlaceBlocks
 };
 
 
-
-//you have to add space for packet info in the begining yourself!
-void sendPacketOptimized(ENetPeer *to, Packet p, char *data, size_t sizeWithoutPacket,
-	bool reliable, int channel);
 
 void sendPacket(ENetPeer *to, Packet p, const char *data, size_t size, bool reliable, int channel);
 char *parsePacket(ENetEvent &event, Packet &p, size_t &dataSize);

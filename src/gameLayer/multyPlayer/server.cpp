@@ -304,14 +304,13 @@ void serverWorkerFunction()
 					packet.cid = i.cid;
 					packet.header = headerRecieveChunk;
 
-					Packet_RecieveChunk_Optimized *packetData = new Packet_RecieveChunk_Optimized(); //todo ring buffer here
 
-					packetData->chunk = *rez;
+					//if you have modified Packet_RecieveChunk make sure you didn't break this!
+					static_assert(sizeof(Packet_RecieveChunk) == sizeof(ChunkData));
 
-					sendPacketOptimized(client.peer, packet, (char *)packetData,
+					sendPacket(client.peer, packet, (char *)rez,
 						sizeof(Packet_RecieveChunk), true, channelChunksAndBlocks);
 
-					delete packetData;
 				}
 				//else
 				//{

@@ -1187,7 +1187,8 @@ void main()
 
 			//out_color.rgb = mix(out_color.rgb, peelTexture, reflectivity);
 			//out_color.rgb = mix(peelTexture, out_color.rgb, pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1 );
-			out_color.rgb = mix(peelTexture, u_waterColor*out_color.rgb, pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1 );
+			//out_color.rgb = mix(peelTexture, u_waterColor*out_color.rgb, pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1 );
+			out_color.rgb = mix(peelTexture, u_waterColor*out_color.rgb, 0.5);
 			
 
 			//darken deep stuff, todo reenable and use final depth
