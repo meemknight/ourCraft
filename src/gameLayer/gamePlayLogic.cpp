@@ -92,7 +92,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		EventCounter validateEvent = 0;
 		RevisionNumber inValidateRevision = 0;
 
-		clientMessageLoop(validateEvent, inValidateRevision);
+		clientMessageLoop(validateEvent, inValidateRevision, 
+			gameData.player.body.pos, gameData.chunkSystem.squareSize);
 
 		if (validateEvent)
 		{
@@ -459,7 +460,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			{
 				ImGui::Checkbox("Colidable", &gameData.colidable);
 
-				ImGui::DragScalarN("camera pos", ImGuiDataType_Double, &gameData.c.position[0], 3, 0.01);
+				ImGui::DragScalarN("Player Body pos", ImGuiDataType_Double,
+					&gameData.player.body.pos[0], 3, 0.01);
 
 				ImGui::Text("camera float: %f, %f, %f", posFloat.x, posFloat.y, posFloat.z);
 				ImGui::Text("camera int: %d, %d, %d", posInt.x, posInt.y, posInt.z);

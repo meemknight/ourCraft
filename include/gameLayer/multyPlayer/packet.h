@@ -47,6 +47,7 @@ enum
 	channelChunksAndBlocks,
 	channelPlayerPositions,
 	channelHandleConnections,
+	//channelRequestChunks, todo maybe try this in the future
 	SERVER_CHANNELS
 
 };
@@ -57,6 +58,7 @@ struct Packet_ReceiveCIDAndData
 
 struct Packet_RequestChunk
 {
+	glm::ivec2 playersPositionAtRequest = {};
 	glm::ivec2 chunkPosition = {};
 };
 

@@ -198,20 +198,6 @@ bool serverStartupStuff()
 	return true;
 }
 
-bool checkIfPlayerShouldGetChunk(glm::ivec3 playerPos, glm::ivec2 chunkPos, int playerSquareDistance)
-{
-	glm::ivec2 playerChunk = fromBlockPosToChunkPos(playerPos);
-	float dist = glm::length(glm::vec2(playerChunk - chunkPos));
-	if (dist > (playerSquareDistance / 2.f) * std::sqrt(2.f) + 1)
-	{
-		return 0;
-	}
-	else
-	{
-		return 1;
-	}
-}
-
 void serverWorkerFunction()
 {
 	StructuresManager structuresManager;
@@ -283,9 +269,9 @@ void serverWorkerFunction()
 			if (i.t.type == Task::generateChunk)
 			{
 				auto client = getClient(i.cid); //todo this could fail when players leave so return pointer and check
-
-				//if (checkIfPlayerShouldGetChunk(client.playerData.position, 
-				//	{i.t.pos.x, i.t.pos.z}, client.playerData.chunkDistance))
+				
+				if (checkIfPlayerShouldGetChunk(client.positionForChunkGeneration, 
+					{i.t.pos.x, i.t.pos.z}, client.playerData.chunkDistance))
 				{
 					PL::Profiler profiler;
 
@@ -308,15 +294,16 @@ void serverWorkerFunction()
 					//if you have modified Packet_RecieveChunk make sure you didn't break this!
 					static_assert(sizeof(Packet_RecieveChunk) == sizeof(ChunkData));
 
+
 					sendPacket(client.peer, packet, (char *)rez,
 						sizeof(Packet_RecieveChunk), true, channelChunksAndBlocks);
 
 				}
-				//else
-				//{
-				//	std::cout << "Chunk rejected because player too far: " <<
-				//		i.t.pos.x << i.t.pos.z << "\n";
-				//}
+				else
+				{
+					std::cout << "Chunk rejected because player too far: " <<
+						i.t.pos.x << " " << i.t.pos.z << "\n";
+				}
 
 				
 			}

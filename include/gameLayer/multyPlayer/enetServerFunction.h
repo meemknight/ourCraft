@@ -23,6 +23,7 @@ struct Client
 	RevisionNumber revisionNumber = 1;
 
 	PlayerData playerData;
+	glm::ivec2 positionForChunkGeneration = {};
 };
 
 void signalWaitingFromServer();
@@ -33,3 +34,6 @@ Client getClient(CID cid);
 std::unordered_map<CID, Client> getAllClients();
 
 void broadCast(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel);
+
+bool checkIfPlayerShouldGetChunk(glm::ivec2 playerPos2D,
+	glm::ivec2 chunkPos, int playerSquareDistance);

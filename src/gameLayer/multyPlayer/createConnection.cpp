@@ -2,6 +2,8 @@
 #include "enet/enet.h"
 #include "multyPlayer/packet.h"
 #include <iostream>
+#include <multyPlayer/enetServerFunction.h>
+
 static ConnectionData clientData;
 
 void submitTaskClient(Task &t)
@@ -18,6 +20,7 @@ void submitTaskClient(Task &t)
 		p.header = headerRequestChunk;
 		Packet_RequestChunk packetData = {};
 		packetData.chunkPosition = {t.pos.x, t.pos.z};
+		packetData.playersPositionAtRequest = t.playerPosForChunkGeneration;
 
 		sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1, 
 			channelChunksAndBlocks);
@@ -45,6 +48,8 @@ void submitTaskClient(Task &t)
 
 void submitTaskClient(std::vector<Task> &t)
 {
+	//todo can be merged into less requests.
+
 	for (auto &i : t)
 	{
 		submitTaskClient(i);
@@ -88,7 +93,11 @@ ConnectionData getConnectionData()
 }
 
 
-void recieveDataClient(ENetEvent &event, EventCounter &validatedEvent, RevisionNumber &invalidateRevision)
+void recieveDataClient(ENetEvent &event, 
+	EventCounter &validatedEvent, 
+	RevisionNumber &invalidateRevision,
+	glm::ivec3 playerPosition, int squareDistance
+	)
 {
 	Packet p;
 	size_t size = 0;
@@ -98,10 +107,22 @@ void recieveDataClient(ENetEvent &event, EventCounter &validatedEvent, RevisionN
 	{
 		case headerRecieveChunk:
 		{
+
 			Packet_RecieveChunk *chunkPacket = (Packet_RecieveChunk *)data;
-			Chunk *c = new Chunk();
-			c->data = chunkPacket->chunk;
-			clientData.recievedChunks.push_back(c);
+
+
+			if (checkIfPlayerShouldGetChunk({playerPosition.x, playerPosition.z},
+				{chunkPacket->chunk.x, chunkPacket->chunk.z}, squareDistance))
+			{
+				Chunk *c = new Chunk();
+				c->data = chunkPacket->chunk;
+				clientData.recievedChunks.push_back(c);
+			}
+			else
+			{
+				//std::cout << "Early rejected chunk by the client\n";
+			}
+			
 
 			break;
 		}
@@ -148,7 +169,8 @@ void recieveDataClient(ENetEvent &event, EventCounter &validatedEvent, RevisionN
 }
 
 //this is not multy threaded
-void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision)
+void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision
+	,glm::ivec3 playerPosition, int squareDistance)
 {
 	ENetEvent event;
 
@@ -161,7 +183,8 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 				case ENET_EVENT_TYPE_RECEIVE:
 				{
 
-					recieveDataClient(event, validatedEvent, invalidateRevision);
+					recieveDataClient(event, validatedEvent, invalidateRevision,
+						playerPosition, squareDistance);
 					
 					enet_packet_destroy(event.packet);
 

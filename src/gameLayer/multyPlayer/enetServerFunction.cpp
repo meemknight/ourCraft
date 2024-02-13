@@ -36,6 +36,21 @@ void broadCast(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool r
 	connectionsMutex.unlock();
 }
 
+bool checkIfPlayerShouldGetChunk(glm::ivec2 playerPos2D,
+	glm::ivec2 chunkPos, int playerSquareDistance)
+{
+	glm::ivec2 playerChunk = fromBlockPosToChunkPos({playerPos2D.x, 0, playerPos2D.y});
+	float dist = glm::length(glm::vec2(playerChunk - chunkPos));
+	if (dist > (playerSquareDistance / 2.f) * std::sqrt(2.f) + 1)
+	{
+		return 0;
+	}
+	else
+	{
+		return 1;
+	}
+}
+
 Client getClient(CID cid)
 {
 	connectionsMutex.lock();
@@ -118,15 +133,44 @@ void recieveData(ENetHost *server, ENetEvent &event)
 	ServerTask serverTask = {};
 	serverTask.cid = p.cid;
 
+	//todo check invalid cids here instead of every time later
+
 	switch (p.header)
 	{
 		case headerRequestChunk:
 		{
 			Packet_RequestChunk packetData = *(Packet_RequestChunk *)data;
-			serverTask.t.type = Task::generateChunk;
-			serverTask.t.pos = {packetData.chunkPosition.x, 0, packetData.chunkPosition.y};
+			
+			int squareDistance = 0;
+			bool error = 0;
 
-			submitTaskForServer(serverTask);
+			{
+				connectionsMutex.lock();
+				auto it = connections.find(p.cid);
+				if (it == connections.end())
+				{
+					std::cout << "invalid cid error";
+					error = true;
+				}
+				else
+				{
+					it->second.positionForChunkGeneration = packetData.playersPositionAtRequest;
+					//std::cout << packetData.playersPositionAtRequest.x << "\n";
+					squareDistance = it->second.playerData.chunkDistance;
+				}
+				connectionsMutex.unlock();
+			}
+
+			if (!error)
+			{
+				serverTask.t.type = Task::generateChunk;
+				serverTask.t.pos = {packetData.chunkPosition.x, 0, packetData.chunkPosition.y};
+
+				submitTaskForServer(serverTask);
+			}
+			
+			
+			
 			break;
 		}
 

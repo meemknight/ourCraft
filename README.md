@@ -41,4 +41,4 @@ Features and todos:
 - [ ] Multy player
   - [x] Connection to server and hand shake
   - [x] Server can validate moves
-  - [ ] Server knows player position to optimize chunk logic stuff
+  - [x] Server knows player position to optimize chunk logic stuff

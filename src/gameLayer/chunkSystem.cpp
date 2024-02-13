@@ -325,7 +325,9 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 				t.type = Task::generateChunk;
 				t.pos = glm::ivec3(x + minPos.x, 0, z + minPos.y);
-				
+				t.playerPosForChunkGeneration.x = playerBlockPosition.x;
+				t.playerPosForChunkGeneration.y = playerBlockPosition.z;
+
 				chunkTasks.push_back(t);
 			}
 		}
