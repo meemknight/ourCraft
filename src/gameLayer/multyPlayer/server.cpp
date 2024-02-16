@@ -256,6 +256,8 @@ void serverWorkerFunction()
 			}
 		}
 
+		//todo rather than a sort use buckets, so the clients can't DDOS the server with
+		//place blocks tasks, making generating chunks impossible.
 		std::sort(sd.waitingTasks.begin(), sd.waitingTasks.end(),
 			[](const ServerTask &a, const ServerTask &b) { return a.t.type < b.t.type; });
 

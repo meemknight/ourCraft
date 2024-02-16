@@ -45,7 +45,7 @@ struct GameData
 	bool renderBox = 0;
 	bool renderPlayerPos = 0;
 	
-	bool colidable = 0;
+	bool colidable = 1;
 
 	Player player;
 	
@@ -64,9 +64,11 @@ bool initGameplay(ProgramData &programData)
 	gameData = GameData();
 	gameData.c.position = glm::vec3(0, 65, 0);
 
-	gameData.player.body.pos = glm::vec3(0, 105, 0);
-	gameData.player.body.lastPos = glm::vec3(0, 105, 0);
-	gameData.player.body.colliderSize = glm::vec3(1,1,1);
+	gameData.player.body.pos = glm::vec3(0, 107, 0);
+	gameData.player.body.lastPos = glm::vec3(0, 107, 0);
+	//gameData.player.body.colliderSize = glm::vec3(0.95,0.95,0.95);
+	//gameData.player.body.colliderSize = glm::vec3(0.5,0.5,0.5);
+	gameData.player.body.colliderSize = glm::vec3(1,2,1);
 	
 
 	gameData.chunkSystem.createChunks(16);
@@ -95,6 +97,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		clientMessageLoop(validateEvent, inValidateRevision, 
 			gameData.player.body.pos, gameData.chunkSystem.squareSize);
 
+		//todo timeout here and request the server for a hard reset
 		if (validateEvent)
 		{
 			while (!gameData.undoQueue.events.empty())
@@ -271,7 +274,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 
 		gameData.player.body.updateMove();
-		gameData.c.position = gameData.player.body.pos;
+		gameData.c.position = gameData.player.body.pos + glm::dvec3(0,1.5,0);
 
 	}
 #pragma endregion

@@ -174,7 +174,7 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 {
 	ENetEvent event;
 
-	for (int i = 0; i < 20; i++)
+	for (int i = 0; i < 25; i++)
 	{
 		if (enet_host_service(clientData.client, &event, 0) > 0)
 		{

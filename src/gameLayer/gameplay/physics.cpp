@@ -61,21 +61,38 @@ void RigidBody::checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
 	glm::vec3 delta = pos - lastPos;
 	const float BLOCK_SIZE = 1;
 
-	//todo
-	//if (
-	//	(pos.y < -dimensions.y)
-	//	|| (pos.x < -dimensions.x)
-	//	|| (pos.y > mapData.h * BLOCK_SIZE)
-	//	|| (pos.x > mapData.w * BLOCK_SIZE)
-	//	)
-	//{
-	//	return;
-	//}
+	
+	
+	//pos.y = performCollision({lastPos.x, pos.y, lastPos.z}, colliderSize, {0, delta.y, 0},
+	//	chunkGetter).y;
 
+	
+	glm::vec3 newPos = pos;
+	
+	if (delta.x)
+	{
+		newPos.x = performCollision({pos.x, lastPos.y, lastPos.z}, lastPos, colliderSize, {delta.x, 0, 0},
+			chunkGetter).x;
+	}
 
+	if (delta.y)
+	{
+		newPos.y = performCollision({newPos.x, pos.y, lastPos.z}, lastPos, colliderSize, {0, delta.y, 0},
+			chunkGetter).y;
+	}
+	
+	if (delta.z)
+	{
+		newPos.z = performCollision({newPos.x, newPos.y, pos.z}, lastPos, colliderSize, {0, 0, delta.z},
+			chunkGetter).z;
+	}
+	
+	pos = newPos;
+
+	/*
 	glm::vec3 newPos = performCollision({pos.x, lastPos.y, lastPos.z}, colliderSize, {delta.x, 0, 0},
 		chunkGetter);
-
+	
 	newPos = performCollision({newPos.x, pos.y, lastPos.z}, colliderSize, {0, delta.y, 0},
 		chunkGetter);
 	
@@ -85,6 +102,7 @@ void RigidBody::checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
 	
 	pos = performCollision({newPos.x, newPos.y, pos.z}, colliderSize, {0, 0, delta.z},
 		chunkGetter);
+	*/
 
 }
 
@@ -109,12 +127,20 @@ bool boxColide(glm::dvec3 p1, glm::vec3 s1,
 	glm::dvec3 p2, glm::vec3 s2)
 {
 
+	//const float delta = 0.000001;
+	//s2.x += delta;
+	//s2.z += delta;
+	//s2.y += delta/2.f;
+	//p2.y -= delta / 2.f;
+
 	if (
 		(p1.x + s1.x / 2.0 > p2.x - s2.x / 2.0) &&
 		(p1.x - s1.x / 2.0 < p2.x + s2.x / 2.0) &&
 
-		(p1.y + s1.y / 2.0 > p2.y - s2.y / 2.0) &&
-		(p1.y - s1.y / 2.0 < p2.y + s2.y / 2.0) &&
+		(p1.y + s1.y > p2.y) &&
+		(p1.y < p2.y + s2.y) &&
+		//(p1.y + s1.y / 2.0 > p2.y - s2.y / 2.0) &&
+		//(p1.y - s1.y / 2.0 < p2.y + s2.y / 2.0) &&
 
 		(p1.z + s1.z / 2.0 > p2.z - s2.z / 2.0) &&
 		(p1.z - s1.z / 2.0 < p2.z + s2.z / 2.0)
@@ -122,30 +148,42 @@ bool boxColide(glm::dvec3 p1, glm::vec3 s1,
 	{
 		return true;
 	}
+	else
+		return false;
 
 }
 
-glm::dvec3 RigidBody::performCollision(glm::dvec3 pos, glm::vec3 size, glm::vec3 delta,
+glm::dvec3 RigidBody::performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, glm::vec3 delta,
 	decltype(chunkGetterSignature) *chunkGetter)
 {
+	
 
 	const float BLOCK_SIZE = 1.f;
 
-	int minX = (pos.x - abs(delta.x) - BLOCK_SIZE) / BLOCK_SIZE;
-	int maxX = ceil((pos.x + abs(delta.x) + BLOCK_SIZE + size.x) / BLOCK_SIZE);
+	int minX = (pos.x - abs(delta.x) - BLOCK_SIZE - size.x / 2.f) / BLOCK_SIZE - 2;
+	int maxX = ceil((pos.x + abs(delta.x) + BLOCK_SIZE + size.x/2.f) / BLOCK_SIZE) + 2;
 
-	int minY = (pos.y - abs(delta.y) - BLOCK_SIZE) / BLOCK_SIZE;
-	int maxY = ceil((pos.y + abs(delta.y) + BLOCK_SIZE + size.y) / BLOCK_SIZE);
+	//int minX = pos.x - 1;
+	//int maxX = pos.x + 2;
 
-	int minZ = (pos.z - abs(delta.z) - BLOCK_SIZE) / BLOCK_SIZE;
-	int maxZ = ceil((pos.z + abs(delta.z) + BLOCK_SIZE + size.z) / BLOCK_SIZE);
+	int minY = (pos.y - abs(delta.y) - BLOCK_SIZE) / BLOCK_SIZE - 2;
+	int maxY = ceil((pos.y + abs(delta.y) + BLOCK_SIZE + size.y) / BLOCK_SIZE) + 2;
+
+	int minZ = (pos.z - abs(delta.z) - BLOCK_SIZE - size.z / 2.f) / BLOCK_SIZE - 2;
+	int maxZ = ceil((pos.z + abs(delta.z) + BLOCK_SIZE + size.z/2.f) / BLOCK_SIZE) + 2;
+
+	//int minZ = pos.z - 1;
+	//int maxZ = pos.z + 2;
 
 	minY = std::max(0, minY);
 	maxY = std::min(CHUNK_HEIGHT-1, maxY);
 
+
 		for (int x = minX; x < maxX; x++)
 			for (int z = minZ; z < maxZ; z++)
 			{
+
+
 				auto chunkPos = fromBlockPosToChunkPos(x, z);
 
 				auto c = chunkGetter(chunkPos);
@@ -163,53 +201,56 @@ glm::dvec3 RigidBody::performCollision(glm::dvec3 pos, glm::vec3 size, glm::vec3
 						if (b->isColidable())
 						{
 
-							if (boxColide(pos, size, {x,y,z}, glm::vec3(BLOCK_SIZE)))
+
+							if (boxColide(pos, size, {x,y - BLOCK_SIZE/2.f,z}, glm::vec3(BLOCK_SIZE)))
 							{
 
-								if (delta.x != 0)
+								if (!boxColide(lastPos, size, {x,y - BLOCK_SIZE / 2.f,z}, glm::vec3(BLOCK_SIZE)))
 								{
-									if (delta.x < 0) // moving left
+									if (delta.x != 0)
 									{
-										//leftTouch = 1;
-										pos.x = x * BLOCK_SIZE + BLOCK_SIZE / 2.f + size.x / 2.f;
-										goto end;
+										if (delta.x < 0) // moving left
+										{
+											//leftTouch = 1;
+											pos.x = x * BLOCK_SIZE + BLOCK_SIZE / 2.f + size.x / 2.f;
+											goto end;
+										}
+										else
+										{
+											//rightTouch = 1;
+											pos.x = x * BLOCK_SIZE - BLOCK_SIZE / 2.f - size.x / 2.f;
+											goto end;
+										}
 									}
-									else
+									else if (delta.y != 0)
 									{
-										//rightTouch = 1;
-										pos.x = x * BLOCK_SIZE - BLOCK_SIZE / 2.f - size.x / 2.f;
-										goto end;
+										if (delta.y < 0) //moving down
+										{
+											pos.y = y * BLOCK_SIZE + BLOCK_SIZE / 2.f;
+											goto end;
+										}
+										else //moving up
+										{
+											pos.y = y * BLOCK_SIZE - BLOCK_SIZE / 2.f - size.y;
+											goto end;
+										}
+									}
+									else if (delta.z != 0)
+									{
+										if (delta.z < 0) // moving left
+										{
+											//leftTouch = 1;
+											pos.z = z * BLOCK_SIZE + BLOCK_SIZE / 2.f + size.z / 2.f;
+											goto end;
+										}
+										else
+										{
+											//rightTouch = 1;
+											pos.z = z * BLOCK_SIZE - BLOCK_SIZE / 2.f - size.z / 2.f;
+											goto end;
+										}
 									}
 								}
-								else if(delta.y != 0)
-								{
-									if (delta.y < 0) //moving down
-									{
-										pos.y = y * BLOCK_SIZE + BLOCK_SIZE / 2.f + size.y / 2.f;
-										goto end;
-									}
-									else
-									{
-										pos.y = y * BLOCK_SIZE - BLOCK_SIZE / 2.f - size.y / 2.f;
-										goto end;
-									}
-								}
-								else
-								{
-									if (delta.z < 0) // moving left
-									{
-										//leftTouch = 1;
-										pos.z = z * BLOCK_SIZE + BLOCK_SIZE / 2.f + size.z / 2.f;
-										goto end;
-									}
-									else
-									{
-										//rightTouch = 1;
-										pos.z = z * BLOCK_SIZE - BLOCK_SIZE / 2.f - size.z / 2.f;
-										goto end;
-									}
-								}
-
 
 
 							};
@@ -226,8 +267,10 @@ glm::dvec3 RigidBody::performCollision(glm::dvec3 pos, glm::vec3 size, glm::vec3
 				
 
 			}
+
 end:
-	return pos;
+	
+		return pos;
 }
 
 void Player::moveFPS(glm::vec3 direction)

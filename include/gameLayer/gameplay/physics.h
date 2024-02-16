@@ -17,7 +17,7 @@ struct RigidBody
 	void checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos, 
 		decltype(chunkGetterSignature) *chunkGetter);
 
-	glm::dvec3 performCollision(glm::dvec3 pos, glm::vec3 size, glm::vec3 delta,
+	glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, glm::vec3 delta,
 		decltype(chunkGetterSignature) *chunkGetter);
 
 	void updateMove();
