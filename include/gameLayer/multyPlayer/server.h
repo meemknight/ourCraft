@@ -18,7 +18,7 @@ struct PerClientServerSettings
 
 	bool validateStuff = true;
 
-	glm::dvec3 outPlayerPos;
+	glm::dvec3 outPlayerPos; //just for printing (todo remove)
 };
 
 struct ServerSettings

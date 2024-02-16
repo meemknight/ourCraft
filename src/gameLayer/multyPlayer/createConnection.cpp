@@ -3,6 +3,7 @@
 #include "multyPlayer/packet.h"
 #include <iostream>
 #include <multyPlayer/enetServerFunction.h>
+#include <gameplay/entityManagerClient.h>
 
 static ConnectionData clientData;
 
@@ -96,7 +97,8 @@ ConnectionData getConnectionData()
 void recieveDataClient(ENetEvent &event, 
 	EventCounter &validatedEvent, 
 	RevisionNumber &invalidateRevision,
-	glm::ivec3 playerPosition, int squareDistance
+	glm::ivec3 playerPosition, int squareDistance,
+	ClientEntityManager &entityManager
 	)
 {
 	Packet p;
@@ -160,6 +162,28 @@ void recieveDataClient(ENetEvent &event,
 			break;
 		}
 
+		case headerClientRecieveOtherPlayerPosition:
+		{
+
+			Packet_ClientRecieveOtherPlayerPosition player =
+				*(Packet_ClientRecieveOtherPlayerPosition *)data;
+
+			if (entityManager.localPlayer.entityId == player.entityId)
+			{
+				entityManager.localPlayer.body.pos = player.position;
+				entityManager.localPlayer.body.lastPos = player.position;
+			}
+			else
+			{
+
+				//todo check if distance too great + drop players that are too far.
+
+				entityManager.players[player.entityId].position = player.position;
+
+			}
+
+		}
+
 		default:
 		break;
 
@@ -170,7 +194,7 @@ void recieveDataClient(ENetEvent &event,
 
 //this is not multy threaded
 void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision
-	,glm::ivec3 playerPosition, int squareDistance)
+	,glm::ivec3 playerPosition, int squareDistance, ClientEntityManager &entityManager)
 {
 	ENetEvent event;
 
@@ -184,7 +208,7 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 				{
 
 					recieveDataClient(event, validatedEvent, invalidateRevision,
-						playerPosition, squareDistance);
+						playerPosition, squareDistance, entityManager);
 					
 					enet_packet_destroy(event.packet);
 
@@ -231,7 +255,7 @@ void closeConnection()
 
 }
 
-bool createConnection()
+bool createConnection(Packet_ReceiveCIDAndData &playerData)
 {
 	if (clientData.conected) { return false; }
 
@@ -288,7 +312,7 @@ bool createConnection()
 
 		clientData.cid = p.cid;
 
-		auto recievedData = *(Packet_ReceiveCIDAndData *)data;
+		playerData = *(Packet_ReceiveCIDAndData *)data;
 		
 		//send player own info or sthing
 		//sendPlayerData(e, true);

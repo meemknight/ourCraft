@@ -24,10 +24,12 @@ struct RigidBody
 
 };
 
+//this is the local player
 struct Player
 {
 	glm::vec3 lookDirection = {0,0,-1};
 	RigidBody body = {};
+	std::uint64_t entityId = 0;
 
 	void moveFPS(glm::vec3 direction);
 

@@ -16,6 +16,7 @@ ENetHost *server = 0;
 std::mutex connectionsMutex;
 std::unordered_map<CID, Client> connections;
 int pids = 1;
+int entityId = 1;
 static std::thread serverThread;
 
 void broadCastNotLocked(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel)
@@ -90,15 +91,22 @@ void submitTaskForServer(ServerTask t)
 //todo remove conection
 void addConnection(ENetHost *server, ENetEvent &event)
 {
-	createConnection(pids, Client{event.peer});
+
+	{
+		Client c{event.peer};
+		c.entityId = entityId;
+		createConnection(pids, c);
+	}
 
 	Packet p;
 	p.header = headerReceiveCIDAndData;
 	p.cid = pids;
-
 	pids++;
 
 	Packet_ReceiveCIDAndData packetToSend = {};
+	packetToSend.playersPosition = glm::dvec3(0, 107, 0);;
+	packetToSend.yourPlayerEntityId = entityId;
+	entityId++;
 
 	//send own cid
 	sendPacket(event.peer, p, (const char *)&packetToSend, 
@@ -106,7 +114,7 @@ void addConnection(ENetHost *server, ENetEvent &event)
 
 	//todo send info of other players to this new connection
 
-	//broadcast data of new connection
+
 	addCidToServerSettings(p.cid);
 
 }
@@ -190,6 +198,9 @@ void recieveData(ENetHost *server, ENetEvent &event)
 		{
 			Packer_SendPlayerData packetData = *(Packer_SendPlayerData *)data;
 
+
+			Client clientCopy = {};
+
 			connectionsMutex.lock();
 			
 			auto it = connections.find(p.cid);
@@ -201,6 +212,8 @@ void recieveData(ENetHost *server, ENetEvent &event)
 			{
 				it->second.playerData = packetData.playerData;
 
+				clientCopy = it->second;
+
 				//todo something better here...
 				auto s = getServerSettingsCopy();
 				s.perClientSettings[p.cid].outPlayerPos = packetData.playerData.position;
@@ -209,6 +222,27 @@ void recieveData(ENetHost *server, ENetEvent &event)
 
 			connectionsMutex.unlock();
 
+
+			//broadcast player movement
+			if(clientCopy.entityId)
+			{
+				Packet_ClientRecieveOtherPlayerPosition sendData;
+				sendData.entityId = clientCopy.entityId;
+				sendData.position = packetData.playerData.position;
+
+				Packet p;
+				p.cid = 0;
+				p.header = headerClientRecieveOtherPlayerPosition;
+
+				broadCast(p, &sendData, sizeof(sendData), clientCopy.peer, false, channelPlayerPositions);
+			}
+
+			//todo redend players position and entities
+			//  from time to time to everyone (if other players are not too far)
+
+
+
+			break;
 		}
 
 

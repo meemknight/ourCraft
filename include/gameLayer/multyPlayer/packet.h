@@ -40,6 +40,7 @@ enum
 	headerValidateEvent,
 	headerInValidateEvent,
 	headerSendPlayerData,
+	headerClientRecieveOtherPlayerPosition,
 };
 
 enum 
@@ -54,6 +55,9 @@ enum
 
 struct Packet_ReceiveCIDAndData
 {
+	glm::dvec3 playersPosition = {};
+	std::uint64_t yourPlayerEntityId = 0;
+
 };
 
 struct Packet_RequestChunk
@@ -81,6 +85,12 @@ struct Packet_InValidateEvent
 struct Packer_SendPlayerData
 {
 	PlayerData playerData = {};
+};
+
+struct Packet_ClientRecieveOtherPlayerPosition
+{
+	std::uint64_t entityId = 0;
+	glm::dvec3 position = {};
 };
 
 //used by the client to talk to the server

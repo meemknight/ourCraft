@@ -24,6 +24,7 @@
 #include <profiler.h>
 #include <thread>
 #include <gameplay/physics.h>
+#include <gameplay/entityManagerClient.h>
 
 struct GameData
 {
@@ -47,7 +48,8 @@ struct GameData
 	
 	bool colidable = 1;
 
-	Player player;
+	ClientEntityManager entityManager;
+
 	
 
 }gameData;
@@ -55,7 +57,10 @@ struct GameData
 
 bool initGameplay(ProgramData &programData)
 {
-	if (!createConnection())
+
+	Packet_ReceiveCIDAndData playerData;
+
+	if (!createConnection(playerData))
 	{
 		std::cout << "problem joining server\n";
 		return false;
@@ -64,14 +69,15 @@ bool initGameplay(ProgramData &programData)
 	gameData = GameData();
 	gameData.c.position = glm::vec3(0, 65, 0);
 
-	gameData.player.body.pos = glm::vec3(0, 107, 0);
-	gameData.player.body.lastPos = glm::vec3(0, 107, 0);
+	gameData.entityManager.localPlayer.body.pos = playerData.playersPosition;
+	gameData.entityManager.localPlayer.body.lastPos = playerData.playersPosition;
+	gameData.entityManager.localPlayer.entityId = playerData.yourPlayerEntityId;
 	//gameData.player.body.colliderSize = glm::vec3(0.95,0.95,0.95);
 	//gameData.player.body.colliderSize = glm::vec3(0.5,0.5,0.5);
-	gameData.player.body.colliderSize = glm::vec3(1,2,1);
-	
+	gameData.entityManager.localPlayer.body.colliderSize = glm::vec3(1,2,1);
 
-	gameData.chunkSystem.createChunks(16);
+
+	gameData.chunkSystem.createChunks(8);
 
 	gameData.sunShadow.init();
 
@@ -95,7 +101,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		RevisionNumber inValidateRevision = 0;
 
 		clientMessageLoop(validateEvent, inValidateRevision, 
-			gameData.player.body.pos, gameData.chunkSystem.squareSize);
+			gameData.entityManager.localPlayer.body.pos, gameData.chunkSystem.squareSize, 
+			gameData.entityManager);
 
 		//todo timeout here and request the server for a hard reset
 		if (validateEvent)
@@ -152,14 +159,16 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.undoQueue.currentEventId.revision++;
 		}
 
+
+		//todo send only if changed and stuff...
 		//send player position
 		{
 
-			static float timer = 1;
+			static float timer = 0.016;
 			timer -= deltaTime;
 			if (timer <= 0)
 			{
-				timer = 1;
+				timer = 0.016;
 					
 				Packer_SendPlayerData data;
 				data.playerData.position = gameData.c.position;
@@ -235,13 +244,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 
 		//gameData.c.moveFPS(moveDir);
-		gameData.player.moveFPS(moveDir);
+		gameData.entityManager.localPlayer.moveFPS(moveDir);
 
 
 		bool rotate = !gameData.escapePressed;
 		if (platform::isRMouseHeld()) { rotate = true; }
 		gameData.c.rotateFPS(platform::getRelMousePosition(), 0.25f * deltaTime, rotate);
-		gameData.player.lookDirection = gameData.c.viewDirection;
+		gameData.entityManager.localPlayer.lookDirection = gameData.c.viewDirection;
 		
 		if (!gameData.escapePressed)
 		{
@@ -270,11 +279,11 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		if (gameData.colidable)
 		{
-			gameData.player.body.resolveConstrains(chunkGetter);
+			gameData.entityManager.localPlayer.body.resolveConstrains(chunkGetter);
 		}
 
-		gameData.player.body.updateMove();
-		gameData.c.position = gameData.player.body.pos + glm::dvec3(0,1.5,0);
+		gameData.entityManager.localPlayer.body.updateMove();
+		gameData.c.position = gameData.entityManager.localPlayer.body.pos + glm::dvec3(0,1.5,0);
 
 	}
 #pragma endregion
@@ -431,10 +440,48 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 	}
 
+	for (auto &p : gameData.entityManager.players)
+	{
+		
+		programData.pointDebugRenderer.renderPoint(gameData.c, p.second.position);
+
+		//todo this will be refactored
+		auto boxSize = gameData.entityManager.localPlayer.body.colliderSize;
+		auto pos = p.second.position;
+
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2),
+			pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2));
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2),
+			pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2));
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2),
+			pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2));
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2),
+			pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2));
+
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2),
+			pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2));
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2),
+			pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2));
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2),
+			pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2));
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2),
+			pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2));
+
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2),
+			pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2));
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2),
+			pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2));
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2),
+			pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2));
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2),
+			pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2));
+
+	}
+
 	
-	programData.gyzmosRenderer.drawLine(
-		gameData.point,
-		glm::vec3(gameData.point) + glm::vec3(gameData.pointSize));
+	//programData.gyzmosRenderer.drawLine(
+	//	gameData.point,
+	//	glm::vec3(gameData.point) + glm::vec3(gameData.pointSize));
 
 	if (gameData.renderPlayerPos)
 	{
@@ -464,7 +511,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				ImGui::Checkbox("Colidable", &gameData.colidable);
 
 				ImGui::DragScalarN("Player Body pos", ImGuiDataType_Double,
-					&gameData.player.body.pos[0], 3, 0.01);
+					&gameData.entityManager.localPlayer.body.pos[0], 3, 0.01);
 
 				ImGui::Text("camera float: %f, %f, %f", posFloat.x, posFloat.y, posFloat.z);
 				ImGui::Text("camera int: %d, %d, %d", posInt.x, posInt.y, posInt.z);

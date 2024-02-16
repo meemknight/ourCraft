@@ -289,7 +289,7 @@ void serverWorkerFunction()
 					//}
 
 					Packet packet;
-					packet.cid = i.cid;
+					packet.cid = i.cid; //todo is this cid here needed? should I just put 0?
 					packet.header = headerRecieveChunk;
 
 
