@@ -40,6 +40,9 @@ struct WorldGeneratorSettings
 
 	float densityBias = 0.1;
 	float densityBiasPower = 1;
+	float densitySquishFactor = 1;
+	float densitySquishPower = 1;
+	int densityHeightoffset = 1;
 
 	float spagettiBias = 0.1;
 	float spagettiBiasPower = 1;
@@ -74,6 +77,10 @@ struct WorldGenerator
 	float stone3Dpower = 1.f;
 	float densityBias = 0.1;
 	float densityBiasPower = 1;
+
+	float densitySquishFactor = 1;
+	float densitySquishPower = 1;
+	int densityHeightoffset = 1;
 	
 	FastNoiseSIMD *spagettiNoise;
 	Spline spagettiNoiseSplines;

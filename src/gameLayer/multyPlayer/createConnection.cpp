@@ -194,6 +194,7 @@ void recieveDataClient(ENetEvent &event,
 
 			}
 
+			break;
 		}
 
 		default:

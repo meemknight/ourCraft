@@ -61,6 +61,10 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	densityBias = s.densityBias;
 	densityBiasPower = s.densityBiasPower;
 
+	densitySquishFactor = s.densitySquishFactor;
+	densitySquishPower = s.densitySquishPower;
+	densityHeightoffset = s.densityHeightoffset;
+
 	apply(spagettiNoise, s.seed + 4, s.spagettiNoise);
 	spagettiNoiseSplines = s.spagettiNoise.spline;
 	spagettiNoisePower = s.spagettiNoise.power;
@@ -135,6 +139,10 @@ std::string WorldGeneratorSettings::saveSettings()
 
 	rez += "densityBias: "; rez += std::to_string(densityBias); rez += ";\n";
 	rez += "densityBiasPower: "; rez += std::to_string(densityBiasPower); rez += ";\n";
+
+	rez += "densitySquishFactor: "; rez += std::to_string(densitySquishFactor); rez += ";\n";
+	rez += "densitySquishPower: "; rez += std::to_string(densitySquishPower); rez += ";\n";
+	rez += "densityHeightoffset: "; rez += std::to_string(densityHeightoffset); rez += ";\n";
 
 	return rez;
 }
@@ -260,7 +268,7 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 
 			auto checkNumber = [&]() -> bool
 			{
-				if (std::isdigit(data[i]))
+				if (std::isdigit(data[i]) || (data[i] == '-' && std::isdigit(data[i+1])) )
 				{
 					Token t;
 					t.type = TokenNumber;
@@ -549,6 +557,30 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					if (isEof()) { return 0; }
 					if (!isNumber()) { return 0; }
 					densityBiasPower = consumeNumber();
+					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
+				}
+				else if (s == "densitySquishFactor")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+					if (!isNumber()) { return 0; }
+					densitySquishFactor = consumeNumber();
+					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
+				}
+				else if (s == "densitySquishPower")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+					if (!isNumber()) { return 0; }
+					densitySquishPower = consumeNumber();
+					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
+				}
+				else if (s == "densityHeightoffset")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+					if (!isNumber()) { return 0; }
+					densityHeightoffset = consumeNumber();
 					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
 				}
 				else if (s == "continentalnessNoise")

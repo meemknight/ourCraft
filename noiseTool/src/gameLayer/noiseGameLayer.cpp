@@ -287,14 +287,26 @@ void recreate()
 			int height = int(startLevel + heightPercentage * heightDiff);
 
 			float firstH = 1;
-			for (int y = 0; y < height; y++)
+			for (int y = 0; y < 256; y++)
 			{
 
 				auto density = getDensityNoiseVal(i, y);
-				float bias = (y - stoneNoiseStartLevel) / (height - 1.f - stoneNoiseStartLevel);
 
-				bias = std::powf(bias, wg.densityBiasPower);
-				//density = std::powf(density, wg.densityBiasPower);
+				int heightOffset = height + settings.densityHeightoffset;
+				int difference = y - heightOffset;
+				float differenceMultiplier = 
+					glm::clamp(pow(abs(difference)/settings.densitySquishFactor, settings.densitySquishPower),
+					1.f, 10.f);
+
+				if (difference > 0)
+				{
+					density = powf(density, differenceMultiplier);
+				}
+				else if (difference < 0)
+				{
+					density = powf(density, 1.f/(differenceMultiplier));
+				}
+
 
 				if (y < stoneNoiseStartLevel)
 				{
@@ -302,7 +314,7 @@ void recreate()
 				}
 				else
 				{
-					if (density > wg.densityBias * bias)
+					if (density > 0.5)
 					{
 						firstH = y;
 						colorData[y * size.x + i] = glm::vec4(77, 73, 70, 255) / 255.f; //stone
@@ -312,6 +324,28 @@ void recreate()
 						colorData[y * size.x + i] = glm::vec4(7, 7, 7, 255) / 255.f; //cave
 					}
 				}
+
+				//float bias = (y - stoneNoiseStartLevel) / (height - 1.f - stoneNoiseStartLevel);
+				//
+				//bias = std::powf(bias, wg.densityBiasPower);
+				////density = std::powf(density, wg.densityBiasPower);
+				//
+				//if (y < stoneNoiseStartLevel)
+				//{
+				//	colorData[y * size.x + i] = glm::vec4(77, 73, 70, 255) / 255.f; //stone
+				//}
+				//else
+				//{
+				//	if (density > wg.densityBias * bias)
+				//	{
+				//		firstH = y;
+				//		colorData[y * size.x + i] = glm::vec4(77, 73, 70, 255) / 255.f; //stone
+				//	}
+				//	else
+				//	{
+				//		colorData[y * size.x + i] = glm::vec4(7, 7, 7, 255) / 255.f; //cave
+				//	}
+				//}
 
 			}
 
@@ -552,6 +586,11 @@ bool gameLogic(float deltaTime)
 
 		ImGui::SliderFloat("3D bias", &settings.densityBias, 0, 1);
 		ImGui::SliderFloat("3D noise bias power", &settings.densityBiasPower, 0.1, 10);
+
+		ImGui::SliderFloat("3D noise squish factor", &settings.densitySquishFactor, 0.1, 100);
+		ImGui::SliderFloat("3D noise squish power", &settings.densitySquishPower, 0.1, 10);
+		ImGui::SliderInt("3D noise density height offset", &settings.densityHeightoffset, -100, 100);
+
 	}
 
 	if (showSpagetti)

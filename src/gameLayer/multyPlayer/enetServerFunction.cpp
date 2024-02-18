@@ -216,6 +216,8 @@ void recieveData(ENetHost *server, ENetEvent &event)
 
 				if (it->second.playerData.position != packetData.playerData.position)
 				{
+
+
 					clientCopy = it->second;
 
 					//todo something better here...
@@ -225,9 +227,10 @@ void recieveData(ENetHost *server, ENetEvent &event)
 				}
 				else
 				{
-					it->second.playerData = packetData.playerData;
+
 				}
-				
+				it->second.playerData = packetData.playerData;
+
 			}
 
 			connectionsMutex.unlock();

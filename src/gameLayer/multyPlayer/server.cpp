@@ -304,7 +304,7 @@ void serverWorkerFunction()
 				else
 				{
 					std::cout << "Chunk rejected because player too far: " <<
-						i.t.pos.x << " " << i.t.pos.z << "\n";
+						i.t.pos.x << " " << i.t.pos.z << " dist: " << client.playerData.chunkDistance << "\n";
 				}
 
 				

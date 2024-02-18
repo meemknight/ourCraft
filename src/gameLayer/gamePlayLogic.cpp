@@ -75,10 +75,10 @@ bool initGameplay(ProgramData &programData)
 	//gameData.player.body.colliderSize = glm::vec3(0.95,0.95,0.95);
 	//gameData.player.body.colliderSize = glm::vec3(0.5,0.5,0.5);
 	//gameData.entityManager.localPlayer.body.colliderSize = glm::vec3(1,2,1);
-	gameData.entityManager.localPlayer.body.colliderSize = glm::vec3(0.95,1.8,0.95);
+	gameData.entityManager.localPlayer.body.colliderSize = glm::vec3(0.8,1.8,0.8);
 
 
-	gameData.chunkSystem.createChunks(8);
+	gameData.chunkSystem.createChunks(32);
 
 	gameData.sunShadow.init();
 

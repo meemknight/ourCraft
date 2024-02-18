@@ -243,14 +243,25 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			int height = int(startLevel + heightPercentage * heightDiff);
 		
 			float firstH = 1;
-			for (int y = 0; y < height; y++)
+			for (int y = 0; y < 256; y++)
 			{
 
 				auto density = getDensityNoiseVal(x, y, z);
-				float bias = (y - stoneNoiseStartLevel) / (height - 1.f - stoneNoiseStartLevel);
+				
+				int heightOffset = height + wg.densityHeightoffset;
+				int difference = y - heightOffset;
+				float differenceMultiplier =
+					glm::clamp(pow(abs(difference) / wg.densitySquishFactor, wg.densitySquishPower),
+					1.f, 10.f);
 
-				bias = std::powf(bias, wg.densityBiasPower);
-				//density = std::powf(density, wg.densityBiasPower);
+				if (difference > 0)
+				{
+					density = powf(density, differenceMultiplier);
+				}
+				else if (difference < 0)
+				{
+					density = powf(density, 1.f / (differenceMultiplier));
+				}
 
 				if (y < stoneNoiseStartLevel)
 				{
@@ -258,11 +269,12 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				}
 				else
 				{
-					if (density > wg.densityBias * bias)
+					if (density > 0.5)
 					{
 						firstH = y;
 						c.unsafeGet(x, y, z).type = BlockTypes::stone;
 					}
+					//else cave
 				}
 
 			}
