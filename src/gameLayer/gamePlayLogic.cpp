@@ -74,7 +74,8 @@ bool initGameplay(ProgramData &programData)
 	gameData.entityManager.localPlayer.entityId = playerData.yourPlayerEntityId;
 	//gameData.player.body.colliderSize = glm::vec3(0.95,0.95,0.95);
 	//gameData.player.body.colliderSize = glm::vec3(0.5,0.5,0.5);
-	gameData.entityManager.localPlayer.body.colliderSize = glm::vec3(1,2,1);
+	//gameData.entityManager.localPlayer.body.colliderSize = glm::vec3(1,2,1);
+	gameData.entityManager.localPlayer.body.colliderSize = glm::vec3(0.95,1.8,0.95);
 
 
 	gameData.chunkSystem.createChunks(8);
@@ -160,7 +161,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 
 
-		//todo send only if changed and stuff...
+		//todo send only if changed and stuff, and send here very rarely...
 		//send player position
 		{
 
@@ -171,7 +172,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				timer = 0.016;
 					
 				Packer_SendPlayerData data;
-				data.playerData.position = gameData.c.position;
+				data.playerData.position = gameData.entityManager.localPlayer.body.pos;
 				data.playerData.chunkDistance = gameData.chunkSystem.squareSize;
 
 				sendPacket(getServer(),
@@ -261,7 +262,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	}
 #pragma endregion
 
-#pragma region collisions
+#pragma region block collisions
 	{
 			
 		auto chunkGetter = [](glm::ivec2 pos) -> ChunkData*
@@ -421,6 +422,14 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	}
 #pragma endregion
 
+#pragma region drop entities that are too far
+
+	gameData.entityManager.dropEntitiesThatAreTooFar({blockPositionPlayer.x,blockPositionPlayer.z},
+		gameData.chunkSystem.squareSize);
+
+
+#pragma endregion
+
 	
 	
 #pragma region debug and gyzmos stuff
@@ -512,6 +521,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 				ImGui::DragScalarN("Player Body pos", ImGuiDataType_Double,
 					&gameData.entityManager.localPlayer.body.pos[0], 3, 0.01);
+				gameData.entityManager.localPlayer.body.lastPos = gameData.entityManager.localPlayer.body.pos;
 
 				ImGui::Text("camera float: %f, %f, %f", posFloat.x, posFloat.y, posFloat.z);
 				ImGui::Text("camera int: %d, %d, %d", posInt.x, posInt.y, posInt.z);

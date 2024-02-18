@@ -10,6 +10,8 @@
 #include <mutex>
 #include <queue>
 #include <multyPlayer/server.h>
+#include <chrono>
+#include <gameplay/entityManagerClient.h>
 
 //todo add to a struct
 ENetHost *server = 0;
@@ -194,6 +196,7 @@ void recieveData(ENetHost *server, ENetEvent &event)
 			break;
 		}
 
+		//todo don't broadcast if nothing changed
 		case headerSendPlayerData:
 		{
 			Packer_SendPlayerData packetData = *(Packer_SendPlayerData *)data;
@@ -210,14 +213,21 @@ void recieveData(ENetHost *server, ENetEvent &event)
 			}
 			else
 			{
-				it->second.playerData = packetData.playerData;
 
-				clientCopy = it->second;
+				if (it->second.playerData.position != packetData.playerData.position)
+				{
+					clientCopy = it->second;
 
-				//todo something better here...
-				auto s = getServerSettingsCopy();
-				s.perClientSettings[p.cid].outPlayerPos = packetData.playerData.position;
-				setServerSettings(s);
+					//todo something better here...
+					auto s = getServerSettingsCopy();
+					s.perClientSettings[p.cid].outPlayerPos = packetData.playerData.position;
+					setServerSettings(s);
+				}
+				else
+				{
+					it->second.playerData = packetData.playerData;
+				}
+				
 			}
 
 			connectionsMutex.unlock();
@@ -236,9 +246,6 @@ void recieveData(ENetHost *server, ENetEvent &event)
 
 				broadCast(p, &sendData, sizeof(sendData), clientCopy.peer, false, channelPlayerPositions);
 			}
-
-			//todo redend players position and entities
-			//  from time to time to everyone (if other players are not too far)
 
 
 
@@ -315,8 +322,18 @@ void enetServerFunction()
 
 	ENetEvent event = {};
 
+	auto start = std::chrono::high_resolution_clock::now();
+
+	float sendEntityTimer = 0.5;
+
 	while (enetServerRunning)
 	{
+		auto stop = std::chrono::high_resolution_clock::now();
+
+		float deltaTime = (std::chrono::duration_cast<std::chrono::microseconds>(stop - start)).count() / 1000000.0f;
+		start = std::chrono::high_resolution_clock::now();
+
+
 		while (enet_host_service(server, &event, 0) > 0 && enetServerRunning)
 		{
 			switch (event.type)
@@ -349,6 +366,65 @@ void enetServerFunction()
 
 			}
 		}
+
+	#pragma region server send entity position data
+
+		{
+			sendEntityTimer -= deltaTime;
+
+			if (sendEntityTimer < 0)
+			{
+				sendEntityTimer = 0.2;
+			
+				//todo make a different timer for each player			
+				//todo maybe merge things into one packet
+
+				//no need for mutex because this thread modifies the clients data
+				auto connections = getAllClients();
+
+				for (auto &c : connections)
+				{
+
+					// send players
+
+					for (auto &other : connections)
+					{
+						if (other.first != c.first)
+						{
+
+							if (checkIfPlayerShouldGetEntity(
+								{c.second.playerData.position.x, c.second.playerData.position.z},
+								other.second.playerData.position, c.second.playerData.chunkDistance, 5)
+								)
+							{
+								Packet_ClientRecieveOtherPlayerPosition sendData;
+								sendData.entityId = other.second.entityId;
+								sendData.position = other.second.playerData.position;
+
+								Packet p;
+								p.cid = 0;
+								p.header = headerClientRecieveOtherPlayerPosition;
+
+								sendPacket(c.second.peer, p, (const char *)&sendData, sizeof(sendData),
+									false, channelPlayerPositions);
+							}
+
+
+
+						}
+					}
+
+
+				}
+
+			}
+
+		}
+
+	#pragma endregion
+
+
+
 
 	}
 

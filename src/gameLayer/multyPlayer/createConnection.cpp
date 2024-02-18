@@ -165,20 +165,32 @@ void recieveDataClient(ENetEvent &event,
 		case headerClientRecieveOtherPlayerPosition:
 		{
 
-			Packet_ClientRecieveOtherPlayerPosition player =
-				*(Packet_ClientRecieveOtherPlayerPosition *)data;
+			Packet_ClientRecieveOtherPlayerPosition *entity =
+				(Packet_ClientRecieveOtherPlayerPosition *)data;
 
-			if (entityManager.localPlayer.entityId == player.entityId)
+
+			if (entityManager.localPlayer.entityId == entity->entityId)
 			{
-				entityManager.localPlayer.body.pos = player.position;
-				entityManager.localPlayer.body.lastPos = player.position;
+				//update local player
+
+				entityManager.localPlayer.body.pos = entity->position;
+				entityManager.localPlayer.body.lastPos = entity->position;
 			}
 			else
 			{
+				if (checkIfPlayerShouldGetEntity({playerPosition.x, playerPosition.z},
+					entity->position, squareDistance, 0))
+				{
 
-				//todo check if distance too great + drop players that are too far.
+					entityManager.players[entity->entityId].position = entity->position;
 
-				entityManager.players[player.entityId].position = player.position;
+				}
+				else
+				{
+					//dropped recieved entity
+				}
+				
+
 
 			}
 

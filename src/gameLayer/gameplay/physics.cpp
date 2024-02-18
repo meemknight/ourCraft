@@ -23,6 +23,8 @@ void RigidBody::resolveConstrains(decltype(chunkGetterSignature) *chunkGetter)
 		delta = glm::normalize(delta);
 		delta *= 0.9 * BLOCK_SIZE;
 
+		int hardLimit = 10000;
+
 		do
 		{
 			newPos += delta;
@@ -37,7 +39,7 @@ void RigidBody::resolveConstrains(decltype(chunkGetterSignature) *chunkGetter)
 				goto end;
 			}
 
-		} while (glm::length((newPos + glm::dvec3(delta)) - pos) > 1.0f * BLOCK_SIZE);
+		} while (glm::length((newPos + glm::dvec3(delta)) - pos) > 1.0f * BLOCK_SIZE && hardLimit-- > 0);
 
 		checkCollisionBrute(pos,
 			lastPos,
@@ -58,7 +60,7 @@ end:
 void RigidBody::checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
 	decltype(chunkGetterSignature) *chunkGetter)
 {
-	glm::vec3 delta = pos - lastPos;
+	glm::dvec3 delta = pos - lastPos;
 	const float BLOCK_SIZE = 1;
 
 	
@@ -67,7 +69,7 @@ void RigidBody::checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
 	//	chunkGetter).y;
 
 	
-	glm::vec3 newPos = pos;
+	glm::dvec3 newPos = pos;
 	
 	if (delta.x)
 	{
@@ -127,10 +129,10 @@ bool boxColide(glm::dvec3 p1, glm::vec3 s1,
 	glm::dvec3 p2, glm::vec3 s2)
 {
 
-	//const float delta = 0.000001;
-	//s2.x += delta;
-	//s2.z += delta;
-	//s2.y += delta/2.f;
+	const double delta = -0.000001;
+	s2.x += delta;
+	s2.z += delta;
+	s2.y += delta/2.0;
 	//p2.y -= delta / 2.f;
 
 	if (
@@ -153,7 +155,7 @@ bool boxColide(glm::dvec3 p1, glm::vec3 s1,
 
 }
 
-glm::dvec3 RigidBody::performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, glm::vec3 delta,
+glm::dvec3 RigidBody::performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, glm::dvec3 delta,
 	decltype(chunkGetterSignature) *chunkGetter)
 {
 	
@@ -183,7 +185,6 @@ glm::dvec3 RigidBody::performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::
 			for (int z = minZ; z < maxZ; z++)
 			{
 
-
 				auto chunkPos = fromBlockPosToChunkPos(x, z);
 
 				auto c = chunkGetter(chunkPos);
@@ -212,13 +213,13 @@ glm::dvec3 RigidBody::performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::
 										if (delta.x < 0) // moving left
 										{
 											//leftTouch = 1;
-											pos.x = x * BLOCK_SIZE + BLOCK_SIZE / 2.f + size.x / 2.f;
+											pos.x = x * BLOCK_SIZE + BLOCK_SIZE / 2.0 + size.x / 2.0;
 											goto end;
 										}
 										else
 										{
 											//rightTouch = 1;
-											pos.x = x * BLOCK_SIZE - BLOCK_SIZE / 2.f - size.x / 2.f;
+											pos.x = x * BLOCK_SIZE - BLOCK_SIZE / 2.0 - size.x / 2.0;
 											goto end;
 										}
 									}
@@ -226,12 +227,12 @@ glm::dvec3 RigidBody::performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::
 									{
 										if (delta.y < 0) //moving down
 										{
-											pos.y = y * BLOCK_SIZE + BLOCK_SIZE / 2.f;
+											pos.y = y * BLOCK_SIZE + BLOCK_SIZE / 2.0;
 											goto end;
 										}
 										else //moving up
 										{
-											pos.y = y * BLOCK_SIZE - BLOCK_SIZE / 2.f - size.y;
+											pos.y = y * BLOCK_SIZE - BLOCK_SIZE / 2.0 - size.y;
 											goto end;
 										}
 									}
@@ -240,13 +241,13 @@ glm::dvec3 RigidBody::performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::
 										if (delta.z < 0) // moving left
 										{
 											//leftTouch = 1;
-											pos.z = z * BLOCK_SIZE + BLOCK_SIZE / 2.f + size.z / 2.f;
+											pos.z = z * BLOCK_SIZE + BLOCK_SIZE / 2.0 + size.z / 2.0;
 											goto end;
 										}
 										else
 										{
 											//rightTouch = 1;
-											pos.z = z * BLOCK_SIZE - BLOCK_SIZE / 2.f - size.z / 2.f;
+											pos.z = z * BLOCK_SIZE - BLOCK_SIZE / 2.0 - size.z / 2.0;
 											goto end;
 										}
 									}
@@ -262,7 +263,7 @@ glm::dvec3 RigidBody::performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::
 				}
 				else
 				{
-					//todo freeze player if he is outside the chunk
+					//todo freeze player if he is outside the loaded chunks
 				}
 				
 
