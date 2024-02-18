@@ -179,7 +179,7 @@ void main()
 	v_uv = calculateUVs(gl_VertexID);
 	
 
-	vec4 posView = vec4(fragmentPositionF + diffF,1);
+	vec4 posView = vec4(fragmentPositionF + diffF,1); //pos view semi actually
 	
 	//apply curvature
 	if(false)	

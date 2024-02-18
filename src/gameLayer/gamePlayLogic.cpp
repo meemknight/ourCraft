@@ -43,6 +43,7 @@ struct GameData
 	//debug stuff
 	glm::ivec3 point = {};
 	glm::ivec3 pointSize = {};//todo move
+	glm::dvec3 entityTest = {};
 	bool renderBox = 0;
 	bool renderPlayerPos = 0;
 	
@@ -388,12 +389,17 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma endregion
 
+#pragma region render entities
+
+	programData.renderer.entityRenderer.itemEntitiesToRender.push_back({gameData.entityTest});
+
+
+#pragma endregion
+
 
 #pragma region chunks and rendering
 	{
-
 		//static std::vector<int> data;
-		
 		
 		programData.renderer.updateDynamicBlocks();
 		
@@ -535,6 +541,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				ImGui::Checkbox("Render Box", &gameData.renderBox);
 				ImGui::Checkbox("Render Player Pos", &gameData.renderPlayerPos);
 
+				ImGui::DragScalarN("Entity pos test", ImGuiDataType_Double,
+					&gameData.entityTest[0], 3, 0.1);
 
 				ImGui::DragFloat("camera speed", &moveSpeed);
 

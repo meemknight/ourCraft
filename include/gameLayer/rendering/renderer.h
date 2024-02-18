@@ -10,6 +10,8 @@ struct ChunkSystem;
 struct ProgramData;
 struct SunShadow;
 
+using uniform = GLuint;
+
 struct Renderer
 {
 
@@ -108,6 +110,36 @@ struct Renderer
 		GLuint u_timeGrass;
 	}zpassShader;
 	
+	struct EntityRenderer
+	{
+
+		struct
+		{
+			Shader shader;
+
+			uniform u_entityPositionInt;
+			uniform u_entityPositionFloat;
+			uniform u_viewProjection;
+			uniform u_cameraPositionInt;
+			uniform u_cameraPositionFloat;
+			uniform u_modelMatrix;
+
+			GLuint vaoCube = 0;
+			GLuint vertexBufferCube = 0;
+			GLuint indexBufferCube = 0;
+
+		}basicEntityshader;
+
+		struct ItemEntityRenderData
+		{
+			glm::dvec3 position;
+		};
+
+
+		std::vector<ItemEntityRenderData> itemEntitiesToRender;
+
+	}entityRenderer;
+
 	float metallic = 0;
 	float roughness = 0.5;
 	float exposure = 1.7;
@@ -128,6 +160,8 @@ struct Renderer
 	
 	void renderShadow(SunShadow &sunShadow,
 		ChunkSystem &chunkSystem, Camera &c, ProgramData &programData);
+
+
 
 	float waterTimer = 0;
 

@@ -287,6 +287,117 @@ float vertexUV[] = {
 };
 
 
+constexpr float uv = 1;
+constexpr float cubeEntityData[] = {
+	-0.5f, +0.5f, +0.5f, // 0
+	+0.0f, +1.0f, +0.0f, // Normal
+	0, 0,				 //uv
+
+	+0.5f, +0.5f, +0.5f, // 1
+	+0.0f, +1.0f, +0.0f, // Normal
+	1 * uv, 0,				 //uv
+
+	+0.5f, +0.5f, -0.5f, // 2
+	+0.0f, +1.0f, +0.0f, // Normal
+	1 * uv, 1 * uv,				 //uv
+
+	-0.5f, +0.5f, -0.5f, // 3
+	+0.0f, +1.0f, +0.0f, // Normal
+	0, 1 * uv,				 //uv
+
+	-0.5f, +0.5f, -0.5f, // 4
+	 0.0f, +0.0f, -1.0f, // Normal
+	 0, 1 * uv,				 //uv
+
+	 +0.5f, +0.5f, -0.5f, // 5
+	  0.0f, +0.0f, -1.0f, // Normal
+	  1 * uv, 1 * uv,				 //uv
+
+	   +0.5f, -0.5f, -0.5f, // 6
+	   0.0f, +0.0f, -1.0f, // Normal
+	   1 * uv, 0,				 //uv
+
+	  -0.5f, -0.5f, -0.5f, // 7
+	   0.0f, +0.0f, -1.0f, // Normal
+	   0, 0,				 //uv
+
+	   +0.5f, +0.5f, -0.5f, // 8
+	   +1.0f, +0.0f, +0.0f, // Normal
+	   1 * uv, 0,				 //uv
+
+	   +0.5f, +0.5f, +0.5f, // 9
+	   +1.0f, +0.0f, +0.0f, // Normal
+	   1 * uv, 1 * uv,				 //uv
+
+	   +0.5f, -0.5f, +0.5f, // 10
+	   +1.0f, +0.0f, +0.0f, // Normal
+	   0, 1 * uv,				 //uv
+
+	   +0.5f, -0.5f, -0.5f, // 11
+	   +1.0f, +0.0f, +0.0f, // Normal
+	   0, 0,				 //uv
+
+	   -0.5f, +0.5f, +0.5f, // 12
+	   -1.0f, +0.0f, +0.0f, // Normal
+	   1 * uv, 1 * uv,				 //uv
+
+	   -0.5f, +0.5f, -0.5f, // 13
+	   -1.0f, +0.0f, +0.0f, // Normal
+	   1 * uv, 0,				 //uv
+
+	   -0.5f, -0.5f, -0.5f, // 14
+	   -1.0f, +0.0f, +0.0f, // Normal
+	   0, 0,				 //uv
+
+	   -0.5f, -0.5f, +0.5f, // 15
+	   -1.0f, +0.0f, +0.0f, // Normal
+	   0, 1 * uv,				 //uv
+
+	   +0.5f, +0.5f, +0.5f, // 16
+	   +0.0f, +0.0f, +1.0f, // Normal
+	   1 * uv, 1 * uv,				 //uv
+
+	   -0.5f, +0.5f, +0.5f, // 17
+	   +0.0f, +0.0f, +1.0f, // Normal
+	   0, 1 * uv,				 //uv
+
+	   -0.5f, -0.5f, +0.5f, // 18
+	   +0.0f, +0.0f, +1.0f, // Normal
+	   0, 0,				 //uv
+
+	   +0.5f, -0.5f, +0.5f, // 19
+	   +0.0f, +0.0f, +1.0f, // Normal
+	   1 * uv, 0,				 //uv
+
+
+	   +0.5f, -0.5f, -0.5f, // 20
+	   +0.0f, -1.0f, +0.0f, // Normal
+	   1 * uv, 0,				 //uv
+
+	   -0.5f, -0.5f, -0.5f, // 21
+	   +0.0f, -1.0f, +0.0f, // Normal
+	   0, 0,				 //uv
+
+	   -0.5f, -0.5f, +0.5f, // 22
+	   +0.0f, -1.0f, +0.0f, // Normal
+	   0, 1 * uv,				 //uv
+
+	   +0.5f, -0.5f, +0.5f, // 23
+	   +0.0f, -1.0f, +0.0f, // Normal
+	   1 * uv, 1 * uv,				 //uv
+
+};
+
+unsigned int cubeEntityIndices[] = {
+0,   1,  2,  0,  2,  3, // Top
+4,   5,  6,  4,  6,  7, // Back
+8,   9, 10,  8, 10, 11, // Right
+12, 13, 14, 12, 14, 15, // Left
+16, 17, 18, 16, 18, 19, // Front
+20, 22, 21, 20, 23, 22, // Bottom
+};
+
+
 void Renderer::create(BlocksLoader &blocksLoader)
 {
 
@@ -433,6 +544,53 @@ void Renderer::create(BlocksLoader &blocksLoader)
 		glVertexAttribDivisor(4, 1);
 
 	glBindVertexArray(0);
+
+
+
+#pragma region basic entity renderer
+
+
+	entityRenderer.basicEntityshader.shader.loadShaderProgramFromFile
+		(RESOURCES_PATH "shaders/basicEntity.vert", RESOURCES_PATH "shaders/basicEntity.frag");
+	entityRenderer.basicEntityshader.shader.bind();
+
+	GET_UNIFORM2(entityRenderer.basicEntityshader, u_entityPositionInt);
+	GET_UNIFORM2(entityRenderer.basicEntityshader, u_entityPositionFloat);
+	GET_UNIFORM2(entityRenderer.basicEntityshader, u_viewProjection);
+	GET_UNIFORM2(entityRenderer.basicEntityshader, u_modelMatrix);
+	GET_UNIFORM2(entityRenderer.basicEntityshader, u_cameraPositionInt);
+	GET_UNIFORM2(entityRenderer.basicEntityshader, u_cameraPositionFloat);
+
+	//GLuint vaoCube = 0;
+	//GLuint vertexBufferCube = 0;
+	//GLuint indexBufferCube = 0;
+
+	glCreateVertexArrays(1, &entityRenderer.basicEntityshader.vaoCube);
+	glBindVertexArray(entityRenderer.basicEntityshader.vaoCube);
+
+	glGenBuffers(1, &entityRenderer.basicEntityshader.vertexBufferCube);
+	glBindBuffer(GL_ARRAY_BUFFER, entityRenderer.basicEntityshader.vertexBufferCube);
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeEntityData), cubeEntityData, GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
+
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
+
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
+
+	glGenBuffers(1, &entityRenderer.basicEntityshader.indexBufferCube);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, entityRenderer.basicEntityshader.indexBufferCube);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeEntityIndices), cubeEntityIndices, GL_STATIC_DRAW);
+
+	glBindVertexArray(0);
+
+#pragma endregion
+
+
 
 }
 
@@ -881,6 +1039,44 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	//glEnable(GL_BLEND);
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	renderStaticGeometry();
+#pragma endregion
+
+#pragma region render entities
+	{
+		glDepthFunc(GL_LESS);
+
+
+		entityRenderer.basicEntityshader.shader.bind();
+
+		glBindVertexArray(entityRenderer.basicEntityshader.vaoCube);
+
+
+		glUniformMatrix4fv(entityRenderer.basicEntityshader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
+		glUniformMatrix4fv(entityRenderer.basicEntityshader.u_modelMatrix, 1, GL_FALSE, &glm::mat4(1.f)[0][0]);
+		glUniform3fv(entityRenderer.basicEntityshader.u_cameraPositionFloat, 1, &posFloat[0]);
+		glUniform3iv(entityRenderer.basicEntityshader.u_cameraPositionInt, 1, &posInt[0]);
+
+
+		//todo instance rendering
+		for (auto &e : entityRenderer.itemEntitiesToRender)
+		{
+			glm::vec3 entityFloat = {};
+			glm::ivec3 entityInt = {};
+
+			decomposePosition(e.position, entityFloat, entityInt);
+
+			glUniform3fv(entityRenderer.basicEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
+			glUniform3iv(entityRenderer.basicEntityshader.u_entityPositionInt, 1, &entityInt[0]);
+
+			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
+
+		}
+	
+		entityRenderer.itemEntitiesToRender.clear();
+	}
+
+	glBindVertexArray(0);
+	defaultShader.shader.bind();
 #pragma endregion
 
 #pragma region copy depth 3
@@ -1364,7 +1560,6 @@ unsigned int cubeIndicesData[] = {
 	16, 17, 18, 16, 18, 19, // Front
 	20, 22, 21, 20, 23, 22, // Bottom
 };
-
 
 void GyzmosRenderer::create()
 {
