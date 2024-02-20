@@ -43,7 +43,7 @@ struct GameData
 	//debug stuff
 	glm::ivec3 point = {};
 	glm::ivec3 pointSize = {};//todo move
-	glm::dvec3 entityTest = {};
+	glm::dvec3 entityTest = {-4, 113, 3};
 	bool renderBox = 0;
 	bool renderPlayerPos = 0;
 	
@@ -421,7 +421,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		//programData.renderer.render(data, gameData.c, programData.texture);
 		programData.renderer.renderFromBakedData(gameData.sunShadow,gameData.chunkSystem, 
-			gameData.c, programData, gameData.showLightLevels, 
+			gameData.c, programData, programData.blocksLoader, gameData.showLightLevels, 
 			gameData.skyLightIntensity, gameData.point, underWater, w, h, deltaTime);
 
 		gameData.gameplayFrameProfiler.endSubProfile("rendering");

@@ -15,7 +15,8 @@ uniform mat4 u_modelMatrix;
 uniform ivec3 u_cameraPositionInt;
 uniform vec3 u_cameraPositionFloat;
 
-
+out vec2 v_uv;
+out flat int v_id;
 
 void main()
 {
@@ -29,7 +30,6 @@ void main()
 	vec4 posProjection = u_viewProjection * posViewSemi;
 	
 	gl_Position = posProjection;
-
-
-
+	v_uv = uv;
+	v_id = gl_VertexID;
 }

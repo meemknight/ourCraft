@@ -388,13 +388,14 @@ constexpr float cubeEntityData[] = {
 
 };
 
+
 unsigned int cubeEntityIndices[] = {
-0,   1,  2,  0,  2,  3, // Top
-4,   5,  6,  4,  6,  7, // Back
-8,   9, 10,  8, 10, 11, // Right
-12, 13, 14, 12, 14, 15, // Left
 16, 17, 18, 16, 18, 19, // Front
+4,   5,  6,  4,  6,  7, // Back
+0,   1,  2,  0,  2,  3, // Top
 20, 22, 21, 20, 23, 22, // Bottom
+12, 13, 14, 12, 14, 15, // Left
+8,   9, 10,  8, 10, 11, // Right
 };
 
 
@@ -560,6 +561,7 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	GET_UNIFORM2(entityRenderer.basicEntityshader, u_modelMatrix);
 	GET_UNIFORM2(entityRenderer.basicEntityshader, u_cameraPositionInt);
 	GET_UNIFORM2(entityRenderer.basicEntityshader, u_cameraPositionFloat);
+	GET_UNIFORM2(entityRenderer.basicEntityshader, u_texture);
 
 	//GLuint vaoCube = 0;
 	//GLuint vertexBufferCube = 0;
@@ -747,7 +749,8 @@ void Renderer::updateDynamicBlocks()
 
 }
 
-void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSystem, Camera &c, ProgramData &programData
+void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSystem, Camera &c,
+	ProgramData &programData, BlocksLoader &blocksLoader
 	, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos, bool underWater, int screenX, int screenY, 
 	float deltaTime)
 {
@@ -1055,6 +1058,16 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniformMatrix4fv(entityRenderer.basicEntityshader.u_modelMatrix, 1, GL_FALSE, &glm::mat4(1.f)[0][0]);
 		glUniform3fv(entityRenderer.basicEntityshader.u_cameraPositionFloat, 1, &posFloat[0]);
 		glUniform3iv(entityRenderer.basicEntityshader.u_cameraPositionInt, 1, &posInt[0]);
+
+
+		std::uint64_t textures[6] = {};
+
+		for (int i = 0; i < 6; i++)
+		{
+			textures[i] = blocksLoader.gpuIds[getGpuIdIndexForBlock(BlockTypes::bookShelf, i)];
+		}
+
+		glUniformHandleui64vARB(entityRenderer.basicEntityshader.u_texture, 6, textures);
 
 
 		//todo instance rendering

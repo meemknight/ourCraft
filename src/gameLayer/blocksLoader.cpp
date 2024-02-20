@@ -66,7 +66,7 @@ const char *texturesNames[] = {
 //back
 //top
 //bottom
-//left
+//leftz
 //right
 
 uint16_t blocksLookupTable[] = {
