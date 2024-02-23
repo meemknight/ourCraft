@@ -78,7 +78,7 @@ bool ClientEntityManager::dropItemByClient(glm::dvec3 position, BlockType blockT
 
 	Task task;
 	task.type = Task::droppedItemEntity;
-	task.doublePos = position;
+	task.doublePos = position + glm::dvec3{0,1,0};
 	task.blockType = blockType;
 	task.eventId = undoQueue.currentEventId;
 	task.blockCount = 1;
@@ -87,12 +87,13 @@ bool ClientEntityManager::dropItemByClient(glm::dvec3 position, BlockType blockT
 
 
 	//todo drop in front of the player
-	undoQueue.addDropItemFromInventoryEvent(position, position, newEntityId);
+	undoQueue.addDropItemFromInventoryEvent(position + glm::dvec3{0,1,0}, position, newEntityId);
 
 	{
 		DroppedItem newEntity = {};
 		newEntity.count = 1;
 		newEntity.position = position;
+		newEntity.lastPosition = position;
 		newEntity.type = blockType;
 
 		droppedItems[newEntityId] = newEntity;

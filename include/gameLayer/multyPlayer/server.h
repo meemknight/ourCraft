@@ -13,7 +13,7 @@ bool isServerRunning();
 bool startServer();
 int getChunkCapacity();
 void closeServer();
-void computeRevisionStuff(Client &client, bool allowed, const EventId &eventId);
+bool computeRevisionStuff(Client &client, bool allowed, const EventId &eventId);
 void serverWorkerFunction();
 
 

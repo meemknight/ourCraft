@@ -17,6 +17,7 @@ struct PlayerNetworked
 struct DroppedItem
 {
 	glm::dvec3 position = {};
+	glm::dvec3 lastPosition = {};
 	BlockType type = 0;
 	unsigned char count = 0;
 };

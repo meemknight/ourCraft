@@ -294,7 +294,6 @@ void recieveData(ENetHost *server, ENetEvent &event)
 
 		case headerClientDroppedItem:
 		{
-
 			if (size != sizeof(Packet_ClientDroppedItem))
 			{
 				//todo better logs + cick clients that send corrupted data?
@@ -304,26 +303,16 @@ void recieveData(ENetHost *server, ENetEvent &event)
 
 			Packet_ClientDroppedItem *packetData = (Packet_ClientDroppedItem *)data;
 
+			serverTask.t.type = Task::droppedItemEntity;
+			serverTask.t.doublePos = packetData->position;
+			serverTask.t.blockCount = packetData->count;
+			serverTask.t.blockType = packetData->blockType;
+			serverTask.t.entityId = packetData->entityID;
+			serverTask.t.eventId = packetData->eventId;
 
-			lockConnectionsMutex();
-			auto client = getClientNotLocked(p.cid);
 
-			//todo some logic
-			//todo add items here
-			if(client)
-			{
-
-				auto serverAllows = getClientSettingCopy(p.cid).validateStuff;
-
-				computeRevisionStuff(*client, true && serverAllows, packetData->eventId);
-
-			}
-			else
-			{
-				assert(client && "Couldn't find client in headerClientDroppedItem, this shouldn't happen");
-			}
-
-			unlockConnectionsMutex();
+			submitTaskForServer(serverTask);
+			break;
 
 		}
 

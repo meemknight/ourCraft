@@ -167,7 +167,12 @@ void closeServer()
 	//serverSettingsMutex.unlock();
 }
 
-void computeRevisionStuff(Client &client, bool allowed, const EventId &eventId)
+
+//todo !!!!!!!!!!!!!!
+//this should return a bool and if it returns false the later code should ignore that message
+
+//todo it is a problem that the block validation and the item validation are on sepparate threads.
+bool computeRevisionStuff(Client &client, bool allowed, const EventId &eventId)
 {
 	bool noNeedToNotifyUndo = false;
 
@@ -209,7 +214,7 @@ void computeRevisionStuff(Client &client, bool allowed, const EventId &eventId)
 			sizeof(Packet_ValidateEvent), true, channelChunksAndBlocks);
 	}
 
-
+	return allowed;
 }
 
 bool serverStartupStuff()
@@ -406,7 +411,7 @@ void serverWorkerFunction()
 						legal = false;
 					}
 					
-					computeRevisionStuff(*client, legal, i.t.eventId);
+					legal = computeRevisionStuff(*client, legal, i.t.eventId);
 
 					if (legal)
 					{
@@ -430,6 +435,33 @@ void serverWorkerFunction()
 					
 				}
 
+				unlockConnectionsMutex();
+
+			}
+			else if (i.t.type == Task::droppedItemEntity)
+			{
+
+				lockConnectionsMutex();
+				auto client = getClientNotLocked(i.cid);
+				
+				//todo some logic
+				//todo add items here into the server's storage
+				if(client)
+				{
+				
+					auto serverAllows = getClientSettingCopy(i.cid).validateStuff;
+				
+					computeRevisionStuff(*client, true && serverAllows, i.t.eventId);
+					
+					//i.t.blockType;
+					//i.t.doublePos;
+					//i.t.blockCount;
+
+				}
+				else
+				{
+				}
+				
 				unlockConnectionsMutex();
 
 			}

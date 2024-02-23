@@ -1107,6 +1107,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 				decomposePosition(e.position, entityFloat, entityInt);
 
+				entityFloat += glm::vec3(0, 0.2, 0);
+
 				glUniform3fv(entityRenderer.basicEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
 				glUniform3iv(entityRenderer.basicEntityshader.u_entityPositionInt, 1, &entityInt[0]);
 
@@ -1137,6 +1139,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 				glm::ivec3 entityInt = {};
 
 				decomposePosition(e.second.position, entityFloat, entityInt);
+
+				entityFloat += glm::vec3(0, 0.2, 0);
 
 				glUniform3fv(entityRenderer.basicEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
 				glUniform3iv(entityRenderer.basicEntityshader.u_entityPositionInt, 1, &entityInt[0]);

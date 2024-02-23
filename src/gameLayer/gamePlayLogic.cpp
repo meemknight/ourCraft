@@ -295,6 +295,25 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		gameData.entityManager.localPlayer.body.updateMove();
 		gameData.c.position = gameData.entityManager.localPlayer.body.pos + glm::dvec3(0,1.5,0);
 
+		for (auto &item : gameData.entityManager.droppedItems)
+		{
+
+			RigidBody body;
+			body.colliderSize = {0.4,0.4,0.4};
+			body.pos = item.second.position;
+			body.lastPos = item.second.lastPosition;
+
+			body.pos += glm::vec3(0, -2, 0) * deltaTime;
+
+			body.resolveConstrains(chunkGetter);
+
+			item.second.lastPosition = body.pos;
+			item.second.position = body.pos;
+
+		}
+
+
+
 	}
 #pragma endregion
 
