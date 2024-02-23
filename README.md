@@ -3,7 +3,7 @@
 It is the third time I have tried to make Minecraft from scratch.
 This time I want to add a lot of harder-to-implement features like transparent blocks, light shadows, and multi-player!
 
-Go check out the videos on [youtube about it](https://www.youtube.com/watch?v=StNAG_tLEoU&list=PLKUl_fMWLdH-0H-tz0S144g5xXliHOIxC&index=4)!
+Go check out the videos on [YouTube about it](https://www.youtube.com/watch?v=StNAG_tLEoU&list=PLKUl_fMWLdH-0H-tz0S144g5xXliHOIxC&index=4)!
 
 ![image](https://github.com/meemknight/ourCraft/assets/36445656/3f6c8976-8f63-4259-a1de-3305c4c52467)
 
