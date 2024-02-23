@@ -12,6 +12,7 @@
 #include <multyPlayer/server.h>
 #include <chrono>
 #include <gameplay/entityManagerClient.h>
+#include <multyPlayer/server.h>
 
 //todo add to a struct
 ENetHost *server = 0;
@@ -303,25 +304,19 @@ void recieveData(ENetHost *server, ENetEvent &event)
 
 			Packet_ClientDroppedItem *packetData = (Packet_ClientDroppedItem *)data;
 
-			//...todo also lock here
 
 			lockConnectionsMutex();
 			auto client = getClientNotLocked(p.cid);
 
-			//todo implement
+			//todo some logic
+			//todo add items here
 			if(client)
 			{
-				Packet packet;
-				//packet.cid = p.cid;
-				packet.header = headerValidateEvent;
 
+				auto serverAllows = getClientSettingCopy(p.cid).validateStuff;
 
-				Packet_ValidateEvent packetDataSend;
-				packetDataSend.eventId = packetData->eventId;
+				computeRevisionStuff(*client, true && serverAllows, packetData->eventId);
 
-				sendPacket(client->peer, packet,
-					(char *)&packetData, sizeof(Packet_ValidateEvent),
-					true, channelChunksAndBlocks);
 			}
 			else
 			{

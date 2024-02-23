@@ -164,7 +164,52 @@ void closeServer()
 		sd = {};
 	}
 
-	serverSettingsMutex.unlock();
+	//serverSettingsMutex.unlock();
+}
+
+void computeRevisionStuff(Client &client, bool allowed, const EventId &eventId)
+{
+	bool noNeedToNotifyUndo = false;
+
+	if (client.revisionNumber > eventId.revision)
+	{
+		//if the revision number is increased it means that we already undoed all those moves
+		allowed = false;
+		noNeedToNotifyUndo = true;
+		//std::cout << "Server revision number ignore: " << client->revisionNumber << " "
+		//	<< i.t.eventId.revision << "\n";
+	}
+
+
+	//validate event
+	if(allowed)
+	{
+		Packet packet;
+		packet.header = headerValidateEvent;
+
+		Packet_ValidateEvent packetData;
+		packetData.eventId = eventId;
+
+		sendPacket(client.peer, packet,
+			(char *)&packetData, sizeof(Packet_ValidateEvent),
+			true, channelChunksAndBlocks);
+	}
+	else if (!noNeedToNotifyUndo)
+	{
+		Packet packet;
+		//packet.cid = i.cid;
+		packet.header = headerInValidateEvent;
+
+		Packet_InValidateEvent packetData;
+		packetData.eventId = eventId;
+
+		client.revisionNumber++;
+
+		sendPacket(client.peer, packet, (char *)&packetData,
+			sizeof(Packet_ValidateEvent), true, channelChunksAndBlocks);
+	}
+
+
 }
 
 bool serverStartupStuff()
@@ -297,8 +342,16 @@ void serverWorkerFunction()
 					static_assert(sizeof(Packet_RecieveChunk) == sizeof(ChunkData));
 
 
-					sendPacket(client.peer, packet, (char *)rez,
-						sizeof(Packet_RecieveChunk), true, channelChunksAndBlocks);
+					{
+						lockConnectionsMutex();
+						auto client = getClientNotLocked(i.cid);
+						if (client)
+						{
+						sendPacket(client->peer, packet, (char *)rez,
+							sizeof(Packet_RecieveChunk), true, channelChunksAndBlocks);
+						}
+						unlockConnectionsMutex();
+					}
 
 				}
 				else
@@ -321,7 +374,6 @@ void serverWorkerFunction()
 				int convertedZ = modBlockToChunk(i.t.pos.z);
 				
 				//todo check if place is legal
-				bool legal = 1;
 				bool noNeedToNotifyUndo = 0;
 				lockConnectionsMutex();
 
@@ -333,15 +385,7 @@ void serverWorkerFunction()
 					//  thread everywhere because the other thread can change connections
 					//todo check in other places in this thread
 
-					if (client->revisionNumber > i.t.eventId.revision)
-					{
-						//if the revision number is increased it means that we already undoed all those moves
-						legal = false;
-						noNeedToNotifyUndo = true;
-						//std::cout << "Server revision number ignore: " << client->revisionNumber << " "
-						//	<< i.t.eventId.revision << "\n";
-					}
-
+					bool legal = 1;
 					{
 						auto f = settings.perClientSettings.find(i.cid);
 						if (f != settings.perClientSettings.end())
@@ -354,8 +398,17 @@ void serverWorkerFunction()
 						}
 					}
 
+
 					auto b = chunk->safeGet(convertedX, i.t.pos.y, convertedZ);
-					if (b && legal)
+
+					if (!b)
+					{
+						legal = false;
+					}
+					
+					computeRevisionStuff(*client, legal, i.t.eventId);
+
+					if (legal)
 					{
 						b->type = i.t.blockType;
 						//todo mark this chunk dirty if needed for saving
@@ -373,36 +426,8 @@ void serverWorkerFunction()
 								client->peer, true, channelChunksAndBlocks);
 						}
 
-						{
-							Packet packet;
-							//packet.cid = i.cid;
-							packet.header = headerValidateEvent;
-
-
-							Packet_ValidateEvent packetData;
-							packetData.eventId = i.t.eventId;
-
-							sendPacket(client->peer, packet,
-								(char *)&packetData, sizeof(Packet_ValidateEvent),
-								true, channelChunksAndBlocks);
-						}
-
-
 					}
-					else if (!noNeedToNotifyUndo)
-					{
-						Packet packet;
-						//packet.cid = i.cid;
-						packet.header = headerInValidateEvent;
-
-						Packet_InValidateEvent packetData;
-						packetData.eventId = i.t.eventId;
-
-						client->revisionNumber++;
-
-						sendPacket(client->peer, packet, (char *)&packetData,
-							sizeof(Packet_ValidateEvent), true, channelChunksAndBlocks);
-					}
+					
 				}
 
 				unlockConnectionsMutex();
@@ -472,6 +497,24 @@ ServerSettings getServerSettingsCopy()
 	auto copy = sd.settings;
 	serverSettingsMutex.unlock();
 	return copy;
+}
+
+PerClientServerSettings getClientSettingCopy(CID client)
+{
+	PerClientServerSettings rez = {};
+
+	serverSettingsMutex.lock();
+	
+	auto it = sd.settings.perClientSettings.find(client);
+
+	if (it != sd.settings.perClientSettings.end())
+	{
+		rez = it->second;
+	}
+
+	serverSettingsMutex.unlock();
+
+	return rez;
 }
 
 void setServerSettings(ServerSettings settings)

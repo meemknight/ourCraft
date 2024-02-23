@@ -3,6 +3,9 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
+struct Client;
+struct EventId;
+
 using CID = int32_t;
 
 bool isServerRunning();
@@ -10,6 +13,7 @@ bool isServerRunning();
 bool startServer();
 int getChunkCapacity();
 void closeServer();
+void computeRevisionStuff(Client &client, bool allowed, const EventId &eventId);
 void serverWorkerFunction();
 
 
@@ -28,6 +32,8 @@ struct ServerSettings
 };
 
 ServerSettings getServerSettingsCopy();
+
+PerClientServerSettings getClientSettingCopy(CID client);
 
 void setServerSettings(ServerSettings settings);
 

@@ -152,9 +152,16 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				{
 					gameData.chunkSystem.placeBlockNoClient(e.blockPos, e.originalBlock, gameData.lightSystem);
 				}
+				else if (e.type == Event::iDroppedItemFromInventory)
+				{
+					gameData.entityManager.removeDroppedItem(e.entityId);
+				}
+
+
 			}
 			
-			gameData.c.position = gameData.undoQueue.events[0].playerPos;
+			gameData.entityManager.localPlayer.body.pos = gameData.undoQueue.events[0].playerPos;
+			gameData.entityManager.localPlayer.body.lastPos = gameData.undoQueue.events[0].playerPos;
 
 			gameData.undoQueue.events.clear();
 

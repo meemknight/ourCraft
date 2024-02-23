@@ -45,6 +45,7 @@ struct ClientEntityManager
 
 	bool dropItemByClient(glm::dvec3 position, BlockType blockType, UndoQueue &undoQueue);
 
+	void removeDroppedItem(std::uint64_t entityId);
 
 };
 

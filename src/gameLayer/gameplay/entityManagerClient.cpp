@@ -100,3 +100,13 @@ bool ClientEntityManager::dropItemByClient(glm::dvec3 position, BlockType blockT
 
 	return true;
 }
+
+void ClientEntityManager::removeDroppedItem(std::uint64_t entityId)
+{
+	auto f = droppedItems.find(entityId);
+
+	if(f != droppedItems.end())
+	{
+		droppedItems.erase(f);
+	}
+}
