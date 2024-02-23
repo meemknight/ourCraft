@@ -36,21 +36,29 @@ enum
 	headerRequestChunk,
 	headerPlaceBlock,
 	headerPlaceBlocks,
+	headerClientDroppedItem,
 	headerRecieveChunk,
 	headerValidateEvent,
 	headerInValidateEvent,
 	headerSendPlayerData,
+	headerClientRecieveReservedEntityIds,
 	headerClientRecieveOtherPlayerPosition,
 };
 
 enum 
 {
-	channelChunksAndBlocks,
+	channelChunksAndBlocks,	  //this also handles items, maybe rename player actions or something
 	channelPlayerPositions,
-	channelHandleConnections,
+	channelHandleConnections, //this will also send Entity cids
 	//channelRequestChunks, todo maybe try this in the future
 	SERVER_CHANNELS
 
+};
+
+struct Packet_ReceiveReserverEndityIds
+{
+	std::uint64_t first = 0; //this is a range
+	size_t count = 0;
 };
 
 struct Packet_ReceiveCIDAndData
@@ -97,15 +105,27 @@ struct Packet_ClientRecieveOtherPlayerPosition
 struct Packet_PlaceBlock 
 {
 	glm::ivec3 blockPos = {};
-	uint16_t blockType = {};
 	EventId eventId = {}; //event id is used by the player
+	BlockType blockType = {};
+
+};
+
+struct Packet_ClientDroppedItem
+{
+	glm::dvec3 position = {};
+	EventId eventId = {}; //event id is used by the player
+	std::uint64_t entityID = 0;
+	BlockType blockType = {};
+	unsigned char count = 0;
+
 };
 
 //the server doesn't have a backend for this !!, sent from the server to the player only
 struct Packet_PlaceBlocks
 {
 	glm::ivec3 blockPos = {};
-	uint16_t blockType = {};
+	BlockType
+		blockType = {};
 };
 
 

@@ -41,6 +41,20 @@ void submitTaskClient(Task &t)
 	}
 	default:
 
+	case Task::droppedItemEntity:
+	{
+		p.header = headerClientDroppedItem;
+		Packet_ClientDroppedItem packetData = {};
+		packetData.position = t.doublePos;
+		packetData.blockType = t.blockType;
+		packetData.count = t.blockCount;
+		packetData.eventId = t.eventId;
+		packetData.entityID = t.entityId;
+
+		sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1,
+			channelChunksAndBlocks);
+	}
+
 	break;
 	}
 
@@ -197,6 +211,21 @@ void recieveDataClient(ENetEvent &event,
 			break;
 		}
 
+		//todo server should know when to send ids to clients
+		case headerClientRecieveReservedEntityIds:
+		{
+			Packet_ReceiveReserverEndityIds *p = (Packet_ReceiveReserverEndityIds *)data;
+
+			assert(sizeof(Packet_ReceiveReserverEndityIds) == size); //corrupted packet? 
+
+			ReservedIDsRange newRange = {};
+			newRange.count = p->count;
+			newRange.idStart = p->first;
+
+			entityManager.reservedIds.push_back(newRange);
+			break;
+		}
+
 		default:
 		break;
 
@@ -311,27 +340,31 @@ bool createConnection(Packet_ReceiveCIDAndData &playerData)
 	if (enet_host_service(clientData.client, &event, 2500) > 0
 		&& event.type == ENET_EVENT_TYPE_RECEIVE)
 	{
-		Packet p = {};
-		size_t size;
-		auto data = parsePacket(event, p, size);
-
-		if (p.header != headerReceiveCIDAndData)
+	
 		{
-			enet_peer_reset(clientData.server);
-			enet_host_destroy(clientData.client);
-			std::cout << "server sent wrong data\n";
-			return false;
-		}
+			Packet p = {};
+			size_t size;
+			auto data = parsePacket(event, p, size);
 
-		clientData.cid = p.cid;
+			if (p.header != headerReceiveCIDAndData)
+			{
+				enet_peer_reset(clientData.server);
+				enet_host_destroy(clientData.client);
+				std::cout << "server sent wrong data\n";
+				return false;
+			}
 
-		playerData = *(Packet_ReceiveCIDAndData *)data;
-		
-		//send player own info or sthing
-		//sendPlayerData(e, true);
+			clientData.cid = p.cid;
 
-		std::cout << "received cid: " << clientData.cid << "\n";
-		enet_packet_destroy(event.packet);
+			playerData = *(Packet_ReceiveCIDAndData *)data;
+
+			//send player own info or sthing
+			//sendPlayerData(e, true);
+
+			std::cout << "received cid: " << clientData.cid << "\n";
+			enet_packet_destroy(event.packet);
+		};
+
 		return true;
 	}
 	else

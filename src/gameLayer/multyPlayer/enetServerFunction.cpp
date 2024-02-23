@@ -17,8 +17,8 @@
 ENetHost *server = 0;
 std::mutex connectionsMutex;
 std::unordered_map<CID, Client> connections;
-int pids = 1;
-int entityId = 1;
+static CID pids = 1;
+static std::uint64_t entityId = 1;
 static std::thread serverThread;
 
 void broadCastNotLocked(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel)
@@ -100,24 +100,44 @@ void addConnection(ENetHost *server, ENetEvent &event)
 		createConnection(pids, c);
 	}
 
-	Packet p;
-	p.header = headerReceiveCIDAndData;
-	p.cid = pids;
-	pids++;
-
-	Packet_ReceiveCIDAndData packetToSend = {};
-	packetToSend.playersPosition = glm::dvec3(0, 107, 0);;
-	packetToSend.yourPlayerEntityId = entityId;
-	entityId++;
-
-	//send own cid
-	sendPacket(event.peer, p, (const char *)&packetToSend, 
-		sizeof(packetToSend), true, channelHandleConnections);
+	CID currentCid = pids;
+	{
+		Packet p;
+		p.header = headerReceiveCIDAndData;
+		p.cid = pids;
+		pids++;
+	
+		Packet_ReceiveCIDAndData packetToSend = {};
+		packetToSend.playersPosition = glm::dvec3(0, 107, 0);;
+		packetToSend.yourPlayerEntityId = entityId;
+		entityId++;
+	
+		//send own cid
+		sendPacket(event.peer, p, (const char *)&packetToSend,
+			sizeof(packetToSend), true, channelHandleConnections);
+	}
 
 	//todo send info of other players to this new connection
 
+	{
+		Packet p;
+		p.header = headerClientRecieveReservedEntityIds;
+		p.cid = 0;
 
-	addCidToServerSettings(p.cid);
+		Packet_ReceiveReserverEndityIds packetData = {};
+
+		constexpr int IDS_RESERVE_COUNT = 500;
+
+		packetData.first = entityId;
+		packetData.count = IDS_RESERVE_COUNT;
+	
+		sendPacket(event.peer, p, (const char *)&packetData,
+			sizeof(packetData), true, channelHandleConnections);
+
+	}
+
+
+	addCidToServerSettings(currentCid);
 
 }
 
@@ -196,7 +216,6 @@ void recieveData(ENetHost *server, ENetEvent &event)
 			break;
 		}
 
-		//todo don't broadcast if nothing changed
 		case headerSendPlayerData:
 		{
 			Packer_SendPlayerData packetData = *(Packer_SendPlayerData *)data;
@@ -227,7 +246,7 @@ void recieveData(ENetHost *server, ENetEvent &event)
 				}
 				else
 				{
-
+					//nothing changed
 				}
 				it->second.playerData = packetData.playerData;
 
@@ -253,6 +272,38 @@ void recieveData(ENetHost *server, ENetEvent &event)
 
 
 			break;
+		}
+
+		case headerClientDroppedItem:
+		{
+
+			if (size != sizeof(Packet_ClientDroppedItem))
+			{
+				//todo better logs + cick clients that send corrupted data?
+				std::cout << "corrupted packet or something Packet_ClientDroppedItem\n";
+				break;
+			}
+
+			Packet_ClientDroppedItem *packetData = (Packet_ClientDroppedItem *)data;
+
+			//...todo
+
+			auto client = getClient(p.cid);
+
+			{
+				Packet packet;
+				//packet.cid = p.cid;
+				packet.header = headerValidateEvent;
+
+
+				Packet_ValidateEvent packetDataSend;
+				packetDataSend.eventId = packetData->eventId;
+
+				sendPacket(client.peer, packet,
+					(char *)&packetData, sizeof(Packet_ValidateEvent),
+					true, channelChunksAndBlocks);
+			}
+
 		}
 
 

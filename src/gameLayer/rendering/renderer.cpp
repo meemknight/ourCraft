@@ -13,6 +13,7 @@
 #include <iostream>
 #include <rendering/sunShadow.h>
 #include <platformTools.h>
+#include <gameplay/entityManagerClient.h>
 
 #define GET_UNIFORM(s, n) n = s.getUniform(#n);
 #define GET_UNIFORM2(s, n) s. n = s.shader.getUniform(#n);
@@ -775,7 +776,7 @@ void Renderer::updateDynamicBlocks()
 }
 
 void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSystem, Camera &c,
-	ProgramData &programData, BlocksLoader &blocksLoader
+	ProgramData &programData, BlocksLoader &blocksLoader, ClientEntityManager &entityManager
 	, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos, bool underWater, int screenX, int screenY, 
 	float deltaTime)
 {
@@ -1085,33 +1086,66 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform3fv(entityRenderer.basicEntityshader.u_cameraPositionFloat, 1, &posFloat[0]);
 		glUniform3iv(entityRenderer.basicEntityshader.u_cameraPositionInt, 1, &posInt[0]);
 
-
-		std::uint64_t textures[6] = {};
-
-		for (int i = 0; i < 6; i++)
+		//debug stuff
 		{
-			textures[i] = blocksLoader.gpuIds[getGpuIdIndexForBlock(BlockTypes::bookShelf, i)];
+			//todo something better here lol
+			std::uint64_t textures[6] = {};
+
+			for (int i = 0; i < 6; i++)
+			{
+				textures[i] = blocksLoader.gpuIds[getGpuIdIndexForBlock(BlockTypes::bookShelf, i)];
+			}
+
+			glUniformHandleui64vARB(entityRenderer.basicEntityshader.u_texture, 6, textures);
+
+
+			//todo instance rendering
+			for (auto &e : entityRenderer.itemEntitiesToRender)
+			{
+				glm::vec3 entityFloat = {};
+				glm::ivec3 entityInt = {};
+
+				decomposePosition(e.position, entityFloat, entityInt);
+
+				glUniform3fv(entityRenderer.basicEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
+				glUniform3iv(entityRenderer.basicEntityshader.u_entityPositionInt, 1, &entityInt[0]);
+
+				glDrawArrays(GL_TRIANGLES, 0, 36);
+
+			}
+
+			entityRenderer.itemEntitiesToRender.clear();
 		}
 
-		glUniformHandleui64vARB(entityRenderer.basicEntityshader.u_texture, 6, textures);
-
-
-		//todo instance rendering
-		for (auto &e : entityRenderer.itemEntitiesToRender)
+		//real entities
 		{
-			glm::vec3 entityFloat = {};
-			glm::ivec3 entityInt = {};
 
-			decomposePosition(e.position, entityFloat, entityInt);
+			//todo instance rendering
+			for (auto &e : entityManager.droppedItems)
+			{
+				//todo something better here lol
+				std::uint64_t textures[6] = {};
 
-			glUniform3fv(entityRenderer.basicEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
-			glUniform3iv(entityRenderer.basicEntityshader.u_entityPositionInt, 1, &entityInt[0]);
+				for (int i = 0; i < 6; i++)
+				{
+					textures[i] = blocksLoader.gpuIds[getGpuIdIndexForBlock(e.second.type, i)];
+				}
 
-			glDrawArrays(GL_TRIANGLES, 0, 36);
+				glUniformHandleui64vARB(entityRenderer.basicEntityshader.u_texture, 6, textures);
+
+				glm::vec3 entityFloat = {};
+				glm::ivec3 entityInt = {};
+
+				decomposePosition(e.second.position, entityFloat, entityInt);
+
+				glUniform3fv(entityRenderer.basicEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
+				glUniform3iv(entityRenderer.basicEntityshader.u_entityPositionInt, 1, &entityInt[0]);
+
+				glDrawArrays(GL_TRIANGLES, 0, 36);
+			}
 
 		}
-	
-		entityRenderer.itemEntitiesToRender.clear();
+
 	}
 
 	glBindVertexArray(0);

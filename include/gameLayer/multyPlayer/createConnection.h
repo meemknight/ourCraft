@@ -13,14 +13,17 @@ struct Task
 		none = 0,
 		placeBlock,
 		generateChunk,
+		droppedItemEntity,
 	};
 
 	glm::ivec3 pos = {};
+	glm::dvec3 doublePos = {};
 	int type = 0;
 	BlockType blockType = 0;
 	EventId eventId = {};
 	glm::ivec2 playerPosForChunkGeneration = {};
-
+	unsigned char blockCount = 0;
+	std::uint64_t entityId;
 };
 
 void submitTaskClient(Task &t);

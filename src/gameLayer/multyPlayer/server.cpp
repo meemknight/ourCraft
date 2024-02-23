@@ -323,7 +323,8 @@ void serverWorkerFunction()
 				//todo check if place is legal
 				bool legal = 1;
 				bool noNeedToNotifyUndo = 0;
-				auto client = getClient(i.cid);
+				auto client = getClient(i.cid); 
+				//todo hold this with a full mutex in this thread everywhere because the other thread can change connections
 
 				if (client.revisionNumber > i.t.eventId.revision)
 				{
@@ -352,7 +353,6 @@ void serverWorkerFunction()
 					b->type = i.t.blockType;
 					//todo mark this chunk dirty if needed for saving
 
-					//todo enum for chanels
 					{
 						Packet packet;
 						packet.cid = i.cid;
@@ -368,7 +368,7 @@ void serverWorkerFunction()
 
 					{
 						Packet packet;
-						packet.cid = i.cid;
+						//packet.cid = i.cid;
 						packet.header = headerValidateEvent;
 
 
@@ -385,7 +385,7 @@ void serverWorkerFunction()
 				else if(!noNeedToNotifyUndo)
 				{
 					Packet packet;
-					packet.cid = i.cid;
+					//packet.cid = i.cid;
 					packet.header = headerInValidateEvent;
 
 					Packet_InValidateEvent packetData;

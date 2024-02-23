@@ -2,6 +2,8 @@
 #include <glm/glm.hpp>
 #include <chunkSystem.h>
 #include <iostream>
+#include "multyPlayer/undoQueue.h"
+#include <multyPlayer/createConnection.h>
 
 
 bool checkIfPlayerShouldGetEntity(glm::ivec2 playerPos2D,
@@ -41,4 +43,60 @@ void ClientEntityManager::dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int 
 
 	
 	
+}
+
+std::uint64_t ClientEntityManager::consumeId()
+{
+
+	while (true)
+	{
+		if (reservedIds.empty()) { return 0; }
+
+		if (reservedIds[0].count > 0)
+		{
+			auto rez = reservedIds[0].idStart;
+			reservedIds[0].count--;
+			reservedIds[0].idStart++;
+			return rez;
+		}
+		else
+		{
+			reservedIds.pop_front();
+		}
+
+	}
+	
+	return 0;
+}
+
+bool ClientEntityManager::dropItemByClient(glm::dvec3 position, BlockType blockType, UndoQueue &undoQueue)
+{
+
+	std::uint64_t newEntityId = consumeId();
+
+	if (!newEntityId) { return 0; }
+
+	Task task;
+	task.type = Task::droppedItemEntity;
+	task.doublePos = position;
+	task.blockType = blockType;
+	task.eventId = undoQueue.currentEventId;
+	task.blockCount = 1;
+	task.entityId = newEntityId;
+	submitTaskClient(task);
+
+
+	//todo drop in front of the player
+	undoQueue.addDropItemFromInventoryEvent(position, position, newEntityId);
+
+	{
+		DroppedItem newEntity = {};
+		newEntity.count = 1;
+		newEntity.position = position;
+		newEntity.type = blockType;
+
+		droppedItems[newEntityId] = newEntity;
+	}
+
+	return true;
 }

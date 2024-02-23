@@ -140,7 +140,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			if (inValidateRevision != gameData.undoQueue.currentEventId.revision)
 			{
-				permaAssert(0); //inconsistency between the server's revision and mine
+				permaAssert(0 && "/inconsistency between the server's revision and mine"); //inconsistency between the server's revision and mine
 			}
 
 			for (int i = gameData.undoQueue.events.size() - 1; i >= 0; i--)
@@ -421,7 +421,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		//programData.renderer.render(data, gameData.c, programData.texture);
 		programData.renderer.renderFromBakedData(gameData.sunShadow,gameData.chunkSystem, 
-			gameData.c, programData, programData.blocksLoader, gameData.showLightLevels, 
+			gameData.c, programData, programData.blocksLoader, gameData.entityManager, gameData.showLightLevels, 
 			gameData.skyLightIntensity, gameData.point, underWater, w, h, deltaTime);
 
 		gameData.gameplayFrameProfiler.endSubProfile("rendering");

@@ -9,6 +9,7 @@ struct BlocksLoader;
 struct ChunkSystem;
 struct ProgramData;
 struct SunShadow;
+struct ClientEntityManager;
 
 using uniform = GLuint;
 
@@ -156,7 +157,8 @@ struct Renderer
 	//void render(std::vector<int> &data, Camera &c, gl2d::Texture &texture);
 
 	void renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSystem, Camera &c,
-		ProgramData &programData, BlocksLoader &blocksLoader, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos,
+		ProgramData &programData, BlocksLoader &blocksLoader,
+		ClientEntityManager &entityManager, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos,
 		bool underWater, int screenX, int screenY, float deltaTime);
 	
 	void renderShadow(SunShadow &sunShadow,
