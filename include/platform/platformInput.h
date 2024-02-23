@@ -29,6 +29,7 @@ namespace platform
 			Right,
 			LeftCtrl,
 			LeftAlt,
+			LeftShift,
 			BUTTONS_COUNT, //
 		};
 

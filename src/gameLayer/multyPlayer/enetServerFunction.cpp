@@ -62,6 +62,23 @@ Client getClient(CID cid)
 	return rez;
 }
 
+Client *getClientNotLocked(CID cid)
+{
+	auto it = connections.find(cid);
+	if (it == connections.end()) { return 0; }
+	return &it->second;
+}
+
+void lockConnectionsMutex()
+{
+	connectionsMutex.lock();
+}
+
+void unlockConnectionsMutex()
+{
+	connectionsMutex.unlock();
+}
+
 std::unordered_map<CID, Client> getAllClients()
 {
 	connectionsMutex.lock();
@@ -286,10 +303,13 @@ void recieveData(ENetHost *server, ENetEvent &event)
 
 			Packet_ClientDroppedItem *packetData = (Packet_ClientDroppedItem *)data;
 
-			//...todo
+			//...todo also lock here
 
-			auto client = getClient(p.cid);
+			lockConnectionsMutex();
+			auto client = getClientNotLocked(p.cid);
 
+			//todo implement
+			if(client)
 			{
 				Packet packet;
 				//packet.cid = p.cid;
@@ -299,10 +319,16 @@ void recieveData(ENetHost *server, ENetEvent &event)
 				Packet_ValidateEvent packetDataSend;
 				packetDataSend.eventId = packetData->eventId;
 
-				sendPacket(client.peer, packet,
+				sendPacket(client->peer, packet,
 					(char *)&packetData, sizeof(Packet_ValidateEvent),
 					true, channelChunksAndBlocks);
 			}
+			else
+			{
+				assert(client && "Couldn't find client in headerClientDroppedItem, this shouldn't happen");
+			}
+
+			unlockConnectionsMutex();
 
 		}
 

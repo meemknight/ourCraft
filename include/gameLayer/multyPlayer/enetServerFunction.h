@@ -33,9 +33,14 @@ void signalWaitingFromServer();
 std::vector<ServerTask> waitForTasksServer();
 std::vector<ServerTask> tryForTasksServer();
 Client getClient(CID cid);
+Client *getClientNotLocked(CID cid);
 std::unordered_map<CID, Client> getAllClients();
+void lockConnectionsMutex();
+void unlockConnectionsMutex();
+
 
 void broadCast(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel);
+void broadCastNotLocked(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel);
 
 bool checkIfPlayerShouldGetChunk(glm::ivec2 playerPos2D,
 	glm::ivec2 chunkPos, int playerSquareDistance);

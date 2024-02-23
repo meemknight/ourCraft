@@ -140,7 +140,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			if (inValidateRevision != gameData.undoQueue.currentEventId.revision)
 			{
-				permaAssert(0 && "/inconsistency between the server's revision and mine"); //inconsistency between the server's revision and mine
+				permaAssert(0 && "inconsistency between the server's revision and mine"); //inconsistency between the server's revision and mine
 			}
 
 			for (int i = gameData.undoQueue.events.size() - 1; i >= 0; i--)
@@ -232,13 +232,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		{
 			moveDir.x += speed;
 		}
-		if (platform::isKeyHeld(platform::Button::Q)
+		if (platform::isKeyHeld(platform::Button::LeftShift)
 			|| platform::getControllerButtons().buttons[platform::ControllerButtons::RBumper].held
 			)
 		{
 			moveDir.y -= speed;
 		}
-		if (platform::isKeyHeld(platform::Button::E)
+		if (platform::isKeyHeld(platform::Button::Space)
 			|| platform::getControllerButtons().buttons[platform::ControllerButtons::LBumper].held
 			)
 		{
@@ -262,6 +262,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	}
 #pragma endregion
+
 
 #pragma region block collisions
 	{
@@ -288,6 +289,17 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		gameData.c.position = gameData.entityManager.localPlayer.body.pos + glm::dvec3(0,1.5,0);
 
 	}
+#pragma endregion
+
+
+#pragma region drop items
+	
+	if (platform::isKeyPressedOn(platform::Button::Q))
+	{
+		gameData.entityManager.dropItemByClient(gameData.entityManager.localPlayer.body.pos,
+			BlockTypes::diamond_ore, gameData.undoQueue);
+	}
+
 #pragma endregion
 
 

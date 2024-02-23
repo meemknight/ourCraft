@@ -323,79 +323,89 @@ void serverWorkerFunction()
 				//todo check if place is legal
 				bool legal = 1;
 				bool noNeedToNotifyUndo = 0;
-				auto client = getClient(i.cid); 
-				//todo hold this with a full mutex in this thread everywhere because the other thread can change connections
+				lockConnectionsMutex();
 
-				if (client.revisionNumber > i.t.eventId.revision)
+				auto client = getClientNotLocked(i.cid); 
+				
+				if (client)
 				{
-					//if the revision number is increased it means that we already undoed all those moes
-					legal = false;
-					noNeedToNotifyUndo = true;
-					std::cout << "Server revision number ignore: " << client.revisionNumber << " "
-						<< i.t.eventId.revision << "\n";
-				}
+					//todo hold this with a full mutex in this
+					//  thread everywhere because the other thread can change connections
+					//todo check in other places in this thread
 
-				{
-					auto f = settings.perClientSettings.find(i.cid);
-					if (f != settings.perClientSettings.end())
+					if (client->revisionNumber > i.t.eventId.revision)
 					{
-						if (!f->second.validateStuff)
+						//if the revision number is increased it means that we already undoed all those moves
+						legal = false;
+						noNeedToNotifyUndo = true;
+						//std::cout << "Server revision number ignore: " << client->revisionNumber << " "
+						//	<< i.t.eventId.revision << "\n";
+					}
+
+					{
+						auto f = settings.perClientSettings.find(i.cid);
+						if (f != settings.perClientSettings.end())
 						{
-							legal = false;
+							if (!f->second.validateStuff)
+							{
+								legal = false;
+							}
+
+						}
+					}
+
+					auto b = chunk->safeGet(convertedX, i.t.pos.y, convertedZ);
+					if (b && legal)
+					{
+						b->type = i.t.blockType;
+						//todo mark this chunk dirty if needed for saving
+
+						{
+							Packet packet;
+							packet.cid = i.cid;
+							packet.header = headerPlaceBlocks;
+
+							Packet_PlaceBlocks packetData;
+							packetData.blockPos = i.t.pos;
+							packetData.blockType = i.t.blockType;
+
+							broadCastNotLocked(packet, &packetData, sizeof(Packet_PlaceBlocks),
+								client->peer, true, channelChunksAndBlocks);
 						}
 
+						{
+							Packet packet;
+							//packet.cid = i.cid;
+							packet.header = headerValidateEvent;
+
+
+							Packet_ValidateEvent packetData;
+							packetData.eventId = i.t.eventId;
+
+							sendPacket(client->peer, packet,
+								(char *)&packetData, sizeof(Packet_ValidateEvent),
+								true, channelChunksAndBlocks);
+						}
+
+
 					}
-				}
-
-				auto b = chunk->safeGet(convertedX, i.t.pos.y, convertedZ);
-				if (b && legal)
-				{
-					b->type = i.t.blockType;
-					//todo mark this chunk dirty if needed for saving
-
-					{
-						Packet packet;
-						packet.cid = i.cid;
-						packet.header = headerPlaceBlocks;
-
-						Packet_PlaceBlocks packetData;
-						packetData.blockPos = i.t.pos;
-						packetData.blockType = i.t.blockType;
-
-						broadCast(packet, &packetData, sizeof(Packet_PlaceBlocks), 
-							client.peer, true, channelChunksAndBlocks);
-					}
-
+					else if (!noNeedToNotifyUndo)
 					{
 						Packet packet;
 						//packet.cid = i.cid;
-						packet.header = headerValidateEvent;
+						packet.header = headerInValidateEvent;
 
-
-						Packet_ValidateEvent packetData;
+						Packet_InValidateEvent packetData;
 						packetData.eventId = i.t.eventId;
 
-						sendPacket(client.peer, packet,
-							(char *)&packetData, sizeof(Packet_ValidateEvent), 
-							true, channelChunksAndBlocks);
+						client->revisionNumber++;
+
+						sendPacket(client->peer, packet, (char *)&packetData,
+							sizeof(Packet_ValidateEvent), true, channelChunksAndBlocks);
 					}
-
-
 				}
-				else if(!noNeedToNotifyUndo)
-				{
-					Packet packet;
-					//packet.cid = i.cid;
-					packet.header = headerInValidateEvent;
 
-					Packet_InValidateEvent packetData;
-					packetData.eventId = i.t.eventId;
-
-					client.revisionNumber++;
-
-					sendPacket(client.peer, packet, (char *)&packetData,
-						sizeof(Packet_ValidateEvent), true, channelChunksAndBlocks);
-				}
+				unlockConnectionsMutex();
 
 			}
 
