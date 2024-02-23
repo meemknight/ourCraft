@@ -573,7 +573,7 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	glGenBuffers(1, &entityRenderer.basicEntityshader.vertexBufferCube);
 	glBindBuffer(GL_ARRAY_BUFFER, entityRenderer.basicEntityshader.vertexBufferCube);
 
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeEntityData), cubeEntityData, GL_STATIC_DRAW);
+	//glBufferData(GL_ARRAY_BUFFER, sizeof(cubeEntityData), cubeEntityData, GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
@@ -584,9 +584,34 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
 
-	glGenBuffers(1, &entityRenderer.basicEntityshader.indexBufferCube);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, entityRenderer.basicEntityshader.indexBufferCube);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeEntityIndices), cubeEntityIndices, GL_STATIC_DRAW);
+	std::vector<float> data;
+	for (int face = 0; face < 6; face++)
+	{
+		for (int i = 0; i < 6; i++)
+		{
+			
+			data.push_back(vertexData[i * 3 + face * 3 * 6 + 0]);
+			data.push_back(vertexData[i * 3 + face * 3 * 6 + 1]);
+			data.push_back(vertexData[i * 3 + face * 3 * 6 + 2]);
+
+			//todo normal
+			data.push_back(0);
+			data.push_back(1);
+			data.push_back(0);
+
+			data.push_back(vertexUV[i * 2 + face * 2 * 6 + 0]);
+			data.push_back(vertexUV[i * 2 + face * 2 * 6 + 1]);
+
+		}
+	}
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * data.size(), data.data(), GL_STATIC_DRAW);
+
+
+
+	//glGenBuffers(1, &entityRenderer.basicEntityshader.indexBufferCube);
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, entityRenderer.basicEntityshader.indexBufferCube);
+	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeEntityIndices), cubeEntityIndices, GL_STATIC_DRAW);
 
 	glBindVertexArray(0);
 
@@ -1055,7 +1080,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 
 		glUniformMatrix4fv(entityRenderer.basicEntityshader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
-		glUniformMatrix4fv(entityRenderer.basicEntityshader.u_modelMatrix, 1, GL_FALSE, &glm::mat4(1.f)[0][0]);
+		glUniformMatrix4fv(entityRenderer.basicEntityshader.u_modelMatrix, 1, GL_FALSE, 
+			glm::value_ptr(glm::scale(glm::vec3{0.4f})));
 		glUniform3fv(entityRenderer.basicEntityshader.u_cameraPositionFloat, 1, &posFloat[0]);
 		glUniform3iv(entityRenderer.basicEntityshader.u_cameraPositionInt, 1, &posInt[0]);
 
@@ -1081,7 +1107,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			glUniform3fv(entityRenderer.basicEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
 			glUniform3iv(entityRenderer.basicEntityshader.u_entityPositionInt, 1, &entityInt[0]);
 
-			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		}
 	
