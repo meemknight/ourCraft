@@ -5,6 +5,26 @@
 
 ChunkData *chunkGetterSignature(glm::ivec2 chunkPos);
 
+struct MotionState
+{
+	glm::vec3 velocity = {};
+	glm::vec3 acceleration = {};
+	unsigned char colides = {}; //front back top bottom left right
+
+	bool colidesTopBottom() { return colidesTop() || colidesBottom(); }
+	bool colidesLeftRight() { return colidesLeft() || colidesRight(); }
+	bool colidesFrontBack() { return colidesFront() || colidesBack(); }
+
+	bool colidesFront() { return colides && 0b1; }
+	bool colidesBack() { return colides && 0b01; }
+	bool colidesTop() { return colides && 0b001; }
+	bool colidesBottom() { return colides && 0b0001; }
+	bool colidesLeft() { return colides && 0b00001; }
+	bool colidesRight() { return colides && 0b000001; }
+
+};
+
+
 struct RigidBody
 {
 
@@ -12,17 +32,27 @@ struct RigidBody
 	glm::dvec3 lastPos = {};
 	glm::vec3 colliderSize = {};
 
-	void resolveConstrains(decltype(chunkGetterSignature) *chunkGetter);
+	//returns false if chunk was not loaded
+	bool resolveConstrains(decltype(chunkGetterSignature) *chunkGetter, MotionState *forces);
 
-	void checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos, 
-		decltype(chunkGetterSignature) *chunkGetter);
+	//returns false if chunk was not loaded
+	bool checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos, 
+		decltype(chunkGetterSignature) *chunkGetter, MotionState *forces);
 
 	glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, glm::dvec3 delta,
-		decltype(chunkGetterSignature) *chunkGetter);
+		decltype(chunkGetterSignature) *chunkGetter, bool &chunkLoaded, MotionState *forces);
 
 	void updateMove();
 
 };
+
+
+
+void updateForces(glm::dvec3 &pos, MotionState &forces, float deltaTime, bool applyGravity);
+
+void updateForces(glm::dvec3 &pos, glm::vec3 &velocity, glm::vec3 &acceleration, float deltaTime, bool applyGravity);
+
+void applyImpulse(MotionState &force, glm::vec3 impulse, float mass = 1.f);
 
 //this is the local player
 struct Player

@@ -69,7 +69,8 @@ std::uint64_t ClientEntityManager::consumeId()
 	return 0;
 }
 
-bool ClientEntityManager::dropItemByClient(glm::dvec3 position, BlockType blockType, UndoQueue &undoQueue)
+bool ClientEntityManager::dropItemByClient(glm::dvec3 position, BlockType blockType, UndoQueue &undoQueue
+	, glm::vec3 throwForce)
 {
 
 	std::uint64_t newEntityId = consumeId();
@@ -86,7 +87,6 @@ bool ClientEntityManager::dropItemByClient(glm::dvec3 position, BlockType blockT
 	submitTaskClient(task);
 
 
-	//todo drop in front of the player
 	undoQueue.addDropItemFromInventoryEvent(position + glm::dvec3{0,1,0}, position, newEntityId);
 
 	{
@@ -95,6 +95,7 @@ bool ClientEntityManager::dropItemByClient(glm::dvec3 position, BlockType blockT
 		newEntity.position = position;
 		newEntity.lastPosition = position;
 		newEntity.type = blockType;
+		newEntity.forces.velocity = throwForce;
 
 		droppedItems[newEntityId] = newEntity;
 	}

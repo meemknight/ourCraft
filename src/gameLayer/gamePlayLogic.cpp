@@ -289,7 +289,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		if (gameData.colidable)
 		{
-			gameData.entityManager.localPlayer.body.resolveConstrains(chunkGetter);
+			gameData.entityManager.localPlayer.body.resolveConstrains(chunkGetter, nullptr);
 		}
 
 		gameData.entityManager.localPlayer.body.updateMove();
@@ -298,14 +298,14 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		for (auto &item : gameData.entityManager.droppedItems)
 		{
 
+			updateForces(item.second.position, item.second.forces, deltaTime, true);
+
 			RigidBody body;
 			body.colliderSize = {0.4,0.4,0.4};
 			body.pos = item.second.position;
 			body.lastPos = item.second.lastPosition;
 
-			body.pos += glm::vec3(0, -2, 0) * deltaTime;
-
-			body.resolveConstrains(chunkGetter);
+			body.resolveConstrains(chunkGetter, &item.second.forces);
 
 			item.second.lastPosition = body.pos;
 			item.second.position = body.pos;
@@ -323,7 +323,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	if (platform::isKeyPressedOn(platform::Button::Q))
 	{
 		gameData.entityManager.dropItemByClient(gameData.entityManager.localPlayer.body.pos,
-			BlockTypes::diamond_ore, gameData.undoQueue);
+			BlockTypes::diamond_ore, gameData.undoQueue, gameData.c.viewDirection * 5.f);
 	}
 
 #pragma endregion

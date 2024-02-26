@@ -3,17 +3,18 @@
 #include <chunkSystem.h>
 
 
-void RigidBody::resolveConstrains(decltype(chunkGetterSignature) *chunkGetter)
+bool RigidBody::resolveConstrains(decltype(chunkGetterSignature) *chunkGetter, MotionState *forces)
 {
+	bool rez = 0;
 
 	float distance = glm::length(lastPos - pos);
 	const float BLOCK_SIZE = 1;
 
 	if (distance < BLOCK_SIZE)
 	{
-		checkCollisionBrute(pos,
+		rez = checkCollisionBrute(pos,
 			lastPos,
-			chunkGetter
+			chunkGetter, forces
 		);
 	}
 	else
@@ -29,8 +30,8 @@ void RigidBody::resolveConstrains(decltype(chunkGetterSignature) *chunkGetter)
 		{
 			newPos += delta;
 			glm::dvec3 posTest = newPos;
-			checkCollisionBrute(newPos,
-				lastPos, chunkGetter
+			rez = checkCollisionBrute(newPos,
+				lastPos, chunkGetter, forces
 				);
 
 			if (newPos != posTest)
@@ -41,9 +42,9 @@ void RigidBody::resolveConstrains(decltype(chunkGetterSignature) *chunkGetter)
 
 		} while (glm::length((newPos + glm::dvec3(delta)) - pos) > 1.0f * BLOCK_SIZE && hardLimit-- > 0);
 
-		checkCollisionBrute(pos,
+		rez = checkCollisionBrute(pos,
 			lastPos,
-			chunkGetter);
+			chunkGetter, forces);
 	}
 
 end:
@@ -51,19 +52,18 @@ end:
 	//clamp the box if needed
 	//if (pos.x < 0) { pos.x = 0; }
 	//if (pos.x + dimensions.x > (mapData.w) * BLOCK_SIZE) { pos.x = ((mapData.w) * BLOCK_SIZE) - dimensions.x; }
-	void;
-
-
+	
+	return rez;
 
 }
 
-void RigidBody::checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
-	decltype(chunkGetterSignature) *chunkGetter)
+bool RigidBody::checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
+	decltype(chunkGetterSignature) *chunkGetter, MotionState *forces)
 {
 	glm::dvec3 delta = pos - lastPos;
 	const float BLOCK_SIZE = 1;
 
-	
+	bool rez = 0;
 	
 	//pos.y = performCollision({lastPos.x, pos.y, lastPos.z}, colliderSize, {0, delta.y, 0},
 	//	chunkGetter).y;
@@ -74,19 +74,19 @@ void RigidBody::checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
 	if (delta.x)
 	{
 		newPos.x = performCollision({pos.x, lastPos.y, lastPos.z}, lastPos, colliderSize, {delta.x, 0, 0},
-			chunkGetter).x;
+			chunkGetter, rez, forces).x;
 	}
 
 	if (delta.y)
 	{
 		newPos.y = performCollision({newPos.x, pos.y, lastPos.z}, lastPos, colliderSize, {0, delta.y, 0},
-			chunkGetter).y;
+			chunkGetter, rez, forces).y;
 	}
 	
 	if (delta.z)
 	{
 		newPos.z = performCollision({newPos.x, newPos.y, pos.z}, lastPos, colliderSize, {0, 0, delta.z},
-			chunkGetter).z;
+			chunkGetter, rez, forces).z;
 	}
 	
 	pos = newPos;
@@ -106,6 +106,12 @@ void RigidBody::checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
 		chunkGetter);
 	*/
 
+	if (!rez)
+	{
+		pos = lastPos;
+	}
+
+	return rez;
 }
 
 
@@ -156,9 +162,9 @@ bool boxColide(glm::dvec3 p1, glm::vec3 s1,
 }
 
 glm::dvec3 RigidBody::performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, glm::dvec3 delta,
-	decltype(chunkGetterSignature) *chunkGetter)
+	decltype(chunkGetterSignature) *chunkGetter, bool &chunkLoaded, MotionState *forces)
 {
-	
+	chunkLoaded = true;
 
 	const float BLOCK_SIZE = 1.f;
 
@@ -210,6 +216,12 @@ glm::dvec3 RigidBody::performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::
 								{
 									if (delta.x != 0)
 									{
+										if (forces)
+										{
+											forces->acceleration.x = 0;
+											forces->velocity.x = 0;
+										}
+
 										if (delta.x < 0) // moving left
 										{
 											//leftTouch = 1;
@@ -222,9 +234,16 @@ glm::dvec3 RigidBody::performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::
 											pos.x = x * BLOCK_SIZE - BLOCK_SIZE / 2.0 - size.x / 2.0;
 											goto end;
 										}
+										
 									}
 									else if (delta.y != 0)
 									{
+										if (forces)
+										{
+											forces->acceleration.y = 0;
+											forces->velocity.y = 0;
+										}
+
 										if (delta.y < 0) //moving down
 										{
 											pos.y = y * BLOCK_SIZE + BLOCK_SIZE / 2.0;
@@ -235,9 +254,16 @@ glm::dvec3 RigidBody::performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::
 											pos.y = y * BLOCK_SIZE - BLOCK_SIZE / 2.0 - size.y;
 											goto end;
 										}
+										
 									}
 									else if (delta.z != 0)
 									{
+										if (forces)
+										{
+											forces->acceleration.z = 0;
+											forces->velocity.z = 0;
+										}
+
 										if (delta.z < 0) // moving left
 										{
 											//leftTouch = 1;
@@ -250,6 +276,8 @@ glm::dvec3 RigidBody::performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::
 											pos.z = z * BLOCK_SIZE - BLOCK_SIZE / 2.0 - size.z / 2.0;
 											goto end;
 										}
+
+										
 									}
 								}
 
@@ -263,7 +291,7 @@ glm::dvec3 RigidBody::performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::
 				}
 				else
 				{
-					//todo freeze player if he is outside the loaded chunks
+					chunkLoaded = false;
 				}
 				
 
@@ -295,4 +323,41 @@ void Player::moveFPS(glm::vec3 direction)
 void RigidBody::updateMove()
 {
 	lastPos = pos;
+}
+
+void updateForces(glm::dvec3 &pos, MotionState &forces, float deltaTime, bool applyGravity)
+{
+	updateForces(pos, forces.velocity, forces.acceleration, deltaTime, applyGravity);
+}
+
+void updateForces(glm::dvec3 &pos, glm::vec3 &velocity, glm::vec3 &acceleration,
+	float deltaTime, bool applyGravity)
+{
+	if (applyGravity)
+	{
+		acceleration += glm::vec3(0, -9.8, 0);
+	}
+	acceleration = glm::clamp(acceleration, glm::vec3(-1000), glm::vec3(1000));
+
+	velocity += acceleration * deltaTime;
+	velocity = glm::clamp(velocity, glm::vec3(-1000), glm::vec3(1000));
+
+	pos += velocity * deltaTime;
+
+	const float drag = 0.1f;
+	glm::vec3 dragForce = drag * -velocity * glm::abs(velocity) * 0.5f;
+
+	auto lastVelocity = velocity;
+	velocity += dragForce * deltaTime;
+	
+	if ((lastVelocity.x < 0 && velocity.x > 0) || (lastVelocity.x > 0 && velocity.x < 0)) { velocity.x = 0; }
+	if ((lastVelocity.y < 0 && velocity.y > 0) || (lastVelocity.y > 0 && velocity.y < 0)) { velocity.y = 0; }
+	if ((lastVelocity.z < 0 && velocity.z > 0) || (lastVelocity.z > 0 && velocity.z < 0)) { velocity.z = 0; }
+
+	acceleration = {};
+}
+
+void applyImpulse(MotionState &force, glm::vec3 impulse, float mass)
+{
+	force.velocity += impulse * mass;
 }

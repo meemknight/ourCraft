@@ -168,10 +168,7 @@ void closeServer()
 }
 
 
-//todo !!!!!!!!!!!!!!
-//this should return a bool and if it returns false the later code should ignore that message
-
-//todo it is a problem that the block validation and the item validation are on sepparate threads.
+//Note: it is a problem that the block validation and the item validation are on sepparate threads.
 bool computeRevisionStuff(Client &client, bool allowed, const EventId &eventId)
 {
 	bool noNeedToNotifyUndo = false;
@@ -451,7 +448,12 @@ void serverWorkerFunction()
 				
 					auto serverAllows = getClientSettingCopy(i.cid).validateStuff;
 				
-					computeRevisionStuff(*client, true && serverAllows, i.t.eventId);
+					if (computeRevisionStuff(*client, true && serverAllows, i.t.eventId))
+					{
+
+
+
+					}
 					
 					//i.t.blockType;
 					//i.t.doublePos;

@@ -18,6 +18,7 @@ struct DroppedItem
 {
 	glm::dvec3 position = {};
 	glm::dvec3 lastPosition = {};
+	MotionState forces = {};
 	BlockType type = 0;
 	unsigned char count = 0;
 };
@@ -44,7 +45,7 @@ struct ClientEntityManager
 
 	std::uint64_t consumeId();
 
-	bool dropItemByClient(glm::dvec3 position, BlockType blockType, UndoQueue &undoQueue);
+	bool dropItemByClient(glm::dvec3 position, BlockType blockType, UndoQueue &undoQueue, glm::vec3 throwForce);
 
 	void removeDroppedItem(std::uint64_t entityId);
 
