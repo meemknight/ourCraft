@@ -398,9 +398,14 @@ void enetServerFunction()
 
 		float deltaTime = (std::chrono::duration_cast<std::chrono::microseconds>(stop - start)).count() / 1000000.0f;
 		start = std::chrono::high_resolution_clock::now();
+		tickTimer += deltaTime;
+		auto settings = getServerSettingsCopy();
 
 
-		while (enet_host_service(server, &event, 0) > 0 && enetServerRunning)
+		//int waitTimer = ((1.f/settings.targetTicksPerSeccond)-tickTimer) * 1000;
+		//waitTimer = std::max(std::min(waitTimer-1, 10), 0);
+
+		while (enet_host_service(server, &event, 2) > 0 && enetServerRunning)
 		{
 			switch (event.type)
 			{
@@ -489,15 +494,13 @@ void enetServerFunction()
 
 	#pragma endregion
 
-		tickTimer += deltaTime;
 
-		auto settings = getServerSettingsCopy();
 
-		if (tickTimer >= 1 / settings.targetTicksPerSeccond)
-		{
-			signalWaitingFromServer();
-			tickTimer -= 1 / settings.targetTicksPerSeccond;
-		}
+		//if (tickTimer >= 1 / settings.targetTicksPerSeccond)
+		//{
+		//	signalWaitingFromServer();
+		//	tickTimer -= 1 / settings.targetTicksPerSeccond;
+		//}
 
 
 	}

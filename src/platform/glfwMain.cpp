@@ -320,6 +320,12 @@ int main()
 #endif
 
 
+//#ifdef _WIN32
+//	timeBeginPeriod(1);
+//	atexit([]() { timeEndPeriod(1); });
+//#endif
+
+
 #pragma region window and opengl
 
 	permaAssertComment(glfwInit(), "err initializing glfw");

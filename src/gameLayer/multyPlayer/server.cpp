@@ -288,8 +288,9 @@ void serverWorkerFunction()
 
 	float tickTimer = 0;
 	int ticksPerSeccond = 0;
+	int runsPerSeccond = 0;
 	float seccondsTimer = 0;
-	constexpr float RESOLUTION_TIMER = 16.6;
+	constexpr float RESOLUTION_TIMER = 16.f;
 
 	while (serverRunning)
 	{
@@ -297,26 +298,46 @@ void serverWorkerFunction()
 		//auto clientsCopy = getAllClients();
 		//todo this could fail? if the client disconected?
 	
-
 		{
 			std::vector<ServerTask> tasks;
-			if (sd.waitingTasks.empty())
+
+			//if (!settings.busyWait)
+			//{
+			//	if (sd.waitingTasks.empty())
+			//	{
+			//
+			//		if (tickTimer > (1.f / settings.targetTicksPerSeccond))
+			//		{
+			//			tasks = tryForTasksServer(); //we will soon need to tick so we don't block
+			//		}
+			//		else
+			//		{
+			//			tasks = waitForTasksServer(); //nothing to do we can wait.
+			//		}
+			//
+			//	}
+			//	else
+			//	{
+			//		tasks = tryForTasksServer(); //already things to do, we just grab more if ready and wating.
+			//	}
+			//}
+			//else
 			{
 
-				if ((tickTimer + RESOLUTION_TIMER) > 1.f / settings.targetTicksPerSeccond)
+				while (sd.waitingTasks.empty())
 				{
-					tasks = tryForTasksServer(); //we will soon need to tick so we don't block
-				}
-				else
-				{
-					tasks = waitForTasksServer(); //nothing to do we can wait.
+					auto timerStop = std::chrono::high_resolution_clock::now();
+					float deltaTime = (std::chrono::duration_cast<std::chrono::microseconds>(timerStop - timerStart)).count() / 1000000.0f;
+
+					if ((tickTimer + deltaTime) > 1.f / settings.targetTicksPerSeccond)
+					{
+						break;
+					}
 				}
 
+				tasks = tryForTasksServer();
 			}
-			else
-			{
-				tasks = tryForTasksServer(); //already things to do, we just grab more if ready and wating.
-			}
+			
 
 			for (auto i : tasks)
 			{
@@ -553,7 +574,7 @@ void serverWorkerFunction()
 		}
 
 		if (tickTimer > 1.f / settings.targetTicksPerSeccond)
-		{
+		{	
 			tickTimer -= (1.f / settings.targetTicksPerSeccond);
 			ticksPerSeccond++;
 
@@ -561,11 +582,19 @@ void serverWorkerFunction()
 
 		}
 
+		//std::cout << deltaTime << " <- dt / 1/dt-> " << (1.f / (deltaTime)) << "\n";
+
+		//std::cout << seccondsTimer << '\n';
+
+		runsPerSeccond++;
+
 		if (seccondsTimer >= 1)
 		{
 			seccondsTimer -= 1;
 			std::cout << "Server ticks per seccond: " << ticksPerSeccond << "\n";
+			std::cout << "Server runs per seccond: " << runsPerSeccond << "\n";
 			ticksPerSeccond = 0;
+			runsPerSeccond = 0;
 		}
 	}
 

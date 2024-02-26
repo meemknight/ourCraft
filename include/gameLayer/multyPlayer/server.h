@@ -30,6 +30,7 @@ struct ServerSettings
 	std::unordered_map<CID, PerClientServerSettings> perClientSettings;
 
 	int targetTicksPerSeccond = 20;
+	bool busyWait = 1;
 };
 
 ServerSettings getServerSettingsCopy();
