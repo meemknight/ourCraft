@@ -73,10 +73,6 @@ bool initGameplay(ProgramData &programData)
 	gameData.entityManager.localPlayer.body.pos = playerData.playersPosition;
 	gameData.entityManager.localPlayer.body.lastPos = playerData.playersPosition;
 	gameData.entityManager.localPlayer.entityId = playerData.yourPlayerEntityId;
-	//gameData.player.body.colliderSize = glm::vec3(0.95,0.95,0.95);
-	//gameData.player.body.colliderSize = glm::vec3(0.5,0.5,0.5);
-	//gameData.entityManager.localPlayer.body.colliderSize = glm::vec3(1,2,1);
-	gameData.entityManager.localPlayer.body.colliderSize = glm::vec3(0.8,1.8,0.8);
 
 
 	gameData.chunkSystem.createChunks(32);
@@ -289,7 +285,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		if (gameData.colidable)
 		{
-			gameData.entityManager.localPlayer.body.resolveConstrains(chunkGetter, nullptr, deltaTime);
+			gameData.entityManager.localPlayer.body.resolveConstrains(chunkGetter, nullptr, deltaTime, 
+				glm::vec3(0.8, 1.8, 0.8));
 		}
 
 		gameData.entityManager.localPlayer.body.updateMove();
@@ -301,11 +298,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			updateForces(item.second.position, item.second.forces, deltaTime, true);
 
 			RigidBody body;
-			body.colliderSize = {0.4,0.4,0.4};
 			body.pos = item.second.position;
 			body.lastPos = item.second.lastPosition;
 
-			body.resolveConstrains(chunkGetter, &item.second.forces, deltaTime);
+			body.resolveConstrains(chunkGetter, &item.second.forces, deltaTime, {0.4,0.4,0.4});
 
 			item.second.lastPosition = body.pos;
 			item.second.position = body.pos;
@@ -499,7 +495,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		programData.pointDebugRenderer.renderPoint(gameData.c, p.second.position);
 
 		//todo this will be refactored
-		auto boxSize = gameData.entityManager.localPlayer.body.colliderSize;
+		auto boxSize = glm::vec3(0.8, 1.8, 0.8);
 		auto pos = p.second.position;
 
 		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2),

@@ -6,6 +6,7 @@
 #include <chunk.h>
 #include "server.h"
 #include "gamePlayLogic.h"
+#include <gameplay/physics.h>
 
 using EventCounter = unsigned int;
 using RevisionNumber = unsigned int;
@@ -117,6 +118,7 @@ struct Packet_ClientDroppedItem
 	std::uint64_t entityID = 0;
 	BlockType blockType = {};
 	unsigned char count = 0;
+	MotionState motionState = {};
 
 };
 
@@ -124,8 +126,7 @@ struct Packet_ClientDroppedItem
 struct Packet_PlaceBlocks
 {
 	glm::ivec3 blockPos = {};
-	BlockType
-		blockType = {};
+	BlockType blockType = {};
 };
 
 

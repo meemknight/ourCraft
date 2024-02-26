@@ -1,4 +1,5 @@
 #pragma once
+#include <gameplay/entityManagerCommon.h>
 #include <gameplay/physics.h>
 #include <unordered_map>
 #include <deque>
@@ -14,14 +15,7 @@ struct PlayerNetworked
 	
 };
 
-struct DroppedItem
-{
-	glm::dvec3 position = {};
-	glm::dvec3 lastPosition = {};
-	MotionState forces = {};
-	BlockType type = 0;
-	unsigned char count = 0;
-};
+
 
 struct ReservedIDsRange
 {

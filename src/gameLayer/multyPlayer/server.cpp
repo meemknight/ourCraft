@@ -21,6 +21,8 @@
 #include <biome.h>
 #include <unordered_set>
 #include <profilerLib.h>
+#include <gameplay/entityManagerServer.h>
+
 
 bool operator==(const BlockInChunkPos &a, const BlockInChunkPos &b)
 {
@@ -280,17 +282,36 @@ void serverWorkerFunction()
 		f.close();
 	}
 
+	ServerEntityManager entityManager;
+
+	auto timerStart = std::chrono::high_resolution_clock::now();
+
+	float tickTimer = 0;
+	int ticksPerSeccond = 0;
+	float seccondsTimer = 0;
+	constexpr float RESOLUTION_TIMER = 16.6;
+
 	while (serverRunning)
 	{
 		auto settings = getServerSettingsCopy();
 		//auto clientsCopy = getAllClients();
 		//todo this could fail? if the client disconected?
+	
 
 		{
 			std::vector<ServerTask> tasks;
 			if (sd.waitingTasks.empty())
 			{
-				tasks = waitForTasksServer(); //nothing to do we can wait.
+
+				if ((tickTimer + RESOLUTION_TIMER) > 1.f / settings.targetTicksPerSeccond)
+				{
+					tasks = tryForTasksServer(); //we will soon need to tick so we don't block
+				}
+				else
+				{
+					tasks = waitForTasksServer(); //nothing to do we can wait.
+				}
+
 			}
 			else
 			{
@@ -302,6 +323,13 @@ void serverWorkerFunction()
 				sd.waitingTasks.push_back(i);
 			}
 		}
+
+		auto timerStop = std::chrono::high_resolution_clock::now();
+		float deltaTime = (std::chrono::duration_cast<std::chrono::microseconds>(timerStop - timerStart)).count() / 1000000.0f;
+		timerStart = std::chrono::high_resolution_clock::now();
+
+		tickTimer += deltaTime;
+		seccondsTimer += deltaTime;
 
 		//todo rather than a sort use buckets, so the clients can't DDOS the server with
 		//place blocks tasks, making generating chunks impossible.
@@ -447,11 +475,19 @@ void serverWorkerFunction()
 				{
 				
 					auto serverAllows = getClientSettingCopy(i.cid).validateStuff;
-				
+					if (entityManager.entityExists(i.t.entityId)) { serverAllows = false; }
+
+
 					if (computeRevisionStuff(*client, true && serverAllows, i.t.eventId))
 					{
-
-
+						
+						DroppedItem newEntity = {};
+						newEntity.count = i.t.blockCount;
+						newEntity.position = i.t.doublePos;
+						newEntity.lastPosition = i.t.doublePos;
+						newEntity.type = i.t.blockType;
+						newEntity.forces = i.t.motionState;
+					
 
 					}
 					
@@ -516,9 +552,21 @@ void serverWorkerFunction()
 			delete[] newBlocks;
 		}
 
-		
+		if (tickTimer > 1.f / settings.targetTicksPerSeccond)
+		{
+			tickTimer -= (1.f / settings.targetTicksPerSeccond);
+			ticksPerSeccond++;
 
+			//tick ...
 
+		}
+
+		if (seccondsTimer >= 1)
+		{
+			seccondsTimer -= 1;
+			std::cout << "Server ticks per seccond: " << ticksPerSeccond << "\n";
+			ticksPerSeccond = 0;
+		}
 	}
 
 	wg.clear();

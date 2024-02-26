@@ -77,13 +77,17 @@ bool ClientEntityManager::dropItemByClient(glm::dvec3 position, BlockType blockT
 
 	if (!newEntityId) { return 0; }
 
-	Task task;
+	MotionState ms = {};
+	ms.velocity = throwForce;
+
+	Task task = {};
 	task.type = Task::droppedItemEntity;
 	task.doublePos = position + glm::dvec3{0,1,0};
 	task.blockType = blockType;
 	task.eventId = undoQueue.currentEventId;
 	task.blockCount = 1;
 	task.entityId = newEntityId;
+	task.motionState = ms;
 	submitTaskClient(task);
 
 
@@ -95,7 +99,7 @@ bool ClientEntityManager::dropItemByClient(glm::dvec3 position, BlockType blockT
 		newEntity.position = position;
 		newEntity.lastPosition = position;
 		newEntity.type = blockType;
-		newEntity.forces.velocity = throwForce;
+		newEntity.forces = ms;
 
 		droppedItems[newEntityId] = newEntity;
 	}

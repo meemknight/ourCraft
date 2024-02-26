@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <vector>
 #include "packet.h"
+#include <gameplay/physics.h>
 
 struct ClientEntityManager;
 
@@ -24,6 +25,8 @@ struct Task
 	glm::ivec2 playerPosForChunkGeneration = {};
 	unsigned char blockCount = 0;
 	std::uint64_t entityId;
+	MotionState motionState;
+	
 };
 
 void submitTaskClient(Task &t);

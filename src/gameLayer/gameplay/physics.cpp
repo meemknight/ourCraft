@@ -29,7 +29,8 @@ void applyDrag2(glm::vec3 &force, glm::vec3 drag)
 
 }
 
-bool RigidBody::resolveConstrains(decltype(chunkGetterSignature) *chunkGetter, MotionState *forces, float deltaTime)
+bool RigidBody::resolveConstrains(decltype(chunkGetterSignature) *chunkGetter, 
+	MotionState *forces, float deltaTime, glm::vec3 colliderSize)
 {
 	bool rez = 0;
 
@@ -40,7 +41,7 @@ bool RigidBody::resolveConstrains(decltype(chunkGetterSignature) *chunkGetter, M
 	{
 		rez = checkCollisionBrute(pos,
 			lastPos,
-			chunkGetter, forces, deltaTime
+			chunkGetter, forces, deltaTime, colliderSize
 		);
 	}
 	else
@@ -57,7 +58,7 @@ bool RigidBody::resolveConstrains(decltype(chunkGetterSignature) *chunkGetter, M
 			newPos += delta;
 			glm::dvec3 posTest = newPos;
 			rez = checkCollisionBrute(newPos,
-				lastPos, chunkGetter, forces, deltaTime
+				lastPos, chunkGetter, forces, deltaTime, colliderSize
 				);
 
 			if (newPos != posTest)
@@ -70,7 +71,7 @@ bool RigidBody::resolveConstrains(decltype(chunkGetterSignature) *chunkGetter, M
 
 		rez = checkCollisionBrute(pos,
 			lastPos,
-			chunkGetter, forces, deltaTime);
+			chunkGetter, forces, deltaTime, colliderSize);
 	}
 
 end:
@@ -84,7 +85,8 @@ end:
 }
 
 bool RigidBody::checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
-	decltype(chunkGetterSignature) *chunkGetter, MotionState *forces, float deltaTime)
+	decltype(chunkGetterSignature) *chunkGetter, MotionState *forces, float deltaTime
+	, glm::vec3 colliderSize)
 {
 	glm::dvec3 delta = pos - lastPos;
 	const float BLOCK_SIZE = 1;

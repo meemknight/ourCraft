@@ -29,6 +29,7 @@ struct ServerSettings
 {
 	std::unordered_map<CID, PerClientServerSettings> perClientSettings;
 
+	int targetTicksPerSeccond = 20;
 };
 
 ServerSettings getServerSettingsCopy();

@@ -30,14 +30,15 @@ struct RigidBody
 
 	glm::dvec3 pos = {};
 	glm::dvec3 lastPos = {};
-	glm::vec3 colliderSize = {};
 
 	//returns false if chunk was not loaded
-	bool resolveConstrains(decltype(chunkGetterSignature) *chunkGetter, MotionState *forces, float deltaTime);
+	bool resolveConstrains(decltype(chunkGetterSignature) *chunkGetter, 
+		MotionState *forces, float deltaTime, glm::vec3 colliderSize);
 
 	//returns false if chunk was not loaded
 	bool checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos, 
-		decltype(chunkGetterSignature) *chunkGetter, MotionState *forces, float deltaTime);
+		decltype(chunkGetterSignature) *chunkGetter, MotionState *forces, float deltaTime, 
+		glm::vec3 colliderSize);
 
 	glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, glm::dvec3 delta,
 		decltype(chunkGetterSignature) *chunkGetter, bool &chunkLoaded, MotionState *forces, float deltaTime,

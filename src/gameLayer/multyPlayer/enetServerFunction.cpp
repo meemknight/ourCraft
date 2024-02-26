@@ -309,7 +309,7 @@ void recieveData(ENetHost *server, ENetEvent &event)
 			serverTask.t.blockType = packetData->blockType;
 			serverTask.t.entityId = packetData->entityID;
 			serverTask.t.eventId = packetData->eventId;
-
+			serverTask.t.motionState = packetData->motionState;
 
 			submitTaskForServer(serverTask);
 			break;
@@ -389,6 +389,8 @@ void enetServerFunction()
 	auto start = std::chrono::high_resolution_clock::now();
 
 	float sendEntityTimer = 0.5;
+
+	float tickTimer = 0;
 
 	while (enetServerRunning)
 	{
@@ -487,7 +489,15 @@ void enetServerFunction()
 
 	#pragma endregion
 
+		tickTimer += deltaTime;
 
+		auto settings = getServerSettingsCopy();
+
+		if (tickTimer >= 1 / settings.targetTicksPerSeccond)
+		{
+			signalWaitingFromServer();
+			tickTimer -= 1 / settings.targetTicksPerSeccond;
+		}
 
 
 	}
