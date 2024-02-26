@@ -289,7 +289,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		if (gameData.colidable)
 		{
-			gameData.entityManager.localPlayer.body.resolveConstrains(chunkGetter, nullptr);
+			gameData.entityManager.localPlayer.body.resolveConstrains(chunkGetter, nullptr, deltaTime);
 		}
 
 		gameData.entityManager.localPlayer.body.updateMove();
@@ -305,7 +305,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			body.pos = item.second.position;
 			body.lastPos = item.second.lastPosition;
 
-			body.resolveConstrains(chunkGetter, &item.second.forces);
+			body.resolveConstrains(chunkGetter, &item.second.forces, deltaTime);
 
 			item.second.lastPosition = body.pos;
 			item.second.position = body.pos;
