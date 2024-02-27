@@ -7,6 +7,7 @@
 #include "server.h"
 #include "gamePlayLogic.h"
 #include <gameplay/physics.h>
+#include <gameplay/entityManagerCommon.h>
 
 using EventCounter = unsigned int;
 using RevisionNumber = unsigned int;
@@ -44,16 +45,24 @@ enum
 	headerSendPlayerData,
 	headerClientRecieveReservedEntityIds,
 	headerClientRecieveOtherPlayerPosition,
+	headerClientRecieveDroppedItemUpdate,
 };
 
 enum 
 {
 	channelChunksAndBlocks,	  //this also handles items, maybe rename player actions or something
 	channelPlayerPositions,
+	channelEntityPositions,
 	channelHandleConnections, //this will also send Entity cids
 	//channelRequestChunks, todo maybe try this in the future
 	SERVER_CHANNELS
 
+};
+
+struct Packet_RecieveDroppedItemUpdate
+{
+	DroppedItem entity;
+	std::uint64_t eid;
 };
 
 struct Packet_ReceiveReserverEndityIds

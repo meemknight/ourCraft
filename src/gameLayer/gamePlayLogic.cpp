@@ -75,7 +75,7 @@ bool initGameplay(ProgramData &programData)
 	gameData.entityManager.localPlayer.entityId = playerData.yourPlayerEntityId;
 
 
-	gameData.chunkSystem.createChunks(32);
+	gameData.chunkSystem.createChunks(16);
 
 	gameData.sunShadow.init();
 
@@ -100,7 +100,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		clientMessageLoop(validateEvent, inValidateRevision, 
 			gameData.entityManager.localPlayer.body.pos, gameData.chunkSystem.squareSize, 
-			gameData.entityManager);
+			gameData.entityManager, gameData.undoQueue);
 
 		//todo timeout here and request the server for a hard reset
 		if (validateEvent)
@@ -295,16 +295,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		for (auto &item : gameData.entityManager.droppedItems)
 		{
 
-			updateForces(item.second.position, item.second.forces, deltaTime, true);
-
-			RigidBody body;
-			body.pos = item.second.position;
-			body.lastPos = item.second.lastPosition;
-
-			body.resolveConstrains(chunkGetter, &item.second.forces, deltaTime, {0.4,0.4,0.4});
-
-			item.second.lastPosition = body.pos;
-			item.second.position = body.pos;
+			updateDroppedItem(item.second, deltaTime, chunkGetter);
 
 		}
 

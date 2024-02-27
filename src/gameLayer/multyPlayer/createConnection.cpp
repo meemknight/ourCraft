@@ -4,6 +4,7 @@
 #include <iostream>
 #include <multyPlayer/enetServerFunction.h>
 #include <gameplay/entityManagerClient.h>
+#include <multyPlayer/undoQueue.h>
 
 static ConnectionData clientData;
 
@@ -50,6 +51,7 @@ void submitTaskClient(Task &t)
 		packetData.count = t.blockCount;
 		packetData.eventId = t.eventId;
 		packetData.entityID = t.entityId;
+		packetData.motionState = t.motionState;
 
 		sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1,
 			channelChunksAndBlocks);
@@ -112,7 +114,8 @@ void recieveDataClient(ENetEvent &event,
 	EventCounter &validatedEvent, 
 	RevisionNumber &invalidateRevision,
 	glm::ivec3 playerPosition, int squareDistance,
-	ClientEntityManager &entityManager
+	ClientEntityManager &entityManager,
+	UndoQueue &undoQueue
 	)
 {
 	Packet p;
@@ -211,12 +214,12 @@ void recieveDataClient(ENetEvent &event,
 			break;
 		}
 
-		//todo server should know when to send ids to clients
+		//todo server should know when to send new ids to clients
 		case headerClientRecieveReservedEntityIds:
 		{
 			Packet_ReceiveReserverEndityIds *p = (Packet_ReceiveReserverEndityIds *)data;
 
-			assert(sizeof(Packet_ReceiveReserverEndityIds) == size); //corrupted packet? 
+			if (sizeof(Packet_ReceiveReserverEndityIds) != size) { break; }; //corrupted packet? 
 
 			ReservedIDsRange newRange = {};
 			newRange.count = p->count;
@@ -224,6 +227,18 @@ void recieveDataClient(ENetEvent &event,
 
 			entityManager.reservedIds.push_back(newRange);
 			break;
+		}
+
+		case headerClientRecieveDroppedItemUpdate:
+		{
+
+			Packet_RecieveDroppedItemUpdate *p = (Packet_RecieveDroppedItemUpdate *)data;
+
+			if (sizeof(Packet_RecieveDroppedItemUpdate) != size) { break; } //todo logs or something
+
+			entityManager.addOrUpdateDroppedItem(p->eid, p->entity, undoQueue);
+
+
 		}
 
 		default:
@@ -236,7 +251,8 @@ void recieveDataClient(ENetEvent &event,
 
 //this is not multy threaded
 void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision
-	,glm::ivec3 playerPosition, int squareDistance, ClientEntityManager &entityManager)
+	,glm::ivec3 playerPosition, int squareDistance, ClientEntityManager &entityManager,
+	UndoQueue &undoQueue)
 {
 	ENetEvent event;
 
@@ -250,7 +266,7 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 				{
 
 					recieveDataClient(event, validatedEvent, invalidateRevision,
-						playerPosition, squareDistance, entityManager);
+						playerPosition, squareDistance, entityManager, undoQueue);
 					
 					enet_packet_destroy(event.packet);
 

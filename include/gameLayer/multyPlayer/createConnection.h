@@ -6,6 +6,7 @@
 #include <gameplay/physics.h>
 
 struct ClientEntityManager;
+struct UndoQueue;
 
 struct Task
 {
@@ -13,8 +14,8 @@ struct Task
 	{
 		none = 0,
 		placeBlock,
-		generateChunk,
 		droppedItemEntity,
+		generateChunk
 	};
 
 	glm::ivec3 pos = {};
@@ -54,6 +55,7 @@ std::vector<Packet_PlaceBlocks> getRecievedBlocks();
 ConnectionData getConnectionData();
 bool createConnection(Packet_ReceiveCIDAndData &playerData);
 void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision
-	,glm::ivec3 playerPosition, int squareDistance, ClientEntityManager& entityManager);
+	,glm::ivec3 playerPosition, int squareDistance, ClientEntityManager& entityManager,
+	UndoQueue &undoQueue);
 
 void closeConnection();

@@ -138,6 +138,8 @@ struct ServerData
 	ENetHost *server = nullptr;
 	ServerSettings settings = {};
 
+	float updateEntititiesTimer = 0;
+
 }sd;
 
 int getChunkCapacity()
@@ -169,6 +171,7 @@ void closeServer()
 	//serverSettingsMutex.unlock();
 }
 
+void doGameTick(float deltaTime, ServerEntityManager &entityManager);
 
 //Note: it is a problem that the block validation and the item validation are on sepparate threads.
 bool computeRevisionStuff(Client &client, bool allowed, const EventId &eventId)
@@ -287,6 +290,7 @@ void serverWorkerFunction()
 	auto timerStart = std::chrono::high_resolution_clock::now();
 
 	float tickTimer = 0;
+	float tickDeltaTime = 0;
 	int ticksPerSeccond = 0;
 	int runsPerSeccond = 0;
 	float seccondsTimer = 0;
@@ -351,11 +355,21 @@ void serverWorkerFunction()
 
 		tickTimer += deltaTime;
 		seccondsTimer += deltaTime;
+		tickDeltaTime += deltaTime;
 
 		//todo rather than a sort use buckets, so the clients can't DDOS the server with
-		//place blocks tasks, making generating chunks impossible.
-		std::sort(sd.waitingTasks.begin(), sd.waitingTasks.end(),
-			[](const ServerTask &a, const ServerTask &b) { return a.t.type < b.t.type; });
+		//place blocks tasks, making generating chunks impossible. 
+		std::stable_sort(sd.waitingTasks.begin(), sd.waitingTasks.end(),
+			[](const ServerTask &a, const ServerTask &b) 
+			{ 
+				if((a.t.type == Task::placeBlock && b.t.type == Task::droppedItemEntity) ||
+					(a.t.type == Task::droppedItemEntity && b.t.type == Task::placeBlock))
+				{
+					return false;
+				}
+				return a.t.type < b.t.type; 
+			}
+		);
 
 		std::vector<ChunkPriorityCache::SendBlocksBack> sendNewBlocksToPlayers;
 
@@ -509,13 +523,9 @@ void serverWorkerFunction()
 						newEntity.type = i.t.blockType;
 						newEntity.forces = i.t.motionState;
 					
-
+						entityManager.droppedItems.insert({i.t.entityId, newEntity});
 					}
 					
-					//i.t.blockType;
-					//i.t.doublePos;
-					//i.t.blockCount;
-
 				}
 				else
 				{
@@ -579,7 +589,10 @@ void serverWorkerFunction()
 			ticksPerSeccond++;
 
 			//tick ...
+			doGameTick(tickDeltaTime, entityManager);
 
+
+			tickDeltaTime = 0;
 		}
 
 		//std::cout << deltaTime << " <- dt / 1/dt-> " << (1.f / (deltaTime)) << "\n";
@@ -591,8 +604,8 @@ void serverWorkerFunction()
 		if (seccondsTimer >= 1)
 		{
 			seccondsTimer -= 1;
-			std::cout << "Server ticks per seccond: " << ticksPerSeccond << "\n";
-			std::cout << "Server runs per seccond: " << runsPerSeccond << "\n";
+			//std::cout << "Server ticks per seccond: " << ticksPerSeccond << "\n";
+			//std::cout << "Server runs per seccond: " << runsPerSeccond << "\n";
 			ticksPerSeccond = 0;
 			runsPerSeccond = 0;
 		}
@@ -1735,4 +1748,70 @@ void ChunkPriorityCache::placeGhostBlocksForChunk(int posX, int posZ, ChunkData 
 
 		ghostBlocks.erase(iter);
 	}
+}
+
+void doGameTick(float deltaTime, ServerEntityManager &entityManager)
+{
+
+	auto chunkGetter = [](glm::ivec2 pos) -> ChunkData *
+	{
+		auto c = sd.chunkCache.getChunkOrGetNullNotUpdateTable(pos.x, pos.y);
+		if (c)
+		{
+			return c;
+		}
+		else
+		{
+			return nullptr;
+		}
+	};
+
+	//todo when a player joins, send him all of the entities
+
+	//todo server constants
+	constexpr float SERVER_UPDATE_ENTITIES_TIMER = 1.f;
+
+	sd.updateEntititiesTimer -= deltaTime;
+
+	if (sd.updateEntititiesTimer < 0)
+	{
+		sd.updateEntititiesTimer = SERVER_UPDATE_ENTITIES_TIMER;
+	}
+
+
+#pragma region physics update
+
+	for (auto &e : entityManager.droppedItems)
+	{
+
+		updateDroppedItem(e.second, deltaTime, chunkGetter);
+
+
+		//send item data
+		{
+			Packet packet;
+			//packet.cid = i.cid;
+			packet.header = headerClientRecieveDroppedItemUpdate;
+
+			Packet_RecieveDroppedItemUpdate packetData;
+			packetData.eid = e.first;
+			packetData.entity = e.second;
+
+			//todo sepparate entity update method so we can reuse,
+			//+ take into accound distance.
+
+			broadCast(packet, &packetData, sizeof(packetData),
+				nullptr, false, channelEntityPositions);
+
+		}
+
+	}
+
+
+#pragma endregion
+
+
+
+
+
 }

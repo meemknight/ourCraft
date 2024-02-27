@@ -30,7 +30,6 @@ struct ClientEntityManager
 	
 	std::unordered_map<std::uint64_t, DroppedItem> droppedItems;
 
-	
 	Player localPlayer;
 
 	void dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int playerSquareDistance);
@@ -42,6 +41,8 @@ struct ClientEntityManager
 	bool dropItemByClient(glm::dvec3 position, BlockType blockType, UndoQueue &undoQueue, glm::vec3 throwForce);
 
 	void removeDroppedItem(std::uint64_t entityId);
+	
+	void addOrUpdateDroppedItem(std::uint64_t eid, DroppedItem droppedItem, UndoQueue &undoQueue);
 
 };
 

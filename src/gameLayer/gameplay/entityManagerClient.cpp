@@ -116,3 +116,27 @@ void ClientEntityManager::removeDroppedItem(std::uint64_t entityId)
 		droppedItems.erase(f);
 	}
 }
+
+void ClientEntityManager::addOrUpdateDroppedItem(std::uint64_t eid, DroppedItem droppedItem, UndoQueue &undoQueue)
+{
+
+	auto found = droppedItems.find(eid);
+
+	if (found == droppedItems.end())
+	{	
+		droppedItems[eid] = droppedItem;
+	}
+	else
+	{
+		found->second = droppedItem;
+
+		for (auto &e : undoQueue.events)
+		{
+			if (e.type == Event::iDroppedItemFromInventory && e.entityId == eid)
+			{
+				e.type = Event::doNothing;
+			}
+		}
+	}
+
+}

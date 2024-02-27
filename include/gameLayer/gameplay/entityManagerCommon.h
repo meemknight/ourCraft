@@ -9,3 +9,7 @@ struct DroppedItem
 	BlockType type = 0;
 	unsigned char count = 0;
 };
+
+
+
+void updateDroppedItem(DroppedItem &item, float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
