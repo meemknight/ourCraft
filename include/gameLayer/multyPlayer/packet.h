@@ -46,6 +46,7 @@ enum
 	headerClientRecieveReservedEntityIds,
 	headerClientRecieveOtherPlayerPosition,
 	headerClientRecieveDroppedItemUpdate,
+	headerClientUpdateTimer,
 };
 
 enum 
@@ -53,16 +54,22 @@ enum
 	channelChunksAndBlocks,	  //this also handles items, maybe rename player actions or something
 	channelPlayerPositions,
 	channelEntityPositions,
-	channelHandleConnections, //this will also send Entity cids
+	channelHandleConnections, //this will also send Entity cids and timers
 	//channelRequestChunks, todo maybe try this in the future
 	SERVER_CHANNELS
 
 };
 
+struct Packet_ClientUpdateTimer
+{
+	std::uint64_t timer = 0;
+};
+
 struct Packet_RecieveDroppedItemUpdate
 {
-	DroppedItem entity;
-	std::uint64_t eid;
+	DroppedItem entity = {};
+	std::uint64_t eid = 0;
+	std::uint64_t timer = 0;
 };
 
 struct Packet_ReceiveReserverEndityIds
@@ -125,10 +132,10 @@ struct Packet_ClientDroppedItem
 	glm::dvec3 position = {};
 	EventId eventId = {}; //event id is used by the player
 	std::uint64_t entityID = 0;
+	std::uint64_t timer = 0;
 	BlockType blockType = {};
 	unsigned char count = 0;
 	MotionState motionState = {};
-
 };
 
 //the server doesn't have a backend for this !!, sent from the server to the player only
@@ -142,3 +149,5 @@ struct Packet_PlaceBlocks
 
 void sendPacket(ENetPeer *to, Packet p, const char *data, size_t size, bool reliable, int channel);
 char *parsePacket(ENetEvent &event, Packet &p, size_t &dataSize);
+
+float computeRestantTimer(std::uint64_t server, std::uint64_t you);

@@ -10,6 +10,11 @@ struct DroppedItem
 	unsigned char count = 0;
 };
 
+struct DroppedItemNetworked
+{
+	float restantTime = 0;
+	DroppedItem item = {};
 
+};
 
 void updateDroppedItem(DroppedItem &item, float deltaTime, decltype(chunkGetterSignature) *chunkGetter);

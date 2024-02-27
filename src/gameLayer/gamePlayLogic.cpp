@@ -51,7 +51,9 @@ struct GameData
 
 	ClientEntityManager entityManager;
 
-	
+	std::uint64_t serverTimer = 0;
+	float serverTimerCounter = 0;
+
 
 }gameData;
 
@@ -98,9 +100,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		EventCounter validateEvent = 0;
 		RevisionNumber inValidateRevision = 0;
 
+		//todo the server should sent only one validate event message that is the latest, if possible
 		clientMessageLoop(validateEvent, inValidateRevision, 
 			gameData.entityManager.localPlayer.body.pos, gameData.chunkSystem.squareSize, 
-			gameData.entityManager, gameData.undoQueue);
+			gameData.entityManager, gameData.undoQueue, gameData.serverTimer);
 
 		//todo timeout here and request the server for a hard reset
 		if (validateEvent)
@@ -187,6 +190,18 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 
 		gameData.gameplayFrameProfiler.endSubProfile("server messages");
+	}
+#pragma endregion
+
+#pragma region timer
+	{
+		gameData.serverTimerCounter += deltaTime;
+		while (gameData.serverTimerCounter > 0.001)
+		{
+			gameData.serverTimerCounter -= 0.001;
+			gameData.serverTimer++;
+		}
+		//std::cout << gameData.serverTimer << "\n";
 	}
 #pragma endregion
 
@@ -294,9 +309,14 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		for (auto &item : gameData.entityManager.droppedItems)
 		{
+			float timer = deltaTime + item.second.restantTime;
 
-			updateDroppedItem(item.second, deltaTime, chunkGetter);
+			if (timer > 0)
+			{
+				updateDroppedItem(item.second.item, timer, chunkGetter);
+			}
 
+			item.second.restantTime = 0;
 		}
 
 
@@ -310,7 +330,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	if (platform::isKeyPressedOn(platform::Button::Q))
 	{
 		gameData.entityManager.dropItemByClient(gameData.entityManager.localPlayer.body.pos,
-			BlockTypes::diamond_ore, gameData.undoQueue, gameData.c.viewDirection * 5.f);
+			BlockTypes::diamond_ore, gameData.undoQueue, gameData.c.viewDirection * 5.f,
+			gameData.serverTimer);
 	}
 
 #pragma endregion

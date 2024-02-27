@@ -171,7 +171,7 @@ void closeServer()
 	//serverSettingsMutex.unlock();
 }
 
-void doGameTick(float deltaTime, ServerEntityManager &entityManager);
+void doGameTick(float deltaTime, ServerEntityManager &entityManager, std::uint64_t currentTimer);
 
 //Note: it is a problem that the block validation and the item validation are on sepparate threads.
 bool computeRevisionStuff(Client &client, bool allowed, const EventId &eventId)
@@ -353,23 +353,28 @@ void serverWorkerFunction()
 		float deltaTime = (std::chrono::duration_cast<std::chrono::microseconds>(timerStop - timerStart)).count() / 1000000.0f;
 		timerStart = std::chrono::high_resolution_clock::now();
 
+		auto currentTimer = getTimer();
 		tickTimer += deltaTime;
 		seccondsTimer += deltaTime;
 		tickDeltaTime += deltaTime;
 
 		//todo rather than a sort use buckets, so the clients can't DDOS the server with
 		//place blocks tasks, making generating chunks impossible. 
-		std::stable_sort(sd.waitingTasks.begin(), sd.waitingTasks.end(),
-			[](const ServerTask &a, const ServerTask &b) 
-			{ 
-				if((a.t.type == Task::placeBlock && b.t.type == Task::droppedItemEntity) ||
-					(a.t.type == Task::droppedItemEntity && b.t.type == Task::placeBlock))
-				{
-					return false;
-				}
-				return a.t.type < b.t.type; 
-			}
-		);
+		// 
+		// actually be very carefull how you cange the order, you can easily break stuff
+		// so I'll leave this commented for now
+		// 
+		//std::stable_sort(sd.waitingTasks.begin(), sd.waitingTasks.end(),
+		//	[](const ServerTask &a, const ServerTask &b) 
+		//	{ 
+		//		if((a.t.type == Task::placeBlock && b.t.type == Task::droppedItemEntity) ||
+		//			(a.t.type == Task::droppedItemEntity && b.t.type == Task::placeBlock))
+		//		{
+		//			return false;
+		//		}
+		//		return a.t.type < b.t.type; 
+		//	}
+		//);
 
 		std::vector<ChunkPriorityCache::SendBlocksBack> sendNewBlocksToPlayers;
 
@@ -516,13 +521,14 @@ void serverWorkerFunction()
 					if (computeRevisionStuff(*client, true && serverAllows, i.t.eventId))
 					{
 						
-						DroppedItem newEntity = {};
-						newEntity.count = i.t.blockCount;
-						newEntity.position = i.t.doublePos;
-						newEntity.lastPosition = i.t.doublePos;
-						newEntity.type = i.t.blockType;
-						newEntity.forces = i.t.motionState;
-					
+						DroppedItemNetworked newEntity = {};
+						newEntity.item.count = i.t.blockCount;
+						newEntity.item.position = i.t.doublePos;
+						newEntity.item.lastPosition = i.t.doublePos;
+						newEntity.item.type = i.t.blockType;
+						newEntity.item.forces = i.t.motionState;
+						newEntity.restantTime = computeRestantTimer(i.t.timer, currentTimer);
+
 						entityManager.droppedItems.insert({i.t.entityId, newEntity});
 					}
 					
@@ -589,7 +595,7 @@ void serverWorkerFunction()
 			ticksPerSeccond++;
 
 			//tick ...
-			doGameTick(tickDeltaTime, entityManager);
+			doGameTick(tickDeltaTime, entityManager, currentTimer);
 
 
 			tickDeltaTime = 0;
@@ -613,6 +619,13 @@ void serverWorkerFunction()
 
 	wg.clear();
 	structuresManager.clear();
+}
+
+std::uint64_t getTimer()
+{
+	auto duration = std::chrono::steady_clock::now().time_since_epoch();
+	auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+	return millis;
 }
 
 ServerSettings getServerSettingsCopy()
@@ -1750,7 +1763,7 @@ void ChunkPriorityCache::placeGhostBlocksForChunk(int posX, int posZ, ChunkData 
 	}
 }
 
-void doGameTick(float deltaTime, ServerEntityManager &entityManager)
+void doGameTick(float deltaTime, ServerEntityManager &entityManager, std::uint64_t currentTimer)
 {
 
 	auto chunkGetter = [](glm::ivec2 pos) -> ChunkData *
@@ -1784,8 +1797,16 @@ void doGameTick(float deltaTime, ServerEntityManager &entityManager)
 	for (auto &e : entityManager.droppedItems)
 	{
 
-		updateDroppedItem(e.second, deltaTime, chunkGetter);
-
+		{
+			float time = deltaTime + e.second.restantTime;
+			//float time = deltaTime;  //todo this file 530 !!!!!!!
+			
+			if (time > 0)
+			{
+				updateDroppedItem(e.second.item, time, chunkGetter);
+			}
+			e.second.restantTime = 0;
+		}
 
 		//send item data
 		{
@@ -1795,7 +1816,8 @@ void doGameTick(float deltaTime, ServerEntityManager &entityManager)
 
 			Packet_RecieveDroppedItemUpdate packetData;
 			packetData.eid = e.first;
-			packetData.entity = e.second;
+			packetData.entity = e.second.item;
+			packetData.timer = currentTimer;
 
 			//todo sepparate entity update method so we can reuse,
 			//+ take into accound distance.

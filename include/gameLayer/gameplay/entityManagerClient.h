@@ -15,8 +15,6 @@ struct PlayerNetworked
 	
 };
 
-
-
 struct ReservedIDsRange
 {
 	std::uint64_t idStart = 0;
@@ -28,7 +26,7 @@ struct ClientEntityManager
 
 	std::unordered_map<std::uint64_t, PlayerNetworked> players;
 	
-	std::unordered_map<std::uint64_t, DroppedItem> droppedItems;
+	std::unordered_map<std::uint64_t, DroppedItemNetworked> droppedItems;
 
 	Player localPlayer;
 
@@ -38,11 +36,12 @@ struct ClientEntityManager
 
 	std::uint64_t consumeId();
 
-	bool dropItemByClient(glm::dvec3 position, BlockType blockType, UndoQueue &undoQueue, glm::vec3 throwForce);
+	bool dropItemByClient(glm::dvec3 position, 
+		BlockType blockType, UndoQueue &undoQueue, glm::vec3 throwForce, std::uint64_t timer);
 
 	void removeDroppedItem(std::uint64_t entityId);
 	
-	void addOrUpdateDroppedItem(std::uint64_t eid, DroppedItem droppedItem, UndoQueue &undoQueue);
+	void addOrUpdateDroppedItem(std::uint64_t eid, DroppedItem droppedItem, UndoQueue &undoQueue, float restantTimer);
 
 };
 

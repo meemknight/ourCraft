@@ -6,6 +6,7 @@
 #include <multyPlayer/createConnection.h>
 
 
+
 bool checkIfPlayerShouldGetEntity(glm::ivec2 playerPos2D,
 	glm::dvec3 entityPos, int playerSquareDistance, int extraDistance)
 {
@@ -70,7 +71,7 @@ std::uint64_t ClientEntityManager::consumeId()
 }
 
 bool ClientEntityManager::dropItemByClient(glm::dvec3 position, BlockType blockType, UndoQueue &undoQueue
-	, glm::vec3 throwForce)
+	, glm::vec3 throwForce, std::uint64_t timer)
 {
 
 	std::uint64_t newEntityId = consumeId();
@@ -88,6 +89,7 @@ bool ClientEntityManager::dropItemByClient(glm::dvec3 position, BlockType blockT
 	task.blockCount = 1;
 	task.entityId = newEntityId;
 	task.motionState = ms;
+	task.timer = timer;
 	submitTaskClient(task);
 
 
@@ -101,7 +103,7 @@ bool ClientEntityManager::dropItemByClient(glm::dvec3 position, BlockType blockT
 		newEntity.type = blockType;
 		newEntity.forces = ms;
 
-		droppedItems[newEntityId] = newEntity;
+		droppedItems[newEntityId].item = newEntity;
 	}
 
 	return true;
@@ -117,18 +119,21 @@ void ClientEntityManager::removeDroppedItem(std::uint64_t entityId)
 	}
 }
 
-void ClientEntityManager::addOrUpdateDroppedItem(std::uint64_t eid, DroppedItem droppedItem, UndoQueue &undoQueue)
+void ClientEntityManager::addOrUpdateDroppedItem(std::uint64_t eid, DroppedItem droppedItem, UndoQueue &undoQueue,
+	float restantTimer)
 {
 
 	auto found = droppedItems.find(eid);
 
 	if (found == droppedItems.end())
 	{	
-		droppedItems[eid] = droppedItem;
+		droppedItems[eid].item = droppedItem;
+		droppedItems[eid].restantTime = restantTimer;
 	}
 	else
 	{
-		found->second = droppedItem;
+		found->second.item = droppedItem;
+		found->second.restantTime = restantTimer;
 
 		for (auto &e : undoQueue.events)
 		{

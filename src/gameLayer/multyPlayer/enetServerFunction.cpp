@@ -135,7 +135,7 @@ void addConnection(ENetHost *server, ENetEvent &event)
 			sizeof(packetToSend), true, channelHandleConnections);
 	}
 
-	//todo send info of other players to this new connection
+	//todo send info of other players and entities to this new connection
 
 	{
 		Packet p;
@@ -148,10 +148,25 @@ void addConnection(ENetHost *server, ENetEvent &event)
 
 		packetData.first = entityId;
 		packetData.count = IDS_RESERVE_COUNT;
-	
+		
+		entityId += IDS_RESERVE_COUNT;
+
 		sendPacket(event.peer, p, (const char *)&packetData,
 			sizeof(packetData), true, channelHandleConnections);
 
+	}
+
+	{
+		auto timer = getTimer();
+
+		Packet packet;
+		packet.header = headerClientUpdateTimer;
+
+		Packet_ClientUpdateTimer packetData;
+		packetData.timer = timer;
+
+		sendPacket(event.peer, packet, (const char *)&packetData,
+			sizeof(packetData), true, channelHandleConnections);
 	}
 
 
@@ -310,6 +325,7 @@ void recieveData(ENetHost *server, ENetEvent &event)
 			serverTask.t.entityId = packetData->entityID;
 			serverTask.t.eventId = packetData->eventId;
 			serverTask.t.motionState = packetData->motionState;
+			serverTask.t.timer = packetData->timer;
 
 			submitTaskForServer(serverTask);
 			break;
@@ -389,6 +405,7 @@ void enetServerFunction()
 	auto start = std::chrono::high_resolution_clock::now();
 
 	float sendEntityTimer = 0.5;
+	float sentTimerUpdateTimer = 2;
 
 	float tickTimer = 0;
 
@@ -400,7 +417,6 @@ void enetServerFunction()
 		start = std::chrono::high_resolution_clock::now();
 		tickTimer += deltaTime;
 		auto settings = getServerSettingsCopy();
-
 
 		//int waitTimer = ((1.f/settings.targetTicksPerSeccond)-tickTimer) * 1000;
 		//waitTimer = std::max(std::min(waitTimer-1, 10), 0);
@@ -494,6 +510,30 @@ void enetServerFunction()
 
 	#pragma endregion
 
+	#pragma region server sends timer updates
+		{
+
+			sentTimerUpdateTimer -= deltaTime;
+
+			if (sentTimerUpdateTimer < 0)
+			{
+				sentTimerUpdateTimer = 2.f;
+				auto timer = getTimer();
+			
+				Packet packet;
+				packet.header = headerClientUpdateTimer;
+					
+				Packet_ClientUpdateTimer packetData;
+				packetData.timer = timer;
+
+				broadCast(packet, &packetData, sizeof(packetData), nullptr, false, channelHandleConnections);
+
+			}
+
+
+
+		}
+	#pragma endregion
 
 
 		//if (tickTimer >= 1 / settings.targetTicksPerSeccond)

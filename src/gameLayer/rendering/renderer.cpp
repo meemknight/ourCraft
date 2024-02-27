@@ -1130,7 +1130,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 				for (int i = 0; i < 6; i++)
 				{
-					textures[i] = blocksLoader.gpuIds[getGpuIdIndexForBlock(e.second.type, i)];
+					textures[i] = blocksLoader.gpuIds[getGpuIdIndexForBlock(e.second.item.type, i)];
 				}
 
 				glUniformHandleui64vARB(entityRenderer.basicEntityshader.u_texture, 6, textures);
@@ -1138,7 +1138,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 				glm::vec3 entityFloat = {};
 				glm::ivec3 entityInt = {};
 
-				decomposePosition(e.second.position, entityFloat, entityInt);
+				decomposePosition(e.second.item.position, entityFloat, entityInt);
 
 				entityFloat += glm::vec3(0, 0.2, 0);
 

@@ -1,4 +1,5 @@
 #pragma once
+#include <chrono>
 #include <unordered_map>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -15,6 +16,9 @@ int getChunkCapacity();
 void closeServer();
 bool computeRevisionStuff(Client &client, bool allowed, const EventId &eventId);
 void serverWorkerFunction();
+
+
+std::uint64_t getTimer();
 
 
 struct PerClientServerSettings

@@ -6,6 +6,7 @@
 #include <gameplay/entityManagerClient.h>
 #include <multyPlayer/undoQueue.h>
 
+
 static ConnectionData clientData;
 
 void submitTaskClient(Task &t)
@@ -52,6 +53,7 @@ void submitTaskClient(Task &t)
 		packetData.eventId = t.eventId;
 		packetData.entityID = t.entityId;
 		packetData.motionState = t.motionState;
+		packetData.timer = t.timer;
 
 		sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1,
 			channelChunksAndBlocks);
@@ -115,7 +117,7 @@ void recieveDataClient(ENetEvent &event,
 	RevisionNumber &invalidateRevision,
 	glm::ivec3 playerPosition, int squareDistance,
 	ClientEntityManager &entityManager,
-	UndoQueue &undoQueue
+	UndoQueue &undoQueue, std::uint64_t &yourTimer
 	)
 {
 	Packet p;
@@ -235,10 +237,29 @@ void recieveDataClient(ENetEvent &event,
 			Packet_RecieveDroppedItemUpdate *p = (Packet_RecieveDroppedItemUpdate *)data;
 
 			if (sizeof(Packet_RecieveDroppedItemUpdate) != size) { break; } //todo logs or something
+			
+			if (p->timer + 16 < yourTimer)
+			{
+				break; //drop too old packets
+			}
 
-			entityManager.addOrUpdateDroppedItem(p->eid, p->entity, undoQueue);
+			float restantTimer = computeRestantTimer(p->timer, yourTimer);
 
+			entityManager.addOrUpdateDroppedItem(p->eid, p->entity, undoQueue,
+				restantTimer);
 
+			//std::cout << restantTimer << "\n";
+
+			break;
+		}
+
+		case headerClientUpdateTimer:
+		{
+			Packet_ClientUpdateTimer *p = (Packet_ClientUpdateTimer *)data;
+			if (sizeof(Packet_ClientUpdateTimer) != size) { break; } //todo logs or something
+
+			yourTimer = p->timer;
+			break;
 		}
 
 		default:
@@ -252,7 +273,7 @@ void recieveDataClient(ENetEvent &event,
 //this is not multy threaded
 void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision
 	,glm::ivec3 playerPosition, int squareDistance, ClientEntityManager &entityManager,
-	UndoQueue &undoQueue)
+	UndoQueue &undoQueue, std::uint64_t &serverTimer)
 {
 	ENetEvent event;
 
@@ -266,7 +287,7 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 				{
 
 					recieveDataClient(event, validatedEvent, invalidateRevision,
-						playerPosition, squareDistance, entityManager, undoQueue);
+						playerPosition, squareDistance, entityManager, undoQueue, serverTimer);
 					
 					enet_packet_destroy(event.packet);
 

@@ -27,7 +27,8 @@ struct Task
 	unsigned char blockCount = 0;
 	std::uint64_t entityId;
 	MotionState motionState;
-	
+	std::uint64_t timer;
+
 };
 
 void submitTaskClient(Task &t);
@@ -56,6 +57,6 @@ ConnectionData getConnectionData();
 bool createConnection(Packet_ReceiveCIDAndData &playerData);
 void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision
 	,glm::ivec3 playerPosition, int squareDistance, ClientEntityManager& entityManager,
-	UndoQueue &undoQueue);
+	UndoQueue &undoQueue, std::uint64_t &serverTimer);
 
 void closeConnection();
