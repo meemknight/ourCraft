@@ -277,7 +277,8 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 {
 	ENetEvent event;
 
-	for (int i = 0; i < 25; i++)
+	//ENetPacket *nextPacket = clientData.server->incomingDataTotal;
+	for (int i = 0; i < 50; i++)
 	{
 		if (enet_host_service(clientData.client, &event, 0) > 0)
 		{
@@ -303,14 +304,26 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 				}
 
 			}
-
-
 		}
 		else
 		{
 			break;
 		}
 	}
+
+	//int counter = 0;
+	//auto nextPacket = clientData.client->dispatchQueue.sentinel.next;
+	//
+	//while (nextPacket)
+	//{
+	//	counter++;
+	//	nextPacket = nextPacket->next;
+	//}
+	//
+	//if (counter)
+	//{
+	//	std::cout << "Restant packets: " << counter << '\n';
+	//}
 
 }
 
@@ -334,7 +347,7 @@ void closeConnection()
 
 }
 
-bool createConnection(Packet_ReceiveCIDAndData &playerData)
+bool createConnection(Packet_ReceiveCIDAndData &playerData, const char *c)
 {
 	if (clientData.conected) { return false; }
 
@@ -345,7 +358,15 @@ bool createConnection(Packet_ReceiveCIDAndData &playerData)
 	ENetAddress adress = {};
 	ENetEvent event = {};
 	
-	enet_address_set_host(&adress, "127.0.0.1");
+	if (c && c[0] != 0)
+	{
+		enet_address_set_host(&adress, c);
+	}
+	else
+	{
+		enet_address_set_host(&adress, "127.0.0.1");
+	}
+
 	adress.port = 7771; //todo port stuff
 
 	//client, adress, channels, data to send rightAway

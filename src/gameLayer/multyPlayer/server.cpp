@@ -379,7 +379,7 @@ void serverWorkerFunction()
 		std::vector<ChunkPriorityCache::SendBlocksBack> sendNewBlocksToPlayers;
 
 		int count = sd.waitingTasks.size();
-		for (int taskIndex = 0; taskIndex < std::min(count, 5); taskIndex++)
+		for (int taskIndex = 0; taskIndex < std::min(count, 15); taskIndex++)
 		{
 			auto &i = sd.waitingTasks.front();
 
@@ -1799,7 +1799,6 @@ void doGameTick(float deltaTime, ServerEntityManager &entityManager, std::uint64
 
 		{
 			float time = deltaTime + e.second.restantTime;
-			//float time = deltaTime;  //todo this file 530 !!!!!!!
 			
 			if (time > 0)
 			{

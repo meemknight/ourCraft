@@ -31,6 +31,7 @@ struct GameData
 	Camera c;
 	ChunkSystem chunkSystem;
 	bool escapePressed = 0;
+	bool showImgui = 1;
 	bool showLightLevels = 0;
 	UndoQueue undoQueue;
 	LightSystem lightSystem;
@@ -58,12 +59,12 @@ struct GameData
 }gameData;
 
 
-bool initGameplay(ProgramData &programData)
+bool initGameplay(ProgramData &programData, const char *c)
 {
 
 	Packet_ReceiveCIDAndData playerData;
 
-	if (!createConnection(playerData))
+	if (!createConnection(playerData, c))
 	{
 		std::cout << "problem joining server\n";
 		return false;
@@ -77,7 +78,7 @@ bool initGameplay(ProgramData &programData)
 	gameData.entityManager.localPlayer.entityId = playerData.yourPlayerEntityId;
 
 
-	gameData.chunkSystem.createChunks(16);
+	gameData.chunkSystem.createChunks(20);
 
 	gameData.sunShadow.init();
 
@@ -101,6 +102,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		RevisionNumber inValidateRevision = 0;
 
 		//todo the server should sent only one validate event message that is the latest, if possible
+		//todo timeout maybe? if the server doesn't give you stuff.
 		clientMessageLoop(validateEvent, inValidateRevision, 
 			gameData.entityManager.localPlayer.body.pos, gameData.chunkSystem.squareSize, 
 			gameData.entityManager, gameData.undoQueue, gameData.serverTimer);
@@ -173,19 +175,36 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		{
 
 			static float timer = 0.016;
-			timer -= deltaTime;
+
+			static glm::dvec3 lastSendPos = {};
+
+			if (gameData.entityManager.localPlayer.body.pos != lastSendPos)
+			{
+				timer -= deltaTime;
+			}
+			else
+			{
+				timer -= deltaTime * 0.1f;
+			}
+
 			if (timer <= 0)
 			{
-				timer = 0.016;
-					
+				timer = 0.016 * 3.f;
+				//timer = 0.316;
+
 				Packer_SendPlayerData data;
 				data.playerData.position = gameData.entityManager.localPlayer.body.pos;
 				data.playerData.chunkDistance = gameData.chunkSystem.squareSize;
+				data.timer = gameData.serverTimer;
 
 				sendPacket(getServer(),
-					formatPacket(headerSendPlayerData), (char*)&data, sizeof(data), 0,
+					formatPacket(headerSendPlayerData), (char *)&data, sizeof(data), 0,
 					channelPlayerPositions);
+
+				lastSendPos = gameData.entityManager.localPlayer.body.pos;
 			}
+
+			
 
 		}
 
@@ -213,6 +232,11 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	if (platform::isKeyReleased(platform::Button::Escape))
 	{
 		gameData.escapePressed = !gameData.escapePressed;
+	}
+
+	if (platform::isKeyReleased(platform::Button::I))
+	{
+		gameData.showImgui = !gameData.showImgui;
 	}
 
 	platform::showMouse(gameData.escapePressed);
@@ -393,12 +417,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				{
 					if (blockToPlace)
 						gameData.chunkSystem.placeBlockByClient(*blockToPlace, blockTypeToPlace,
-						gameData.undoQueue, gameData.c.position, gameData.lightSystem);
+						gameData.undoQueue, gameData.entityManager.localPlayer.body.pos, gameData.lightSystem);
 				}
 				else if (platform::isLMouseReleased())
 				{
 					gameData.chunkSystem.placeBlockByClient(rayCastPos, BlockTypes::air,
-						gameData.undoQueue, gameData.c.position, gameData.lightSystem);
+						gameData.undoQueue, gameData.entityManager.localPlayer.body.pos, gameData.lightSystem);
 				}
 			}
 
@@ -556,7 +580,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma region imgui
 
-	//if (gameData.escapePressed)
+	if (gameData.showImgui)
 	{
 		gameData.gameplayFrameProfiler.startSubProfile("imgui");
 
@@ -688,7 +712,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 									glm::ivec3 pos = gameData.point + glm::ivec3(x, y, z);
 
 									gameData.chunkSystem.placeBlockByClient(pos, s->unsafeGet(x, y, z),
-										gameData.undoQueue, gameData.c.position, gameData.lightSystem);
+										gameData.undoQueue, 
+										gameData.entityManager.localPlayer.body.pos, gameData.lightSystem);
 								}
 
 						gameData.pointSize = s->size;

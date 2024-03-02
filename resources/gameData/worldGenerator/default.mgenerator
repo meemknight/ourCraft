@@ -200,19 +200,19 @@ temperatureNoise:
 	}
 spagettiNoise:
 	{
-	scale: 0.940000;
-	type: ValueFractal;
-	frequency: 0.032000;
+	scale: 0.481000;
+	type: PerlinFractal;
+	frequency: 0.022000;
 	octaves: 3;
 	perturbFractalOctaves: 0;
-	power: 1.000000;
+	power: 1.200000;
 	spline:
 		{
 		0.000000,1.000000;
-		0.416667,1.000000;
-		0.416667,0.026144;
-		0.487745,0.003268;
-		0.487745,1.000000;
+		0.442811,1.000000;
+		0.464053,0.032680;
+		0.500001,0.008170;
+		0.500001,1.000000;
 		1.000000,1.000000;
 		}
 	}

@@ -31,7 +31,7 @@ struct PlayerData
 	//...
 };
 
-bool initGameplay(ProgramData &programData);
+bool initGameplay(ProgramData &programData, const char *c);
 
 bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData);
 

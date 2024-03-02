@@ -133,7 +133,8 @@ bool gameLogic(float deltaTime)
 
 	static bool gameStarted = 0;
 	static std::string lastError = "";
-	
+	static char ipString[50] = {};
+
 	if (!gameStarted)
 	{
 		glui::Begin(1);
@@ -146,7 +147,7 @@ bool gameLogic(float deltaTime)
 			else
 			{
 				gameStarted = true;
-				if (!initGameplay(programData))
+				if (!initGameplay(programData, nullptr))
 				{
 					closeServer();
 					lastError = "Coultn't join, closing server";
@@ -157,7 +158,7 @@ bool gameLogic(float deltaTime)
 		}
 		if (glui::Button("Join game", Colors_Gray))
 		{
-			if (initGameplay(programData))
+			if (initGameplay(programData, ipString))
 			{
 				gameStarted = true;
 			}
@@ -166,6 +167,8 @@ bool gameLogic(float deltaTime)
 				lastError = "Couldn't join server";
 			}
 		}
+		
+		glui::InputText("IP: ", ipString, sizeof(ipString));
 
 		if (!lastError.empty())
 		{

@@ -110,6 +110,8 @@ struct Packet_InValidateEvent
 struct Packer_SendPlayerData
 {
 	PlayerData playerData = {};
+	std::uint64_t timer = 0;
+
 };
 
 struct Packet_ClientRecieveOtherPlayerPosition

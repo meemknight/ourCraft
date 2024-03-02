@@ -54,7 +54,7 @@ struct ConnectionData
 std::vector<Chunk *> getRecievedChunks();
 std::vector<Packet_PlaceBlocks> getRecievedBlocks();
 ConnectionData getConnectionData();
-bool createConnection(Packet_ReceiveCIDAndData &playerData);
+bool createConnection(Packet_ReceiveCIDAndData &playerData, const char *c);
 void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision
 	,glm::ivec3 playerPosition, int squareDistance, ClientEntityManager& entityManager,
 	UndoQueue &undoQueue, std::uint64_t &serverTimer);

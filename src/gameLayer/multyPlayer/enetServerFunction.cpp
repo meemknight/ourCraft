@@ -287,22 +287,24 @@ void recieveData(ENetHost *server, ENetEvent &event)
 
 			connectionsMutex.unlock();
 
-
-			//broadcast player movement
-			if(clientCopy.entityId)
+			if (packetData.timer + 16 * 4 > getTimer())
 			{
-				Packet_ClientRecieveOtherPlayerPosition sendData;
-				sendData.entityId = clientCopy.entityId;
-				sendData.position = packetData.playerData.position;
 
-				Packet p;
-				p.cid = 0;
-				p.header = headerClientRecieveOtherPlayerPosition;
+				//broadcast player movement
+				if (clientCopy.entityId)
+				{
+					Packet_ClientRecieveOtherPlayerPosition sendData;
+					sendData.entityId = clientCopy.entityId;
+					sendData.position = packetData.playerData.position;
 
-				broadCast(p, &sendData, sizeof(sendData), clientCopy.peer, false, channelPlayerPositions);
+					Packet p;
+					p.cid = 0;
+					p.header = headerClientRecieveOtherPlayerPosition;
+
+					broadCast(p, &sendData, sizeof(sendData), clientCopy.peer, false, channelPlayerPositions);
+				}
+
 			}
-
-
 
 			break;
 		}
@@ -420,9 +422,13 @@ void enetServerFunction()
 
 		//int waitTimer = ((1.f/settings.targetTicksPerSeccond)-tickTimer) * 1000;
 		//waitTimer = std::max(std::min(waitTimer-1, 10), 0);
-
-		while (enet_host_service(server, &event, 2) > 0 && enetServerRunning)
+		
+		int waitTime = 3;
+		while (enet_host_service(server, &event, waitTime) > 0 && enetServerRunning)
 		{
+			//we wait only the first time, than we want to let the server update happen.
+			waitTime = 0;
+
 			switch (event.type)
 			{
 				case ENET_EVENT_TYPE_CONNECT:
@@ -453,6 +459,8 @@ void enetServerFunction()
 
 			}
 		}
+		
+		if (!enetServerRunning) { break; }
 
 	#pragma region server send entity position data
 
@@ -461,7 +469,7 @@ void enetServerFunction()
 
 			if (sendEntityTimer < 0)
 			{
-				sendEntityTimer = 0.2;
+				sendEntityTimer = 0.4;
 			
 				//todo make a different timer for each player			
 				//todo maybe merge things into one packet
