@@ -605,7 +605,7 @@ float getLastDepthLiniarized(vec2 p, out float nonLinear)
 vec3 applyNormalMap(vec3 inNormal)
 {
 	vec3 normal;
-	if(u_hasPeelInformation != 0 && ((v_flags & 1) != 0))
+	if( ((v_flags & 1) != 0) )
 	{
 		vec2 firstDudv = texture(sampler2D(u_dudvNormal), getDudvCoords3(waterSpeed/5.f)).rg;
 		normal = texture(sampler2D(u_dudvNormal), getDudvCoords(waterSpeed)+firstDudv*0.1 ).rgb*1;
@@ -770,7 +770,6 @@ float computeLight(vec3 N, vec3 L, vec3 V)
 	
 	return spec + diffuse;
 }
-
 
 
 

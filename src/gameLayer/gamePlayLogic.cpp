@@ -55,6 +55,9 @@ struct GameData
 	std::uint64_t serverTimer = 0;
 	float serverTimerCounter = 0;
 
+	glm::dvec3 lastSendPos = {-INFINITY,0,0};
+
+
 
 }gameData;
 
@@ -66,7 +69,7 @@ bool initGameplay(ProgramData &programData, const char *c)
 
 	if (!createConnection(playerData, c))
 	{
-		std::cout << "problem joining server\n";
+		reportError("Problem joining server");
 		return false;
 	}
 	
@@ -90,7 +93,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 {
 	gameData.gameplayFrameProfiler.endSubProfile("swap chain and others");
 
-	gameData.c.aspectRatio = (float)w / h;
+	if (h != 0)
+		{gameData.c.aspectRatio = (float)w / h;}
 	glViewport(0, 0, w, h);
 
 
@@ -110,7 +114,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		if (disconnect) { return 0; }
 
-		//todo timeout here and request the server for a hard reset
+		//todo timeout here? and request the server for a hard reset?
 		if (validateEvent)
 		{
 			while (!gameData.undoQueue.events.empty())
@@ -173,15 +177,11 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 
 
-		//todo send only if changed and stuff, and send here very rarely...
-		//send player position
 		{
 
 			static float timer = 0.016;
 
-			static glm::dvec3 lastSendPos = {};
-
-			if (gameData.entityManager.localPlayer.body.pos != lastSendPos)
+			if (gameData.entityManager.localPlayer.body.pos != gameData.lastSendPos)
 			{
 				timer -= deltaTime;
 			}
@@ -204,7 +204,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					formatPacket(headerSendPlayerData), (char *)&data, sizeof(data), 0,
 					channelPlayerPositions);
 
-				lastSendPos = gameData.entityManager.localPlayer.body.pos;
+				gameData.lastSendPos = gameData.entityManager.localPlayer.body.pos;
 			}
 
 			
@@ -462,15 +462,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma endregion
 
-#pragma region render entities
-
 	programData.renderer.entityRenderer.itemEntitiesToRender.push_back({gameData.entityTest});
 
-
-#pragma endregion
-
-
 #pragma region chunks and rendering
+	if(w != 0 && h != 0)
 	{
 		//static std::vector<int> data;
 		
@@ -847,7 +842,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma endregion
 
 #pragma region ui
-	if(1)
+	if (w != 0 && h != 0)
 	{	
 		gameData.gameplayFrameProfiler.startSubProfile("ui");
 

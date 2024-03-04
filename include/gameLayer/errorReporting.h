@@ -11,3 +11,7 @@ void GLAPIENTRY glDebugOutput(GLenum source,
 	const void* userParam);
 
 void enableReportGlErrors();
+
+void createErrorFile();
+
+void reportError(const char *message);

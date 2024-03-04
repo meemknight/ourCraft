@@ -24,6 +24,8 @@ ProgramData programData;
 
 bool initGame()
 {
+	createErrorFile();
+
 	enableReportGlErrors();
 	
 	glui::gluiInit();
@@ -71,10 +73,9 @@ bool initGame()
 	programData.gyzmosRenderer.create();
 	programData.pointDebugRenderer.create();
 
-	//todo create error function
 	if (enet_initialize() != 0)
 	{
-		std::cout << "problem starting enet\n";
+		reportError("problem starting ENET");
 		return false;
 	}
 

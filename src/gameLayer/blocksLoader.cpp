@@ -2,6 +2,7 @@
 #include "blocks.h"
 #include <fstream>
 #include <iostream>
+#include <errorReporting.h>
 
 const char *texturesNames[] = {
 	
@@ -290,9 +291,6 @@ bool fixAlpha(unsigned char *buffer, int w, int h, bool firstTime)
 			}
 		}
 
-	//todo fix
-	//return false;
-
 	bool changed = 0;
 	for (int y = 0; y < h; y++)
 		for (int x = 0; x < w; x++)
@@ -454,8 +452,7 @@ bool loadFromFileWithAplhaFixing(gl2d::Texture &t,
 		char c[300] = {0};
 		strcat(c, "error openning: ");
 		strcat(c + strlen(c), fileName);
-		std::cout << c << "\n";
-		//errorFunc(c);//todo propper error function
+		reportError(c);
 		return 0;
 	}
 
@@ -586,7 +583,7 @@ void BlocksLoader::loadAllTextures()
 
 		gpuIds.push_back(handle);
 
-		return 1;
+	return 1;
 	};
 
 	for (int i = 0; i < count; i++)
@@ -615,7 +612,7 @@ void BlocksLoader::loadAllTextures()
 			}
 		}
 		
-		if (1) //no normals
+		if (0) //no normals
 		{
 			texturesIds.push_back(texturesIds[1]);
 			gpuIds.push_back(gpuIds[1]);

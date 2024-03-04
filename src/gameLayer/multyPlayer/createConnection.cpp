@@ -5,6 +5,7 @@
 #include <multyPlayer/enetServerFunction.h>
 #include <gameplay/entityManagerClient.h>
 #include <multyPlayer/undoQueue.h>
+#include <errorReporting.h>
 
 
 static ConnectionData clientData;
@@ -428,7 +429,7 @@ bool createConnection(Packet_ReceiveCIDAndData &playerData, const char *c)
 	}
 	else
 	{
-		std::cout << "server timeout\n";
+		reportError("server timeout");
 		enet_peer_reset(clientData.server);
 		enet_host_destroy(clientData.client);
 		return false;
@@ -449,7 +450,7 @@ bool createConnection(Packet_ReceiveCIDAndData &playerData, const char *c)
 			{
 				enet_peer_reset(clientData.server);
 				enet_host_destroy(clientData.client);
-				std::cout << "server sent wrong data\n";
+				reportError("server sent wrong data");
 				return false;
 			}
 
@@ -470,7 +471,7 @@ bool createConnection(Packet_ReceiveCIDAndData &playerData, const char *c)
 	{
 		enet_peer_reset(clientData.server);
 		enet_host_destroy(clientData.client);
-		std::cout << "server handshake timeout\n";
+		reportError("server handshake timeout");
 		return 0;
 	}
 

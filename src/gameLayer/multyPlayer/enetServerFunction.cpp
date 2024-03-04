@@ -13,6 +13,7 @@
 #include <chrono>
 #include <gameplay/entityManagerClient.h>
 #include <multyPlayer/server.h>
+#include <errorReporting.h>
 
 //todo add to a struct
 ENetHost *server = 0;
@@ -254,8 +255,7 @@ void recieveData(ENetHost *server, ENetEvent &event)
 	if (connections[p.cid].peer != event.peer)
 	{
 		//connectionsMutex.unlock();
-
-		std::cout << "invalid data!\n";
+		reportError("invalidData: connections[p.cid].peer != event.peer");
 		return;
 	}
 	//connectionsMutex.unlock();
@@ -280,7 +280,7 @@ void recieveData(ENetHost *server, ENetEvent &event)
 				auto it = connections.find(p.cid);
 				if (it == connections.end())
 				{
-					std::cout << "invalid cid error";
+					reportError("invalid cid error");
 					error = true;
 				}
 				else
@@ -329,7 +329,7 @@ void recieveData(ENetHost *server, ENetEvent &event)
 			auto it = connections.find(p.cid);
 			if (it == connections.end())
 			{
-				std::cout << "invalid cid error";
+				reportError("invalid cid error in headerSendPlayerData");
 			}
 			else
 			{
@@ -381,8 +381,8 @@ void recieveData(ENetHost *server, ENetEvent &event)
 		{
 			if (size != sizeof(Packet_ClientDroppedItem))
 			{
-				//todo better logs + cick clients that send corrupted data?
-				std::cout << "corrupted packet or something Packet_ClientDroppedItem\n";
+				//error checking + cick clients that send corrupted data?
+				reportError("corrupted packet or something Packet_ClientDroppedItem");
 				break;
 			}
 

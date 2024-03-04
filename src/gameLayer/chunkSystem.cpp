@@ -1003,7 +1003,7 @@ void ChunkSystem::dropChunkAtIndexSafe(int index)
 	}
 }
 
-//todo short for type
+
 void ChunkSystem::placeBlockByClient(glm::ivec3 pos, BlockType type, UndoQueue &undoQueue, glm::dvec3 playerPos
 	, LightSystem &lightSystem)
 {
@@ -1033,10 +1033,7 @@ void ChunkSystem::placeBlockByClient(glm::ivec3 pos, BlockType type, UndoQueue &
 	
 }
 
-//todo add place block by server that will be forced
-//or rename this as place block by server or something
 
-//todo refactor and reuse up
 void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, BlockType type, LightSystem &lightSystem)
 {
 	//todo were we will check legality locally
