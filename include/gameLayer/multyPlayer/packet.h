@@ -47,6 +47,8 @@ enum
 	headerClientRecieveOtherPlayerPosition,
 	headerClientRecieveDroppedItemUpdate,
 	headerClientUpdateTimer,
+	headerDisconnectOtherPlayer, //we use cid there to specify the connection to be removed
+	headerConnectOtherPlayer,
 };
 
 enum 
@@ -116,8 +118,15 @@ struct Packer_SendPlayerData
 
 struct Packet_ClientRecieveOtherPlayerPosition
 {
-	std::uint64_t entityId = 0;
 	glm::dvec3 position = {};
+	std::uint64_t entityId = 0;
+};
+
+struct Packet_HeaderConnectOtherPlayer
+{
+	glm::dvec3 position = {};
+	std::uint64_t entityId = 0;
+	CID cid = 0;
 };
 
 //used by the client to talk to the server

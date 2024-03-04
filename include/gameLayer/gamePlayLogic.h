@@ -26,7 +26,7 @@ struct ProgramData
 
 struct PlayerData 
 {
-	int chunkDistance = 10;
+	int chunkDistance = 10; //remove this from here
 	glm::dvec3 position = {};
 	//...
 };

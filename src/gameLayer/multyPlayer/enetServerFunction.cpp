@@ -20,7 +20,7 @@ std::mutex connectionsMutex;
 std::unordered_map<CID, Client> connections;
 static CID pids = 1;
 static std::uint64_t entityId = 1;
-static std::thread serverThread;
+static std::thread enetServerThread;
 
 void broadCastNotLocked(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel)
 {
@@ -88,7 +88,7 @@ std::unordered_map<CID, Client> getAllClients()
 	return rez;
 }
 
-void createConnection(CID cid, Client c)
+void insertConnection(CID cid, Client c)
 {
 	connectionsMutex.lock();
 	connections.insert({cid, c});
@@ -108,14 +108,46 @@ void submitTaskForServer(ServerTask t)
 	taskCondition.notify_one();
 }
 
+void sentNewConnectionMessage(ENetPeer *peer, Client c, CID cid)
+{
+	Packet p;
+	p.header = headerConnectOtherPlayer;
+	
+	Packet_HeaderConnectOtherPlayer data;
+	data.cid = cid;
+	data.position = c.playerData.position;
+	data.entityId = c.entityId;
+
+	sendPacket(peer, p, (const char *)&data,
+		sizeof(data), true, channelHandleConnections);
+}
+
+void broadcastNewConnectionMessage(ENetPeer *peerToIgnore, Client c, CID cid)
+{
+	Packet p;
+	p.header = headerConnectOtherPlayer;
+
+	Packet_HeaderConnectOtherPlayer data;
+	data.cid = cid;
+	data.position = c.playerData.position;
+	data.entityId = c.entityId;
+
+	//no need to lock because this is the thread to modify the data
+	broadCastNotLocked(p, &data,
+		sizeof(data), peerToIgnore, true, channelHandleConnections);
+}
+
 //todo remove conection
 void addConnection(ENetHost *server, ENetEvent &event)
 {
 
+	glm::dvec3 spawnPosition(0, 107, 0);
+
 	{
 		Client c{event.peer};
+		c.playerData.position = spawnPosition;
 		c.entityId = entityId;
-		createConnection(pids, c);
+		insertConnection(pids, c);
 	}
 
 	CID currentCid = pids;
@@ -126,7 +158,7 @@ void addConnection(ENetHost *server, ENetEvent &event)
 		pids++;
 	
 		Packet_ReceiveCIDAndData packetToSend = {};
-		packetToSend.playersPosition = glm::dvec3(0, 107, 0);;
+		packetToSend.playersPosition = spawnPosition;
 		packetToSend.yourPlayerEntityId = entityId;
 		entityId++;
 	
@@ -135,7 +167,7 @@ void addConnection(ENetHost *server, ENetEvent &event)
 			sizeof(packetToSend), true, channelHandleConnections);
 	}
 
-	//todo send info of other players and entities to this new connection
+	//todo send entities to this new connection
 
 	{
 		Packet p;
@@ -169,8 +201,44 @@ void addConnection(ENetHost *server, ENetEvent &event)
 			sizeof(packetData), true, channelHandleConnections);
 	}
 
+	//send others to this
+	for (auto &c : connections)
+	{
+		if (c.first != currentCid)
+		{
+			sentNewConnectionMessage(event.peer, c.second, c.first);
+		}
+
+	}
 
 	addCidToServerSettings(currentCid);
+
+	//send this to others
+	Client c = *getClientNotLocked(currentCid);
+	broadcastNewConnectionMessage(event.peer, c, currentCid);
+
+}
+
+void removeConnection(ENetHost *server, ENetEvent &event)
+{
+	
+	for (auto &c : connections)
+	{
+		if (c.second.peer == event.peer)
+		{
+			Packet p = {};
+			p.header = headerDisconnectOtherPlayer;
+			p.cid = c.first;
+
+			broadCastNotLocked(p, 0, 0, 0, true, channelHandleConnections);
+
+			lockConnectionsMutex();
+			connections.erase(connections.find(c.first));
+			unlockConnectionsMutex();
+			break;
+		}
+	}
+
 
 }
 
@@ -449,10 +517,11 @@ void enetServerFunction()
 				}
 				case ENET_EVENT_TYPE_DISCONNECT:
 				{
+
 					//std::cout << "disconnect: "
 					//	<< event.peer->address.host << " "
 					//	<< event.peer->address.port << "\n\n";
-					//removeConnection(server, event);
+					removeConnection(server, event);
 					break;
 				}
 
@@ -553,6 +622,27 @@ void enetServerFunction()
 
 	}
 
+	for (auto &c : connections)
+	{
+		enet_peer_disconnect(c.second.peer, 0);
+		enet_peer_reset(c.second.peer);
+	}
+
+	enet_host_flush(server);
+
+	int capCounter = 20;
+	while (enet_host_service(server, &event, 100) > 0 && capCounter-->0)
+	{
+		if (event.type == ENET_EVENT_TYPE_RECEIVE)
+		{
+			enet_packet_destroy(event.packet);
+		}
+		else if (event.type == ENET_EVENT_TYPE_RECEIVE)
+		{
+			
+		}
+	}
+
 }
 
 bool startEnetListener(ENetHost *_server)
@@ -564,7 +654,7 @@ bool startEnetListener(ENetHost *_server)
 	bool expected = 0;
 	if (enetServerRunning.compare_exchange_strong(expected, 1))
 	{
-		serverThread = std::move(std::thread(enetServerFunction));
+		enetServerThread = std::move(std::thread(enetServerFunction));
 		return 1;
 	}
 	else
@@ -576,5 +666,5 @@ bool startEnetListener(ENetHost *_server)
 void closeEnetListener()
 {
 	enetServerRunning = false;
-	serverThread.join();
+	enetServerThread.join();
 }

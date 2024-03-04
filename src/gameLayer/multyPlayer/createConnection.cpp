@@ -262,6 +262,35 @@ void recieveDataClient(ENetEvent &event,
 			break;
 		}
 
+		case headerConnectOtherPlayer:
+		{
+
+			Packet_HeaderConnectOtherPlayer *player= (Packet_HeaderConnectOtherPlayer *)data;
+
+			if (size == sizeof(Packet_HeaderConnectOtherPlayer))
+			{
+				entityManager.players[player->entityId].position = player->position;
+				entityManager.players[player->entityId].cid = player->cid;
+			}
+
+		};
+		break;
+
+		//disconnect other player
+		case headerDisconnectOtherPlayer:
+		{
+			for (auto it = entityManager.players.begin(); it != entityManager.players.end(); it++)
+			{
+
+				if (it->second.cid == p.cid)
+				{
+					entityManager.players.erase(it);
+					break;
+				}
+			}
+		}
+		break;
+
 		default:
 		break;
 
@@ -273,7 +302,7 @@ void recieveDataClient(ENetEvent &event,
 //this is not multy threaded
 void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision
 	,glm::ivec3 playerPosition, int squareDistance, ClientEntityManager &entityManager,
-	UndoQueue &undoQueue, std::uint64_t &serverTimer)
+	UndoQueue &undoQueue, std::uint64_t &serverTimer, bool &disconnect)
 {
 	ENetEvent event;
 
@@ -297,9 +326,7 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 
 				case ENET_EVENT_TYPE_DISCONNECT:
 				{
-					std::cout << "Disconected from server\n";
-					exit(0);
-
+					disconnect = 1;
 					break;
 				}
 
@@ -331,19 +358,33 @@ void closeConnection()
 {
 
 	if (!clientData.conected) { return; }
-
-	if(clientData.server)
-	enet_peer_reset(clientData.server);
 	
-	if (clientData.client)
-	enet_host_destroy(clientData.client);
-
-	for (auto &i : clientData.recievedChunks)
+	if (clientData.server)
 	{
-		delete i;
+		enet_peer_disconnect(clientData.server, 0);
+
+		enet_host_flush(clientData.client);
+			
+		ENetEvent event = {};
+
+		while (enet_host_service(clientData.client, &event, 1000) > 0)
+		{
+			if (event.type == ENET_EVENT_TYPE_RECEIVE)
+			{
+				enet_packet_destroy(event.packet);
+			}
+			else if (event.type == ENET_EVENT_TYPE_RECEIVE)
+			{
+				break;
+			}
+		}
+
+		enet_peer_reset(clientData.server);
 	}
 
-	clientData = {};
+	if (clientData.client)
+	enet_host_destroy(clientData.client);
+	
 
 }
 

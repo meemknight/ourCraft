@@ -207,11 +207,12 @@ bool gameLogic(float deltaTime)
 			setServerSettings(s);
 		}
 
+		//todo also cleanup stuff at exit but not unnecessary stuff
 		if (!gameplayFrame(deltaTime, w, h, programData))
 		{
 			closeGameLogic();
 			closeConnection();
-			closeServer();
+			closeServer();		//this will do something only if the server is on
 			gameStarted = false;
 		}
 

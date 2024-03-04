@@ -100,12 +100,15 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		EventCounter validateEvent = 0;
 		RevisionNumber inValidateRevision = 0;
+		bool disconnect = 0;
 
 		//todo the server should sent only one validate event message that is the latest, if possible
 		//todo timeout maybe? if the server doesn't give you stuff.
 		clientMessageLoop(validateEvent, inValidateRevision, 
 			gameData.entityManager.localPlayer.body.pos, gameData.chunkSystem.squareSize, 
-			gameData.entityManager, gameData.undoQueue, gameData.serverTimer);
+			gameData.entityManager, gameData.undoQueue, gameData.serverTimer, disconnect);
+
+		if (disconnect) { return 0; }
 
 		//todo timeout here and request the server for a hard reset
 		if (validateEvent)
@@ -580,12 +583,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma region imgui
 
+	bool terminate = false;
+
 	if (gameData.showImgui)
 	{
 		gameData.gameplayFrameProfiler.startSubProfile("imgui");
 
 
-		bool terminate = false;
 		//if (ImGui::Begin("camera controll", &gameData.escapePressed))
 		ImGui::PushStyleColor(ImGuiCol_WindowBg, {26/255.f,26/255.f,26/255.f,0.5f});
 		if (ImGui::Begin("client controll"))
@@ -837,11 +841,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		ImGui::PopStyleColor();
 
-		if (terminate)
-		{
-			return false;
-		}
-
 		gameData.gameplayFrameProfiler.endSubProfile("imgui");
 	}
 
@@ -867,18 +866,16 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	gameData.gameplayFrameProfiler.startFrame();
 	gameData.gameplayFrameProfiler.startSubProfile("swap chain and others");
 
+	if (terminate)
+	{
+		return false;
+	}
 
 	return true;
 }
 
 void closeGameLogic()
 {
-
-	for (auto &i : gameData.chunkSystem.loadedChunks)
-	{
-		delete i;
-	}
-
-
+	gameData.chunkSystem.dropAllChunks();
 	gameData = GameData(); //free all resources
 }

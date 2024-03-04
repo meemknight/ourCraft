@@ -3,6 +3,7 @@
 #include <gameplay/physics.h>
 #include <unordered_map>
 #include <deque>
+#include <multyPlayer/server.h>
 
 struct UndoQueue;
 
@@ -12,7 +13,7 @@ struct PlayerNetworked
 
 	//todo rotation and others
 
-	
+	CID cid = 0;
 };
 
 struct ReservedIDsRange

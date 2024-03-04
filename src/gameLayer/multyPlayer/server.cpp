@@ -127,6 +127,7 @@ struct ChunkPriorityCache
 
 	void placeGhostBlocksForChunk(int posX, int posZ, ChunkData &c);
 
+	void cleanup();
 };
 
 std::mutex serverSettingsMutex;
@@ -149,21 +150,24 @@ int getChunkCapacity()
 
 void closeServer()
 {
-	//toto cleanup stuff
+	//todo cleanup stuff
 	if (serverRunning)
 	{
+
 		closeEnetListener();
+
 
 		//close loop
 		serverRunning = false;
 
-		//then signal the barier from the task waiting
+		//then signal the barier from the task waiting to unlock the mutex
 		signalWaitingFromServer();
 
 		//then wait for the server to close
 		serverThread.join();
 
 		enet_host_destroy(sd.server);
+
 		//todo clear othher stuff
 		sd = {};
 	}
@@ -417,8 +421,8 @@ void serverWorkerFunction()
 						auto client = getClientNotLocked(i.cid);
 						if (client)
 						{
-						sendPacket(client->peer, packet, (char *)rez,
-							sizeof(Packet_RecieveChunk), true, channelChunksAndBlocks);
+							sendPacket(client->peer, packet, (char *)rez,
+								sizeof(Packet_RecieveChunk), true, channelChunksAndBlocks);
 						}
 						unlockConnectionsMutex();
 					}
@@ -619,6 +623,7 @@ void serverWorkerFunction()
 
 	wg.clear();
 	structuresManager.clear();
+	sd.chunkCache.cleanup();
 }
 
 std::uint64_t getTimer()
@@ -1761,6 +1766,17 @@ void ChunkPriorityCache::placeGhostBlocksForChunk(int posX, int posZ, ChunkData 
 
 		ghostBlocks.erase(iter);
 	}
+}
+
+void ChunkPriorityCache::cleanup()
+{
+
+	for (auto &c : savedChunks)
+	{
+		delete c.second->node;
+		delete c.second;
+	}
+
 }
 
 void doGameTick(float deltaTime, ServerEntityManager &entityManager, std::uint64_t currentTimer)
