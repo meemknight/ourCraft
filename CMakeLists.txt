@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebug$<$<CONFIG:Debug>:Debug>")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
 
+
 #if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 #	if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 #		set(CMAKE_MSVC_RUNTIME_LIBRARY "Multi-Threaded Debug")
@@ -38,10 +39,11 @@ add_subdirectory(thirdparty/fastNoiseSIMD)
 add_subdirectory(thirdparty/FastNoise2)
 add_subdirectory(thirdparty/enet-1.3.17)
 add_subdirectory(thirdparty/glui)
-add_subdirectory(thirdparty/assimp-5.2.4)
+#add_subdirectory(thirdparty/assimp-5.2.4)
 add_subdirectory(thirdparty/magic_enum-0.9.3)
 add_subdirectory(thirdparty/safeSave)
 add_subdirectory(thirdparty/profilerLib)
+add_subdirectory(thirdparty/zstd-1.5.5/build/cmake)
 add_subdirectory(noiseTool)
 
 
@@ -81,8 +83,10 @@ target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURC
 target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/")
 target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/gameLayer/")
 target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/platform/")
+target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/")
 
 
 target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE glm glfw glad stb_image stb_truetype 
-	gl2d raudio imgui fastNoiseSIMD FastNoise2 enet glui magic_enum safeSave profilerLib)
+	gl2d raudio imgui fastNoiseSIMD FastNoise2 enet glui magic_enum safeSave profilerLib 
+	libzstd_static)
 

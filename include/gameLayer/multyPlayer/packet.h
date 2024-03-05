@@ -23,12 +23,19 @@ struct EventId
 
 struct Packet
 {
-	int32_t header = 0;
+	uint32_t header = 0;
 	CID cid = 0;
 	char *getData()
 	{
 		return (char *)((&cid) + 1);
 	}
+
+	bool isCompressed() { return header & 0x8000'0000; }
+
+	void setCompressed(){header |= 0x8000'0000; }
+
+	void setNotCompressed() { header &= 0x7FFF'FFF; }
+
 };
 
 enum
@@ -157,6 +164,10 @@ struct Packet_PlaceBlocks
 };
 
 
+
+void *unCompressData(const char *data, size_t compressedSize, size_t &originalSize);
+
+void sendPacketAndCompress(ENetPeer *to, Packet p, const char *data, size_t size, bool reliable, int channel);
 
 void sendPacket(ENetPeer *to, Packet p, const char *data, size_t size, bool reliable, int channel);
 char *parsePacket(ENetEvent &event, Packet &p, size_t &dataSize);

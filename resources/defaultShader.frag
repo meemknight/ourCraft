@@ -77,6 +77,11 @@ const float waterSpeed = 5.f;
 const float causticsLightPower = 3;	
 ///
 
+bool isWater()
+{
+	return ((v_flags & 1) != 0);
+}
+
 uniform int u_tonemapper;
 
 float computeFog(float dist)
@@ -605,7 +610,7 @@ float getLastDepthLiniarized(vec2 p, out float nonLinear)
 vec3 applyNormalMap(vec3 inNormal)
 {
 	vec3 normal;
-	if( ((v_flags & 1) != 0) )
+	if( isWater() )
 	{
 		vec2 firstDudv = texture(sampler2D(u_dudvNormal), getDudvCoords3(waterSpeed/5.f)).rg;
 		normal = texture(sampler2D(u_dudvNormal), getDudvCoords(waterSpeed)+firstDudv*0.1 ).rgb*1;
@@ -623,7 +628,6 @@ vec3 applyNormalMap(vec3 inNormal)
 	{
 		normal = texture(sampler2D(v_normalSampler), v_uv).rgb;
 	}
-
 
 	normal = normalize(2*normal - 1.f);
 	mat3 rotMat = NormalToRotation(inNormal);
@@ -949,6 +953,11 @@ void main()
 		if(textureColor.a <= 0){discard;}
 		//gamma correction
 		textureColor.rgb = toLinear(textureColor.rgb);
+
+		if(isWater())
+		{
+			textureColor.rgb *= u_waterColor.rgb;
+		}
 	}
 	
 	vec3 N = applyNormalMap(v_normal);
@@ -1180,14 +1189,16 @@ void main()
 				finalDepth = distortWaterDepth;
 			}
 
+
+			//darken water with depth
 			peelTexture = mix(peelTexture, u_waterColor, 0.6 * clamp(pow(finalDepth/18.0,2),0,1) );
 
 			
 
 			//out_color.rgb = mix(out_color.rgb, peelTexture, reflectivity);
-			//out_color.rgb = mix(peelTexture, out_color.rgb, pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1 );
+			out_color.rgb = mix(peelTexture, out_color.rgb, pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1 );
 			//out_color.rgb = mix(peelTexture, u_waterColor*out_color.rgb, pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1 );
-			out_color.rgb = mix(peelTexture, u_waterColor*out_color.rgb, 0.5);
+			//out_color.rgb = mix(peelTexture, out_color.rgb, 0.5);
 			
 
 			//darken deep stuff, todo reenable and use final depth

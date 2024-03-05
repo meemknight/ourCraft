@@ -1,6 +1,86 @@
 #include "multyPlayer/packet.h"
 #include <algorithm>
+#include <zstd-1.5.5/lib/zstd.h> 
+#include <iostream>
 
+void *compressData(const char *data, size_t size, size_t &compressedSize)
+{
+
+	//PL::Profiler profiler;
+	//profiler.start();
+
+	size_t newExpectedMaxSize = size * 0.8;
+
+	char *rezult = new char[newExpectedMaxSize];
+
+
+	compressedSize = ZSTD_compress(rezult, newExpectedMaxSize, data, size, 1);
+
+	//profiler.end();
+
+	if (ZSTD_isError(compressedSize))
+	{
+		delete[] rezult;
+		return 0;
+	}
+
+	//std::cout << "Old size: " << size << " new size: " << rezSize << " ratio: " << (float)size / rezSize << "\n";
+	//std::cout << "Time ms: " << profiler.rezult.timeSeconds * 1000 << " Time per 100: " << profiler.rezult.timeSeconds * 100'000 <<"\n";
+
+	return rezult;
+	//delete[] rezult;
+
+}
+
+void *unCompressData(const char *data, size_t compressedSize, size_t &originalSize)
+{
+	// Decompress data
+   // First, we need to get the decompressed size
+	originalSize = ZSTD_getDecompressedSize(data, compressedSize);
+	if (originalSize == ZSTD_CONTENTSIZE_ERROR || originalSize == 0)
+	{
+		// Failed to get decompressed size
+		return nullptr;
+	}
+
+	char *decompressedData = new char[originalSize];
+	if (!decompressedData)
+	{
+		// Memory allocation failed
+		return nullptr;
+	}
+
+	// Decompress data
+	size_t result = ZSTD_decompress(decompressedData, originalSize, data, compressedSize);
+	if (ZSTD_isError(result))
+	{
+		// Decompression failed
+		delete[] decompressedData;
+		return nullptr;
+	}
+
+	return decompressedData;
+}
+
+
+
+void sendPacketAndCompress(ENetPeer *to, Packet p, const char *data, size_t size, bool reliable, int channel)
+{
+	size_t compressedSize = 0;
+	char* compressedData = (char*)compressData(data, size, compressedSize);
+
+	if (!compressData)
+	{
+		sendPacket(to, p, data, size, reliable, channel);
+	}
+	else
+	{
+		//std::cout << "compressed\n";
+		p.setCompressed();
+		sendPacket(to, p, compressedData, compressedSize, reliable, channel);
+		delete[] compressedData;
+	}
+}
 
 void sendPacket(ENetPeer *to, Packet p,
 	const char *data, size_t size, bool reliable, int channel)

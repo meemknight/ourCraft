@@ -6,6 +6,7 @@
 #include <gameplay/entityManagerClient.h>
 #include <multyPlayer/undoQueue.h>
 #include <errorReporting.h>
+#include <platformTools.h>
 
 
 static ConnectionData clientData;
@@ -125,6 +126,28 @@ void recieveDataClient(ENetEvent &event,
 	size_t size = 0;
 	auto data = parsePacket(event, p, size);
 
+	bool wasCompressed = 0;
+
+	if(p.isCompressed())
+	{
+		//std::cout << "Decompressing\n";
+		size_t newSize = {};
+		auto compressedData = unCompressData(data, size, newSize);
+		
+		if (compressedData)
+		{
+			data = (char*)compressedData;
+			size = newSize;
+		}
+		else
+		{
+			//hard error request a hard reset.
+			permaAssertComment(0, "decompression failed");
+		}
+
+		p.setNotCompressed();
+	}
+
 	switch(p.header)
 	{
 		case headerRecieveChunk:
@@ -132,6 +155,11 @@ void recieveDataClient(ENetEvent &event,
 
 			Packet_RecieveChunk *chunkPacket = (Packet_RecieveChunk *)data;
 
+			if (size != sizeof(Packet_RecieveChunk))
+			{
+				std::cout << "Size error " << size << "\n";
+				break;
+			}
 
 			if (checkIfPlayerShouldGetChunk({playerPosition.x, playerPosition.z},
 				{chunkPacket->chunk.x, chunkPacket->chunk.z}, squareDistance))
@@ -297,7 +325,10 @@ void recieveDataClient(ENetEvent &event,
 
 	}
 
-
+	if (wasCompressed)
+	{
+		delete[] data;
+	}
 }
 
 //this is not multy threaded
