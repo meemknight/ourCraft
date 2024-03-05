@@ -74,7 +74,8 @@ const float atenuationFactor = 0.5f;
 const float causticsTextureScale = 3.f;
 const float causticsChromaticAberationStrength = 0.004;	
 const float waterSpeed = 5.f;
-const float causticsLightPower = 3;	
+const float causticsLightStrength = 1.4;	
+const float causticsLightPower = 1;	
 ///
 
 bool isWater()
@@ -591,6 +592,21 @@ vec2 getDudvCoords4(float speed)
 	return samplingPoint * 0.1;
 }
 
+vec2 getDudvCoords5(float speed)
+{
+	vec2 samplingPoint = - v_blockPos.zx + vec2(v_uv.x + u_waterMove*speed, v_uv.y + u_waterMove*speed/2);
+	return samplingPoint * (1/50.f);
+}
+
+vec2 getDudvCoords6(float speed)
+{
+	vec2 samplingPoint = - v_blockPos.zx + vec2(v_uv.x + u_waterMove*speed, v_uv.y - u_waterMove*speed*2);
+	samplingPoint.y = -samplingPoint.y;
+	return samplingPoint * (1/100.f);
+}
+
+
+
 uniform float u_near;
 uniform float u_far;
 
@@ -612,8 +628,8 @@ vec3 applyNormalMap(vec3 inNormal)
 	vec3 normal;
 	if( isWater() )
 	{
-		vec2 firstDudv = texture(sampler2D(u_dudvNormal), getDudvCoords3(waterSpeed/5.f)).rg;
-		normal = texture(sampler2D(u_dudvNormal), getDudvCoords(waterSpeed)+firstDudv*0.1 ).rgb*1;
+		vec2 firstDudv = texture(sampler2D(u_dudvNormal), getDudvCoords3(waterSpeed/3.f)).rg;
+		normal = texture(sampler2D(u_dudvNormal), getDudvCoords5(waterSpeed*2)+firstDudv*0.04 ).rgb;
 
 		//normal = texture(sampler2D(u_dudvNormal), getDudvCoords(waterSpeed)).rgb*1;
 		////normal += texture(sampler2D(u_dudvNormal), getDudvCoords2(10)).rgb;
@@ -956,7 +972,7 @@ void main()
 
 		if(isWater())
 		{
-			textureColor.rgb *= u_waterColor.rgb;
+			textureColor.rgb = u_waterColor.rgb;
 		}
 	}
 	
@@ -984,16 +1000,18 @@ void main()
 	if(blockIsInWater)
 	{
 		vec2 dudv = vec2(0);
-		dudv += texture(sampler2D(u_dudv), getDudvCoords(waterSpeed/2)).rg;
-		//dudv += texture(sampler2D(u_dudv), getDudvCoords2(1)).rg;
-		dudv += texture(sampler2D(u_dudv), getDudvCoords3(waterSpeed/2)).rg*1;
+		dudv += texture(sampler2D(u_dudv), getDudvCoords(waterSpeed*2)).rg;
+		dudv += texture(sampler2D(u_dudv), getDudvCoords5(waterSpeed+dudv.x)).rg*1;
+		//dudv += texture(sampler2D(u_dudv), getDudvCoords2(waterSpeed*0.1)).rg * 0.4;
+		//dudv *= texture(sampler2D(u_dudv), getDudvCoords2(1)).rg;
 
 		vec2 coords = getDudvCoords(1) * causticsTextureScale + dudv / 10;
+		//vec2 coords = dudv * ;
 		
 
-		causticsColor.r = texture(u_caustics, coords + vec2(0,0)).r * causticsLightPower;
-		causticsColor.g = texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)).g * causticsLightPower;
-		causticsColor.b = texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)*2.0).b * causticsLightPower;
+		causticsColor.r = pow(texture(u_caustics, coords + vec2(0,0)).r, causticsLightPower) * causticsLightStrength;
+		causticsColor.g = pow(texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)).g, causticsLightPower) * causticsLightStrength;
+		causticsColor.b = pow(texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)*2.0).b, causticsLightPower) * causticsLightStrength;
 
 		//out_color.rgb = texture(u_caustics, coords).rgb;
 		//out_color.a = 1;
@@ -1161,10 +1179,10 @@ void main()
 
 			vec2 dudv = vec2(0);
 			dudv += texture(sampler2D(u_dudv), getDudvCoords(waterSpeed)).rg;
-			//dudv += texture(sampler2D(u_dudv), getDudvCoords2(1)).rg;
+			dudv += texture(sampler2D(u_dudv), getDudvCoords2(dudv.x)).rg * 0.01;
 			//dudv += texture(sampler2D(u_dudv), getDudvCoords3(1)).rg;
 			vec2 dudvConv = (dudv * 2) - 1;
-			vec2 distorsionCoord = dudvConv * 0.009;	
+			vec2 distorsionCoord = dudvConv * 0.007;	
 
 			float distortDepth = getLastDepthLiniarized(p + distorsionCoord, nonLinear);
 			float distortWaterDepth = distortDepth - currentDepth;
@@ -1191,14 +1209,14 @@ void main()
 
 
 			//darken water with depth
-			peelTexture = mix(peelTexture, u_waterColor, 0.6 * clamp(pow(finalDepth/18.0,2),0,1) );
+			peelTexture = mix(peelTexture, u_waterColor*0.7, 0.6 * clamp(pow(finalDepth/18.0,2),0,1) );
 
 			
 
 			//out_color.rgb = mix(out_color.rgb, peelTexture, reflectivity);
 			out_color.rgb = mix(peelTexture, out_color.rgb, pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1 );
 			//out_color.rgb = mix(peelTexture, u_waterColor*out_color.rgb, pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1 );
-			//out_color.rgb = mix(peelTexture, out_color.rgb, 0.5);
+			//out_color.rgb = mix(peelTexture, out_color.rgb, 0.0);
 			
 
 			//darken deep stuff, todo reenable and use final depth

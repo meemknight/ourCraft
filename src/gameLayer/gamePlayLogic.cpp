@@ -230,7 +230,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma region input
 
-	static float moveSpeed = 10.f;
+	static float moveSpeed = 20.f;
 
 	if (platform::isKeyReleased(platform::Button::Escape))
 	{
