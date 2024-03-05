@@ -626,7 +626,7 @@ float getLastDepthLiniarized(vec2 p, out float nonLinear)
 vec3 applyNormalMap(vec3 inNormal)
 {
 	vec3 normal;
-	if( isWater() && false )
+	if( isWater() )
 	{
 		vec2 firstDudv = texture(sampler2D(u_dudvNormal), getDudvCoords3(waterSpeed/3.f)).rg;
 		normal = texture(sampler2D(u_dudvNormal), getDudvCoords5(waterSpeed*2)+firstDudv*0.04 ).rgb;
@@ -635,11 +635,17 @@ vec3 applyNormalMap(vec3 inNormal)
 		////normal += texture(sampler2D(u_dudvNormal), getDudvCoords2(10)).rgb;
 		//normal += texture(sampler2D(u_dudvNormal), getDudvCoords3(waterSpeed)).rgb*0.5;
 
-		normal = normalize(normal);
+		//normal = normalize(normal);
 
-		//normal = normalize(normal * vec3(1.0, 0.2, 1.0));
+		normal = (vec3(0.5,0.5,1) + (vec3(normal.x,0,normal.z) - vec3(0.5,0,0.5)) * 0.5);
+
+		//return normalize(vec3(0.0,1,0));
+
+		//normal = normalize(mix(normal, vec3(0.5,0.5,1), 0.9));
+		//normal = vec3(0.5,0.5,1);
 		//normal = normalize(2*normal - 1.f);
 		//return normal;
+		//return inNormal;
 	}else
 	{
 		normal = texture(sampler2D(v_normalSampler), v_uv).rgb;
@@ -1113,7 +1119,10 @@ void main()
 	out_color = clamp(out_color, vec4(0), vec4(1));
 	
 	//ssr
+	bool ssrSuccess = false;
+
 	if(true)
+	if(roughness < 0.1)
 	{
 		vec2 fragCoord = gl_FragCoord.xy / textureSize(u_lastFramePositionViewSpace, 0).xy;
 
@@ -1124,23 +1133,25 @@ void main()
 
 		vec3 viewSpaceNormal = normalize( vec3(transpose(inverse(mat3(u_view))) * N));
 
+		vec3 ssrNormal = N;
+		if(isWater()){ssrNormal = v_normal;}
+
 		float mixFactor = 0;
 		//vec3 ssr = SSR(posViewSpace, N, metallic, F, mixFactor, roughness, pos, V, viewSpaceNormal, 
 		//	textureSize(u_lastFramePositionViewSpace, 0).xy);
-		bool success = false;
-		vec3 ssr = SSR(success, posViewSpace, N, mixFactor, 0, pos, V, viewSpaceNormal, 
+		vec3 ssr = SSR(ssrSuccess, posViewSpace, ssrNormal, mixFactor, 0, pos, V, viewSpaceNormal, 
 			textureSize(u_lastFramePositionViewSpace, 0).xy);
 		
 		
 		
 		//if is water just reflect 100% because we deal with it later
-		//if(((v_flags & 1) != 0))
-		//{
-		//	if(success)out_color.rgb = ssr;
-		//	out_color.a = 1;
-		//}else
+		if(((v_flags & 1) != 0))
 		{
-			if(success) {out_color.rgb = mix(ssr, out_color.rgb, dotNV);}	
+			if(ssrSuccess) {out_color.rgb = ssr;}
+			//out_color.a = 1;
+		}else
+		{
+			if(ssrSuccess) {out_color.rgb = mix(ssr, out_color.rgb, dotNV);}	
 
 			//if(success) {out_color.rgb = vec3(0,0,1);}else
 			//{out_color.rgb = vec3(1,0,0);}
@@ -1159,8 +1170,8 @@ void main()
 	//}
 	
 	//is water	
-	if(false)
-	if(((v_flags & 1) != 0))
+	//if(false)
+	if(isWater())
 	{
 		float reflectivity = dotNV;
 		//float reflectivity = 0;
@@ -1216,9 +1227,16 @@ void main()
 			peelTexture = mix(peelTexture, u_waterColor*0.7, 0.6 * clamp(pow(finalDepth/18.0,2),0,1) );
 
 			
+			//float mixFactor = pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1;
+			float mixFactor = clamp(pow(1-clamp(reflectivity,0,1),2) * 0.9+0.1,0,1);
+			//mixFactor = 1-reflectivity;
+			//if(ssrSuccess){mixFactor = pow(mixFactor, 0.9);}
 
-			//out_color.rgb = mix(out_color.rgb, peelTexture, reflectivity);
-			out_color.rgb = mix(peelTexture, out_color.rgb, pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1 );
+			out_color.rgb = mix(peelTexture, out_color.rgb,  mixFactor);
+
+
+			//out_color.rgb = mix(out_color.rgb, peelTexture, clamp(reflectivity,0,1));
+			//out_color.rgb = mix(peelTexture, out_color.rgb, pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1 );
 			//out_color.rgb = mix(peelTexture, u_waterColor*out_color.rgb, pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1 );
 			//out_color.rgb = mix(peelTexture, out_color.rgb, 0.0);
 			
@@ -1271,11 +1289,11 @@ void main()
 //}
 
 const float INFINITY = 1.f/0.f;
-const float SSR_minRayStep = 0.4;
-const int SSR_maxSteps = 40;
-const int	SSR_numBinarySearchSteps = 5;
-const float SSR_maxRayStep = 1.2;
-const float SSR_maxRayDelta = 0.6;
+const float SSR_minRayStep = 1.0;
+const int	SSR_maxSteps = 150;
+const int	SSR_numBinarySearchSteps = 7;
+const float SSR_maxRayStep = 3.2;
+const float SSR_maxRayDelta = 3.0;
 
 vec2 BinarySearch(inout vec3 dir, inout vec3 hitCoord, 
 inout float dDepth, vec2 oldValue)
