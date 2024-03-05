@@ -737,7 +737,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			if (ImGui::CollapsingHeader("Screen space pos",
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
 			{
-				ImGui::Image((void *)programData.renderer.fboMain.secondaryColor, {256, 256},
+				ImGui::Image((void *)programData.renderer.fboLastFramePositions.color, {256, 256},
 					{0, 1}, {1, 0});
 			}
 

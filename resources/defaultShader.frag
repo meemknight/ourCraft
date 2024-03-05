@@ -626,7 +626,7 @@ float getLastDepthLiniarized(vec2 p, out float nonLinear)
 vec3 applyNormalMap(vec3 inNormal)
 {
 	vec3 normal;
-	if( isWater() )
+	if( isWater() && false )
 	{
 		vec2 firstDudv = texture(sampler2D(u_dudvNormal), getDudvCoords3(waterSpeed/3.f)).rg;
 		normal = texture(sampler2D(u_dudvNormal), getDudvCoords5(waterSpeed*2)+firstDudv*0.04 ).rgb;
@@ -1001,7 +1001,7 @@ void main()
 	{
 		vec2 dudv = vec2(0);
 		dudv += texture(sampler2D(u_dudv), getDudvCoords(waterSpeed*2)).rg;
-		dudv += texture(sampler2D(u_dudv), getDudvCoords5(waterSpeed+dudv.x)).rg*1;
+		dudv += texture(sampler2D(u_dudv), getDudvCoords5(waterSpeed)).rg*1;
 		//dudv += texture(sampler2D(u_dudv), getDudvCoords2(waterSpeed*0.1)).rg * 0.4;
 		//dudv *= texture(sampler2D(u_dudv), getDudvCoords2(1)).rg;
 
@@ -1057,9 +1057,9 @@ void main()
 
 		if(dot(u_sunDirection, vec3(0,1,0))> -0.2)
 		{
-			finalColor += shadowCalc2(dot(L, v_normal)) * computePointLightSource(L, 
+			finalColor += computePointLightSource(L, 
 				metallic, roughness, sunLightColor * causticsColor, V, 
-				textureColor.rgb, N, F0);
+				textureColor.rgb, N, F0); // * shadowCalc2(dot(L, v_normal));
 		}
 	}
 	
@@ -1113,7 +1113,7 @@ void main()
 	out_color = clamp(out_color, vec4(0), vec4(1));
 	
 	//ssr
-	if(false)
+	if(true)
 	{
 		vec2 fragCoord = gl_FragCoord.xy / textureSize(u_lastFramePositionViewSpace, 0).xy;
 
@@ -1141,7 +1141,11 @@ void main()
 		//}else
 		{
 			if(success) {out_color.rgb = mix(ssr, out_color.rgb, dotNV);}	
-			else{ out_color.rgb/=2;};
+
+			//if(success) {out_color.rgb = vec3(0,0,1);}else
+			//{out_color.rgb = vec3(1,0,0);}
+
+			//out_color.rgb *= posViewSpace;
 		}
 		//if(success)out_color.rgb = ssr;
 		
@@ -1155,7 +1159,7 @@ void main()
 	//}
 	
 	//is water	
-	//if(false)
+	if(false)
 	if(((v_flags & 1) != 0))
 	{
 		float reflectivity = dotNV;
@@ -1234,7 +1238,7 @@ void main()
 			//out_color.b = clamp(waterDepth/5,0,1);
 		}else
 		{
-			out_color.a = reflectivity;
+			out_color.a = reflectivity; //set the alpha component
 		}
 	
 

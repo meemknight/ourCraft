@@ -38,7 +38,7 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 	}
 
 	const int maxUpperBoundPerElement = 1000;
-	const int totalMaxUpperBoundPerElement = 100'000;
+	const int totalMaxUpperBound = 100'000;
 	//const int maxUpperBound = 1000;
 
 
@@ -46,7 +46,7 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 
 	//sunLightsRemoveTimer.start();
 
-	int upperBound = totalMaxUpperBoundPerElement;
+	int upperBound = totalMaxUpperBound;
 	
 
 	while(upperBound > 0)

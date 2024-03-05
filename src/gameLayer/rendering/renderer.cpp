@@ -801,7 +801,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	float timeGrass = std::clock() / 1000.f;
 
-
 #pragma region render sky box 0
 
 	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fboOnlyFirstTarget);
@@ -1054,7 +1053,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glColorMask(0, 0, 0, 0);
 		zpassShader.shader.bind();
 		renderStaticGeometry();
-
 	}
 #pragma endregion
 
@@ -1068,7 +1066,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	//glEnable(GL_BLEND);
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	renderStaticGeometry();
+
 #pragma endregion
+
 
 #pragma region render entities
 	{
@@ -1081,7 +1081,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 
 		glUniformMatrix4fv(entityRenderer.basicEntityshader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
-		glUniformMatrix4fv(entityRenderer.basicEntityshader.u_modelMatrix, 1, GL_FALSE, 
+		glUniformMatrix4fv(entityRenderer.basicEntityshader.u_modelMatrix, 1, GL_FALSE,
 			glm::value_ptr(glm::scale(glm::vec3{0.4f})));
 		glUniform3fv(entityRenderer.basicEntityshader.u_cameraPositionFloat, 1, &posFloat[0]);
 		glUniform3iv(entityRenderer.basicEntityshader.u_cameraPositionInt, 1, &posInt[0]);
@@ -1156,9 +1156,11 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	defaultShader.shader.bind();
 #pragma endregion
 
+
 #pragma region copy depth 3
 	fboCoppy.copyDepthFromOtherFBO(fboMain.fbo, screenX, screenY);
 #pragma endregion
+
 
 #pragma region render only water geometry to depth 4
 	glBindFramebuffer(GL_FRAMEBUFFER, fboCoppy.fbo);
@@ -1172,6 +1174,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	renderTransparentGeometry();
 #pragma endregion
+
 
 #pragma region render with depth peel first part of the transparent of the geometry 5
 	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
@@ -1194,22 +1197,27 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	renderTransparentGeometry();
 #pragma endregion
 
+
 #pragma region copy color buffer and last depth for later use 6
 	fboCoppy.copyDepthAndColorFromOtherFBO(fboMain.fbo, screenX, screenY);
 #pragma endregion
 
+
 #pragma region render transparent geometry last phaze 7
 	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
 	defaultShader.shader.bind();
+	glColorMask(1, 1, 1, 1);
 
 	glEnablei(GL_BLEND, 0);
 	glBlendFunci(0, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisablei(GL_BLEND, 1);
+	//glDisable(GL_BLEND); //todo REMOVE!
+
 
 	glColorMask(1, 1, 1, 1);
 	glUniform1i(defaultShader.u_depthPeelwaterPass, 0);
 	glUniform1i(defaultShader.u_hasPeelInformation, 1);
-	
+
 	glActiveTexture(GL_TEXTURE0 + 3);
 	glBindTexture(GL_TEXTURE_2D, fboCoppy.color);
 	glUniform1i(defaultShader.u_PeelTexture, 3);
@@ -1223,6 +1231,19 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	//glDisable(GL_CULL_FACE); //todo change
 	renderTransparentGeometry();
 #pragma endregion
+
+
+//#pragma region temporary
+//	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
+//	glColorMask(1, 1, 1, 1);
+//	glDepthFunc(GL_LESS);
+//	defaultShader.shader.bind();
+//	glEnablei(GL_BLEND, 0);
+//	glBlendFunci(0, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//	glDisablei(GL_BLEND, 1);
+//	renderTransparentGeometry();
+//#pragma endregion
+
 
 #pragma region copy to main fbo 8
 
@@ -2001,7 +2022,7 @@ void Renderer::FBO::copyDepthFromOtherFBO(GLuint other, int w, int h)
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, other);
-	glBindTexture(GL_TEXTURE_2D, depth);
+	//glBindTexture(GL_TEXTURE_2D, depth);
 
 	glBlitFramebuffer(
 		0, 0, w, h,  // Source rectangle (usually the whole screen)
