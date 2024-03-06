@@ -1139,7 +1139,7 @@ void main()
 		float mixFactor = 0;
 		//vec3 ssr = SSR(posViewSpace, N, metallic, F, mixFactor, roughness, pos, V, viewSpaceNormal, 
 		//	textureSize(u_lastFramePositionViewSpace, 0).xy);
-		vec3 ssr = SSR(ssrSuccess, posViewSpace, ssrNormal, mixFactor, pow(roughness,1), pos, V, viewSpaceNormal, 
+		vec3 ssr = SSR(ssrSuccess, posViewSpace, ssrNormal, mixFactor, pow(roughness,2), pos, V, viewSpaceNormal, 
 			textureSize(u_lastFramePositionViewSpace, 0).xy);
 		
 		
