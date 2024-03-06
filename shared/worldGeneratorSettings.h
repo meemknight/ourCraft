@@ -27,14 +27,13 @@ struct WorldGeneratorSettings
 	int seed = 1234;
 	NoiseSetting continentalnessNoiseSettings;
 	NoiseSetting peaksAndValies;
-	NoiseSetting oceansAndTerases;
+	NoiseSetting wierdness;
 	NoiseSetting stone3Dnoise;
 	NoiseSetting humidityNoise;
 	NoiseSetting temperatureNoise;
 	NoiseSetting spagettiNoise;
 
 	Spline peaksAndValiesContributionSpline;
-	Spline oceansAndTerasesContributionSpline;
 
 	NoiseSetting vegetationNoise;
 
@@ -67,10 +66,10 @@ struct WorldGenerator
 	Spline peaksValiesContributionSplines;
 	float peaksValiesPower = 1.f;
 
-	FastNoiseSIMD *oceansAndTerasesNoise;
-	Spline oceansAndTerasesSplines;
-	Spline oceansAndTerasesContributionSplines;
-	float oceansAndTerasesPower = 1.f;
+	FastNoiseSIMD *wierdnessNoise;
+	Spline wierdnessSplines;
+	//Spline oceansAndTerasesContributionSplines;
+	float wierdnessPower = 1.f;
 
 	FastNoiseSIMD *stone3Dnoise;
 	Spline stone3DnoiseSplines;

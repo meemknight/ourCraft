@@ -1122,7 +1122,7 @@ void main()
 	bool ssrSuccess = false;
 
 	if(true)
-	if(roughness < 0.1)
+	if(roughness < 0.5)
 	{
 		vec2 fragCoord = gl_FragCoord.xy / textureSize(u_lastFramePositionViewSpace, 0).xy;
 
@@ -1139,7 +1139,7 @@ void main()
 		float mixFactor = 0;
 		//vec3 ssr = SSR(posViewSpace, N, metallic, F, mixFactor, roughness, pos, V, viewSpaceNormal, 
 		//	textureSize(u_lastFramePositionViewSpace, 0).xy);
-		vec3 ssr = SSR(ssrSuccess, posViewSpace, ssrNormal, mixFactor, 0, pos, V, viewSpaceNormal, 
+		vec3 ssr = SSR(ssrSuccess, posViewSpace, ssrNormal, mixFactor, pow(roughness,1), pos, V, viewSpaceNormal, 
 			textureSize(u_lastFramePositionViewSpace, 0).xy);
 		
 		
@@ -1151,7 +1151,11 @@ void main()
 			//out_color.a = 1;
 		}else
 		{
-			if(ssrSuccess) {out_color.rgb = mix(ssr, out_color.rgb, dotNV);}	
+			if(ssrSuccess) 
+			{
+				ssr = mix(ssr, out_color.rgb, dotNV);
+				out_color.rgb = mix(ssr, out_color.rgb, pow(roughness, 0.5));
+			}	
 
 			//if(success) {out_color.rgb = vec3(0,0,1);}else
 			//{out_color.rgb = vec3(1,0,0);}
@@ -1291,7 +1295,7 @@ void main()
 const float INFINITY = 1.f/0.f;
 const float SSR_minRayStep = 1.0;
 const int	SSR_maxSteps = 150;
-const int	SSR_numBinarySearchSteps = 7;
+const int	SSR_numBinarySearchSteps = 10;
 const float SSR_maxRayStep = 3.2;
 const float SSR_maxRayDelta = 3.0;
 
@@ -1450,8 +1454,8 @@ vec3 SSR(out bool success, vec3 viewPos, vec3 N,
 	//vec3 jitt = mix(vec3(0.0), vec3(hash(wp)), spec);
 	
 	//todo test
-	//vec3 jitt = computeJitt(wp, rezolution, viewSpaceNormal, roughness); //use roughness for specular factor
-	vec3 jitt = vec3(0.0);
+	vec3 jitt = computeJitt(wp, rezolution, viewSpaceNormal, roughness); //use roughness for specular factor
+	//vec3 jitt = vec3(0.0);
 
 	vec2 coords = RayMarch( normalize((vec3(jitt) + reflected) *
 		max(SSR_minRayStep, -viewPos.z)), hitPos, dDepth,

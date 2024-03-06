@@ -67,8 +67,9 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	float *peaksAndValies
 		= wg.peaksValiesNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 
-	float *oceansAndTerases
-		= wg.peaksValiesNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+	//todo fix this bug in an older commit
+	float *wierdness
+		= wg.wierdnessNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 
 	float *densityNoise
 		= wg.stone3Dnoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
@@ -157,15 +158,12 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
-		oceansAndTerases[i] += 1;
-		oceansAndTerases[i] /= 2;
-		oceansAndTerases[i] = std::powf(oceansAndTerases[i], wg.oceansAndTerasesPower);
+		wierdness[i] += 1;
+		wierdness[i] /= 2;
+		wierdness[i] = std::powf(wierdness[i], wg.wierdnessPower);
 
-		float val = oceansAndTerases[i];
+		float val = wierdness[i];
 
-		oceansAndTerases[i] = wg.oceansAndTerasesSplines.applySpline(oceansAndTerases[i]);
-
-		continentalness[i] = lerp(continentalness[i], oceansAndTerases[i], wg.oceansAndTerasesContributionSplines.applySpline(val));
 	}
 
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
@@ -226,11 +224,17 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return spagettiNoise[x * CHUNK_SIZE * (CHUNK_HEIGHT)+y * CHUNK_SIZE + z];
 	};
 
+	auto getWierdness = [&](int x, int z)
+	{
+		return wierdness[x * CHUNK_SIZE + z];
+	};
 
 	for (int x = 0; x < CHUNK_SIZE; x++)
 		for (int z = 0; z < CHUNK_SIZE; z++)
 		{
 
+			float squishFactor = wg.densitySquishFactor + getWierdness(x, z) * 30 - 15;
+			squishFactor = std::max(squishFactor, 0.f);
 
 			auto biomeIndex = biomesManager.determineBiomeIndex(getTemperature(x, z), getHumidity(x, z));
 			auto &biome = biomesManager.biomes[biomeIndex];
@@ -251,7 +255,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				int heightOffset = height + wg.densityHeightoffset;
 				int difference = y - heightOffset;
 				float differenceMultiplier =
-					glm::clamp(pow(abs(difference) / wg.densitySquishFactor, wg.densitySquishPower),
+					glm::clamp(pow(abs(difference) / squishFactor, wg.densitySquishPower),
 					1.f, 10.f);
 
 				if (difference > 0)
@@ -395,7 +399,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	
 	FastNoiseSIMD::FreeNoiseSet(continentalness);
 	FastNoiseSIMD::FreeNoiseSet(peaksAndValies);
-	FastNoiseSIMD::FreeNoiseSet(oceansAndTerases);
+	FastNoiseSIMD::FreeNoiseSet(wierdness);
 	FastNoiseSIMD::FreeNoiseSet(densityNoise);
 	FastNoiseSIMD::FreeNoiseSet(vegetationNoise);
 	FastNoiseSIMD::FreeNoiseSet(whiteNoise);

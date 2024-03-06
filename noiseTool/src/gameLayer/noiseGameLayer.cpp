@@ -43,7 +43,7 @@ bool showFinal = 1;
 bool showSlice = 1;
 bool showContinentalness = 0;
 bool showPeaksAndValies = 0;
-bool showOceans = 0;
+bool showWierdness = 0;
 bool showVegetation = 1;
 bool show3DStone = 0;
 bool showSpagetti = 0;
@@ -68,7 +68,7 @@ gl2d::Texture peaksValiesT;
 gl2d::Texture finalTexture;
 gl2d::Texture sliceT;
 gl2d::Texture stone3DNoiseT;
-gl2d::Texture oceansAndTerasesT;
+gl2d::Texture wierdnessT;
 gl2d::Texture vegetationT;
 gl2d::Texture spagettiT;
 
@@ -183,26 +183,31 @@ void recreate()
 
 	};
 
-	float *oceansNoise;
+	float *wierdnessNoise;
 	{
-		oceansNoise
-			= wg.oceansAndTerasesNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
+		wierdnessNoise
+			= wg.wierdnessNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
 
 		for (int i = 0; i < size.x * size.y; i++)
 		{
-			oceansNoise[i] += 1;
-			oceansNoise[i] /= 2;
-			oceansNoise[i] = std::pow(oceansNoise[i], settings.oceansAndTerases.power);
-			float val = oceansNoise[i];
-			oceansNoise[i] = applySpline(oceansNoise[i], settings.oceansAndTerases.spline);
+			wierdnessNoise[i] += 1;
+			wierdnessNoise[i] /= 2;
+			wierdnessNoise[i] = std::pow(wierdnessNoise[i], settings.wierdness.power);
+			float val = wierdnessNoise[i];
+			wierdnessNoise[i] = applySpline(wierdnessNoise[i], settings.wierdness.spline);
 
-			finalNoise[i] = lerp(finalNoise[i], oceansNoise[i], settings.oceansAndTerasesContributionSpline.applySpline(val));
+			//finalNoise[i] = lerp(finalNoise[i], wierdnessNoise[i], settings.oceansAndTerasesContributionSpline.applySpline(val));
 
 		}
-		createFromGrayScale(oceansAndTerasesT, oceansNoise, size);
+		createFromGrayScale(wierdnessT, wierdnessNoise, size);
 
 
 	}
+
+	auto getWierdness = [&](int x, int y) 
+	{
+		return wierdnessNoise[y * size.x + x];
+	};
 
 	{
 		float *vegetationNoise;
@@ -286,6 +291,10 @@ void recreate()
 			float heightPercentage = finalNoise[i + size.y - 1];
 			int height = int(startLevel + heightPercentage * heightDiff);
 
+			float squishFactor = settings.densitySquishFactor + getWierdness(i,0) * 30 - 15;
+			squishFactor = std::max(squishFactor, 0.f);
+
+
 			float firstH = 1;
 			for (int y = 0; y < 256; y++)
 			{
@@ -295,7 +304,7 @@ void recreate()
 				int heightOffset = height + settings.densityHeightoffset;
 				int difference = y - heightOffset;
 				float differenceMultiplier = 
-					glm::clamp(pow(abs(difference)/settings.densitySquishFactor, settings.densitySquishPower),
+					glm::clamp(pow(abs(difference)/ squishFactor, settings.densitySquishPower),
 					1.f, 10.f);
 
 				if (difference > 0)
@@ -431,7 +440,7 @@ void recreate()
 
 	FastNoiseSIMD::FreeNoiseSet(testNoise);
 	FastNoiseSIMD::FreeNoiseSet(peaksNoise);
-	FastNoiseSIMD::FreeNoiseSet(oceansNoise);
+	FastNoiseSIMD::FreeNoiseSet(wierdnessNoise);
 	FastNoiseSIMD::FreeNoiseSet(stoneNoise);
 	FastNoiseSIMD::FreeNoiseSet(humidityNoise);
 	FastNoiseSIMD::FreeNoiseSet(temperatureNoise);
@@ -572,12 +581,11 @@ bool gameLogic(float deltaTime)
 		splineEditor(settings.peaksAndValiesContributionSpline, "Peaks And Valies spline");
 	}
 
-	if (showOceans)
+	if (showWierdness)
 	{
 		ImGui::Separator();
 
-		noiseEditor(settings.oceansAndTerases, "Oceans And Terases");
-		splineEditor(settings.oceansAndTerasesContributionSpline, "Oceans And Terases spline");
+		noiseEditor(settings.wierdness, "Wierdness");
 	}
 
 	if (show3DStone)
@@ -643,7 +651,7 @@ bool gameLogic(float deltaTime)
 	ImGui::Checkbox("showSlice", &showSlice); ImGui::SameLine();
 	ImGui::Checkbox("showContinentalness", &showContinentalness);
 	ImGui::Checkbox("showPeaksAndValies", &showPeaksAndValies); ImGui::SameLine();
-	ImGui::Checkbox("showOceans", &showOceans); ImGui::SameLine();
+	ImGui::Checkbox("showWierdness", &showWierdness); ImGui::SameLine();
 	ImGui::Checkbox("show3DStone", &show3DStone); ImGui::SameLine();
 	ImGui::Checkbox("showVegetation", &showVegetation);
 	ImGui::Checkbox("showHumidityAndTemperature", &showHumidityAndTemperature); ImGui::SameLine();
@@ -689,9 +697,9 @@ bool gameLogic(float deltaTime)
 		drawNoise("PeaksValies", peaksValiesT);
 	}
 
-	if (showOceans)
+	if (showWierdness)
 	{
-		drawNoise("Oceans And Terases", oceansAndTerasesT);
+		drawNoise("wierdness noise", wierdnessT);
 	}
 
 	if (showVegetation)
@@ -706,7 +714,6 @@ bool gameLogic(float deltaTime)
 	}
 
 	ImGui::End();
-
 
 
 

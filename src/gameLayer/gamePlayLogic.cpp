@@ -81,7 +81,7 @@ bool initGameplay(ProgramData &programData, const char *c)
 	gameData.entityManager.localPlayer.entityId = playerData.yourPlayerEntityId;
 
 
-	gameData.chunkSystem.createChunks(20);
+	gameData.chunkSystem.createChunks(32);
 
 	gameData.sunShadow.init();
 

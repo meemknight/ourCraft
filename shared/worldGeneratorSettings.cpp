@@ -7,7 +7,7 @@ void WorldGenerator::init()
 {
 	continentalnessNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	peaksValiesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
-	oceansAndTerasesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	wierdnessNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	stone3Dnoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	vegetationNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	whiteNoise = FastNoiseSIMD::NewFastNoiseSIMD();
@@ -25,7 +25,7 @@ void WorldGenerator::clear()
 {
 	delete continentalnessNoise;
 	delete peaksValiesNoise;
-	delete oceansAndTerasesNoise;
+	delete wierdnessNoise;
 	delete stone3Dnoise;
 	delete vegetationNoise;
 	delete whiteNoise;
@@ -76,10 +76,9 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	peaksValiesPower = s.peaksAndValies.power;
 	peaksValiesContributionSplines = s.peaksAndValiesContributionSpline;
 
-	apply(oceansAndTerasesNoise, s.seed + 6, s.oceansAndTerases);
-	oceansAndTerasesSplines = s.oceansAndTerases.spline;
-	oceansAndTerasesPower = s.oceansAndTerases.power;
-	oceansAndTerasesContributionSplines = s.oceansAndTerasesContributionSpline;
+	apply(wierdnessNoise, s.seed + 6, s.wierdness);
+	wierdnessSplines = s.wierdness.spline;
+	wierdnessPower = s.wierdness.power;
 
 	apply(vegetationNoise, s.seed + 7, s.vegetationNoise);
 	vegetationPower = s.vegetationNoise.power;
@@ -114,10 +113,8 @@ std::string WorldGeneratorSettings::saveSettings()
 	rez += "peaksAndValiesContributionSpline:\n";
 	rez += peaksAndValiesContributionSpline.saveSettings(1);
 
-	rez += "oceansAndTerases:\n";
-	rez += oceansAndTerases.saveSettings(1);
-	rez += "oceansAndTerasesContributionSpline:\n";
-	rez += oceansAndTerasesContributionSpline.saveSettings(1);
+	rez += "wierdness:\n";
+	rez += wierdness.saveSettings(1);
 
 	rez += "vegetationNoise:\n";
 	rez += vegetationNoise.saveSettings(1);
@@ -151,14 +148,13 @@ void WorldGeneratorSettings::sanitize()
 {
 	continentalnessNoiseSettings.sanitize();
 	peaksAndValies.sanitize();
-	oceansAndTerases.sanitize();
+	wierdness.sanitize();
 	stone3Dnoise.sanitize();
 	humidityNoise.sanitize();
 	temperatureNoise.sanitize();
 	vegetationNoise.sanitize();
 	
 	peaksAndValiesContributionSpline.sanitize();
-	oceansAndTerasesContributionSpline.sanitize();
 
 	densityBias = glm::clamp(densityBias, 0.f, 1.f);
 	densityBiasPower = glm::clamp(densityBiasPower, 0.1f, 10.f);
@@ -633,12 +629,12 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 						return 0;
 					}
 				}
-				else if (s == "oceansAndTerases")
+				else if (s == "wierdness")
 				{
 					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
 					if (isEof()) { return 0; }
 
-					if (!consumeNoise(oceansAndTerases))
+					if (!consumeNoise(wierdness))
 					{
 						return 0;
 					}
@@ -685,16 +681,6 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					if (isEof()) { return 0; }
 
 					if (!consumeSpline(peaksAndValiesContributionSpline))
-					{
-						return 0;
-					}
-				}
-				else if (s == "oceansAndTerasesContributionSpline")
-				{
-					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
-					if (isEof()) { return 0; }
-
-					if (!consumeSpline(oceansAndTerasesContributionSpline))
 					{
 						return 0;
 					}
