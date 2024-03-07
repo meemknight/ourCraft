@@ -10,7 +10,7 @@ layout(binding = 1) uniform sampler2D u_numbers;
 
 in vec2 v_uv;
 in float v_ambient;
-in vec3 v_viewSpacePos;
+in vec3 v_semiViewSpacePos; //world space view position and view only with transpation
 
 in flat uvec2 v_textureSampler;
 in flat uvec2 v_normalSampler;
@@ -21,17 +21,26 @@ in flat int v_skyLight; //ambient sun value
 in flat int v_skyLightUnchanged;
 in flat int v_normalLight;
 
-uniform int u_showLightLevels;
+
+uniform ShadingSettings
+{
+	vec3 u_waterColor;
+	int u_tonemapper;
+	vec3 u_underWaterColor;
+	float u_fogDistance;
+	float u_exposure;
+	float u_underwaterDarkenStrength;
+	float u_underwaterDarkenDistance;
+	float u_fogGradientUnderWater;
+};
 
 uniform vec3 u_pointPosF;
 uniform ivec3 u_pointPosI;
 uniform vec3 u_sunDirection;
 
-uniform float u_metallic;
-uniform float u_roughness;
-uniform float u_exposure;
+
 uniform int u_underWater;
-uniform int u_writeScreenSpacePositions;
+uniform int u_showLightLevels;
 
 in vec4 v_fragPos;
 in vec4 v_fragPosLightSpace;
@@ -39,12 +48,11 @@ in flat ivec3 v_blockPos;
 
 uniform sampler2D u_sunShadowTexture;
 
-uniform float u_fogDistance = 10 * 16 / 2;
-const float fogGradient = 32;
-const float fogGradientUnderWater = 2;
-const float fogUnderWaterMaxDistance = 20;
+uniform sampler2D u_brdf;
 
-uniform vec3 u_waterColor;
+
+const float fogGradient = 32;
+
 
 uniform sampler2D u_depthTexture;
 uniform int u_depthPeelwaterPass = 0;
@@ -58,6 +66,7 @@ uniform float u_waterMove;
 uniform sampler2D u_caustics;
 
 uniform mat4 u_inverseProjMat;
+uniform mat4 u_inverseViewProjMat;
 
 uniform mat4 u_cameraProjection;
 uniform mat4 u_inverseView;
@@ -73,9 +82,10 @@ const float pointLightColor = 2.f;
 const float atenuationFactor = 0.5f;
 const float causticsTextureScale = 3.f;
 const float causticsChromaticAberationStrength = 0.004;	
-const float waterSpeed = 5.f;
+const float waterSpeed = 15.f;
 const float causticsLightStrength = 1.4;	
-const float causticsLightPower = 1;	
+const float causticsLightPower = 1.0;	
+const bool physicallyAccurateReflections = false;
 ///
 
 bool isWater()
@@ -83,7 +93,6 @@ bool isWater()
 	return ((v_flags & 1) != 0);
 }
 
-uniform int u_tonemapper;
 
 float computeFog(float dist)
 {
@@ -94,7 +103,7 @@ float computeFog(float dist)
 
 float computeFogUnderWater(float dist)
 {
-	float rez = exp(-pow(dist*(1/fogUnderWaterMaxDistance), fogGradientUnderWater));
+	float rez = exp(-pow(dist*(1/u_underwaterDarkenDistance), u_fogGradientUnderWater));
 	return pow(rez,4);
 }
 
@@ -107,6 +116,9 @@ uniform int u_lightsCount;
 
 uniform ivec3 u_positionInt;
 uniform vec3 u_positionFloat;
+
+uniform float u_near;
+uniform float u_far;
 
 in flat ivec3 fragmentPositionI;
 in vec3 fragmentPositionF;
@@ -486,7 +498,6 @@ float toLinearSRGB(float sRGB)
 }
 
 
-
 float toLinear(float a)
 {
 	if(u_tonemapper == 0)
@@ -607,8 +618,6 @@ vec2 getDudvCoords6(float speed)
 
 
 
-uniform float u_near;
-uniform float u_far;
 
 float linearizeDepth(float d)
 {
@@ -637,7 +646,9 @@ vec3 applyNormalMap(vec3 inNormal)
 
 		//normal = normalize(normal);
 
-		normal = (vec3(0.5,0.5,1) + (vec3(normal.x,0,normal.z) - vec3(0.5,0,0.5)) * 0.5);
+		//normal = (vec3(0.5,0.5,1) + (vec3(normal.x,0,normal.z) - vec3(0.5,0,0.5)) * 0.5);
+		normal = (vec3(0.5,0.5,1) + (vec3(normal.x,normal.y,0) - vec3(0.5,0.5,0)) * 0.2);
+		//normal = vec3(normal);
 
 		//return normalize(vec3(0.0,1,0));
 
@@ -655,6 +666,9 @@ vec3 applyNormalMap(vec3 inNormal)
 	mat3 rotMat = NormalToRotation(inNormal);
 	normal = rotMat * normal;
 	normal = normalize(normal);
+
+	if(!gl_FrontFacing){normal = -normal;};
+
 	return normal;
 }
 
@@ -798,6 +812,25 @@ float computeLight(vec3 N, vec3 L, vec3 V)
 }
 
 
+uniform mat4 u_lightSpaceMatrix;
+uniform ivec3 u_lightPos;
+
+//pointPos is in worls space
+float testShadow(vec3 pointPos, float dotLightNormal)
+{
+	vec4 fragPosLightSpace = 
+		u_lightSpaceMatrix * vec4(pointPos, 1);
+
+	vec3 pos = fragPosLightSpace.xyz * 0.5 + 0.5;
+	pos.z = min(pos.z, 1.0);
+	
+	float depth = texture(u_sunShadowTexture, pos.xy).r;
+		
+	float bias = max(0.001, 0.05 * (1.f - dotLightNormal));
+
+	return (depth+bias) < pos.z ? 0.0 : 1.0;	
+	
+}
 
 float shadowCalc(float dotLightNormal)
 {
@@ -937,6 +970,29 @@ float shadowCalc2(float dotLightNormal)
 vec3 SSR(out bool success,vec3 viewPos, vec3 N, 
 	out float mixFactor, float roughness, vec3 wp, vec3 viewDir, vec3 viewSpaceNormal, vec2 rezolution);
 
+vec3 computeAmbientTerm(vec3 gammaAmbient, vec3 N, vec3 V, vec3 F0, float roughness, 
+	float metallic, vec3 albedo, out bool ssrSuccess, vec3 out_color);
+
+vec2 reprojectViewSpace(vec2 oldViewSpace)
+{
+	//// Convert current fragment's screen space coordinate to clip space
+	//vec4 clipCoord = vec4(oldViewSpace * 2.0 - 1.0, 0.0, 1.0);
+	//
+	//// Convert clip space coordinate to view space using the inverse of the current view projection matrix
+	//vec4 posViewSpace = u_inverseProjMat * clipCoord;
+	//posViewSpace /= posViewSpace.w; // Homogeneous divide to normalize
+	//
+	//// Sample position from the last frame's view space texture
+	////vec3 pos = texture(u_lastFramePositionViewSpace, posViewSpace.xy).xyz;
+	//
+	//return (posViewSpace.xy + 1) / 2;
+	return oldViewSpace;
+}
+
+
+//position view space -> proj matrix -> perspective divide -> ndc
+
+
 void main()
 {
 
@@ -978,7 +1034,10 @@ void main()
 
 		if(isWater())
 		{
+			//textureColor.rgb = u_waterColor.rgb;
 			textureColor.rgb = u_waterColor.rgb;
+			roughness = 0.09;
+			metallic = 0.0;
 		}
 	}
 	
@@ -988,13 +1047,19 @@ void main()
 	//float viewLength = length(ViewSpaceVector);
 	//vec3 V = ViewSpaceVector / viewLength;
 	
-	float viewLength = length(v_viewSpacePos);
-	vec3 V = -v_viewSpacePos / viewLength;
+	float viewLength = length(v_semiViewSpacePos);
+	vec3 V = -v_semiViewSpacePos / viewLength;
+
+	//{
+	//	vec4 worldSpaceV = inverse(u_view) * vec4(V, 0.0);
+	//	vec3 worldSpaceDirection = worldSpaceV.xyz / worldSpaceV.w;
+	//	V = worldSpaceDirection;
+	//}
 
 	//if(u_writeScreenSpacePositions != 0)
 	{
 		////out_screenSpacePositions.xyz = u_view* -ViewSpaceVector; 
-		out_screenSpacePositions.xyz = (u_view * vec4(v_viewSpacePos,1)).xyz; //this is good
+		out_screenSpacePositions.xyz = (u_view * vec4(v_semiViewSpacePos,1)).xyz; //this is good
 		//out_screenSpacePositions.a = 1;
 	}
 		
@@ -1032,7 +1097,6 @@ void main()
 
 	vec3 F0 = vec3(0.04); 
 	F0 = mix(F0, textureColor.rgb, vec3(metallic));
-	
 
 	for(int i=0; i< u_lightsCount; i++)
 	{
@@ -1058,14 +1122,22 @@ void main()
 	{
 		vec3 sunLightColor = vec3(1.5);
 		sunLightColor *= 1-((15-v_skyLightUnchanged)/9.f);
+		sunLightColor *= ((v_ambientInt/15.f)*0.6 + 0.4f);
+
+		if(isWater())
+		{
+			sunLightColor *= 1.0;
+		}
 
 		vec3 L = u_sunDirection;
 
 		if(dot(u_sunDirection, vec3(0,1,0))> -0.2)
 		{
+			float shadow = shadowCalc2(dot(L, v_normal));
+
 			finalColor += computePointLightSource(L, 
 				metallic, roughness, sunLightColor * causticsColor, V, 
-				textureColor.rgb, N, F0); // * shadowCalc2(dot(L, v_normal));
+				textureColor.rgb, N, F0) * shadow;
 		}
 	}
 	
@@ -1083,14 +1155,25 @@ void main()
 
 	//ambient
 	//todo light sub scatter
-	vec3 computedAmbient = vec3(toLinear(v_ambient));
-	if(blockIsInWater)
-	{
-		computedAmbient *= vec3(0.4,0.4,0.41);
-	}
+	bool ssrSuccess = false;
+	const float baseAmbient = 0.1;
+		vec3 computedAmbient = vec3(toLinear(v_ambient * (1.f-baseAmbient) + baseAmbient));
+		if(blockIsInWater)
+		{
+			computedAmbient *= vec3(0.38,0.4,0.42);
+		}
 
-	out_color.rgb += textureColor.rgb * computedAmbient ;
-	
+	if(physicallyAccurateReflections) //phisically accurate ambient
+	{
+		vec3 ssrNormal = N;
+		//if(isWater()){ssrNormal = v_normal;}
+		vec3 finalAmbient = computeAmbientTerm(computedAmbient, ssrNormal,
+		V, F0, roughness, metallic, textureColor.rgb, ssrSuccess, out_color.rgb);
+		out_color.rgb += finalAmbient;
+	}else
+	{
+		out_color.rgb += textureColor.rgb * computedAmbient;
+	}
 	
 	if(u_showLightLevels != 0)
 	{
@@ -1102,15 +1185,48 @@ void main()
 
 	if(u_underWater != 0)
 	{
-		out_color.rgb = mix(u_waterColor.rgb, out_color.rgb, 
-							vec3(computeFogUnderWater(viewLength)) * 0.5 + 0.5
+		out_color.rgb = mix(u_underWaterColor.rgb, out_color.rgb, 
+							vec3(computeFogUnderWater(viewLength)) * u_underwaterDarkenStrength 
+							+ (1-u_underwaterDarkenStrength)
 						);
 	}
 
+
+	//godRays
+	if(false)
+	{
+		vec3 godRaysContribution = vec3(0);
+
+		vec3 start = vec3((fragmentPositionI - u_lightPos) + fragmentPositionF);
+		
+		vec4 viewSpaceV = u_view * vec4(V, 0.0);
+		vec3 viewSpaceDirection = viewSpaceV.xyz / viewSpaceV.w;
+		
+		vec3 direction = -normalize(start);
+
+		vec3 end = vec3(0);
+		float advance = length(start)/30;
+		for(int i=1; i<30;i++)
+		{
+			start += direction*advance;
+			
+			if(testShadow(start, 1) > 0.5)
+			{
+				godRaysContribution += vec3(0.01);
+			}
+
+		}
+
+		godRaysContribution = clamp(godRaysContribution, vec3(0), vec3(0.5));
+
+		out_color.rgb += godRaysContribution;
+	}
+
+
 	//gamma correction + HDR
 	out_color.rgb *= u_exposure;
-	vec3 purkine = purkineShift(out_color.rgb);
 	
+	//vec3 purkine = purkineShift(out_color.rgb);
 	//out_color.rgb = mix(out_color.rgb, purkine, 0.05);
 
 	out_color.rgb = tonemapFunction(out_color.rgb);
@@ -1119,16 +1235,16 @@ void main()
 	out_color = clamp(out_color, vec4(0), vec4(1));
 	
 	//ssr
-	bool ssrSuccess = false;
 
-	if(true)
+	if(!physicallyAccurateReflections)
 	if(roughness < 0.5)
 	{
 		vec2 fragCoord = gl_FragCoord.xy / textureSize(u_lastFramePositionViewSpace, 0).xy;
 
 		//float dotNVClamped = clamp(dotNV, 0.0, 0.99);
 		
-		vec3 posViewSpace = texture(u_lastFramePositionViewSpace, fragCoord).xyz;
+		vec3 posViewSpace = texture(u_lastFramePositionViewSpace, 
+			reprojectViewSpace(fragCoord)).xyz;
 		vec3 pos = vec3(u_inverseView * vec4(posViewSpace,1));
 
 		vec3 viewSpaceNormal = normalize( vec3(transpose(inverse(mat3(u_view))) * N));
@@ -1145,9 +1261,13 @@ void main()
 		
 		
 		//if is water just reflect 100% because we deal with it later
-		if(((v_flags & 1) != 0))
+		if(isWater())
 		{
-			if(ssrSuccess) {out_color.rgb = ssr;}
+			if(ssrSuccess) 
+			{
+				//out_color.rgb = mix(u_waterColor, ssr, 0.9);
+				out_color.rgb = ssr;
+			}
 			//out_color.a = 1;
 		}else
 		{
@@ -1166,6 +1286,9 @@ void main()
 		
 	}
 	
+
+
+
 	//out_color.rgb = linear_to_srgb(out_color.rgb);
 	
 	//fog
@@ -1232,7 +1355,7 @@ void main()
 
 			
 			//float mixFactor = pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1;
-			float mixFactor = clamp(pow(1-clamp(reflectivity,0,1),2) * 0.9+0.1,0,1);
+			float mixFactor = clamp(pow(1-clamp(reflectivity,0,1),2) * 0.8+0.1,0,1);
 			//mixFactor = 1-reflectivity;
 			//if(ssrSuccess){mixFactor = pow(mixFactor, 0.9);}
 
@@ -1315,8 +1438,8 @@ inout float dDepth, vec2 oldValue)
 		projectedCoord.xy /= projectedCoord.w;
 		projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;
  
-		//depth = textureLod(gPosition, projectedCoord.xy, 2).z;
-		depth = texture(u_lastFramePositionViewSpace, projectedCoord.xy).z;
+		depth = textureLod(u_lastFramePositionViewSpace, projectedCoord.xy, 2).z;
+		//depth = texture(u_lastFramePositionViewSpace, projectedCoord.xy).z;
  
 		if(depth < -1000) //-INFINITY
 			continue;
@@ -1368,8 +1491,9 @@ vec2 RayMarch(vec3 dir, inout vec3 hitCoord, out float dDepth, vec3 worldNormal,
 			break;
 		}
 
-		//depth = textureLod(gPosition, projectedCoord.xy, 2).z;
-		depth = texture(u_lastFramePositionViewSpace, projectedCoord.xy).z;
+		depth = textureLod(u_lastFramePositionViewSpace,
+			reprojectViewSpace(projectedCoord.xy),2).z;
+		//depth = texture(u_lastFramePositionViewSpace, projectedCoord.xy).z;
 
 		if(depth > 1000.0)
 			continue;
@@ -1390,7 +1514,7 @@ vec2 RayMarch(vec3 dir, inout vec3 hitCoord, out float dDepth, vec3 worldNormal,
 				break; //fail //project to infinity :(((
 			}
 			
-			depth = texture(u_lastFramePositionViewSpace, Result.xy).z;
+			depth = texture(u_lastFramePositionViewSpace, reprojectViewSpace(Result.xy)).z;
 			if(depth < -10000)
 				{break;}//fail
 
@@ -1478,7 +1602,8 @@ vec3 SSR(out bool success, vec3 viewPos, vec3 N,
 	}
 
 	// Get color
-	vec3 lastFrameColor = textureLod(u_lastFrameColor, coords.xy, 0).rgb;
+	vec3 lastFrameColor = textureLod(u_lastFrameColor, 
+		reprojectViewSpace(coords.xy), 0).rgb;
 	//vec3 SSR = lastFrameColor * clamp(ReflectionMultiplier, 0.0, 0.9) * F;  
 	vec3 SSR = lastFrameColor;
 
@@ -1490,3 +1615,132 @@ vec3 SSR(out bool success, vec3 viewPos, vec3 N,
 
 ////////////////////////////////////////////
 
+
+//normal in world space, viewDir, wp = world space position
+//F = freshnell
+//todo send F 
+vec3 computeAmbientTerm(vec3 gammaAmbient, vec3 N, vec3 V, vec3 F0, float roughness, 
+float metallic, vec3 albedo, 
+out bool ssrSuccess, vec3 out_color
+)
+{
+	ssrSuccess = false;
+	vec3 ambient = vec3(0); //result
+		
+	float dotNVClamped = clamp(dot(N, V), 0.0, 0.99);
+	vec3 F = fresnelSchlickRoughness(dotNVClamped, F0, roughness);
+	vec3 kS = F;
+
+	vec3 irradiance = vec3(0,0,0); //diffuse
+	vec3 radiance = vec3(0,0,0); //specular
+	vec2 brdf = vec2(0,0);
+	vec2 brdfVec = vec2(dotNVClamped, roughness);
+
+	if(true) //ssr
+	{
+		//radiance = SSR(viewPos, N, metallic, F, mixFactor, roughness, wp, V, viewSpaceNormal, rezolution);
+	
+		//if(roughness < 0.5)
+		{
+			vec2 fragCoord = gl_FragCoord.xy / textureSize(u_lastFramePositionViewSpace, 0).xy;
+			
+			vec3 posViewSpace = texture(u_lastFramePositionViewSpace,
+				reprojectViewSpace(fragCoord)).xyz;
+			vec3 pos = vec3(u_inverseView * vec4(posViewSpace,1));
+
+			vec3 viewSpaceNormal = normalize( vec3(transpose(inverse(mat3(u_view))) * N));
+
+			vec3 ssrNormal = N;
+			if(isWater()){ssrNormal = v_normal;}
+
+			float mixFactor = 0;
+			//vec3 ssr = SSR(posViewSpace, N, metallic, F, mixFactor, roughness, pos, V, viewSpaceNormal, 
+			//	textureSize(u_lastFramePositionViewSpace, 0).xy);
+			vec3 ssr = SSR(ssrSuccess, posViewSpace, ssrNormal, mixFactor, pow(roughness,2), pos, V, viewSpaceNormal, 
+				textureSize(u_lastFramePositionViewSpace, 0).xy) * 1.f;
+			
+			if(ssrSuccess) 
+			{
+				radiance.rgb = ssr;
+			}
+
+			//if is water just reflect 100% because we deal with it later
+			//if(isWater())
+			//{
+			//	if(ssrSuccess) 
+			//	{
+			//		//out_color.rgb = mix(u_waterColor, ssr, 0.9);
+			//		radiance.rgb = ssr;
+			//	}
+			//	//out_color.a = 1;
+			//}else
+			//{
+			//	if(ssrSuccess) 
+			//	{
+			//		ssr = mix(ssr, out_color.rgb, dotNVClamped);
+			//		radiance.rgb = mix(ssr, out_color.rgb, pow(roughness, 0.5));
+			//	}	
+			//
+			//}
+			
+		}
+	
+	}
+
+	//todo
+	//if(lightPassData.skyBoxPresent != 0)
+	//{
+	//	
+	//	irradiance = texture(u_skyboxIradiance, N).rgb * gammaAmbient; //this color is coming directly at the object
+	//
+	//	// sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
+	//	const float MAX_REFLECTION_LOD = 4.0;
+	//	
+	//	if(mixFactor < 0.999)
+	//	{
+	//		radiance = mix(textureLod(u_skyboxFiltered, R, roughness * MAX_REFLECTION_LOD).rgb * gammaAmbient, radiance, mixFactor);
+	//	}
+	//
+	//	//brdfVec.y = 1 - brdfVec.y; 
+	//	brdf  = texture(u_brdfTexture, brdfVec).rg;
+	//
+	//}else
+	{
+		
+		//radiance = mix(gammaAmbient, radiance, mixFactor);
+		irradiance = gammaAmbient ; //this color is coming directly at the object
+
+		//brdfVec.y = 1 - brdfVec.y; 
+		brdf = texture(u_brdf, brdfVec).rg;
+	}
+
+	//if(lightPassData.lightSubScater == 0)
+	//{
+	//	vec3 kD = 1.0 - kS;
+	//	kD *= 1.0 - metallic;
+	//	
+	//	vec3 diffuse = irradiance * albedo;
+	//	
+	//	vec3 specular = radiance * (F * brdf.x + brdf.y);
+	//
+	//	//no multiple scattering
+	//	ambient = (kD * diffuse + specular);
+	//}else
+	{
+		//http://jcgt.org/published/0008/01/03/
+		// Multiple scattering version
+		vec3 FssEss = kS * brdf.x + brdf.y;
+		float Ess = brdf.x + brdf.y;
+		float Ems = 1-Ess;
+		vec3 Favg = F0 + (1-F0)/21;
+		vec3 Fms = FssEss*Favg/(1-(1-Ess)*Favg);
+		// Dielectrics
+		vec3 Edss = 1 - (FssEss + Fms * Ems);
+		vec3 kD = albedo * Edss;
+
+		// Multiple scattering version
+		ambient = FssEss * radiance + (Fms*Ems+kD) * irradiance;
+	}
+	
+	return ambient;
+}

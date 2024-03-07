@@ -73,12 +73,9 @@ struct Renderer
 		GLint u_cameraProjection = -1;
 		GLint u_inverseView = -1;
 		GLint u_view = -1;
-		GLint u_tonemapper = -1;
 
 		GLint u_metallic = -1;
 		GLint u_roughness = -1;
-		GLint u_exposure = -1;
-		GLint u_fogDistance = -1;
 		GLint u_underWater = -1;
 		GLint u_waterColor = -1;
 		GLint u_depthPeelwaterPass = -1;
@@ -95,6 +92,23 @@ struct Renderer
 		GLint u_lightSpaceMatrix = -1;
 		GLint u_lightPos = -1;
 		GLint u_sunShadowTexture = -1;
+		GLint u_brdf = -1;
+		GLint u_inverseViewProjMat = -1;
+		GLuint u_shadingSettings = 0;
+		GLuint shadingSettingsBuffer = 0;
+
+		struct ShadingSettings
+		{
+			glm::vec3 waterColor = (glm::vec3(9, 75, 126) / 255.f);
+			int tonemapper = 0;
+			glm::vec3 underWaterColor = (glm::vec3(0, 17, 25) / 255.f);
+			float fogDistance = 10 * 16 / 2;
+			float exposure = 1.7;
+			float underwaterDarkenStrength = 0.94;
+			float underwaterDarkenDistance = 29;
+			float fogGradientUnderWater = 1.9;
+		}shadingSettings;
+
 
 	}defaultShader;
 
@@ -144,8 +158,6 @@ struct Renderer
 
 	float metallic = 0;
 	float roughness = 0.5;
-	float exposure = 1.7;
-	int tonemapper = 0;
 
 	FBO fboMain;
 	FBO fboCoppy;
@@ -153,6 +165,7 @@ struct Renderer
 	FBO fboLastFramePositions;
 
 	void create(BlocksLoader &blocksLoader);
+	void reloadShaders();
 	void updateDynamicBlocks();
 	//void render(std::vector<int> &data, Camera &c, gl2d::Texture &texture);
 
@@ -175,6 +188,7 @@ struct Renderer
 	SkyBoxLoaderAndDrawer skyBoxLoaderAndDrawer;
 	SkyBox defaultSkyBox;
 	gl2d::Texture sunTexture;
+	gl2d::Texture brdfTexture;
 
 	GLuint vao = 0;
 	GLuint vertexBuffer = 0;

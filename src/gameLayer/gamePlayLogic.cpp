@@ -81,7 +81,7 @@ bool initGameplay(ProgramData &programData, const char *c)
 	gameData.entityManager.localPlayer.entityId = playerData.yourPlayerEntityId;
 
 
-	gameData.chunkSystem.createChunks(32);
+	gameData.chunkSystem.createChunks(22);
 
 	gameData.sunShadow.init();
 
@@ -94,7 +94,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	gameData.gameplayFrameProfiler.endSubProfile("swap chain and others");
 
 	if (h != 0)
-		{gameData.c.aspectRatio = (float)w / h;}
+	{
+		gameData.c.aspectRatio = (float)w / h;
+	}
 	glViewport(0, 0, w, h);
 
 
@@ -108,8 +110,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		//todo the server should sent only one validate event message that is the latest, if possible
 		//todo timeout maybe? if the server doesn't give you stuff.
-		clientMessageLoop(validateEvent, inValidateRevision, 
-			gameData.entityManager.localPlayer.body.pos, gameData.chunkSystem.squareSize, 
+		clientMessageLoop(validateEvent, inValidateRevision,
+			gameData.entityManager.localPlayer.body.pos, gameData.chunkSystem.squareSize,
 			gameData.entityManager, gameData.undoQueue, gameData.serverTimer, disconnect);
 
 		if (disconnect) { return 0; }
@@ -153,7 +155,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			for (int i = gameData.undoQueue.events.size() - 1; i >= 0; i--)
 			{
-				
+
 				auto &e = gameData.undoQueue.events[i];
 
 				if (e.type == Event::iPlacedBlock)
@@ -167,7 +169,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 			}
-			
+
 			gameData.entityManager.localPlayer.body.pos = gameData.undoQueue.events[0].playerPos;
 			gameData.entityManager.localPlayer.body.lastPos = gameData.undoQueue.events[0].playerPos;
 
@@ -207,7 +209,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				gameData.lastSendPos = gameData.entityManager.localPlayer.body.pos;
 			}
 
-			
+
 
 		}
 
@@ -240,6 +242,11 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	if (platform::isKeyReleased(platform::Button::I))
 	{
 		gameData.showImgui = !gameData.showImgui;
+	}
+
+	if (platform::isKeyPressedOn(platform::Button::R))
+	{
+		programData.renderer.reloadShaders();
 	}
 
 	platform::showMouse(gameData.escapePressed);
@@ -372,7 +379,11 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	if (gameData.chunkSystem.rayCast(cameraRayPos, gameData.c.viewDirection, rayCastPos, 20, blockToPlace))
 	{
-		programData.gyzmosRenderer.drawCube(rayCastPos);
+		auto b = gameData.chunkSystem.getBlockSafe(rayCastPos);
+		if (b && b->type != BlockTypes::water)
+		{
+			programData.gyzmosRenderer.drawCube(rayCastPos);
+		}
 
 	}
 
@@ -629,12 +640,31 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				ImGui::SliderInt("skyLightIntensity", &gameData.skyLightIntensity, 0, 15);
 				ImGui::SliderFloat("metallic", &programData.renderer.metallic, 0, 1);
 				ImGui::SliderFloat("roughness", &programData.renderer.roughness, 0, 1);
-				ImGui::SliderFloat("exposure", &programData.renderer.exposure, 0.001, 10);
-				ImGui::Combo("Tonemapper", &programData.renderer.tonemapper, "ACES\0AgX\0ZCAM\0");
+				ImGui::SliderFloat("exposure", &programData.renderer.defaultShader
+					.shadingSettings.exposure, 0.001, 10);
+				ImGui::Combo("Tonemapper", &programData.renderer.defaultShader.
+					shadingSettings.tonemapper, "ACES\0AgX\0ZCAM\0");
 
 				ImGui::SliderFloat3("Sky pos", &programData.renderer.skyBoxRenderer.sunPos[0], -1, 1);
 
-				ImGui::ColorPicker3("Underwater color", &programData.renderer.skyBoxRenderer.waterColor[0]);
+				ImGui::ColorPicker3("water color", 
+					&programData.renderer.defaultShader.shadingSettings.waterColor[0]);
+
+				ImGui::ColorPicker3("under water color",
+					&programData.renderer.defaultShader.shadingSettings.underWaterColor[0]);
+
+				ImGui::SliderFloat("underwaterDarkenStrength",
+					&programData.renderer.defaultShader.shadingSettings.underwaterDarkenStrength,
+					0, 1);
+
+				ImGui::SliderFloat("underwaterDarkenDistance",
+					&programData.renderer.defaultShader.shadingSettings.underwaterDarkenDistance,
+					0, 40);
+
+				ImGui::SliderFloat("fogGradientUnderWater",
+					&programData.renderer.defaultShader.shadingSettings.fogGradientUnderWater,
+					0, 10);
+
 
 				if (glm::length(programData.renderer.skyBoxRenderer.sunPos[0]) != 0)
 				{

@@ -415,67 +415,26 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	//skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/twilightsky.png", defaultSkyBox);
 	sunTexture.loadFromFile(RESOURCES_PATH "sky/sun.png", false, false);
 
-	defaultShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "defaultShader.vert", RESOURCES_PATH "defaultShader.frag");
-	defaultShader.shader.bind();
+	brdfTexture.loadFromFile(RESOURCES_PATH "otherTextures/brdf.png", false, false);
+	
+	glGenBuffers(1, &defaultShader.shadingSettingsBuffer);
+	glBindBuffer(GL_UNIFORM_BUFFER, defaultShader.shadingSettingsBuffer);
+	
+	reloadShaders();
 
-	GET_UNIFORM2(defaultShader, u_viewProjection);
-	GET_UNIFORM2(defaultShader, u_typesCount);
-	GET_UNIFORM2(defaultShader, u_positionInt);
-	GET_UNIFORM2(defaultShader, u_positionFloat);
-	GET_UNIFORM2(defaultShader, u_texture);
-	GET_UNIFORM2(defaultShader, u_time);
-	GET_UNIFORM2(defaultShader, u_showLightLevels);
-	GET_UNIFORM2(defaultShader, u_skyLightIntensity);
-	GET_UNIFORM2(defaultShader, u_lightsCount);
-	GET_UNIFORM2(defaultShader, u_pointPosF);
-	GET_UNIFORM2(defaultShader, u_pointPosI);
-	GET_UNIFORM2(defaultShader, u_sunDirection);
-	GET_UNIFORM2(defaultShader, u_metallic);
-	GET_UNIFORM2(defaultShader, u_roughness);
-	GET_UNIFORM2(defaultShader, u_exposure);
-	GET_UNIFORM2(defaultShader, u_fogDistance);
-	GET_UNIFORM2(defaultShader, u_underWater);
-	GET_UNIFORM2(defaultShader, u_waterColor);
-	GET_UNIFORM2(defaultShader, u_depthPeelwaterPass);
-	GET_UNIFORM2(defaultShader, u_depthTexture);
-	GET_UNIFORM2(defaultShader, u_hasPeelInformation);
-	GET_UNIFORM2(defaultShader, u_PeelTexture);
-	GET_UNIFORM2(defaultShader, u_dudv);
-	GET_UNIFORM2(defaultShader, u_dudvNormal);
-	GET_UNIFORM2(defaultShader, u_waterMove);
-	GET_UNIFORM2(defaultShader, u_near);
-	GET_UNIFORM2(defaultShader, u_far);
-	GET_UNIFORM2(defaultShader, u_caustics);
-	GET_UNIFORM2(defaultShader, u_inverseProjMat);
-	GET_UNIFORM2(defaultShader, u_lightSpaceMatrix);
-	GET_UNIFORM2(defaultShader, u_lightPos);
-	GET_UNIFORM2(defaultShader, u_sunShadowTexture);
-	GET_UNIFORM2(defaultShader, u_timeGrass);
-	GET_UNIFORM2(defaultShader, u_writeScreenSpacePositions);
-	GET_UNIFORM2(defaultShader, u_lastFrameColor);
-	GET_UNIFORM2(defaultShader, u_lastFramePositionViewSpace);
-	GET_UNIFORM2(defaultShader, u_cameraProjection);
-	GET_UNIFORM2(defaultShader, u_inverseView);
-	GET_UNIFORM2(defaultShader, u_view);
-	GET_UNIFORM2(defaultShader, u_tonemapper);
 	
 	
-	defaultShader.u_vertexData = getStorageBlockIndex(defaultShader.shader.id, "u_vertexData");
-	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_vertexData, 1);
 	glGenBuffers(1, &vertexDataBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexDataBuffer);
 	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(vertexData), vertexData, GL_DYNAMIC_STORAGE_BIT);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vertexDataBuffer);
 
-	defaultShader.u_vertexUV = getStorageBlockIndex(defaultShader.shader.id, "u_vertexUV");
-	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_vertexUV, 2);
+	
 	glGenBuffers(1, &vertexUVBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexUVBuffer);
 	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(vertexUV), vertexUV, 0);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, vertexUVBuffer);
 
-	defaultShader.u_textureSamplerers = getStorageBlockIndex(defaultShader.shader.id, "u_textureSamplerers");
-	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_textureSamplerers, 3);
 	glGenBuffers(1, &textureSamplerersBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, textureSamplerersBuffer);
 	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint64) * blocksLoader.gpuIds.size(), blocksLoader.gpuIds.data(), 0);
@@ -487,35 +446,7 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-
-	defaultShader.u_lights = getStorageBlockIndex(defaultShader.shader.id, "u_lights");
-	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_lights, 4);
-
-
 	
-#pragma region zpass
-	{
-		zpassShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "zpass.vert", RESOURCES_PATH "zpass.frag");
-		zpassShader.shader.bind();
-
-		GET_UNIFORM2(zpassShader, u_viewProjection);
-		GET_UNIFORM2(zpassShader, u_positionInt);
-		GET_UNIFORM2(zpassShader, u_positionFloat);
-		GET_UNIFORM2(zpassShader, u_renderOnlyWater);
-		GET_UNIFORM2(zpassShader, u_timeGrass);
-
-		zpassShader.u_vertexData = getStorageBlockIndex(zpassShader.shader.id, "u_vertexData");
-		glShaderStorageBlockBinding(zpassShader.shader.id, zpassShader.u_vertexData, 1);
-
-		zpassShader.u_vertexUV = getStorageBlockIndex(zpassShader.shader.id, "u_vertexUV");
-		glShaderStorageBlockBinding(zpassShader.shader.id, zpassShader.u_vertexUV, 2);
-		
-		zpassShader.u_textureSamplerers = getStorageBlockIndex(zpassShader.shader.id, "u_textureSamplerers");
-		glShaderStorageBlockBinding(zpassShader.shader.id, zpassShader.u_textureSamplerers, 3);
-
-	}
-#pragma endregion
-
 	//todo remove?
 	glCreateBuffers(1, &vertexBuffer);
 	//glNamedBufferData(vertexBuffer, sizeof(data), data, GL_DYNAMIC_DRAW);
@@ -550,19 +481,6 @@ void Renderer::create(BlocksLoader &blocksLoader)
 
 
 #pragma region basic entity renderer
-
-
-	entityRenderer.basicEntityshader.shader.loadShaderProgramFromFile
-		(RESOURCES_PATH "shaders/basicEntity.vert", RESOURCES_PATH "shaders/basicEntity.frag");
-	entityRenderer.basicEntityshader.shader.bind();
-
-	GET_UNIFORM2(entityRenderer.basicEntityshader, u_entityPositionInt);
-	GET_UNIFORM2(entityRenderer.basicEntityshader, u_entityPositionFloat);
-	GET_UNIFORM2(entityRenderer.basicEntityshader, u_viewProjection);
-	GET_UNIFORM2(entityRenderer.basicEntityshader, u_modelMatrix);
-	GET_UNIFORM2(entityRenderer.basicEntityshader, u_cameraPositionInt);
-	GET_UNIFORM2(entityRenderer.basicEntityshader, u_cameraPositionFloat);
-	GET_UNIFORM2(entityRenderer.basicEntityshader, u_texture);
 
 	//GLuint vaoCube = 0;
 	//GLuint vertexBufferCube = 0;
@@ -615,6 +533,122 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeEntityIndices), cubeEntityIndices, GL_STATIC_DRAW);
 
 	glBindVertexArray(0);
+
+#pragma endregion
+
+
+
+}
+
+void Renderer::reloadShaders()
+{
+
+	defaultShader.shader.clear();
+
+	defaultShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "defaultShader.vert", RESOURCES_PATH "defaultShader.frag");
+	defaultShader.shader.bind();
+
+	GET_UNIFORM2(defaultShader, u_viewProjection);
+	GET_UNIFORM2(defaultShader, u_typesCount);
+	GET_UNIFORM2(defaultShader, u_positionInt);
+	GET_UNIFORM2(defaultShader, u_positionFloat);
+	GET_UNIFORM2(defaultShader, u_texture);
+	GET_UNIFORM2(defaultShader, u_time);
+	GET_UNIFORM2(defaultShader, u_showLightLevels);
+	GET_UNIFORM2(defaultShader, u_skyLightIntensity);
+	GET_UNIFORM2(defaultShader, u_lightsCount);
+	GET_UNIFORM2(defaultShader, u_pointPosF);
+	GET_UNIFORM2(defaultShader, u_pointPosI);
+	GET_UNIFORM2(defaultShader, u_sunDirection);
+	GET_UNIFORM2(defaultShader, u_metallic);
+	GET_UNIFORM2(defaultShader, u_roughness);
+	GET_UNIFORM2(defaultShader, u_underWater);
+	GET_UNIFORM2(defaultShader, u_waterColor);
+	GET_UNIFORM2(defaultShader, u_depthPeelwaterPass);
+	GET_UNIFORM2(defaultShader, u_depthTexture);
+	GET_UNIFORM2(defaultShader, u_hasPeelInformation);
+	GET_UNIFORM2(defaultShader, u_PeelTexture);
+	GET_UNIFORM2(defaultShader, u_dudv);
+	GET_UNIFORM2(defaultShader, u_dudvNormal);
+	GET_UNIFORM2(defaultShader, u_waterMove);
+	GET_UNIFORM2(defaultShader, u_near);
+	GET_UNIFORM2(defaultShader, u_far);
+	GET_UNIFORM2(defaultShader, u_caustics);
+	GET_UNIFORM2(defaultShader, u_inverseProjMat);
+	GET_UNIFORM2(defaultShader, u_lightSpaceMatrix);
+	GET_UNIFORM2(defaultShader, u_lightPos);
+	GET_UNIFORM2(defaultShader, u_sunShadowTexture);
+	GET_UNIFORM2(defaultShader, u_timeGrass);
+	GET_UNIFORM2(defaultShader, u_writeScreenSpacePositions);
+	GET_UNIFORM2(defaultShader, u_lastFrameColor);
+	GET_UNIFORM2(defaultShader, u_lastFramePositionViewSpace);
+	GET_UNIFORM2(defaultShader, u_cameraProjection);
+	GET_UNIFORM2(defaultShader, u_inverseView);
+	GET_UNIFORM2(defaultShader, u_view);
+	GET_UNIFORM2(defaultShader, u_brdf);
+	GET_UNIFORM2(defaultShader, u_inverseViewProjMat);
+
+	defaultShader.u_shadingSettings
+		= glGetUniformBlockIndex(defaultShader.shader.id, "ShadingSettings");
+	glBindBufferBase(GL_UNIFORM_BUFFER, 
+		defaultShader.u_shadingSettings, defaultShader.shadingSettingsBuffer);
+
+
+	defaultShader.u_vertexData = getStorageBlockIndex(defaultShader.shader.id, "u_vertexData");
+	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_vertexData, 1);
+
+	defaultShader.u_vertexUV = getStorageBlockIndex(defaultShader.shader.id, "u_vertexUV");
+	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_vertexUV, 2);
+
+	defaultShader.u_textureSamplerers = getStorageBlockIndex(defaultShader.shader.id, "u_textureSamplerers");
+	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_textureSamplerers, 3);
+
+
+	defaultShader.u_lights = getStorageBlockIndex(defaultShader.shader.id, "u_lights");
+	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_lights, 4);
+
+#pragma region zpass
+	{
+
+		zpassShader.shader.clear();
+
+		zpassShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "zpass.vert", RESOURCES_PATH "zpass.frag");
+		zpassShader.shader.bind();
+
+		GET_UNIFORM2(zpassShader, u_viewProjection);
+		GET_UNIFORM2(zpassShader, u_positionInt);
+		GET_UNIFORM2(zpassShader, u_positionFloat);
+		GET_UNIFORM2(zpassShader, u_renderOnlyWater);
+		GET_UNIFORM2(zpassShader, u_timeGrass);
+
+		zpassShader.u_vertexData = getStorageBlockIndex(zpassShader.shader.id, "u_vertexData");
+		glShaderStorageBlockBinding(zpassShader.shader.id, zpassShader.u_vertexData, 1);
+
+		zpassShader.u_vertexUV = getStorageBlockIndex(zpassShader.shader.id, "u_vertexUV");
+		glShaderStorageBlockBinding(zpassShader.shader.id, zpassShader.u_vertexUV, 2);
+
+		zpassShader.u_textureSamplerers = getStorageBlockIndex(zpassShader.shader.id, "u_textureSamplerers");
+		glShaderStorageBlockBinding(zpassShader.shader.id, zpassShader.u_textureSamplerers, 3);
+
+	}
+#pragma endregion
+
+#pragma region basic entity renderer
+
+	entityRenderer.basicEntityshader.shader.clear();
+
+	entityRenderer.basicEntityshader.shader.loadShaderProgramFromFile
+	(RESOURCES_PATH "shaders/basicEntity.vert", RESOURCES_PATH "shaders/basicEntity.frag");
+	entityRenderer.basicEntityshader.shader.bind();
+
+	GET_UNIFORM2(entityRenderer.basicEntityshader, u_entityPositionInt);
+	GET_UNIFORM2(entityRenderer.basicEntityshader, u_entityPositionFloat);
+	GET_UNIFORM2(entityRenderer.basicEntityshader, u_viewProjection);
+	GET_UNIFORM2(entityRenderer.basicEntityshader, u_modelMatrix);
+	GET_UNIFORM2(entityRenderer.basicEntityshader, u_cameraPositionInt);
+	GET_UNIFORM2(entityRenderer.basicEntityshader, u_cameraPositionFloat);
+	GET_UNIFORM2(entityRenderer.basicEntityshader, u_texture);
+
 
 #pragma endregion
 
@@ -775,6 +809,8 @@ void Renderer::updateDynamicBlocks()
 
 }
 
+
+
 void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSystem, Camera &c,
 	ProgramData &programData, BlocksLoader &blocksLoader, ClientEntityManager &entityManager
 	, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos, bool underWater, int screenX, int screenY, 
@@ -814,6 +850,15 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 #pragma region setup uniforms and stuff
 	{
+
+		defaultShader.shadingSettings.fogDistance =
+			(chunkSystem.squareSize / 2.f) * CHUNK_SIZE - CHUNK_SIZE;
+
+
+		glNamedBufferData(defaultShader.shadingSettingsBuffer,
+			sizeof(defaultShader.shadingSettings), &defaultShader.shadingSettings,
+			GL_STREAM_DRAW);
+
 		zpassShader.shader.bind();
 		glUniformMatrix4fv(zpassShader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
 		glUniform3fv(zpassShader.u_positionFloat, 1, &posFloat[0]);
@@ -836,10 +881,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform3fv(defaultShader.u_sunDirection, 1, &skyBoxRenderer.sunPos[0]);
 		glUniform1f(defaultShader.u_metallic, metallic);
 		glUniform1f(defaultShader.u_roughness, roughness);
-		glUniform1f(defaultShader.u_exposure, exposure);
-		glUniform1f(defaultShader.u_fogDistance, (chunkSystem.squareSize / 2.f) * CHUNK_SIZE - CHUNK_SIZE);
 		glUniform1i(defaultShader.u_underWater, underWater);
-		glUniform3fv(defaultShader.u_waterColor, 1, &skyBoxRenderer.waterColor[0]);
+		glUniform3fv(defaultShader.u_waterColor, 1, &defaultShader.shadingSettings.waterColor[0]);
 		glUniform1i(defaultShader.u_depthPeelwaterPass, 0);
 		glUniform1i(defaultShader.u_hasPeelInformation, 0);
 		glUniform1f(defaultShader.u_waterMove, waterTimer);
@@ -852,6 +895,10 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform3iv(defaultShader.u_lightPos, 1, &sunShadow.lightSpacePosition[0]);
 		glUniform1i(defaultShader.u_writeScreenSpacePositions, 1);//todo remove
 
+		glUniformMatrix4fv(defaultShader.u_inverseViewProjMat, 1, 0,
+			&glm::inverse(c.getProjectionMatrix() * c.getViewMatrix())[0][0]);
+		
+		
 		programData.dudv.bind(4);
 		glUniform1i(defaultShader.u_dudv, 4);
 
@@ -874,6 +921,10 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glBindTexture(GL_TEXTURE_2D, fboLastFramePositions.color);
 		glUniform1i(defaultShader.u_lastFramePositionViewSpace, 9);
 
+		glActiveTexture(GL_TEXTURE0 + 10);
+		glBindTexture(GL_TEXTURE_2D, brdfTexture.id);
+		glUniform1i(defaultShader.u_brdf, 10);
+
 		glUniformMatrix4fv(defaultShader.u_cameraProjection, 1, GL_FALSE, glm::value_ptr(c.getProjectionMatrix()));
 
 		glUniformMatrix4fv(defaultShader.u_inverseView, 1, GL_FALSE, 
@@ -881,9 +932,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		glUniformMatrix4fv(defaultShader.u_view, 1, GL_FALSE,
 			glm::value_ptr(c.getViewMatrix()));
-
-		glUniform1i(defaultShader.u_tonemapper, tonemapper);
-		
 
 		waterTimer += deltaTime * 0.09;
 		if (waterTimer > 20)
@@ -1192,7 +1240,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	glUniform1i(defaultShader.u_depthTexture, 2);
 
 	glDepthFunc(GL_LESS);
-	//glDisable(GL_CULL_FACE); //todo change
+	glDisable(GL_CULL_FACE); //todo change
 	//todo disable ssr for this step?
 	renderTransparentGeometry();
 #pragma endregion
@@ -1211,7 +1259,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	glEnablei(GL_BLEND, 0);
 	glBlendFunci(0, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisablei(GL_BLEND, 1);
-	//glDisable(GL_BLEND); //todo REMOVE!
 
 
 	glColorMask(1, 1, 1, 1);
@@ -1228,21 +1275,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 
 	glDepthFunc(GL_LESS);
-	//glDisable(GL_CULL_FACE); //todo change
+	glDisable(GL_CULL_FACE); //todo change
 	renderTransparentGeometry();
 #pragma endregion
-
-
-//#pragma region temporary
-//	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
-//	glColorMask(1, 1, 1, 1);
-//	glDepthFunc(GL_LESS);
-//	defaultShader.shader.bind();
-//	glEnablei(GL_BLEND, 0);
-//	glBlendFunci(0, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-//	glDisablei(GL_BLEND, 1);
-//	renderTransparentGeometry();
-//#pragma endregion
 
 
 #pragma region copy to main fbo 8

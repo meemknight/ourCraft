@@ -402,11 +402,11 @@ void serverWorkerFunction()
 						sendNewBlocksToPlayers, true, nullptr, &wasGenerated);
 					profiler.end();
 
-					if (wasGenerated)
-					{
-						std::cout << "Generated ChunK: " << profiler.rezult.timeSeconds * 1000.f << "ms  per 100: " <<
-							profiler.rezult.timeSeconds * 100'000.f << "\n";
-					}
+					//if (wasGenerated)
+					//{
+					//	std::cout << "Generated ChunK: " << profiler.rezult.timeSeconds * 1000.f << "ms  per 100: " <<
+					//		profiler.rezult.timeSeconds * 100'000.f << "\n";
+					//}
 
 					Packet packet;
 					packet.cid = i.cid; //todo is this cid here needed? should I just put 0?

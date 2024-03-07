@@ -51,3 +51,18 @@ Features and todos:
   - [ ] Buffering
   - [ ] Rubber banding
   - [ ] Entities
+
+
+
+
+todo for shaders:
+
+ - [ ] Make water more shiny (specular reflection)
+ - [ ] Make water move faster
+ - [ ] Make water wripels a little smaller?
+ - [ ] Make water geometry actually move
+ - [ ] Make water geometry actually move
+
+
+
+

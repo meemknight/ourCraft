@@ -228,7 +228,7 @@ vec3 calculateVertexPos(int vertexId)
 	return pos;
 }
 
-out vec3 v_viewSpacePos;
+out vec3 v_semiViewSpacePos;
 
 void main()
 {
@@ -294,7 +294,7 @@ void main()
 		posView.y = curved;
 	}
 
-	v_viewSpacePos = posView.xyz;
+	v_semiViewSpacePos = posView.xyz;
 	vec4 posProjection = u_viewProjection * posView;
 
 	gl_Position = posProjection;
