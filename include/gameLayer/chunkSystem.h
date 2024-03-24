@@ -8,11 +8,14 @@
 #include <optional>
 #include "multyPlayer/undoQueue.h"
 #include "chunk.h"
+#include <rendering/bigGpuBuffer.h>
 
 struct LightSystem;
 
 struct ChunkSystem
 {
+
+	BigGpuBuffer gpuBuffer;
 
 	struct ChunkSystemSettings
 	{
@@ -43,7 +46,9 @@ struct ChunkSystem
 
 	void setChunkAndNeighboursFlagDirtyFromBlockPos(int x, int z);
 
-	void createChunks(int viewDistance);
+	void init(int viewDistance);
+
+	void cleanup();
 
 	void update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQueue &undoQueue, LightSystem &lightSystem);
 	int lastX = 0, lastZ = 0, created = 0;
@@ -79,14 +84,13 @@ struct ChunkSystem
 		BlockType newType, LightSystem &lightSystem);
 
 	//unloads all loaded chunks
-	void dropAllChunks();
+	void dropAllChunks(BigGpuBuffer *gpuBuffer);
 	
 	//unloads a chunk atn the specified index in the matrix vector,
 	//ASSUMES THE CHUNK IS LOADED AND HAS GPU DATA
-	void dropChunkAtIndexUnsafe(int index);
+	void dropChunkAtIndexUnsafe(int index, BigGpuBuffer *gpuBuffer);
 
-	void dropChunkAtIndexSafe(int index);
-
+	void dropChunkAtIndexSafe(int index, BigGpuBuffer *gpuBuffer);
 
 	std::unordered_map<glm::ivec2, float> recentlyRequestedChunks;
 };

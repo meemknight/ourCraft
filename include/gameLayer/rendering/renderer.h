@@ -160,6 +160,7 @@ struct Renderer
 	float metallic = 0;
 	float roughness = 0.5;
 
+	bool unifiedGeometry = 1;
 	bool sortChunks = 1;
 	bool zprepass = 0;
 
@@ -167,6 +168,8 @@ struct Renderer
 	FBO fboCoppy;
 	FBO fboLastFrame;
 	FBO fboLastFramePositions;
+
+	GLuint drawCommandsOpaqueBuffer;
 
 	void create(BlocksLoader &blocksLoader);
 	void reloadShaders();

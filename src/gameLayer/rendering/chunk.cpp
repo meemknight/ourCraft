@@ -2,6 +2,8 @@
 #include <rendering/renderer.h>
 #include <blocksLoader.h>
 #include <lightSystem.h>
+#include <iostream>
+#include <rendering/bigGpuBuffer.h>
 
 Block *Chunk::safeGet(int x, int y, int z)
 {
@@ -28,7 +30,8 @@ static std::vector<int> transparentGeometry;
 static std::vector<glm::ivec4> lights;
 
 //todo a counter to know if I have transparent geometry in this chunk
-bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec3 playerPosition)
+bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, 
+	glm::ivec3 playerPosition, BigGpuBuffer &gpuBuffer)
 {
 
 	bool updateGeometry = 0;
@@ -351,6 +354,8 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, glm::ivec
 		glBufferData(GL_SHADER_STORAGE_BUFFER, lights.size() * sizeof(lights[0]),
 			lights.data(), GL_STREAM_READ);
 		lightsElementCountSize = lights.size();
+
+		gpuBuffer.addChunk({data.x, data.z}, opaqueGeometry);
 	}
 
 	if (updateTransparency)
@@ -390,28 +395,7 @@ bool Chunk::shouldBakeOnlyBecauseOfTransparency(Chunk *left, Chunk *right, Chunk
 	return dirtyTransparency;
 }
 
-void setupVertexAttributes()
-{
-	glEnableVertexAttribArray(0);
-	glVertexAttribIPointer(0, 1, GL_SHORT, 6 * sizeof(int), 0);
-	glVertexAttribDivisor(0, 1);
 
-	glEnableVertexAttribArray(1);
-	glVertexAttribIPointer(1, 1, GL_SHORT, 6 * sizeof(int), (void *)(1 * sizeof(short)));
-	glVertexAttribDivisor(1, 1);
-
-	glEnableVertexAttribArray(2);
-	glVertexAttribIPointer(2, 3, GL_INT, 6 * sizeof(int), (void *)(1 * sizeof(int)));
-	glVertexAttribDivisor(2, 1);
-
-	glEnableVertexAttribArray(3);
-	glVertexAttribIPointer(3, 1, GL_INT, 6 * sizeof(int), (void *)(4 * sizeof(int)));
-	glVertexAttribDivisor(3, 1);
-
-	glEnableVertexAttribArray(4);
-	glVertexAttribIPointer(4, 1, GL_INT, 6 * sizeof(int), (void *)(5 * sizeof(int)));
-	glVertexAttribDivisor(4, 1);
-}
 
 void Chunk::createGpuData()
 {
@@ -444,7 +428,7 @@ void Chunk::createGpuData()
 
 }
 
-void Chunk::clearGpuData()
+void Chunk::clearGpuData(BigGpuBuffer *gpuBuffer)
 {
 	glDeleteBuffers(1, &opaqueGeometryBuffer);
 	glDeleteBuffers(1, &opaqueGeometryIndex);
@@ -453,6 +437,11 @@ void Chunk::clearGpuData()
 	glDeleteBuffers(1, &lightsBuffer);
 	glDeleteVertexArrays(1, &vao);
 	glDeleteVertexArrays(1, &transparentVao);
+
+	if (gpuBuffer)
+	{
+		gpuBuffer->removeChunk({data.x, data.z});
+	}
 }
 
 void ChunkData::clearLightLevels()

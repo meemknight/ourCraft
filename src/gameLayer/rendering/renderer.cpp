@@ -479,6 +479,10 @@ void Renderer::create(BlocksLoader &blocksLoader)
 
 	glBindVertexArray(0);
 
+	glGenBuffers(1, &drawCommandsOpaqueBuffer);
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCommandsOpaqueBuffer);
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+
 
 
 #pragma region basic entity renderer
@@ -812,14 +816,22 @@ void Renderer::updateDynamicBlocks()
 
 }
 
+struct DrawElementsIndirectCommand
+{
+	GLuint count; // The number of elements to be rendered.
+	GLuint instanceCount; // The number of instances of the specified range of elements to be rendered.
+	GLuint firstIndex; // The starting index in the enabled arrays.
+	GLuint baseVertex; // The starting vertex index in the vertex buffer.
+	GLuint baseInstance; // The base instance for use in fetching instanced vertex attributes.
+};
 
 void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSystem, Camera &c,
 	ProgramData &programData, BlocksLoader &blocksLoader, ClientEntityManager &entityManager
-	, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos, bool underWater, int screenX, int screenY, 
+	, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos, bool underWater, int screenX, int screenY,
 	float deltaTime)
 {
 	glViewport(0, 0, screenX, screenY);
-	
+
 	fboCoppy.updateSize(screenX, screenY);
 	fboCoppy.clearFBO();
 
@@ -891,7 +903,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform1f(defaultShader.u_near, c.closePlane);
 		glUniform1f(defaultShader.u_far, c.farPlane);
 		glUniformMatrix4fv(defaultShader.u_inverseProjMat, 1, 0,
-		&glm::inverse(c.getProjectionMatrix())[0][0]);
+			&glm::inverse(c.getProjectionMatrix())[0][0]);
 		glUniformMatrix4fv(defaultShader.u_lightSpaceMatrix, 1, 0,
 			&sunShadow.lightSpaceMatrix[0][0]);
 		glUniform3iv(defaultShader.u_lightPos, 1, &sunShadow.lightSpacePosition[0]);
@@ -902,7 +914,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		glUniformMatrix4fv(defaultShader.u_lastViewProj, 1, 0,
 			&(c.lastFrameViewProjMatrix)[0][0]);
-		
+
 		programData.dudv.bind(4);
 		glUniform1i(defaultShader.u_dudv, 4);
 
@@ -931,8 +943,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		glUniformMatrix4fv(defaultShader.u_cameraProjection, 1, GL_FALSE, glm::value_ptr(c.getProjectionMatrix()));
 
-		glUniformMatrix4fv(defaultShader.u_inverseView, 1, GL_FALSE, 
-			glm::value_ptr( glm::inverse(c.getViewMatrix())) );
+		glUniformMatrix4fv(defaultShader.u_inverseView, 1, GL_FALSE,
+			glm::value_ptr(glm::inverse(c.getViewMatrix())));
 
 		glUniformMatrix4fv(defaultShader.u_view, 1, GL_FALSE,
 			glm::value_ptr(c.getViewMatrix()));
@@ -948,7 +960,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		//{
 		//	waterTimer -= 1;
 		//}
-		
+
 
 		{
 			glm::ivec3 i;
@@ -1041,8 +1053,13 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 #pragma endregion
 
 
-	auto renderStaticGeometry = [&]()
+	//configure opaque geometry
+	static std::vector<DrawElementsIndirectCommand> drawCommands;
+
 	{
+		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCommandsOpaqueBuffer);
+		drawCommands.clear();
+
 		if (sortChunks)
 		{
 			int s = chunkVectorCopy.size();
@@ -1056,8 +1073,25 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 						int facesCount = chunk->elementCountSize;
 						if (facesCount)
 						{
-							glBindVertexArray(chunk->vao);
-							glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
+
+							auto entry = chunkSystem.gpuBuffer
+								.getEntry({chunk->data.x,chunk->data.z});
+
+							permaAssertComment(
+								(int)entry.size / (6 * sizeof(int)) == facesCount,
+								"Gib Gpu Buffer desync");
+
+							// Prepare draw command for this chunk
+							DrawElementsIndirectCommand command;
+							command.count = 4; // Assuming you're drawing quads
+							command.instanceCount = facesCount;
+							command.firstIndex = 0;
+							command.baseVertex = 0;
+							command.baseInstance = entry.beg / (6 * sizeof(int)); 
+
+							// Add draw command to the array
+							drawCommands.push_back(command);
+
 						}
 					}
 				}
@@ -1074,13 +1108,156 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 						int facesCount = chunk->elementCountSize;
 						if (facesCount)
 						{
-							glBindVertexArray(chunk->vao);
-							glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
+							auto entry = chunkSystem.gpuBuffer
+								.getEntry({chunk->data.x,chunk->data.z});
+
+							permaAssertComment(
+								(int)entry.size / (6 * sizeof(int)) == facesCount,
+								"Gib Gpu Buffer desync");
+
+							// Prepare draw command for this chunk
+							DrawElementsIndirectCommand command;
+							command.count = 4; // Assuming you're drawing quads
+							command.instanceCount = facesCount;
+							command.firstIndex = 0;
+							command.baseVertex = 0;
+							command.baseInstance = entry.beg / (6 * sizeof(int));
+
+							// Add draw command to the array
+							drawCommands.push_back(command);
+
 						}
 					}
 				}
 			}
 		}
+	}
+
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCommandsOpaqueBuffer);
+	glBufferData(GL_DRAW_INDIRECT_BUFFER, drawCommands.size() * sizeof(DrawElementsIndirectCommand), drawCommands.data(), GL_STREAM_DRAW);
+
+
+	auto renderStaticGeometry = [&]()
+	{
+
+		if (unifiedGeometry)
+		{
+			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCommandsOpaqueBuffer);
+
+			glBindVertexArray(chunkSystem.gpuBuffer.vao);
+
+			glMultiDrawElementsIndirect(GL_TRIANGLE_FAN, GL_UNSIGNED_BYTE,
+				nullptr, drawCommands.size(), sizeof(DrawElementsIndirectCommand));
+			//glDrawElementsInstancedBaseInstance(GL_TRIANGLE_FAN,
+			//	4, GL_UNSIGNED_BYTE,
+			//	0, chunkSystem.gpuBuffer.arenaSize/(6 * sizeof(int)), 0);
+
+
+
+			//if (sortChunks)
+			//{
+			//	int s = chunkVectorCopy.size();
+			//	for (int i = s - 1; i >= 0; i--)
+			//	{
+			//		auto chunk = chunkVectorCopy[i];
+			//		if (chunk)
+			//		{
+			//			if (!chunk->dontDrawYet)
+			//			{
+			//				int facesCount = chunk->elementCountSize;
+			//				if (facesCount)
+			//				{
+			//
+			//					auto entry = chunkSystem.gpuBuffer
+			//						.getEntry({chunk->data.x,chunk->data.z});
+			//
+			//					permaAssertComment(
+			//						(int)entry.size / (6 * sizeof(int)) == facesCount,
+			//						"Gib Gpu Buffer desync");
+			//
+			//					glDrawElementsInstancedBaseInstance(GL_TRIANGLE_FAN,
+			//						4, GL_UNSIGNED_BYTE,
+			//						0, facesCount, entry.beg / (6 * sizeof(int)));
+			//
+			//				}
+			//			}
+			//		}
+			//	}
+			//}
+			//else
+			//{
+			//	for (auto &chunk : chunkVectorCopy)
+			//	{
+			//		if (chunk)
+			//		{
+			//			if (!chunk->dontDrawYet)
+			//			{
+			//				int facesCount = chunk->elementCountSize;
+			//				if (facesCount)
+			//				{
+			//					auto entry = chunkSystem.gpuBuffer
+			//						.getEntry({chunk->data.x,chunk->data.z});
+			//
+			//					permaAssertComment(
+			//						(int)entry.size / (6 * sizeof(int)) == facesCount,
+			//						"Gib Gpu Buffer desync");
+			//
+			//					glDrawElementsInstancedBaseInstance(GL_TRIANGLE_FAN, 4,
+			//						GL_UNSIGNED_BYTE,
+			//						0, facesCount, entry.beg / (6 * sizeof(int)));
+			//
+			//				}
+			//			}
+			//		}
+			//	}
+			//}
+
+		}
+		else
+		{
+
+
+			if (sortChunks)
+			{
+				int s = chunkVectorCopy.size();
+				for (int i = s - 1; i >= 0; i--)
+				{
+					auto chunk = chunkVectorCopy[i];
+					if (chunk)
+					{
+						if (!chunk->dontDrawYet)
+						{
+							int facesCount = chunk->elementCountSize;
+							if (facesCount)
+							{
+								glBindVertexArray(chunk->vao);
+								glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				for (auto &chunk : chunkVectorCopy)
+				{
+					if (chunk)
+					{
+						if (!chunk->dontDrawYet)
+						{
+							int facesCount = chunk->elementCountSize;
+							if (facesCount)
+							{
+								glBindVertexArray(chunk->vao);
+								glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
+							}
+						}
+					}
+				}
+			}
+
+		}
+
 	};
 
 	auto renderTransparentGeometry = [&]()

@@ -81,7 +81,7 @@ bool initGameplay(ProgramData &programData, const char *c)
 	gameData.entityManager.localPlayer.entityId = playerData.yourPlayerEntityId;
 
 
-	gameData.chunkSystem.createChunks(30);
+	gameData.chunkSystem.init(60);
 
 	gameData.sunShadow.init();
 
@@ -792,9 +792,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				ImVec4 colLoaded = {0.2f,0.9f,0.2f,1.f};
 				ImVec4 colrequested = {0.2f,0.2f,0.9f,1.f};
 
+				ImGui::Text("Gpu buffer entries count: %d",
+					(int)gameData.chunkSystem.gpuBuffer.entriesMap.size());
+
 				if (ImGui::Button("Drop all chunks"))
 				{
-					gameData.chunkSystem.dropAllChunks();
+					gameData.chunkSystem.dropAllChunks(&gameData.chunkSystem.gpuBuffer);
 				}
 				
 				ImGui::ColorButton("##1", colNotLoaded, ImGuiColorEditFlags_NoInputs, ImVec2(25, 25));
@@ -852,6 +855,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					}
 
 			}
+
+			ImGui::Checkbox("Unified geometry pool",
+				&programData.renderer.unifiedGeometry);
 
 			ImGui::Checkbox("Sort chunks",
 				&programData.renderer.sortChunks);
@@ -912,6 +918,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 void closeGameLogic()
 {
-	gameData.chunkSystem.dropAllChunks();
+	gameData.chunkSystem.cleanup();
 	gameData = GameData(); //free all resources
 }

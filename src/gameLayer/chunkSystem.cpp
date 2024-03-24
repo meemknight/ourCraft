@@ -27,10 +27,17 @@ Chunk* ChunkSystem::getChunkSafeFromMatrixSpace(int x, int z)
 	}
 }
 
-void ChunkSystem::createChunks(int viewDistance)
+void ChunkSystem::init(int viewDistance)
 {
 	squareSize = viewDistance;
 	loadedChunks.resize(squareSize * squareSize, nullptr);
+	gpuBuffer.create(squareSize * squareSize);
+}
+
+void ChunkSystem::cleanup()
+{
+	dropAllChunks(nullptr);
+	gpuBuffer.cleanup();
 }
 
 //x and z are the block positions of the player
@@ -181,7 +188,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 			else
 			{	
 				//chunk no longer needed delete it
-				dropChunkAtIndexUnsafe(i);
+				dropChunkAtIndexUnsafe(i, &gpuBuffer);
 			}
 		}
 
@@ -481,7 +488,8 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 			{
 				if (currentBakedTransparency < maxToBakeTransparency)
 				{
-					auto b = chunk->bake(left, right, front, back, playerBlockPosition);
+					auto b = chunk->bake(left, right, 
+						front, back, playerBlockPosition, gpuBuffer);
 					if (b) { currentBakedTransparency++; }
 				}
 			}
@@ -489,7 +497,8 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 			{
 				if (currentBaked < maxToBake)
 				{
-					auto b = chunk->bake(left, right, front, back, playerBlockPosition);
+					auto b = chunk->bake(left, right, front, back, 
+						playerBlockPosition, gpuBuffer);
 					if (b) { currentBaked++; }
 				}
 			}
@@ -979,27 +988,27 @@ void ChunkSystem::changeBlockLightStuff(glm::ivec3 pos, int currentSkyLightLevel
 
 }
 
-void ChunkSystem::dropAllChunks()
+void ChunkSystem::dropAllChunks(BigGpuBuffer *gpuBuffer)
 {
 	for (int i = 0; i < loadedChunks.size(); i++)
 	{
-		dropChunkAtIndexSafe(i);
+		dropChunkAtIndexSafe(i, gpuBuffer);
 	}
 }
 
-void ChunkSystem::dropChunkAtIndexUnsafe(int index)
+void ChunkSystem::dropChunkAtIndexUnsafe(int index, BigGpuBuffer *gpuBuffer)
 {
-	loadedChunks[index]->clearGpuData();
+	loadedChunks[index]->clearGpuData(gpuBuffer);
 	delete loadedChunks[index];
 	loadedChunks[index] = nullptr;
 
 }
 
-void ChunkSystem::dropChunkAtIndexSafe(int index)
+void ChunkSystem::dropChunkAtIndexSafe(int index, BigGpuBuffer *gpuBuffer)
 {
 	if (loadedChunks[index] != nullptr)
 	{
-		dropChunkAtIndexUnsafe(index);
+		dropChunkAtIndexUnsafe(index, gpuBuffer);
 	}
 }
 

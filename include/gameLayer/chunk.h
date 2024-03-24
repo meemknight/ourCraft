@@ -1,6 +1,8 @@
 #pragma once
 #include "blocks.h"
 
+struct BigGpuBuffer;
+
 constexpr int CHUNK_SIZE = 16;
 constexpr int META_CHUNK_SIZE = 32;
 constexpr int CHUNK_HEIGHT = 256;
@@ -90,11 +92,11 @@ struct Chunk
 	//returns true if it changed anything, it will also return true if the newly baked
 	//geometry is 0 because that means that it took very little time.
 	bool bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
-		glm::ivec3 playerPosition);
+		glm::ivec3 playerPosition, BigGpuBuffer &gpuBuffer);
 
 	bool shouldBakeOnlyBecauseOfTransparency(Chunk *left, Chunk *right, Chunk *front, Chunk *back);
 
 	void createGpuData();
 
-	void clearGpuData();
+	void clearGpuData(BigGpuBuffer *gpuBuffer);
 };
