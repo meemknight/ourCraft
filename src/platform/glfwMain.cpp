@@ -330,6 +330,9 @@ int main()
 
 	permaAssertComment(glfwInit(), "err initializing glfw");
 	//glfwWindowHint(GLFW_SAMPLES, 4);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 
 	int w = 500;
 	int h = 500;
@@ -345,6 +348,8 @@ int main()
 	glfwSetCharCallback(wind, characterCallback);
 
 	permaAssertComment(gladLoadGL(), "err initializing glad");
+
+	//enableReportGlErrors();
 
 #pragma endregion
 

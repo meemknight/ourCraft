@@ -25,8 +25,6 @@ ProgramData programData;
 bool initGame()
 {
 	createErrorFile();
-
-	enableReportGlErrors();
 	
 	glui::gluiInit();
 

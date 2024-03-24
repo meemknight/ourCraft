@@ -61,7 +61,7 @@ todo for shaders:
  - [ ] Make water move faster
  - [ ] Make water wripels a little smaller?
  - [ ] Make water geometry actually move
- - [ ] Make water geometry actually move
+ - [ ] Sepparate underwater color
 
 
 

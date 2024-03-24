@@ -72,6 +72,9 @@ uniform mat4 u_cameraProjection;
 uniform mat4 u_inverseView;
 uniform mat4 u_view;
 
+uniform mat4 u_lastViewProj;
+
+
 in flat int v_flags; //todo no need to have a flag to specify if the block is water, just use the texture id or something
 
 uniform sampler2D u_lastFrameColor;
@@ -724,9 +727,9 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
 	return F0 + (1.0 - F0) * pow(max(1.0 - cosTheta, 0.0), 5.0);
 }
-vec3 fresnelSchlickWater(float cosTheta)
+float fresnelSchlickWater(float cosTheta)
 {
-	vec3 F0 = vec3(0.02);
+	float F0 = float(0.02);
 	return F0 + (1.0 - F0) * pow(max(1.0 - cosTheta, 0.0), 5.0);
 }
 
@@ -973,20 +976,23 @@ vec3 SSR(out bool success,vec3 viewPos, vec3 N,
 vec3 computeAmbientTerm(vec3 gammaAmbient, vec3 N, vec3 V, vec3 F0, float roughness, 
 	float metallic, vec3 albedo, out bool ssrSuccess, vec3 out_color);
 
-vec2 reprojectViewSpace(vec2 oldViewSpace)
+vec2 reprojectViewSpace(vec2 currentTextureSpacePos)
 {
-	//// Convert current fragment's screen space coordinate to clip space
-	//vec4 clipCoord = vec4(oldViewSpace * 2.0 - 1.0, 0.0, 1.0);
+	// Convert current fragment's screen space coordinate to clip space
+	//vec4 clipCoord = vec4(currentTextureSpacePos * 2.0 - 1.0, 0.0, 1.0);
 	//
 	//// Convert clip space coordinate to view space using the inverse of the current view projection matrix
-	//vec4 posViewSpace = u_inverseProjMat * clipCoord;
+	//vec4 posViewSpace = u_inverseViewProjMat * clipCoord;
 	//posViewSpace /= posViewSpace.w; // Homogeneous divide to normalize
 	//
-	//// Sample position from the last frame's view space texture
-	////vec3 pos = texture(u_lastFramePositionViewSpace, posViewSpace.xy).xyz;
+	//posViewSpace = u_lastViewProj * posViewSpace;
+	////posViewSpace = u_cameraProjection * u_view * posViewSpace;
+	//
+	//posViewSpace /= posViewSpace.w;
 	//
 	//return (posViewSpace.xy + 1) / 2;
-	return oldViewSpace;
+
+	return currentTextureSpacePos;
 }
 
 
@@ -1142,6 +1148,7 @@ void main()
 	}
 	
 	float dotNV = dot(N, V);
+	vec3 freshnel = fresnelSchlickRoughness(dotNV, F0, roughness);
 		
 	out_color = vec4(finalColor,textureColor.a);
 	out_color.a = 1-out_color.a;
@@ -1237,14 +1244,14 @@ void main()
 	//ssr
 
 	if(!physicallyAccurateReflections)
-	if(roughness < 0.5)
+	if(roughness < 0.45)
 	{
 		vec2 fragCoord = gl_FragCoord.xy / textureSize(u_lastFramePositionViewSpace, 0).xy;
 
 		//float dotNVClamped = clamp(dotNV, 0.0, 0.99);
 		
 		vec3 posViewSpace = texture(u_lastFramePositionViewSpace, 
-			reprojectViewSpace(fragCoord)).xyz;
+			(fragCoord)).xyz;
 		vec3 pos = vec3(u_inverseView * vec4(posViewSpace,1));
 
 		vec3 viewSpaceNormal = normalize( vec3(transpose(inverse(mat3(u_view))) * N));
@@ -1273,7 +1280,8 @@ void main()
 		{
 			if(ssrSuccess) 
 			{
-				ssr = mix(ssr, out_color.rgb, dotNV);
+				//ssr = mix(ssr, out_color.rgb, dotNV);
+				ssr = mix(ssr, out_color.rgb, freshnel);
 				out_color.rgb = mix(ssr, out_color.rgb, pow(roughness, 0.5));
 			}	
 
@@ -1354,12 +1362,15 @@ void main()
 			peelTexture = mix(peelTexture, u_waterColor*0.7, 0.6 * clamp(pow(finalDepth/18.0,2),0,1) );
 
 			
+			//float mixFactor = clamp(fresnelSchlickWater(reflectivity),0,1);
 			//float mixFactor = pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1;
 			float mixFactor = clamp(pow(1-clamp(reflectivity,0,1),2) * 0.8+0.1,0,1);
-			//mixFactor = 1-reflectivity;
+			//float mixFactor = 1-clamp(reflectivity,0,1);
 			//if(ssrSuccess){mixFactor = pow(mixFactor, 0.9);}
 
+			//clamp(mixFactor,0,1);
 			out_color.rgb = mix(peelTexture, out_color.rgb,  mixFactor);
+			//out_color.rgb = peelTexture + out_color.rgb*mixFactor;
 
 
 			//out_color.rgb = mix(out_color.rgb, peelTexture, clamp(reflectivity,0,1));

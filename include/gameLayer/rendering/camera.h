@@ -38,6 +38,8 @@ struct Camera
 	void rotateFPS(glm::ivec2 mousePos, float speed, bool shouldMove);
 	glm::ivec2 lastMousePos = {};
 
+	glm::mat4x4 lastFrameViewProjMatrix = getProjectionMatrix() * getViewMatrix();
+
 	bool operator==(const Camera& other)
 	{
 		return

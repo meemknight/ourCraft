@@ -81,7 +81,7 @@ bool initGameplay(ProgramData &programData, const char *c)
 	gameData.entityManager.localPlayer.entityId = playerData.yourPlayerEntityId;
 
 
-	gameData.chunkSystem.createChunks(22);
+	gameData.chunkSystem.createChunks(30);
 
 	gameData.sunShadow.init();
 
@@ -503,6 +503,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.c, programData, programData.blocksLoader, gameData.entityManager, gameData.showLightLevels, 
 			gameData.skyLightIntensity, gameData.point, underWater, w, h, deltaTime);
 
+		gameData.c.lastFrameViewProjMatrix =
+			gameData.c.getProjectionMatrix() * gameData.c.getViewMatrix();
+
 		gameData.gameplayFrameProfiler.endSubProfile("rendering");
 	}
 #pragma endregion
@@ -628,7 +631,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			}
 
-		
 			ImGui::NewLine();
 
 			gameData.pointSize = glm::clamp(gameData.pointSize, glm::ivec3(0, 0, 0), glm::ivec3(64, 64, 64));
@@ -850,6 +852,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					}
 
 			}
+
+			ImGui::Checkbox("Sort chunks",
+				&programData.renderer.sortChunks);
+
+			ImGui::Checkbox("Z pre pass",
+				&programData.renderer.zprepass);
+
 		}
 		ImGui::End();
 
@@ -864,12 +873,14 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 		ImGui::End();
 
+
 		ImGui::PopStyleColor();
 
 		gameData.gameplayFrameProfiler.endSubProfile("imgui");
 	}
 
 #pragma endregion
+
 
 #pragma region ui
 	if (w != 0 && h != 0)

@@ -11,7 +11,7 @@ struct ProgramData;
 struct SunShadow;
 struct ClientEntityManager;
 
-using uniform = GLuint;
+using uniform = GLint;
 
 struct Renderer
 {
@@ -49,53 +49,54 @@ struct Renderer
 	struct DefaultShader
 	{
 		Shader shader;
-		GLint u_viewProjection = -1;
-		GLint u_typesCount = -1;
-		GLint u_positionInt = -1;
-		GLint u_positionFloat = -1;
-		GLint u_texture = -1;
-		GLint u_time = -1;
-		GLint u_showLightLevels = -1;
-		GLint u_skyLightIntensity = -1;
-		GLint u_lightsCount = -1;
-		GLint u_pointPosF = -1;
-		GLint u_pointPosI = -1;
-		GLint u_sunDirection = -1;
+		uniform u_viewProjection = -1;
+		uniform u_typesCount = -1;
+		uniform u_positionInt = -1;
+		uniform u_positionFloat = -1;
+		uniform u_texture = -1;
+		uniform u_time = -1;
+		uniform u_showLightLevels = -1;
+		uniform u_skyLightIntensity = -1;
+		uniform u_lightsCount = -1;
+		uniform u_pointPosF = -1;
+		uniform u_pointPosI = -1;
+		uniform u_sunDirection = -1;
 		GLuint u_vertexData = GL_INVALID_INDEX;
 		GLuint u_vertexUV = GL_INVALID_INDEX;
 		GLuint u_textureSamplerers = GL_INVALID_INDEX;
 		GLuint u_normalsData = GL_INVALID_INDEX;
 		GLuint u_lights = GL_INVALID_INDEX;
-		GLint u_timeGrass = -1;
-		GLint u_writeScreenSpacePositions = -1;
-		GLint u_lastFrameColor = -1;
-		GLint u_lastFramePositionViewSpace = -1;
-		GLint u_cameraProjection = -1;
-		GLint u_inverseView = -1;
-		GLint u_view = -1;
+		uniform u_timeGrass = -1;
+		uniform u_writeScreenSpacePositions = -1;
+		uniform u_lastFrameColor = -1;
+		uniform u_lastFramePositionViewSpace = -1;
+		uniform u_cameraProjection = -1;
+		uniform u_inverseView = -1;
+		uniform u_view = -1;
 
-		GLint u_metallic = -1;
-		GLint u_roughness = -1;
-		GLint u_underWater = -1;
-		GLint u_waterColor = -1;
-		GLint u_depthPeelwaterPass = -1;
-		GLint u_hasPeelInformation = -1;
-		GLint u_depthTexture = -1;
-		GLint u_PeelTexture = -1;
-		GLint u_dudv = -1;
-		GLint u_dudvNormal = -1;
-		GLint u_waterMove = -1;
-		GLint u_near = -1;
-		GLint u_far = -1;
-		GLint u_caustics = -1;
-		GLint u_inverseProjMat = -1;
-		GLint u_lightSpaceMatrix = -1;
-		GLint u_lightPos = -1;
-		GLint u_sunShadowTexture = -1;
-		GLint u_brdf = -1;
-		GLint u_inverseViewProjMat = -1;
+		uniform u_metallic = -1;
+		uniform u_roughness = -1;
+		uniform u_underWater = -1;
+		uniform u_waterColor = -1;
+		uniform u_depthPeelwaterPass = -1;
+		uniform u_hasPeelInformation = -1;
+		uniform u_depthTexture = -1;
+		uniform u_PeelTexture = -1;
+		uniform u_dudv = -1;
+		uniform u_dudvNormal = -1;
+		uniform u_waterMove = -1;
+		uniform u_near = -1;
+		uniform u_far = -1;
+		uniform u_caustics = -1;
+		uniform u_inverseProjMat = -1;
+		uniform u_lightSpaceMatrix = -1;
+		uniform u_lightPos = -1;
+		uniform u_sunShadowTexture = -1;
+		uniform u_brdf = -1;
+		uniform u_inverseViewProjMat = -1;
 		GLuint u_shadingSettings = 0;
 		GLuint shadingSettingsBuffer = 0;
+		uniform u_lastViewProj = -1;
 
 		struct ShadingSettings
 		{
@@ -158,6 +159,9 @@ struct Renderer
 
 	float metallic = 0;
 	float roughness = 0.5;
+
+	bool sortChunks = 1;
+	bool zprepass = 0;
 
 	FBO fboMain;
 	FBO fboCoppy;

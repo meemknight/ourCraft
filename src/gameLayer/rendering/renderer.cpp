@@ -420,6 +420,7 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	glGenBuffers(1, &defaultShader.shadingSettingsBuffer);
 	glBindBuffer(GL_UNIFORM_BUFFER, defaultShader.shadingSettingsBuffer);
 	
+
 	reloadShaders();
 
 	
@@ -587,6 +588,8 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(defaultShader, u_view);
 	GET_UNIFORM2(defaultShader, u_brdf);
 	GET_UNIFORM2(defaultShader, u_inverseViewProjMat);
+	GET_UNIFORM2(defaultShader, u_lastViewProj);
+
 
 	defaultShader.u_shadingSettings
 		= glGetUniformBlockIndex(defaultShader.shader.id, "ShadingSettings");
@@ -810,7 +813,6 @@ void Renderer::updateDynamicBlocks()
 }
 
 
-
 void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSystem, Camera &c,
 	ProgramData &programData, BlocksLoader &blocksLoader, ClientEntityManager &entityManager
 	, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos, bool underWater, int screenX, int screenY, 
@@ -897,7 +899,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		glUniformMatrix4fv(defaultShader.u_inverseViewProjMat, 1, 0,
 			&glm::inverse(c.getProjectionMatrix() * c.getViewMatrix())[0][0]);
-		
+
+		glUniformMatrix4fv(defaultShader.u_lastViewProj, 1, 0,
+			&(c.lastFrameViewProjMatrix)[0][0]);
 		
 		programData.dudv.bind(4);
 		glUniform1i(defaultShader.u_dudv, 4);
@@ -1036,38 +1040,43 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	}
 #pragma endregion
 
+
 	auto renderStaticGeometry = [&]()
 	{
-		//todo??????????
-		//int s = chunkVectorCopy.size();
-		//for (int i = s - 1; s >= 0; s--)
-		//{
-		//	auto chunk = chunkVectorCopy[s];
-		//	if (chunk)
-		//	{
-		//		if (!chunk->dontDrawYet)
-		//		{
-		//			int facesCount = chunk->elementCountSize;
-		//			if (facesCount)
-		//			{
-		//				glBindVertexArray(chunk->vao);
-		//				glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
-		//			}
-		//		}
-		//	}
-		//}
-
-		for (auto &chunk : chunkVectorCopy)
+		if (sortChunks)
 		{
-			if (chunk)
+			int s = chunkVectorCopy.size();
+			for (int i = s - 1; i >= 0; i--)
 			{
-				if (!chunk->dontDrawYet)
+				auto chunk = chunkVectorCopy[i];
+				if (chunk)
 				{
-					int facesCount = chunk->elementCountSize;
-					if (facesCount)
+					if (!chunk->dontDrawYet)
 					{
-						glBindVertexArray(chunk->vao);
-						glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
+						int facesCount = chunk->elementCountSize;
+						if (facesCount)
+						{
+							glBindVertexArray(chunk->vao);
+							glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			for (auto &chunk : chunkVectorCopy)
+			{
+				if (chunk)
+				{
+					if (!chunk->dontDrawYet)
+					{
+						int facesCount = chunk->elementCountSize;
+						if (facesCount)
+						{
+							glBindVertexArray(chunk->vao);
+							glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
+						}
 					}
 				}
 			}
@@ -1094,6 +1103,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	};
 
 #pragma region depth pre pass 1
+	if(zprepass)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
 		glDepthFunc(GL_LESS);
@@ -1108,7 +1118,16 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 #pragma region solid pass 2
 	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
 	glColorMask(1, 1, 1, 1);
-	glDepthFunc(GL_EQUAL);
+
+	if (zprepass)
+	{
+		glDepthFunc(GL_EQUAL);
+	}
+	else
+	{
+		glDepthFunc(GL_LESS);
+	}
+
 	defaultShader.shader.bind();
 	glDisable(GL_BLEND);
 	//glEnable(GL_BLEND);
@@ -1581,7 +1600,8 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 	glm::ivec3 newPos = c.position;
 
 	{
-		newPos.y = 120;
+		//newPos.y = 120;
+		newPos.y += 50;
 
 		glm::vec3 moveDir = skyBoxRenderer.sunPos;
 
@@ -1610,7 +1630,7 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 
 	float near_plane = 1.0f, far_plane = 260.f;
 	glm::mat4 lightProjection = glm::ortho(-projectSize, projectSize, -projectSize, projectSize,
-		near_plane, far_plane);
+		near_plane,		far_plane);
 	//auto mvp = lightProjection * glm::lookAt({},
 	//	-skyBoxRenderer.sunPos, glm::vec3(0, 1, 0));
 
