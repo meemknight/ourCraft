@@ -476,6 +476,26 @@ bool loadFromFileWithAplhaFixing(gl2d::Texture &t,
 	return 1;
 }
 
+//https://stackoverflow.com/questions/15095909/from-rgb-to-hsv-in-opengl-glsl
+glm::vec3 rgbToHSV(glm::vec3 c)
+{
+	glm::vec4 K = glm::vec4(0.0f, -1.0f / 3.0f, 2.0f / 3.0f, -1.0f);
+	glm::vec4 p = glm::mix(glm::vec4(c.b, c.g, K.w, K.z), glm::vec4(c.g, c.b, K.x, K.y), glm::step(c.b, c.g));
+	glm::vec4 q = glm::mix(glm::vec4(glm::vec3(p.x, p.y, p.w), c.r), glm::vec4(c.r, p.y, p.z, p.x), glm::step(p.x, c.r));
+
+	float d = q.x - glm::min(q.w, q.y);
+	float e = 1.0e-10;
+	return glm::vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+
+glm::vec3 hsv2rgb(glm::vec3 c)
+{
+	glm::vec4 K = glm::vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+	glm::vec3 p = abs(glm::fract(glm::vec3(c.x, c.x, c.x) + glm::vec3(K.x, K.y, K.z)) 
+		* 6.0f - glm::vec3(K.w, K.w, K.w));
+	return c.z * glm::mix(glm::vec3(K.x, K.x, K.x), glm::clamp(p - glm::vec3(K.x, K.x, K.x), 0.0f, 1.0f), c.y);
+}
+
 //textureloader texture loader
 void BlocksLoader::loadAllTextures()
 {
@@ -570,17 +590,17 @@ void BlocksLoader::loadAllTextures()
 
 	auto setGpuIds = [&](int blockIndex) 
 	{
-		auto handle = glGetTextureHandleARB(texturesIds[blockIndex * 3 + 0]);
+		auto handle = glGetTextureHandleARB(texturesIds[blockIndex + 0]);
 		glMakeTextureHandleResidentARB(handle);
-		gpuIds[blockIndex * 3 + 0] = handle;
+		gpuIds[blockIndex + 0] = handle;
 
-		handle = glGetTextureHandleARB(texturesIds[blockIndex * 3 + 1]);
+		handle = glGetTextureHandleARB(texturesIds[blockIndex + 1]);
 		glMakeTextureHandleResidentARB(handle);
-		gpuIds[blockIndex * 3 + 1] = handle;
+		gpuIds[blockIndex + 1] = handle;
 
-		handle = glGetTextureHandleARB(texturesIds[blockIndex * 3 + 2]);
+		handle = glGetTextureHandleARB(texturesIds[blockIndex + 2]);
 		glMakeTextureHandleResidentARB(handle);
-		gpuIds[blockIndex * 3 + 2] = handle;
+		gpuIds[blockIndex + 2] = handle;
 	};
 
 	auto addTexture = [&](std::string path, bool isNormalMap = 0) -> bool
@@ -620,7 +640,7 @@ void BlocksLoader::loadAllTextures()
 		
 		path2 += "pbr/block/"; //default
 		
-		//path += "pbr2/";
+		//path += "pbr2/";		//texture pack
 		path += "pbr/block/"; //original
 		
 		path += texturesNames[i];
@@ -664,16 +684,68 @@ void BlocksLoader::loadAllTextures()
 		}
 	}
 	
+	auto copyFromOtherTexture = [&](int desinationIndex, int sourceIndex)
+	{
+		texturesIds[desinationIndex + 0] = texturesIds[sourceIndex + 0];
+		texturesIds[desinationIndex + 1] = texturesIds[sourceIndex + 1];
+		texturesIds[desinationIndex + 2] = texturesIds[sourceIndex + 2];
+	};
+
+	auto applyModifications = [&](std::vector<unsigned char> &data,
+		glm::ivec2 size, glm::vec3(*func)(glm::vec3))
+	{
+		for (int i = 0; i < size.x * size.y; i++)
+		{
+			glm::vec3 color = {};
+
+			color.r = data[i * 4 + 0] / 255.f;
+			color.g = data[i * 4 + 1] / 255.f;
+			color.b = data[i * 4 + 2] / 255.f;
+
+			color = func(color);
+
+			data[i * 4 + 0] = color.r * 255;
+			data[i * 4 + 1] = color.g * 255;
+			data[i * 4 + 2] = color.b * 255;
+		}
+	};
+
+	auto copyFromOtherTextureAndApplyModifications = [&](int desinationIndex, int sourceIndex,
+		glm::vec3(*func)(glm::vec3))
+	{
+		copyFromOtherTexture(desinationIndex, sourceIndex);
+
+		gl2d::Texture t; t.id = texturesIds[desinationIndex + 0];
+		glm::ivec2 size = {};
+		auto data = t.readTextureData(0, &size);
+
+		applyModifications(data, size, func);
+
+		t.createFromBuffer((char *)data.data(), size.x, size.y, true, true);
+		texturesIds[desinationIndex + 0] = t.id;
+
+		setGpuIds(desinationIndex);
+	};
+
 	//generate other textures
 	{
 		//test texture
-		texturesIds[56 * 3 + 0] = texturesIds[getGpuIdIndexForBlock(BlockTypes::wooden_plank, 0) + 0];
-		texturesIds[56 * 3 + 1] = texturesIds[getGpuIdIndexForBlock(BlockTypes::wooden_plank, 0) + 1];
-		texturesIds[56 * 3 + 2] = texturesIds[getGpuIdIndexForBlock(BlockTypes::wooden_plank, 0) + 2];
-		
+		copyFromOtherTextureAndApplyModifications(56 * 3, 
+			getGpuIdIndexForBlock(BlockTypes::wooden_plank, 0),
+			[](glm::vec3 in) ->glm::vec3
+		{
+			in = glm::pow(in, glm::vec3(2.f));
+			
+			//in = rgbToHSV(in);
+			//in.x += 0.0;
+			//in.x = glm::fract(in.x);
+			//in = hsv2rgb(in);
+			
+			return in;
+		});
 		
 
-		setGpuIds(56);
+
 	}
 
 

@@ -896,13 +896,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		programData.renderer2d.renderRectangle(
 			Ui::Box().xCenter().yCenter().xDimensionPixels(30).yAspectRatio(1.f),
-			programData.uiTexture, programData.uiAtlas.get(2, 0)
+			programData.uiTexture, Colors_White, {}, 0, 
+			programData.uiAtlas.get(2, 0)
 		);
 	}
 #pragma endregion
 
-	programData.renderer2d.flush();
-	
 	gameData.gameplayFrameProfiler.endFrame();
 	gameData.gameplayFrameProfiler.startFrame();
 	gameData.gameplayFrameProfiler.startSubProfile("swap chain and others");

@@ -1778,8 +1778,6 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 	void Texture::createFromBuffer(const char* image_data, const int width, const int height
 		,bool pixelated, bool useMipMaps)
 	{
-		cleanup();
-
 		GLuint id = 0;
 
 		glActiveTexture(GL_TEXTURE0);
@@ -2079,7 +2077,7 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 	void Texture::readTextureData(void *buffer, int mipLevel)
 	{
 		glBindTexture(GL_TEXTURE_2D, id);
-		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+		glGetTexImage(GL_TEXTURE_2D, mipLevel, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	}
 
 	std::vector<unsigned char> Texture::readTextureData(int mipLevel, glm::ivec2 *outSize)
@@ -2098,7 +2096,7 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 
 		std::vector<unsigned char> data;
 		data.resize(outSize->x * outSize->y * 4);
-		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+		glGetTexImage(GL_TEXTURE_2D, mipLevel, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
 
 		glBindTexture(GL_TEXTURE_2D, 0);
 
