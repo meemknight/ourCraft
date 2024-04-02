@@ -61,6 +61,8 @@ const char *texturesNames[] = {
 	"spruce_log_top",	//53
 	"glowstone",		//54
 	"glass",			//55
+	"",					//56 test texture
+
 };
 
 //front
@@ -215,6 +217,9 @@ uint16_t blocksLookupTable[] = {
 
 	//glass
 	55, 55, 55, 55, 55, 55,
+
+	//test texture
+	56, 56, 56, 56, 56, 56,
 };
 
 void fixAlphaForNormals(unsigned char *buffer, int w, int h)
@@ -479,6 +484,9 @@ void BlocksLoader::loadAllTextures()
 	gpuIds.reserve(count + 1);
 	texturesIds.reserve(count+ 1);
 
+
+
+
 	//default texture
 	{
 		unsigned char data[16] = {};
@@ -560,6 +568,21 @@ void BlocksLoader::loadAllTextures()
 	std::string path;
 	std::string path2;
 
+	auto setGpuIds = [&](int blockIndex) 
+	{
+		auto handle = glGetTextureHandleARB(texturesIds[blockIndex * 3 + 0]);
+		glMakeTextureHandleResidentARB(handle);
+		gpuIds[blockIndex * 3 + 0] = handle;
+
+		handle = glGetTextureHandleARB(texturesIds[blockIndex * 3 + 1]);
+		glMakeTextureHandleResidentARB(handle);
+		gpuIds[blockIndex * 3 + 1] = handle;
+
+		handle = glGetTextureHandleARB(texturesIds[blockIndex * 3 + 2]);
+		glMakeTextureHandleResidentARB(handle);
+		gpuIds[blockIndex * 3 + 2] = handle;
+	};
+
 	auto addTexture = [&](std::string path, bool isNormalMap = 0) -> bool
 	{
 
@@ -603,9 +626,9 @@ void BlocksLoader::loadAllTextures()
 		path += texturesNames[i];
 		path2 += texturesNames[i];
 
-		if (!addTexture(path + ".png"))
+		if (!texturesNames[i] || !addTexture(path + ".png"))
 		{
-			if (!addTexture(path2 + ".png"))
+			if (!texturesNames[i] || !addTexture(path2 + ".png"))
 			{
 				texturesIds.push_back(texturesIds[0]);
 				gpuIds.push_back(gpuIds[0]);
@@ -619,9 +642,9 @@ void BlocksLoader::loadAllTextures()
 		}
 		else
 		{
-			if (!addTexture(path + "_n.png", true))
+			if (!texturesNames[i] || !addTexture(path + "_n.png", true))
 			{
-				if (!addTexture(path2 + "_n.png", true))
+				if (!texturesNames[i] || !addTexture(path2 + "_n.png", true))
 				{
 					texturesIds.push_back(texturesIds[1]);
 					gpuIds.push_back(gpuIds[1]);
@@ -631,9 +654,9 @@ void BlocksLoader::loadAllTextures()
 
 		
 
-		if (!addTexture(path + "_s.png"))
+		if (!texturesNames[i] || !addTexture(path + "_s.png"))
 		{
-			if (!addTexture(path2 + "_s.png"))
+			if (!texturesNames[i] || !addTexture(path2 + "_s.png"))
 			{
 				texturesIds.push_back(texturesIds[2]);
 				gpuIds.push_back(gpuIds[2]);
@@ -641,6 +664,19 @@ void BlocksLoader::loadAllTextures()
 		}
 	}
 	
+	//generate other textures
+	{
+		//test texture
+		texturesIds[56 * 3 + 0] = texturesIds[getGpuIdIndexForBlock(BlockTypes::wooden_plank, 0) + 0];
+		texturesIds[56 * 3 + 1] = texturesIds[getGpuIdIndexForBlock(BlockTypes::wooden_plank, 0) + 1];
+		texturesIds[56 * 3 + 2] = texturesIds[getGpuIdIndexForBlock(BlockTypes::wooden_plank, 0) + 2];
+		
+		
+
+		setGpuIds(56);
+	}
+
+
 
 }
 

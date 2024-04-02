@@ -81,7 +81,7 @@ bool initGameplay(ProgramData &programData, const char *c)
 	gameData.entityManager.localPlayer.entityId = playerData.yourPlayerEntityId;
 
 
-	gameData.chunkSystem.init(60);
+	gameData.chunkSystem.init(20);
 
 	gameData.sunShadow.init();
 
@@ -891,18 +891,17 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma region ui
 	if (w != 0 && h != 0)
 	{	
-		gameData.gameplayFrameProfiler.startSubProfile("ui");
 
 		Ui::Frame f({0,0, w, h});
 
 		programData.renderer2d.renderRectangle(
-			Ui::Box().xCenter().yCenter().xDimensionPixels(30).yAspectRatio(1.f), {}, 0,
+			Ui::Box().xCenter().yCenter().xDimensionPixels(30).yAspectRatio(1.f),
 			programData.uiTexture, programData.uiAtlas.get(2, 0)
 		);
-		gameData.gameplayFrameProfiler.endSubProfile("ui");
 	}
 #pragma endregion
 
+	programData.renderer2d.flush();
 	
 	gameData.gameplayFrameProfiler.endFrame();
 	gameData.gameplayFrameProfiler.startFrame();

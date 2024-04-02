@@ -1242,7 +1242,7 @@ void main()
 	out_color = clamp(out_color, vec4(0), vec4(1));
 	
 	//ssr
-	if(false)
+	//if(false)
 	if(!physicallyAccurateReflections)
 	if(roughness < 0.45)
 	{

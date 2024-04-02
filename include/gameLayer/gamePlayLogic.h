@@ -3,7 +3,6 @@
 #include "rendering/renderer.h"
 #include "blocksLoader.h"
 #include <structure.h>
-
 struct ProgramData
 {
 	gl2d::Renderer2D renderer2d;

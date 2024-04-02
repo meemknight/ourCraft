@@ -141,7 +141,7 @@ void recieveDataClient(ENetEvent &event,
 		}
 		else
 		{
-			//hard error request a hard reset.
+			//todo hard error request a hard reset.
 			permaAssertComment(0, "decompression failed");
 		}
 
