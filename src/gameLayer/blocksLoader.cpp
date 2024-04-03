@@ -640,15 +640,15 @@ void BlocksLoader::loadAllTextures()
 		
 		path2 += "pbr/block/"; //default
 		
-		//path += "pbr2/";		//texture pack
+		//path += "pbr3/";		//texture pack
 		path += "pbr/block/"; //original
 		
 		path += texturesNames[i];
 		path2 += texturesNames[i];
 
-		if (!texturesNames[i] || !addTexture(path + ".png"))
+		if (!texturesNames[i][0] || !addTexture(path + ".png"))
 		{
-			if (!texturesNames[i] || !addTexture(path2 + ".png"))
+			if (!texturesNames[i][0] || !addTexture(path2 + ".png"))
 			{
 				texturesIds.push_back(texturesIds[0]);
 				gpuIds.push_back(gpuIds[0]);
@@ -662,9 +662,9 @@ void BlocksLoader::loadAllTextures()
 		}
 		else
 		{
-			if (!texturesNames[i] || !addTexture(path + "_n.png", true))
+			if (!texturesNames[i][0] || !addTexture(path + "_n.png", true))
 			{
-				if (!texturesNames[i] || !addTexture(path2 + "_n.png", true))
+				if (!texturesNames[i][0] || !addTexture(path2 + "_n.png", true))
 				{
 					texturesIds.push_back(texturesIds[1]);
 					gpuIds.push_back(gpuIds[1]);
@@ -672,11 +672,10 @@ void BlocksLoader::loadAllTextures()
 			}
 		}
 
-		
 
-		if (!texturesNames[i] || !addTexture(path + "_s.png"))
+		if (!texturesNames[i][0] || !addTexture(path + "_s.png"))
 		{
-			if (!texturesNames[i] || !addTexture(path2 + "_s.png"))
+			if (!texturesNames[i][0] || !addTexture(path2 + "_s.png"))
 			{
 				texturesIds.push_back(texturesIds[2]);
 				gpuIds.push_back(gpuIds[2]);
@@ -724,6 +723,13 @@ void BlocksLoader::loadAllTextures()
 		t.createFromBuffer((char *)data.data(), size.x, size.y, true, true);
 		texturesIds[desinationIndex + 0] = t.id;
 
+		t.bind();
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 6.f);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 6.f);
+		glGenerateMipmap(GL_TEXTURE_2D);
+
 		setGpuIds(desinationIndex);
 	};
 
@@ -731,23 +737,108 @@ void BlocksLoader::loadAllTextures()
 	{
 		//test texture
 		copyFromOtherTextureAndApplyModifications(56 * 3, 
-			getGpuIdIndexForBlock(BlockTypes::wooden_plank, 0),
+			getGpuIdIndexForBlock(BlockTypes::diamond_ore, 0),
 			[](glm::vec3 in) ->glm::vec3
 		{
-			in = glm::pow(in, glm::vec3(2.f));
 			
-			//in = rgbToHSV(in);
-			//in.x += 0.0;
-			//in.x = glm::fract(in.x);
-			//in = hsv2rgb(in);
+			//in = glm::pow(in, glm::vec3(1.5f, 1.5f, 0.5f));
+
+			//in = glm::pow(in, glm::vec3(0.5f));
+
+
+			in = rgbToHSV(in);
+			
+			in.x += 0.3;
+			in.x = glm::fract(in.x);
+			
+			in = hsv2rgb(in);
 			
 			return in;
 		});
-		
+	}
+
+	//generate normal maps
+	{
+
+		for (int i = 1; i < texturesIds.size() / 3; i++)
+		{
+
+			if (texturesIds[i * 3 + 1] == texturesIds[1])
+			{
+				//no normal map!
+
+				gl2d::Texture t; t.id = texturesIds[i*3 + 0];
+				glm::ivec2 size = {};
+				auto data = t.readTextureData(0, &size);
+
+				std::vector<float> dataGrayScale;
+				dataGrayScale.resize(data.size() / 4);
+
+				for (int i = 0; i < data.size() / 4; i++)
+				{
+					glm::vec3 color = {};
+					color.r = data[i * 4 + 0] / 255.f;
+					color.g = data[i * 4 + 1] / 255.f;
+					color.b = data[i * 4 + 2] / 255.f;
+					float luminosity = glm::dot(color, {0.21,0.71,0.07});
+					dataGrayScale[i] = luminosity;
+				}
+
+				float pixelSize = (1.f / size.x) * 6.f;
+				//the last constant represents the height of the normal map result
+
+				for (int y = 0; y < size.y; y++)
+					for (int x = 0; x < size.x; x++)
+					{
+						glm::vec3 color = {};
+						int i = x + y*size.x;
+
+						int iRight = std::min((x + 1), size.x - 1) + y * size.x;
+						int iDown = x + std::min(y + 1, size.y - 1) * size.x;
+
+						float h = dataGrayScale[i];
+						float hRight = dataGrayScale[iRight];
+						float hDown = dataGrayScale[iDown];
+
+						glm::vec3 vertex(0, 0, h);
+						glm::vec3 vertexR(pixelSize, 0, hRight);
+						glm::vec3 vertexD(0, -pixelSize, hDown);
+
+						glm::vec3 R = glm::normalize(vertexR - vertex);
+						glm::vec3 D = glm::normalize(vertexD - vertex);
+
+						glm::vec3 N = glm::normalize(glm::cross(D, R));
+
+						//from [-1 1] to [0 255]
+						N += glm::vec3(1.f);
+						N /= 2.f;
+						color = N;
+						
+						data[i * 4 + 0] = color.r * 255;
+						data[i * 4 + 1] = color.g * 255;
+						data[i * 4 + 2] = color.b * 255;
+					}
+
+				t.createFromBuffer((char *)data.data(), size.x, size.y, true, true);
+				texturesIds[i * 3 + 1] = t.id;
+
+				t.bind();
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 6.f);
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 6.f);
+				glGenerateMipmap(GL_TEXTURE_2D);
+
+				auto handle = glGetTextureHandleARB(texturesIds[i*3 + 1]);
+				glMakeTextureHandleResidentARB(handle);
+				gpuIds[i * 3 + 1] = handle;
+
+			}
+
+		}
 
 
 	}
-
 
 
 }

@@ -285,3 +285,15 @@ constexpr unsigned char merge4bits(unsigned char a, unsigned char b)
 
 	return rez;
 }
+
+constexpr unsigned short mergeChars(unsigned char a, unsigned char b)
+{
+	unsigned short rez = b;
+
+	unsigned short secondA = a;
+	secondA <<= 8;
+
+	rez |= secondA;
+
+	return rez;
+}

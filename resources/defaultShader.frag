@@ -57,7 +57,6 @@ const float fogGradient = 32;
 uniform sampler2D u_depthTexture;
 uniform int u_depthPeelwaterPass = 0;
 uniform int u_hasPeelInformation = 0;
-
 uniform sampler2D u_PeelTexture;
 uniform sampler2D u_dudv;
 uniform sampler2D u_dudvNormal;

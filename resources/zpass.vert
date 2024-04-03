@@ -3,9 +3,8 @@
 layout(location = 0) in int in_faceOrientation; //up down left etc
 layout(location = 1) in int in_textureIndex; //dirt grass stone etc
 layout(location = 2) in ivec3 in_facePosition; // int x y z
-layout(location = 3) in int in_skyAndNormalLights;
-layout(location = 4) in int in_flags; 
 
+ivec3 facePosition;
 
 uniform mat4 u_viewProjection;
 uniform ivec3 u_positionInt;
@@ -89,7 +88,7 @@ vec3 calculateVertexPos(int vertexId)
 		//vertexShape.y = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 1];
 		//vertexShape.z = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 2];
 		//
-		//if(in_facePosition.y % 2 == 0)
+		//if(facePosition.y % 2 == 0)
 		//{
 		//	vertexShape.x = -vertexShape.x;
 		//	vertexShape.z = -vertexShape.z;
@@ -102,13 +101,13 @@ vec3 calculateVertexPos(int vertexId)
 		
 		vec3 offset = vec3(0);		
 
-		offset.y = 0.01*sin((u_timeGrass/0.2 )+vertexShape.x+in_facePosition.x);
-		offset.y += 0.04*sin((u_timeGrass/1.0 )+vertexShape.z+in_facePosition.z);
-		offset.xz = 0.05*sin((u_timeGrass/2.0 )+vertexShape.xz+in_facePosition.xz);
+		offset.y = 0.01*sin((u_timeGrass/0.2 )+vertexShape.x+facePosition.x);
+		offset.y += 0.04*sin((u_timeGrass/1.0 )+vertexShape.z+facePosition.z);
+		offset.xz = 0.05*sin((u_timeGrass/2.0 )+vertexShape.xz+facePosition.xz);
 
-		offset.y += 0.010*cos((u_timeGrass/1.0 )+vertexShape.x+in_facePosition.x);
-		offset.y += 0.02*cos((u_timeGrass/2.0 )+vertexShape.z+in_facePosition.z);
-		offset.xz += 0.02*cos((u_timeGrass/3.0 )+vertexShape.xz+in_facePosition.xz);	
+		offset.y += 0.010*cos((u_timeGrass/1.0 )+vertexShape.x+facePosition.x);
+		offset.y += 0.02*cos((u_timeGrass/2.0 )+vertexShape.z+facePosition.z);
+		offset.xz += 0.02*cos((u_timeGrass/3.0 )+vertexShape.xz+facePosition.xz);	
 
 		vertexShape += offset;
 
@@ -127,11 +126,11 @@ vec3 calculateVertexPos(int vertexId)
 		float AMPLITUDE2 = 0.9f;		
 		vec2 dir2 = normalize(vec2(0.9,1));		
 
-		float offset = biasUp(cos((in_facePosition.x * dir.x + 
-		in_facePosition.z * dir.y - u_timeGrass * SPEED) * FREQUENCY)) * AMPLITUDE;		
+		float offset = biasUp(cos((facePosition.x * dir.x + 
+		facePosition.z * dir.y - u_timeGrass * SPEED) * FREQUENCY)) * AMPLITUDE;		
 	
-		float offset2 = biasUp2(sin((in_facePosition.x * dir2.x +
-			in_facePosition.z * dir2.y - u_timeGrass * SPEED) * FREQUENCY)) * AMPLITUDE;		
+		float offset2 = biasUp2(sin((facePosition.x * dir2.x +
+			facePosition.z * dir2.y - u_timeGrass * SPEED) * FREQUENCY)) * AMPLITUDE;		
 
 		vertexShape.x = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 0];
 		vertexShape.y = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 1];
@@ -163,6 +162,16 @@ vec2 calculateUVs(int vertexId)
 void main()
 {
 
+	facePosition = in_facePosition; 
+	facePosition.y &= 0x0000FFFF;
+	
+	int in_skyAndNormalLights = in_facePosition.y >> 16;
+	in_skyAndNormalLights &= 0xFF;
+	
+	int in_flags =  in_facePosition.y >> 24;
+	in_flags &= 0xFF;
+
+
 	if((u_renderOnlyWater != 0) && ((in_flags & 1) == 0))
 	{
 		gl_Position = vec4(0,0,0,1);
@@ -170,12 +179,12 @@ void main()
 		return;
 	}
 
-	vec3 diffI = in_facePosition - u_positionInt;
+	vec3 diffI = facePosition - u_positionInt;
 	vec3 diffF = diffI - u_positionFloat;
 	
 
 	vec3 fragmentPositionF = calculateVertexPos(gl_VertexID);
-	ivec3 fragmentPositionI = in_facePosition;
+	ivec3 fragmentPositionI = facePosition;
 	v_uv = calculateUVs(gl_VertexID);
 	
 

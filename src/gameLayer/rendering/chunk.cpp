@@ -51,21 +51,37 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 #pragma region helpers
 
-	auto pushFlag = [](std::vector<int> &vect, bool isWater, bool isInWater)
+	auto pushFlagsLightAndPosition = 
+		[](std::vector<int> &vect,
+		glm::ivec3 position,
+		bool isWater, bool isInWater,
+		unsigned char sunLight, unsigned char torchLight)
 	{
-		int rez = 0;
 
+		//0x    FF      FF      FF    FF
+		//   -flags----light----position--
+
+		unsigned char light = merge4bits(sunLight, torchLight);
+
+		unsigned char flags = 0;
 		if (isWater)
 		{
-			rez |= 0b1;
+			flags |= 0b1;
 		}
 
 		if (isInWater)
 		{
-			rez |= 0b10;
+			flags |= 0b10;
 		}
 
-		vect.push_back(rez);
+		unsigned short firstHalf = mergeChars(flags, light);
+		//unsigned short firstHalf = mergeChars(flags, 0xFF);
+
+		int positionY = mergeShorts((short)position.y, firstHalf);
+
+		vect.push_back(position.x);
+		vect.push_back(positionY);
+		vect.push_back(position.z);
 	};
 
 	auto getNeighboursLogic = [&](int x, int y, int z, Block *sides[6])
@@ -122,39 +138,45 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 				)
 			{
 				currentVector->push_back(mergeShorts(i + isAnimated * 10, getGpuIdIndexForBlock(b.type, i)));
-				currentVector->push_back(x + this->data.x * CHUNK_SIZE);
-				currentVector->push_back(y);
-				currentVector->push_back(z + this->data.z * CHUNK_SIZE);
+
+				glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y, z + this->data.z * CHUNK_SIZE};
+
+				bool isInWater = (sides[i] != nullptr) && sides[i]->type == BlockTypes::water;
 
 				if (dontUpdateLightSystem)
 				{
-					currentVector->push_back(merge4bits(15,15));
+					pushFlagsLightAndPosition(*currentVector, position, 0, isInWater, 
+						15, 15);
+
 				}
 				else if (isLightEmitor(b.type))
 				{
-					currentVector->push_back(merge4bits(b.getSkyLight(),15)); //todo transparent block should emit internal light
+					pushFlagsLightAndPosition(*currentVector, position, 0, isInWater,
+						b.getSkyLight(), 15);
+					//todo transparent block should emit internal light
 				}else
 				if (i == 2 && y == CHUNK_HEIGHT - 1)
 				{
-					currentVector->push_back(merge4bits(15, b.getLight()));
+					pushFlagsLightAndPosition(*currentVector, position, 0, isInWater,
+						15, b.getLight());
 				}
 				else if (y == 0 && i == 3)
 				{
-					currentVector->push_back(merge4bits(5, b.getLight())); //bottom of the world
+					pushFlagsLightAndPosition(*currentVector, position, 0, isInWater,
+						15, b.getLight()); //bottom of the world
+					
 				}
 				else if (sides[i] != nullptr)
 				{
-					int val = merge4bits(sides[i]->getSkyLight(), sides[i]->getLight());
-					currentVector->push_back(val);
+					pushFlagsLightAndPosition(*currentVector, position, 0, isInWater,
+						sides[i]->getSkyLight(), sides[i]->getLight());
 				}
 				else
 				{
-					currentVector->push_back(0);
+					pushFlagsLightAndPosition(*currentVector, position, 0, isInWater,
+						0,0);
 				}
 				
-				bool isInWater = (sides[i] != nullptr) && sides[i]->type == BlockTypes::water;
-
-				pushFlag(*currentVector, 0, isInWater);
 			}
 		}
 	};
@@ -178,24 +200,28 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 				)
 			{
 				currentVector->push_back(mergeShorts(i + isAnimated * 10, getGpuIdIndexForBlock(b.type, i)));
-				currentVector->push_back(x + this->data.x * CHUNK_SIZE);
-				currentVector->push_back(y);
-				currentVector->push_back(z + this->data.z * CHUNK_SIZE);
-
-
+				
+				glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y,
+					z + this->data.z * CHUNK_SIZE};
+				bool isInWater = (sides[i] != nullptr) && sides[i]->type == BlockTypes::water;
+				bool isWater = b.type == BlockTypes::water;
 
 				if (dontUpdateLightSystem)
 				{
-					currentVector->push_back(merge4bits(15, 15));
+					pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
+						15, 15);
 				}
 				else
 					if (sides[i] == nullptr && i == 2)
 					{
-						currentVector->push_back(merge4bits(15, b.getLight()));
+						pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
+							15, b.getLight());
 					}
 					else if (sides[i] == nullptr && i == 3)
 					{
-						currentVector->push_back(merge4bits(5, b.getLight())); //bottom of the world
+						pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
+							5, b.getLight());
+						//bottom of the world
 					}
 					else if (sides[i] != nullptr)
 					{
@@ -204,16 +230,17 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 							std::max(b.getLight(),sides[i]->getLight())
 						);
 
-						currentVector->push_back(val);
+						pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
+							std::max(b.getSkyLight(), sides[i]->getSkyLight()),
+							std::max(b.getLight(), sides[i]->getLight()));
 					}
 					else
 					{
-						currentVector->push_back(0);
+						pushFlagsLightAndPosition(*currentVector, position, 
+							isWater, isInWater,
+							0, 0);
 					}
 
-				bool isInWater = (sides[i] != nullptr) && sides[i]->type == BlockTypes::water;
-
-				pushFlag(*currentVector, b.type == BlockTypes::water, isInWater);
 			}
 		}
 	};
@@ -240,23 +267,20 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		for (int i = 6; i <= 9; i++)
 		{
 			//opaqueGeometry.push_back(mergeShorts(i, b.type));
-			opaqueGeometry.push_back(mergeShorts(i, getGpuIdIndexForBlock(b.type, 0)));
+			currentVector->push_back(mergeShorts(i, getGpuIdIndexForBlock(b.type, 0)));
 
-			opaqueGeometry.push_back(x + this->data.x * CHUNK_SIZE);
-			opaqueGeometry.push_back(y);
-			opaqueGeometry.push_back(z + this->data.z * CHUNK_SIZE);
-			//opaqueGeometry.push_back(15);
+			glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y,
+				z + this->data.z * CHUNK_SIZE};
 
 			if (dontUpdateLightSystem)
 			{
-				opaqueGeometry.push_back(15);
+				pushFlagsLightAndPosition(*currentVector, position, 0, 0, 15, 15);
 			}
 			else
 			{
-				opaqueGeometry.push_back( merge4bits(b.getSkyLight(), b.getLight()) );
+				pushFlagsLightAndPosition(*currentVector, position,
+					0, 0, b.getSkyLight(), b.getLight());
 			}
-
-			pushFlag(opaqueGeometry, 0, 0);
 
 		}
 
@@ -348,7 +372,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		glBindBuffer(GL_ARRAY_BUFFER, opaqueGeometryBuffer);
 		glBufferData(GL_ARRAY_BUFFER, opaqueGeometry.size() * sizeof(opaqueGeometry[0]),
 			opaqueGeometry.data(), GL_STREAM_DRAW);
-		elementCountSize = opaqueGeometry.size() / 6; //todo magic number
+		elementCountSize = opaqueGeometry.size() / 4; //todo magic number
 
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsBuffer);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, lights.size() * sizeof(lights[0]),
@@ -363,7 +387,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		glBindBuffer(GL_ARRAY_BUFFER, transparentGeometryBuffer);
 		glBufferData(GL_ARRAY_BUFFER, transparentGeometry.size() * sizeof(transparentGeometry[0]),
 			transparentGeometry.data(), GL_STREAM_DRAW);
-		transparentElementCountSize = transparentGeometry.size() / 6;
+		transparentElementCountSize = transparentGeometry.size() / 4; //todo magic number
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);

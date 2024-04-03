@@ -5,24 +5,24 @@
 void setupVertexAttributes()
 {
 	glEnableVertexAttribArray(0);
-	glVertexAttribIPointer(0, 1, GL_SHORT, 6 * sizeof(int), 0);
+	glVertexAttribIPointer(0, 1, GL_SHORT, 4 * sizeof(int), 0);
 	glVertexAttribDivisor(0, 1);
 
 	glEnableVertexAttribArray(1);
-	glVertexAttribIPointer(1, 1, GL_SHORT, 6 * sizeof(int), (void *)(1 * sizeof(short)));
+	glVertexAttribIPointer(1, 1, GL_SHORT, 4 * sizeof(int), (void *)(1 * sizeof(short)));
 	glVertexAttribDivisor(1, 1);
 
 	glEnableVertexAttribArray(2);
-	glVertexAttribIPointer(2, 3, GL_INT, 6 * sizeof(int), (void *)(1 * sizeof(int)));
+	glVertexAttribIPointer(2, 3, GL_INT, 4 * sizeof(int), (void *)(1 * sizeof(int)));
 	glVertexAttribDivisor(2, 1);
 
-	glEnableVertexAttribArray(3);
-	glVertexAttribIPointer(3, 1, GL_INT, 6 * sizeof(int), (void *)(4 * sizeof(int)));
-	glVertexAttribDivisor(3, 1);
-
-	glEnableVertexAttribArray(4);
-	glVertexAttribIPointer(4, 1, GL_INT, 6 * sizeof(int), (void *)(5 * sizeof(int)));
-	glVertexAttribDivisor(4, 1);
+	//glEnableVertexAttribArray(3);
+	//glVertexAttribIPointer(3, 1, GL_INT, 4 * sizeof(int), (void *)(4 * sizeof(int)));
+	//glVertexAttribDivisor(3, 1);
+	//
+	//glEnableVertexAttribArray(4);
+	//glVertexAttribIPointer(4, 1, GL_INT, 4 * sizeof(int), (void *)(5 * sizeof(int)));
+	//glVertexAttribDivisor(4, 1);
 }
 
 void BigGpuBuffer::create(size_t chunks)

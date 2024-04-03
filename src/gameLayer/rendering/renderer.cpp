@@ -449,6 +449,7 @@ void Renderer::create(BlocksLoader &blocksLoader)
 
 	
 	//todo remove?
+	//not in use anymore?
 	glCreateBuffers(1, &vertexBuffer);
 	//glNamedBufferData(vertexBuffer, sizeof(data), data, GL_DYNAMIC_DRAW);
 
@@ -458,24 +459,24 @@ void Renderer::create(BlocksLoader &blocksLoader)
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 
 		glEnableVertexAttribArray(0);
-		glVertexAttribIPointer(0, 1, GL_SHORT, 5 * sizeof(int), 0);
+		glVertexAttribIPointer(0, 1, GL_SHORT, 4 * sizeof(int), 0);
 		glVertexAttribDivisor(0, 1);
 
 		glEnableVertexAttribArray(1);
-		glVertexAttribIPointer(1, 1, GL_SHORT, 5 * sizeof(int), (void *)(1 * sizeof(short)));
+		glVertexAttribIPointer(1, 1, GL_SHORT, 4 * sizeof(int), (void *)(1 * sizeof(short)));
 		glVertexAttribDivisor(1, 1);
 
 		glEnableVertexAttribArray(2);
-		glVertexAttribIPointer(2, 3, GL_INT, 5 * sizeof(int), (void *)(1 * sizeof(int)));
+		glVertexAttribIPointer(2, 3, GL_INT, 4 * sizeof(int), (void *)(1 * sizeof(int)));
 		glVertexAttribDivisor(2, 1);
 		
-		glEnableVertexAttribArray(3);
-		glVertexAttribIPointer(3, 1, GL_INT, 5 * sizeof(int), (void *)(4 * sizeof(int)));
-		glVertexAttribDivisor(3, 1);
-
-		glEnableVertexAttribArray(4);
-		glVertexAttribIPointer(4, 1, GL_INT, 6 * sizeof(int), (void *)(5 * sizeof(int)));
-		glVertexAttribDivisor(4, 1);
+		//glEnableVertexAttribArray(3);
+		//glVertexAttribIPointer(3, 1, GL_INT, 5 * sizeof(int), (void *)(4 * sizeof(int)));
+		//glVertexAttribDivisor(3, 1);
+		//
+		//glEnableVertexAttribArray(4);
+		//glVertexAttribIPointer(4, 1, GL_INT, 6 * sizeof(int), (void *)(5 * sizeof(int)));
+		//glVertexAttribDivisor(4, 1);
 
 	glBindVertexArray(0);
 
@@ -1078,7 +1079,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 								.getEntry({chunk->data.x,chunk->data.z});
 
 							permaAssertComment(
-								(int)entry.size / (6 * sizeof(int)) == facesCount,
+								(int)entry.size / (4 * sizeof(int)) == facesCount,
 								"Gib Gpu Buffer desync");
 
 							// Prepare draw command for this chunk
@@ -1087,7 +1088,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 							command.instanceCount = facesCount;
 							command.firstIndex = 0;
 							command.baseVertex = 0;
-							command.baseInstance = entry.beg / (6 * sizeof(int)); 
+							command.baseInstance = entry.beg / (4 * sizeof(int)); 
 
 							// Add draw command to the array
 							drawCommands.push_back(command);
@@ -1112,7 +1113,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 								.getEntry({chunk->data.x,chunk->data.z});
 
 							permaAssertComment(
-								(int)entry.size / (6 * sizeof(int)) == facesCount,
+								(int)entry.size / (4 * sizeof(int)) == facesCount,
 								"Gib Gpu Buffer desync");
 
 							// Prepare draw command for this chunk
@@ -1121,7 +1122,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 							command.instanceCount = facesCount;
 							command.firstIndex = 0;
 							command.baseVertex = 0;
-							command.baseInstance = entry.beg / (6 * sizeof(int));
+							command.baseInstance = entry.beg / (4 * sizeof(int));
 
 							// Add draw command to the array
 							drawCommands.push_back(command);
