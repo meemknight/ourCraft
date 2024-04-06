@@ -176,6 +176,7 @@ vec3 calculateVertexPos(int vertexId)
 		//	vertexShape.x = -vertexShape.x;
 		//	vertexShape.z = -vertexShape.z;
 		//	//v_uv.x = 1.f-v_uv.x;
+
 		//}
 
 		vertexShape.x += vertexData[(in_faceOrientation-10) * 3 * 6 + vertexId * 3 + 0];
@@ -236,6 +237,8 @@ vec3 calculateVertexPos(int vertexId)
 
 out vec3 v_semiViewSpacePos;
 
+vec3 normals[6] = {vec3(0,0,1),vec3(0,0,-1),vec3(0,1,0),vec3(0,-1,0),vec3(-1,0,0),vec3(1,0,0)};
+
 void main()
 {
 	facePosition = in_facePosition; 
@@ -269,8 +272,15 @@ void main()
 	
 
 	v_uv = calculateUVs(gl_VertexID);
-
+	
+	//todo optimize this
 	//calculate normals	
+
+	if(in_faceOrientation < 6)
+	{
+		v_normal = normals[in_faceOrientation];
+	}
+	else
 	{
 		vec3 pos1 = vec3(0);
 		vec3 pos2 = vec3(0);
@@ -321,7 +331,6 @@ void main()
 
 	v_ambient = (vertexColor[in_faceOrientation] * (v_ambientInt/15.f)) * 0.8 + 0.2;
 	//v_color = vertexColor[in_faceOrientation];
-
 
 
 	v_textureSampler = textureSamplerers[in_textureIndex];

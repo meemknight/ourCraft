@@ -2,6 +2,7 @@
 #extension GL_ARB_bindless_texture: require
 
 layout(location = 0) out vec4 color;
+layout(location = 1) out vec4 position;
 
 in vec2 v_uv;
 in flat int v_id;

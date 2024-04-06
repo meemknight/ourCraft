@@ -19,6 +19,17 @@ glm::mat4x4 Camera::getViewMatrix()
 	return  glm::lookAt(glm::vec3{0,0,0}, viewDirection, up);
 }
 
+glm::mat4x4 Camera::getViewMatrixWithPosition()
+{
+	glm::vec3 dir = glm::vec3(position) + glm::vec3(viewDirection);
+	return  glm::lookAt(glm::vec3(position), dir, up);
+}
+
+glm::mat4x4 Camera::getViewProjectionWithPositionMatrix()
+{
+	return getProjectionMatrix() * getViewMatrixWithPosition();
+}
+
 //todo better rotate function
 void Camera::rotateCamera(const glm::vec2 delta)
 {

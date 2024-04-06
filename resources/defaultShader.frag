@@ -32,7 +32,9 @@ uniform ShadingSettings
 	float u_underwaterDarkenStrength;
 	float u_underwaterDarkenDistance;
 	float u_fogGradientUnderWater;
+	int u_shaders;
 };
+
 
 uniform vec3 u_pointPosF;
 uniform ivec3 u_pointPosI;
@@ -637,7 +639,7 @@ float getLastDepthLiniarized(vec2 p, out float nonLinear)
 vec3 applyNormalMap(vec3 inNormal)
 {
 	vec3 normal;
-	if( isWater() )
+	if( isWater() && (u_shaders!=0) )
 	{
 		vec2 firstDudv = texture(sampler2D(u_dudvNormal), getDudvCoords3(waterSpeed/3.f)).rg;
 		normal = texture(sampler2D(u_dudvNormal), getDudvCoords5(waterSpeed*2)+firstDudv*0.04 ).rgb;
@@ -1013,397 +1015,486 @@ void main()
 
 	}
 
-	//load material
-	float metallic = 0;
-	float roughness = 0;
+	const bool blockIsInWater = ((v_flags & 2) != 0);
+	const float baseAmbient = 0.1;
+	vec3 computedAmbient = vec3(toLinear(v_ambient * (1.f-baseAmbient) + baseAmbient));
+	if(blockIsInWater)
 	{
-		vec2 materialColor = texture(sampler2D(v_materialSampler), v_uv).rg;
-		
-		roughness = pow((1 - materialColor.r),2);
-		metallic =pow((materialColor.g),0.5);
-		
-		//roughness = u_roughness;
-		//metallic = u_metallic;
-
-		roughness = clamp(roughness, 0.09, 0.99);
-		metallic = clamp(metallic, 0.0, 0.98);
+		computedAmbient *= vec3(0.38,0.4,0.42);
 	}
 
-	//load albedo
-	vec4 textureColor;
+	if(u_shaders == 0)
 	{
-		textureColor = texture(sampler2D(v_textureSampler), v_uv);
+		//load albedo
+		vec4 textureColor = texture(sampler2D(v_textureSampler), v_uv);
 		if(textureColor.a <= 0){discard;}
 		//gamma correction
 		textureColor.rgb = toLinear(textureColor.rgb);
 
-		if(isWater())
+		vec3 N = applyNormalMap(v_normal);
+
+		float viewLength = length(v_semiViewSpacePos);
+		vec3 V = -v_semiViewSpacePos / viewLength;
+
+		vec3 finalColor = computedAmbient;
+		for(int i=0; i< u_lightsCount; i++)
 		{
-			//textureColor.rgb = u_waterColor.rgb;
-			textureColor.rgb = u_waterColor.rgb;
-			roughness = 0.09;
-			metallic = 0.0;
-		}
-	}
-	
-	vec3 N = applyNormalMap(v_normal);
-	//vec3 N = v_normal;
-	//vec3 ViewSpaceVector = compute(u_positionInt, u_positionFloat, fragmentPositionI, fragmentPositionF);
-	//float viewLength = length(ViewSpaceVector);
-	//vec3 V = ViewSpaceVector / viewLength;
-	
-	float viewLength = length(v_semiViewSpacePos);
-	vec3 V = -v_semiViewSpacePos / viewLength;
-
-	//{
-	//	vec4 worldSpaceV = inverse(u_view) * vec4(V, 0.0);
-	//	vec3 worldSpaceDirection = worldSpaceV.xyz / worldSpaceV.w;
-	//	V = worldSpaceDirection;
-	//}
-
-	//if(u_writeScreenSpacePositions != 0)
-	{
-		////out_screenSpacePositions.xyz = u_view* -ViewSpaceVector; 
-		out_screenSpacePositions.xyz = (u_view * vec4(v_semiViewSpacePos,1)).xyz; //this is good
-		//out_screenSpacePositions.a = 1;
-	}
-		
-
-	bool blockIsInWater = ((v_flags & 2) != 0);
-	
-	//caustics
-	vec3 causticsColor = vec3(1);
-	if(blockIsInWater)
-	{
-		vec2 dudv = vec2(0);
-		dudv += texture(sampler2D(u_dudv), getDudvCoords(waterSpeed*2)).rg;
-		dudv += texture(sampler2D(u_dudv), getDudvCoords5(waterSpeed)).rg*1;
-		//dudv += texture(sampler2D(u_dudv), getDudvCoords2(waterSpeed*0.1)).rg * 0.4;
-		//dudv *= texture(sampler2D(u_dudv), getDudvCoords2(1)).rg;
-
-		vec2 coords = getDudvCoords(1) * causticsTextureScale + dudv / 10;
-		//vec2 coords = dudv * ;
-		
-
-		causticsColor.r = pow(texture(u_caustics, coords + vec2(0,0)).r, causticsLightPower) * causticsLightStrength;
-		causticsColor.g = pow(texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)).g, causticsLightPower) * causticsLightStrength;
-		causticsColor.b = pow(texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)*2.0).b, causticsLightPower) * causticsLightStrength;
-
-		//out_color.rgb = texture(u_caustics, coords).rgb;
-		//out_color.a = 1;
-		//return ;
-		//todo water uvs so the texture is continuous on all sides
-	}
-	
-
-	vec3 finalColor = vec3(0);
-
-	
-
-	vec3 F0 = vec3(0.04); 
-	F0 = mix(F0, textureColor.rgb, vec3(metallic));
-
-	for(int i=0; i< u_lightsCount; i++)
-	{
-		vec3 L = compute(lights[i].rgb, vec3(0), fragmentPositionI, fragmentPositionF);
-		//vec3 L =compute(u_pointPosI, u_pointPosF, fragmentPositionI, fragmentPositionF);
-		
-		float menhetanDistance = dot((abs(fragmentPositionI-lights[i].rgb)),vec3(1));
-		//float menhetanDistance = dot((abs(L)),vec3(1));
-
-		float LightDist = length(L);
-		if((15-menhetanDistance) + 0.1 > v_normalLight){continue;}
-		L = normalize(L);		
-
-		//light += computeLight(N,L,V) * atenuationFunction(LightDist)*1.f;
-		finalColor += computePointLightSource(L, metallic, roughness, vec3(pointLightColor,pointLightColor,pointLightColor)	* causticsColor, V, 
-			textureColor.rgb, N, F0) * atenuationFunction(LightDist);
+			vec3 L = compute(lights[i].rgb, vec3(0), fragmentPositionI, fragmentPositionF);
+			//vec3 L =compute(u_pointPosI, u_pointPosF, fragmentPositionI, fragmentPositionF);
 			
-	}
-	//light = 0;
+			float menhetanDistance = dot((abs(fragmentPositionI-lights[i].rgb)),vec3(1));
+			//float menhetanDistance = dot((abs(L)),vec3(1));
 
-	//sun light
-	if(v_skyLightUnchanged > 5)
-	{
-		vec3 sunLightColor = vec3(1.5);
-		sunLightColor *= 1-((15-v_skyLightUnchanged)/9.f);
-		sunLightColor *= ((v_ambientInt/15.f)*0.6 + 0.4f);
-
-		if(isWater())
-		{
-			sunLightColor *= 1.0;
+			float LightDist = length(L);
+			if((15-menhetanDistance) + 0.1 > v_normalLight){continue;}
+			L = normalize(L);		
+			
+			finalColor += clamp(dot(L, N), 0, 1) 
+				* atenuationFunction(LightDist) * pointLightColor;
+				
 		}
 
-		vec3 L = u_sunDirection;
-
-		if(dot(u_sunDirection, vec3(0,1,0))> -0.2)
+		if(v_skyLightUnchanged > 5)
 		{
-			float shadow = shadowCalc2(dot(L, v_normal));
+			vec3 sunLightColor = vec3(1.5);
+			sunLightColor *= 1-((15-v_skyLightUnchanged)/9.f);
+			sunLightColor *= ((v_ambientInt/15.f)*0.6 + 0.4f);
 
-			finalColor += computePointLightSource(L, 
-				metallic, roughness, sunLightColor * causticsColor, V, 
-				textureColor.rgb, N, F0) * shadow;
+			vec3 L = u_sunDirection;
+
+			if(dot(u_sunDirection, vec3(0,1,0))> -0.2)
+			{
+				float shadow = shadowCalc2(dot(L, v_normal));
+				
+				finalColor += clamp(dot(N, L), 0, 1)
+					* sunLightColor * shadow;
+			}
 		}
-	}
-	
-	float dotNV = dot(N, V);
-	vec3 freshnel = fresnelSchlickRoughness(dotNV, F0, roughness);
 		
-	out_color = vec4(finalColor,textureColor.a);
-	out_color.a = 1-out_color.a;
-	out_color.a *= dotNV;
-	out_color.a = 1-out_color.a;
-	//preview shadow
-	//if(shadowCalc(dot(u_sunDirection, v_normal)) < 0.5)
-	//{
-	//	out_color.rgb = mix(out_color.rgb, vec3(1,0.5,0.7), 0.3);
-	//}
+		out_color = vec4(finalColor,textureColor.a);
+		out_color.a = 1-out_color.a;
+		out_color.a *= clamp(0,1,dot(N,V));
+		out_color.a = 1-out_color.a;
 
-	//ambient
-	//todo light sub scatter
-	bool ssrSuccess = false;
-	const float baseAmbient = 0.1;
-		vec3 computedAmbient = vec3(toLinear(v_ambient * (1.f-baseAmbient) + baseAmbient));
-		if(blockIsInWater)
+		out_color.rgb = textureColor.rgb * finalColor;
+		
+		if(u_showLightLevels != 0)
 		{
-			computedAmbient *= vec3(0.38,0.4,0.42);
+			vec4 numbersColor = texture(u_numbers, vec2(v_uv.x / 16.0 + (1/16.0)*v_ambientInt, v_uv.y));
+			if(numbersColor.a > 0.1)
+			{out_color.rgb = mix(toLinear(numbersColor.rgb), out_color.rgb, 0.5);}
+		}
+		
+
+		if(u_underWater != 0)
+		{
+			out_color.rgb = mix(u_underWaterColor.rgb, out_color.rgb, 
+								vec3(computeFogUnderWater(viewLength)) * u_underwaterDarkenStrength 
+								+ (1-u_underwaterDarkenStrength)
+							);
 		}
 
-	if(physicallyAccurateReflections) //phisically accurate ambient
-	{
-		vec3 ssrNormal = N;
-		//if(isWater()){ssrNormal = v_normal;}
-		vec3 finalAmbient = computeAmbientTerm(computedAmbient, ssrNormal,
-		V, F0, roughness, metallic, textureColor.rgb, ssrSuccess, out_color.rgb);
-		out_color.rgb += finalAmbient;
+		out_color.rgb *= u_exposure;
+		
+		//vec3 purkine = purkineShift(out_color.rgb);
+		//out_color.rgb = mix(out_color.rgb, purkine, 0.05);
+
+		out_color.rgb = tonemapFunction(out_color.rgb);
+		out_color.rgb = toGammaSpace(out_color.rgb);
+
+		out_color = clamp(out_color, vec4(0), vec4(1));
+	
 	}else
 	{
-		out_color.rgb += textureColor.rgb * computedAmbient;
-	}
-	
-	if(u_showLightLevels != 0)
-	{
-		vec4 numbersColor = texture(u_numbers, vec2(v_uv.x / 16.0 + (1/16.0)*v_ambientInt, v_uv.y));
-		if(numbersColor.a > 0.1)
-		{out_color.rgb = mix(toLinear(numbersColor.rgb), out_color.rgb, 0.5);}
-	}
-	
-
-	if(u_underWater != 0)
-	{
-		out_color.rgb = mix(u_underWaterColor.rgb, out_color.rgb, 
-							vec3(computeFogUnderWater(viewLength)) * u_underwaterDarkenStrength 
-							+ (1-u_underwaterDarkenStrength)
-						);
-	}
-
-
-	//godRays
-	if(false)
-	{
-		vec3 godRaysContribution = vec3(0);
-
-		vec3 start = vec3((fragmentPositionI - u_lightPos) + fragmentPositionF);
-		
-		vec4 viewSpaceV = u_view * vec4(V, 0.0);
-		vec3 viewSpaceDirection = viewSpaceV.xyz / viewSpaceV.w;
-		
-		vec3 direction = -normalize(start);
-
-		vec3 end = vec3(0);
-		float advance = length(start)/30;
-		for(int i=1; i<30;i++)
+		//load material
+		float metallic = 0;
+		float roughness = 0;
 		{
-			start += direction*advance;
+			vec2 materialColor = texture(sampler2D(v_materialSampler), v_uv).rg;
 			
-			if(testShadow(start, 1) > 0.5)
-			{
-				godRaysContribution += vec3(0.01);
-			}
+			roughness = pow((1 - materialColor.r),2);
+			metallic =pow((materialColor.g),0.5);
+			
+			//roughness = u_roughness;
+			//metallic = u_metallic;
 
+			roughness = clamp(roughness, 0.09, 0.99);
+			metallic = clamp(metallic, 0.0, 0.98);
 		}
 
-		godRaysContribution = clamp(godRaysContribution, vec3(0), vec3(0.5));
-
-		out_color.rgb += godRaysContribution;
-	}
-
-
-	//gamma correction + HDR
-	out_color.rgb *= u_exposure;
-	
-	//vec3 purkine = purkineShift(out_color.rgb);
-	//out_color.rgb = mix(out_color.rgb, purkine, 0.05);
-
-	out_color.rgb = tonemapFunction(out_color.rgb);
-	out_color.rgb = toGammaSpace(out_color.rgb);
-
-	out_color = clamp(out_color, vec4(0), vec4(1));
-	
-	//ssr
-	//if(false)
-	if(!physicallyAccurateReflections)
-	if(roughness < 0.45)
-	{
-		vec2 fragCoord = gl_FragCoord.xy / textureSize(u_lastFramePositionViewSpace, 0).xy;
-
-		//float dotNVClamped = clamp(dotNV, 0.0, 0.99);
-		
-		vec3 posViewSpace = texture(u_lastFramePositionViewSpace, 
-			(fragCoord)).xyz;
-		vec3 pos = vec3(u_inverseView * vec4(posViewSpace,1));
-
-		vec3 viewSpaceNormal = normalize( vec3(transpose(inverse(mat3(u_view))) * N));
-
-		vec3 ssrNormal = N;
-		if(isWater()){ssrNormal = v_normal;}
-
-		float mixFactor = 0;
-		//vec3 ssr = SSR(posViewSpace, N, metallic, F, mixFactor, roughness, pos, V, viewSpaceNormal, 
-		//	textureSize(u_lastFramePositionViewSpace, 0).xy);
-		vec3 ssr = SSR(ssrSuccess, posViewSpace, ssrNormal, mixFactor, pow(roughness,2), pos, V, viewSpaceNormal, 
-			textureSize(u_lastFramePositionViewSpace, 0).xy);
-		
-		
-		
-		//if is water just reflect 100% because we deal with it later
-		if(isWater())
+		//load albedo
+		vec4 textureColor;
 		{
-			if(ssrSuccess) 
+			textureColor = texture(sampler2D(v_textureSampler), v_uv);
+			if(textureColor.a <= 0){discard;}
+			//gamma correction
+			textureColor.rgb = toLinear(textureColor.rgb);
+
+			if(isWater())
 			{
-				//out_color.rgb = mix(u_waterColor, ssr, 0.9);
-				out_color.rgb = ssr;
+				//textureColor.rgb = u_waterColor.rgb;
+				textureColor.rgb = u_waterColor.rgb;
+				roughness = 0.09;
+				metallic = 0.0;
 			}
+		}
+		
+		vec3 N = applyNormalMap(v_normal);
+		//vec3 N = v_normal;
+		//vec3 ViewSpaceVector = compute(u_positionInt, u_positionFloat, fragmentPositionI, fragmentPositionF);
+		//float viewLength = length(ViewSpaceVector);
+		//vec3 V = ViewSpaceVector / viewLength;
+		
+		float viewLength = length(v_semiViewSpacePos);
+		vec3 V = -v_semiViewSpacePos / viewLength;
+
+		//{
+		//	vec4 worldSpaceV = inverse(u_view) * vec4(V, 0.0);
+		//	vec3 worldSpaceDirection = worldSpaceV.xyz / worldSpaceV.w;
+		//	V = worldSpaceDirection;
+		//}
+
+		//if(u_writeScreenSpacePositions != 0)
+		{
+			////out_screenSpacePositions.xyz = u_view* -ViewSpaceVector; 
+			out_screenSpacePositions.xyz = (u_view * vec4(v_semiViewSpacePos,1)).xyz; //this is good
+			//out_screenSpacePositions.a = 1;
+		}
+			
+
+		
+		//caustics
+		vec3 causticsColor = vec3(1);
+		if(blockIsInWater)
+		{
+			vec2 dudv = vec2(0);
+			dudv += texture(sampler2D(u_dudv), getDudvCoords(waterSpeed*2)).rg;
+			dudv += texture(sampler2D(u_dudv), getDudvCoords5(waterSpeed)).rg*1;
+			//dudv += texture(sampler2D(u_dudv), getDudvCoords2(waterSpeed*0.1)).rg * 0.4;
+			//dudv *= texture(sampler2D(u_dudv), getDudvCoords2(1)).rg;
+
+			vec2 coords = getDudvCoords(1) * causticsTextureScale + dudv / 10;
+			//vec2 coords = dudv * ;
+			
+
+			causticsColor.r = pow(texture(u_caustics, coords + vec2(0,0)).r, causticsLightPower) * causticsLightStrength;
+			causticsColor.g = pow(texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)).g, causticsLightPower) * causticsLightStrength;
+			causticsColor.b = pow(texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)*2.0).b, causticsLightPower) * causticsLightStrength;
+
+			//out_color.rgb = texture(u_caustics, coords).rgb;
 			//out_color.a = 1;
+			//return ;
+			//todo water uvs so the texture is continuous on all sides
+		}
+		
+
+		vec3 finalColor = vec3(0);
+
+		
+
+		vec3 F0 = vec3(0.04); 
+		F0 = mix(F0, textureColor.rgb, vec3(metallic));
+
+		for(int i=0; i< u_lightsCount; i++)
+		{
+			vec3 L = compute(lights[i].rgb, vec3(0), fragmentPositionI, fragmentPositionF);
+			//vec3 L =compute(u_pointPosI, u_pointPosF, fragmentPositionI, fragmentPositionF);
+			
+			float menhetanDistance = dot((abs(fragmentPositionI-lights[i].rgb)),vec3(1));
+			//float menhetanDistance = dot((abs(L)),vec3(1));
+
+			float LightDist = length(L);
+			if((15-menhetanDistance) + 0.1 > v_normalLight){continue;}
+			L = normalize(L);		
+
+			//light += computeLight(N,L,V) * atenuationFunction(LightDist)*1.f;
+			finalColor += computePointLightSource(L, metallic, roughness, vec3(pointLightColor,pointLightColor,pointLightColor)	* causticsColor, V, 
+				textureColor.rgb, N, F0) * atenuationFunction(LightDist);
+				
+		}
+		//light = 0;
+
+		//sun light
+		if(v_skyLightUnchanged > 5)
+		{
+			vec3 sunLightColor = vec3(1.5);
+			sunLightColor *= 1-((15-v_skyLightUnchanged)/9.f);
+			sunLightColor *= ((v_ambientInt/15.f)*0.6 + 0.4f);
+
+			if(isWater())
+			{
+				sunLightColor *= 1.0;
+			}
+
+			vec3 L = u_sunDirection;
+
+			if(dot(u_sunDirection, vec3(0,1,0))> -0.2)
+			{
+				float shadow = shadowCalc2(dot(L, v_normal));
+
+				finalColor += computePointLightSource(L, 
+					metallic, roughness, sunLightColor * causticsColor, V, 
+					textureColor.rgb, N, F0) * shadow;
+			}
+		}
+		
+		float dotNV = dot(N, V);
+		vec3 freshnel = fresnelSchlickRoughness(dotNV, F0, roughness);
+			
+		out_color = vec4(finalColor,textureColor.a);
+		out_color.a = 1-out_color.a;
+		out_color.a *= dotNV;
+		out_color.a = 1-out_color.a;
+		//preview shadow
+		//if(shadowCalc(dot(u_sunDirection, v_normal)) < 0.5)
+		//{
+		//	out_color.rgb = mix(out_color.rgb, vec3(1,0.5,0.7), 0.3);
+		//}
+
+		//ambient
+		//todo light sub scatter
+		bool ssrSuccess = false;
+
+		if(physicallyAccurateReflections) //phisically accurate ambient
+		{
+			vec3 ssrNormal = N;
+			//if(isWater()){ssrNormal = v_normal;}
+			vec3 finalAmbient = computeAmbientTerm(computedAmbient, ssrNormal,
+			V, F0, roughness, metallic, textureColor.rgb, ssrSuccess, out_color.rgb);
+			out_color.rgb += finalAmbient;
 		}else
 		{
-			if(ssrSuccess) 
-			{
-				//ssr = mix(ssr, out_color.rgb, dotNV);
-				ssr = mix(ssr, out_color.rgb, freshnel);
-				out_color.rgb = mix(ssr, out_color.rgb, pow(roughness, 0.5));
-			}	
-
-			//if(success) {out_color.rgb = vec3(0,0,1);}else
-			//{out_color.rgb = vec3(1,0,0);}
-
-			//out_color.rgb *= posViewSpace;
+			out_color.rgb += textureColor.rgb * computedAmbient;
 		}
-		//if(success)out_color.rgb = ssr;
 		
-	}
-	
-
-
-
-	//out_color.rgb = linear_to_srgb(out_color.rgb);
-	
-	//fog
-	//{
-	//	out_color.a *= computeFog(viewLength);	
-	//}
-	
-	//is water	
-	//if(false)
-	if(isWater())
-	{
-		float reflectivity = dotNV;
-		//float reflectivity = 0;
-
-		if(u_hasPeelInformation != 0)
+		if(u_showLightLevels != 0)
 		{
-			vec2 p = v_fragPos.xy / v_fragPos.w;
-			p += 1;
-			p/=2;
+			vec4 numbersColor = texture(u_numbers, vec2(v_uv.x / 16.0 + (1/16.0)*v_ambientInt, v_uv.y));
+			if(numbersColor.a > 0.1)
+			{out_color.rgb = mix(toLinear(numbersColor.rgb), out_color.rgb, 0.5);}
+		}
+		
 
-			float nonLinear;
-			float currentDepth = linearizeDepth(gl_FragCoord.z);		
-			float lastDepth = getLastDepthLiniarized(p, nonLinear);
-			float waterDepth = lastDepth - currentDepth;
+		if(u_underWater != 0)
+		{
+			out_color.rgb = mix(u_underWaterColor.rgb, out_color.rgb, 
+								vec3(computeFogUnderWater(viewLength)) * u_underwaterDarkenStrength 
+								+ (1-u_underwaterDarkenStrength)
+							);
+		}
+
+
+		//godRays
+		if(false)
+		{
+			vec3 godRaysContribution = vec3(0);
+
+			vec3 start = vec3((fragmentPositionI - u_lightPos) + fragmentPositionF);
 			
-			//visualize dudv
-			//out_color.rgb = texture(sampler2D(u_dudv), getDudvCoords3(1)).rgb;
-			//out_color.a = 1;
-			//return;
-
-			vec2 dudv = vec2(0);
-			dudv += texture(sampler2D(u_dudv), getDudvCoords(waterSpeed)).rg;
-			dudv += texture(sampler2D(u_dudv), getDudvCoords2(dudv.x)).rg * 0.01;
-			//dudv += texture(sampler2D(u_dudv), getDudvCoords3(1)).rg;
-			vec2 dudvConv = (dudv * 2) - 1;
-			vec2 distorsionCoord = dudvConv * 0.007;	
-
-			float distortDepth = getLastDepthLiniarized(p + distorsionCoord, nonLinear);
-			float distortWaterDepth = distortDepth - currentDepth;
-
+			vec4 viewSpaceV = u_view * vec4(V, 0.0);
+			vec3 viewSpaceDirection = viewSpaceV.xyz / viewSpaceV.w;
 			
-			//v_fragPos
-			vec3 perturbedFragPos = (u_inverseProjMat * vec4(p + distorsionCoord, nonLinear, 1)).rgb;
-			vec3 direction = perturbedFragPos - v_fragPos.xyz;
-			
-			vec3 peelTexture = vec3(1,0.5,0.5);
-			float finalDepth = 0;			
-			if(distortDepth < currentDepth + 0.1)
-			//if(dot(direction, v_normal) > 0 || distortDepth < currentDepth + 0.1)
+			vec3 direction = -normalize(start);
+
+			vec3 end = vec3(0);
+			float advance = length(start)/30;
+			for(int i=1; i<30;i++)
 			{
-				//geometry in front of water
-				//keep original texture
-				peelTexture = texture(u_PeelTexture, p).rgb;
-				finalDepth = waterDepth;
-			}else
-			{
-				peelTexture = texture(u_PeelTexture, p + distorsionCoord).rgb;
-				finalDepth = distortWaterDepth;
+				start += direction*advance;
+				
+				if(testShadow(start, 1) > 0.5)
+				{
+					godRaysContribution += vec3(0.01);
+				}
+
 			}
 
+			godRaysContribution = clamp(godRaysContribution, vec3(0), vec3(0.5));
 
-			//darken water with depth
-			peelTexture = mix(peelTexture, u_waterColor*0.7, 0.6 * clamp(pow(finalDepth/18.0,2),0,1) );
+			out_color.rgb += godRaysContribution;
+		}
 
+
+		//gamma correction + HDR
+		out_color.rgb *= u_exposure;
+		
+		//vec3 purkine = purkineShift(out_color.rgb);
+		//out_color.rgb = mix(out_color.rgb, purkine, 0.05);
+
+		out_color.rgb = tonemapFunction(out_color.rgb);
+		out_color.rgb = toGammaSpace(out_color.rgb);
+
+		out_color = clamp(out_color, vec4(0), vec4(1));
+		
+		//ssr
+		//if(false)
+		if(!physicallyAccurateReflections)
+		if(roughness < 0.45)
+		{
+			vec2 fragCoord = gl_FragCoord.xy / textureSize(u_lastFramePositionViewSpace, 0).xy;
+
+			//float dotNVClamped = clamp(dotNV, 0.0, 0.99);
 			
+			vec3 posViewSpace = texture(u_lastFramePositionViewSpace, 
+				(fragCoord)).xyz;
+			vec3 pos = vec3(u_inverseView * vec4(posViewSpace,1));
+
+			vec3 viewSpaceNormal = normalize( vec3(transpose(inverse(mat3(u_view))) * N));
+
+			vec3 ssrNormal = N;
+			if(isWater()){ssrNormal = v_normal;}
+
+			float mixFactor = 0;
+			//vec3 ssr = SSR(posViewSpace, N, metallic, F, mixFactor, roughness, pos, V, viewSpaceNormal, 
+			//	textureSize(u_lastFramePositionViewSpace, 0).xy);
+			vec3 ssr = SSR(ssrSuccess, posViewSpace, ssrNormal, mixFactor, pow(roughness,2), pos, V, viewSpaceNormal, 
+				textureSize(u_lastFramePositionViewSpace, 0).xy);
+			
+			
+			
+			//if is water just reflect 100% because we deal with it later
+			if(isWater())
+			{
+				if(ssrSuccess) 
+				{
+					//out_color.rgb = mix(u_waterColor, ssr, 0.9);
+					out_color.rgb = ssr;
+				}
+				//out_color.a = 1;
+			}else
+			{
+				if(ssrSuccess) 
+				{
+					//ssr = mix(ssr, out_color.rgb, dotNV);
+					ssr = mix(ssr, out_color.rgb, freshnel);
+					out_color.rgb = mix(ssr, out_color.rgb, pow(roughness, 0.5));
+				}	
+
+				//if(success) {out_color.rgb = vec3(0,0,1);}else
+				//{out_color.rgb = vec3(1,0,0);}
+
+				//out_color.rgb *= posViewSpace;
+			}
+			//if(success)out_color.rgb = ssr;
+			
+		}
+		
+
+
+
+		//out_color.rgb = linear_to_srgb(out_color.rgb);
+		
+		//fog
+		//{
+		//	out_color.a *= computeFog(viewLength);	
+		//}
+		
+		//is water	
+		//if(false)
+		if(isWater())
+		{
+			float reflectivity = dotNV;
+			//float reflectivity = 0;
+
 			//float mixFactor = clamp(fresnelSchlickWater(reflectivity),0,1);
 			//float mixFactor = pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1;
 			float mixFactor = clamp(pow(1-clamp(reflectivity,0,1),2) * 0.8+0.1,0,1);
 			//float mixFactor = 1-clamp(reflectivity,0,1);
 			//if(ssrSuccess){mixFactor = pow(mixFactor, 0.9);}
 
-			//clamp(mixFactor,0,1);
-			out_color.rgb = mix(peelTexture, out_color.rgb,  mixFactor);
-			//out_color.rgb = peelTexture + out_color.rgb*mixFactor;
+			if(u_hasPeelInformation != 0)
+			{
+				vec2 p = v_fragPos.xy / v_fragPos.w;
+				p += 1;
+				p/=2;
+
+				float nonLinear;
+				float currentDepth = linearizeDepth(gl_FragCoord.z);		
+				float lastDepth = getLastDepthLiniarized(p, nonLinear);
+				float waterDepth = lastDepth - currentDepth;
+				
+				//visualize dudv
+				//out_color.rgb = texture(sampler2D(u_dudv), getDudvCoords3(1)).rgb;
+				//out_color.a = 1;
+				//return;
+
+				vec2 dudv = vec2(0);
+				dudv += texture(sampler2D(u_dudv), getDudvCoords(waterSpeed)).rg;
+				dudv += texture(sampler2D(u_dudv), getDudvCoords2(dudv.x)).rg * 0.01;
+				//dudv += texture(sampler2D(u_dudv), getDudvCoords3(1)).rg;
+				vec2 dudvConv = (dudv * 2) - 1;
+				vec2 distorsionCoord = dudvConv * 0.007;	
+
+				float distortDepth = getLastDepthLiniarized(p + distorsionCoord, nonLinear);
+				float distortWaterDepth = distortDepth - currentDepth;
+
+				
+				//v_fragPos
+				vec3 perturbedFragPos = (u_inverseProjMat * vec4(p + distorsionCoord, nonLinear, 1)).rgb;
+				vec3 direction = perturbedFragPos - v_fragPos.xyz;
+				
+				vec3 peelTexture = vec3(1,0.5,0.5);
+				float finalDepth = 0;			
+				if(distortDepth < currentDepth + 0.1)
+				//if(dot(direction, v_normal) > 0 || distortDepth < currentDepth + 0.1)
+				{
+					//geometry in front of water
+					//keep original texture
+					peelTexture = texture(u_PeelTexture, p).rgb;
+					finalDepth = waterDepth;
+				}else
+				{
+					peelTexture = texture(u_PeelTexture, p + distorsionCoord).rgb;
+					finalDepth = distortWaterDepth;
+				}
 
 
-			//out_color.rgb = mix(out_color.rgb, peelTexture, clamp(reflectivity,0,1));
-			//out_color.rgb = mix(peelTexture, out_color.rgb, pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1 );
-			//out_color.rgb = mix(peelTexture, u_waterColor*out_color.rgb, pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1 );
-			//out_color.rgb = mix(peelTexture, out_color.rgb, 0.0);
-			
+				//darken water with depth
+				peelTexture = mix(peelTexture, u_waterColor*0.7, 0.6 * clamp(pow(finalDepth/18.0,2),0,1) );
 
-			//darken deep stuff, todo reenable and use final depth
-			//out_color.rgb = vec3(waterDepth/20);
-			//out_color.r = (currentDepth) / 10;
-			//out_color.g = (lastDepth) / 10;
-			//out_color.b = (lastDepth) / 10;
-			//out_color.rg = dudv.rg;
-			//out_color.b = 0;
 
-			out_color.a = 1;
-			//out_color.a = clamp(waterDepth/5,0,1);
-			//out_color.r = clamp(waterDepth/5,0,1);
-			//out_color.g = clamp(waterDepth/5,0,1);
-			//out_color.b = clamp(waterDepth/5,0,1);
-		}else
-		{
-			out_color.a = reflectivity; //set the alpha component
+				//clamp(mixFactor,0,1);
+				out_color.rgb = mix(peelTexture, out_color.rgb,  mixFactor);
+				//out_color.rgb = peelTexture + out_color.rgb*mixFactor;
+
+
+				//out_color.rgb = mix(out_color.rgb, peelTexture, clamp(reflectivity,0,1));
+				//out_color.rgb = mix(peelTexture, out_color.rgb, pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1 );
+				//out_color.rgb = mix(peelTexture, u_waterColor*out_color.rgb, pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1 );
+				//out_color.rgb = mix(peelTexture, out_color.rgb, 0.0);
+				
+
+				//darken deep stuff, todo reenable and use final depth
+				//out_color.rgb = vec3(waterDepth/20);
+				//out_color.r = (currentDepth) / 10;
+				//out_color.g = (lastDepth) / 10;
+				//out_color.b = (lastDepth) / 10;
+				//out_color.rg = dudv.rg;
+				//out_color.b = 0;
+
+				out_color.a = 1;
+				//out_color.a = clamp(waterDepth/5,0,1);
+				//out_color.r = clamp(waterDepth/5,0,1);
+				//out_color.g = clamp(waterDepth/5,0,1);
+				//out_color.b = clamp(waterDepth/5,0,1);
+			}else
+			{
+				//make it darker so you can more easily see the back face
+				out_color.a = pow(mixFactor, 0.8); //set the alpha component
+			}
+		
+
 		}
-	
 
+
+		//out_color.r = 1-roughness;
+		//out_color.g = metallic;
+		//out_color.b = 0;
+		//out_color.a = 1;
+	
 	}
 
-
-	//out_color.r = 1-roughness;
-	//out_color.g = metallic;
-	//out_color.b = 0;
-	//out_color.a = 1;
+	
 }
 
 

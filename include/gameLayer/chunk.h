@@ -76,6 +76,7 @@ struct Chunk
 	char neighbourToFront = 0;
 	char neighbourToBack = 0;
 	char dontDrawYet = 0; //first time ever don't draw it yet so we have time to process the light
+	char culled = 0;
 
 	void clear()
 	{

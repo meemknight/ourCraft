@@ -81,7 +81,7 @@ bool initGameplay(ProgramData &programData, const char *c)
 	gameData.entityManager.localPlayer.entityId = playerData.yourPlayerEntityId;
 
 
-	gameData.chunkSystem.init(20);
+	gameData.chunkSystem.init(60);
 
 	gameData.sunShadow.init();
 
@@ -790,6 +790,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 				ImVec4 colNotLoaded = {0.2f,0.2f,0.2f,1.f};
 				ImVec4 colLoaded = {0.2f,0.9f,0.2f,1.f};
+				ImVec4 colCulled = {0.4f,0.1f,0.1f,1.f};
+				ImVec4 colLoadedRebakingTransparency = {0.2f,0.4f,1.0f,1.f};
+				ImVec4 colLoadedButNotBaked = {0.5f,0.5f,0.2f,1.f};
 				ImVec4 colrequested = {0.2f,0.2f,0.9f,1.f};
 
 				ImGui::Text("Gpu buffer entries count: %d",
@@ -804,13 +807,25 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				ImGui::SameLine();
 				ImGui::Text("Not loaded."); 
 
-				ImGui::ColorButton("##2", colLoaded, ImGuiColorEditFlags_NoInputs, ImVec2(25, 25));
-				ImGui::SameLine();
-				ImGui::Text("Not Loaded.");
-
 				ImGui::ColorButton("##2", colrequested, ImGuiColorEditFlags_NoInputs, ImVec2(25, 25));
 				ImGui::SameLine();
-				ImGui::Text("Not Loaded.");
+				ImGui::Text("Requested Loaded.");
+
+				ImGui::ColorButton("##3", colLoadedButNotBaked, ImGuiColorEditFlags_NoInputs, ImVec2(25, 25));
+				ImGui::SameLine();
+				ImGui::Text("Loaded not baked");
+
+				ImGui::ColorButton("##4", colLoadedRebakingTransparency, ImGuiColorEditFlags_NoInputs, ImVec2(25, 25));
+				ImGui::SameLine();
+				ImGui::Text("Rebaking transparency");
+
+				ImGui::ColorButton("##5", colCulled, ImGuiColorEditFlags_NoInputs, ImVec2(25, 25));
+				ImGui::SameLine();
+				ImGui::Text("Culled (but loaded)");
+
+				ImGui::ColorButton("##6", colLoaded, ImGuiColorEditFlags_NoInputs, ImVec2(25, 25));
+				ImGui::SameLine();
+				ImGui::Text("Loaded!");
 
 				ImGui::Separator();
 
@@ -824,7 +839,23 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 						if (c != nullptr)
 						{
-							currentColor = colLoaded;
+							if (c->culled)
+							{
+								currentColor = colCulled;
+							}
+							else if (c->dirty)
+							{
+								currentColor = colLoadedButNotBaked;
+							}
+							else if(c->dirtyTransparency)
+							{
+								currentColor = colLoadedRebakingTransparency;
+							}
+							else
+							{
+								currentColor = colLoaded;
+							}
+
 						}
 						else
 						{
@@ -865,6 +896,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			ImGui::Checkbox("Z pre pass",
 				&programData.renderer.zprepass);
 
+			bool shaders = programData.renderer.defaultShader.shadingSettings.shaders;
+			ImGui::Checkbox("Shaders",
+				&shaders);
+			programData.renderer.defaultShader.shadingSettings.shaders = shaders;
+
+			ImGui::Checkbox("Frustum culling",
+				&programData.renderer.frustumCulling);
 		}
 		ImGui::End();
 

@@ -108,6 +108,7 @@ struct Renderer
 			float underwaterDarkenStrength = 0.94;
 			float underwaterDarkenDistance = 29;
 			float fogGradientUnderWater = 1.9;
+			int shaders = true;
 		}shadingSettings;
 
 
@@ -163,6 +164,7 @@ struct Renderer
 	bool unifiedGeometry = 1;
 	bool sortChunks = 1;
 	bool zprepass = 0;
+	bool frustumCulling = 1;
 
 	FBO fboMain;
 	FBO fboCoppy;

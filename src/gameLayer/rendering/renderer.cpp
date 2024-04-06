@@ -14,6 +14,7 @@
 #include <rendering/sunShadow.h>
 #include <platformTools.h>
 #include <gameplay/entityManagerClient.h>
+#include <rendering/frustumCulling.h>
 
 #define GET_UNIFORM(s, n) n = s.getUniform(#n);
 #define GET_UNIFORM2(s, n) s. n = s.shader.getUniform(#n);
@@ -852,6 +853,36 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	float timeGrass = std::clock() / 1000.f;
 
+
+#pragma region frustum culling
+
+	FrustumVolume cameraFrustum(c.getViewProjectionWithPositionMatrix());
+
+	for (auto c : chunkSystem.loadedChunks)
+	{
+		if (c)
+		{
+			c->culled = 0;
+
+			if (frustumCulling)
+			{
+				AABBVolume chunkAABB;
+
+				chunkAABB.minVertex = {c->data.x * CHUNK_SIZE, 0, c->data.z * CHUNK_SIZE};
+				chunkAABB.maxVertex = {(c->data.x + 1) * CHUNK_SIZE, CHUNK_HEIGHT + 1, (c->data.z + 1) * CHUNK_SIZE};
+
+				if (!CheckFrustumVsAABB(cameraFrustum, chunkAABB))
+				{
+					c->culled = 1;
+				}
+			};
+		}
+	}
+
+#pragma endregion
+
+
+
 #pragma region render sky box 0
 
 	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fboOnlyFirstTarget);
@@ -1057,6 +1088,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	//configure opaque geometry
 	static std::vector<DrawElementsIndirectCommand> drawCommands;
 
+	if(unifiedGeometry)
 	{
 		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCommandsOpaqueBuffer);
 		drawCommands.clear();
@@ -1069,7 +1101,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 				auto chunk = chunkVectorCopy[i];
 				if (chunk)
 				{
-					if (!chunk->dontDrawYet)
+					if (!chunk->dontDrawYet &&
+						!chunk->culled)
 					{
 						int facesCount = chunk->elementCountSize;
 						if (facesCount)
@@ -1104,7 +1137,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			{
 				if (chunk)
 				{
-					if (!chunk->dontDrawYet)
+					if (!chunk->dontDrawYet
+						&& ! chunk->culled
+						)
 					{
 						int facesCount = chunk->elementCountSize;
 						if (facesCount)
@@ -1132,11 +1167,10 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 				}
 			}
 		}
+
+		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCommandsOpaqueBuffer);
+		glBufferData(GL_DRAW_INDIRECT_BUFFER, drawCommands.size() * sizeof(DrawElementsIndirectCommand), drawCommands.data(), GL_STREAM_DRAW);
 	}
-
-	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCommandsOpaqueBuffer);
-	glBufferData(GL_DRAW_INDIRECT_BUFFER, drawCommands.size() * sizeof(DrawElementsIndirectCommand), drawCommands.data(), GL_STREAM_DRAW);
-
 
 	auto renderStaticGeometry = [&]()
 	{
@@ -1149,70 +1183,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 			glMultiDrawElementsIndirect(GL_TRIANGLE_FAN, GL_UNSIGNED_BYTE,
 				nullptr, drawCommands.size(), sizeof(DrawElementsIndirectCommand));
-			//glDrawElementsInstancedBaseInstance(GL_TRIANGLE_FAN,
-			//	4, GL_UNSIGNED_BYTE,
-			//	0, chunkSystem.gpuBuffer.arenaSize/(6 * sizeof(int)), 0);
-
-
-
-			//if (sortChunks)
-			//{
-			//	int s = chunkVectorCopy.size();
-			//	for (int i = s - 1; i >= 0; i--)
-			//	{
-			//		auto chunk = chunkVectorCopy[i];
-			//		if (chunk)
-			//		{
-			//			if (!chunk->dontDrawYet)
-			//			{
-			//				int facesCount = chunk->elementCountSize;
-			//				if (facesCount)
-			//				{
-			//
-			//					auto entry = chunkSystem.gpuBuffer
-			//						.getEntry({chunk->data.x,chunk->data.z});
-			//
-			//					permaAssertComment(
-			//						(int)entry.size / (6 * sizeof(int)) == facesCount,
-			//						"Gib Gpu Buffer desync");
-			//
-			//					glDrawElementsInstancedBaseInstance(GL_TRIANGLE_FAN,
-			//						4, GL_UNSIGNED_BYTE,
-			//						0, facesCount, entry.beg / (6 * sizeof(int)));
-			//
-			//				}
-			//			}
-			//		}
-			//	}
-			//}
-			//else
-			//{
-			//	for (auto &chunk : chunkVectorCopy)
-			//	{
-			//		if (chunk)
-			//		{
-			//			if (!chunk->dontDrawYet)
-			//			{
-			//				int facesCount = chunk->elementCountSize;
-			//				if (facesCount)
-			//				{
-			//					auto entry = chunkSystem.gpuBuffer
-			//						.getEntry({chunk->data.x,chunk->data.z});
-			//
-			//					permaAssertComment(
-			//						(int)entry.size / (6 * sizeof(int)) == facesCount,
-			//						"Gib Gpu Buffer desync");
-			//
-			//					glDrawElementsInstancedBaseInstance(GL_TRIANGLE_FAN, 4,
-			//						GL_UNSIGNED_BYTE,
-			//						0, facesCount, entry.beg / (6 * sizeof(int)));
-			//
-			//				}
-			//			}
-			//		}
-			//	}
-			//}
-
+			
 		}
 		else
 		{
@@ -1226,7 +1197,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 					auto chunk = chunkVectorCopy[i];
 					if (chunk)
 					{
-						if (!chunk->dontDrawYet)
+						if (!chunk->dontDrawYet && !chunk->culled)
 						{
 							int facesCount = chunk->elementCountSize;
 							if (facesCount)
@@ -1244,7 +1215,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 				{
 					if (chunk)
 					{
-						if (!chunk->dontDrawYet)
+						if (!chunk->dontDrawYet && !chunk->culled)
 						{
 							int facesCount = chunk->elementCountSize;
 							if (facesCount)
@@ -1267,7 +1238,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		{
 			if (chunk)
 			{
-				if (!chunk->dontDrawYet)
+				if (!chunk->dontDrawYet && !chunk->culled)
 				{
 					int facesCount = chunk->transparentElementCountSize;
 					if (facesCount)
