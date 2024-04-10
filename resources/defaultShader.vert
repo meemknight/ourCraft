@@ -8,8 +8,6 @@ layout(location = 2) in ivec3 in_facePosition; // int x y z
 //0x    FF      FF      FF    FF
 //   -flags----light----position--
 
-//layout(location = 3) in int in_skyAndNormalLights; 
-//layout(location = 4) in int in_flags; 
 
 ivec3 facePosition;
 
@@ -167,18 +165,7 @@ vec3 calculateVertexPos(int vertexId)
 
 	if(in_faceOrientation >= 10) //animated trees
 	{
-		//vertexShape.x = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 0];
-		//vertexShape.y = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 1];
-		//vertexShape.z = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 2];
-		//
-		//if(facePosition.y % 2 == 0)
-		//{
-		//	vertexShape.x = -vertexShape.x;
-		//	vertexShape.z = -vertexShape.z;
-		//	//v_uv.x = 1.f-v_uv.x;
-
-		//}
-
+		
 		vertexShape.x += vertexData[(in_faceOrientation-10) * 3 * 6 + vertexId * 3 + 0];
 		vertexShape.y += vertexData[(in_faceOrientation-10) * 3 * 6 + vertexId * 3 + 1];
 		vertexShape.z += vertexData[(in_faceOrientation-10) * 3 * 6 + vertexId * 3 + 2];
@@ -225,6 +212,7 @@ vec3 calculateVertexPos(int vertexId)
 
 	}else
 	{
+		//todo optimize move up
 		vertexShape.x = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 0];
 		vertexShape.y = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 1];
 		vertexShape.z = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 2];

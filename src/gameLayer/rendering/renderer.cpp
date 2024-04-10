@@ -20,13 +20,6 @@
 #define GET_UNIFORM2(s, n) s. n = s.shader.getUniform(#n);
 
 
-//data format:
-
-// short orientation
-// short texture index
-// int x
-// int y
-// int z
 
 float vertexData[] = {
 	//front
@@ -1805,6 +1798,9 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 		glUniform1i(zpassShader.u_renderOnlyWater, 0);
 	}
 #pragma endregion
+
+
+
 
 	for (auto &chunk : chunkSystem.loadedChunks)
 	{

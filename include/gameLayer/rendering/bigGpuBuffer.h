@@ -7,6 +7,8 @@
 #include <glad/glad.h>
 #include <list>
 
+constexpr static int REMOVE_BIG_GPU_BUFFER = 1;
+
 struct BigGpuBuffer
 {
 	

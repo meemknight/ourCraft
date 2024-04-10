@@ -637,10 +637,6 @@ void enetServerFunction()
 		{
 			enet_packet_destroy(event.packet);
 		}
-		else if (event.type == ENET_EVENT_TYPE_RECEIVE)
-		{
-			
-		}
 	}
 
 }

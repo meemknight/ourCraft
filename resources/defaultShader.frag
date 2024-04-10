@@ -1518,10 +1518,17 @@ void main()
 
 const float INFINITY = 1.f/0.f;
 const float SSR_minRayStep = 1.0;
-const int	SSR_maxSteps = 150;
+const int	SSR_maxSteps = 50;
 const int	SSR_numBinarySearchSteps = 10;
-const float SSR_maxRayStep = 3.2;
-const float SSR_maxRayDelta = 3.0;
+const float SSR_maxRayStep = 10.2;
+const float SSR_maxRayDelta = 10.0;
+
+//old
+//const float SSR_minRayStep = 1.0;
+//const int	SSR_maxSteps = 150;
+//const int	SSR_numBinarySearchSteps = 10;
+//const float SSR_maxRayStep = 3.2;
+//const float SSR_maxRayDelta = 3.0;
 
 vec2 BinarySearch(inout vec3 dir, inout vec3 hitCoord, 
 inout float dDepth, vec2 oldValue)

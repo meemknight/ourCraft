@@ -35,6 +35,8 @@ struct ServerSettings
 
 	int targetTicksPerSeccond = 20;
 	bool busyWait = 1;
+	int unloadChunksEverySecconds = 10;
+
 };
 
 ServerSettings getServerSettingsCopy();

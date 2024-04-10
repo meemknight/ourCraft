@@ -493,8 +493,11 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		gameData.sunShadow.update();
 
-		programData.renderer.renderShadow(gameData.sunShadow,
-			gameData.chunkSystem, gameData.c, programData);
+		if (programData.renderer.renderShadows)
+		{
+			programData.renderer.renderShadow(gameData.sunShadow,
+				gameData.chunkSystem, gameData.c, programData);
+		}
 
 		gameData.sunShadow.renderShadowIntoTexture(gameData.c);
 
@@ -887,8 +890,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			}
 
-			ImGui::Checkbox("Unified geometry pool",
-				&programData.renderer.unifiedGeometry);
+			//ImGui::Checkbox("Unified geometry pool",
+			//	&programData.renderer.unifiedGeometry);
 
 			ImGui::Checkbox("Sort chunks",
 				&programData.renderer.sortChunks);
@@ -903,6 +906,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			ImGui::Checkbox("Frustum culling",
 				&programData.renderer.frustumCulling);
+
+			ImGui::Checkbox("Shadows",
+				&programData.renderer.renderShadows);
 		}
 		ImGui::End();
 

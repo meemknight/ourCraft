@@ -31,7 +31,8 @@ bool operator==(const BlockInChunkPos &a, const BlockInChunkPos &b)
 
 struct ListNode;
 
-struct SavedChunk
+//0.25 MB
+struct SavedChunk 
 {
 	//std::mutex mu;
 	ChunkData chunk;
@@ -76,6 +77,7 @@ bool startServer()
 	}
 }
 
+//0.24 GB per 1000
 const int maxSavedChunks = 2000;
 
 struct ChunkPriorityCache
@@ -99,6 +101,9 @@ struct ChunkPriorityCache
 	ListNode *first = nullptr;
 	ListNode *last = nullptr;
 
+	//this chunks are kept force loaded.
+	std::unordered_set<glm::ivec2> loadedChunks = {};
+
 	struct SendBlocksBack
 	{
 		glm::ivec3 pos;
@@ -116,6 +121,13 @@ struct ChunkPriorityCache
 	//uses chunk coorodonates
 	ChunkData *getChunkOrGetNullNotUpdateTable(int posX, int posZ);
 
+	//sets an element as first, from an iterator
+	void updateTable(std::unordered_map<glm::ivec2, SavedChunk *, 
+		Ivec2Hash>::iterator &foundPos);
+
+	//uses chunk coorodonates
+	bool setChunkAsMostRecent(int posX, int posZ);
+
 	bool generateStructure(StructureToGenerate s, StructuresManager &structureManager,
 		std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks, std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
 		std::vector<glm::ivec3> *controlBlocks);
@@ -129,6 +141,8 @@ struct ChunkPriorityCache
 
 	void cleanup();
 };
+
+void updateLoadedChunks();
 
 std::mutex serverSettingsMutex;
 
@@ -298,7 +312,8 @@ void serverWorkerFunction()
 	int ticksPerSeccond = 0;
 	int runsPerSeccond = 0;
 	float seccondsTimer = 0;
-	constexpr float RESOLUTION_TIMER = 16.f;
+	float unloadChunksTimer = 0;
+	//constexpr float RESOLUTION_TIMER = 16.f;
 
 	while (serverRunning)
 	{
@@ -306,6 +321,7 @@ void serverWorkerFunction()
 		//auto clientsCopy = getAllClients();
 		//todo this could fail? if the client disconected?
 	
+		//tasks stuff
 		{
 			std::vector<ServerTask> tasks;
 
@@ -332,6 +348,7 @@ void serverWorkerFunction()
 			//else
 			{
 
+				//sleep untill we get a message or the tick timer runs out
 				while (sd.waitingTasks.empty())
 				{
 					auto timerStop = std::chrono::high_resolution_clock::now();
@@ -361,6 +378,8 @@ void serverWorkerFunction()
 		tickTimer += deltaTime;
 		seccondsTimer += deltaTime;
 		tickDeltaTime += deltaTime;
+		unloadChunksTimer += deltaTime;
+
 
 		//todo rather than a sort use buckets, so the clients can't DDOS the server with
 		//place blocks tasks, making generating chunks impossible. 
@@ -594,14 +613,34 @@ void serverWorkerFunction()
 			delete[] newBlocks;
 		}
 
+		//todo check if there are too many loaded chunks and unload them before processing
+		//generate chunk
+
+		//reload chunks
+		for (auto &i : sd.chunkCache.loadedChunks)
+		{
+			bool wasGenerated = 0;
+			sd.chunkCache.getOrCreateChunk(i.x, i.y, wg, structuresManager, biomesManager,
+				sendNewBlocksToPlayers, true, nullptr, &wasGenerated);
+
+			if (wasGenerated)
+			{
+				//todo error and warning logs for server.
+			}
+		}
+
+	#pragma region gameplay tick
+
 		if (tickTimer > 1.f / settings.targetTicksPerSeccond)
 		{	
 			tickTimer -= (1.f / settings.targetTicksPerSeccond);
 			ticksPerSeccond++;
 
+			updateLoadedChunks();
+
 			//tick ...
 			doGameTick(tickDeltaTime, entityManager, currentTimer);
-
+			//std::cout << "Loaded chunks: " << sd.chunkCache.loadedChunks.size() << "\n";
 
 			tickDeltaTime = 0;
 		}
@@ -620,6 +659,20 @@ void serverWorkerFunction()
 			ticksPerSeccond = 0;
 			runsPerSeccond = 0;
 		}
+
+	#pragma endregion
+
+
+		if (unloadChunksTimer > settings.unloadChunksEverySecconds)
+		{
+			unloadChunksTimer -= settings.unloadChunksEverySecconds;
+			sd.chunkCache.loadedChunks.clear();
+			//std::cout << "Unload chunks...\n";
+		}
+
+
+
+
 	}
 
 	wg.clear();
@@ -689,7 +742,7 @@ void removeCidFromServerSettings(CID cid)
 }
 
 
-ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerator &wg, 
+ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerator &wg,
 	StructuresManager &structureManager, BiomesManager &biomesManager,
 	std::vector<SendBlocksBack> &sendNewBlocksToPlayers, bool generateGhostAndStructures,
 	std::vector<StructureToGenerate> *newStructuresToAdd, bool *wasGenerated)
@@ -700,46 +753,8 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 	auto foundPos = savedChunks.find(pos);
 	if (foundPos != savedChunks.end())
 	{
-		auto nod = (*foundPos).second->node;
+		updateTable(foundPos);
 
-		auto left = nod->prev;
-		auto right = nod->next;
-
-		if (left == nullptr)
-		{
-			//nothing, this is the first element
-		}
-		else if (right == nullptr)
-		{
-			left->next = nullptr;
-			last = left;
-
-			nod->next = first;
-			if (first)
-			{
-				first->prev = nod;
-			}
-
-			nod->prev = nullptr;
-			first = nod;
-		}
-		else
-		{
-			//link left right:
-			left->next = right;
-			right->prev = left;
-
-			nod->next = first;
-			if (first)
-			{
-				first->prev = nod;
-			}
-
-			nod->prev = nullptr;
-			first = nod;
-		}
-
-		//submitChunk(new Chunk((*foundPos).second->chunk));
 		return &((*foundPos).second->chunk);
 	}
 	else 
@@ -773,7 +788,6 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 
 			generateChunk(chunkToRecycle->chunk, wg, structureManager, biomesManager, newStructures);
 			rez = &chunkToRecycle->chunk;
-			//submitChunk(new Chunk(chunkToRecycle->chunk));
 
 			assert(chunkToRecycle->node == last);
 			last->chunkPos = pos;
@@ -1437,6 +1451,69 @@ ChunkData *ChunkPriorityCache::getChunkOrGetNullNotUpdateTable(int posX, int pos
 	}
 }
 
+void ChunkPriorityCache::updateTable(
+	std::unordered_map<glm::ivec2, SavedChunk *, Ivec2Hash>::iterator
+	&foundPos)
+{
+
+	auto nod = (*foundPos).second->node;
+
+	auto left = nod->prev;
+	auto right = nod->next;
+
+	if (left == nullptr)
+	{
+		//nothing, this is the first element
+	}
+	else if (right == nullptr)
+	{
+		left->next = nullptr;
+		last = left;
+
+		nod->next = first;
+		if (first)
+		{
+			first->prev = nod;
+		}
+
+		nod->prev = nullptr;
+		first = nod;
+	}
+	else
+	{
+		//link left right:
+		left->next = right;
+		right->prev = left;
+
+		nod->next = first;
+		if (first)
+		{
+			first->prev = nod;
+		}
+
+		nod->prev = nullptr;
+		first = nod;
+	}
+
+}
+
+
+bool ChunkPriorityCache::setChunkAsMostRecent(int posX, int posZ)
+{
+	glm::ivec2 pos = {posX, posZ};
+	auto foundPos = savedChunks.find(pos);
+
+	if (foundPos != savedChunks.end())
+	{
+		updateTable(foundPos);
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
 bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructuresManager &structureManager,
 	std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks, std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
 	std::vector<glm::ivec3> *controlBlocks)
@@ -1779,6 +1856,39 @@ void ChunkPriorityCache::cleanup()
 	}
 
 }
+
+
+
+//adds loaded chunks.
+void updateLoadedChunks()
+{
+
+	std::unordered_set<glm::ivec2> chunks;
+
+	auto clientsCopy = getAllClients();
+
+	for (auto &c : clientsCopy)
+	{
+		
+
+		glm::ivec2 pos(divideChunk(c.second.playerData.position.x), 
+			divideChunk(c.second.playerData.position.z));
+		
+		//todo
+		for (int i = -2; i <= 2; i++)
+			for (int j = -2; j <= 2; j++)
+			{
+				chunks.insert(pos + glm::ivec2(i,j));
+			}
+	}
+	
+	for (auto c : chunks)
+	{
+		sd.chunkCache.loadedChunks.insert(c);
+	}
+
+}
+
 
 void doGameTick(float deltaTime, ServerEntityManager &entityManager, std::uint64_t currentTimer)
 {

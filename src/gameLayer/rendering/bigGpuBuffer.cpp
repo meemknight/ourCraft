@@ -27,6 +27,8 @@ void setupVertexAttributes()
 
 void BigGpuBuffer::create(size_t chunks)
 {
+	if (REMOVE_BIG_GPU_BUFFER) { return; }
+
 	unsigned char winding[4] = {0,1,2,4};
 
 	arenaSize = chunks * 10'000 * 6 * sizeof(int);
@@ -55,6 +57,8 @@ void BigGpuBuffer::create(size_t chunks)
 
 void BigGpuBuffer::cleanup()
 {
+	if (REMOVE_BIG_GPU_BUFFER) { return; }
+
 	glDeleteBuffers(1, &opaqueGeometryBuffer);
 	glDeleteBuffers(1, &opaqueGeometryIndex);
 	glDeleteVertexArrays(1, &vao);
@@ -63,6 +67,8 @@ void BigGpuBuffer::cleanup()
 
 void BigGpuBuffer::addChunk(glm::ivec2 chunkPos, std::vector<int> &data)
 {
+	if (REMOVE_BIG_GPU_BUFFER) { return; }
+
 	{
 		auto it = entriesMap.find(chunkPos);
 	
@@ -139,6 +145,8 @@ void BigGpuBuffer::addChunk(glm::ivec2 chunkPos, std::vector<int> &data)
 
 void BigGpuBuffer::removeChunk(glm::ivec2 chunkPos)
 {
+	if (REMOVE_BIG_GPU_BUFFER) { return; }
+
 	auto it = entriesMap.find(chunkPos);
 
 	if (it != entriesMap.end())
@@ -150,6 +158,8 @@ void BigGpuBuffer::removeChunk(glm::ivec2 chunkPos)
 
 void BigGpuBuffer::writeData(std::vector<int> &data, size_t pos)
 {
+	if (REMOVE_BIG_GPU_BUFFER) { return; }
+
 	//todo modern function
 	glBindBuffer(GL_ARRAY_BUFFER, opaqueGeometryBuffer);
 	glBufferSubData(GL_ARRAY_BUFFER, pos, 
@@ -160,6 +170,8 @@ void BigGpuBuffer::writeData(std::vector<int> &data, size_t pos)
 
 BigGpuBuffer::GpuEntry BigGpuBuffer::getEntry(glm::ivec2 chunkPos)
 {
+	if (REMOVE_BIG_GPU_BUFFER) { return {}; }
+
 	auto it = entriesMap.find(chunkPos);
 
 	if (it != entriesMap.end())

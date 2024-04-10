@@ -161,10 +161,11 @@ struct Renderer
 	float metallic = 0;
 	float roughness = 0.5;
 
-	bool unifiedGeometry = 1;
+	bool unifiedGeometry = 0;
 	bool sortChunks = 1;
 	bool zprepass = 0;
 	bool frustumCulling = 1;
+	bool renderShadows = 1;
 
 	FBO fboMain;
 	FBO fboCoppy;
