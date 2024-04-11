@@ -347,7 +347,7 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 			{
 				case ENET_EVENT_TYPE_RECEIVE:
 				{
-
+					//todo limit chunk recieved per frame!!!!
 					recieveDataClient(event, validatedEvent, invalidateRevision,
 						playerPosition, squareDistance, entityManager, undoQueue, serverTimer);
 					

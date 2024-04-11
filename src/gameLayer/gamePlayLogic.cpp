@@ -349,6 +349,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			{
 				updateDroppedItem(item.second.item, timer, chunkGetter);
 			}
+			item.second.rubberBand.computeRubberBand(item.second.item.position, deltaTime);
 
 			item.second.restantTime = 0;
 		}

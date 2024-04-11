@@ -119,7 +119,8 @@ void ClientEntityManager::removeDroppedItem(std::uint64_t entityId)
 	}
 }
 
-void ClientEntityManager::addOrUpdateDroppedItem(std::uint64_t eid, DroppedItem droppedItem, UndoQueue &undoQueue,
+void ClientEntityManager::addOrUpdateDroppedItem(std::uint64_t eid,
+	DroppedItem droppedItem, UndoQueue &undoQueue,
 	float restantTimer)
 {
 
@@ -132,6 +133,9 @@ void ClientEntityManager::addOrUpdateDroppedItem(std::uint64_t eid, DroppedItem 
 	}
 	else
 	{
+		found->second.rubberBand.startPosition = found->second.item.position;
+		found->second.rubberBand.timer = 0;
+
 		found->second.item = droppedItem;
 		found->second.restantTime = restantTimer;
 
@@ -142,6 +146,7 @@ void ClientEntityManager::addOrUpdateDroppedItem(std::uint64_t eid, DroppedItem 
 				e.type = Event::doNothing;
 			}
 		}
+
 	}
 
 }

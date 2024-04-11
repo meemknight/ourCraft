@@ -1347,7 +1347,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 				glm::vec3 entityFloat = {};
 				glm::ivec3 entityInt = {};
 
-				decomposePosition(e.second.item.position, entityFloat, entityInt);
+				decomposePosition(e.second.rubberBand.position, entityFloat, entityInt);
 
 				entityFloat += glm::vec3(0, 0.2, 0);
 

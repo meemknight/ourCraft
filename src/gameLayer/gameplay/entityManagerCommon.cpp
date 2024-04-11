@@ -1,7 +1,15 @@
 #include <gameplay/entityManagerCommon.h>
-
+#include <glm/glm.hpp>
 
 //todo entities should freeze their state completely when chunks are missing
+
+void computeRubberBand(RubberBand &rubberBand, glm::dvec3 &position, float deltaTime)
+{
+	rubberBand.timer -= deltaTime;
+	if (rubberBand.timer < 0) { rubberBand.timer = 0; }
+
+	rubberBand.position = glm::mix(rubberBand.startPosition, position, rubberBand.timer);
+}
 
 void updateDroppedItem(DroppedItem &item, float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
 {
@@ -18,4 +26,9 @@ void updateDroppedItem(DroppedItem &item, float deltaTime, decltype(chunkGetterS
 	item.position = body.pos;
 
 
+}
+
+void RubberBand::computeRubberBand(glm::dvec3 &position, float deltaTime)
+{
+	::computeRubberBand(*this, position, deltaTime);
 }

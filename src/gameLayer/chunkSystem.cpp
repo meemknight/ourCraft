@@ -74,6 +74,14 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	glm::ivec2 maxPos = glm::ivec2(x, z) + glm::ivec2(squareSize / 2 + squareSize % 2, squareSize / 2 + squareSize % 2);
 	//exclusive max
 
+	auto checkChunkInRadius = [&](glm::ivec2 pos)
+	{
+		glm::vec2 center{squareSize / 2,squareSize / 2};
+		center -= glm::vec2(pos);
+
+		return std::sqrt(glm::dot(center, center)) <= (squareSize/2);
+	};
+
 	cornerPos = minPos;
 
 #pragma region recieve chunks by the server
@@ -99,7 +107,9 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 		int x = i->data.x - minPos.x;
 		int z = i->data.z - minPos.y;
 
-		if (x < 0 || z < 0 || x >= squareSize || z >= squareSize)
+		if (x < 0 || z < 0 || x >= squareSize || z >= squareSize
+			|| !checkChunkInRadius({x,z})
+			)
 		{
 			delete i; // ignore chunk, not of use anymore
 			continue;
@@ -176,7 +186,8 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 				chunkPos.x >= minPos.x &&
 				chunkPos.y >= minPos.y &&
 				chunkPos.x < maxPos.x &&
-				chunkPos.y < maxPos.y
+				chunkPos.y < maxPos.y &&
+				checkChunkInRadius(chunkPos-minPos)
 				)
 			{
 				glm::ivec2 chunkPosRelToSystem = chunkPos - minPos;
@@ -323,7 +334,9 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	for (int x = 0; x < squareSize; x++)
 		for (int z = 0; z < squareSize; z++)
 		{
-			if (loadedChunks[x * squareSize + z] == nullptr)
+			if (loadedChunks[x * squareSize + z] == nullptr
+				&& checkChunkInRadius({x, z})
+				)
 			{
 				Task t;
 
@@ -375,7 +388,6 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 		submitTaskClient(finalTask);
 	}
-
 
 
 	created = 1;
