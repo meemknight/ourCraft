@@ -962,6 +962,7 @@ SavedChunk *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenera
 					{
 						//todo fill this
 						std::unordered_set<glm::ivec2, Ivec2Hash> newCreatedChunksSet;
+						newCreatedChunksSet.reserve(30);
 
 						StructureToGenerate s;
 						s.pos.x = rootChunk.x * CHUNK_SIZE + inChunkPos.x;
@@ -1336,6 +1337,7 @@ SavedChunk *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenera
 						{
 							//todo fill this
 							std::unordered_set<glm::ivec2, Ivec2Hash> newCreatedChunksSet;
+							newCreatedChunksSet.reserve(30);
 
 							StructureToGenerate s;
 							s.pos.x = rootChunk.x * CHUNK_SIZE + inChunkPos.x;
@@ -1403,6 +1405,7 @@ SavedChunk *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenera
 						{
 							//todo fill this
 							std::unordered_set<glm::ivec2, Ivec2Hash> newCreatedChunksSet;
+							newCreatedChunksSet.reserve(30);
 
 							StructureToGenerate s;
 							s.pos.x = rootChunk.x * CHUNK_SIZE + inChunkPos.x;
@@ -1437,6 +1440,7 @@ SavedChunk *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenera
 		if (generateGhostAndStructures)
 		{
 			std::unordered_set<glm::ivec2, Ivec2Hash> newCreatedChunksSet;
+			newCreatedChunksSet.reserve(30);
 
 			//ghost blocks
 			for (auto &cp : newCreatedChunks)
@@ -1962,7 +1966,9 @@ void ChunkPriorityCache::saveAllChunks(WorldSaver &worldSaver)
 void updateLoadedChunks()
 {
 
-	std::unordered_set<glm::ivec2> chunks;
+	static std::unordered_set<glm::ivec2> chunks;
+	chunks.clear();
+	chunks.reserve(100);
 
 	auto clientsCopy = getAllClients();
 

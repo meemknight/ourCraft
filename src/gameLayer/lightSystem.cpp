@@ -2,6 +2,7 @@
 #include <chunkSystem.h>
 #include <iostream>
 #include <chrono>
+#include <unordered_set>
 
 struct Timer
 {
@@ -48,6 +49,25 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 
 	int upperBound = totalMaxUpperBound;
 	
+	static std::unordered_set<glm::ivec2> chunksToUpdate;
+	chunksToUpdate.clear();
+	chunksToUpdate.reserve(300);
+
+	auto setChunkAndNeighboursFlagDirtyFromBlockPos = [&](int x, int z)
+	{
+		const int o = 5;
+		glm::ivec2 offsets[o] = {{0,0}, {-1,0}, {1,0}, {0, -1}, {0, 1}};
+
+		for (int i = 0; i < o; i++)
+		{
+			auto pos = glm::ivec2(x + offsets[i].x, z + offsets[i].y);
+
+			pos.x = divideChunk(pos.x);
+			pos.y = divideChunk(pos.y);
+
+			chunksToUpdate.insert(pos);
+		}
+	};
 
 	while(upperBound > 0)
 	{
@@ -68,33 +88,33 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 			char currentLightLevel = element.intensity;
 	
 			auto checkNeighbout = [&](glm::ivec3 p, bool down = 0)
-		{
-			auto b2 = chunkSystem.getBlockSafe(p.x, p.y, p.z);
-
-			if (b2 && !b2->isOpaque())
 			{
-				int b2Level = b2->getSkyLight();
+				auto b2 = chunkSystem.getBlockSafe(p.x, p.y, p.z);
 
-				if ((down && currentLightLevel == 15) || (b2Level != 0 && b2Level < currentLightLevel))
+				if (b2 && !b2->isOpaque())
 				{
-					//remove
-					LightSystem::Light l;
-					l.intensity = b2Level;
-					l.pos = p;
-					sunLigtsToRemove.push_back(l);
-					b2->setSkyLevel(0);
+					int b2Level = b2->getSkyLight();
+
+					if ((down && currentLightLevel == 15) || (b2Level != 0 && b2Level < currentLightLevel))
+					{
+						//remove
+						LightSystem::Light l;
+						l.intensity = b2Level;
+						l.pos = p;
+						sunLigtsToRemove.push_back(l);
+						b2->setSkyLevel(0);
+					}
+					else if (b2Level >= currentLightLevel)
+					{
+						//add
+						LightSystem::Light l;
+						l.intensity = b2Level;
+						l.pos = p;
+						sunLigtsToAdd.push_back(l);
+						//b2->setSkyLevel(b2Level); //it already is
+					}
 				}
-				else if (b2Level >= currentLightLevel)
-				{
-					//add
-					LightSystem::Light l;
-					l.intensity = b2Level;
-					l.pos = p;
-					sunLigtsToAdd.push_back(l);
-					//b2->setSkyLevel(b2Level); //it already is
-				}
-			}
-		};
+			};
 	
 			checkNeighbout({element.pos.x, element.pos.y - 1, element.pos.z}, true);
 	
@@ -106,6 +126,7 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 			checkNeighbout({element.pos.x, element.pos.y, element.pos.z + 1});
 			checkNeighbout({element.pos.x, element.pos.y, element.pos.z - 1});
 	
+			//setChunkAndNeighboursFlagDirtyFromBlockPos(element.pos.x, element.pos.z);
 			chunkSystem.setChunkAndNeighboursFlagDirtyFromBlockPos(element.pos.x, element.pos.z);
 	
 		}
@@ -132,57 +153,58 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 	
 			//auto b = chunkSystem.getBlockSafe(element.pos.x, element.pos.y, element.pos.z);
 			if (!b || b->getSkyLight() != element.intensity)
-		{
-			continue;
-		}
+			{
+				continue;
+			}
 	
 			{
-			//c->dontDrawYet = false; 
+				//c->dontDrawYet = false; 
 
-			//char currentLightLevel = b->getSkyLight();
-			char currentLightLevel = element.intensity;
+				//char currentLightLevel = b->getSkyLight();
+				char currentLightLevel = element.intensity;
 
-			auto checkNeighbout = [&](glm::ivec3 p, Block *b2, char newLightLevel)
-			{
-				if (!b2->isOpaque() && b2->getSkyLight() < newLightLevel)
+				auto checkNeighbout = [&](glm::ivec3 p, Block *b2, char newLightLevel)
 				{
-					LightSystem::Light l;
-					l.intensity = newLightLevel;
-					l.pos = p;
-					sunLigtsToAdd.push_back(l);
-					b2->setSkyLevel(newLightLevel);
+					if (!b2->isOpaque() && b2->getSkyLight() < newLightLevel)
+					{
+						LightSystem::Light l;
+						l.intensity = newLightLevel;
+						l.pos = p;
+						sunLigtsToAdd.push_back(l);
+						b2->setSkyLevel(newLightLevel);
+					}
+				};
+
+				if (currentLightLevel == 15)
+				{
+					if (bottom)
+						checkNeighbout({element.pos.x, element.pos.y - 1, element.pos.z}, bottom, currentLightLevel);
 				}
-			};
+				else
+				{
+					if (bottom)
+						checkNeighbout({element.pos.x, element.pos.y - 1, element.pos.z}, bottom, currentLightLevel - 1);
+				}
 
-			if (currentLightLevel == 15)
-			{
-				if (bottom)
-					checkNeighbout({element.pos.x, element.pos.y - 1, element.pos.z}, bottom, currentLightLevel);
+				if (back)
+					checkNeighbout({element.pos.x - 1, element.pos.y, element.pos.z}, back, currentLightLevel - 1);
+
+				if (front)
+					checkNeighbout({element.pos.x + 1, element.pos.y, element.pos.z}, front, currentLightLevel - 1);
+
+				if (top)
+					checkNeighbout({element.pos.x, element.pos.y + 1, element.pos.z}, top, currentLightLevel - 1);
+
+				if (right)
+					checkNeighbout({element.pos.x, element.pos.y, element.pos.z + 1}, right, currentLightLevel - 1);
+
+				if (left)
+					checkNeighbout({element.pos.x, element.pos.y, element.pos.z - 1}, left, currentLightLevel - 1);
+
+				//setChunkAndNeighboursFlagDirtyFromBlockPos(element.pos.x, element.pos.z);
+				chunkSystem.setChunkAndNeighboursFlagDirtyFromBlockPos(element.pos.x, element.pos.z);
+
 			}
-			else
-			{
-				if (bottom)
-					checkNeighbout({element.pos.x, element.pos.y - 1, element.pos.z}, bottom, currentLightLevel - 1);
-			}
-
-			if (back)
-				checkNeighbout({element.pos.x - 1, element.pos.y, element.pos.z}, back, currentLightLevel - 1);
-
-			if (front)
-				checkNeighbout({element.pos.x + 1, element.pos.y, element.pos.z}, front, currentLightLevel - 1);
-
-			if (top)
-				checkNeighbout({element.pos.x, element.pos.y + 1, element.pos.z}, top, currentLightLevel - 1);
-
-			if (right)
-				checkNeighbout({element.pos.x, element.pos.y, element.pos.z + 1}, right, currentLightLevel - 1);
-
-			if (left)
-				checkNeighbout({element.pos.x, element.pos.y, element.pos.z - 1}, left, currentLightLevel - 1);
-
-			chunkSystem.setChunkAndNeighboursFlagDirtyFromBlockPos(element.pos.x, element.pos.z);
-
-		}
 	
 		}
 	
@@ -240,6 +262,7 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 			checkNeighbout({element.pos.x, element.pos.y, element.pos.z + 1});
 			checkNeighbout({element.pos.x, element.pos.y, element.pos.z - 1});
 
+			//setChunkAndNeighboursFlagDirtyFromBlockPos(element.pos.x, element.pos.z);
 			chunkSystem.setChunkAndNeighboursFlagDirtyFromBlockPos(element.pos.x, element.pos.z);
 
 		}
@@ -295,6 +318,7 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 				checkNeighbout({element.pos.x, element.pos.y, element.pos.z + 1}, currentLightLevel - 1);
 				checkNeighbout({element.pos.x, element.pos.y, element.pos.z - 1}, currentLightLevel - 1);
 
+				//setChunkAndNeighboursFlagDirtyFromBlockPos(element.pos.x, element.pos.z);
 				chunkSystem.setChunkAndNeighboursFlagDirtyFromBlockPos(element.pos.x, element.pos.z);
 
 			}
@@ -336,6 +360,16 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 		ligtsToRemove.push_back(l);
 	}
 
+	//for (auto &i : chunksToUpdate)
+	//{
+	//	//the positions are not in block space!
+	//	auto c = chunkSystem.getChunkSafeFromBlockPos(i.x * CHUNK_SIZE, i.y * CHUNK_SIZE);
+	//	if (c)
+	//	{
+	//		c->dirty = true;
+	//	}
+	//}
+
 	//if (sunLightsAddTimer.counter > 1000)
 	//{
 	//	//std::cout << "Added: " << sunLightsAddTimer.counter << " in: " <<
@@ -347,12 +381,55 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 
 void LightSystem::addSunLight(ChunkSystem &chunkSystem, glm::ivec3 pos, char intensity)
 {
+	if (pos.y == CHUNK_HEIGHT - 1)
+	{
+		intensity = 15;
+	}
+
 	auto b = chunkSystem.getBlockSafe(pos.x, pos.y, pos.z);
 	if (b)
 	{
 		b->setSkyLevel(intensity);
 	}
 	sunLigtsToAdd.push_back({pos, intensity});
+	
+}
+
+void LightSystem::addSunLightAndPropagateDown(ChunkSystem &chunkSystem, glm::ivec3 pos, char intensity)
+{
+	if (pos.y == CHUNK_HEIGHT - 1)
+	{
+		intensity = 15;
+	}
+
+	auto b = chunkSystem.getBlockSafe(pos.x, pos.y, pos.z);
+	if (b)
+	{
+		b->setSkyLevel(intensity);
+	}
+	sunLigtsToAdd.push_back({pos, intensity});
+
+	if (intensity == 15)
+	{
+		pos.y--;
+		while (pos.y > 0)
+		{
+			auto b = chunkSystem.getBlockSafe(pos.x, pos.y, pos.z);
+			if (b && !b->isOpaque())
+			{
+				b->setSkyLevel(intensity);
+			}
+			else
+			{
+				break;
+			}
+	
+			sunLigtsToAdd.push_back({pos, intensity});
+	
+			pos.y--;
+		}
+	}
+
 }
 
 void LightSystem::removeSunLight(ChunkSystem &chunkSystem, glm::ivec3 pos, char oldVal)

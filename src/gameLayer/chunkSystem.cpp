@@ -216,7 +216,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 				{
 					if (!chunk->unsafeGet(xPos - xStart, CHUNK_HEIGHT - 1, zPos - ZStart).isOpaque())
 					{
-						lightSystem.addSunLight(*this, {xPos, CHUNK_HEIGHT - 1, zPos}, 15);
+						lightSystem.addSunLightAndPropagateDown(*this, {xPos, CHUNK_HEIGHT - 1, zPos}, 15);
 					}
 				}
 

@@ -2,7 +2,7 @@
 #include <glm/vec3.hpp>
 #include <deque>
 
-bool constexpr dontUpdateLightSystem = 1;
+bool constexpr dontUpdateLightSystem = 0;
 
 struct ChunkSystem;
 
@@ -23,6 +23,7 @@ struct LightSystem
 	void update(ChunkSystem &chunkSystem);
 	
 	void addSunLight(ChunkSystem &chunkSystem, glm::ivec3 pos, char intensity);
+	void addSunLightAndPropagateDown(ChunkSystem &chunkSystem, glm::ivec3 pos, char intensity);
 	void removeSunLight(ChunkSystem &chunkSystem, glm::ivec3 pos, char oldVal);
 
 	void addLight(ChunkSystem &chunkSystem, glm::ivec3 pos, char intensity);
