@@ -207,23 +207,19 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 		{
 			auto chunk = getChunkSafeFromMatrixSpace(c.x, c.y);
 			assert(chunk);
+
 			
 			int xStart = chunk->data.x * CHUNK_SIZE;
 			int ZStart = chunk->data.z * CHUNK_SIZE;
 
-			for (int xPos = xStart; xPos < xStart + CHUNK_SIZE; xPos++)
-				for (int zPos = ZStart; zPos < ZStart + CHUNK_SIZE; zPos++)
-				{
-					if (!chunk->unsafeGet(xPos - xStart, CHUNK_HEIGHT - 1, zPos - ZStart).isOpaque())
-					{
-						lightSystem.addSunLightAndPropagateDown(*this, {xPos, CHUNK_HEIGHT - 1, zPos}, 15);
-					}
-				}
+			lightSystem.setSunlightForAnEntireChunk(*chunk, *this);
 
 			auto leftNeighbour = getChunkSafeFromMatrixSpace(c.x - 1, c.y);
 			auto rightNeighbour = getChunkSafeFromMatrixSpace(c.x + 1, c.y);
 			auto frontNeighbour = getChunkSafeFromMatrixSpace(c.x, c.y + 1);
 			auto backNeighbour = getChunkSafeFromMatrixSpace(c.x, c.y - 1);
+
+			//todo propate from this chunk out
 
 			auto propagateLight = [&](Chunk *neighbour, glm::ivec3 darkBlock,
 				glm::ivec3 lightBlock,
@@ -241,6 +237,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 					}
 				}
 			};
+
 
 			if (leftNeighbour)
 			{

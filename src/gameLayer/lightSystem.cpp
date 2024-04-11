@@ -465,3 +465,81 @@ void LightSystem::removeLight(ChunkSystem &chunkSystem, glm::ivec3 pos, char old
 
 	ligtsToRemove.push_back({pos, oldVal});
 }
+
+void LightSystem::setSunlightForAnEntireChunk(Chunk &chunk, ChunkSystem &chunkSystem)
+{
+
+	int xStart = chunk.data.x * CHUNK_SIZE;
+	int ZStart = chunk.data.z * CHUNK_SIZE;
+	
+	//auto checkNeighbour = [&](glm::ivec3 pos, unsigned char light, unsigned char decrease = 0)
+	//{
+	//	auto b = chunk.safeGet(pos.x, pos.y, pos.z);
+	//	if (b)
+	//	{
+	//		unsigned char sky = b->getSkyLight();
+	//		if (decrease || sky < 15) { sky--; }
+	//
+	//		return std::max(light, sky);
+	//	}
+	//	return light;
+	//};
+	//
+	//for (int x = 0; x < CHUNK_SIZE; x++)
+	//	for (int z = 0; z < CHUNK_SIZE; z++)
+	//	{
+	//		auto &b = chunk.unsafeGet(x, CHUNK_HEIGHT-1, z);
+	//		if (!b.isOpaque())
+	//		{
+	//			b.setSkyLevel(15);
+	//		}
+	//		else
+	//		{
+	//			b.setSkyLevel(0);
+	//		}
+	//	}
+	//
+	//for (int y = CHUNK_HEIGHT - 2; y > 0; y--)
+	//{
+	//	for (int x = 0; x < CHUNK_SIZE; x++)
+	//		for (int z = 0; z < CHUNK_SIZE; z++)
+	//		{
+	//
+	//			auto &b = chunk.unsafeGet(x, CHUNK_HEIGHT - 1, z);
+	//			if (!b.isOpaque())
+	//			{
+	//				int xPos = x + xStart;
+	//				int zPos = z + ZStart;
+	//
+	//				glm::ivec3 pos = {x,y,z};
+	//
+	//				unsigned char light = checkNeighbour(pos + glm::ivec3(0, 1, 0), 0, 0);
+	//				light = checkNeighbour(pos + glm::ivec3(1, 0, 0), light, 1);
+	//				light = checkNeighbour(pos + glm::ivec3(0, 0, 1), light, 1);
+	//				light = checkNeighbour(pos + glm::ivec3(-1, 0, 0), light, 1);
+	//				light = checkNeighbour(pos + glm::ivec3(0, 0, -1), light, 1);
+	//
+	//				light = std::max(light, unsigned char(0));
+	//				b.setSkyLevel(light);
+	//			}
+	//			else
+	//			{
+	//				b.setSkyLevel(0);
+	//			}
+	//
+	//
+	//		}
+	//
+	//}
+
+	for (int xPos = xStart; xPos < xStart + CHUNK_SIZE; xPos++)
+		for (int zPos = ZStart; zPos < ZStart + CHUNK_SIZE; zPos++)
+		{
+			if (!chunk.unsafeGet(xPos - xStart, CHUNK_HEIGHT - 1, zPos - ZStart).isOpaque())
+			{
+				addSunLightAndPropagateDown(chunkSystem, {xPos, CHUNK_HEIGHT - 1, zPos}, 15);
+			}
+		}
+
+
+}

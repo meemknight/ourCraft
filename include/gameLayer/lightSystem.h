@@ -5,6 +5,7 @@
 bool constexpr dontUpdateLightSystem = 0;
 
 struct ChunkSystem;
+struct Chunk;
 
 struct LightSystem
 {
@@ -29,4 +30,5 @@ struct LightSystem
 	void addLight(ChunkSystem &chunkSystem, glm::ivec3 pos, char intensity);
 	void removeLight(ChunkSystem &chunkSystem, glm::ivec3 pos, char oldVal);
 
+	void setSunlightForAnEntireChunk(Chunk &chunk, ChunkSystem &chunkSystem);
 };
