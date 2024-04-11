@@ -17,4 +17,6 @@ struct DroppedItemNetworked
 
 };
 
+constexpr static int simulationDistance = 6;
+
 void updateDroppedItem(DroppedItem &item, float deltaTime, decltype(chunkGetterSignature) *chunkGetter);

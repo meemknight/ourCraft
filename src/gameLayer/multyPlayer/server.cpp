@@ -22,7 +22,7 @@
 #include <unordered_set>
 #include <profilerLib.h>
 #include <gameplay/entityManagerServer.h>
-
+#include "multyPlayer/chunkSaver.h"
 
 bool operator==(const BlockInChunkPos &a, const BlockInChunkPos &b)
 {
@@ -37,6 +37,10 @@ struct SavedChunk
 	//std::mutex mu;
 	ChunkData chunk;
 	ListNode *node = nullptr;
+	struct OtherData
+	{
+		bool dirty = 0;
+	}otherData;
 };
 
 struct ListNode
@@ -78,7 +82,7 @@ bool startServer()
 }
 
 //0.24 GB per 1000
-const int maxSavedChunks = 2000;
+const int maxSavedChunks = 4000;
 
 struct ChunkPriorityCache
 {
@@ -111,15 +115,17 @@ struct ChunkPriorityCache
 	};
 
 	//uses chunk coorodonates
-	ChunkData *getOrCreateChunk(int posX, int posZ, WorldGenerator &wg, 
+	SavedChunk *getOrCreateChunk(int posX, int posZ, WorldGenerator &wg,
 		StructuresManager &structureManager, BiomesManager &biomesManager
 		,std::vector<SendBlocksBack> &sendNewBlocksToPlayers, bool generateGhostAndStructures, 
-			std::vector<StructureToGenerate> *newStructuresToAdd, bool *wasGenerated = 0);
+			std::vector<StructureToGenerate> *newStructuresToAdd,
+		WorldSaver &worldSaver,
+		bool *wasGenerated = 0);
 
 	Block *tryGetBlockIfChunkExistsNoChecks(glm::ivec3 pos);
 
 	//uses chunk coorodonates
-	ChunkData *getChunkOrGetNullNotUpdateTable(int posX, int posZ);
+	SavedChunk *getChunkOrGetNullNotUpdateTable(int posX, int posZ);
 
 	//sets an element as first, from an iterator
 	void updateTable(std::unordered_map<glm::ivec2, SavedChunk *, 
@@ -140,6 +146,12 @@ struct ChunkPriorityCache
 	void placeGhostBlocksForChunk(int posX, int posZ, ChunkData &c);
 
 	void cleanup();
+
+	void saveNextChunk(WorldSaver &worldSaver, int count = 1);
+
+	void saveChunk(WorldSaver &worldSaver, SavedChunk *savedChunks);
+
+	void saveAllChunks(WorldSaver &worldSaver);
 };
 
 void updateLoadedChunks();
@@ -148,6 +160,8 @@ std::mutex serverSettingsMutex;
 
 struct ServerData
 {
+
+	//todo probably move this just locally
 	ChunkPriorityCache chunkCache = {};
 	std::vector<ServerTask> waitingTasks = {};
 	ENetHost *server = nullptr;
@@ -272,6 +286,9 @@ void serverWorkerFunction()
 {
 	StructuresManager structuresManager;
 	BiomesManager biomesManager;
+	WorldSaver worldSaver;
+
+	worldSaver.savePath = RESOURCES_PATH "saves/";
 
 	if (!structuresManager.loadAllStructures())
 	{
@@ -370,6 +387,7 @@ void serverWorkerFunction()
 			}
 		}
 
+	#pragma region timers stuff
 		auto timerStop = std::chrono::high_resolution_clock::now();
 		float deltaTime = (std::chrono::duration_cast<std::chrono::microseconds>(timerStop - timerStart)).count() / 1000000.0f;
 		timerStart = std::chrono::high_resolution_clock::now();
@@ -379,6 +397,7 @@ void serverWorkerFunction()
 		seccondsTimer += deltaTime;
 		tickDeltaTime += deltaTime;
 		unloadChunksTimer += deltaTime;
+	#pragma endregion
 
 
 		//todo rather than a sort use buckets, so the clients can't DDOS the server with
@@ -418,7 +437,7 @@ void serverWorkerFunction()
 					profiler.start();
 					bool wasGenerated = 0;
 					auto rez = sd.chunkCache.getOrCreateChunk(i.t.pos.x, i.t.pos.z, wg, structuresManager, biomesManager,
-						sendNewBlocksToPlayers, true, nullptr, &wasGenerated);
+						sendNewBlocksToPlayers, true, nullptr, worldSaver, &wasGenerated);
 					profiler.end();
 
 					//if (wasGenerated)
@@ -463,7 +482,7 @@ void serverWorkerFunction()
 				//std::cout << "server recieved place block\n";
 				//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
 				auto chunk = sd.chunkCache.getOrCreateChunk(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z), wg, structuresManager
-					,biomesManager, sendNewBlocksToPlayers, true, nullptr, &wasGenerated);
+					,biomesManager, sendNewBlocksToPlayers, true, nullptr, worldSaver, &wasGenerated);
 				int convertedX = modBlockToChunk(i.t.pos.x);
 				int convertedZ = modBlockToChunk(i.t.pos.z);
 				
@@ -493,7 +512,7 @@ void serverWorkerFunction()
 					}
 
 
-					auto b = chunk->safeGet(convertedX, i.t.pos.y, convertedZ);
+					auto b = chunk->chunk.safeGet(convertedX, i.t.pos.y, convertedZ);
 
 					if (!b)
 					{
@@ -505,7 +524,7 @@ void serverWorkerFunction()
 					if (legal)
 					{
 						b->type = i.t.blockType;
-						//todo mark this chunk dirty if needed for saving
+						chunk->otherData.dirty = true;
 
 						{
 							Packet packet;
@@ -616,19 +635,6 @@ void serverWorkerFunction()
 		//todo check if there are too many loaded chunks and unload them before processing
 		//generate chunk
 
-		//reload chunks
-		for (auto &i : sd.chunkCache.loadedChunks)
-		{
-			bool wasGenerated = 0;
-			sd.chunkCache.getOrCreateChunk(i.x, i.y, wg, structuresManager, biomesManager,
-				sendNewBlocksToPlayers, true, nullptr, &wasGenerated);
-
-			if (wasGenerated)
-			{
-				//todo error and warning logs for server.
-			}
-		}
-
 	#pragma region gameplay tick
 
 		if (tickTimer > 1.f / settings.targetTicksPerSeccond)
@@ -636,7 +642,32 @@ void serverWorkerFunction()
 			tickTimer -= (1.f / settings.targetTicksPerSeccond);
 			ticksPerSeccond++;
 
+			if (sd.chunkCache.loadedChunks.size() > maxSavedChunks * 0.75f)
+			{
+				unloadChunksTimer = 0;
+				sd.chunkCache.loadedChunks.clear();
+				std::cout << "Warning too many loaded chunks\n";
+			}
+
 			updateLoadedChunks();
+
+			if (sd.chunkCache.loadedChunks.size() > maxSavedChunks)
+			{
+				std::cout << "Warning too many loaded chunks, more than can be fit\n";
+			}
+
+			//reload chunks
+			for (auto &i : sd.chunkCache.loadedChunks)
+			{
+				bool wasGenerated = 0;
+				sd.chunkCache.getOrCreateChunk(i.x, i.y, wg, structuresManager, biomesManager,
+					sendNewBlocksToPlayers, true, nullptr, worldSaver, &wasGenerated);
+
+				if (wasGenerated)
+				{
+					//todo error and warning logs for server.
+				}
+			}
 
 			//tick ...
 			doGameTick(tickDeltaTime, entityManager, currentTimer);
@@ -670,11 +701,11 @@ void serverWorkerFunction()
 			//std::cout << "Unload chunks...\n";
 		}
 
-
-
+		sd.chunkCache.saveNextChunk(worldSaver);
 
 	}
 
+	sd.chunkCache.saveAllChunks(worldSaver);
 	wg.clear();
 	structuresManager.clear();
 	sd.chunkCache.cleanup();
@@ -742,10 +773,10 @@ void removeCidFromServerSettings(CID cid)
 }
 
 
-ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerator &wg,
+SavedChunk *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerator &wg,
 	StructuresManager &structureManager, BiomesManager &biomesManager,
 	std::vector<SendBlocksBack> &sendNewBlocksToPlayers, bool generateGhostAndStructures,
-	std::vector<StructureToGenerate> *newStructuresToAdd, bool *wasGenerated)
+	std::vector<StructureToGenerate> *newStructuresToAdd, WorldSaver &worldSaver, bool *wasGenerated)
 {
 	if(wasGenerated){ *wasGenerated = false; }
 
@@ -755,29 +786,37 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 	{
 		updateTable(foundPos);
 
-		return &((*foundPos).second->chunk);
+		return (*foundPos).second;
 	}
 	else 
 	{
+
 		//create new chunk!
 		if (wasGenerated) { *wasGenerated = true; }
 
 		std::vector<StructureToGenerate> newStructures;
 		newStructures.reserve(10); //todo cache up
 
-		ChunkData *rez = 0;
+		SavedChunk *rez = 0;
 
 		//auto startTimer = std::chrono::high_resolution_clock::now();
 
+		//not enough space we ditch the oldest chunk
 		if (savedChunks.size() >= maxSavedChunks)
 		{
 
-			//std::cout << "bad";
+			
 			glm::ivec2 oldPos = last->chunkPos;
 			auto foundPos = savedChunks.find(oldPos);
 			assert(foundPos != savedChunks.end());//unlink of the 2 data structures
 
 			SavedChunk *chunkToRecycle = foundPos->second;
+			if (chunkToRecycle->otherData.dirty)
+			{
+				worldSaver.saveChunk(chunkToRecycle->chunk);
+			}
+
+			chunkToRecycle->otherData = {};
 
 			//here we can save the chunk to a file
 
@@ -786,8 +825,17 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 			chunkToRecycle->chunk.x = pos.x;
 			chunkToRecycle->chunk.z = pos.y;
 
-			generateChunk(chunkToRecycle->chunk, wg, structureManager, biomesManager, newStructures);
-			rez = &chunkToRecycle->chunk;
+			if (!worldSaver.loadChunk(chunkToRecycle->chunk))
+			{
+				generateChunk(chunkToRecycle->chunk, wg, structureManager, biomesManager, newStructures);
+				chunkToRecycle->otherData.dirty = true;
+			}
+			else
+			{
+				std::cout << "Loaded!\n";
+			}
+
+			rez = chunkToRecycle;
 
 			assert(chunkToRecycle->node == last);
 			last->chunkPos = pos;
@@ -812,8 +860,16 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 			c->chunk.x = posX;
 			c->chunk.z = posZ;
 
-			generateChunk(c->chunk, wg, structureManager, biomesManager, newStructures);
-			rez = &c->chunk;
+			if (!worldSaver.loadChunk(c->chunk))
+			{
+				generateChunk(c->chunk, wg, structureManager, biomesManager, newStructures);
+				c->otherData.dirty = true;
+			}
+			else
+			{
+				std::cout << "Loaded!\n";
+			}
+			rez = c;
 
 			ListNode *node = new ListNode;
 			if (last == nullptr) { last = node; }
@@ -854,14 +910,14 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 			auto generateTreeHouse = [&](glm::ivec2 rootChunk, glm::ivec2 inChunkPos,
 				std::vector<glm::ivec3> *controllBlocks) -> bool
 			{
-				getOrCreateChunk(rootChunk.x + 1, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-				getOrCreateChunk(rootChunk.x - 1, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-				getOrCreateChunk(rootChunk.x + 1, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-				getOrCreateChunk(rootChunk.x - 1, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-				getOrCreateChunk(rootChunk.x + 1, rootChunk.y, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-				getOrCreateChunk(rootChunk.x - 1, rootChunk.y, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-				getOrCreateChunk(rootChunk.x, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-				getOrCreateChunk(rootChunk.x, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+				getOrCreateChunk(rootChunk.x + 1, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+				getOrCreateChunk(rootChunk.x - 1, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+				getOrCreateChunk(rootChunk.x + 1, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+				getOrCreateChunk(rootChunk.x - 1, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+				getOrCreateChunk(rootChunk.x + 1, rootChunk.y, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+				getOrCreateChunk(rootChunk.x - 1, rootChunk.y, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+				getOrCreateChunk(rootChunk.x, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+				getOrCreateChunk(rootChunk.x, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
 
 				newCreatedChunks.push_back({rootChunk.x + 1, rootChunk.y + 1});
 				newCreatedChunks.push_back({rootChunk.x - 1, rootChunk.y - 1});
@@ -877,53 +933,56 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 				//std::cout << "Generated root chunk: " << rootChunk.x << " " << rootChunk.y << "\n";
 
 				auto newC = getOrCreateChunk(rootChunk.x, rootChunk.y, wg,
-					structureManager, biomesManager, sendNewBlocksToPlayers, false, &newStructures);
+					structureManager, biomesManager, sendNewBlocksToPlayers, false, &newStructures, worldSaver);
 
-				int y;
-				for (y = CHUNK_HEIGHT - 20; y > 40; y--)
+				if (newC)
 				{
-					auto b = newC->unsafeGet(inChunkPos.x, y, inChunkPos.y);
-
-					if (b.type == BlockTypes::grassBlock)
+					int y;
+					for (y = CHUNK_HEIGHT - 20; y > 40; y--)
 					{
-						y++;
-						break;
-					}
-					else if (b.type == BlockTypes::air || b.type == BlockTypes::grass)
-					{
+						auto b = newC->chunk.unsafeGet(inChunkPos.x, y, inChunkPos.y);
 
-					}
-					else
-					{
-						y = 0;
-						break;
-					}
-				}
+						if (b.type == BlockTypes::grassBlock)
+						{
+							y++;
+							break;
+						}
+						else if (b.type == BlockTypes::air || b.type == BlockTypes::grass)
+						{
 
-				if (y > 40)
-				{
-					//todo fill this
-					std::unordered_set<glm::ivec2, Ivec2Hash> newCreatedChunksSet;
-
-					StructureToGenerate s;
-					s.pos.x = rootChunk.x * CHUNK_SIZE + inChunkPos.x;
-					s.pos.z = rootChunk.y * CHUNK_SIZE + inChunkPos.y;
-					s.pos.y = y;
-					s.randomNumber1 = randValues[randomIndex++]; //todo
-					s.randomNumber2 = randValues[randomIndex++]; //todo
-					s.randomNumber3 = randValues[randomIndex++]; //todo
-					s.randomNumber4 = randValues[randomIndex++]; //todo
-					s.replaceBlocks = true;
-					s.type = Structure_TreeHouse;
-
-
-					if (generateStructure(s,
-						structureManager, newCreatedChunksSet, sendNewBlocksToPlayers, controllBlocks))
-					{
-						std::cout << "Generated a jungle tree! : " << s.pos.x << " " << s.pos.z << "\n";
-						return true;
+						}
+						else
+						{
+							y = 0;
+							break;
+						}
 					}
 
+					if (y > 40)
+					{
+						//todo fill this
+						std::unordered_set<glm::ivec2, Ivec2Hash> newCreatedChunksSet;
+
+						StructureToGenerate s;
+						s.pos.x = rootChunk.x * CHUNK_SIZE + inChunkPos.x;
+						s.pos.z = rootChunk.y * CHUNK_SIZE + inChunkPos.y;
+						s.pos.y = y;
+						s.randomNumber1 = randValues[randomIndex++]; //todo
+						s.randomNumber2 = randValues[randomIndex++]; //todo
+						s.randomNumber3 = randValues[randomIndex++]; //todo
+						s.randomNumber4 = randValues[randomIndex++]; //todo
+						s.replaceBlocks = true;
+						s.type = Structure_TreeHouse;
+
+
+						if (generateStructure(s,
+							structureManager, newCreatedChunksSet, sendNewBlocksToPlayers, controllBlocks))
+						{
+							std::cout << "Generated a jungle tree! : " << s.pos.x << " " << s.pos.z << "\n";
+							return true;
+						}
+
+					}
 				}
 
 				return 0;
@@ -954,10 +1013,10 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 						glm::ivec2 inChunkPos = {8,8};
 
 						auto newC = getOrCreateChunk(rootChunk.x, rootChunk.y, wg,
-							structureManager, biomesManager, sendNewBlocksToPlayers, false, &newStructures);
+							structureManager, biomesManager, sendNewBlocksToPlayers, false, &newStructures, worldSaver);
 						newCreatedChunks.push_back(rootChunk);
 
-						if (newC->unsafeGetCachedBiome(inChunkPos.x, inChunkPos.y) == 5)
+						if (newC->chunk.unsafeGetCachedBiome(inChunkPos.x, inChunkPos.y) == 5)
 						{
 
 							if (generateTreeHouse(rootChunk, inChunkPos, controllBlocks))
@@ -975,7 +1034,7 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 					glm::ivec2 inChunkPos = {8,8};
 
 					auto newC = getOrCreateChunk(rootChunk.x, rootChunk.y, wg,
-						structureManager, biomesManager, sendNewBlocksToPlayers, false, &newStructures);
+						structureManager, biomesManager, sendNewBlocksToPlayers, false, &newStructures, worldSaver);
 					newCreatedChunks.push_back(rootChunk);
 
 					auto fillControllBlocksWithLeaves = [&](glm::ivec3 pos)
@@ -1112,7 +1171,7 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 						drawBridge(neighbour1, neighbour2);
 					};
 
-					auto biome = newC->unsafeGetCachedBiome(inChunkPos.x, inChunkPos.y);
+					auto biome = newC->chunk.unsafeGetCachedBiome(inChunkPos.x, inChunkPos.y);
 					if (biome == 5)
 					{
 						std::vector<glm::ivec3> rootControllBlocks;
@@ -1234,14 +1293,14 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 					}
 					else if(biome == 2 || biome == 1)
 					{
-						getOrCreateChunk(rootChunk.x + 1, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-						getOrCreateChunk(rootChunk.x - 1, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-						getOrCreateChunk(rootChunk.x + 1, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-						getOrCreateChunk(rootChunk.x - 1, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-						getOrCreateChunk(rootChunk.x + 1, rootChunk.y, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-						getOrCreateChunk(rootChunk.x - 1, rootChunk.y, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-						getOrCreateChunk(rootChunk.x, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-						getOrCreateChunk(rootChunk.x, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+						getOrCreateChunk(rootChunk.x + 1, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+						getOrCreateChunk(rootChunk.x - 1, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+						getOrCreateChunk(rootChunk.x + 1, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+						getOrCreateChunk(rootChunk.x - 1, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+						getOrCreateChunk(rootChunk.x + 1, rootChunk.y, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+						getOrCreateChunk(rootChunk.x - 1, rootChunk.y, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+						getOrCreateChunk(rootChunk.x, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+						getOrCreateChunk(rootChunk.x, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
 
 						newCreatedChunks.push_back({rootChunk.x + 1, rootChunk.y + 1});
 						newCreatedChunks.push_back({rootChunk.x - 1, rootChunk.y - 1});
@@ -1255,7 +1314,7 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 						int y;
 						for (y = CHUNK_HEIGHT - 20; y > 40; y--)
 						{
-							auto b = newC->unsafeGet(inChunkPos.x, y, inChunkPos.y);
+							auto b = newC->chunk.unsafeGet(inChunkPos.x, y, inChunkPos.y);
 
 							if (b.type == BlockTypes::sand || b.type == BlockTypes::sand_stone)
 							{
@@ -1302,14 +1361,14 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 					else if (biome == 8 || biome == 9)
 					{
 						
-						getOrCreateChunk(rootChunk.x + 1, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-						getOrCreateChunk(rootChunk.x - 1, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-						getOrCreateChunk(rootChunk.x + 1, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-						getOrCreateChunk(rootChunk.x - 1, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-						getOrCreateChunk(rootChunk.x + 1, rootChunk.y, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-						getOrCreateChunk(rootChunk.x - 1, rootChunk.y, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-						getOrCreateChunk(rootChunk.x, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
-						getOrCreateChunk(rootChunk.x, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures);
+						getOrCreateChunk(rootChunk.x + 1, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+						getOrCreateChunk(rootChunk.x - 1, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+						getOrCreateChunk(rootChunk.x + 1, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+						getOrCreateChunk(rootChunk.x - 1, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+						getOrCreateChunk(rootChunk.x + 1, rootChunk.y, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+						getOrCreateChunk(rootChunk.x - 1, rootChunk.y, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+						getOrCreateChunk(rootChunk.x, rootChunk.y + 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
+						getOrCreateChunk(rootChunk.x, rootChunk.y - 1, wg, structureManager, biomesManager, sendNewBlocksToPlayers, 0, &newStructures, worldSaver);
 
 						newCreatedChunks.push_back({rootChunk.x + 1, rootChunk.y + 1});
 						newCreatedChunks.push_back({rootChunk.x - 1, rootChunk.y - 1});
@@ -1323,7 +1382,7 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 						int y;
 						for (y = CHUNK_HEIGHT - 20; y > 40; y--)
 						{
-							auto b = newC->unsafeGet(inChunkPos.x, y, inChunkPos.y);
+							auto b = newC->chunk.unsafeGet(inChunkPos.x, y, inChunkPos.y);
 
 							if (b.type == BlockTypes::snow_block)
 							{
@@ -1388,8 +1447,10 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 
 				if (c)
 				{
-					placeGhostBlocksForChunk(c->x, c->z, *c);
-					newCreatedChunksSet.insert({c->x, c->z});
+					auto &d = c->chunk;
+					c->otherData.dirty = true;
+					placeGhostBlocksForChunk(d.x, d.z, d);
+					newCreatedChunksSet.insert({d.x, d.z});
 				}
 				
 			}
@@ -1424,26 +1485,27 @@ ChunkData *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenerat
 	}
 }
 
+//todo rename? or what? there are checks here so
 Block *ChunkPriorityCache::tryGetBlockIfChunkExistsNoChecks(glm::ivec3 pos)
 {
 	auto c = getChunkOrGetNullNotUpdateTable(divideChunk(pos.x), divideChunk(pos.z));
 
 	if (c)
 	{
-		return &c->unsafeGet(modBlockToChunk(pos.x), pos.y, modBlockToChunk(pos.z));
+		return &c->chunk.unsafeGet(modBlockToChunk(pos.x), pos.y, modBlockToChunk(pos.z));
 	}
 
 	return nullptr;
 }
 
-ChunkData *ChunkPriorityCache::getChunkOrGetNullNotUpdateTable(int posX, int posZ)
+SavedChunk *ChunkPriorityCache::getChunkOrGetNullNotUpdateTable(int posX, int posZ)
 {
 	glm::ivec2 pos = {posX, posZ};
 	auto foundPos = savedChunks.find(pos);
 
 	if (foundPos != savedChunks.end())
 	{
-		return &((*foundPos).second->chunk);
+		return ((*foundPos).second);
 	}
 	else
 	{
@@ -1667,11 +1729,11 @@ bool ChunkPriorityCache::generateStructure(StructureToGenerate s, StructureData 
 			
 				if (c)
 				{
-			
+					c->otherData.dirty = true;
 					for (int y = startPos.y; y < endPos.y; y++)
 					{
 
-						auto &b = c->unsafeGet(inChunkX, y, inChunkZ);
+						auto &b = c->chunk.unsafeGet(inChunkX, y, inChunkZ);
 
 						if (b.type == BlockTypes::air || replaceAnything)
 						{
@@ -1854,7 +1916,44 @@ void ChunkPriorityCache::cleanup()
 		delete c.second->node;
 		delete c.second;
 	}
+	*this = {};
 
+}
+
+void ChunkPriorityCache::saveNextChunk(WorldSaver &worldSaver, int count)
+{
+
+	for (auto &c : savedChunks)
+	{
+		if (c.second->otherData.dirty)
+		{
+
+			saveChunk(worldSaver, c.second);
+
+			count--;
+			if (count <= 0)break;
+		}
+	}
+
+}
+
+void ChunkPriorityCache::saveChunk(WorldSaver &worldSaver, SavedChunk *savedChunks)
+{
+
+	worldSaver.saveChunk(savedChunks->chunk);
+	savedChunks->otherData.dirty = false;
+
+}
+
+void ChunkPriorityCache::saveAllChunks(WorldSaver &worldSaver)
+{
+	for (auto &c : savedChunks)
+	{
+		if (c.second->otherData.dirty)
+		{
+			saveChunk(worldSaver, c.second);
+		}
+	}
 }
 
 
@@ -1874,11 +1973,19 @@ void updateLoadedChunks()
 		glm::ivec2 pos(divideChunk(c.second.playerData.position.x), 
 			divideChunk(c.second.playerData.position.z));
 		
+		
 		//todo
-		for (int i = -2; i <= 2; i++)
-			for (int j = -2; j <= 2; j++)
+		for (int i = -simulationDistance; i <= simulationDistance; i++)
+			for (int j = -simulationDistance; j <= simulationDistance; j++)
 			{
-				chunks.insert(pos + glm::ivec2(i,j));
+				glm::dvec2 vect(i, j);
+
+				float dist = std::sqrt(glm::dot(vect, vect));
+
+				if (dist <= simulationDistance)
+				{
+					chunks.insert(pos + glm::ivec2(i, j));
+				}
 			}
 	}
 	
@@ -1898,7 +2005,7 @@ void doGameTick(float deltaTime, ServerEntityManager &entityManager, std::uint64
 		auto c = sd.chunkCache.getChunkOrGetNullNotUpdateTable(pos.x, pos.y);
 		if (c)
 		{
-			return c;
+			return &c->chunk;
 		}
 		else
 		{

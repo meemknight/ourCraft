@@ -31,6 +31,8 @@ void WorldGenerator::clear()
 	delete whiteNoise;
 	delete whiteNoise2;
 	delete spagettiNoise;
+
+	*this = {};
 }
 
 void WorldGenerator::applySettings(WorldGeneratorSettings &s)

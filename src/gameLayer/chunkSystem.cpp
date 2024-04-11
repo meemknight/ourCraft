@@ -1076,7 +1076,7 @@ int modBlockToChunk(int x)
 
 int divideChunk(int x)
 {
-	return (int)std::floor((float)x / (float)CHUNK_SIZE);
+	return (int)std::floorf((float)x / (float)CHUNK_SIZE);
 }
 glm::ivec2 fromBlockPosToChunkPos(glm::ivec3 blockPos)
 {

@@ -12,6 +12,7 @@ struct ChunkData
 
 	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_HEIGHT];
 
+	//todo send this to the player and save it in the future, or just remove it
 	unsigned char cachedBiomes[CHUNK_SIZE][CHUNK_SIZE];
 
 	int x, z;

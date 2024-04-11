@@ -5,3 +5,4 @@ build/
 .idea/
 CMakeSettings.json
 /ourcmake
+resources/saves/
