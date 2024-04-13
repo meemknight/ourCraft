@@ -114,6 +114,19 @@ struct Renderer
 
 	}defaultShader;
 
+	struct HBAOShader
+	{
+		Shader shader;
+
+
+	}hbaoShader;
+
+	struct ApplyHBAOShader
+	{
+		Shader shader;
+		uniform u_hbao;
+	}applyHBAOShader;
+
 	struct ZpassShader
 	{
 		Shader shader;
@@ -141,6 +154,7 @@ struct Renderer
 			uniform u_cameraPositionFloat;
 			uniform u_modelMatrix;
 			uniform u_texture;
+			uniform u_view;
 
 			GLuint vaoCube = 0;
 			GLuint vertexBufferCube = 0;
@@ -165,8 +179,9 @@ struct Renderer
 	bool sortChunks = 1;
 	bool zprepass = 0;
 	bool frustumCulling = 1;
-	bool renderShadows = 1;
+	bool renderShadows = 0;
 
+	FBO fboHBAO;
 	FBO fboMain;
 	FBO fboCoppy;
 	FBO fboLastFrame;
@@ -188,7 +203,6 @@ struct Renderer
 		ChunkSystem &chunkSystem, Camera &c, ProgramData &programData);
 
 
-
 	float waterTimer = 0;
 
 	GLuint lightBuffer = 0;
@@ -206,6 +220,8 @@ struct Renderer
 	GLuint vertexUVBuffer = 0;
 	GLuint textureSamplerersBuffer = 0;
 	
+	GLuint vaoQuad = 0;
+	GLuint vertexBufferQuad = 0;
 };
 
 struct GyzmosRenderer

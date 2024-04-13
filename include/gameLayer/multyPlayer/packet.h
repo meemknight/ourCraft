@@ -172,4 +172,4 @@ void sendPacketAndCompress(ENetPeer *to, Packet p, const char *data, size_t size
 void sendPacket(ENetPeer *to, Packet p, const char *data, size_t size, bool reliable, int channel);
 char *parsePacket(ENetEvent &event, Packet &p, size_t &dataSize);
 
-float computeRestantTimer(std::uint64_t server, std::uint64_t you);
+float computeRestantTimer(std::uint64_t older, std::uint64_t newer);

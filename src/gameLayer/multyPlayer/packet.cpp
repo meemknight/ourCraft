@@ -125,8 +125,8 @@ char *parsePacket(ENetEvent &event, Packet &p, size_t &dataSize)
 
 }
 
-float computeRestantTimer(std::uint64_t server, std::uint64_t you)
+float computeRestantTimer(std::uint64_t older, std::uint64_t newer)
 {
-	float rez = (((std::int64_t)you - (std::int64_t)server)) / 1000.f;
+	float rez = (((std::int64_t)newer - (std::int64_t)older)) / 1000.f;
 	return rez;
 }

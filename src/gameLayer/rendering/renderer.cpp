@@ -401,6 +401,7 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	fboMain.create(true, true, GL_RGB16F);
 	fboLastFrame.create(true, false);
 	fboLastFramePositions.create(GL_RGB16F, false);
+	fboHBAO.create(GL_RED, false);
 
 	skyBoxRenderer.create();
 	skyBoxLoaderAndDrawer.createGpuData();
@@ -410,7 +411,33 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	sunTexture.loadFromFile(RESOURCES_PATH "sky/sun.png", false, false);
 
 	brdfTexture.loadFromFile(RESOURCES_PATH "otherTextures/brdf.png", false, false);
-	
+
+	{
+		glGenVertexArrays(1, &vaoQuad);
+		glBindVertexArray(vaoQuad);
+		glGenBuffers(1, &vertexBufferQuad);
+		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferQuad);
+
+		//how to use
+		//glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		float quadVertices[] = {
+			// positions        // texture Coords
+			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+			 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+			 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+		};
+
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+
+		glBindVertexArray(0);
+	};
+
+
 	glGenBuffers(1, &defaultShader.shadingSettingsBuffer);
 	glBindBuffer(GL_UNIFORM_BUFFER, defaultShader.shadingSettingsBuffer);
 	
@@ -650,10 +677,28 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(entityRenderer.basicEntityshader, u_cameraPositionInt);
 	GET_UNIFORM2(entityRenderer.basicEntityshader, u_cameraPositionFloat);
 	GET_UNIFORM2(entityRenderer.basicEntityshader, u_texture);
+	GET_UNIFORM2(entityRenderer.basicEntityshader, u_view);
 
 
 #pragma endregion
 
+#pragma region post process
+
+	hbaoShader.shader.clear();
+	hbaoShader.shader.loadShaderProgramFromFile(
+		RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
+		RESOURCES_PATH "shaders/postProcess/hbao.frag");
+
+	applyHBAOShader.shader.clear();
+	applyHBAOShader.shader.loadShaderProgramFromFile(
+		RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
+		RESOURCES_PATH "shaders/postProcess/applyHBAO.frag");
+
+	GET_UNIFORM2(applyHBAOShader, u_hbao);
+
+
+#pragma endregion
+	
 
 
 }
@@ -835,13 +880,15 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	fboLastFrame.updateSize(screenX, screenY);
 	fboLastFramePositions.updateSize(screenX, screenY);
+	fboHBAO.updateSize(screenX / 2, screenY / 2);
 
 	glm::vec3 posFloat = {};
 	glm::ivec3 posInt = {};
 	glm::ivec3 blockPosition = from3DPointToBlock(c.position);
 	c.decomposePosition(posFloat, posInt);
 
-	auto vp = c.getProjectionMatrix() * glm::lookAt({0,0,0}, c.viewDirection, c.up);
+	auto viewMatrix = c.getViewMatrix();
+	auto vp = c.getProjectionMatrix() * viewMatrix;
 	auto chunkVectorCopy = chunkSystem.loadedChunks;
 
 	float timeGrass = std::clock() / 1000.f;
@@ -935,7 +982,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform1i(defaultShader.u_writeScreenSpacePositions, 1);//todo remove
 
 		glUniformMatrix4fv(defaultShader.u_inverseViewProjMat, 1, 0,
-			&glm::inverse(c.getProjectionMatrix() * c.getViewMatrix())[0][0]);
+			&glm::inverse(c.getProjectionMatrix() * viewMatrix)[0][0]);
 
 		glUniformMatrix4fv(defaultShader.u_lastViewProj, 1, 0,
 			&(c.lastFrameViewProjMatrix)[0][0]);
@@ -969,10 +1016,10 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniformMatrix4fv(defaultShader.u_cameraProjection, 1, GL_FALSE, glm::value_ptr(c.getProjectionMatrix()));
 
 		glUniformMatrix4fv(defaultShader.u_inverseView, 1, GL_FALSE,
-			glm::value_ptr(glm::inverse(c.getViewMatrix())));
+			glm::value_ptr(glm::inverse(viewMatrix)));
 
 		glUniformMatrix4fv(defaultShader.u_view, 1, GL_FALSE,
-			glm::value_ptr(c.getViewMatrix()));
+			glm::value_ptr(viewMatrix));
 
 		waterTimer += deltaTime * 0.09;
 		if (waterTimer > 20)
@@ -1281,6 +1328,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 #pragma region render entities
 	{
+		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
+
 		glDepthFunc(GL_LESS);
 
 
@@ -1290,6 +1339,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 
 		glUniformMatrix4fv(entityRenderer.basicEntityshader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
+		glUniformMatrix4fv(entityRenderer.basicEntityshader.u_view, 1, GL_FALSE, &viewMatrix[0][0]);
 		glUniformMatrix4fv(entityRenderer.basicEntityshader.u_modelMatrix, 1, GL_FALSE,
 			glm::value_ptr(glm::scale(glm::vec3{0.4f})));
 		glUniform3fv(entityRenderer.basicEntityshader.u_cameraPositionFloat, 1, &posFloat[0]);
@@ -1347,6 +1397,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 				glm::vec3 entityFloat = {};
 				glm::ivec3 entityInt = {};
 
+				//decomposePosition(e.second.item.position, entityFloat, entityInt);
 				decomposePosition(e.second.rubberBand.position, entityFloat, entityInt);
 
 				entityFloat += glm::vec3(0, 0.2, 0);
@@ -1438,6 +1489,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	glDepthFunc(GL_LESS);
 	glDisable(GL_CULL_FACE); //todo change
 	renderTransparentGeometry();
+	glEnable(GL_CULL_FACE);
 #pragma endregion
 
 
@@ -1449,10 +1501,39 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 #pragma endregion
 
+#pragma region HBAO
+
+	if (0)
+	{
+		glViewport(0, 0, fboHBAO.size.x, fboHBAO.size.y);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, fboHBAO.fbo);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		hbaoShader.shader.bind();
+		glBindVertexArray(vaoQuad);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+
+		//apply hbao
+		glViewport(0, 0, screenX, screenY);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		applyHBAOShader.shader.bind();
+		glEnable(GL_BLEND);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, fboHBAO.color);
+		glUniform1i(applyHBAOShader.u_hbao, 0);
+
+
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	};
+
+#pragma endregion
 
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
 	glBindVertexArray(0);
+
 }
 
 //https://www.youtube.com/watch?v=lUo7s-i9Gy4&ab_channel=OREONENGINE

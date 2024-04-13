@@ -17,6 +17,7 @@ uniform vec3 u_cameraPositionFloat;
 
 out vec2 v_uv;
 out flat int v_id;
+out vec3 v_vertexPosition;
 
 void main()
 {
@@ -32,4 +33,6 @@ void main()
 	gl_Position = posProjection;
 	v_uv = uv;
 	v_id = gl_VertexID;
+
+	v_vertexPosition = posViewSemi.xyz;
 }

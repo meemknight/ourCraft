@@ -475,7 +475,7 @@ void enetServerFunction()
 	auto start = std::chrono::high_resolution_clock::now();
 
 	float sendEntityTimer = 0.5;
-	float sentTimerUpdateTimer = 2;
+	float sentTimerUpdateTimer = 1;
 
 	float tickTimer = 0;
 
@@ -594,7 +594,7 @@ void enetServerFunction()
 
 			if (sentTimerUpdateTimer < 0)
 			{
-				sentTimerUpdateTimer = 2.f;
+				sentTimerUpdateTimer = 1.f;
 				auto timer = getTimer();
 			
 				Packet packet;

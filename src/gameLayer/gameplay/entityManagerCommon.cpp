@@ -9,7 +9,14 @@ void computeRubberBand(RubberBand &rubberBand, glm::dvec3 &position, float delta
 	if (rubberBand.timer < 0) { rubberBand.timer = 0; }
 
 	rubberBand.position = glm::mix(rubberBand.startPosition, position, rubberBand.timer);
+	rubberBand.startPosition = rubberBand.position;
 }
+
+void RubberBand::computeRubberBand(glm::dvec3 &position, float deltaTime)
+{
+	::computeRubberBand(*this, position, deltaTime);
+}
+
 
 void updateDroppedItem(DroppedItem &item, float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
 {
@@ -28,7 +35,3 @@ void updateDroppedItem(DroppedItem &item, float deltaTime, decltype(chunkGetterS
 
 }
 
-void RubberBand::computeRubberBand(glm::dvec3 &position, float deltaTime)
-{
-	::computeRubberBand(*this, position, deltaTime);
-}

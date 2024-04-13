@@ -342,6 +342,7 @@ void serverWorkerFunction()
 		{
 			std::vector<ServerTask> tasks;
 
+			//I also commented the notify one thing in submittaskforserver!
 			//if (!settings.busyWait)
 			//{
 			//	if (sd.waitingTasks.empty())
@@ -570,8 +571,11 @@ void serverWorkerFunction()
 						newEntity.item.lastPosition = i.t.doublePos;
 						newEntity.item.type = i.t.blockType;
 						newEntity.item.forces = i.t.motionState;
+						//newEntity.restantTime = computeRestantTimer(currentTimer, i.t.timer);
 						newEntity.restantTime = computeRestantTimer(i.t.timer, currentTimer);
 
+						
+						std::cout << "restant: " << newEntity.restantTime << "\n";
 						entityManager.droppedItems.insert({i.t.entityId, newEntity});
 					}
 					
@@ -832,7 +836,7 @@ SavedChunk *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenera
 			}
 			else
 			{
-				std::cout << "Loaded!\n";
+				//std::cout << "Loaded!\n";
 			}
 
 			rez = chunkToRecycle;
@@ -867,7 +871,7 @@ SavedChunk *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenera
 			}
 			else
 			{
-				std::cout << "Loaded!\n";
+				//std::cout << "Loaded!\n";
 			}
 			rez = c;
 

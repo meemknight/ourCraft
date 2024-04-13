@@ -349,6 +349,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			{
 				updateDroppedItem(item.second.item, timer, chunkGetter);
 			}
+
 			item.second.rubberBand.computeRubberBand(item.second.item.position, deltaTime);
 
 			item.second.restantTime = 0;
@@ -765,6 +766,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
 			{
 				ImGui::Image((void *)gameData.sunShadow.shadowTexturePreview.color, {256, 256}, 
+					{0, 1}, {1, 0});
+			}
+
+			if (ImGui::CollapsingHeader("HBAO Map",
+				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+			{
+				ImGui::Image((void *)programData.renderer.fboHBAO.color, {256, 256},
 					{0, 1}, {1, 0});
 			}
 
