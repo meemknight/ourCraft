@@ -34,7 +34,6 @@ projects/
 bin/
 .buckd/
 buck-out/
-build-*
 *.gcda
 
 # Other files
