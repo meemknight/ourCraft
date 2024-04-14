@@ -27,10 +27,10 @@ bool checkIfPlayerShouldGetEntity(glm::ivec2 playerPos2D,
 void ClientEntityManager::dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int playerSquareDistance)
 {
 
-
 	for (auto it = players.begin(); it != players.end(); )
 	{
-		if (!checkIfPlayerShouldGetEntity(playerPos2D, it->second.position, playerSquareDistance, 0))
+		if (!checkIfPlayerShouldGetEntity(playerPos2D, it->second.getPosition(),
+			playerSquareDistance, 0))
 		{
 			it = players.erase(it);
 			std::cout << "Dropped player\n";
@@ -168,6 +168,13 @@ void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)
 		entity.second.restantTime = 0;
 	};
 
+	for (auto &player : players)
+	{
+
+		player.second.rubberBand.computeRubberBand(
+			player.second.entity.position, deltaTime);
+
+	}
 
 	for (auto &item : droppedItems)
 	{

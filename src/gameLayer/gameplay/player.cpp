@@ -1,6 +1,6 @@
 #include "gameplay/player.h"
 
-void Player_::moveFPS(glm::vec3 direction)
+void Player::moveFPS(glm::vec3 direction)
 {
 	lookDirection = glm::normalize(lookDirection);
 

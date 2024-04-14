@@ -535,11 +535,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	for (auto &p : gameData.entityManager.players)
 	{
 		
-		programData.pointDebugRenderer.renderPoint(gameData.c, p.second.position);
+		programData.pointDebugRenderer.
+			renderPoint(gameData.c, p.second.getRubberBandPosition());
 
 		//todo this will be refactored
 		auto boxSize = glm::vec3(0.8, 1.8, 0.8);
-		auto pos = p.second.position;
+		auto pos = p.second.getRubberBandPosition();
 
 		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2),
 			pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2));

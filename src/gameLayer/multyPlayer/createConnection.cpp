@@ -216,6 +216,11 @@ void recieveDataClient(ENetEvent &event,
 			Packet_ClientRecieveOtherPlayerPosition *entity =
 				(Packet_ClientRecieveOtherPlayerPosition *)data;
 
+			//todo add the timer
+			//if (p->timer + 16 < yourTimer)
+			//{
+			//	break; //drop too old packets
+			//}
 
 			if (entityManager.localPlayer.entityId == entity->entityId)
 			{
@@ -230,7 +235,20 @@ void recieveDataClient(ENetEvent &event,
 					entity->position, squareDistance, 0))
 				{
 
-					entityManager.players[entity->entityId].position = entity->position;
+					auto found = entityManager.players.find(entity->entityId);
+					
+					if (found == entityManager.players.end())
+					{
+						entityManager.players[entity->entityId] = {};
+						found = entityManager.players.find(entity->entityId);
+					}
+					
+					found->second.rubberBand
+						.add(found->second.entity.position - entity->position);
+					
+					entityManager.players[entity->entityId].getPosition()
+						= entity->position;
+				
 
 				}
 				else
@@ -298,7 +316,7 @@ void recieveDataClient(ENetEvent &event,
 
 			if (size == sizeof(Packet_HeaderConnectOtherPlayer))
 			{
-				entityManager.players[player->entityId].position = player->position;
+				entityManager.players[player->entityId].entity.position = player->position;
 				entityManager.players[player->entityId].cid = player->cid;
 			}
 

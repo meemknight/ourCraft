@@ -8,7 +8,7 @@
 #include "gamePlayLogic.h"
 #include <gameplay/physics.h>
 #include <gameplay/droppedItem.h>
-
+#include <gameplay/player.h>
 
 using EventCounter = unsigned int;
 using RevisionNumber = unsigned int;

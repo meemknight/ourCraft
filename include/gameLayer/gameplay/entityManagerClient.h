@@ -19,7 +19,7 @@ struct ReservedIDsRange
 struct ClientEntityManager
 {
 
-	std::unordered_map<std::uint64_t, PlayerNetworked> players;
+	std::unordered_map<std::uint64_t, PlayerClient> players;
 	
 	std::unordered_map<std::uint64_t, DroppedItemClient> droppedItems;
 
