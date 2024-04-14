@@ -54,17 +54,3 @@ void updateForces(glm::dvec3 &pos, glm::vec3 &velocity, glm::vec3 &acceleration,
 
 void applyImpulse(MotionState &force, glm::vec3 impulse, float mass = 1.f);
 
-//this is the local player
-struct Player
-{
-
-	//todo will probably remove the idea of a rigid body
-	glm::vec3 lookDirection = {0,0,-1};
-	RigidBody body = {};
-	std::uint64_t entityId = 0;
-
-	void moveFPS(glm::vec3 direction);
-
-	
-
-};

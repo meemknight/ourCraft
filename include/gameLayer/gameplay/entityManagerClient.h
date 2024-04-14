@@ -23,7 +23,7 @@ struct ClientEntityManager
 	
 	std::unordered_map<std::uint64_t, DroppedItemClient> droppedItems;
 
-	Player localPlayer;
+	LocalPlayer localPlayer;
 
 	void dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int playerSquareDistance);
 

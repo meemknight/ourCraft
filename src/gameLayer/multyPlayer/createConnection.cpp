@@ -221,8 +221,8 @@ void recieveDataClient(ENetEvent &event,
 			{
 				//update local player
 
-				entityManager.localPlayer.body.pos = entity->position;
-				entityManager.localPlayer.body.lastPos = entity->position;
+				entityManager.localPlayer.position = entity->position;
+				entityManager.localPlayer.lastPosition = entity->position;
 			}
 			else
 			{
