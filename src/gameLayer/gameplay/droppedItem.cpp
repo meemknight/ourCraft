@@ -11,3 +11,13 @@ void DroppedItem::update(float deltaTime, decltype(chunkGetterSignature) *chunkG
 
 
 }
+
+void DroppedItemServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
+{
+	entity.update(deltaTime, chunkGetter);
+}
+
+void DroppedItemClient::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
+{
+	entity.update(deltaTime, chunkGetter);
+}

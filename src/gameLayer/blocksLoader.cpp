@@ -62,7 +62,7 @@ const char *texturesNames[] = {
 	"glowstone",		//54
 	"glass",			//55
 	"",					//56 test texture
-
+	"torch",			//57
 };
 
 //front
@@ -220,6 +220,9 @@ uint16_t blocksLookupTable[] = {
 
 	//test texture
 	56, 56, 56, 56, 56, 56,
+
+	//torch
+	57, 57, 57, 57, 57, 57,
 };
 
 void fixAlphaForNormals(unsigned char *buffer, int w, int h)

@@ -56,6 +56,7 @@ enum BlockTypes
 	glowstone,
 	glass,
 	testBlock,
+	torch,
 	BlocksCount
 };
 

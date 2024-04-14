@@ -160,7 +160,7 @@ void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)
 
 		if (timer > 0)
 		{
-			entity.second.entity.update(timer, chunkGetter);
+			entity.second.update(timer, chunkGetter);
 		}
 
 		entity.second.rubberBand.computeRubberBand(entity.second.entity.position, deltaTime);

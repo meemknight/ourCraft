@@ -33,13 +33,15 @@ bool isOpaque(BlockType type)
 		&& type != BlockTypes::spruce_leaves
 		&& type != BlockTypes::spruce_leaves_red
 		&& type != BlockTypes::glowstone
+		&& type != BlockTypes::torch
 		&& !(isTransparentGeometry(type))
 		&& !(isGrassMesh(type));
 }
 
 bool isLightEmitor(BlockType type)
 {
-	return type == BlockTypes::glowstone;
+	return type == BlockTypes::glowstone 
+		|| type == BlockTypes::torch;
 }
 
 bool isTransparentGeometry(BlockType type)

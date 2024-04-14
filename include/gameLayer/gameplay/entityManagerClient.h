@@ -5,17 +5,10 @@
 #include <deque>
 #include <multyPlayer/server.h>
 #include <gameplay/droppedItem.h>
+#include <gameplay/player.h>
 
 struct UndoQueue;
 
-struct PlayerNetworked
-{
-	glm::dvec3 position = {};
-
-	//todo rotation and others
-
-	CID cid = 0;
-};
 
 struct ReservedIDsRange
 {

@@ -13,11 +13,11 @@ struct DroppedItem: public PhysicalEntity
 
 struct DroppedItemClient: public CleintEntity<DroppedItem>
 {
-	
+	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 };
 
 struct DroppedItemServer : public ServerEntity<DroppedItem>
 {
-
+	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 };
 

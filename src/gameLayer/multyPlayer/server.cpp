@@ -1991,7 +1991,7 @@ void genericCallUpdateForEntity(T &e,
 	float time = deltaTime + e.second.restantTime;
 	if (time > 0)
 	{
-		e.second.entity.update(time, chunkGetter);
+		e.second.update(time, chunkGetter);
 	}
 	e.second.restantTime = 0;
 };
