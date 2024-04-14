@@ -24,7 +24,7 @@ struct MotionState
 
 };
 
-
+//todo remove this struct because we don't actually use it
 struct RigidBody
 {
 
@@ -47,8 +47,6 @@ struct RigidBody
 	void updateMove();
 
 };
-
-
 
 void updateForces(glm::dvec3 &pos, MotionState &forces, float deltaTime, bool applyGravity);
 

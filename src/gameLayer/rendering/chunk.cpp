@@ -371,7 +371,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 	{
 		glBindBuffer(GL_ARRAY_BUFFER, opaqueGeometryBuffer);
 		glBufferData(GL_ARRAY_BUFFER, opaqueGeometry.size() * sizeof(opaqueGeometry[0]),
-			opaqueGeometry.data(), GL_STREAM_DRAW);
+			opaqueGeometry.data(), GL_STATIC_DRAW);
 		elementCountSize = opaqueGeometry.size() / 4; //todo magic number
 
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsBuffer);
@@ -386,7 +386,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 	{
 		glBindBuffer(GL_ARRAY_BUFFER, transparentGeometryBuffer);
 		glBufferData(GL_ARRAY_BUFFER, transparentGeometry.size() * sizeof(transparentGeometry[0]),
-			transparentGeometry.data(), GL_STREAM_DRAW);
+			transparentGeometry.data(), GL_STATIC_DRAW);
 		transparentElementCountSize = transparentGeometry.size() / 4; //todo magic number
 	}
 

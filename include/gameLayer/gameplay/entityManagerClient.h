@@ -1,9 +1,10 @@
 #pragma once
-#include <gameplay/entityManagerCommon.h>
+#include <gameplay/entity.h>
 #include <gameplay/physics.h>
 #include <unordered_map>
 #include <deque>
 #include <multyPlayer/server.h>
+#include <gameplay/droppedItem.h>
 
 struct UndoQueue;
 
@@ -27,7 +28,7 @@ struct ClientEntityManager
 
 	std::unordered_map<std::uint64_t, PlayerNetworked> players;
 	
-	std::unordered_map<std::uint64_t, DroppedItemNetworked> droppedItems;
+	std::unordered_map<std::uint64_t, DroppedItemClient> droppedItems;
 
 	Player localPlayer;
 
@@ -44,6 +45,7 @@ struct ClientEntityManager
 	
 	void addOrUpdateDroppedItem(std::uint64_t eid, DroppedItem droppedItem, UndoQueue &undoQueue, float restantTimer);
 
+	void doAllUpdates(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2));
 };
 
 

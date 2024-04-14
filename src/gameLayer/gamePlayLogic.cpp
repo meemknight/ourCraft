@@ -81,7 +81,7 @@ bool initGameplay(ProgramData &programData, const char *c)
 	gameData.entityManager.localPlayer.entityId = playerData.yourPlayerEntityId;
 
 
-	gameData.chunkSystem.init(40);
+	gameData.chunkSystem.init(30);
 
 	gameData.sunShadow.init();
 
@@ -341,19 +341,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		gameData.entityManager.localPlayer.body.updateMove();
 		gameData.c.position = gameData.entityManager.localPlayer.body.pos + glm::dvec3(0,1.5,0);
 
-		for (auto &item : gameData.entityManager.droppedItems)
-		{
-			float timer = deltaTime + item.second.restantTime;
-
-			if (timer > 0)
-			{
-				updateDroppedItem(item.second.item, timer, chunkGetter);
-			}
-
-			item.second.rubberBand.computeRubberBand(item.second.item.position, deltaTime);
-
-			item.second.restantTime = 0;
-		}
+		gameData.entityManager.doAllUpdates(deltaTime, chunkGetter);
 
 
 
@@ -899,8 +887,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			}
 
-			//ImGui::Checkbox("Unified geometry pool",
-			//	&programData.renderer.unifiedGeometry);
+			ImGui::Checkbox("Unified geometry pool",
+				&programData.renderer.unifiedGeometry);
 
 			ImGui::Checkbox("Sort chunks",
 				&programData.renderer.sortChunks);

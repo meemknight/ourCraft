@@ -372,6 +372,7 @@ void RigidBody::updateMove()
 	lastPos = pos;
 }
 
+
 void updateForces(glm::dvec3 &pos, MotionState &forces, float deltaTime, bool applyGravity)
 {
 	updateForces(pos, forces.velocity, forces.acceleration, deltaTime, applyGravity);

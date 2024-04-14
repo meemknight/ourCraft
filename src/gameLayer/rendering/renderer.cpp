@@ -1067,6 +1067,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 				glBindBuffer(GL_COPY_WRITE_BUFFER, lightBuffer);
 
+				//todo only copy chunks that are close
+				//todo max lights
 				size_t offset = 0;
 				for (auto c : chunkSystem.loadedChunks)
 				{
@@ -1389,7 +1391,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 				for (int i = 0; i < 6; i++)
 				{
-					textures[i] = blocksLoader.gpuIds[getGpuIdIndexForBlock(e.second.item.type, i)];
+					textures[i] = blocksLoader.gpuIds
+						[getGpuIdIndexForBlock(e.second.entity.type, i)];
 				}
 
 				glUniformHandleui64vARB(entityRenderer.basicEntityshader.u_texture, 6, textures);
@@ -1398,7 +1401,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 				glm::ivec3 entityInt = {};
 
 				//decomposePosition(e.second.item.position, entityFloat, entityInt);
-				decomposePosition(e.second.rubberBand.position, entityFloat, entityInt);
+				decomposePosition(e.second.getRubberBandPosition(), entityFloat, entityInt);
 
 				entityFloat += glm::vec3(0, 0.2, 0);
 

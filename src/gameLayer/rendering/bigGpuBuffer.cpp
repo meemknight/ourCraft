@@ -41,7 +41,7 @@ void BigGpuBuffer::create(size_t chunks)
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 	glBindBuffer(GL_ARRAY_BUFFER, opaqueGeometryBuffer);
-	glBufferData(GL_ARRAY_BUFFER, arenaSize, 0, GL_DYNAMIC_DRAW); //todo look into a modern function here
+	glBufferData(GL_ARRAY_BUFFER, arenaSize, 0, GL_STATIC_DRAW); //todo look into a modern function here
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opaqueGeometryIndex);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(winding), winding, GL_STATIC_DRAW);
 	setupVertexAttributes();

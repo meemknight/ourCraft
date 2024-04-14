@@ -103,7 +103,7 @@ bool ClientEntityManager::dropItemByClient(glm::dvec3 position, BlockType blockT
 		newEntity.type = blockType;
 		newEntity.forces = ms;
 
-		droppedItems[newEntityId].item = newEntity;
+		droppedItems[newEntityId].entity = newEntity;
 	}
 
 	return true;
@@ -128,15 +128,15 @@ void ClientEntityManager::addOrUpdateDroppedItem(std::uint64_t eid,
 
 	if (found == droppedItems.end())
 	{	
-		droppedItems[eid].item = droppedItem;
+		droppedItems[eid].entity = droppedItem;
 		droppedItems[eid].restantTime = restantTimer;
 	}
 	else
 	{
-		found->second.rubberBand.startPosition = found->second.item.position;
-		found->second.rubberBand.timer = 0;
+		found->second.rubberBand
+			.add(found->second.entity.position - droppedItem.position);
 
-		found->second.item = droppedItem;
+		found->second.entity = droppedItem;
 		found->second.restantTime = restantTimer;
 
 		for (auto &e : undoQueue.events)
@@ -148,5 +148,31 @@ void ClientEntityManager::addOrUpdateDroppedItem(std::uint64_t eid,
 		}
 
 	}
+
+}
+
+void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2))
+{
+
+	auto genericUpdate = [&](auto &entity)
+	{
+		float timer = deltaTime + entity.second.restantTime;
+
+		if (timer > 0)
+		{
+			entity.second.entity.update(timer, chunkGetter);
+		}
+
+		entity.second.rubberBand.computeRubberBand(entity.second.entity.position, deltaTime);
+
+		entity.second.restantTime = 0;
+	};
+
+
+	for (auto &item : droppedItems)
+	{
+		genericUpdate(item);
+	}
+
 
 }

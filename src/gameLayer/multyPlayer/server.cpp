@@ -105,6 +105,7 @@ struct ChunkPriorityCache
 	ListNode *first = nullptr;
 	ListNode *last = nullptr;
 
+	//todo remove this, just keep chunks that you need loaded in the start.
 	//this chunks are kept force loaded.
 	std::unordered_set<glm::ivec2> loadedChunks = {};
 
@@ -167,7 +168,6 @@ struct ServerData
 	ENetHost *server = nullptr;
 	ServerSettings settings = {};
 
-	float updateEntititiesTimer = 0;
 
 }sd;
 
@@ -565,17 +565,17 @@ void serverWorkerFunction()
 					if (computeRevisionStuff(*client, true && serverAllows, i.t.eventId))
 					{
 						
-						DroppedItemNetworked newEntity = {};
-						newEntity.item.count = i.t.blockCount;
-						newEntity.item.position = i.t.doublePos;
-						newEntity.item.lastPosition = i.t.doublePos;
-						newEntity.item.type = i.t.blockType;
-						newEntity.item.forces = i.t.motionState;
+						DroppedItemServer newEntity = {};
+						newEntity.entity.count = i.t.blockCount;
+						newEntity.entity.position = i.t.doublePos;
+						newEntity.entity.lastPosition = i.t.doublePos;
+						newEntity.entity.type = i.t.blockType;
+						newEntity.entity.forces = i.t.motionState;
 						//newEntity.restantTime = computeRestantTimer(currentTimer, i.t.timer);
 						newEntity.restantTime = computeRestantTimer(i.t.timer, currentTimer);
 
 						
-						std::cout << "restant: " << newEntity.restantTime << "\n";
+						//std::cout << "restant: " << newEntity.restantTime << "\n";
 						entityManager.droppedItems.insert({i.t.entityId, newEntity});
 					}
 					
@@ -1965,6 +1965,37 @@ void ChunkPriorityCache::saveAllChunks(WorldSaver &worldSaver)
 }
 
 
+template <class T, int Packet_Type, class E>
+void genericBroadcastEntityUpdateFromServerToPlayer(E &e, bool reliable, 
+	std::uint64_t currentTimer)
+{
+
+	Packet packet;
+	packet.header = Packet_Type;
+
+	T packetData;
+	packetData.eid = e.first;
+	packetData.entity = e.second.entity;
+	packetData.timer = currentTimer;
+
+	broadCast(packet, &packetData, sizeof(packetData),
+		nullptr, reliable, channelEntityPositions);
+
+}
+
+
+template<class T>
+void genericCallUpdateForEntity(T &e,
+	float deltaTime, ChunkData*(chunkGetter)(glm::ivec2))
+{
+	float time = deltaTime + e.second.restantTime;
+	if (time > 0)
+	{
+		e.second.entity.update(time, chunkGetter);
+	}
+	e.second.restantTime = 0;
+};
+
 
 //adds loaded chunks.
 void updateLoadedChunks()
@@ -2007,7 +2038,8 @@ void updateLoadedChunks()
 }
 
 
-void doGameTick(float deltaTime, ServerEntityManager &entityManager, std::uint64_t currentTimer)
+void doGameTick(float deltaTime, ServerEntityManager &entityManager, 
+	std::uint64_t currentTimer)
 {
 
 	auto chunkGetter = [](glm::ivec2 pos) -> ChunkData *
@@ -2028,47 +2060,44 @@ void doGameTick(float deltaTime, ServerEntityManager &entityManager, std::uint64
 	//todo server constants
 	constexpr float SERVER_UPDATE_ENTITIES_TIMER = 1.f;
 
-	sd.updateEntititiesTimer -= deltaTime;
-
-	if (sd.updateEntititiesTimer < 0)
-	{
-		sd.updateEntititiesTimer = SERVER_UPDATE_ENTITIES_TIMER;
-	}
 
 
 #pragma region physics update
 
+	//static int counter = 70;
+	//
+	//if (counter-- < 0)
+	//{
+	//	counter = 70;
+	//}
+
+
 	for (auto &e : entityManager.droppedItems)
 	{
+		//if (counter == 70)
+		//{
+		//	e.second.item.position.y += 5;
+		//}
 
-		{
-			float time = deltaTime + e.second.restantTime;
-			
-			if (time > 0)
-			{
-				updateDroppedItem(e.second.item, time, chunkGetter);
-			}
-			e.second.restantTime = 0;
-		}
 
-		//send item data
-		{
-			Packet packet;
-			//packet.cid = i.cid;
-			packet.header = headerClientRecieveDroppedItemUpdate;
+		genericCallUpdateForEntity(e, deltaTime, chunkGetter);
 
-			Packet_RecieveDroppedItemUpdate packetData;
-			packetData.eid = e.first;
-			packetData.entity = e.second.item;
-			packetData.timer = currentTimer;
+		genericBroadcastEntityUpdateFromServerToPlayer
+			< Packet_RecieveDroppedItemUpdate,
+			headerClientRecieveDroppedItemUpdate>(e, false, currentTimer);
 
-			//todo sepparate entity update method so we can reuse,
-			//+ take into accound distance.
-
-			broadCast(packet, &packetData, sizeof(packetData),
-				nullptr, false, channelEntityPositions);
-
-		}
+		//{
+		//	Packet packet;
+		//	packet.header = headerClientRecieveDroppedItemUpdate;
+		//
+		//	Packet_RecieveDroppedItemUpdate packetData;
+		//	packetData.eid = e.first;
+		//	packetData.entity = e.second.entity;
+		//	packetData.timer = currentTimer;
+		//
+		//	broadCast(packet, &packetData, sizeof(packetData),
+		//		nullptr, false, channelEntityPositions);
+		//}
 
 	}
 
