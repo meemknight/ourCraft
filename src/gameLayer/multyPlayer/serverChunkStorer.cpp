@@ -44,7 +44,6 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 	else
 	{
 
-
 		std::vector<StructureToGenerate> newStructures;
 		newStructures.reserve(10); //todo cache up
 
@@ -65,6 +64,9 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 		{
 			//std::cout << "Loaded!\n";
 		}
+
+		savedChunks[pos] = rez;
+
 
 		//todo this part should be moved in world generator if possible...
 
@@ -653,8 +655,9 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 			}
 		}
 
+	
 
-		savedChunks[pos] = rez;
+		return rez;
 
 	}
 
@@ -1071,7 +1074,7 @@ void ServerChunkStorer::saveAllChunks(WorldSaver &worldSaver)
 
 int ServerChunkStorer::unloadChunksThatNeedUnloading(WorldSaver &worldSaver, int count)
 {
-
+	int unloaded = 0;
 	for (auto it = savedChunks.begin(); it != savedChunks.end(); )
 	{
 		auto &c = *it;
@@ -1086,14 +1089,16 @@ int ServerChunkStorer::unloadChunksThatNeedUnloading(WorldSaver &worldSaver, int
 			delete c.second;
 			it = savedChunks.erase(it); // Erase the element
 
-			count--;
-			if (count <= 0) break;
+			unloaded++;
+			if (unloaded >= count) break;
 		}
 		else
 		{
 			it++;
 		}
 	}
+
+	return unloaded;
 }
 
 
