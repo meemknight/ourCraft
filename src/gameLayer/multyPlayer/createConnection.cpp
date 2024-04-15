@@ -515,7 +515,7 @@ bool createConnection(Packet_ReceiveCIDAndData &playerData, const char *c)
 	
 
 	enet_peer_throttle_configure(clientData.server,
-		ENET_PEER_PACKET_THROTTLE_INTERVAL, 6, 2);
+		ENET_PEER_PACKET_THROTTLE_INTERVAL, 6, 3);
 
 
 
