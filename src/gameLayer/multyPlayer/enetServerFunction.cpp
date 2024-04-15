@@ -14,6 +14,12 @@
 #include <gameplay/entityManagerClient.h>
 #include <multyPlayer/server.h>
 #include <errorReporting.h>
+#include <biome.h>
+#include <multyPlayer/chunkSaver.h>
+#include <worldGenerator.h>
+#include <fstream>
+#include <sstream>
+#include <gameplay/entityManagerServer.h>
 
 //todo add to a struct
 ENetHost *server = 0;
@@ -421,11 +427,12 @@ void recieveData(ENetHost *server, ENetEvent &event)
 
 		}
 
-
 		default:
 
 		break;
 	}
+
+
 
 
 
@@ -489,7 +496,45 @@ void enetServerFunction()
 {
 	std::cout << "Successfully started server!\n";
 
+
+	StructuresManager structuresManager;
+	BiomesManager biomesManager;
+	WorldSaver worldSaver;
+
+	worldSaver.savePath = RESOURCES_PATH "saves/";
+	if (!structuresManager.loadAllStructures())
+	{
+		exit(0); //todo error out
+	}
+	if (!biomesManager.loadAllBiomes())
+	{
+		exit(0); //todo error out
+	}
+
+	WorldGenerator wg;
+	wg.init();
 	ENetEvent event = {};
+
+	std::ifstream f(RESOURCES_PATH "gameData/worldGenerator/default.mgenerator");
+	if (f.is_open())
+	{
+		std::stringstream buffer;
+		buffer << f.rdbuf();
+		WorldGeneratorSettings s;
+		if (s.loadSettings(buffer.str().c_str()))
+		{
+			wg.applySettings(s);
+		}
+		else
+		{
+			exit(0); //todo error out
+		}
+		f.close();
+	}
+
+	ServerEntityManager entityManager;
+
+
 
 	auto start = std::chrono::high_resolution_clock::now();
 
@@ -632,18 +677,24 @@ void enetServerFunction()
 	#pragma endregion
 
 
+	serverWorkerUpdate(wg, structuresManager, biomesManager, worldSaver,
+		entityManager, deltaTime);
+
 		//if (tickTimer >= 1 / settings.targetTicksPerSeccond)
 		//{
 		//	signalWaitingFromServer();
 		//	tickTimer -= 1 / settings.targetTicksPerSeccond;
 		//}
 
-		if (tasks.size() > 25)
-		{
-			std::cout << "Server thread stalled!\n";
-		}
-
+		//if (tasks.size() > 25)
+		//{
+		//	std::cout << "Server thread stalled!\n";
+		//}
 	}
+
+	clearSD(worldSaver);
+	wg.clear();
+	structuresManager.clear();
 
 	for (auto &c : connections)
 	{

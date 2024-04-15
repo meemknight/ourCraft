@@ -77,7 +77,7 @@ bool startServer()
 			return 0;
 		}
 
-		serverThread = std::move(std::thread(serverWorkerFunction));
+		//serverThread = std::move(std::thread(serverWorkerFunction));
 		return 1;
 	}
 	else
@@ -179,8 +179,19 @@ struct ServerData
 	ENetHost *server = nullptr;
 	ServerSettings settings = {};
 
+	float tickTimer = 0;
+	float tickDeltaTime = 0;
+	int ticksPerSeccond = 0;
+	int runsPerSeccond = 0;
+	float seccondsTimer = 0;
 
 }sd;
+
+void clearSD(WorldSaver &worldSaver)
+{
+	sd.chunkCache.saveAllChunks(worldSaver);
+	sd.chunkCache.cleanup();
+}
 
 int getChunkCapacity()
 {
@@ -203,7 +214,7 @@ void closeServer()
 		signalWaitingFromServer();
 
 		//then wait for the server to close
-		serverThread.join();
+		//serverThread.join();
 
 		enet_host_destroy(sd.server);
 
@@ -343,17 +354,409 @@ void serverWorkerUpdate(
 	WorldGenerator &wg,
 	StructuresManager &structuresManager,
 	BiomesManager &biomesManager,
-	WorldSaver &worldSaver)
+	WorldSaver &worldSaver,
+	ServerEntityManager &entityManager,
+	float deltaTime
+	)
 {
 
+	auto settings = getServerSettingsCopy();
 
+#pragma region timers stuff
+	auto currentTimer = getTimer();
+	sd.tickTimer += deltaTime;
+	sd.seccondsTimer += deltaTime;
+	sd.tickDeltaTime += deltaTime;
+#pragma endregion
+
+	//tasks stuff
+	{
+		std::vector<ServerTask> tasks;
+
+		//I also commented the notify one thing in submittaskforserver!
+		//if (!settings.busyWait)
+		//{
+		//	if (sd.waitingTasks.empty())
+		//	{
+		//
+		//		if (tickTimer > (1.f / settings.targetTicksPerSeccond))
+		//		{
+		//			tasks = tryForTasksServer(); //we will soon need to tick so we don't block
+		//		}
+		//		else
+		//		{
+		//			tasks = waitForTasksServer(); //nothing to do we can wait.
+		//		}
+		//
+		//	}
+		//	else
+		//	{
+		//		tasks = tryForTasksServer(); //already things to do, we just grab more if ready and wating.
+		//	}
+		//}
+		//else
+
+		tasks = tryForTasksServer();
+
+		for (auto i : tasks)
+		{
+			sd.waitingTasks.push_back(i);
+		}
+	}
+
+	//todo rather than a sort use buckets, so the clients can't DDOS the server with
+	//place blocks tasks, making generating chunks impossible. 
+	// 
+	// actually be very carefull how you cange the order, you can easily break stuff
+	// so I'll leave this commented for now
+	// 
+	//std::stable_sort(sd.waitingTasks.begin(), sd.waitingTasks.end(),
+	//	[](const ServerTask &a, const ServerTask &b) 
+	//	{ 
+	//		if((a.t.type == Task::placeBlock && b.t.type == Task::droppedItemEntity) ||
+	//			(a.t.type == Task::droppedItemEntity && b.t.type == Task::placeBlock))
+	//		{
+	//			return false;
+	//		}
+	//		return a.t.type < b.t.type; 
+	//	}
+	//);
+
+	std::vector<ChunkPriorityCache::SendBlocksBack> sendNewBlocksToPlayers;
+
+	int count = sd.waitingTasks.size();
+	for (int taskIndex = 0; taskIndex < std::min(count, 15); taskIndex++)
+	{
+		auto &i = sd.waitingTasks.front();
+
+		if (i.t.type == Task::generateChunk)
+		{
+			auto client = getClient(i.cid); //todo this could fail when players leave so return pointer and check
+
+			if (checkIfPlayerShouldGetChunk(client.positionForChunkGeneration,
+				{i.t.pos.x, i.t.pos.z}, client.playerData.chunkDistance))
+			{
+				PL::Profiler profiler;
+
+				profiler.start();
+				bool wasGenerated = 0;
+				auto rez = sd.chunkCache.getOrCreateChunk(i.t.pos.x, i.t.pos.z, wg, structuresManager, biomesManager,
+					sendNewBlocksToPlayers, true, nullptr, worldSaver, &wasGenerated);
+				profiler.end();
+
+				//if (wasGenerated)
+				//{
+				//	std::cout << "Generated ChunK: " << profiler.rezult.timeSeconds * 1000.f << "ms  per 100: " <<
+				//		profiler.rezult.timeSeconds * 100'000.f << "\n";
+				//}
+
+				Packet packet;
+				packet.cid = i.cid; //todo is this cid here needed? should I just put 0?
+				packet.header = headerRecieveChunk;
+
+
+				//if you have modified Packet_RecieveChunk make sure you didn't break this!
+				static_assert(sizeof(Packet_RecieveChunk) == sizeof(ChunkData));
+
+
+				{
+					lockConnectionsMutex();
+					auto client = getClientNotLocked(i.cid);
+					if (client)
+					{
+						sendPacketAndCompress(client->peer, packet, (char *)rez,
+							sizeof(Packet_RecieveChunk), true, channelChunksAndBlocks);
+					}
+					unlockConnectionsMutex();
+				}
+
+			}
+			else
+			{
+				std::cout << "Chunk rejected because player too far: " <<
+					i.t.pos.x << " " << i.t.pos.z << " dist: " << client.playerData.chunkDistance << "\n";
+			}
+
+
+		}
+		else
+			if (i.t.type == Task::placeBlock)
+			{
+				bool wasGenerated = 0;
+				//std::cout << "server recieved place block\n";
+				//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
+				auto chunk = sd.chunkCache.getOrCreateChunk(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z), wg, structuresManager
+					, biomesManager, sendNewBlocksToPlayers, true, nullptr, worldSaver, &wasGenerated);
+				int convertedX = modBlockToChunk(i.t.pos.x);
+				int convertedZ = modBlockToChunk(i.t.pos.z);
+
+				//todo check if place is legal
+				bool noNeedToNotifyUndo = 0;
+				lockConnectionsMutex();
+
+				auto client = getClientNotLocked(i.cid);
+
+				if (client)
+				{
+					//todo hold this with a full mutex in this
+					//  thread everywhere because the other thread can change connections
+					//todo check in other places in this thread
+
+					bool legal = 1;
+					{
+						auto f = settings.perClientSettings.find(i.cid);
+						if (f != settings.perClientSettings.end())
+						{
+							if (!f->second.validateStuff)
+							{
+								legal = false;
+							}
+
+						}
+					}
+
+
+					auto b = chunk->chunk.safeGet(convertedX, i.t.pos.y, convertedZ);
+
+					if (!b)
+					{
+						legal = false;
+					}
+
+					legal = computeRevisionStuff(*client, legal, i.t.eventId);
+
+					if (legal)
+					{
+						b->type = i.t.blockType;
+						chunk->otherData.dirty = true;
+
+						{
+							Packet packet;
+							packet.cid = i.cid;
+							packet.header = headerPlaceBlocks;
+
+							Packet_PlaceBlocks packetData;
+							packetData.blockPos = i.t.pos;
+							packetData.blockType = i.t.blockType;
+
+							broadCastNotLocked(packet, &packetData, sizeof(Packet_PlaceBlocks),
+								client->peer, true, channelChunksAndBlocks);
+						}
+
+					}
+
+				}
+
+				unlockConnectionsMutex();
+
+			}
+			else if (i.t.type == Task::droppedItemEntity)
+			{
+
+				lockConnectionsMutex();
+				auto client = getClientNotLocked(i.cid);
+
+				//todo some logic
+				//todo add items here into the server's storage
+				if (client)
+				{
+
+					auto serverAllows = getClientSettingCopy(i.cid).validateStuff;
+					if (entityManager.entityExists(i.t.entityId)) { serverAllows = false; }
+
+
+					if (computeRevisionStuff(*client, true && serverAllows, i.t.eventId))
+					{
+
+						DroppedItemServer newEntity = {};
+						newEntity.entity.count = i.t.blockCount;
+						newEntity.entity.position = i.t.doublePos;
+						newEntity.entity.lastPosition = i.t.doublePos;
+						newEntity.entity.type = i.t.blockType;
+						newEntity.entity.forces = i.t.motionState;
+						//newEntity.restantTime = computeRestantTimer(currentTimer, i.t.timer);
+						newEntity.restantTime = computeRestantTimer(i.t.timer, currentTimer);
+
+
+						auto chunkPosition = determineChunkThatIsEntityIn(i.t.doublePos);
+
+						SavedChunk *chunk = sd.chunkCache.getOrCreateChunk(chunkPosition.x,
+							chunkPosition.y, wg, structuresManager, biomesManager,
+							sendNewBlocksToPlayers, true, nullptr, worldSaver
+						);
+
+						if (chunk)
+						{
+							chunk->otherData.droppedItems.insert(i.t.entityId);
+							entityManager.droppedItems.insert({i.t.entityId, newEntity});
+						}
+
+						//std::cout << "restant: " << newEntity.restantTime << "\n";
+
+
+					}
+
+				}
+				else
+				{
+				}
+
+				unlockConnectionsMutex();
+
+			}
+
+		sd.waitingTasks.erase(sd.waitingTasks.begin());
+
+		//we generate only one chunk per loop
+		if (i.t.type == Task::generateChunk)
+		{
+			break;
+		}
+	}
+
+
+
+	//todo check if there are too many loaded chunks and unload them before processing
+	//generate chunk
+
+#pragma region gameplay tick
+
+	if (sd.tickTimer > 1.f / settings.targetTicksPerSeccond)
+	{
+		sd.tickTimer -= (1.f / settings.targetTicksPerSeccond);
+		sd.ticksPerSeccond++;
+
+
+		{
+
+			static bool did = 0;
+
+			if (settings.perClientSettings.begin()->second.spawnZombie && !did)
+			{
+				did = true;
+
+				auto c = getAllClients();
+
+
+				Zombie z;
+				glm::dvec3 position = c.begin()->second.playerData.position;
+				z.position = position;
+				z.lastPosition = position;
+
+				spawnZombie(entityManager, sd.chunkCache, z, getEntityIdSafeAndIncrement());
+			}
+
+
+		}
+
+
+		updateLoadedChunks();
+		if (sd.chunkCache.loadedChunks.size() > maxSavedChunks * 0.75f)
+		{
+			//sd.chunkCache.loadedChunks.clear();
+			std::cout << "Warning too many loaded chunks\n";
+		}
+
+		if (sd.chunkCache.loadedChunks.size() > maxSavedChunks)
+		{
+			std::cout << "Warning too many loaded chunks, more than can be fit\n";
+		}
+
+		//reload chunks
+		for (auto &i : sd.chunkCache.loadedChunks)
+		{
+			bool wasGenerated = 0;
+			sd.chunkCache.getOrCreateChunk(i.x, i.y, wg, structuresManager, biomesManager,
+				sendNewBlocksToPlayers, true, nullptr, worldSaver, &wasGenerated);
+
+			if (wasGenerated)
+			{
+				//todo error and warning logs for server.
+			}
+		}
+
+		//tick ...
+		doGameTick(sd.tickDeltaTime, entityManager, currentTimer, wg,
+			structuresManager, biomesManager, sendNewBlocksToPlayers,
+			worldSaver);
+		//std::cout << "Loaded chunks: " << sd.chunkCache.loadedChunks.size() << "\n";
+
+		sd.tickDeltaTime = 0;
+	}
+
+	//std::cout << deltaTime << " <- dt / 1/dt-> " << (1.f / (deltaTime)) << "\n";
+
+	//std::cout << seccondsTimer << '\n';
+
+	sd.runsPerSeccond++;
+
+	if (sd.seccondsTimer >= 1)
+	{
+		sd.seccondsTimer -= 1;
+		//std::cout << "Server ticks per seccond: " << ticksPerSeccond << "\n";
+		//std::cout << "Server runs per seccond: " << runsPerSeccond << "\n";
+		sd.ticksPerSeccond = 0;
+		sd.runsPerSeccond = 0;
+	}
+
+#pragma endregion
+
+	//this are blocks created by new chunks so everyone needs them
+	if (!sendNewBlocksToPlayers.empty())
+	{
+		Packet_PlaceBlocks *newBlocks = new Packet_PlaceBlocks[sendNewBlocksToPlayers.size()];
+
+		Packet packet;
+		packet.cid = 0;
+		packet.header = headerPlaceBlocks;
+
+		int i = 0;
+		for (auto &b : sendNewBlocksToPlayers)
+		{
+			//todo an option to send multiple blocks per place block
+			//std::cout << "Sending block...";
+
+			//Packet packet;
+			//packet.cid = 0;
+			//packet.header = headerPlaceBlock;
+			//
+			//Packet_PlaceBlock packetData;
+			//packetData.blockPos = b.pos;
+			//packetData.blockType = b.block;
+			//
+			//broadCast(packet, &packetData, sizeof(Packet_PlaceBlock), nullptr, true, channelChunksAndBlocks);
+
+			newBlocks[i].blockPos = b.pos;
+			newBlocks[i].blockType = b.block;
+
+			i++;
+		}
+
+		broadCast(packet, newBlocks,
+			sizeof(Packet_PlaceBlocks) * sendNewBlocksToPlayers.size(),
+			nullptr, true, channelChunksAndBlocks);
+
+
+		delete[] newBlocks;
+	}
+
+
+	//todo start unloading chunks that we don't need so we also unload entities.
+
+	sd.chunkCache.loadedChunks.clear();
+
+	//save one chunk on disk
+	sd.chunkCache.saveNextChunk(worldSaver);
 
 
 }
 
 
+//todo remove
 void serverWorkerFunction()
 {
+
+
 	StructuresManager structuresManager;
 	BiomesManager biomesManager;
 	WorldSaver worldSaver;
@@ -364,7 +767,6 @@ void serverWorkerFunction()
 	{
 		exit(0); //todo error out
 	}
-
 	if (!biomesManager.loadAllBiomes())
 	{
 		exit(0); //todo error out
@@ -394,425 +796,36 @@ void serverWorkerFunction()
 
 	auto timerStart = std::chrono::high_resolution_clock::now();
 
-	float tickTimer = 0;
-	float tickDeltaTime = 0;
-	int ticksPerSeccond = 0;
-	int runsPerSeccond = 0;
-	float seccondsTimer = 0;
+
 	//constexpr float RESOLUTION_TIMER = 16.f;
 
 	while (serverRunning)
 	{
-		//todo this doesn't work???
-		auto settings = getServerSettingsCopy();
-		//auto clientsCopy = getAllClients();
-		//todo this could fail? if the client disconected?
-	
-		//tasks stuff
-		{
-			std::vector<ServerTask> tasks;
 
-			//I also commented the notify one thing in submittaskforserver!
-			//if (!settings.busyWait)
-			//{
-			//	if (sd.waitingTasks.empty())
-			//	{
-			//
-			//		if (tickTimer > (1.f / settings.targetTicksPerSeccond))
-			//		{
-			//			tasks = tryForTasksServer(); //we will soon need to tick so we don't block
-			//		}
-			//		else
-			//		{
-			//			tasks = waitForTasksServer(); //nothing to do we can wait.
-			//		}
-			//
-			//	}
-			//	else
-			//	{
-			//		tasks = tryForTasksServer(); //already things to do, we just grab more if ready and wating.
-			//	}
-			//}
-			//else
-			{
 
-				//sleep untill we get a message or the tick timer runs out
-				while (sd.waitingTasks.empty())
-				{
-					auto timerStop = std::chrono::high_resolution_clock::now();
-					float deltaTime = (std::chrono::duration_cast<std::chrono::microseconds>(timerStop - timerStart)).count() / 1000000.0f;
-
-					if ((tickTimer + deltaTime) > 1.f / settings.targetTicksPerSeccond)
-					{
-						break;
-					}
-				}
-
-				tasks = tryForTasksServer();
-			}
-			
-
-			for (auto i : tasks)
-			{
-				sd.waitingTasks.push_back(i);
-			}
-		}
-
-	#pragma region timers stuff
 		auto timerStop = std::chrono::high_resolution_clock::now();
 		float deltaTime = (std::chrono::duration_cast<std::chrono::microseconds>(timerStop - timerStart)).count() / 1000000.0f;
 		timerStart = std::chrono::high_resolution_clock::now();
 
-		auto currentTimer = getTimer();
-		tickTimer += deltaTime;
-		seccondsTimer += deltaTime;
-		tickDeltaTime += deltaTime;
-	#pragma endregion
+		//todo move structuresManager, biomesManager in wg.
+		serverWorkerUpdate(wg, structuresManager, biomesManager, worldSaver,
+			entityManager, deltaTime);
 
-
-		//todo rather than a sort use buckets, so the clients can't DDOS the server with
-		//place blocks tasks, making generating chunks impossible. 
-		// 
-		// actually be very carefull how you cange the order, you can easily break stuff
-		// so I'll leave this commented for now
-		// 
-		//std::stable_sort(sd.waitingTasks.begin(), sd.waitingTasks.end(),
-		//	[](const ServerTask &a, const ServerTask &b) 
-		//	{ 
-		//		if((a.t.type == Task::placeBlock && b.t.type == Task::droppedItemEntity) ||
-		//			(a.t.type == Task::droppedItemEntity && b.t.type == Task::placeBlock))
-		//		{
-		//			return false;
-		//		}
-		//		return a.t.type < b.t.type; 
-		//	}
-		//);
-
-		std::vector<ChunkPriorityCache::SendBlocksBack> sendNewBlocksToPlayers;
-
-		int count = sd.waitingTasks.size();
-		for (int taskIndex = 0; taskIndex < std::min(count, 15); taskIndex++)
 		{
-			auto &i = sd.waitingTasks.front();
 
-			if (i.t.type == Task::generateChunk)
+			//sleep untill we get a message or the tick timer runs out
+			while (sd.waitingTasks.empty())
 			{
-				auto client = getClient(i.cid); //todo this could fail when players leave so return pointer and check
-				
-				if (checkIfPlayerShouldGetChunk(client.positionForChunkGeneration, 
-					{i.t.pos.x, i.t.pos.z}, client.playerData.chunkDistance))
+				auto timerStop = std::chrono::high_resolution_clock::now();
+				float deltaTime = (std::chrono::duration_cast<std::chrono::microseconds>(timerStop - timerStart)).count() / 1000000.0f;
+
+				if ((sd.tickTimer + deltaTime) > 1.f / sd.settings.targetTicksPerSeccond)
 				{
-					PL::Profiler profiler;
-
-					profiler.start();
-					bool wasGenerated = 0;
-					auto rez = sd.chunkCache.getOrCreateChunk(i.t.pos.x, i.t.pos.z, wg, structuresManager, biomesManager,
-						sendNewBlocksToPlayers, true, nullptr, worldSaver, &wasGenerated);
-					profiler.end();
-
-					//if (wasGenerated)
-					//{
-					//	std::cout << "Generated ChunK: " << profiler.rezult.timeSeconds * 1000.f << "ms  per 100: " <<
-					//		profiler.rezult.timeSeconds * 100'000.f << "\n";
-					//}
-
-					Packet packet;
-					packet.cid = i.cid; //todo is this cid here needed? should I just put 0?
-					packet.header = headerRecieveChunk;
-
-
-					//if you have modified Packet_RecieveChunk make sure you didn't break this!
-					static_assert(sizeof(Packet_RecieveChunk) == sizeof(ChunkData));
-
-
-					{
-						lockConnectionsMutex();
-						auto client = getClientNotLocked(i.cid);
-						if (client)
-						{
-							sendPacketAndCompress(client->peer, packet, (char *)rez,
-								sizeof(Packet_RecieveChunk), true, channelChunksAndBlocks);
-						}
-						unlockConnectionsMutex();
-					}
-
+					break;
 				}
-				else
-				{
-					std::cout << "Chunk rejected because player too far: " <<
-						i.t.pos.x << " " << i.t.pos.z << " dist: " << client.playerData.chunkDistance << "\n";
-				}
-
-				
-			}
-			else
-			if (i.t.type == Task::placeBlock)
-			{
-				bool wasGenerated = 0;
-				//std::cout << "server recieved place block\n";
-				//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
-				auto chunk = sd.chunkCache.getOrCreateChunk(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z), wg, structuresManager
-					,biomesManager, sendNewBlocksToPlayers, true, nullptr, worldSaver, &wasGenerated);
-				int convertedX = modBlockToChunk(i.t.pos.x);
-				int convertedZ = modBlockToChunk(i.t.pos.z);
-				
-				//todo check if place is legal
-				bool noNeedToNotifyUndo = 0;
-				lockConnectionsMutex();
-
-				auto client = getClientNotLocked(i.cid); 
-				
-				if (client)
-				{
-					//todo hold this with a full mutex in this
-					//  thread everywhere because the other thread can change connections
-					//todo check in other places in this thread
-
-					bool legal = 1;
-					{
-						auto f = settings.perClientSettings.find(i.cid);
-						if (f != settings.perClientSettings.end())
-						{
-							if (!f->second.validateStuff)
-							{
-								legal = false;
-							}
-
-						}
-					}
-
-
-					auto b = chunk->chunk.safeGet(convertedX, i.t.pos.y, convertedZ);
-
-					if (!b)
-					{
-						legal = false;
-					}
-					
-					legal = computeRevisionStuff(*client, legal, i.t.eventId);
-
-					if (legal)
-					{
-						b->type = i.t.blockType;
-						chunk->otherData.dirty = true;
-
-						{
-							Packet packet;
-							packet.cid = i.cid;
-							packet.header = headerPlaceBlocks;
-
-							Packet_PlaceBlocks packetData;
-							packetData.blockPos = i.t.pos;
-							packetData.blockType = i.t.blockType;
-
-							broadCastNotLocked(packet, &packetData, sizeof(Packet_PlaceBlocks),
-								client->peer, true, channelChunksAndBlocks);
-						}
-
-					}
-					
-				}
-
-				unlockConnectionsMutex();
-
-			}
-			else if (i.t.type == Task::droppedItemEntity)
-			{
-
-				lockConnectionsMutex();
-				auto client = getClientNotLocked(i.cid);
-				
-				//todo some logic
-				//todo add items here into the server's storage
-				if(client)
-				{
-				
-					auto serverAllows = getClientSettingCopy(i.cid).validateStuff;
-					if (entityManager.entityExists(i.t.entityId)) { serverAllows = false; }
-
-
-					if (computeRevisionStuff(*client, true && serverAllows, i.t.eventId))
-					{
-						
-						DroppedItemServer newEntity = {};
-						newEntity.entity.count = i.t.blockCount;
-						newEntity.entity.position = i.t.doublePos;
-						newEntity.entity.lastPosition = i.t.doublePos;
-						newEntity.entity.type = i.t.blockType;
-						newEntity.entity.forces = i.t.motionState;
-						//newEntity.restantTime = computeRestantTimer(currentTimer, i.t.timer);
-						newEntity.restantTime = computeRestantTimer(i.t.timer, currentTimer);
-
-						
-						auto chunkPosition = determineChunkThatIsEntityIn(i.t.doublePos);
-
-						SavedChunk *chunk = sd.chunkCache.getOrCreateChunk(chunkPosition.x,
-							chunkPosition.y, wg, structuresManager, biomesManager,
-							sendNewBlocksToPlayers, true, nullptr, worldSaver
-						);
-
-						if (chunk)
-						{
-							chunk->otherData.droppedItems.insert(i.t.entityId);
-							entityManager.droppedItems.insert({i.t.entityId, newEntity});
-						}
-
-						//std::cout << "restant: " << newEntity.restantTime << "\n";
-
-
-					}
-					
-				}
-				else
-				{
-				}
-				
-				unlockConnectionsMutex();
-
-			}
-
-			sd.waitingTasks.erase(sd.waitingTasks.begin());
-
-			//we generate only one chunk per loop
-			if (i.t.type == Task::generateChunk)
-			{
-				break;
 			}
 		}
 
-		
-
-		//todo check if there are too many loaded chunks and unload them before processing
-		//generate chunk
-
-	#pragma region gameplay tick
-
-		if (tickTimer > 1.f / settings.targetTicksPerSeccond)
-		{	
-			tickTimer -= (1.f / settings.targetTicksPerSeccond);
-			ticksPerSeccond++;
-
-
-			{
-
-				static bool did = 0;
-
-				if (settings.perClientSettings.begin()->second.spawnZombie && !did)
-				{
-					did = true;
-
-					auto c = getAllClients();
-
-
-					Zombie z;
-					glm::dvec3 position = c.begin()->second.playerData.position;
-					z.position = position;
-					z.lastPosition = position;
-
-					spawnZombie(entityManager, sd.chunkCache, z, getEntityIdSafeAndIncrement());
-				}
-
-
-			}
-
-			
-			updateLoadedChunks();
-			if (sd.chunkCache.loadedChunks.size() > maxSavedChunks * 0.75f)
-			{
-				//sd.chunkCache.loadedChunks.clear();
-				std::cout << "Warning too many loaded chunks\n";
-			}
-
-			if (sd.chunkCache.loadedChunks.size() > maxSavedChunks)
-			{
-				std::cout << "Warning too many loaded chunks, more than can be fit\n";
-			}
-
-			//reload chunks
-			for (auto &i : sd.chunkCache.loadedChunks)
-			{
-				bool wasGenerated = 0;
-				sd.chunkCache.getOrCreateChunk(i.x, i.y, wg, structuresManager, biomesManager,
-					sendNewBlocksToPlayers, true, nullptr, worldSaver, &wasGenerated);
-
-				if (wasGenerated)
-				{
-					//todo error and warning logs for server.
-				}
-			}
-
-			//tick ...
-			doGameTick(tickDeltaTime, entityManager, currentTimer, wg,
-				structuresManager, biomesManager, sendNewBlocksToPlayers,
-				worldSaver);
-			//std::cout << "Loaded chunks: " << sd.chunkCache.loadedChunks.size() << "\n";
-
-			tickDeltaTime = 0;
-		}
-
-		//std::cout << deltaTime << " <- dt / 1/dt-> " << (1.f / (deltaTime)) << "\n";
-
-		//std::cout << seccondsTimer << '\n';
-
-		runsPerSeccond++;
-
-		if (seccondsTimer >= 1)
-		{
-			seccondsTimer -= 1;
-			//std::cout << "Server ticks per seccond: " << ticksPerSeccond << "\n";
-			//std::cout << "Server runs per seccond: " << runsPerSeccond << "\n";
-			ticksPerSeccond = 0;
-			runsPerSeccond = 0;
-		}
-
-	#pragma endregion
-
-		//this are blocks created by new chunks so everyone needs them
-		if (!sendNewBlocksToPlayers.empty())
-		{
-			Packet_PlaceBlocks *newBlocks = new Packet_PlaceBlocks[sendNewBlocksToPlayers.size()];
-
-			Packet packet;
-			packet.cid = 0;
-			packet.header = headerPlaceBlocks;
-
-			int i = 0;
-			for (auto &b : sendNewBlocksToPlayers)
-			{
-				//todo an option to send multiple blocks per place block
-				//std::cout << "Sending block...";
-
-				//Packet packet;
-				//packet.cid = 0;
-				//packet.header = headerPlaceBlock;
-				//
-				//Packet_PlaceBlock packetData;
-				//packetData.blockPos = b.pos;
-				//packetData.blockType = b.block;
-				//
-				//broadCast(packet, &packetData, sizeof(Packet_PlaceBlock), nullptr, true, channelChunksAndBlocks);
-
-				newBlocks[i].blockPos = b.pos;
-				newBlocks[i].blockType = b.block;
-
-				i++;
-			}
-
-			broadCast(packet, newBlocks,
-				sizeof(Packet_PlaceBlocks) * sendNewBlocksToPlayers.size(),
-				nullptr, true, channelChunksAndBlocks);
-
-
-			delete[] newBlocks;
-		}
-		
-
-		//todo start unloading chunks that we don't need so we also unload entities.
-
-		sd.chunkCache.loadedChunks.clear();
-
-		//save one chunk on disk
-		sd.chunkCache.saveNextChunk(worldSaver);
 
 	}
 
@@ -821,6 +834,7 @@ void serverWorkerFunction()
 	structuresManager.clear();
 	sd.chunkCache.cleanup();
 }
+
 
 std::uint64_t getTimer()
 {

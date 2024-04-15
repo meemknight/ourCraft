@@ -3,6 +3,10 @@
 #include <unordered_map>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include <biome.h>
+#include <multyPlayer/chunkSaver.h>
+#include <worldGenerator.h>
+#include <gameplay/entityManagerServer.h>
 
 struct Client;
 struct EventId;
@@ -12,9 +16,14 @@ using CID = int32_t;
 bool isServerRunning();
 
 bool startServer();
+void clearSD(WorldSaver &worldSaver);
 int getChunkCapacity();
 void closeServer();
 bool computeRevisionStuff(Client &client, bool allowed, const EventId &eventId);
+void serverWorkerUpdate(WorldGenerator &wg, StructuresManager &structuresManager, 
+	BiomesManager &biomesManager, WorldSaver &worldSaver, ServerEntityManager &entityManager, 
+	float deltaTime);
+
 void serverWorkerFunction();
 
 
