@@ -3,7 +3,6 @@
 #include <splines.h>
 #include <string>
 
-
 struct NoiseSetting
 {
 	float scale = 0.35;

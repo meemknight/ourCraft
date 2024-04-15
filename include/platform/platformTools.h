@@ -1,6 +1,6 @@
-#ifndef TOOLS_H_INCLUDE
-#define TOOLS_H_INCLUDE
+#pragma once
 
+//note this should be included last
 
 #include "config.h"
 #include <signal.h>
@@ -215,4 +215,3 @@ inline float constexpr BYTES_TO_GB(size_t x) { return BYTES_TO_MB(x) / 1024.f; }
 
 #endif
 
-#endif

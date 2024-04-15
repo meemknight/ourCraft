@@ -23,41 +23,12 @@
 #include <profilerLib.h>
 #include <gameplay/entityManagerServer.h>
 #include "multyPlayer/chunkSaver.h"
+#include "multyPlayer/serverChunkStorer.h"
 
-bool operator==(const BlockInChunkPos &a, const BlockInChunkPos &b)
-{
-	return a.x == b.x && a.y == b.y && a.z == b.z;
-}
 
-struct ListNode;
-
-//0.25 MB
-struct SavedChunk 
-{
-
-	//std::mutex mu;
-	ChunkData chunk;
-	ListNode *node = nullptr;
-	struct OtherData
-	{
-		std::unordered_set<std::uint64_t> droppedItems;
-		std::unordered_set<std::uint64_t> zombies;
-
-		bool dirty = 0;
-
-	}otherData;
-};
-
-struct ListNode
-{
-	ListNode *prev = nullptr;
-	glm::ivec2 chunkPos = {};
-	ListNode *next = nullptr;
-};
 
 
 static std::atomic<bool> serverRunning = false;
-std::thread serverThread;
 
 bool serverStartupStuff();
 
@@ -77,7 +48,6 @@ bool startServer()
 			return 0;
 		}
 
-		//serverThread = std::move(std::thread(serverWorkerFunction));
 		return 1;
 	}
 	else
@@ -91,17 +61,6 @@ const int maxSavedChunks = 1000;
 
 struct ChunkPriorityCache
 {
-	struct GhostBlock
-	{
-		BlockType type;
-		bool replaceAnything = 0;
-
-		bool operator==(const GhostBlock &other)
-		{
-			return type == other.type && replaceAnything == other.replaceAnything;
-		}
-	};
-
 
 	std::unordered_map<glm::ivec2, std::unordered_map<BlockInChunkPos, GhostBlock, BlockInChunkHash>, Ivec2Hash>
 		ghostBlocks;
@@ -114,11 +73,7 @@ struct ChunkPriorityCache
 	//this chunks are kept force loaded.
 	std::unordered_set<glm::ivec2> loadedChunks = {};
 
-	struct SendBlocksBack
-	{
-		glm::ivec3 pos;
-		BlockType block;
-	};
+	
 
 	//uses chunk coorodonates
 	SavedChunk *getOrCreateChunk(int posX, int posZ, WorldGenerator &wg,
@@ -229,7 +184,7 @@ void doGameTick(float deltaTime,
 	ServerEntityManager &entityManager, std::uint64_t currentTimer,
 	WorldGenerator &wg, StructuresManager &structuresManager,
 	BiomesManager &biomeManager,
-	std::vector<ChunkPriorityCache::SendBlocksBack> &sendNewBlocksToPlayers,
+	std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
 	WorldSaver &worldSaver
 );
 
@@ -422,7 +377,7 @@ void serverWorkerUpdate(
 	//	}
 	//);
 
-	std::vector<ChunkPriorityCache::SendBlocksBack> sendNewBlocksToPlayers;
+	std::vector<SendBlocksBack> sendNewBlocksToPlayers;
 
 	int count = sd.waitingTasks.size();
 	for (int taskIndex = 0; taskIndex < std::min(count, 15); taskIndex++)
@@ -752,89 +707,6 @@ void serverWorkerUpdate(
 }
 
 
-//todo remove
-void serverWorkerFunction()
-{
-
-
-	StructuresManager structuresManager;
-	BiomesManager biomesManager;
-	WorldSaver worldSaver;
-
-	worldSaver.savePath = RESOURCES_PATH "saves/";
-
-	if (!structuresManager.loadAllStructures())
-	{
-		exit(0); //todo error out
-	}
-	if (!biomesManager.loadAllBiomes())
-	{
-		exit(0); //todo error out
-	}
-
-	WorldGenerator wg;
-	wg.init();
-
-	std::ifstream f(RESOURCES_PATH "gameData/worldGenerator/default.mgenerator");
-	if (f.is_open())
-	{
-		std::stringstream buffer;
-		buffer << f.rdbuf();
-		WorldGeneratorSettings s;
-		if (s.loadSettings(buffer.str().c_str()))
-		{
-			wg.applySettings(s);
-		}
-		else
-		{
-			exit(0); //todo error out
-		}
-		f.close();
-	}
-
-	ServerEntityManager entityManager;
-
-	auto timerStart = std::chrono::high_resolution_clock::now();
-
-
-	//constexpr float RESOLUTION_TIMER = 16.f;
-
-	while (serverRunning)
-	{
-
-
-		auto timerStop = std::chrono::high_resolution_clock::now();
-		float deltaTime = (std::chrono::duration_cast<std::chrono::microseconds>(timerStop - timerStart)).count() / 1000000.0f;
-		timerStart = std::chrono::high_resolution_clock::now();
-
-		//todo move structuresManager, biomesManager in wg.
-		serverWorkerUpdate(wg, structuresManager, biomesManager, worldSaver,
-			entityManager, deltaTime);
-
-		{
-
-			//sleep untill we get a message or the tick timer runs out
-			while (sd.waitingTasks.empty())
-			{
-				auto timerStop = std::chrono::high_resolution_clock::now();
-				float deltaTime = (std::chrono::duration_cast<std::chrono::microseconds>(timerStop - timerStart)).count() / 1000000.0f;
-
-				if ((sd.tickTimer + deltaTime) > 1.f / sd.settings.targetTicksPerSeccond)
-				{
-					break;
-				}
-			}
-		}
-
-
-	}
-
-	sd.chunkCache.saveAllChunks(worldSaver);
-	wg.clear();
-	structuresManager.clear();
-	sd.chunkCache.cleanup();
-}
-
 
 std::uint64_t getTimer()
 {
@@ -1116,7 +988,6 @@ SavedChunk *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenera
 
 				return 0;
 			};
-
 
 			//todo random chance
 			if (true)
@@ -1616,6 +1487,7 @@ SavedChunk *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenera
 		return rez;
 	}
 }
+
 
 //todo rename? or what? there are checks here so
 Block *ChunkPriorityCache::tryGetBlockIfChunkExistsNoChecks(glm::ivec3 pos)
@@ -2255,7 +2127,7 @@ void updateLoadedChunks()
 void doGameTick(float deltaTime, ServerEntityManager &entityManager, 
 	std::uint64_t currentTimer, WorldGenerator &wg, 
 	StructuresManager &structuresManager, BiomesManager &biomesManager,
-	std::vector<ChunkPriorityCache::SendBlocksBack> &sendNewBlocksToPlayers,
+	std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
 	WorldSaver &worldSaver)
 {
 
