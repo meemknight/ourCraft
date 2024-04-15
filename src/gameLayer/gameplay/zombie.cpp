@@ -12,6 +12,8 @@ void Zombie::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter
 
 void ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
 {
+	getPosition().x += 1 * deltaTime;
+
 	entity.update(deltaTime, chunkGetter);
 }
 

@@ -19,7 +19,7 @@
 #include <worldGenerator.h>
 #include <fstream>
 #include <sstream>
-#include <gameplay/entityManagerServer.h>
+
 
 //todo add to a struct
 ENetHost *server = 0;
@@ -532,8 +532,6 @@ void enetServerFunction()
 		f.close();
 	}
 
-	ServerEntityManager entityManager;
-
 
 
 	auto start = std::chrono::high_resolution_clock::now();
@@ -677,8 +675,8 @@ void enetServerFunction()
 	#pragma endregion
 
 
-	serverWorkerUpdate(wg, structuresManager, biomesManager, worldSaver,
-		entityManager, deltaTime);
+	serverWorkerUpdate(wg, structuresManager, biomesManager,
+		worldSaver, deltaTime);
 
 		//if (tickTimer >= 1 / settings.targetTicksPerSeccond)
 		//{

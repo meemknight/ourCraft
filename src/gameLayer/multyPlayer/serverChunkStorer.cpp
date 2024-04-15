@@ -1028,7 +1028,6 @@ void ServerChunkStorer::cleanup()
 {
 	for (auto &c : savedChunks)
 	{
-		delete c.second->node;
 		delete c.second;
 	}
 	*this = {};
@@ -1099,6 +1098,14 @@ int ServerChunkStorer::unloadChunksThatNeedUnloading(WorldSaver &worldSaver, int
 	}
 
 	return unloaded;
+}
+
+bool ServerChunkStorer::entityAlreadyExists(std::uint64_t eid)
+{
+	//todo
+	//implement!
+
+	return false;
 }
 
 

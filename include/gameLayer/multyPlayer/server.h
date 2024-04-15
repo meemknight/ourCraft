@@ -6,7 +6,6 @@
 #include <biome.h>
 #include <multyPlayer/chunkSaver.h>
 #include <worldGenerator.h>
-#include <gameplay/entityManagerServer.h>
 
 struct Client;
 struct EventId;
@@ -20,10 +19,8 @@ int getChunkCapacity();
 void closeServer();
 bool computeRevisionStuff(Client &client, bool allowed, const EventId &eventId);
 void serverWorkerUpdate(WorldGenerator &wg, StructuresManager &structuresManager, 
-	BiomesManager &biomesManager, WorldSaver &worldSaver, ServerEntityManager &entityManager, 
+	BiomesManager &biomesManager, WorldSaver &worldSaver, 
 	float deltaTime);
-
-void serverWorkerFunction();
 
 
 std::uint64_t getTimer();

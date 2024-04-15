@@ -5,6 +5,9 @@
 #include <glm/glm.hpp>
 #include <worldGenerator.h>
 #include <multyPlayer/chunkSaver.h>
+#include <gameplay/droppedItem.h>
+#include <gameplay/zombie.h>
+
 
 //https://www.geeksforgeeks.org/how-to-create-an-unordered_map-of-user-defined-class-in-cpp/
 struct Ivec2Hash
@@ -76,24 +79,33 @@ struct GhostBlock
 	}
 };
 
+
+
+struct EntityData
+{
+	std::unordered_map<std::uint64_t, DroppedItemServer> droppedItems;
+	std::unordered_map<std::uint64_t, ZombieServer> zombies;
+};
+
+
 //0.25 MB
 struct SavedChunk
 {
 
 	ChunkData chunk;
 
-	//todo remove
-	ListNode *node = nullptr;
+	//todo remove this struct
 	struct OtherData
 	{
-		std::unordered_set<std::uint64_t> droppedItems;
-		std::unordered_set<std::uint64_t> zombies;
+	
 
 		bool dirty = 0;
 		bool shouldUnload = 0;
 
 
 	}otherData;
+
+	EntityData entityData;
 };
 
 struct SendBlocksBack
@@ -149,7 +161,7 @@ struct ServerChunkStorer
 
 	int unloadChunksThatNeedUnloading(WorldSaver &worldSaver, int count = 1);
 
-
+	bool entityAlreadyExists(std::uint64_t eid);
 };
 
 
