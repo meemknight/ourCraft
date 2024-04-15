@@ -333,6 +333,25 @@ bool spawnZombie(
 
 
 
+void initServerWorker()
+{
+
+}
+
+
+void serverWorkerUpdate(
+	WorldGenerator &wg,
+	StructuresManager &structuresManager,
+	BiomesManager &biomesManager,
+	WorldSaver &worldSaver)
+{
+
+
+
+
+}
+
+
 void serverWorkerFunction()
 {
 	StructuresManager structuresManager;
@@ -675,11 +694,10 @@ void serverWorkerFunction()
 
 
 			{
-				static bool did = 0;
-				static float timer = 5;
-				timer -= deltaTime;
 
-				if (timer < 0 && !did)
+				static bool did = 0;
+
+				if (settings.perClientSettings.begin()->second.spawnZombie && !did)
 				{
 					did = true;
 
