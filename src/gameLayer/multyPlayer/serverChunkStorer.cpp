@@ -43,19 +43,21 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 	}
 	else
 	{
-		//create new chunk!
-		if (wasGenerated) { *wasGenerated = true; }
+
 
 		std::vector<StructureToGenerate> newStructures;
 		newStructures.reserve(10); //todo cache up
 
-		SavedChunk *rez = 0;
+		SavedChunk *rez = new SavedChunk;
 
 		rez->chunk.x = posX;
 		rez->chunk.z = posZ;
 
 		if (!worldSaver.loadChunk(rez->chunk))
 		{
+			//create new chunk!
+			if (wasGenerated) { *wasGenerated = true; }
+
 			generateChunk(rez->chunk, wg, structureManager, biomesManager, newStructures);
 			rez->otherData.dirty = true;
 		}
@@ -611,7 +613,6 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 
 		}
 
-
 		if (generateGhostAndStructures)
 		{
 			std::unordered_set<glm::ivec2, Ivec2Hash> newCreatedChunksSet;
@@ -651,6 +652,9 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 				}
 			}
 		}
+
+
+		savedChunks[pos] = rez;
 
 	}
 

@@ -115,7 +115,12 @@ struct ChunkPriorityCache
 	void saveAllChunks(WorldSaver &worldSaver);
 };
 
-void updateLoadedChunks();
+void updateLoadedChunks(
+	WorldGenerator &wg,
+	StructuresManager &structureManager,
+	BiomesManager &biomesManager,
+	std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
+	WorldSaver &worldSaver);
 
 std::mutex serverSettingsMutex;
 
@@ -129,7 +134,7 @@ struct ServerData
 {
 
 	//todo probably move this just locally
-	ChunkPriorityCache chunkCache = {};
+	ServerChunkStorer chunkCache = {};
 	std::vector<ServerTask> waitingTasks = {};
 	ENetHost *server = nullptr;
 	ServerSettings settings = {};
@@ -268,7 +273,7 @@ bool serverStartupStuff()
 
 bool spawnZombie(
 	ServerEntityManager &entityManager,
-	ChunkPriorityCache &chunkManager,
+	ServerChunkStorer &chunkManager,
 	Zombie zombie, std::uint64_t newId)
 {
 
@@ -276,7 +281,7 @@ bool spawnZombie(
 
 	auto chunkPos = determineChunkThatIsEntityIn(zombie.position);
 
-	auto c = chunkManager.getChunkOrGetNullNotUpdateTable(chunkPos.x, chunkPos.y);
+	auto c = chunkManager.getChunkOrGetNull(chunkPos.x, chunkPos.y);
 
 	if (c)
 	{
@@ -605,30 +610,12 @@ void serverWorkerUpdate(
 		}
 
 
-		updateLoadedChunks();
-		if (sd.chunkCache.loadedChunks.size() > maxSavedChunks * 0.75f)
-		{
-			//sd.chunkCache.loadedChunks.clear();
-			std::cout << "Warning too many loaded chunks\n";
-		}
+		updateLoadedChunks(wg, structuresManager, biomesManager, sendNewBlocksToPlayers,
+			worldSaver);
+	
 
-		if (sd.chunkCache.loadedChunks.size() > maxSavedChunks)
-		{
-			std::cout << "Warning too many loaded chunks, more than can be fit\n";
-		}
+		//todo error and warning logs for server.
 
-		//reload chunks
-		for (auto &i : sd.chunkCache.loadedChunks)
-		{
-			bool wasGenerated = 0;
-			sd.chunkCache.getOrCreateChunk(i.x, i.y, wg, structuresManager, biomesManager,
-				sendNewBlocksToPlayers, true, nullptr, worldSaver, &wasGenerated);
-
-			if (wasGenerated)
-			{
-				//todo error and warning logs for server.
-			}
-		}
 
 		//tick ...
 		doGameTick(sd.tickDeltaTime, entityManager, currentTimer, wg,
@@ -698,7 +685,8 @@ void serverWorkerUpdate(
 
 	//todo start unloading chunks that we don't need so we also unload entities.
 
-	sd.chunkCache.loadedChunks.clear();
+	sd.chunkCache.unloadChunksThatNeedUnloading(worldSaver, 100);
+	//sd.chunkCache.loadedChunks.clear();
 
 	//save one chunk on disk
 	sd.chunkCache.saveNextChunk(worldSaver);
@@ -2000,7 +1988,7 @@ void moveDroppedItem(glm::ivec2 initialChunk, glm::ivec2 newChunk,
 
 	if (initialChunk != newChunk)
 	{
-		auto c = sd.chunkCache.getChunkOrGetNullNotUpdateTable(initialChunk.x, initialChunk.y);
+		auto c = sd.chunkCache.getChunkOrGetNull(initialChunk.x, initialChunk.y);
 
 		if (c)
 		{
@@ -2010,7 +1998,7 @@ void moveDroppedItem(glm::ivec2 initialChunk, glm::ivec2 newChunk,
 			{
 				c->otherData.droppedItems.erase(pos);
 
-				auto c2 = sd.chunkCache.getChunkOrGetNullNotUpdateTable(newChunk.x,
+				auto c2 = sd.chunkCache.getChunkOrGetNull(newChunk.x,
 					newChunk.y);
 
 				if (c2)
@@ -2045,7 +2033,7 @@ void moveZombie(glm::ivec2 initialChunk, glm::ivec2 newChunk,
 
 	if (initialChunk != newChunk)
 	{
-		auto c = sd.chunkCache.getChunkOrGetNullNotUpdateTable(initialChunk.x, initialChunk.y);
+		auto c = sd.chunkCache.getChunkOrGetNull(initialChunk.x, initialChunk.y);
 
 		if (c)
 		{
@@ -2055,7 +2043,7 @@ void moveZombie(glm::ivec2 initialChunk, glm::ivec2 newChunk,
 			{
 				c->otherData.zombies.erase(pos);
 
-				auto c2 = sd.chunkCache.getChunkOrGetNullNotUpdateTable(newChunk.x,
+				auto c2 = sd.chunkCache.getChunkOrGetNull(newChunk.x,
 					newChunk.y);
 
 				if (c2)
@@ -2084,12 +2072,18 @@ void moveZombie(glm::ivec2 initialChunk, glm::ivec2 newChunk,
 };
 
 //adds loaded chunks.
-void updateLoadedChunks()
+void updateLoadedChunks(
+	WorldGenerator &wg,
+	StructuresManager &structureManager,
+	BiomesManager &biomesManager,
+	std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
+	WorldSaver &worldSaver)
 {
 
-	static std::unordered_set<glm::ivec2> chunks;
-	chunks.clear();
-	chunks.reserve(100);
+	for (auto &c : sd.chunkCache.savedChunks)
+	{
+		c.second->otherData.shouldUnload = true;
+	}
 
 	auto clientsCopy = getAllClients();
 
@@ -2111,15 +2105,21 @@ void updateLoadedChunks()
 
 				if (dist <= simulationDistance)
 				{
-					chunks.insert(pos + glm::ivec2(i, j));
+					auto finalPos = pos + glm::ivec2(i, j);
+					auto c = sd.chunkCache.getOrCreateChunk(finalPos.x, finalPos.y,
+						wg, structureManager, biomesManager, sendNewBlocksToPlayers, true,
+						nullptr, worldSaver, false
+						);
+
+					if (c)
+					{
+						c->otherData.shouldUnload = false;
+					}
 				}
 			}
 	}
 	
-	for (auto c : chunks)
-	{
-		sd.chunkCache.loadedChunks.insert(c);
-	}
+
 
 }
 
@@ -2133,7 +2133,7 @@ void doGameTick(float deltaTime, ServerEntityManager &entityManager,
 
 	auto chunkGetter = [](glm::ivec2 pos) -> ChunkData *
 	{
-		auto c = sd.chunkCache.getChunkOrGetNullNotUpdateTable(pos.x, pos.y);
+		auto c = sd.chunkCache.getChunkOrGetNull(pos.x, pos.y);
 		if (c)
 		{
 			return &c->chunk;
@@ -2160,17 +2160,6 @@ void doGameTick(float deltaTime, ServerEntityManager &entityManager,
 
 		auto initialChunk = determineChunkThatIsEntityIn(e.second.getPosition());
 
-		if (sd.chunkCache.loadedChunks.find(initialChunk) == 
-			sd.chunkCache.loadedChunks.end())
-		{
-			//std::cout << "Skipped Dropped item!\n";
-			++it;
-			continue;
-		}
-		else
-		{
-			//std::cout << "Didn't skip!\n";
-		}
 
 		genericCallUpdateForEntity(e, deltaTime, chunkGetter);
 		auto newChunk = determineChunkThatIsEntityIn(e.second.getPosition());
@@ -2201,13 +2190,6 @@ void doGameTick(float deltaTime, ServerEntityManager &entityManager,
 		auto &e = *it;
 
 		auto initialChunk = determineChunkThatIsEntityIn(e.second.getPosition());
-
-		if (sd.chunkCache.loadedChunks.find(initialChunk) ==
-			sd.chunkCache.loadedChunks.end())
-		{
-			++it;
-			continue;
-		}
 
 		genericCallUpdateForEntity(e, deltaTime, chunkGetter);
 		auto newChunk = determineChunkThatIsEntityIn(e.second.getPosition());
