@@ -16,6 +16,7 @@ struct ZombieClient: public ClientEntity<Zombie>
 
 struct ZombieServer: public ServerEntity<Zombie>
 {
-	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
+	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
+		ServerChunkStorer &serverChunkStorer);
 };
 

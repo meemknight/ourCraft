@@ -1,4 +1,6 @@
 #include <gameplay/zombie.h>
+#include <multyPlayer/serverChunkStorer.h>
+
 
 void Zombie::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
 {
@@ -7,10 +9,10 @@ void Zombie::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter
 
 	resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime, {0.8, 1.8, 0.8});
 
-
 }
 
-void ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
+void ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
+	ServerChunkStorer &serverChunkStorer)
 {
 	getPosition().x += 1 * deltaTime;
 

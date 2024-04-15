@@ -23,14 +23,13 @@
 
 //todo add to a struct
 ENetHost *server = 0;
-std::mutex connectionsMutex;
+std::mutex connectionsMutex; //todo remove 
 std::unordered_map<CID, Client> connections;
 static CID pids = 1;
 static std::uint64_t entityId = 1;
 static std::thread enetServerThread;
 
-std::mutex entityIdMutex;
-
+std::mutex entityIdMutex; //todo remove
 std::uint64_t getEntityIdNowLocked() { return entityId; }
 void lockEntityIdMutex() { entityIdMutex.lock(); }
 void unlockEntityIdMutex() { entityIdMutex.unlock(); }
@@ -118,9 +117,9 @@ void insertConnection(CID cid, Client c)
 }
 
 
-std::mutex taskMutex;
-std::condition_variable taskCondition;
-std::queue<ServerTask> tasks;
+std::mutex taskMutex; //todo remove
+std::condition_variable taskCondition; //todo remove
+std::queue<ServerTask> tasks; //todo remove
 
 void submitTaskForServer(ServerTask t)
 {
@@ -159,7 +158,6 @@ void broadcastNewConnectionMessage(ENetPeer *peerToIgnore, Client c, CID cid)
 		sizeof(data), peerToIgnore, true, channelHandleConnections);
 }
 
-//todo remove conection
 void addConnection(ENetHost *server, ENetEvent &event)
 {
 
@@ -443,6 +441,7 @@ void signalWaitingFromServer()
 	taskCondition.notify_one();
 }
 
+//todo remove
 std::vector<ServerTask> waitForTasksServer()
 {
 	std::unique_lock<std::mutex> locker(taskMutex);
@@ -678,16 +677,7 @@ void enetServerFunction()
 	serverWorkerUpdate(wg, structuresManager, biomesManager,
 		worldSaver, deltaTime);
 
-		//if (tickTimer >= 1 / settings.targetTicksPerSeccond)
-		//{
-		//	signalWaitingFromServer();
-		//	tickTimer -= 1 / settings.targetTicksPerSeccond;
-		//}
-
-		//if (tasks.size() > 25)
-		//{
-		//	std::cout << "Server thread stalled!\n";
-		//}
+	
 	}
 
 	clearSD(worldSaver);

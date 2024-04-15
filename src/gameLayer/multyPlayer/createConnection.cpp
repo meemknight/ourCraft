@@ -487,6 +487,17 @@ bool createConnection(Packet_ReceiveCIDAndData &playerData, const char *c)
 		return false;
 	}
 
+	auto test = clientData.server;
+
+	{
+
+		// Set maximum throttle parameters for a specific client
+		//clientData.server->packetThrottle = ENET_PEER_PACKET_THROTTLE_SCALE;
+		//clientData.server->packetThrottleLimit = ENET_PEER_PACKET_THROTTLE_SCALE;
+		//clientData.server->packetThrottleAcceleration = 2;
+		//clientData.server->packetThrottleDeceleration = 2;
+	}
+
 	//see if we got events by server
 	//client, event, ms to wait(0 means that we don't wait)
 	if (enet_host_service(clientData.client, &event, 4000) > 0
@@ -496,12 +507,18 @@ bool createConnection(Packet_ReceiveCIDAndData &playerData, const char *c)
 	}
 	else
 	{
-		reportError("server timeout");
+		reportError("server timeout...");
 		enet_peer_reset(clientData.server);
 		enet_host_destroy(clientData.client);
 		return false;
 	}
 	
+
+	enet_peer_throttle_configure(clientData.server,
+		ENET_PEER_PACKET_THROTTLE_INTERVAL, 6, 2);
+
+
+
 	#pragma region handshake
 	
 	if (enet_host_service(clientData.client, &event, 2500) > 0

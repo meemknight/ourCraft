@@ -195,6 +195,7 @@ bool serverStartupStuff()
 	//first param adress, players limit, channels, bandwith limit
 	sd.server = enet_host_create(&adress, 32, SERVER_CHANNELS, 0, 0);
 
+
 	if (!sd.server)
 	{
 		//todo some king of error reporting to the player
@@ -719,7 +720,7 @@ void genericCallUpdateForEntity(T &e,
 	float time = deltaTime + e.second.restantTime;
 	if (time > 0)
 	{
-		e.second.update(time, chunkGetter);
+		e.second.update(time, chunkGetter, sd.chunkCache);
 	}
 	e.second.restantTime = 0;
 };

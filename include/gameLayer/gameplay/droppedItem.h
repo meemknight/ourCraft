@@ -18,6 +18,7 @@ struct DroppedItemClient: public ClientEntity<DroppedItem>
 
 struct DroppedItemServer : public ServerEntity<DroppedItem>
 {
-	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
+	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
+		ServerChunkStorer &serverChunkStorer);
 };
 

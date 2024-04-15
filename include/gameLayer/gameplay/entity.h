@@ -21,6 +21,7 @@
 
 
 
+struct ServerChunkStorer;
 
 
 struct RubberBand
@@ -106,6 +107,5 @@ struct ClientEntity
 		return entity.position;
 	}
 };
-
 
 
