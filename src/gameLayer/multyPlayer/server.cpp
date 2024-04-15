@@ -34,12 +34,17 @@ struct ListNode;
 //0.25 MB
 struct SavedChunk 
 {
+
 	//std::mutex mu;
 	ChunkData chunk;
 	ListNode *node = nullptr;
 	struct OtherData
 	{
+		std::unordered_set<std::uint64_t> droppedItems;
+		std::unordered_set<std::uint64_t> zombies;
+
 		bool dirty = 0;
+
 	}otherData;
 };
 
@@ -82,7 +87,7 @@ bool startServer()
 }
 
 //0.24 GB per 1000
-const int maxSavedChunks = 4000;
+const int maxSavedChunks = 1000;
 
 struct ChunkPriorityCache
 {
@@ -159,6 +164,12 @@ void updateLoadedChunks();
 
 std::mutex serverSettingsMutex;
 
+
+glm::ivec2 determineChunkThatIsEntityIn(glm::dvec3 position)
+{
+	return {divideChunk(position.x), divideChunk(position.z)};
+}
+
 struct ServerData
 {
 
@@ -203,7 +214,13 @@ void closeServer()
 	//serverSettingsMutex.unlock();
 }
 
-void doGameTick(float deltaTime, ServerEntityManager &entityManager, std::uint64_t currentTimer);
+void doGameTick(float deltaTime,
+	ServerEntityManager &entityManager, std::uint64_t currentTimer,
+	WorldGenerator &wg, StructuresManager &structuresManager,
+	BiomesManager &biomeManager,
+	std::vector<ChunkPriorityCache::SendBlocksBack> &sendNewBlocksToPlayers,
+	WorldSaver &worldSaver
+);
 
 //Note: it is a problem that the block validation and the item validation are on sepparate threads.
 bool computeRevisionStuff(Client &client, bool allowed, const EventId &eventId)
@@ -282,6 +299,40 @@ bool serverStartupStuff()
 	return true;
 }
 
+
+bool spawnZombie(
+	ServerEntityManager &entityManager,
+	ChunkPriorityCache &chunkManager,
+	Zombie zombie, std::uint64_t newId)
+{
+
+	//todo also send packets
+
+	auto chunkPos = determineChunkThatIsEntityIn(zombie.position);
+
+	auto c = chunkManager.getChunkOrGetNullNotUpdateTable(chunkPos.x, chunkPos.y);
+
+	if (c)
+	{
+
+		c->otherData.zombies.insert(newId);
+
+		ZombieServer serverZombie = {};
+		serverZombie.entity = zombie;
+
+		entityManager.zombies[newId] = serverZombie;
+
+	}
+	else
+	{
+		return 0;
+	}
+
+	return 1;
+}
+
+
+
 void serverWorkerFunction()
 {
 	StructuresManager structuresManager;
@@ -329,11 +380,11 @@ void serverWorkerFunction()
 	int ticksPerSeccond = 0;
 	int runsPerSeccond = 0;
 	float seccondsTimer = 0;
-	float unloadChunksTimer = 0;
 	//constexpr float RESOLUTION_TIMER = 16.f;
 
 	while (serverRunning)
 	{
+		//todo this doesn't work???
 		auto settings = getServerSettingsCopy();
 		//auto clientsCopy = getAllClients();
 		//todo this could fail? if the client disconected?
@@ -397,7 +448,6 @@ void serverWorkerFunction()
 		tickTimer += deltaTime;
 		seccondsTimer += deltaTime;
 		tickDeltaTime += deltaTime;
-		unloadChunksTimer += deltaTime;
 	#pragma endregion
 
 
@@ -575,8 +625,22 @@ void serverWorkerFunction()
 						newEntity.restantTime = computeRestantTimer(i.t.timer, currentTimer);
 
 						
+						auto chunkPosition = determineChunkThatIsEntityIn(i.t.doublePos);
+
+						SavedChunk *chunk = sd.chunkCache.getOrCreateChunk(chunkPosition.x,
+							chunkPosition.y, wg, structuresManager, biomesManager,
+							sendNewBlocksToPlayers, true, nullptr, worldSaver
+						);
+
+						if (chunk)
+						{
+							chunk->otherData.droppedItems.insert(i.t.entityId);
+							entityManager.droppedItems.insert({i.t.entityId, newEntity});
+						}
+
 						//std::cout << "restant: " << newEntity.restantTime << "\n";
-						entityManager.droppedItems.insert({i.t.entityId, newEntity});
+
+
 					}
 					
 				}
@@ -597,44 +661,7 @@ void serverWorkerFunction()
 			}
 		}
 
-		//this are blocks created by new chunks so everyone needs them
-		if (!sendNewBlocksToPlayers.empty())
-		{
-			Packet_PlaceBlocks *newBlocks = new Packet_PlaceBlocks[sendNewBlocksToPlayers.size()];
-			
-			Packet packet;
-			packet.cid = 0;
-			packet.header = headerPlaceBlocks;
-
-			int i = 0;
-			for (auto &b : sendNewBlocksToPlayers)
-			{
-				//todo an option to send multiple blocks per place block
-				//std::cout << "Sending block...";
-
-				//Packet packet;
-				//packet.cid = 0;
-				//packet.header = headerPlaceBlock;
-				//
-				//Packet_PlaceBlock packetData;
-				//packetData.blockPos = b.pos;
-				//packetData.blockType = b.block;
-				//
-				//broadCast(packet, &packetData, sizeof(Packet_PlaceBlock), nullptr, true, channelChunksAndBlocks);
-					
-				newBlocks[i].blockPos = b.pos;
-				newBlocks[i].blockType = b.block;
-
-				i++;
-			}
-
-			broadCast(packet, newBlocks, 
-				sizeof(Packet_PlaceBlocks) *sendNewBlocksToPlayers.size(), 
-				nullptr, true, channelChunksAndBlocks);
-
-
-			delete[] newBlocks;
-		}
+		
 
 		//todo check if there are too many loaded chunks and unload them before processing
 		//generate chunk
@@ -646,14 +673,37 @@ void serverWorkerFunction()
 			tickTimer -= (1.f / settings.targetTicksPerSeccond);
 			ticksPerSeccond++;
 
-			if (sd.chunkCache.loadedChunks.size() > maxSavedChunks * 0.75f)
+
 			{
-				unloadChunksTimer = 0;
-				sd.chunkCache.loadedChunks.clear();
-				std::cout << "Warning too many loaded chunks\n";
+				static bool did = 0;
+				static float timer = 5;
+				timer -= deltaTime;
+
+				if (timer < 0 && !did)
+				{
+					did = true;
+
+					auto c = getAllClients();
+
+
+					Zombie z;
+					glm::dvec3 position = c.begin()->second.playerData.position;
+					z.position = position;
+					z.lastPosition = position;
+
+					spawnZombie(entityManager, sd.chunkCache, z, getEntityIdSafeAndIncrement());
+				}
+
+
 			}
 
+			
 			updateLoadedChunks();
+			if (sd.chunkCache.loadedChunks.size() > maxSavedChunks * 0.75f)
+			{
+				//sd.chunkCache.loadedChunks.clear();
+				std::cout << "Warning too many loaded chunks\n";
+			}
 
 			if (sd.chunkCache.loadedChunks.size() > maxSavedChunks)
 			{
@@ -674,7 +724,9 @@ void serverWorkerFunction()
 			}
 
 			//tick ...
-			doGameTick(tickDeltaTime, entityManager, currentTimer);
+			doGameTick(tickDeltaTime, entityManager, currentTimer, wg,
+				structuresManager, biomesManager, sendNewBlocksToPlayers,
+				worldSaver);
 			//std::cout << "Loaded chunks: " << sd.chunkCache.loadedChunks.size() << "\n";
 
 			tickDeltaTime = 0;
@@ -697,14 +749,51 @@ void serverWorkerFunction()
 
 	#pragma endregion
 
-
-		if (unloadChunksTimer > settings.unloadChunksEverySecconds)
+		//this are blocks created by new chunks so everyone needs them
+		if (!sendNewBlocksToPlayers.empty())
 		{
-			unloadChunksTimer -= settings.unloadChunksEverySecconds;
-			sd.chunkCache.loadedChunks.clear();
-			//std::cout << "Unload chunks...\n";
-		}
+			Packet_PlaceBlocks *newBlocks = new Packet_PlaceBlocks[sendNewBlocksToPlayers.size()];
 
+			Packet packet;
+			packet.cid = 0;
+			packet.header = headerPlaceBlocks;
+
+			int i = 0;
+			for (auto &b : sendNewBlocksToPlayers)
+			{
+				//todo an option to send multiple blocks per place block
+				//std::cout << "Sending block...";
+
+				//Packet packet;
+				//packet.cid = 0;
+				//packet.header = headerPlaceBlock;
+				//
+				//Packet_PlaceBlock packetData;
+				//packetData.blockPos = b.pos;
+				//packetData.blockType = b.block;
+				//
+				//broadCast(packet, &packetData, sizeof(Packet_PlaceBlock), nullptr, true, channelChunksAndBlocks);
+
+				newBlocks[i].blockPos = b.pos;
+				newBlocks[i].blockType = b.block;
+
+				i++;
+			}
+
+			broadCast(packet, newBlocks,
+				sizeof(Packet_PlaceBlocks) * sendNewBlocksToPlayers.size(),
+				nullptr, true, channelChunksAndBlocks);
+
+
+			delete[] newBlocks;
+		}
+		
+
+		//todo start unloading chunks that we don't need so we also unload entities.
+
+		sd.chunkCache.loadedChunks.clear();
+
+		//save one chunk on disk
 		sd.chunkCache.saveNextChunk(worldSaver);
 
 	}
@@ -817,6 +906,9 @@ SavedChunk *ChunkPriorityCache::getOrCreateChunk(int posX, int posZ, WorldGenera
 			SavedChunk *chunkToRecycle = foundPos->second;
 			if (chunkToRecycle->otherData.dirty)
 			{
+				//todo unload chunk function here, 
+				//that will save the chunk and also unload the
+				//entities
 				worldSaver.saveChunk(chunkToRecycle->chunk);
 			}
 
@@ -1997,6 +2089,96 @@ void genericCallUpdateForEntity(T &e,
 };
 
 
+void moveDroppedItem(glm::ivec2 initialChunk, glm::ivec2 newChunk, 
+	std::uint64_t id, ServerEntityManager &entityManager, bool &shouldDelete)
+{
+	shouldDelete = 0;
+
+	if (initialChunk != newChunk)
+	{
+		auto c = sd.chunkCache.getChunkOrGetNullNotUpdateTable(initialChunk.x, initialChunk.y);
+
+		if (c)
+		{
+
+			auto pos = c->otherData.droppedItems.find(id);
+			if (pos != c->otherData.droppedItems.end())
+			{
+				c->otherData.droppedItems.erase(pos);
+
+				auto c2 = sd.chunkCache.getChunkOrGetNullNotUpdateTable(newChunk.x,
+					newChunk.y);
+
+				if (c2)
+				{
+					c2->otherData.droppedItems.insert(id);
+				}
+				else
+				{
+					//unload that entity and save it in the new chunk
+					shouldDelete = 1;
+
+				}
+
+			}
+			else
+			{
+				//todo search for this item otherwhere
+			}
+
+		}
+		else
+		{
+			//todo search for this item otherwhere
+		}
+	}
+};
+
+void moveZombie(glm::ivec2 initialChunk, glm::ivec2 newChunk,
+	std::uint64_t id, ServerEntityManager &entityManager, bool &shouldDelete)
+{
+	shouldDelete = 0;
+
+	if (initialChunk != newChunk)
+	{
+		auto c = sd.chunkCache.getChunkOrGetNullNotUpdateTable(initialChunk.x, initialChunk.y);
+
+		if (c)
+		{
+
+			auto pos = c->otherData.zombies.find(id);
+			if (pos != c->otherData.zombies.end())
+			{
+				c->otherData.zombies.erase(pos);
+
+				auto c2 = sd.chunkCache.getChunkOrGetNullNotUpdateTable(newChunk.x,
+					newChunk.y);
+
+				if (c2)
+				{
+					c2->otherData.zombies.insert(id);
+				}
+				else
+				{
+					//unload that entity and save it in the new chunk
+					shouldDelete = 1;
+
+				}
+
+			}
+			else
+			{
+				//todo search for this item otherwhere
+			}
+
+		}
+		else
+		{
+			//todo search for this item otherwhere
+		}
+	}
+};
+
 //adds loaded chunks.
 void updateLoadedChunks()
 {
@@ -2039,7 +2221,10 @@ void updateLoadedChunks()
 
 
 void doGameTick(float deltaTime, ServerEntityManager &entityManager, 
-	std::uint64_t currentTimer)
+	std::uint64_t currentTimer, WorldGenerator &wg, 
+	StructuresManager &structuresManager, BiomesManager &biomesManager,
+	std::vector<ChunkPriorityCache::SendBlocksBack> &sendNewBlocksToPlayers,
+	WorldSaver &worldSaver)
 {
 
 	auto chunkGetter = [](glm::ivec2 pos) -> ChunkData *
@@ -2062,44 +2247,93 @@ void doGameTick(float deltaTime, ServerEntityManager &entityManager,
 
 
 
-#pragma region physics update
+#pragma region entity updates
 
-	//static int counter = 70;
-	//
-	//if (counter-- < 0)
-	//{
-	//	counter = 70;
-	//}
-
-
-	for (auto &e : entityManager.droppedItems)
+	
+	for (auto it = entityManager.droppedItems.begin(); it != entityManager.droppedItems.end(); )
 	{
-		//if (counter == 70)
-		//{
-		//	e.second.item.position.y += 5;
-		//}
+		auto &e = *it;
 
+		auto initialChunk = determineChunkThatIsEntityIn(e.second.getPosition());
+
+		if (sd.chunkCache.loadedChunks.find(initialChunk) == 
+			sd.chunkCache.loadedChunks.end())
+		{
+			//std::cout << "Skipped Dropped item!\n";
+			++it;
+			continue;
+		}
+		else
+		{
+			//std::cout << "Didn't skip!\n";
+		}
 
 		genericCallUpdateForEntity(e, deltaTime, chunkGetter);
+		auto newChunk = determineChunkThatIsEntityIn(e.second.getPosition());
 
+		bool shouldDelete = 0;
+		moveDroppedItem(initialChunk, newChunk, e.first, entityManager, shouldDelete);
+
+		if (shouldDelete)
+		{
+			//todo save entity
+			//todo the save could easily be in chunks that were never loaded so whenever we create a 
+			//new chunk we should check if there are entities there.
+			std::cout << "Unloaded Dropped item!\n";
+			it = entityManager.droppedItems.erase(it);
+			continue;
+		}
+		
+		//todo this should take into acount if that player should recieve it
 		genericBroadcastEntityUpdateFromServerToPlayer
 			< Packet_RecieveDroppedItemUpdate,
 			headerClientRecieveDroppedItemUpdate>(e, false, currentTimer);
 
-		//{
-		//	Packet packet;
-		//	packet.header = headerClientRecieveDroppedItemUpdate;
-		//
-		//	Packet_RecieveDroppedItemUpdate packetData;
-		//	packetData.eid = e.first;
-		//	packetData.entity = e.second.entity;
-		//	packetData.timer = currentTimer;
-		//
-		//	broadCast(packet, &packetData, sizeof(packetData),
-		//		nullptr, false, channelEntityPositions);
-		//}
-
+		++it;
 	}
+
+	for (auto it = entityManager.zombies.begin(); it != entityManager.zombies.end(); )
+	{
+		auto &e = *it;
+
+		auto initialChunk = determineChunkThatIsEntityIn(e.second.getPosition());
+
+		if (sd.chunkCache.loadedChunks.find(initialChunk) ==
+			sd.chunkCache.loadedChunks.end())
+		{
+			++it;
+			continue;
+		}
+
+		genericCallUpdateForEntity(e, deltaTime, chunkGetter);
+		auto newChunk = determineChunkThatIsEntityIn(e.second.getPosition());
+
+		bool shouldDelete = 0;
+		moveZombie(initialChunk, newChunk, e.first, entityManager, shouldDelete);
+
+		if (shouldDelete)
+		{
+			//todo save entity
+			//todo the save could easily be in chunks that were never loaded so whenever we create a 
+			//new chunk we should check if there are entities there.
+			std::cout << "Unloaded zombie!\n";
+			it = entityManager.zombies.erase(it);
+			continue;
+		}
+
+		//std::cout << e.second.getPosition().x << ' ' <<
+		//	e.second.getPosition().y << " " << e.second.getPosition().z << "\n";
+
+		//todo this should take into acount if that player should recieve it
+		genericBroadcastEntityUpdateFromServerToPlayer
+			< Packet_UpdateZombie,
+			headerUpdateZombie>(e, false, currentTimer);
+
+		++it;
+	}
+
+
+
 
 
 #pragma endregion

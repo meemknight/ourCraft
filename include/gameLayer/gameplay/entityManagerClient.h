@@ -6,6 +6,7 @@
 #include <multyPlayer/server.h>
 #include <gameplay/droppedItem.h>
 #include <gameplay/player.h>
+#include <gameplay/zombie.h>
 
 struct UndoQueue;
 
@@ -22,6 +23,7 @@ struct ClientEntityManager
 	std::unordered_map<std::uint64_t, PlayerClient> players;
 	
 	std::unordered_map<std::uint64_t, DroppedItemClient> droppedItems;
+	std::unordered_map<std::uint64_t, ZombieClient> zombies;
 
 	LocalPlayer localPlayer;
 
@@ -37,6 +39,8 @@ struct ClientEntityManager
 	void removeDroppedItem(std::uint64_t entityId);
 	
 	void addOrUpdateDroppedItem(std::uint64_t eid, DroppedItem droppedItem, UndoQueue &undoQueue, float restantTimer);
+
+	void addOrUpdateZombie(std::uint64_t eid, Zombie entity,float restantTimer);
 
 	void doAllUpdates(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2));
 };

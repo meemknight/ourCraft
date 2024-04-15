@@ -9,6 +9,7 @@
 #include <gameplay/physics.h>
 #include <gameplay/droppedItem.h>
 #include <gameplay/player.h>
+#include <gameplay/zombie.h>
 
 using EventCounter = unsigned int;
 using RevisionNumber = unsigned int;
@@ -57,6 +58,7 @@ enum
 	headerClientUpdateTimer,
 	headerDisconnectOtherPlayer, //we use cid there to specify the connection to be removed
 	headerConnectOtherPlayer,
+	headerUpdateZombie,
 };
 
 enum 
@@ -81,6 +83,14 @@ struct Packet_RecieveDroppedItemUpdate
 	std::uint64_t eid = 0;
 	std::uint64_t timer = 0;
 };
+
+struct Packet_UpdateZombie
+{
+	Zombie entity = {};
+	std::uint64_t eid = 0;
+	std::uint64_t timer = 0;
+};
+
 
 struct Packet_ReceiveReserverEndityIds
 {

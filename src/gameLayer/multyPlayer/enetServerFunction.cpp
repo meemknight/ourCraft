@@ -23,6 +23,21 @@ static CID pids = 1;
 static std::uint64_t entityId = 1;
 static std::thread enetServerThread;
 
+std::mutex entityIdMutex;
+
+std::uint64_t getEntityIdNowLocked() { return entityId; }
+void lockEntityIdMutex() { entityIdMutex.lock(); }
+void unlockEntityIdMutex() { entityIdMutex.unlock(); }
+
+std::uint64_t getEntityIdSafeAndIncrement()
+{
+	lockEntityIdMutex();
+	std::uint64_t id = entityId;
+	entityId++;
+	unlockEntityIdMutex();
+	return entityId;
+}
+
 void broadCastNotLocked(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel)
 {
 	for (auto it = connections.begin(); it != connections.end(); it++)
@@ -142,12 +157,14 @@ void broadcastNewConnectionMessage(ENetPeer *peerToIgnore, Client c, CID cid)
 void addConnection(ENetHost *server, ENetEvent &event)
 {
 
+	auto id = getEntityIdSafeAndIncrement();
+
 	glm::dvec3 spawnPosition(0, 107, 0);
 
 	{
 		Client c{event.peer};
 		c.playerData.position = spawnPosition;
-		c.entityId = entityId;
+		c.entityId = id;
 		insertConnection(pids, c);
 	}
 
@@ -160,8 +177,7 @@ void addConnection(ENetHost *server, ENetEvent &event)
 	
 		Packet_ReceiveCIDAndData packetToSend = {};
 		packetToSend.playersPosition = spawnPosition;
-		packetToSend.yourPlayerEntityId = entityId;
-		entityId++;
+		packetToSend.yourPlayerEntityId = id;
 	
 		//send own cid
 		sendPacket(event.peer, p, (const char *)&packetToSend,
@@ -179,10 +195,13 @@ void addConnection(ENetHost *server, ENetEvent &event)
 
 		constexpr int IDS_RESERVE_COUNT = 500;
 
+		lockEntityIdMutex();
 		packetData.first = entityId;
-		packetData.count = IDS_RESERVE_COUNT;
-		
 		entityId += IDS_RESERVE_COUNT;
+		unlockEntityIdMutex();
+		packetData.count = IDS_RESERVE_COUNT;
+
+
 
 		sendPacket(event.peer, p, (const char *)&packetData,
 			sizeof(packetData), true, channelHandleConnections);
@@ -619,6 +638,10 @@ void enetServerFunction()
 		//	tickTimer -= 1 / settings.targetTicksPerSeccond;
 		//}
 
+		if (tasks.size() > 25)
+		{
+			std::cout << "Server thread stalled!\n";
+		}
 
 	}
 

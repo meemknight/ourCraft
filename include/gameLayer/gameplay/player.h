@@ -25,7 +25,7 @@ struct LocalPlayer : public Player
 
 };
 
-struct PlayerClient: public CleintEntity<Player>
+struct PlayerClient: public ClientEntity<Player>
 {
 	//todo remove from here?
 	std::uint64_t entityId = 0;
@@ -37,7 +37,7 @@ struct PlayerClient: public CleintEntity<Player>
 //this is what we send through the network
 struct PlayerData
 {
-	int chunkDistance = 10; //remove this from here ?
+	int chunkDistance = 10; //remove this from here?
 	glm::dvec3 position = {};
 	//...
 };

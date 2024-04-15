@@ -27,6 +27,7 @@ bool checkIfPlayerShouldGetEntity(glm::ivec2 playerPos2D,
 void ClientEntityManager::dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int playerSquareDistance)
 {
 
+	//todo also do this for zombies or dropped items
 	for (auto it = players.begin(); it != players.end(); )
 	{
 		if (!checkIfPlayerShouldGetEntity(playerPos2D, it->second.getPosition(),
@@ -151,6 +152,26 @@ void ClientEntityManager::addOrUpdateDroppedItem(std::uint64_t eid,
 
 }
 
+void ClientEntityManager::addOrUpdateZombie(std::uint64_t eid, Zombie entity,
+	float restantTimer)
+{
+	auto found = zombies.find(eid);
+
+	if (found == zombies.end())
+	{
+		zombies[eid].entity = entity;
+		zombies[eid].restantTime = restantTimer;
+	}
+	else
+	{
+		found->second.rubberBand
+			.add(found->second.entity.position - entity.position);
+
+		found->second.entity = entity;
+		found->second.restantTime = restantTimer;
+	}
+}
+
 void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2))
 {
 
@@ -179,6 +200,11 @@ void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)
 	for (auto &item : droppedItems)
 	{
 		genericUpdate(item);
+	}
+
+	for (auto &zombie : zombies)
+	{
+		genericUpdate(zombie);
 	}
 
 

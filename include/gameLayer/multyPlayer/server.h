@@ -25,6 +25,7 @@ struct PerClientServerSettings
 {
 
 	bool validateStuff = true;
+	bool spawnZombie = false;
 
 	glm::dvec3 outPlayerPos; //just for printing (todo remove)
 };
@@ -35,7 +36,6 @@ struct ServerSettings
 
 	int targetTicksPerSeccond = 20;
 	bool busyWait = 1;
-	int unloadChunksEverySecconds = 10;
 
 };
 

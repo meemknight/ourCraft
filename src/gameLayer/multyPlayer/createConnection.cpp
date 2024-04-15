@@ -285,6 +285,7 @@ void recieveDataClient(ENetEvent &event,
 
 			if (sizeof(Packet_RecieveDroppedItemUpdate) != size) { break; } //todo logs or something
 			
+			//todo dont break if reliable
 			if (p->timer + 16 < yourTimer)
 			{
 				break; //drop too old packets
@@ -296,6 +297,23 @@ void recieveDataClient(ENetEvent &event,
 				restantTimer);
 
 			//std::cout << restantTimer << "\n";
+
+			break;
+		}
+
+		case headerUpdateZombie:
+		{
+			Packet_UpdateZombie *p = (Packet_UpdateZombie *)data;
+			if (sizeof(Packet_UpdateZombie) != size) { break; }
+
+			//todo dont break if reliable
+			if (p->timer + 16 < yourTimer)
+			{
+				break; //drop too old packets
+			}
+			float restantTimer = computeRestantTimer(p->timer, yourTimer);
+
+			entityManager.addOrUpdateZombie(p->eid, p->entity, restantTimer);
 
 			break;
 		}

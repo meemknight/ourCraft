@@ -81,7 +81,7 @@ template <class T>
 struct ServerEntity
 {
 	T entity = {};
-	float restantTime = 0;
+	float restantTime = 0; //todo not used for many things so move
 
 	glm::dvec3 &getPosition()
 	{
@@ -90,7 +90,7 @@ struct ServerEntity
 };
 
 template <class T>
-struct CleintEntity
+struct ClientEntity
 {
 	T entity = {};
 	RubberBand rubberBand = {};
