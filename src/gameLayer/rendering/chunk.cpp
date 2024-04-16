@@ -423,7 +423,8 @@ bool Chunk::shouldBakeOnlyBecauseOfTransparency(Chunk *left, Chunk *right, Chunk
 
 void Chunk::createGpuData()
 {
-	unsigned char winding[4] = {0,1,2,4};
+	//unsigned char winding[4] = {0,1,2,4};
+	unsigned char winding[4] = {0,1,2,3};
 
 	glGenBuffers(1, &opaqueGeometryBuffer);
 	glGenBuffers(1, &opaqueGeometryIndex);

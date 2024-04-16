@@ -40,29 +40,21 @@ uint grassMask[] =
 	1,
 	0,
 	0,
-	0,
-	1,
 
 	0,
 	1,
 	1,
-	1,
-	0,
 	0,
 
 	1,
 	1,
 	0,
 	0,
-	0,
-	1,
 
 	0,
 	0,
 	1,
 	1,
-	1,
-	0
 };
 
 float biasUp(float a)
@@ -84,20 +76,10 @@ vec3 calculateVertexPos(int vertexId)
 
 	if(in_faceOrientation >= 10) //animated trees
 	{
-		//vertexShape.x = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 0];
-		//vertexShape.y = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 1];
-		//vertexShape.z = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 2];
-		//
-		//if(facePosition.y % 2 == 0)
-		//{
-		//	vertexShape.x = -vertexShape.x;
-		//	vertexShape.z = -vertexShape.z;
-		//	//v_uv.x = 1.f-v_uv.x;
-		//}
-
-		vertexShape.x += vertexData[(in_faceOrientation-10) * 3 * 6 + vertexId * 3 + 0];
-		vertexShape.y += vertexData[(in_faceOrientation-10) * 3 * 6 + vertexId * 3 + 1];
-		vertexShape.z += vertexData[(in_faceOrientation-10) * 3 * 6 + vertexId * 3 + 2];
+		
+		vertexShape.x += vertexData[(in_faceOrientation-10) * 3 * 4 + vertexId * 3 + 0];
+		vertexShape.y += vertexData[(in_faceOrientation-10) * 3 * 4 + vertexId * 3 + 1];
+		vertexShape.z += vertexData[(in_faceOrientation-10) * 3 * 4 + vertexId * 3 + 2];
 		
 		vec3 offset = vec3(0);		
 
@@ -107,13 +89,13 @@ vec3 calculateVertexPos(int vertexId)
 
 		offset.y += 0.010*cos((u_timeGrass/1.0 )+vertexShape.x+facePosition.x);
 		offset.y += 0.02*cos((u_timeGrass/2.0 )+vertexShape.z+facePosition.z);
-		offset.xz += 0.02*cos((u_timeGrass/3.0 )+vertexShape.xz+facePosition.xz);	
+		offset.xz += 0.02*cos((u_timeGrass/3.0 )+vertexShape.xz+facePosition.xz);
 
 		vertexShape += offset;
 
 	}else if(in_faceOrientation >= 6)
 	{
-		uint mask = grassMask[(in_faceOrientation-6)*6+vertexId];
+		uint mask = grassMask[(in_faceOrientation-6)*4+vertexId];
 
 		//grass
 		vec2 dir = normalize(vec2(0.5,1));		
@@ -132,18 +114,19 @@ vec3 calculateVertexPos(int vertexId)
 		float offset2 = biasUp2(sin((facePosition.x * dir2.x +
 			facePosition.z * dir2.y - u_timeGrass * SPEED) * FREQUENCY)) * AMPLITUDE;		
 
-		vertexShape.x = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 0];
-		vertexShape.y = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 1];
-		vertexShape.z = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 2];
+		vertexShape.x = vertexData[in_faceOrientation * 3 * 4 + vertexId * 3 + 0];
+		vertexShape.y = vertexData[in_faceOrientation * 3 * 4 + vertexId * 3 + 1];
+		vertexShape.z = vertexData[in_faceOrientation * 3 * 4 + vertexId * 3 + 2];
 		
 		vertexShape.x += mask * (offset * dir.x + offset2 * dir.x);
 		vertexShape.z += mask * (offset * dir.y + offset2 * dir.y);
 
 	}else
 	{
-		vertexShape.x = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 0];
-		vertexShape.y = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 1];
-		vertexShape.z = vertexData[in_faceOrientation * 3 * 6 + vertexId * 3 + 2];
+		//todo optimize move up
+		vertexShape.x = vertexData[in_faceOrientation * 3 * 4 + vertexId * 3 + 0];
+		vertexShape.y = vertexData[in_faceOrientation * 3 * 4 + vertexId * 3 + 1];
+		vertexShape.z = vertexData[in_faceOrientation * 3 * 4 + vertexId * 3 + 2];
 	}
 
 	pos.xyz += vertexShape;
@@ -154,8 +137,8 @@ vec3 calculateVertexPos(int vertexId)
 vec2 calculateUVs(int vertexId)
 {	
 	vec2 uvs;
-	uvs.x = vertexUV[(in_faceOrientation) * 2 * 6 + vertexId * 2 + 0];
-	uvs.y = vertexUV[(in_faceOrientation) * 2 * 6 + vertexId * 2 + 1];
+	uvs.x = vertexUV[(in_faceOrientation) * 2 * 4 + vertexId * 2 + 0];
+	uvs.y = vertexUV[(in_faceOrientation) * 2 * 4 + vertexId * 2 + 1];
 	return uvs;
 }
 
