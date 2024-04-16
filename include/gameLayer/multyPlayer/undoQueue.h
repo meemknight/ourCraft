@@ -16,6 +16,8 @@ struct Event
 	BlockType newBlock = 0;
 	std::uint64_t entityId = 0;
 
+	std::uint64_t createTime = 0;
+
 	int type = 0;
 
 	enum
@@ -24,6 +26,11 @@ struct Event
 		iPlacedBlock,
 		iDroppedItemFromInventory,
 	};
+
+	void setTimer()
+	{
+		createTime = getTimer();
+	}
 };
 
 

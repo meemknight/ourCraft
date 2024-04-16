@@ -337,7 +337,6 @@ void recieveDataClient(ENetEvent &event,
 			if (size == sizeof(Packet_HeaderConnectOtherPlayer))
 			{
 				entityManager.players[player->entityId].entity.position = player->position;
-				entityManager.players[player->entityId].cid = player->cid;
 			}
 
 		};
@@ -346,15 +345,19 @@ void recieveDataClient(ENetEvent &event,
 		//disconnect other player
 		case headerDisconnectOtherPlayer:
 		{
-			for (auto it = entityManager.players.begin(); it != entityManager.players.end(); it++)
-			{
+			Packet_DisconectOtherPlayer *eid = (Packet_DisconectOtherPlayer *)data;
 
-				if (it->second.cid == p.cid)
+			if (size == sizeof(Packet_DisconectOtherPlayer))
+			{
+				auto found = entityManager.players.find(eid->EID);
+
+				if (found != entityManager.players.end())
 				{
-					entityManager.players.erase(it);
-					break;
+					entityManager.players.erase(found);
 				}
+
 			}
+
 		}
 		break;
 

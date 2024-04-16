@@ -10,11 +10,11 @@ struct FrustumVolume
 {
 	constexpr static int PLANESCOUNT = 6;
 
-	glm::vec4 plane[PLANESCOUNT];
+	glm::dvec4 plane[PLANESCOUNT];
 
-	FrustumVolume(const glm::mat4 &mvpMatrix)
+	FrustumVolume(const glm::dmat4 &mvpMatrix)
 	{
-		glm::mat4 MVP = glm::transpose(mvpMatrix);
+		glm::dmat4 MVP = glm::transpose(mvpMatrix);
 
 		plane[0].x = MVP[0][0] + MVP[3][0];
 		plane[0].y = MVP[0][1] + MVP[3][1];
@@ -56,22 +56,22 @@ struct FrustumVolume
 
 struct AABBVolume
 {
-	glm::vec3 minVertex = {};
-	glm::vec3 maxVertex = {};
+	glm::dvec3 minVertex = {};
+	glm::dvec3 maxVertex = {};
 
 	AABBVolume() {};
 
-	AABBVolume(glm::vec3 min, glm::vec3 max):minVertex(min), maxVertex(max) {};
+	AABBVolume(glm::dvec3 min, glm::dvec3 max):minVertex(min), maxVertex(max) {};
 };
 
 struct RayPrimitive
 {
-	glm::vec3 origin = {};
-	glm::vec3 direction = {};
+	glm::dvec3 origin = {};
+	glm::dvec3 direction = {};
 
 	RayPrimitive() {};
 
-	RayPrimitive(const glm::vec3 &origin1, const glm::vec3 &direction1):
+	RayPrimitive(const glm::dvec3 &origin1, const glm::dvec3 &direction1):
 		origin(origin1),
 		direction(direction1)
 	{

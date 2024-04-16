@@ -10,24 +10,24 @@
 bool checkIfPlayerShouldGetEntity(glm::ivec2 playerPos2D,
 	glm::dvec3 entityPos, int playerSquareDistance, int extraDistance)
 {
-	glm::ivec2 ientityPos = {entityPos.x, entityPos.z};
 
-	float dist = glm::length(glm::vec2(playerPos2D - ientityPos));
+	glm::ivec2 pos(divideChunk(playerPos2D.x),
+		divideChunk(playerPos2D.y));
 
-	if (dist > ((playerSquareDistance * CHUNK_SIZE) / 2.f) * std::sqrt(2.f) + 1 + extraDistance)
-	{
-		return 0;
-	}
-	else
-	{
-		return 1;
-	}
+	int distance = (playerSquareDistance/2) + extraDistance;
+
+	glm::ivec2 entityPosI(divideChunk(entityPos.x),
+		divideChunk(entityPos.z));
+	
+	glm::dvec2 difference = glm::dvec2(entityPosI - pos);
+
+	return glm::length(difference) <= distance;
+	
 }
 
 void ClientEntityManager::dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int playerSquareDistance)
 {
 
-	//todo also do this for zombies or dropped items
 	for (auto it = players.begin(); it != players.end(); )
 	{
 		if (!checkIfPlayerShouldGetEntity(playerPos2D, it->second.getPosition(),
@@ -42,8 +42,33 @@ void ClientEntityManager::dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int 
 		}
 	}
 
+	for (auto it = droppedItems.begin(); it != droppedItems.end(); )
+	{
+		if (!checkIfPlayerShouldGetEntity(playerPos2D, it->second.getPosition(),
+			playerSquareDistance, 0))
+		{
+			it = droppedItems.erase(it);
+			std::cout << "Dropped dropped item\n";
+		}
+		else
+		{
+			++it;
+		}
+	}
 
-	
+	for (auto it = zombies.begin(); it != zombies.end(); )
+	{
+		if (!checkIfPlayerShouldGetEntity(playerPos2D, it->second.getPosition(),
+			playerSquareDistance, 0))
+		{
+			it = zombies.erase(it);
+			std::cout << "Dropped zombie\n";
+		}
+		else
+		{
+			++it;
+		}
+	}
 	
 }
 

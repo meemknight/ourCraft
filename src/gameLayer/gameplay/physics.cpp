@@ -1,6 +1,7 @@
 #include "gameplay/physics.h"
 #include <glm/glm.hpp>
 #include <chunkSystem.h>
+#include <iostream>
 
 
 
@@ -29,7 +30,9 @@ void applyDrag2(glm::vec3 &force, glm::vec3 drag)
 
 }
 
-bool RigidBody::resolveConstrains(decltype(chunkGetterSignature) *chunkGetter, 
+bool resolveConstrains(
+	glm::dvec3 &pos, glm::dvec3 &lastPos,
+	decltype(chunkGetterSignature) *chunkGetter, 
 	MotionState *forces, float deltaTime, glm::vec3 colliderSize)
 {
 	bool rez = 0;
@@ -84,7 +87,7 @@ end:
 
 }
 
-bool RigidBody::checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
+bool checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
 	decltype(chunkGetterSignature) *chunkGetter, MotionState *forces, float deltaTime
 	, glm::vec3 colliderSize)
 {
@@ -165,7 +168,6 @@ bool aabb(glm::vec4 b1, glm::vec4 b2)
 	return 0;
 }
 
-//todo add a delta
 bool boxColide(glm::dvec3 p1, glm::vec3 s1,
 	glm::dvec3 p2, glm::vec3 s2)
 {
@@ -196,7 +198,7 @@ bool boxColide(glm::dvec3 p1, glm::vec3 s1,
 
 }
 
-glm::dvec3 RigidBody::performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, glm::dvec3 delta,
+glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, glm::dvec3 delta,
 	decltype(chunkGetterSignature) *chunkGetter, bool &chunkLoaded, MotionState *forces, float deltaTime,
 	glm::vec3 &drag)
 {
@@ -241,7 +243,11 @@ glm::dvec3 RigidBody::performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::
 						auto blockPos = fromBlockPosToBlockPosInChunk({x,y,z});
 
 						auto b = c->safeGet(blockPos);
-						assert(b); //todo remove later and use unsafe get
+						if (!b)
+						{
+							std::cout << "ERROR WELP IT DIDN'T WORK\n";
+						}
+						//todo remove later and use unsafe get
 						
 						if (b->isColidable())
 						{
@@ -347,11 +353,6 @@ glm::dvec3 RigidBody::performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::
 end:
 	
 		return pos;
-}
-
-void RigidBody::updateMove()
-{
-	lastPos = pos;
 }
 
 

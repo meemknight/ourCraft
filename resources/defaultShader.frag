@@ -1402,16 +1402,20 @@ void main()
 			//float mixFactor = 1-clamp(reflectivity,0,1);
 			//if(ssrSuccess){mixFactor = pow(mixFactor, 0.9);}
 
+			vec2 p = v_fragPos.xy / v_fragPos.w;
+			p += 1;
+			p/=2;
+
+			float nonLinear = 0;
+			float lastDepth = getLastDepthLiniarized(p, nonLinear);
+			float currentDepth = linearizeDepth(gl_FragCoord.z);		
+			float waterDepth = lastDepth - currentDepth;
+
+
 			if(u_hasPeelInformation != 0)
 			{
-				vec2 p = v_fragPos.xy / v_fragPos.w;
-				p += 1;
-				p/=2;
+				
 
-				float nonLinear;
-				float currentDepth = linearizeDepth(gl_FragCoord.z);		
-				float lastDepth = getLastDepthLiniarized(p, nonLinear);
-				float waterDepth = lastDepth - currentDepth;
 				
 				//visualize dudv
 				//out_color.rgb = texture(sampler2D(u_dudv), getDudvCoords3(1)).rgb;
@@ -1424,9 +1428,7 @@ void main()
 				//dudv += texture(sampler2D(u_dudv), getDudvCoords3(1)).rg;
 				vec2 dudvConv = (dudv * 2) - 1;
 				vec2 distorsionCoord = dudvConv * 0.007;	
-
 				float distortDepth = getLastDepthLiniarized(p + distorsionCoord, nonLinear);
-				float distortWaterDepth = distortDepth - currentDepth;
 
 				
 				//v_fragPos
@@ -1444,6 +1446,8 @@ void main()
 					finalDepth = waterDepth;
 				}else
 				{
+					float distortWaterDepth = distortDepth - currentDepth;
+
 					peelTexture = texture(u_PeelTexture, p + distorsionCoord).rgb;
 					finalDepth = distortWaterDepth;
 				}
@@ -1479,10 +1483,27 @@ void main()
 				//out_color.b = clamp(waterDepth/5,0,1);
 			}else
 			{
+
+				if(ssrSuccess)
+				{
+					float depthMix = 0.2 * clamp(pow(waterDepth/18.0,2),0,1) + 0;
+					out_color.rgb = mix(out_color.rgb, u_waterColor*0.7, depthMix);
+					//out_color.a = pow(mixFactor, depthMix); 
+					//out_color.a = pow(mixFactor, 0.5); 
+				}else
+				{
+					float depthMix = 0.4 * clamp(pow(waterDepth/18.0,2),0,1) + 0;
+					out_color.rgb = mix(out_color.rgb, u_waterColor*0.7, depthMix);
+					//out_color.a = pow(mixFactor, depthMix); 
+				}
+				
+				out_color.a = pow(mixFactor, 0.7); 
+
 				//make it darker so you can more easily see the back face
-				out_color.a = pow(mixFactor, 0.8); //set the alpha component
 			}
-		
+
+			//out_color.rgba = vec4(waterDepth/15,0,0,1);
+			
 
 		}
 

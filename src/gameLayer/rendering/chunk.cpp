@@ -35,14 +35,14 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 {
 
 	bool updateGeometry = 0;
-	bool updateTransparency = dirtyTransparency;
+	bool updateTransparency = isDirtyTransparency();
 
 	if (
-		dirty
-		|| (!neighbourToLeft && left != nullptr)
-		|| (!neighbourToRight && right != nullptr)
-		|| (!neighbourToFront && front != nullptr)
-		|| (!neighbourToBack && back != nullptr)
+		isDirty()
+		|| (!isNeighbourToLeft() && left != nullptr)
+		|| (!isNeighbourToRight() && right != nullptr)
+		|| (!isNeighbourToFront() && front != nullptr)
+		|| (!isNeighbourToBack() && back != nullptr)
 		)
 	{
 		updateGeometry = true;
@@ -295,11 +295,11 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 	if (updateGeometry)
 	{
-		dirty = 0;
-		neighbourToLeft = (left != nullptr);
-		neighbourToRight = (right != nullptr);
-		neighbourToFront = (front != nullptr);
-		neighbourToBack = (back != nullptr);
+		setDirty(0);
+		setNeighbourToLeft(left != nullptr);
+		setNeighbourToRight(right != nullptr);
+		setNeighbourToFront(front != nullptr);
+		setNeighbourToBack(back != nullptr);
 
 		for (int x = 0; x < CHUNK_SIZE; x++)
 			for (int z = 0; z < CHUNK_SIZE; z++)
@@ -331,7 +331,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 	if (updateTransparency)
 	{
-		dirtyTransparency = 0;
+		setDirtyTransparency(0);
 
 		int chunkPosX = data.x * CHUNK_SIZE;
 		int chunkPosZ = data.z * CHUNK_SIZE;
@@ -406,17 +406,17 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 bool Chunk::shouldBakeOnlyBecauseOfTransparency(Chunk *left, Chunk *right, Chunk *front, Chunk *back)
 {
 	if (
-		dirty
-		|| (!neighbourToLeft && left != nullptr)
-		|| (!neighbourToRight && right != nullptr)
-		|| (!neighbourToFront && front != nullptr)
-		|| (!neighbourToBack && back != nullptr)
+		isDirty()
+		|| (!isNeighbourToLeft() && left != nullptr)
+		|| (!isNeighbourToRight() && right != nullptr)
+		|| (!isNeighbourToFront() && front != nullptr)
+		|| (!isNeighbourToBack() && back != nullptr)
 		)
 	{
 		return false;
 	}
 
-	return dirtyTransparency;
+	return isDirtyTransparency();
 }
 
 

@@ -1,5 +1,6 @@
 #pragma once
 #include "blocks.h"
+#include <bitset>
 
 struct BigGpuBuffer;
 
@@ -13,6 +14,7 @@ struct ChunkData
 	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_HEIGHT];
 
 	//todo send this to the player and save it in the future, or just remove it
+	//also save it.
 	unsigned char cachedBiomes[CHUNK_SIZE][CHUNK_SIZE];
 
 	int x, z;
@@ -52,11 +54,19 @@ struct ChunkData
 	void clearLightLevels();
 };
 
+#define DECLARE_FLAG(N, I)	bool is##N () { return flags[ I ]; } \
+void set##N (bool flag) { flags[ I ] = flag; }
+
 struct Chunk
 {
+	Chunk()
+	{
+		setDirty(true);
+		setDirtyTransparency(true);
+	}
+
 	ChunkData data;
 
-	//std::vector<int> opaqueGeometry;
 	GLuint opaqueGeometryBuffer = 0;
 	GLuint opaqueGeometryIndex = 0;
 	GLuint vao = 0;
@@ -70,15 +80,18 @@ struct Chunk
 	GLuint lightsBuffer = 0;
 	size_t lightsElementCountSize = 0;
 
-	//todo flag bitfield here...
-	char dirty = 1;
-	char dirtyTransparency = 1;
-	char neighbourToLeft = 0;
-	char neighbourToRight = 0;
-	char neighbourToFront = 0;
-	char neighbourToBack = 0;
-	char dontDrawYet = 0; //first time ever don't draw it yet so we have time to process the light
-	char culled = 0;
+	std::bitset<16> flags = {};
+	
+	DECLARE_FLAG(Dirty, 0);
+	DECLARE_FLAG(DirtyTransparency, 1);
+	DECLARE_FLAG(NeighbourToLeft, 2);
+	DECLARE_FLAG(NeighbourToRight, 3);
+	DECLARE_FLAG(NeighbourToFront, 4);
+	DECLARE_FLAG(NeighbourToBack, 5);
+	DECLARE_FLAG(DontDrawYet, 6);
+	DECLARE_FLAG(Culled, 7);
+
+
 
 	void clear()
 	{
@@ -103,3 +116,5 @@ struct Chunk
 
 	void clearGpuData(BigGpuBuffer *gpuBuffer);
 };
+
+#undef DECLARE_FLAG

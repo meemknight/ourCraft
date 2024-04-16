@@ -699,162 +699,8 @@ void Renderer::reloadShaders()
 
 #pragma endregion
 	
-
-
 }
 
-void Renderer::updateDynamicBlocks()
-{
-	float time = std::clock();
-
-	glm::vec3 topFrontLeftGrass = {-0.5f, 0.5f, 0.5f};
-	glm::vec3 topFrontRightGrass = {0.5f, 0.5f, 0.5f};
-	glm::vec3 topBackLeftGrass = {-0.5f, 0.5f, -0.5f};
-	glm::vec3 topBackRightGrass = {0.5f, 0.5f, -0.5f};
-	glm::vec3 bottomFrontLeftGrass = {-0.5f, -0.5f, 0.5f};
-	glm::vec3 bottomFrontRightGrass = {0.5f, -0.5f, 0.5f};
-	glm::vec3 bottomBackLeftGrass = {-0.5f, -0.5f, -0.5f};
-	glm::vec3 bottomBackRightGrass = {0.5f, -0.5f, -0.5f};
-
-	glm::vec3 topFrontLeft = {};
-	glm::vec3 topFrontRight = {};
-	glm::vec3 topBackLeft = {};
-	glm::vec3 topBackRight = {};
-	glm::vec3 bottomFrontLeft = {};
-	glm::vec3 bottomFrontRight = {};
-	glm::vec3 bottomBackLeft = {};
-	glm::vec3 bottomBackRight = {};
-
-	glm::vec3 *topFaces[4] = {&topFrontLeft, &topFrontRight, &topBackLeft, &topBackRight};
-	glm::vec3* bottomFaces[4] = {&bottomFrontLeft, &bottomFrontRight, &bottomBackLeft, &bottomBackRight};
-
-	glm::vec3 *topFacesGrass[4] = {&topFrontLeftGrass, &topFrontRightGrass, &topBackLeftGrass, &topBackRightGrass};
-	glm::vec3 *bottomFacesGrass[4] = {&bottomFrontLeftGrass, &bottomFrontRightGrass, &bottomBackLeftGrass, &bottomBackRightGrass};
-	
-	float prelucratedTime = time / 100000.f;
-
-	prelucratedTime = std::sin(prelucratedTime) * 3.14159 * 10;
-
-	float s = std::sin(prelucratedTime);
-	float c = std::cos(prelucratedTime);
-	
-	glm::vec2 offsetVector = {1, 0};
-	offsetVector = {c * offsetVector.x - s * offsetVector.y, s * offsetVector.x + c * offsetVector.y};
-	offsetVector = glm::normalize(offsetVector) * 0.06f * std::abs(cos(prelucratedTime * 2.f));
-	//offsetVector = glm::normalize(offsetVector) * 0.07f * sin(prelucratedTime * 20.f);
-	
-	for (int i = 0; i < 4; i++)
-	{
-		topFaces[i]->x += offsetVector.x;
-		topFaces[i]->z += offsetVector.y;
-	
-		bottomFaces[i]->x -= offsetVector.x;
-		bottomFaces[i]->z -= offsetVector.y;
-
-
-		//topFacesGrass[i]->x += offsetVector.x;
-		//topFacesGrass[i]->z += offsetVector.y;
-
-		//bottomFacesGrass[i]->x -= offsetVector.x;
-		//bottomFacesGrass[i]->z -= offsetVector.y;
-	}
-	//sin((worldPos.x * DIRECTIONX + worldPos.z * DIRECTIONZ - time * SPEED) * FREQUENCY) * AMPLITUDE
-
-	float newData[] =
-	{
-		//grass
-		topFrontRightGrass.x, topFrontRightGrass.y, topFrontRightGrass.z,
-		topBackLeftGrass.x,topBackLeftGrass.y,topBackLeftGrass.z,
-		-0.5, -0.5, -0.5,
-		-0.5, -0.5, -0.5,
-		0.5, -0.5, 0.5,
-		topFrontRightGrass.x, topFrontRightGrass.y, topFrontRightGrass.z,
-
-		-0.5, -0.5, -0.5,
-		topBackLeftGrass.x,topBackLeftGrass.y,topBackLeftGrass.z,
-		topFrontRightGrass.x, topFrontRightGrass.y, topFrontRightGrass.z,
-		topFrontRightGrass.x, topFrontRightGrass.y, topFrontRightGrass.z,
-		0.5, -0.5, 0.5,
-		-0.5, -0.5, -0.5,
-
-		topFrontLeftGrass.x,topFrontLeftGrass.y,topFrontLeftGrass.z,
-		topBackRightGrass.x,topBackRightGrass.y,topBackRightGrass.z,
-		0.5, -0.5, -0.5,
-		0.5, -0.5, -0.5,
-		-0.5, -0.5, 0.5,
-		topFrontLeftGrass.x,topFrontLeftGrass.y,topFrontLeftGrass.z,
-
-		
-		-0.5, -0.5, 0.5,
-		0.5, -0.5, -0.5,
-		topBackRightGrass.x,topBackRightGrass.y,topBackRightGrass.z,
-		topBackRightGrass.x,topBackRightGrass.y,topBackRightGrass.z,
-		topFrontLeftGrass.x,topFrontLeftGrass.y,topFrontLeftGrass.z,
-		-0.5, -0.5, 0.5,
-
-		//-0.5, -0.5, 0.5,
-		//0.5, -0.5, -0.5,
-		//0.5, 0.5, -0.5,
-		//0.5, 0.5, -0.5,
-		//-0.5, 0.5, 0.5,
-		//-0.5, -0.5, 0.5,
-
-
-		//leaves
-		//front
-		topFrontRight.x, topFrontRight.y, topFrontRight.z,
-		topFrontLeft.x, topFrontLeft.y, topFrontLeft.z,
-		bottomFrontLeft.x, bottomFrontLeft.y, bottomFrontLeft.z,
-		bottomFrontLeft.x, bottomFrontLeft.y, bottomFrontLeft.z,
-		bottomFrontRight.x, bottomFrontRight.y, bottomFrontRight.z,
-		topFrontRight.x, topFrontRight.y, topFrontRight.z,
-
-		//back
-		bottomBackLeft.x, bottomBackLeft.y, bottomBackLeft.z,
-		topBackLeft.x, topBackLeft.y, topBackLeft.z,
-		topBackRight.x, topBackRight.y, topBackRight.z,
-		topBackRight.x, topBackRight.y, topBackRight.z,
-		bottomBackRight.x, bottomBackRight.y, bottomBackRight.z,
-		bottomBackLeft.x, bottomBackLeft.y, bottomBackLeft.z,
-
-		//top
-		topBackLeft.x, topBackLeft.y, topBackLeft.z,
-		topFrontLeft.x, topFrontLeft.y, topFrontLeft.z,
-		topFrontRight.x, topFrontRight.y, topFrontRight.z,
-		topFrontRight.x, topFrontRight.y, topFrontRight.z,
-		topBackRight.x, topBackRight.y, topBackRight.z,
-		topBackLeft.x, topBackLeft.y, topBackLeft.z,
-
-		//bottom
-		bottomFrontRight.x, bottomFrontRight.y, bottomFrontRight.z,
-		bottomFrontLeft.x, bottomFrontLeft.y, bottomFrontLeft.z,
-		bottomBackLeft.x, bottomBackLeft.y, bottomBackLeft.z,
-		bottomBackLeft.x, bottomBackLeft.y, bottomBackLeft.z,
-		bottomBackRight.x, bottomBackRight.y, bottomBackRight.z,
-		bottomFrontRight.x, bottomFrontRight.y, bottomFrontRight.z,
-
-		//left
-		bottomFrontLeft.x, bottomFrontLeft.y, bottomFrontLeft.z,
-		topFrontLeft.x, topFrontLeft.y, topFrontLeft.z,
-		topBackLeft.x, topBackLeft.y, topBackLeft.z,
-		topBackLeft.x, topBackLeft.y, topBackLeft.z,
-		bottomBackLeft.x, bottomBackLeft.y, bottomBackLeft.z,
-		bottomFrontLeft.x, bottomFrontLeft.y, bottomFrontLeft.z,
-
-		//right
-		topBackRight.x, topBackRight.y, topBackRight.z,
-		topFrontRight.x, topFrontRight.y, topFrontRight.z,
-		bottomFrontRight.x, bottomFrontRight.y, bottomFrontRight.z,
-		bottomFrontRight.x, bottomFrontRight.y, bottomFrontRight.z,
-		bottomBackRight.x, bottomBackRight.y, bottomBackRight.z,
-		topBackRight.x, topBackRight.y, topBackRight.z,
-
-	};
-
-	glNamedBufferSubData(vertexDataBuffer, sizeof(vertexData) - sizeof(newData), sizeof(newData), newData);
-
-
-}
 
 struct DrawElementsIndirectCommand
 {
@@ -896,13 +742,13 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 #pragma region frustum culling
 
-	FrustumVolume cameraFrustum(c.getViewProjectionWithPositionMatrix());
+	FrustumVolume cameraFrustum(c.getViewProjectionWithPositionMatrixDouble());
 
 	for (auto c : chunkSystem.loadedChunks)
 	{
 		if (c)
 		{
-			c->culled = 0;
+			c->setCulled(0);
 
 			if (frustumCulling)
 			{
@@ -913,7 +759,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 				if (!CheckFrustumVsAABB(cameraFrustum, chunkAABB))
 				{
-					c->culled = 1;
+					c->setCulled(1);
 				}
 			};
 		}
@@ -1143,8 +989,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 				auto chunk = chunkVectorCopy[i];
 				if (chunk)
 				{
-					if (!chunk->dontDrawYet &&
-						!chunk->culled)
+					if (!chunk->isDontDrawYet() &&
+						!chunk->isCulled())
 					{
 						int facesCount = chunk->elementCountSize;
 						if (facesCount)
@@ -1179,8 +1025,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			{
 				if (chunk)
 				{
-					if (!chunk->dontDrawYet
-						&& ! chunk->culled
+					if (!chunk->isDontDrawYet()
+						&& ! chunk->isCulled()
 						)
 					{
 						int facesCount = chunk->elementCountSize;
@@ -1239,7 +1085,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 					auto chunk = chunkVectorCopy[i];
 					if (chunk)
 					{
-						if (!chunk->dontDrawYet && !chunk->culled)
+						if (!chunk->isDontDrawYet() && !chunk->isCulled())
 						{
 							int facesCount = chunk->elementCountSize;
 							if (facesCount)
@@ -1257,7 +1103,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 				{
 					if (chunk)
 					{
-						if (!chunk->dontDrawYet && !chunk->culled)
+						if (!chunk->isDontDrawYet() && !chunk->isCulled())
 						{
 							int facesCount = chunk->elementCountSize;
 							if (facesCount)
@@ -1280,7 +1126,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		{
 			if (chunk)
 			{
-				if (!chunk->dontDrawYet && !chunk->culled)
+				if (!chunk->isDontDrawYet() && !chunk->isCulled())
 				{
 					int facesCount = chunk->transparentElementCountSize;
 					if (facesCount)
@@ -1293,216 +1139,258 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		}
 	};
 
-#pragma region depth pre pass 1
-	if(zprepass)
+	auto depthPrePass = [&]()
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
-		glDepthFunc(GL_LESS);
-		glDisable(GL_BLEND);
-		glColorMask(0, 0, 0, 0);
-		zpassShader.shader.bind();
-		renderStaticGeometry();
-	}
-#pragma endregion
-
-
-#pragma region solid pass 2
-	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
-	glColorMask(1, 1, 1, 1);
-
-	if (zprepass)
-	{
-		glDepthFunc(GL_EQUAL);
-	}
-	else
-	{
-		glDepthFunc(GL_LESS);
-	}
-
-	defaultShader.shader.bind();
-	glDisable(GL_BLEND);
-	//glEnable(GL_BLEND);
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	renderStaticGeometry();
-
-#pragma endregion
-
-
-#pragma region render entities
-	{
-		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
-
-		glDepthFunc(GL_LESS);
-
-
-		entityRenderer.basicEntityshader.shader.bind();
-
-		glBindVertexArray(entityRenderer.basicEntityshader.vaoCube);
-
-
-		glUniformMatrix4fv(entityRenderer.basicEntityshader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
-		glUniformMatrix4fv(entityRenderer.basicEntityshader.u_view, 1, GL_FALSE, &viewMatrix[0][0]);
-		glUniformMatrix4fv(entityRenderer.basicEntityshader.u_modelMatrix, 1, GL_FALSE,
-			glm::value_ptr(glm::scale(glm::vec3{0.4f})));
-		glUniform3fv(entityRenderer.basicEntityshader.u_cameraPositionFloat, 1, &posFloat[0]);
-		glUniform3iv(entityRenderer.basicEntityshader.u_cameraPositionInt, 1, &posInt[0]);
-
-		//debug stuff
+		if (zprepass)
 		{
-			//todo something better here lol
-			std::uint64_t textures[6] = {};
+			glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
+			glDepthFunc(GL_LESS);
+			glDisable(GL_BLEND);
+			glColorMask(0, 0, 0, 0);
+			zpassShader.shader.bind();
+			renderStaticGeometry();
+		}
+	};
+	
+	auto solidPass = [&]()
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
+		glColorMask(1, 1, 1, 1);
 
-			for (int i = 0; i < 6; i++)
-			{
-				textures[i] = blocksLoader.gpuIds[getGpuIdIndexForBlock(BlockTypes::bookShelf, i)];
-			}
-
-			glUniformHandleui64vARB(entityRenderer.basicEntityshader.u_texture, 6, textures);
-
-
-			//todo instance rendering
-			for (auto &e : entityRenderer.itemEntitiesToRender)
-			{
-				glm::vec3 entityFloat = {};
-				glm::ivec3 entityInt = {};
-
-				decomposePosition(e.position, entityFloat, entityInt);
-
-				entityFloat += glm::vec3(0, 0.2, 0);
-
-				glUniform3fv(entityRenderer.basicEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
-				glUniform3iv(entityRenderer.basicEntityshader.u_entityPositionInt, 1, &entityInt[0]);
-
-				glDrawArrays(GL_TRIANGLES, 0, 36);
-
-			}
-
-			entityRenderer.itemEntitiesToRender.clear();
+		if (zprepass)
+		{
+			glDepthFunc(GL_EQUAL);
+		}
+		else
+		{
+			glDepthFunc(GL_LESS);
 		}
 
-		//real entities
-		{
+		defaultShader.shader.bind();
+		glDisable(GL_BLEND);
+		//glEnable(GL_BLEND);
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		renderStaticGeometry();
+	};
 
-			//todo instance rendering
-			for (auto &e : entityManager.droppedItems)
+	auto renderEntities = [&]()
+	{
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
+
+			glDepthFunc(GL_LESS);
+
+
+			entityRenderer.basicEntityshader.shader.bind();
+
+			glBindVertexArray(entityRenderer.basicEntityshader.vaoCube);
+
+
+			glUniformMatrix4fv(entityRenderer.basicEntityshader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
+			glUniformMatrix4fv(entityRenderer.basicEntityshader.u_view, 1, GL_FALSE, &viewMatrix[0][0]);
+			glUniformMatrix4fv(entityRenderer.basicEntityshader.u_modelMatrix, 1, GL_FALSE,
+				glm::value_ptr(glm::scale(glm::vec3{0.4f})));
+			glUniform3fv(entityRenderer.basicEntityshader.u_cameraPositionFloat, 1, &posFloat[0]);
+			glUniform3iv(entityRenderer.basicEntityshader.u_cameraPositionInt, 1, &posInt[0]);
+
+			//debug stuff
 			{
 				//todo something better here lol
 				std::uint64_t textures[6] = {};
 
 				for (int i = 0; i < 6; i++)
 				{
-					textures[i] = blocksLoader.gpuIds
-						[getGpuIdIndexForBlock(e.second.entity.type, i)];
+					textures[i] = blocksLoader.gpuIds[getGpuIdIndexForBlock(BlockTypes::bookShelf, i)];
 				}
 
 				glUniformHandleui64vARB(entityRenderer.basicEntityshader.u_texture, 6, textures);
 
-				glm::vec3 entityFloat = {};
-				glm::ivec3 entityInt = {};
 
-				//decomposePosition(e.second.item.position, entityFloat, entityInt);
-				decomposePosition(e.second.getRubberBandPosition(), entityFloat, entityInt);
+				//todo instance rendering
+				for (auto &e : entityRenderer.itemEntitiesToRender)
+				{
+					glm::vec3 entityFloat = {};
+					glm::ivec3 entityInt = {};
 
-				entityFloat += glm::vec3(0, 0.2, 0);
+					decomposePosition(e.position, entityFloat, entityInt);
 
-				glUniform3fv(entityRenderer.basicEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
-				glUniform3iv(entityRenderer.basicEntityshader.u_entityPositionInt, 1, &entityInt[0]);
+					entityFloat += glm::vec3(0, 0.2, 0);
 
-				glDrawArrays(GL_TRIANGLES, 0, 36);
+					glUniform3fv(entityRenderer.basicEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
+					glUniform3iv(entityRenderer.basicEntityshader.u_entityPositionInt, 1, &entityInt[0]);
+
+					glDrawArrays(GL_TRIANGLES, 0, 36);
+
+				}
+
+				entityRenderer.itemEntitiesToRender.clear();
 			}
 
+			//real entities
+			{
+
+				//todo instance rendering
+				for (auto &e : entityManager.droppedItems)
+				{
+					//todo something better here lol
+					std::uint64_t textures[6] = {};
+
+					for (int i = 0; i < 6; i++)
+					{
+						textures[i] = blocksLoader.gpuIds
+							[getGpuIdIndexForBlock(e.second.entity.type, i)];
+					}
+
+					glUniformHandleui64vARB(entityRenderer.basicEntityshader.u_texture, 6, textures);
+
+					glm::vec3 entityFloat = {};
+					glm::ivec3 entityInt = {};
+
+					//decomposePosition(e.second.item.position, entityFloat, entityInt);
+					decomposePosition(e.second.getRubberBandPosition(), entityFloat, entityInt);
+
+					entityFloat += glm::vec3(0, 0.2, 0);
+
+					glUniform3fv(entityRenderer.basicEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
+					glUniform3iv(entityRenderer.basicEntityshader.u_entityPositionInt, 1, &entityInt[0]);
+
+					glDrawArrays(GL_TRIANGLES, 0, 36);
+				}
+
+			}
+			glBindVertexArray(0);
 		}
+	};
+
+	auto copyToMainFbo = [&]()
+	{
+		fboMain.writeAllToOtherFbo(0, screenX, screenY);
+		fboLastFrame.copyColorFromOtherFBO(fboMain.fboOnlyFirstTarget, screenX, screenY);
+		fboLastFramePositions.copyColorFromOtherFBO(fboMain.fboOnlySecondTarget, screenX, screenY);
+	};
+
+	auto renderTransparentGeometryPhaze = [&](bool hasPeelInformation)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
+		defaultShader.shader.bind();
+		glColorMask(1, 1, 1, 1);
+
+		glEnablei(GL_BLEND, 0);
+		glBlendFunci(0, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDisablei(GL_BLEND, 1);
+
+
+		glColorMask(1, 1, 1, 1);
+		glUniform1i(defaultShader.u_depthPeelwaterPass, 0);
+		glUniform1i(defaultShader.u_hasPeelInformation, hasPeelInformation);
+
+		glActiveTexture(GL_TEXTURE0 + 3);
+		glBindTexture(GL_TEXTURE_2D, fboCoppy.color);
+		glUniform1i(defaultShader.u_PeelTexture, 3);
+
+		glActiveTexture(GL_TEXTURE0 + 2);
+		glBindTexture(GL_TEXTURE_2D, fboCoppy.depth);
+		glUniform1i(defaultShader.u_depthTexture, 2);
+
+
+		glDepthFunc(GL_LESS);
+		glDisable(GL_CULL_FACE); //todo change
+		renderTransparentGeometry();
+		glEnable(GL_CULL_FACE);
+	};
+
+	if (waterRefraction)
+	{
+
+	#pragma region depth pre pass 1
+		depthPrePass();
+	#pragma endregion
+
+
+	#pragma region solid pass 2
+		solidPass();
+	#pragma endregion
+
+
+	#pragma region render entities
+		renderEntities();
+	#pragma endregion
+
+
+	#pragma region copy depth 3
+		fboCoppy.copyDepthFromOtherFBO(fboMain.fbo, screenX, screenY);
+	#pragma endregion
+
+
+	#pragma region render only water geometry to depth 4
+		defaultShader.shader.bind();
+		glBindFramebuffer(GL_FRAMEBUFFER, fboCoppy.fbo);
+		glDepthFunc(GL_LESS);
+		zpassShader.shader.bind();
+		glUniform1i(zpassShader.u_renderOnlyWater, 1);
+		glEnablei(GL_BLEND, 0);
+		glBlendFunci(0, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDisablei(GL_BLEND, 1);
+		glColorMask(0, 0, 0, 0);
+
+		renderTransparentGeometry();
+	#pragma endregion
+
+
+	#pragma region render with depth peel first part of the transparent of the geometry 5
+		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
+		defaultShader.shader.bind();
+
+		glEnablei(GL_BLEND, 0);
+		glBlendFunci(0, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDisablei(GL_BLEND, 1);
+
+		glColorMask(1, 1, 1, 1);
+		glUniform1i(defaultShader.u_depthPeelwaterPass, true);
+
+		glActiveTexture(GL_TEXTURE0 + 2);
+		glBindTexture(GL_TEXTURE_2D, fboCoppy.depth);
+		glUniform1i(defaultShader.u_depthTexture, 2);
+
+		glDepthFunc(GL_LESS);
+		glDisable(GL_CULL_FACE); //todo change
+		//todo disable ssr for this step?
+		renderTransparentGeometry();
+	#pragma endregion
+
+
+	#pragma region copy color buffer and last depth for later use 6
+		fboCoppy.copyDepthAndColorFromOtherFBO(fboMain.fbo, screenX, screenY);
+	#pragma endregion
+
+
+	#pragma region render transparent geometry last phaze 7
+		renderTransparentGeometryPhaze(true);
+	#pragma endregion
+
+
+	#pragma region copy to main fbo 8
+		copyToMainFbo();
+	#pragma endregion
+
+	}
+	else
+	{
+		depthPrePass();
+
+		solidPass();
+
+		renderEntities();
+
+		fboCoppy.copyDepthFromOtherFBO(fboMain.fbo, screenX, screenY);
+
+		renderTransparentGeometryPhaze(false);
+
+		copyToMainFbo();
 
 	}
 
-	glBindVertexArray(0);
-	defaultShader.shader.bind();
-#pragma endregion
 
-
-#pragma region copy depth 3
-	fboCoppy.copyDepthFromOtherFBO(fboMain.fbo, screenX, screenY);
-#pragma endregion
-
-
-#pragma region render only water geometry to depth 4
-	glBindFramebuffer(GL_FRAMEBUFFER, fboCoppy.fbo);
-	glDepthFunc(GL_LESS);
-	zpassShader.shader.bind();
-	glUniform1i(zpassShader.u_renderOnlyWater, 1);
-	glEnablei(GL_BLEND, 0);
-	glBlendFunci(0, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDisablei(GL_BLEND, 1);
-	glColorMask(0, 0, 0, 0);
-
-	renderTransparentGeometry();
-#pragma endregion
-
-
-#pragma region render with depth peel first part of the transparent of the geometry 5
-	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
-	defaultShader.shader.bind();
-
-	glEnablei(GL_BLEND, 0);
-	glBlendFunci(0, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDisablei(GL_BLEND, 1);
-
-	glColorMask(1, 1, 1, 1);
-	glUniform1i(defaultShader.u_depthPeelwaterPass, true);
-
-	glActiveTexture(GL_TEXTURE0 + 2);
-	glBindTexture(GL_TEXTURE_2D, fboCoppy.depth);
-	glUniform1i(defaultShader.u_depthTexture, 2);
-
-	glDepthFunc(GL_LESS);
-	glDisable(GL_CULL_FACE); //todo change
-	//todo disable ssr for this step?
-	renderTransparentGeometry();
-#pragma endregion
-
-
-#pragma region copy color buffer and last depth for later use 6
-	fboCoppy.copyDepthAndColorFromOtherFBO(fboMain.fbo, screenX, screenY);
-#pragma endregion
-
-
-#pragma region render transparent geometry last phaze 7
-	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
-	defaultShader.shader.bind();
-	glColorMask(1, 1, 1, 1);
-
-	glEnablei(GL_BLEND, 0);
-	glBlendFunci(0, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDisablei(GL_BLEND, 1);
-
-
-	glColorMask(1, 1, 1, 1);
-	glUniform1i(defaultShader.u_depthPeelwaterPass, 0);
-	glUniform1i(defaultShader.u_hasPeelInformation, 1);
-
-	glActiveTexture(GL_TEXTURE0 + 3);
-	glBindTexture(GL_TEXTURE_2D, fboCoppy.color);
-	glUniform1i(defaultShader.u_PeelTexture, 3);
-
-	glActiveTexture(GL_TEXTURE0 + 2);
-	glBindTexture(GL_TEXTURE_2D, fboCoppy.depth);
-	glUniform1i(defaultShader.u_depthTexture, 2);
-
-
-	glDepthFunc(GL_LESS);
-	glDisable(GL_CULL_FACE); //todo change
-	renderTransparentGeometry();
-	glEnable(GL_CULL_FACE);
-#pragma endregion
-
-
-#pragma region copy to main fbo 8
-
-	fboMain.writeAllToOtherFbo(0, screenX, screenY);
-	fboLastFrame.copyColorFromOtherFBO(fboMain.fboOnlyFirstTarget, screenX, screenY);
-	fboLastFramePositions.copyColorFromOtherFBO(fboMain.fboOnlySecondTarget, screenX, screenY);
-
-#pragma endregion
 
 #pragma region HBAO
 
@@ -1890,7 +1778,7 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 	{
 		if (chunk)
 		{
-			if (!chunk->dontDrawYet)
+			if (!chunk->isDontDrawYet())
 			{
 				int facesCount = chunk->elementCountSize;
 				if (facesCount)

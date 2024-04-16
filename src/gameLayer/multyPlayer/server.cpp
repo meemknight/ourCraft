@@ -63,8 +63,6 @@ void updateLoadedChunks(
 	std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
 	WorldSaver &worldSaver);
 
-std::mutex serverSettingsMutex;
-
 
 glm::ivec2 determineChunkThatIsEntityIn(glm::dvec3 position)
 {
@@ -272,6 +270,23 @@ void initServerWorker()
 
 }
 
+//todo this things will get removed!!!!!!!!!!
+ServerSettings getServerSettingsCopy()
+{
+	return sd.settings;
+}
+
+void setServerSettings(ServerSettings settings)
+{
+	for (auto &s : sd.settings.perClientSettings)
+	{
+		auto it = settings.perClientSettings.find(s.first);
+		if (it != settings.perClientSettings.end())
+		{
+			s.second = it->second;
+		}
+	}
+}
 
 void serverWorkerUpdate(
 	WorldGenerator &wg,
@@ -282,14 +297,14 @@ void serverWorkerUpdate(
 	)
 {
 
-	auto settings = getServerSettingsCopy();
-
 #pragma region timers stuff
 	auto currentTimer = getTimer();
 	sd.tickTimer += deltaTime;
 	sd.seccondsTimer += deltaTime;
 	sd.tickDeltaTime += deltaTime;
 #pragma endregion
+
+	auto &settings = sd.settings;
 
 	//tasks stuff
 	{
@@ -420,9 +435,6 @@ void serverWorkerUpdate(
 
 				if (client)
 				{
-					//todo hold this with a full mutex in this
-					//  thread everywhere because the other thread can change connections
-					//todo check in other places in this thread
 
 					bool legal = 1;
 					{
@@ -483,7 +495,7 @@ void serverWorkerUpdate(
 				if (client)
 				{
 
-					auto serverAllows = getClientSettingCopy(i.cid).validateStuff;
+					auto serverAllows = settings.perClientSettings[i.cid].validateStuff;
 					
 					if (i.t.entityId >= RESERVED_CLIENTS_ID)
 					{
@@ -526,6 +538,7 @@ void serverWorkerUpdate(
 				}
 				else
 				{
+
 				}
 
 				unlockConnectionsMutex();
@@ -662,63 +675,21 @@ void serverWorkerUpdate(
 
 std::uint64_t getTimer()
 {
-	auto duration = std::chrono::steady_clock::now().time_since_epoch();
-	auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+	static const auto start_time = std::chrono::steady_clock::now();
+	auto now = std::chrono::steady_clock::now();
+	auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
 	return millis;
 }
 
-ServerSettings getServerSettingsCopy()
-{
-	serverSettingsMutex.lock();
-	auto copy = sd.settings;
-	serverSettingsMutex.unlock();
-	return copy;
-}
-
-PerClientServerSettings getClientSettingCopy(CID client)
-{
-	PerClientServerSettings rez = {};
-
-	serverSettingsMutex.lock();
-	
-	auto it = sd.settings.perClientSettings.find(client);
-
-	if (it != sd.settings.perClientSettings.end())
-	{
-		rez = it->second;
-	}
-
-	serverSettingsMutex.unlock();
-
-	return rez;
-}
-
-void setServerSettings(ServerSettings settings)
-{
-	serverSettingsMutex.lock();
-	for (auto &s : sd.settings.perClientSettings)
-	{
-		auto it = settings.perClientSettings.find(s.first);
-		if (it != settings.perClientSettings.end())
-		{
-			s.second = it->second;
-		}
-	}
-	serverSettingsMutex.unlock();
-}
 
 void addCidToServerSettings(CID cid)
 {
-	serverSettingsMutex.lock();
 	sd.settings.perClientSettings.insert({cid, {}});
-	serverSettingsMutex.unlock();
 }
 
 void removeCidFromServerSettings(CID cid)
 {
-	serverSettingsMutex.lock();
 	sd.settings.perClientSettings.erase(cid);
-	serverSettingsMutex.unlock();
 }
 
 
@@ -744,14 +715,23 @@ void genericBroadcastEntityUpdateFromServerToPlayer(E &e, bool reliable,
 
 template<class T>
 void genericCallUpdateForEntity(T &e,
-	float deltaTime, ChunkData*(chunkGetter)(glm::ivec2))
+	float deltaTime, ChunkData *(chunkGetter)(glm::ivec2))
 {
-	float time = deltaTime + e.second.restantTime;
+	float time = deltaTime;
+	if constexpr (hasRestantTimer<decltype(e.second)>)
+	{
+		time = deltaTime + e.second.restantTime;
+	}
+
 	if (time > 0)
 	{
 		e.second.update(time, chunkGetter, sd.chunkCache);
 	}
-	e.second.restantTime = 0;
+
+	if constexpr (hasRestantTimer<decltype(e.second)>)
+	{
+		e.second.restantTime = 0;
+	}
 };
 
 
@@ -868,16 +848,16 @@ void updateLoadedChunks(
 		glm::ivec2 pos(divideChunk(c.second.playerData.position.x), 
 			divideChunk(c.second.playerData.position.z));
 		
-		
-		//todo
-		for (int i = -simulationDistance; i <= simulationDistance; i++)
-			for (int j = -simulationDistance; j <= simulationDistance; j++)
+		int distance = (c.second.playerData.chunkDistance/2) + 1;
+
+		for (int i = -distance; i <= distance; i++)
+			for (int j = -distance; j <= distance; j++)
 			{
-				glm::dvec2 vect(i, j);
+				glm::vec2 vect(i, j);
 
 				float dist = std::sqrt(glm::dot(vect, vect));
 
-				if (dist <= simulationDistance)
+				if (dist <= distance)
 				{
 					auto finalPos = pos + glm::ivec2(i, j);
 					auto c = sd.chunkCache.getOrCreateChunk(finalPos.x, finalPos.y,

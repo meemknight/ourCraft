@@ -98,7 +98,7 @@ struct SavedChunk
 	struct OtherData
 	{
 	
-
+		//dirty means we should resave it to the disk
 		bool dirty = 0;
 		bool shouldUnload = 0;
 

@@ -79,8 +79,6 @@ bool WorldSaver::loadChunk(ChunkData &c)
 	loadChunkAtIndex(f, c, loadIndex);
 	c.clearLightLevels();
 
-	//todo, probably add this flag only when creating a chunk or something.
-	//c.shouldReSave = false;
 
 	f.close();
 	return 1;
@@ -88,8 +86,6 @@ bool WorldSaver::loadChunk(ChunkData &c)
 
 void WorldSaver::saveChunk(ChunkData &c)
 {
-	//todo add
-	//c.shouldReSave = 0;
 
 	const glm::ivec2 pos = {c.x, c.z};
 

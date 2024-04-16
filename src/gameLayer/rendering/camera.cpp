@@ -14,6 +14,20 @@ glm::mat4x4 Camera::getProjectionMatrix()
 	return mat;
 }
 
+glm::dmat4x4 Camera::getProjectionMatrixDouble()
+{
+	if (std::isinf(this->aspectRatio) || std::isnan(this->aspectRatio) || this->aspectRatio == 0)
+	{
+		return glm::dmat4x4(1.f);
+	}
+
+	auto mat = glm::perspective(double(this->fovRadians), double(this->aspectRatio),
+		double(this->closePlane),
+		double(this->farPlane));
+
+	return mat;
+}
+
 glm::mat4x4 Camera::getViewMatrix()
 {
 	return  glm::lookAt(glm::vec3{0,0,0}, viewDirection, up);
@@ -25,9 +39,20 @@ glm::mat4x4 Camera::getViewMatrixWithPosition()
 	return  glm::lookAt(glm::vec3(position), dir, up);
 }
 
+glm::dmat4x4 Camera::getViewMatrixWithPositionDouble()
+{
+	glm::dvec3 dir = glm::dvec3(position) + glm::dvec3(viewDirection);
+	return  glm::lookAt(glm::dvec3(position), dir, glm::dvec3(up));
+}
+
 glm::mat4x4 Camera::getViewProjectionWithPositionMatrix()
 {
 	return getProjectionMatrix() * getViewMatrixWithPosition();
+}
+
+glm::dmat4x4 Camera::getViewProjectionWithPositionMatrixDouble()
+{
+	return getProjectionMatrixDouble() * getViewMatrixWithPositionDouble();
 }
 
 //todo better rotate function

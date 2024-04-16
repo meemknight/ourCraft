@@ -43,7 +43,7 @@ struct GameData
 
 	//debug stuff
 	glm::ivec3 point = {};
-	glm::ivec3 pointSize = {};//todo move
+	glm::ivec3 pointSize = {};
 	glm::dvec3 entityTest = {-4, 113, 3};
 	bool renderBox = 0;
 	bool renderPlayerPos = 0;
@@ -108,15 +108,24 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		RevisionNumber inValidateRevision = 0;
 		bool disconnect = 0;
 
-		//todo the server should sent only one validate event message that is the latest, if possible
-		//todo timeout maybe? if the server doesn't give you stuff.
+		if (!gameData.undoQueue.events.empty())
+		{
+			auto time = gameData.undoQueue.events[0].createTime;
+
+			//todo Request the server for a hard reset rather than a timeout?
+			if ((getTimer() - time) > 8000)
+			{
+				std::cout << "Client timeouted because of validate events!\n";
+				return 0;
+			}
+		}
+
 		clientMessageLoop(validateEvent, inValidateRevision,
 			gameData.entityManager.localPlayer.position, gameData.chunkSystem.squareSize,
 			gameData.entityManager, gameData.undoQueue, gameData.serverTimer, disconnect);
 
 		if (disconnect) { return 0; }
 
-		//todo timeout here? and request the server for a hard reset?
 		if (validateEvent)
 		{
 			while (!gameData.undoQueue.events.empty())
@@ -388,7 +397,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		blockTypeToPlace = glm::clamp(blockTypeToPlace, 1, BlocksCount - 1);
 
 		if (platform::isKeyHeld(platform::Button::LeftCtrl)
-			&& (platform::isLMousePressed || platform::isRMousePressed)
+			&& (platform::isLMousePressed() || platform::isRMousePressed())
 			)
 		{
 			if (blockToPlace)
@@ -402,37 +411,37 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		}
 		else
-			if (platform::isKeyHeld(platform::Button::LeftAlt))
+		if (platform::isKeyHeld(platform::Button::LeftAlt))
+		{
+			if (platform::isRMouseReleased())
 			{
-				if (platform::isRMouseReleased())
+				if (blockToPlace)
 				{
-					if (blockToPlace)
-					{
-						gameData.point = *blockToPlace;
-					}
-				}
-				else if (platform::isLMouseReleased())
-				{
-					if (blockToPlace)
-					{
-						gameData.pointSize = *blockToPlace - gameData.point;
-					}
+					gameData.point = *blockToPlace;
 				}
 			}
-			else
+			else if (platform::isLMouseReleased())
 			{
-				if (platform::isRMouseReleased())
+				if (blockToPlace)
 				{
-					if (blockToPlace)
-						gameData.chunkSystem.placeBlockByClient(*blockToPlace, blockTypeToPlace,
-						gameData.undoQueue, gameData.entityManager.localPlayer.position, gameData.lightSystem);
-				}
-				else if (platform::isLMouseReleased())
-				{
-					gameData.chunkSystem.placeBlockByClient(rayCastPos, BlockTypes::air,
-						gameData.undoQueue, gameData.entityManager.localPlayer.position, gameData.lightSystem);
+					gameData.pointSize = *blockToPlace - gameData.point;
 				}
 			}
+		}
+		else if (!platform::isKeyHeld(platform::Button::LeftCtrl))
+		{
+			if (platform::isRMouseReleased())
+			{
+				if (blockToPlace)
+					gameData.chunkSystem.placeBlockByClient(*blockToPlace, blockTypeToPlace,
+					gameData.undoQueue, gameData.entityManager.localPlayer.position, gameData.lightSystem);
+			}
+			else if (platform::isLMouseReleased())
+			{
+				gameData.chunkSystem.placeBlockByClient(rayCastPos, BlockTypes::air,
+					gameData.undoQueue, gameData.entityManager.localPlayer.position, gameData.lightSystem);
+			}
+		}
 
 
 	};
@@ -472,9 +481,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma region chunks and rendering
 	if(w != 0 && h != 0)
 	{
-		//static std::vector<int> data;
 		
-		programData.renderer.updateDynamicBlocks();
 		
 		gameData.gameplayFrameProfiler.startSubProfile("chunkSystem");
 		gameData.chunkSystem.update(blockPositionPlayer, deltaTime, gameData.undoQueue,
@@ -534,6 +541,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 	}
 
+
 	auto drawPlayerBox = [&](glm::dvec3 pos, glm::vec3 boxSize)
 	{
 		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2),
@@ -569,7 +577,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		programData.pointDebugRenderer.
 			renderPoint(gameData.c, p.second.getRubberBandPosition());
 
-		//todo this will be refactored
 		auto boxSize = glm::vec3(0.8, 1.8, 0.8);
 		auto pos = p.second.getRubberBandPosition();
 
@@ -584,7 +591,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		programData.pointDebugRenderer.
 			renderPoint(gameData.c, p.second.getRubberBandPosition());
 
-		//todo this will be refactored
 		auto boxSize = glm::vec3(0.8, 1.8, 0.8);
 		auto pos = p.second.getRubberBandPosition();
 
@@ -862,15 +868,15 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 						if (c != nullptr)
 						{
-							if (c->culled)
+							if (c->isCulled())
 							{
 								currentColor = colCulled;
 							}
-							else if (c->dirty)
+							else if (c->isDirty())
 							{
 								currentColor = colLoadedButNotBaked;
 							}
-							else if(c->dirtyTransparency)
+							else if(c->isDirtyTransparency())
 							{
 								currentColor = colLoadedRebakingTransparency;
 							}
@@ -929,6 +935,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			ImGui::Checkbox("Shadows",
 				&programData.renderer.renderShadows);
+
+			ImGui::Checkbox("Water Refraction",
+				&programData.renderer.waterRefraction);
+			
 		}
 		ImGui::End();
 

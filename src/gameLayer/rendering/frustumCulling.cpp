@@ -7,7 +7,7 @@ bool CheckFrustumVsAABB(const FrustumVolume &frustum, const AABBVolume &bounding
 	for (std::size_t i = 0; i < FrustumVolume::PLANESCOUNT; i++)
 	{
 		// this is the current plane
-		const glm::vec4 &plane = frustum.plane[i];
+		const glm::dvec4 &plane = frustum.plane[i];
 
 		// p-vertex selection
 		const float px = std::signbit(plane.x) ? boundingBox.minVertex.x : boundingBox.maxVertex.x;
@@ -35,15 +35,15 @@ bool CheckRayVsAABB(const RayPrimitive &ray, const AABBVolume &aabb, float &dist
 {
 	float tMin, tMax;
 
-	glm::vec3 invRayDir = glm::vec3(1.0f) / ray.direction;
-	glm::vec3 t1 = (aabb.minVertex - ray.origin) * invRayDir;
-	glm::vec3 t2 = (aabb.maxVertex - ray.origin) * invRayDir;
+	glm::dvec3 invRayDir = glm::dvec3(1.0) / ray.direction;
+	glm::dvec3 t1 = (aabb.minVertex - ray.origin) * invRayDir;
+	glm::dvec3 t2 = (aabb.maxVertex - ray.origin) * invRayDir;
 
-	glm::vec3 tmin = glm::min(t1, t2);
-	glm::vec3 tmax = glm::max(t1, t2);
+	glm::dvec3 tmin = glm::min(t1, t2);
+	glm::dvec3 tmax = glm::max(t1, t2);
 
-	tMin = std::max(tmin.x, std::max(tmin.y, tmin.z));
-	tMax = std::min(tmax.x, std::min(tmax.y, tmax.z));
+	tMin = glm::max(tmin.x, glm::max(tmin.y, tmin.z));
+	tMax = glm::min(tmax.x, glm::min(tmax.y, tmax.z));
 
 	if (tMax > tMin)
 	{

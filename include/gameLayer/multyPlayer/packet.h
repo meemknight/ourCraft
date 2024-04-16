@@ -56,7 +56,7 @@ enum
 	headerClientRecieveOtherPlayerPosition,
 	headerClientRecieveDroppedItemUpdate,
 	headerClientUpdateTimer,
-	headerDisconnectOtherPlayer, //we use cid there to specify the connection to be removed
+	headerDisconnectOtherPlayer, 
 	headerConnectOtherPlayer,
 	headerUpdateZombie,
 };
@@ -70,6 +70,11 @@ enum
 	//channelRequestChunks, todo maybe try this in the future
 	SERVER_CHANNELS
 
+};
+
+struct Packet_DisconectOtherPlayer
+{
+	std::uint64_t EID = 0;
 };
 
 struct Packet_ClientUpdateTimer

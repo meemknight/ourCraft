@@ -24,29 +24,22 @@ struct MotionState
 
 };
 
-//todo remove this struct because we don't actually use it
-struct RigidBody
-{
 
-	glm::dvec3 pos = {};
-	glm::dvec3 lastPos = {};
+//returns false if chunk was not loaded
+bool resolveConstrains(
+	glm::dvec3 &pos, glm::dvec3 &lastPos,
+	decltype(chunkGetterSignature) *chunkGetter,
+	MotionState *forces, float deltaTime, glm::vec3 colliderSize);
 
-	//returns false if chunk was not loaded
-	bool resolveConstrains(decltype(chunkGetterSignature) *chunkGetter, 
-		MotionState *forces, float deltaTime, glm::vec3 colliderSize);
+//returns false if chunk was not loaded
+bool checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
+	decltype(chunkGetterSignature) *chunkGetter, MotionState *forces, float deltaTime,
+	glm::vec3 colliderSize);
 
-	//returns false if chunk was not loaded
-	bool checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos, 
-		decltype(chunkGetterSignature) *chunkGetter, MotionState *forces, float deltaTime, 
-		glm::vec3 colliderSize);
 
-	glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, glm::dvec3 delta,
-		decltype(chunkGetterSignature) *chunkGetter, bool &chunkLoaded, MotionState *forces, float deltaTime,
-		glm::vec3 &drag);
-
-	void updateMove();
-
-};
+glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, glm::dvec3 delta,
+	decltype(chunkGetterSignature) *chunkGetter, bool &chunkLoaded, MotionState *forces, float deltaTime,
+	glm::vec3 &drag);
 
 void updateForces(glm::dvec3 &pos, MotionState &forces, float deltaTime, bool applyGravity);
 

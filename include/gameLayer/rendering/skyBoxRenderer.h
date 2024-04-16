@@ -6,7 +6,6 @@
 #include "rendering/camera.h"
 #include <gl2d/gl2d.h>
 
-//todo big refactor
 struct SkyBoxRenderer
 {
 

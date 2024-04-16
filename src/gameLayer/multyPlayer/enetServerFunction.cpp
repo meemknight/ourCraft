@@ -233,7 +233,10 @@ void removeConnection(ENetHost *server, ENetEvent &event)
 			p.header = headerDisconnectOtherPlayer;
 			p.cid = c.first;
 
-			broadCastNotLocked(p, 0, 0, 0, true, channelHandleConnections);
+			Packet_DisconectOtherPlayer data;
+			data.EID = c.second.entityId;
+
+			broadCastNotLocked(p, &data, sizeof(data), 0, true, channelHandleConnections);
 
 			lockConnectionsMutex();
 			connections.erase(connections.find(c.first));
@@ -598,7 +601,7 @@ void enetServerFunction()
 
 							if (checkIfPlayerShouldGetEntity(
 								{c.second.playerData.position.x, c.second.playerData.position.z},
-								other.second.playerData.position, c.second.playerData.chunkDistance, 5)
+								other.second.playerData.position, c.second.playerData.chunkDistance, 0)
 								)
 							{
 								Packet_ClientRecieveOtherPlayerPosition sendData;

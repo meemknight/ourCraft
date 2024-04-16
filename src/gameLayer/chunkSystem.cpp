@@ -133,7 +133,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 				if(!dontUpdateLightSystem)
 				{
-					i->dontDrawYet = true;
+					i->setDontDrawYet(true);
 
 					//c is in chunk system coordonates space, not chunk space!
 					chunksToAddLight.push_back({x, z});
@@ -208,6 +208,8 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 #pragma endregion
 
+	//don't call chunk position related things untill this line!
+
 #pragma region add lights
 
 	if (!dontUpdateLightSystem)
@@ -229,8 +231,6 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 			auto rightNeighbour = getChunkSafeFromMatrixSpace(c.x + 1, c.y);
 			auto frontNeighbour = getChunkSafeFromMatrixSpace(c.x, c.y + 1);
 			auto backNeighbour = getChunkSafeFromMatrixSpace(c.x, c.y - 1);
-
-			//todo propate from this chunk out
 
 			auto propagateLight = [&](Chunk *neighbour, glm::ivec3 darkBlock,
 				glm::ivec3 lightBlock,
@@ -323,7 +323,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 			if (c)
 			{
-				c->dirtyTransparency = true;
+				c->setDirtyTransparency(true);
 			}
 
 		}
@@ -394,8 +394,6 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	lastX = x;
 	lastZ = z;
 	lastPlayerBlockPosition = playerBlockPosition;
-
-	//todo extra asserts to check if chunk messages are not called when the chunk system is in build
 
 
 
@@ -480,7 +478,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	{
 		auto chunk = chunkVectorCopy[i];
 		if (chunk == nullptr) { continue; }
-		if (chunk->dontDrawYet == true) { chunk->dontDrawYet = false; continue; }
+		if (chunk->isDontDrawYet() == true) { chunk->setDontDrawYet(false); continue; }
 	
 		int x = chunk->data.x - minPos.x;
 		int z = chunk->data.z - minPos.y;
@@ -559,7 +557,7 @@ void ChunkSystem::setChunkAndNeighboursFlagDirtyFromBlockPos(int x, int z)
 		auto c = getChunkSafeFromBlockPos(x + offsets[i].x, z + offsets[i].y);
 		if (c)
 		{
-			c->dirty = true;
+			c->setDirty(true);
 		}
 	}
 }

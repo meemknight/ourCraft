@@ -45,10 +45,6 @@ void computeRubberBand(
 
 
 
-//todo move and change
-constexpr static int simulationDistance = 6;
-
-
 struct PhysicalEntity
 {
 	glm::dvec3 position = {};
@@ -65,13 +61,10 @@ struct PhysicalEntity
 		float deltaTime, glm::vec3 colliderSize
 	)
 	{
-		RigidBody body;
-		body.pos = position;
-		body.lastPos = lastPosition;
-		body.resolveConstrains(chunkGetter, &forces, deltaTime, colliderSize);
+		resolveConstrains(position, lastPosition, chunkGetter,
+			&forces, deltaTime, colliderSize);
 
-		lastPosition = body.pos;
-		position = body.pos;
+		lastPosition = position;
 	}
 
 
@@ -82,7 +75,6 @@ template <class T>
 struct ServerEntity
 {
 	T entity = {};
-	float restantTime = 0; //todo not used for many things so move
 
 	glm::dvec3 &getPosition()
 	{
@@ -108,4 +100,8 @@ struct ClientEntity
 	}
 };
 
+template <typename T, typename = void>
+constexpr bool hasRestantTimer = false;
 
+template <typename T>
+constexpr bool hasRestantTimer<T, std::void_t<decltype(std::declval<T>().restantTime)>> = true;

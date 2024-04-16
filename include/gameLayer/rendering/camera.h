@@ -28,9 +28,13 @@ struct Camera
 	glm::vec3 viewDirection = {0,0,-1};
 
 	glm::mat4x4 getProjectionMatrix();
+	glm::dmat4x4 getProjectionMatrixDouble();
 	glm::mat4x4 getViewMatrix();
 	glm::mat4x4 getViewMatrixWithPosition();
+	glm::dmat4x4 getViewMatrixWithPositionDouble();
 	glm::mat4x4 getViewProjectionWithPositionMatrix();
+	
+	glm::dmat4x4 getViewProjectionWithPositionMatrixDouble();
 
 	void rotateCamera(const glm::vec2 delta);
 	float yaw = 0.f;

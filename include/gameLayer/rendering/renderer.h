@@ -180,6 +180,7 @@ struct Renderer
 	bool zprepass = 0;
 	bool frustumCulling = 1;
 	bool renderShadows = 0;
+	bool waterRefraction = 1;
 
 	FBO fboHBAO;
 	FBO fboMain;
@@ -191,7 +192,6 @@ struct Renderer
 
 	void create(BlocksLoader &blocksLoader);
 	void reloadShaders();
-	void updateDynamicBlocks();
 	//void render(std::vector<int> &data, Camera &c, gl2d::Texture &texture);
 
 	void renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSystem, Camera &c,

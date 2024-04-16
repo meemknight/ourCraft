@@ -7,7 +7,6 @@
 struct Player : public PhysicalEntity
 {
 
-	//todo will probably remove the idea of a rigid body
 	glm::vec3 lookDirection = {0,0,-1};
 
 	void moveFPS(glm::vec3 direction);
@@ -27,10 +26,9 @@ struct LocalPlayer : public Player
 
 struct PlayerClient: public ClientEntity<Player>
 {
-	//todo remove from here?
-	std::uint64_t entityId = 0;
 
-	CID cid = 0;
+
+
 };
 
 
