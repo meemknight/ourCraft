@@ -41,9 +41,11 @@ struct ServerSettings
 
 };
 
+struct ServerTask;
 
 void serverWorkerUpdate(WorldGenerator &wg, StructuresManager &structuresManager, 
-	BiomesManager &biomesManager, WorldSaver &worldSaver,
+	BiomesManager &biomesManager, WorldSaver &worldSaver, 
+	std::vector<ServerTask> &serverTask,
 	float deltaTime);
 
 

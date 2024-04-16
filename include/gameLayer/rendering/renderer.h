@@ -18,7 +18,8 @@ struct Renderer
 
 	struct FBO
 	{
-		void create(GLint addColor, bool addDepth, GLint addSecondaryRenderTarger = 0);
+		void create(GLint addColor, bool addDepth, GLint addSecondaryRenderTarget = 0,
+			GLint addThirdRenderTarget = 0);
 
 		void updateSize(int x, int y);
 
@@ -26,13 +27,16 @@ struct Renderer
 		GLuint fbo = 0;
 		GLuint fboOnlyFirstTarget = 0;
 		GLuint fboOnlySecondTarget = 0;
+		GLuint fboOnlyThirdTarget = 0;
 
 		GLuint color = 0;
 		GLuint secondaryColor = 0;
+		GLuint thirdColor = 0;
 		GLuint depth = 0;
 
 		GLint colorFormat = 0;
 		GLint secondaryColorFormat = 0;
+		GLint thirdColorFormat = 0;
 
 		void copyDepthFromMainFBO(int w, int h);
 		void copyColorFromMainFBO(int w, int h);
@@ -117,8 +121,10 @@ struct Renderer
 	struct HBAOShader
 	{
 		Shader shader;
-
-
+		uniform u_gPosition;
+		uniform u_gNormal;
+		uniform u_view;
+		uniform u_projection;
 	}hbaoShader;
 
 	struct ApplyHBAOShader

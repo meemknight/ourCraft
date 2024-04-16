@@ -3,6 +3,7 @@
 
 layout (location = 0) out vec4 out_color;
 layout (location = 1) out vec4 out_screenSpacePositions;
+layout (location = 2) out ivec3 out_normals;
 
 
 layout(binding = 0) uniform sampler2D u_texture;
@@ -91,6 +92,21 @@ const float causticsLightStrength = 1.4;
 const float causticsLightPower = 1.0;	
 const bool physicallyAccurateReflections = false;
 ///
+
+ivec3 fromFloatTouShort(vec3 a)
+{
+	//[-1 1] -> [0 2]
+	a += 1.f;
+
+	//[0 2] -> [0 1]
+	a /= 2.f;
+
+	//[0 1] -> [0 65536]
+	a *= 65536;
+
+	return ivec3(a);
+}
+
 
 bool isWater()
 {
@@ -1161,6 +1177,7 @@ void main()
 			//out_screenSpacePositions.a = 1;
 		}
 			
+		out_normals = fromFloatTouShort(N);
 
 		
 		//caustics

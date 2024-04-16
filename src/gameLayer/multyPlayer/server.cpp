@@ -26,7 +26,6 @@
 
 
 
-
 static std::atomic<bool> serverRunning = false;
 
 bool serverStartupStuff();
@@ -110,7 +109,6 @@ void closeServer()
 		serverRunning = false;
 
 		//then signal the barier from the task waiting to unlock the mutex
-		signalWaitingFromServer();
 
 		//then wait for the server to close
 		//serverThread.join();
@@ -293,6 +291,7 @@ void serverWorkerUpdate(
 	StructuresManager &structuresManager,
 	BiomesManager &biomesManager,
 	WorldSaver &worldSaver,
+	std::vector<ServerTask> &serverTask,
 	float deltaTime
 	)
 {
@@ -306,40 +305,11 @@ void serverWorkerUpdate(
 
 	auto &settings = sd.settings;
 
-	//tasks stuff
+	for (auto i : serverTask)
 	{
-		std::vector<ServerTask> tasks;
-
-		//I also commented the notify one thing in submittaskforserver!
-		//if (!settings.busyWait)
-		//{
-		//	if (sd.waitingTasks.empty())
-		//	{
-		//
-		//		if (tickTimer > (1.f / settings.targetTicksPerSeccond))
-		//		{
-		//			tasks = tryForTasksServer(); //we will soon need to tick so we don't block
-		//		}
-		//		else
-		//		{
-		//			tasks = waitForTasksServer(); //nothing to do we can wait.
-		//		}
-		//
-		//	}
-		//	else
-		//	{
-		//		tasks = tryForTasksServer(); //already things to do, we just grab more if ready and wating.
-		//	}
-		//}
-		//else
-
-		tasks = tryForTasksServer();
-
-		for (auto i : tasks)
-		{
-			sd.waitingTasks.push_back(i);
-		}
+		sd.waitingTasks.push_back(i);
 	}
+	serverTask.clear();
 
 	//todo rather than a sort use buckets, so the clients can't DDOS the server with
 	//place blocks tasks, making generating chunks impossible. 

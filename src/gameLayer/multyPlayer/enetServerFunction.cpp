@@ -116,19 +116,6 @@ void insertConnection(CID cid, Client c)
 	connectionsMutex.unlock();
 }
 
-
-std::mutex taskMutex; //todo remove
-std::condition_variable taskCondition; //todo remove
-std::queue<ServerTask> tasks; //todo remove
-
-void submitTaskForServer(ServerTask t)
-{
-	std::unique_lock<std::mutex> locker(taskMutex);
-	tasks.push(t);
-	locker.unlock();
-	taskCondition.notify_one();
-}
-
 void sentNewConnectionMessage(ENetPeer *peer, Client c, CID cid)
 {
 	Packet p;
@@ -248,7 +235,7 @@ void removeConnection(ENetHost *server, ENetEvent &event)
 
 }
 
-void recieveData(ENetHost *server, ENetEvent &event)
+void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &serverTasks)
 {
 	Packet p;
 	size_t size = 0;
@@ -302,7 +289,7 @@ void recieveData(ENetHost *server, ENetEvent &event)
 				serverTask.t.type = Task::generateChunk;
 				serverTask.t.pos = {packetData.chunkPosition.x, 0, packetData.chunkPosition.y};
 
-				submitTaskForServer(serverTask);
+				serverTasks.push_back(serverTask);
 			}
 			
 			
@@ -318,7 +305,7 @@ void recieveData(ENetHost *server, ENetEvent &event)
 			serverTask.t.blockType = {packetData.blockType};
 			serverTask.t.eventId = packetData.eventId;
 
-			submitTaskForServer(serverTask);
+			serverTasks.push_back(serverTask);
 			break;
 		}
 
@@ -402,7 +389,7 @@ void recieveData(ENetHost *server, ENetEvent &event)
 			serverTask.t.motionState = packetData->motionState;
 			serverTask.t.timer = packetData->timer;
 
-			submitTaskForServer(serverTask);
+			serverTasks.push_back(serverTask);
 			break;
 
 		}
@@ -418,58 +405,7 @@ void recieveData(ENetHost *server, ENetEvent &event)
 
 }
 
-void signalWaitingFromServer()
-{
-	taskCondition.notify_one();
-}
 
-//todo remove
-std::vector<ServerTask> waitForTasksServer()
-{
-	std::unique_lock<std::mutex> locker(taskMutex);
-	if (tasks.empty())
-	{
-		taskCondition.wait(locker);
-	}
-
-	auto size = tasks.size();
-	std::vector<ServerTask> retVector;
-	retVector.reserve(size);
-
-	for (int i = 0; i < size; i++)
-	{
-		retVector.push_back(tasks.front());
-		tasks.pop();
-	}
-
-	locker.unlock();
-
-	return retVector;
-}
-
-std::vector<ServerTask> tryForTasksServer()
-{
-	std::unique_lock<std::mutex> locker(taskMutex);
-	if (tasks.empty())
-	{
-		locker.unlock();
-		return {};
-	}
-
-	auto size = tasks.size();
-	std::vector<ServerTask> retVector;
-	retVector.reserve(size);
-
-	for (int i = 0; i < size; i++)
-	{
-		retVector.push_back(tasks.front());
-		tasks.pop();
-	}
-
-	locker.unlock();
-
-	return retVector;
-}
 
 static std::atomic<bool> enetServerRunning = false;
 
@@ -522,6 +458,9 @@ void enetServerFunction()
 
 	float tickTimer = 0;
 
+	std::vector<ServerTask> serverTasks;
+	serverTasks.reserve(100);
+
 	while (enetServerRunning)
 	{
 		auto stop = std::chrono::high_resolution_clock::now();
@@ -552,7 +491,7 @@ void enetServerFunction()
 				}
 				case ENET_EVENT_TYPE_RECEIVE:
 				{
-					recieveData(server, event);
+					recieveData(server, event, serverTasks);
 
 					enet_packet_destroy(event.packet);
 
@@ -655,9 +594,8 @@ void enetServerFunction()
 		}
 	#pragma endregion
 
-
 	serverWorkerUpdate(wg, structuresManager, biomesManager,
-		worldSaver, deltaTime);
+		worldSaver, serverTasks, deltaTime);
 
 	
 	}

@@ -398,7 +398,7 @@ void Renderer::create(BlocksLoader &blocksLoader)
 {
 
 	fboCoppy.create(true, true);
-	fboMain.create(true, true, GL_RGB16F);
+	fboMain.create(true, true, GL_RGB16F, GL_RGB16UI);
 	fboLastFrame.create(true, false);
 	fboLastFramePositions.create(GL_RGB16F, false);
 	fboHBAO.create(GL_RED, false);
@@ -688,6 +688,12 @@ void Renderer::reloadShaders()
 	hbaoShader.shader.loadShaderProgramFromFile(
 		RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
 		RESOURCES_PATH "shaders/postProcess/hbao.frag");
+
+	GET_UNIFORM2(hbaoShader, u_gPosition);
+	GET_UNIFORM2(hbaoShader, u_gNormal);
+	GET_UNIFORM2(hbaoShader, u_view);
+	GET_UNIFORM2(hbaoShader, u_projection);
+	
 
 	applyHBAOShader.shader.clear();
 	applyHBAOShader.shader.loadShaderProgramFromFile(
@@ -1176,7 +1182,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	auto renderEntities = [&]()
 	{
 		{
-			glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
+			//glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
+			glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fboOnlyFirstTarget);
 
 			glDepthFunc(GL_LESS);
 
@@ -1394,7 +1401,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 #pragma region HBAO
 
-	if (0)
+	if (1)
 	{
 		glViewport(0, 0, fboHBAO.size.x, fboHBAO.size.y);
 
@@ -1403,9 +1410,28 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		hbaoShader.shader.bind();
 		glBindVertexArray(vaoQuad);
+		
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, fboMain.secondaryColor);
+		glUniform1i(hbaoShader.u_gPosition, 0);
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, fboMain.thirdColor);
+		glUniform1i(hbaoShader.u_gNormal, 1);
+
+		glUniformMatrix4fv(hbaoShader.u_view, 1, GL_FALSE,
+			glm::value_ptr(viewMatrix));
+
+		glUniformMatrix4fv(hbaoShader.u_projection, 1, GL_FALSE,
+			glm::value_ptr(c.getProjectionMatrix()));
+		//GET_UNIFORM2(hbaoShader, u_texNoise);
+		
+		
+		
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-
+		//todo optimize texture binding so it is done only once at the beginning, not changed that often
+		
 		//apply hbao
 		glViewport(0, 0, screenX, screenY);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1415,11 +1441,11 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glBindTexture(GL_TEXTURE_2D, fboHBAO.color);
 		glUniform1i(applyHBAOShader.u_hbao, 0);
 
-
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	};
 
 #pragma endregion
+
 
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
@@ -2011,16 +2037,20 @@ void PointDebugRenderer::renderCubePoint(Camera &c, glm::dvec3 point)
 
 #undef GET_UNIFORM
 
-void Renderer::FBO::create(GLint addColor, bool addDepth, GLint addSecondaryRenderTarger)
+void Renderer::FBO::create(GLint addColor, bool addDepth,
+	GLint addSecondaryRenderTarget, GLint addThirdRenderTarget)
 {
 	if (addColor == 1) { addColor = GL_RGBA8; }
-	if (addSecondaryRenderTarger == 1) { addSecondaryRenderTarger = GL_RGBA8; }
+	if (addSecondaryRenderTarget == 1) { addSecondaryRenderTarget = GL_RGBA8; }
+	if (addThirdRenderTarget == 1) { addThirdRenderTarget = GL_RGBA8; }
 
 	colorFormat = addColor;
-	secondaryColorFormat = addSecondaryRenderTarger;
+	secondaryColorFormat = addSecondaryRenderTarget;
+	thirdColorFormat = addThirdRenderTarget;
 
 
-	permaAssert(!(addColor == 0 && addSecondaryRenderTarger == 1));
+	permaAssert(!(addColor == 0 && addSecondaryRenderTarget != 0));
+	permaAssert(!(addSecondaryRenderTarget == 0 && addThirdRenderTarget != 0));
 
 
 	glGenFramebuffers(1, &fbo);
@@ -2041,7 +2071,7 @@ void Renderer::FBO::create(GLint addColor, bool addDepth, GLint addSecondaryRend
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color, 0);
 	}
 
-	if (addSecondaryRenderTarger)
+	if (addSecondaryRenderTarget)
 	{
 		glGenTextures(1, &secondaryColor);
 		glBindTexture(GL_TEXTURE_2D, secondaryColor);
@@ -2059,6 +2089,28 @@ void Renderer::FBO::create(GLint addColor, bool addDepth, GLint addSecondaryRend
 		glDrawBuffers(2, attachments);
 	}
 
+	if (addThirdRenderTarget)
+	{
+		glGenTextures(1, &thirdColor);
+		glBindTexture(GL_TEXTURE_2D, thirdColor);
+		
+		GLenum internalFormat = GL_RGB;
+		if (thirdColorFormat == GL_RGB16UI) { internalFormat = GL_RGB_INTEGER; }
+
+		glTexImage2D(GL_TEXTURE_2D, 0, thirdColorFormat, 1, 1, 0, internalFormat, GL_UNSIGNED_BYTE, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, secondaryColor, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, thirdColor, 0);
+
+		unsigned int attachments[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
+			GL_COLOR_ATTACHMENT2};
+		glDrawBuffers(3, attachments);
+	}
 	
 
 	if (addDepth)
@@ -2090,7 +2142,7 @@ void Renderer::FBO::create(GLint addColor, bool addDepth, GLint addSecondaryRend
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	if (addSecondaryRenderTarger)
+	if (addSecondaryRenderTarget)
 	{
 		glGenFramebuffers(1, &fboOnlyFirstTarget);
 		glBindFramebuffer(GL_FRAMEBUFFER, fboOnlyFirstTarget);
@@ -2119,7 +2171,7 @@ void Renderer::FBO::create(GLint addColor, bool addDepth, GLint addSecondaryRend
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	if (addSecondaryRenderTarger)
+	if (addSecondaryRenderTarget)
 	{
 		glGenFramebuffers(1, &fboOnlySecondTarget);
 		glBindFramebuffer(GL_FRAMEBUFFER, fboOnlySecondTarget);
@@ -2147,6 +2199,38 @@ void Renderer::FBO::create(GLint addColor, bool addDepth, GLint addSecondaryRend
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
+
+	if (addThirdRenderTarget)
+	{
+		glGenFramebuffers(1, &fboOnlyThirdTarget);
+		glBindFramebuffer(GL_FRAMEBUFFER, fboOnlyThirdTarget);
+
+		if (addColor)
+		{
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, \
+				thirdColor, 0);
+		}
+
+		if (addDepth)
+		{
+			if (!addColor)
+			{
+				glDrawBuffer(GL_NONE);
+				glReadBuffer(GL_NONE);
+			}
+
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth, 0);
+		}
+
+		// Check for framebuffer completeness
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		{
+			std::cout << "Framebuffer Error!!!\n";
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+
 }
 
 void Renderer::FBO::updateSize(int x, int y)
@@ -2165,6 +2249,16 @@ void Renderer::FBO::updateSize(int x, int y)
 			glBindTexture(GL_TEXTURE_2D, secondaryColor);
 			glTexImage2D(GL_TEXTURE_2D, 0, secondaryColorFormat, x, y,
 				0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+		}
+
+		if (thirdColor)
+		{
+			GLenum internalFormat = GL_RGB;
+			if (thirdColorFormat == GL_RGB16UI) { internalFormat = GL_RGB_INTEGER; }
+
+			glBindTexture(GL_TEXTURE_2D, thirdColor);
+			glTexImage2D(GL_TEXTURE_2D, 0, thirdColorFormat, x, y,
+				0, internalFormat, GL_UNSIGNED_BYTE, NULL);
 		}
 		
 		if (depth)
@@ -2269,6 +2363,12 @@ void Renderer::FBO::clearFBO()
 	{
 		const float clearColor2[] = {0.0f, 0.0f, 0.0f, 0.0f};
 		glClearBufferfv(GL_COLOR, 1, clearColor2);
+	}
+
+	if (thirdColor)
+	{
+		const float clearColor3[] = {0.0f, 0.0f, 0.0f, 0.0f};
+		glClearBufferfv(GL_COLOR, 2, clearColor3);
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

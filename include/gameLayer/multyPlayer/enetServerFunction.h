@@ -28,10 +28,6 @@ struct Client
 	glm::ivec2 positionForChunkGeneration = {};
 };
 
-void signalWaitingFromServer();
-
-std::vector<ServerTask> waitForTasksServer();
-std::vector<ServerTask> tryForTasksServer();
 Client getClient(CID cid);
 Client *getClientNotLocked(CID cid);
 std::unordered_map<CID, Client> getAllClients();

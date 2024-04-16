@@ -8,6 +8,6 @@ uniform sampler2D u_hbao;
 
 void main()
 {
-	outColor = vec4(0,0,0,texture2D(u_hbao, v_texCoords).r);
+	outColor = vec4(0,0,0,texture2D(u_hbao, v_texCoords).r * 0.8);
 	//outColor = vec4(0,0,0,0.5);
 }
