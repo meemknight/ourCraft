@@ -49,26 +49,13 @@ void ClientEntityManager::dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int 
 
 std::uint64_t ClientEntityManager::consumeId()
 {
-
-	while (true)
+	auto rez = idCounter;
+	idCounter++;
+	if (idCounter >= RESERVED_CLIENTS_ID)
 	{
-		if (reservedIds.empty()) { return 0; }
-
-		if (reservedIds[0].count > 0)
-		{
-			auto rez = reservedIds[0].idStart;
-			reservedIds[0].count--;
-			reservedIds[0].idStart++;
-			return rez;
-		}
-		else
-		{
-			reservedIds.pop_front();
-		}
-
+		idCounter = 1;
 	}
-	
-	return 0;
+	return rez;
 }
 
 bool ClientEntityManager::dropItemByClient(glm::dvec3 position, BlockType blockType, UndoQueue &undoQueue

@@ -7,6 +7,8 @@
 #include <multyPlayer/chunkSaver.h>
 #include <worldGenerator.h>
 
+constexpr std::uint64_t RESERVED_CLIENTS_ID = 100;
+
 struct Client;
 struct EventId;
 
@@ -17,7 +19,9 @@ bool startServer();
 void clearSD(WorldSaver &worldSaver);
 int getChunkCapacity();
 void closeServer();
-bool computeRevisionStuff(Client &client, bool allowed, const EventId &eventId);
+bool computeRevisionStuff(Client &client, bool allowed,
+	const EventId &eventId, std::uint64_t *oldid = 0, std::uint64_t *newid = 0);
+
 void serverWorkerUpdate(WorldGenerator &wg, StructuresManager &structuresManager, 
 	BiomesManager &biomesManager, WorldSaver &worldSaver, 
 	float deltaTime);

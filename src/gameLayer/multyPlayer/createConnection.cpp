@@ -204,6 +204,23 @@ void recieveDataClient(ENetEvent &event,
 			break;
 		}
 
+		case headerValidateEventAndChangeID:
+		{
+			Packet_ValidateEventAndChangeId &p = *(Packet_ValidateEventAndChangeId *)data;
+
+			auto found = entityManager.droppedItems.find(p.oldId);
+
+			if (found != entityManager.droppedItems.end())
+			{
+				auto entity = found->second;
+				entityManager.droppedItems.erase(found);
+				entityManager.droppedItems.insert({p.newId, entity});
+			}
+
+			validatedEvent = std::max(validatedEvent, p.eventId.counter);
+			break;
+		}
+
 		case headerInValidateEvent:
 		{
 			invalidateRevision = std::max(invalidateRevision, ((Packet_InValidateEvent *)data)->eventId.revision);
@@ -260,21 +277,6 @@ void recieveDataClient(ENetEvent &event,
 
 			}
 
-			break;
-		}
-
-		//todo server should know when to send new ids to clients
-		case headerClientRecieveReservedEntityIds:
-		{
-			Packet_ReceiveReserverEndityIds *p = (Packet_ReceiveReserverEndityIds *)data;
-
-			if (sizeof(Packet_ReceiveReserverEndityIds) != size) { break; }; //corrupted packet? 
-
-			ReservedIDsRange newRange = {};
-			newRange.count = p->count;
-			newRange.idStart = p->first;
-
-			entityManager.reservedIds.push_back(newRange);
 			break;
 		}
 

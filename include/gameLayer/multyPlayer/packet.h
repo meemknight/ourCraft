@@ -50,9 +50,9 @@ enum
 	headerClientDroppedItem,
 	headerRecieveChunk,
 	headerValidateEvent,
+	headerValidateEventAndChangeID,
 	headerInValidateEvent,
 	headerSendPlayerData,
-	headerClientRecieveReservedEntityIds,
 	headerClientRecieveOtherPlayerPosition,
 	headerClientRecieveDroppedItemUpdate,
 	headerClientUpdateTimer,
@@ -92,12 +92,6 @@ struct Packet_UpdateZombie
 };
 
 
-struct Packet_ReceiveReserverEndityIds
-{
-	std::uint64_t first = 0; //this is a range
-	size_t count = 0;
-};
-
 struct Packet_ReceiveCIDAndData
 {
 	glm::dvec3 playersPosition = {};
@@ -120,6 +114,13 @@ struct Packet_RecieveChunk
 struct Packet_ValidateEvent
 {
 	EventId eventId = {};
+};
+
+struct Packet_ValidateEventAndChangeId
+{
+	EventId eventId = {};
+	std::uint64_t oldId = 0;
+	std::uint64_t newId = 0;
 };
 
 struct Packet_InValidateEvent

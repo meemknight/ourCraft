@@ -17,6 +17,7 @@ struct ReservedIDsRange
 	size_t count = 0;
 };
 
+
 struct ClientEntityManager
 {
 
@@ -29,7 +30,7 @@ struct ClientEntityManager
 
 	void dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int playerSquareDistance);
 
-	std::deque<ReservedIDsRange> reservedIds;
+	std::uint64_t idCounter = 1;
 
 	std::uint64_t consumeId();
 

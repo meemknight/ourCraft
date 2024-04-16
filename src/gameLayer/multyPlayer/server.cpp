@@ -135,8 +135,14 @@ void doGameTick(float deltaTime,
 );
 
 //Note: it is a problem that the block validation and the item validation are on sepparate threads.
-bool computeRevisionStuff(Client &client, bool allowed, const EventId &eventId)
+bool computeRevisionStuff(Client &client, bool allowed, 
+	const EventId &eventId, std::uint64_t *oldid, std::uint64_t *newid)
 {
+
+	permaAssertComment((oldid == 0 && newid == 0) || (oldid != 0 && newid != 0),
+		"both ids should be supplied or none");
+
+
 	bool noNeedToNotifyUndo = false;
 
 	if (client.revisionNumber > eventId.revision)
@@ -152,15 +158,33 @@ bool computeRevisionStuff(Client &client, bool allowed, const EventId &eventId)
 	//validate event
 	if(allowed)
 	{
-		Packet packet;
-		packet.header = headerValidateEvent;
+		if (oldid && newid)
+		{
+			Packet packet;
+			packet.header = headerValidateEventAndChangeID;
 
-		Packet_ValidateEvent packetData;
-		packetData.eventId = eventId;
+			Packet_ValidateEventAndChangeId packetData;
+			packetData.eventId = eventId;
+			packetData.oldId = *oldid;
+			packetData.newId = *newid;
 
-		sendPacket(client.peer, packet,
-			(char *)&packetData, sizeof(Packet_ValidateEvent),
-			true, channelChunksAndBlocks);
+			sendPacket(client.peer, packet,
+				(char *)&packetData, sizeof(Packet_ValidateEventAndChangeId),
+				true, channelChunksAndBlocks);
+		}
+		else
+		{
+			Packet packet;
+			packet.header = headerValidateEvent;
+
+			Packet_ValidateEvent packetData;
+			packetData.eventId = eventId;
+
+			sendPacket(client.peer, packet,
+				(char *)&packetData, sizeof(Packet_ValidateEvent),
+				true, channelChunksAndBlocks);
+		}
+		
 	}
 	else if (!noNeedToNotifyUndo)
 	{
@@ -461,10 +485,15 @@ void serverWorkerUpdate(
 
 					auto serverAllows = getClientSettingCopy(i.cid).validateStuff;
 					
-					if (sd.chunkCache.entityAlreadyExists(i.t.entityId)) { serverAllows = false; }
+					if (i.t.entityId >= RESERVED_CLIENTS_ID)
+					{
+						serverAllows = false; 
+					}
 
+					auto newId = getEntityIdSafeAndIncrement();
 
-					if (computeRevisionStuff(*client, true && serverAllows, i.t.eventId))
+					if (computeRevisionStuff(*client, true && serverAllows, i.t.eventId,
+						&i.t.entityId, &newId))
 					{
 
 						DroppedItemServer newEntity = {};
@@ -486,7 +515,7 @@ void serverWorkerUpdate(
 
 						if (chunk)
 						{
-							chunk->entityData.droppedItems.insert({i.t.entityId, newEntity});
+							chunk->entityData.droppedItems.insert({newId, newEntity});
 						}
 
 						//std::cout << "restant: " << newEntity.restantTime << "\n";

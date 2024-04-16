@@ -190,27 +190,6 @@ void addConnection(ENetHost *server, ENetEvent &event)
 
 	//todo send entities to this new connection
 
-	{
-		Packet p;
-		p.header = headerClientRecieveReservedEntityIds;
-		p.cid = 0;
-
-		Packet_ReceiveReserverEndityIds packetData = {};
-
-		constexpr int IDS_RESERVE_COUNT = 500;
-
-		lockEntityIdMutex();
-		packetData.first = entityId;
-		entityId += IDS_RESERVE_COUNT;
-		unlockEntityIdMutex();
-		packetData.count = IDS_RESERVE_COUNT;
-
-
-
-		sendPacket(event.peer, p, (const char *)&packetData,
-			sizeof(packetData), true, channelHandleConnections);
-
-	}
 
 	{
 		auto timer = getTimer();

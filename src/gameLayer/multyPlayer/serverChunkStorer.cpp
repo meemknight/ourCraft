@@ -74,6 +74,8 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 		std::vector<glm::ivec2> newCreatedChunks;
 		newCreatedChunks.push_back({posX, posZ});
 
+		//generateGhostAndStructures = false;
+
 		if (generateGhostAndStructures)
 		{
 			int metaChunkX = divideMetaChunk(posX);

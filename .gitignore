@@ -6,3 +6,4 @@ build/
 CMakeSettings.json
 /ourcmake
 resources/saves/
+errorLogs.txt
