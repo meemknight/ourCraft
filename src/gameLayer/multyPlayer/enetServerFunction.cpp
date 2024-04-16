@@ -26,7 +26,7 @@ ENetHost *server = 0;
 std::mutex connectionsMutex; //todo remove 
 std::unordered_map<CID, Client> connections;
 static CID pids = 1;
-static std::uint64_t entityId = 1;
+static std::uint64_t entityId = RESERVED_CLIENTS_ID + 1;
 static std::thread enetServerThread;
 
 std::mutex entityIdMutex; //todo remove

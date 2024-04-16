@@ -387,7 +387,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		blockTypeToPlace = glm::clamp(blockTypeToPlace, 1, BlocksCount - 1);
 
-		if (platform::isKeyHeld(platform::Button::LeftCtrl))
+		if (platform::isKeyHeld(platform::Button::LeftCtrl)
+			&& (platform::isLMousePressed || platform::isRMousePressed)
+			)
 		{
 			if (blockToPlace)
 			{
