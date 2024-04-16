@@ -139,6 +139,11 @@ uint grassMask[] =
 	1,
 };
 
+uint waterMask[] =
+{
+	1,1,0,0, 0,1,1,0, 1,1,1,1, 0,0,0,0, 0,1,1,0, 1,1,0,0
+};
+
 float biasUp(float a)
 {
 	return (a + 0.75)/1.75;
@@ -155,8 +160,32 @@ vec3 calculateVertexPos(int vertexId)
 	vec3 pos = vec3(0);
 	vec3 vertexShape = vec3(0);
 
+	if(in_faceOrientation >= 22) //water
+	{
+		uint mask = waterMask[(in_faceOrientation-22)*4+vertexId];
 
-	if(in_faceOrientation >= 10) //animated trees
+		vertexShape.x += vertexData[(in_faceOrientation) * 3 * 4 + vertexId * 3 + 0];
+		vertexShape.y += vertexData[(in_faceOrientation) * 3 * 4 + vertexId * 3 + 1];
+		vertexShape.z += vertexData[(in_faceOrientation) * 3 * 4 + vertexId * 3 + 2];
+
+		float SPEED = 2.6f;		
+		float FREQUENCY = 0.5f;		
+		float AMPLITUDE = 0.030f;		
+
+		float SPEED2 = 1.72f;		
+		float FREQUENCY2 = 0.04f;		
+		float AMPLITUDE2 = 0.008f;		
+
+		float offset = biasUp(cos((facePosition.x + vertexShape.x + vertexShape.z + 
+		facePosition.z - u_timeGrass * SPEED) * FREQUENCY)) * AMPLITUDE;		
+
+		float offset2 = (sin((1 + facePosition.x + vertexShape.x + (vertexShape.z + 
+			facePosition.z) * 2 - u_timeGrass * SPEED) * FREQUENCY)) * AMPLITUDE;	
+
+		vertexShape.y += mask * (offset + offset2);
+
+	}else
+	if(in_faceOrientation >= 10 && in_faceOrientation < 16) //animated trees
 	{
 		
 		vertexShape.x += vertexData[(in_faceOrientation-10) * 3 * 4 + vertexId * 3 + 0];
@@ -175,7 +204,7 @@ vec3 calculateVertexPos(int vertexId)
 
 		vertexShape += offset;
 
-	}else if(in_faceOrientation >= 6)
+	}else if(in_faceOrientation >= 6 && in_faceOrientation < 16)
 	{
 		uint mask = grassMask[(in_faceOrientation-6)*4+vertexId];
 
@@ -261,6 +290,11 @@ void main()
 	{
 		v_normal = normals[in_faceOrientation];
 	}
+	//else
+	//if(in_faceOrientation >= 22)
+	//{
+	//	v_normal = normals[in_faceOrientation-22];
+	//}
 	else
 	{
 		vec3 pos1 = vec3(0);
@@ -295,7 +329,8 @@ void main()
 	//v_fragPosLightSpace.xyz -= u_lightPos;
 
 
-	v_ambient = (vertexColor[in_faceOrientation] * (v_ambientInt/15.f)) * 0.8 + 0.2;
+	//v_ambient = (vertexColor[in_faceOrientation] * (v_ambientInt/15.f)) * 0.8 + 0.2;
+	v_ambient = (v_ambientInt/15.f) * 0.8 + 0.2;
 	//v_color = vertexColor[in_faceOrientation];
 
 

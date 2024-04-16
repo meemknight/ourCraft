@@ -88,7 +88,7 @@ float vertexUVOriginal[] = {
 	1, 0,
 	0, 0,
 
-	//bottom
+	//top
 	1, 1,
 	0, 1,
 	0, 0,
@@ -96,7 +96,7 @@ float vertexUVOriginal[] = {
 	1, 0,
 	1, 1,
 
-	//top
+	//bottom
 	1, 1,
 	0, 1,
 	0, 0,
@@ -216,6 +216,81 @@ float vertexData[] = {
 	0.5, 0.5, 0.5,
 	0.5, -0.5, 0.5,
 	0.5, -0.5, -0.5,
+
+
+	//torch
+	//front
+	0.0625, 0.125, 0.0625,
+	-0.0625, 0.125, 0.0625,
+	-0.0625, -0.5, 0.0625,
+	0.0625, -0.5, 0.0625,
+
+	//back
+	-0.0625, -0.5, -0.0625,
+	-0.0625, 0.125, -0.0625,
+	0.0625, 0.125, -0.0625,
+	0.0625, -0.5, -0.0625,
+
+	//top
+	-0.0625, 0.125, -0.0625,
+	-0.0625, 0.125, 0.0625,
+	0.0625, 0.125, 0.0625,
+	0.0625, 0.125, -0.0625,
+
+	//bottom
+	0.0625, -0.5, 0.0625,
+	-0.0625, -0.5, 0.0625,
+	-0.0625, -0.5, -0.0625,
+	0.0625, -0.5, -0.0625,
+
+	//left
+	-0.0625, -0.5, 0.0625,
+	-0.0625, 0.125, 0.0625,
+	-0.0625, 0.125, -0.0625,
+	-0.0625, -0.5, -0.0625,
+
+	//right
+	0.0625, 0.125, -0.0625,
+	0.0625, 0.125, 0.0625,
+	0.0625, -0.5, 0.0625,
+	0.0625, -0.5, -0.0625,
+
+	//water
+	//front
+	0.5, 0.375, 0.5,
+	-0.5, 0.375, 0.5,
+	-0.5, -0.5, 0.5,
+	0.5, -0.5, 0.5,
+
+	//back
+	-0.5, -0.5, -0.5,
+	-0.5, 0.375, -0.5,
+	0.5, 0.375, -0.5,
+	0.5, -0.5, -0.5,
+
+	//top
+	-0.5, 0.375, -0.5,
+	-0.5, 0.375, 0.5,
+	0.5, 0.375, 0.5,
+	0.5, 0.375, -0.5,
+
+	//bottom
+	0.5, -0.5, 0.5,
+	-0.5, -0.5, 0.5,
+	-0.5, -0.5, -0.5,
+	0.5, -0.5, -0.5,
+
+	//left
+	-0.5, -0.5, 0.5,
+	-0.5, 0.375, 0.5,
+	-0.5, 0.375, -0.5,
+	-0.5, -0.5, -0.5,
+
+	//right
+	0.5, 0.375, -0.5,
+	0.5, 0.375, 0.5,
+	0.5, -0.5, 0.5,
+	0.5, -0.5, -0.5,
 };
 
 float vertexUV[] = {
@@ -231,13 +306,13 @@ float vertexUV[] = {
 	1, 1,
 	1, 0,
 
-	//bottom
+	//top
 	1, 1,
 	0, 1,
 	0, 0,
 	1, 0,
 
-	//top
+	//bottom
 	1, 1,
 	0, 1,
 	0, 0,
@@ -292,13 +367,13 @@ float vertexUV[] = {
 	1, 1,
 	1, 0,
 
-	//bottom
+	//top
 	1, 1,
 	0, 1,
 	0, 0,
 	1, 0,
 
-	//top
+	//bottom
 	1, 1,
 	0, 1,
 	0, 0,
@@ -313,6 +388,81 @@ float vertexUV[] = {
 	//right
 	1, 1,
 	0, 1,
+	0, 0,
+	1, 0,
+
+
+	//torches ///////
+	//front
+	0.5625, 0.625,
+	0.4375, 0.625,
+	0.4375, 0,
+	0.5625, 0,
+
+	//back
+	0.4375, 0,
+	0.4375, 0.625,
+	0.5625, 0.625,
+	0.5625, 0,
+
+	//top
+	0.5625, 0.625,
+	0.4375, 0.625,
+	0.4375, 0.5,
+	0.5625, 0.5,
+
+	//bottom
+	0.5625, 0.125,
+	0.4375, 0.125,
+	0.4375, 0,
+	0.5625, 0,
+
+	//left
+	0.5625, 0,
+	0.5625, 0.625,
+	0.4375, 0.625,
+	0.4375, 0,
+
+	//right
+	0.5625, 0.625,
+	0.4375, 0.625,
+	0.4375, 0,
+	0.5625, 0,
+
+	//water
+	//front
+	1, 0.875,
+	0, 0.875,
+	0, 0,
+	1, 0,
+
+	//back
+	0, 0,
+	0, 0.875,
+	1, 0.875,
+	1, 0,
+
+	//top
+	1, 1,
+	0, 1,
+	0, 0,
+	1, 0,
+
+	//bottom
+	1, 1,
+	0, 1,
+	0, 0,
+	1, 0,
+
+	//left
+	1, 0,
+	1, 0.875,
+	0, 0.875,
+	0, 0,
+
+	//right
+	1, 0.875,
+	0, 0.875,
 	0, 0,
 	1, 0,
 };
@@ -1437,6 +1587,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 #pragma region HBAO
 
+
 	if (1)
 	{
 		glViewport(0, 0, fboHBAO.size.x, fboHBAO.size.y);
@@ -1469,6 +1620,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		//todo optimize texture binding so it is done only once at the beginning, not changed that often
 		
 		//apply hbao
+		glDisable(GL_DEPTH_TEST);
 		glViewport(0, 0, screenX, screenY);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		applyHBAOShader.shader.bind();
@@ -1478,6 +1630,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform1i(applyHBAOShader.u_hbao, 0);
 
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+		glEnable(GL_DEPTH_TEST);
+
 	};
 
 #pragma endregion

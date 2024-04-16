@@ -66,5 +66,6 @@ bool isColidable(BlockType type)
 		type != BlockTypes::rose &&
 		type != BlockTypes::cactus_bud &&
 		type != BlockTypes::dead_bush &&
+		type != BlockTypes::torch &&
 		type != BlockTypes::water;
 }
