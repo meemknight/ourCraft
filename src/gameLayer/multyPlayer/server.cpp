@@ -86,6 +86,7 @@ void clearSD(WorldSaver &worldSaver)
 {
 	sd.chunkCache.saveAllChunks(worldSaver);
 	sd.chunkCache.cleanup();
+	closeThreadPool();
 }
 
 int getChunkCapacity()

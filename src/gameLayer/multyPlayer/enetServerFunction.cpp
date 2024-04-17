@@ -19,6 +19,7 @@
 #include <worldGenerator.h>
 #include <fstream>
 #include <sstream>
+#include <multyPlayer/splitUpdatesLogic.h>
 
 
 //todo add to a struct
