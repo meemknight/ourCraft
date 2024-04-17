@@ -69,7 +69,7 @@ void sendPacketAndCompress(ENetPeer *to, Packet p, const char *data, size_t size
 	size_t compressedSize = 0;
 	char* compressedData = (char*)compressData(data, size, compressedSize);
 
-	if (!compressData)
+	if (!compressedData)
 	{
 		sendPacket(to, p, data, size, reliable, channel);
 	}

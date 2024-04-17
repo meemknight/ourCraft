@@ -23,6 +23,8 @@
 #include <profilerLib.h>
 #include "multyPlayer/chunkSaver.h"
 #include "multyPlayer/serverChunkStorer.h"
+#include <multyPlayer/tick.h>
+#include <multyPlayer/splitUpdatesLogic.h>
 
 
 
@@ -62,11 +64,6 @@ void updateLoadedChunks(
 	std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
 	WorldSaver &worldSaver);
 
-
-glm::ivec2 determineChunkThatIsEntityIn(glm::dvec3 position)
-{
-	return {divideChunk(position.x), divideChunk(position.z)};
-}
 
 struct ServerData
 {
@@ -122,13 +119,6 @@ void closeServer()
 	//serverSettingsMutex.unlock();
 }
 
-void doGameTick(float deltaTime,
-	std::uint64_t currentTimer,
-	WorldGenerator &wg, StructuresManager &structuresManager,
-	BiomesManager &biomeManager,
-	std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
-	WorldSaver &worldSaver
-);
 
 //Note: it is a problem that the block validation and the item validation are on sepparate threads.
 bool computeRevisionStuff(Client &client, bool allowed, 
@@ -262,11 +252,6 @@ bool spawnZombie(
 }
 
 
-
-void initServerWorker()
-{
-
-}
 
 //todo this things will get removed!!!!!!!!!!
 ServerSettings getServerSettingsCopy()
@@ -567,12 +552,7 @@ void serverWorkerUpdate(
 
 		//todo error and warning logs for server.
 
-
-		//tick ...
-		doGameTick(sd.tickDeltaTime, currentTimer, wg,
-			structuresManager, biomesManager, sendNewBlocksToPlayers,
-			worldSaver);
-		//std::cout << "Loaded chunks: " << sd.chunkCache.loadedChunks.size() << "\n";
+		splitUpdatesLogic(sd.tickDeltaTime, currentTimer, sd.chunkCache);
 
 		sd.tickDeltaTime = 0;
 	}
@@ -664,137 +644,7 @@ void removeCidFromServerSettings(CID cid)
 
 
 
-template <class T, int Packet_Type, class E>
-void genericBroadcastEntityUpdateFromServerToPlayer(E &e, bool reliable, 
-	std::uint64_t currentTimer)
-{
 
-	Packet packet;
-	packet.header = Packet_Type;
-
-	T packetData;
-	packetData.eid = e.first;
-	packetData.entity = e.second.entity;
-	packetData.timer = currentTimer;
-
-	broadCast(packet, &packetData, sizeof(packetData),
-		nullptr, reliable, channelEntityPositions);
-
-}
-
-
-template<class T>
-void genericCallUpdateForEntity(T &e,
-	float deltaTime, ChunkData *(chunkGetter)(glm::ivec2))
-{
-	float time = deltaTime;
-	if constexpr (hasRestantTimer<decltype(e.second)>)
-	{
-		time = deltaTime + e.second.restantTime;
-	}
-
-	if (time > 0)
-	{
-		e.second.update(time, chunkGetter, sd.chunkCache);
-	}
-
-	if constexpr (hasRestantTimer<decltype(e.second)>)
-	{
-		e.second.restantTime = 0;
-	}
-};
-
-
-//todo remove this comments
-//void moveDroppedItem(glm::ivec2 initialChunk, glm::ivec2 newChunk, 
-//	std::uint64_t id, ServerEntityManager &entityManager, bool &shouldDelete)
-//{
-//	shouldDelete = 0;
-//
-//	if (initialChunk != newChunk)
-//	{
-//		auto c = sd.chunkCache.getChunkOrGetNull(initialChunk.x, initialChunk.y);
-//
-//		if (c)
-//		{
-//
-//			auto pos = c->otherData.droppedItems.find(id);
-//			if (pos != c->otherData.droppedItems.end())
-//			{
-//				c->otherData.droppedItems.erase(pos);
-//
-//				auto c2 = sd.chunkCache.getChunkOrGetNull(newChunk.x,
-//					newChunk.y);
-//
-//				if (c2)
-//				{
-//					c2->otherData.droppedItems.insert(id);
-//				}
-//				else
-//				{
-//					//unload that entity and save it in the new chunk
-//					shouldDelete = 1;
-//
-//				}
-//
-//			}
-//			else
-//			{
-//				//todo search for this item otherwhere
-//			}
-//
-//		}
-//		else
-//		{
-//			//todo search for this item otherwhere
-//		}
-//	}
-//};
-//
-//void moveZombie(glm::ivec2 initialChunk, glm::ivec2 newChunk,
-//	std::uint64_t id, ServerEntityManager &entityManager, bool &shouldDelete)
-//{
-//	shouldDelete = 0;
-//
-//	if (initialChunk != newChunk)
-//	{
-//		auto c = sd.chunkCache.getChunkOrGetNull(initialChunk.x, initialChunk.y);
-//
-//		if (c)
-//		{
-//
-//			auto pos = c->otherData.zombies.find(id);
-//			if (pos != c->otherData.zombies.end())
-//			{
-//				c->otherData.zombies.erase(pos);
-//
-//				auto c2 = sd.chunkCache.getChunkOrGetNull(newChunk.x,
-//					newChunk.y);
-//
-//				if (c2)
-//				{
-//					c2->otherData.zombies.insert(id);
-//				}
-//				else
-//				{
-//					//unload that entity and save it in the new chunk
-//					shouldDelete = 1;
-//
-//				}
-//
-//			}
-//			else
-//			{
-//				//todo search for this item otherwhere
-//			}
-//
-//		}
-//		else
-//		{
-//			//todo search for this item otherwhere
-//		}
-//	}
-//};
 
 //adds loaded chunks.
 void updateLoadedChunks(
@@ -847,132 +697,3 @@ void updateLoadedChunks(
 
 }
 
-
-void doGameTick(float deltaTime, std::uint64_t currentTimer, WorldGenerator &wg, 
-	StructuresManager &structuresManager, BiomesManager &biomesManager,
-	std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
-	WorldSaver &worldSaver)
-{
-
-	auto chunkGetter = [](glm::ivec2 pos) -> ChunkData *
-	{
-		auto c = sd.chunkCache.getChunkOrGetNull(pos.x, pos.y);
-		if (c)
-		{
-			return &c->chunk;
-		}
-		else
-		{
-			return nullptr;
-		}
-	};
-
-	//todo when a player joins, send him all of the entities
-
-
-#pragma region entity updates
-
-	EntityData orphanEntities;
-	
-	for (auto &c : sd.chunkCache.savedChunks)
-	{
-		auto &entityData = c.second->entityData;
-
-		auto initialChunk = c.first;
-
-		for (auto it = entityData.droppedItems.begin(); it != entityData.droppedItems.end(); )
-		{
-			auto &e = *it;
-
-			genericCallUpdateForEntity(e, deltaTime, chunkGetter);
-			auto newChunk = determineChunkThatIsEntityIn(e.second.getPosition());
-
-			//todo this should take into acount if that player should recieve it
-			genericBroadcastEntityUpdateFromServerToPlayer
-				< Packet_RecieveDroppedItemUpdate,
-				headerClientRecieveDroppedItemUpdate>(e, false, currentTimer);
-
-			if (initialChunk != newChunk)
-			{
-				orphanEntities.droppedItems.insert(
-					{e.first, e.second});
-			
-				it = entityData.droppedItems.erase(it);
-			}
-			else
-			{
-				++it;
-			}
-
-		}
-
-		for (auto it = entityData.zombies.begin(); it != entityData.zombies.end(); )
-		{
-			auto &e = *it;
-
-			genericCallUpdateForEntity(e, deltaTime, chunkGetter);
-			auto newChunk = determineChunkThatIsEntityIn(e.second.getPosition());
-
-			//todo this should take into acount if that player should recieve it
-			genericBroadcastEntityUpdateFromServerToPlayer
-				< Packet_UpdateZombie,
-				headerUpdateZombie>(e, false, currentTimer);
-
-			if (initialChunk != newChunk)
-			{
-				orphanEntities.zombies.insert(
-					{e.first, e.second});
-			
-				it = entityData.zombies.erase(it);
-
-				std::cout << "Orphaned!\n";
-			}
-			else
-			{
-				++it;
-			}
-		}
-
-
-	}
-	
-	
-	//re set entities in their new chunk
-	for (auto &e : orphanEntities.droppedItems)
-	{
-		auto pos = determineChunkThatIsEntityIn(e.second.getPosition());
-		auto chunk = sd.chunkCache.getChunkOrGetNull(pos.x, pos.y);
-
-		if (chunk)
-		{
-			chunk->entityData.droppedItems.insert({e.first, e.second});
-		}
-		else
-		{
-			//todo save entity to disk!
-		}
-	}
-
-	for (auto &e : orphanEntities.zombies)
-	{
-		auto pos = determineChunkThatIsEntityIn(e.second.getPosition());
-		auto chunk = sd.chunkCache.getChunkOrGetNull(pos.x, pos.y);
-
-		if (chunk)
-		{
-			chunk->entityData.zombies.insert({e.first, e.second});
-		}
-		else
-		{
-			//todo save entity to disk!
-		}
-	}
-
-
-#pragma endregion
-
-
-
-
-
-}

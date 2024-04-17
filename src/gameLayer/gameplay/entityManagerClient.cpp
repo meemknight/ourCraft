@@ -48,7 +48,7 @@ void ClientEntityManager::dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int 
 			playerSquareDistance, 0))
 		{
 			it = droppedItems.erase(it);
-			std::cout << "Dropped dropped item\n";
+			//std::cout << "Dropped dropped item\n";
 		}
 		else
 		{
@@ -62,7 +62,7 @@ void ClientEntityManager::dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int 
 			playerSquareDistance, 0))
 		{
 			it = zombies.erase(it);
-			std::cout << "Dropped zombie\n";
+			//std::cout << "Dropped zombie\n";
 		}
 		else
 		{
