@@ -54,7 +54,7 @@ uniform sampler2D u_sunShadowTexture;
 uniform sampler2D u_brdf;
 
 
-const float fogGradient = 32;
+const float fogGradient = 16;
 
 
 uniform sampler2D u_depthTexture;
@@ -63,6 +63,7 @@ uniform int u_hasPeelInformation = 0;
 uniform sampler2D u_PeelTexture;
 uniform sampler2D u_dudv;
 uniform sampler2D u_dudvNormal;
+uniform sampler2D u_skyTexture;
 
 uniform float u_waterMove;
 uniform sampler2D u_caustics;
@@ -116,9 +117,16 @@ bool isWater()
 
 float computeFog(float dist)
 {
-	float rez = exp(-pow(dist*(1/u_fogDistance), fogGradient));
-	if(rez > 0.9){return 1;};
-	return rez;
+
+	float rezClose = exp(-pow(dist*(1.f/64), 32));
+	if(rezClose > 0.9){rezClose = 1;}
+	rezClose = rezClose / 4.f;
+	rezClose = rezClose + 0.75f;
+
+
+	float rez = exp(-pow(dist*(1.f/u_fogDistance), fogGradient));
+	if(rez > 0.9){rez = 1.f;}
+	return pow(rez,2) * rezClose;
 }
 
 float computeFogUnderWater(float dist)
@@ -638,7 +646,6 @@ vec2 getDudvCoords6(float speed)
 
 
 
-
 float linearizeDepth(float d)
 {
 	return 2 * u_near * u_far / (u_far + u_near - (2*d-1.f) * (u_far - u_near) );
@@ -1155,6 +1162,9 @@ void main()
 			}
 		}
 		
+		
+		vec3 skyBoxColor = texture(u_skyTexture, (gl_FragCoord.xy / textureSize(u_skyTexture, 0)) ).rgb;
+
 		vec3 N = applyNormalMap(v_normal);
 		//vec3 N = v_normal;
 		//vec3 ViewSpaceVector = compute(u_positionInt, u_positionFloat, fragmentPositionI, fragmentPositionF);
@@ -1398,12 +1408,11 @@ void main()
 		
 
 
-
 		//out_color.rgb = linear_to_srgb(out_color.rgb);
 		
 		//fog
 		//{
-		//	out_color.a *= computeFog(viewLength);	
+		//	out_color.a *= ;	
 		//}
 		
 		//is water	
@@ -1524,6 +1533,13 @@ void main()
 
 		}
 
+
+		if(u_underWater == 0)
+		{
+			out_color.rgb = mix(skyBoxColor, out_color.rgb, 
+								computeFog(viewLength)
+							);
+		}
 
 		//out_color.r = 1-roughness;
 		//out_color.g = metallic;

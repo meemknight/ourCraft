@@ -19,6 +19,9 @@ static std::deque<std::atomic<bool>> taskTaken;
 static float tickDeltaTime = 0;
 static std::uint64_t currentTimer = 0;
 
+int regionsAverageCounter[50] = {};
+int counterPosition = 0;
+
 void closeThreadPool()
 {
 	for (int i = 0; i < threadPool.currentCounter; i++)
@@ -26,6 +29,9 @@ void closeThreadPool()
 		threadPool.threIsWork[i] = 0;
 	}
 	threadPool.setThreadsNumber(0);
+
+	memset(regionsAverageCounter, 0, sizeof(regionsAverageCounter));
+	counterPosition = 0;
 }
 
 int tryTakeTask()
@@ -138,26 +144,52 @@ void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
 
 #pragma endregion
 
-	auto rez = pl.end();
 
-	//std::cout << chunkRegionsData.size() << std::fixed 
-	//	<< " Duration ms: " << (rez.timeSeconds/1000.f) << '\n';
 
 	taskTaken.resize(chunkRegionsData.size());
 	for (auto &i : taskTaken) { i = 0; }
 
-	//todo better way of asigning a number of threads over time
-	threadPool.setThreadsNumber(chunkRegionsData.size()-1);
+#pragma region set threads count
+	{
+
+		regionsAverageCounter[counterPosition] = chunkRegionsData.size();
+
+		if (counterPosition == 49)
+		{
+			float average = 0;
+			for (int i = 0; i < 50; i++)
+			{
+				average += regionsAverageCounter[i];
+			}
+
+			average /= 50;
+
+			int averageInt = std::roundf(average);
+
+			threadPool.setThreadsNumber(averageInt - 1);
+			counterPosition = 0;
+		}
+		else
+		{
+			counterPosition++;
+		}
+	}
+#pragma endregion
+
 
 	//start race
 	threadPool.setThrerIsWork();
+
+	auto rez = pl.end();
+	std::cout << threadPool.currentCounter << std::fixed
+		<< " Duration ms: " << (rez.timeSeconds/1000.f) << '\n';
 
 	while (true)
 	{
 		int taskIndex = tryTakeTask();
 		if (taskIndex < 0) { break; }
 		
-		std::cout << "main took task " << taskIndex << '\n';
+		//std::cout << "main took task " << taskIndex << '\n';
 
 		//tick
 		doGameTick(tickDeltaTime, currentTimer,
@@ -188,7 +220,7 @@ void workerThread(int index)
 				int taskIndex = tryTakeTask();
 				if (taskIndex < 0) { break; }
 				
-				std::cout << index << " took task " << taskIndex << '\n';
+				//std::cout << index << " took task " << taskIndex << '\n';
 
 				//tick
 				doGameTick(tickDeltaTime, currentTimer,
@@ -203,7 +235,7 @@ void workerThread(int index)
 		
 	}
 
-	std::cout << "Closed thread " << index << "\n";
+	//std::cout << "Closed thread " << index << "\n";
 }
 
 void ThreadPool::setThreadsNumber(int nr)

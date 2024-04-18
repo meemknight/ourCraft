@@ -588,12 +588,13 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	fboLastFrame.create(true, false);
 	fboLastFramePositions.create(GL_RGB16F, false);
 	fboHBAO.create(GL_RED, false);
+	fboSkyBox.create(true, false);
 
 	skyBoxRenderer.create();
 	skyBoxLoaderAndDrawer.createGpuData();
-	skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/skybox.png", defaultSkyBox);
+	//skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/skybox.png", defaultSkyBox);
 	//skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/nightsky.png", defaultSkyBox);
-	//skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/twilightsky.png", defaultSkyBox);
+	skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/twilightsky.png", defaultSkyBox);
 	sunTexture.loadFromFile(RESOURCES_PATH "sky/sun.png", false, false);
 
 	brdfTexture.loadFromFile(RESOURCES_PATH "otherTextures/brdf.png", false, false);
@@ -801,7 +802,8 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(defaultShader, u_brdf);
 	GET_UNIFORM2(defaultShader, u_inverseViewProjMat);
 	GET_UNIFORM2(defaultShader, u_lastViewProj);
-
+	GET_UNIFORM2(defaultShader, u_skyTexture);
+	
 
 	defaultShader.u_shadingSettings
 		= glGetUniformBlockIndex(defaultShader.shader.id, "ShadingSettings");
@@ -879,7 +881,6 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(hbaoShader, u_gNormal);
 	GET_UNIFORM2(hbaoShader, u_view);
 	GET_UNIFORM2(hbaoShader, u_projection);
-	
 
 	applyHBAOShader.shader.clear();
 	applyHBAOShader.shader.loadShaderProgramFromFile(
@@ -887,7 +888,12 @@ void Renderer::reloadShaders()
 		RESOURCES_PATH "shaders/postProcess/applyHBAO.frag");
 
 	GET_UNIFORM2(applyHBAOShader, u_hbao);
+	GET_UNIFORM2(applyHBAOShader, u_currentViewSpace);
 
+	applyHBAOShader.u_shadingSettings
+		= glGetUniformBlockIndex(applyHBAOShader.shader.id, "ShadingSettings");
+	glBindBufferBase(GL_UNIFORM_BUFFER,
+		applyHBAOShader.u_shadingSettings, defaultShader.shadingSettingsBuffer);
 
 #pragma endregion
 	
@@ -919,6 +925,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	fboLastFrame.updateSize(screenX, screenY);
 	fboLastFramePositions.updateSize(screenX, screenY);
 	fboHBAO.updateSize(screenX / 2, screenY / 2);
+
+	fboSkyBox.updateSize(screenX, screenY);
+	fboSkyBox.clearFBO();
 
 	glm::vec3 posFloat = {};
 	glm::ivec3 posInt = {};
@@ -966,8 +975,11 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fboOnlyFirstTarget);
 
 	programData.renderer.skyBoxLoaderAndDrawer.drawBefore(c.getProjectionMatrix() * c.getViewMatrix(),
-		programData.renderer.defaultSkyBox, programData.renderer.sunTexture,
+		programData.renderer.defaultSkyBox,programData.renderer.sunTexture,
 		programData.renderer.skyBoxRenderer.sunPos);
+
+	fboSkyBox.copyColorFromOtherFBO(fboMain.color,
+		fboMain.size.x, fboMain.size.y);
 
 #pragma endregion
 
@@ -1050,6 +1062,11 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glActiveTexture(GL_TEXTURE0 + 10);
 		glBindTexture(GL_TEXTURE_2D, brdfTexture.id);
 		glUniform1i(defaultShader.u_brdf, 10);
+
+		glActiveTexture(GL_TEXTURE0 + 11);
+		glBindTexture(GL_TEXTURE_2D, fboSkyBox.color);
+		glUniform1i(defaultShader.u_skyTexture, 11);
+		
 
 		glUniformMatrix4fv(defaultShader.u_cameraProjection, 1, GL_FALSE, glm::value_ptr(c.getProjectionMatrix()));
 
@@ -1628,6 +1645,11 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, fboHBAO.color);
 		glUniform1i(applyHBAOShader.u_hbao, 0);
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, fboMain.secondaryColor);
+		glUniform1i(applyHBAOShader.u_currentViewSpace, 1);
+		
 
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -2502,6 +2524,7 @@ void Renderer::FBO::copyColorFromOtherFBO(GLuint other, int w, int h)
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
+
 
 void Renderer::FBO::copyDepthAndColorFromOtherFBO(GLuint other, int w, int h)
 {

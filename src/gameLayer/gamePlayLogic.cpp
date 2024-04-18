@@ -81,7 +81,7 @@ bool initGameplay(ProgramData &programData, const char *c)
 	gameData.entityManager.localPlayer.entityId = playerData.yourPlayerEntityId;
 
 
-	gameData.chunkSystem.init(20);
+	gameData.chunkSystem.init(40);
 
 	gameData.sunShadow.init();
 
@@ -790,6 +790,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
 			{
 				ImGui::Image((void *)programData.renderer.fboHBAO.color, {256, 256},
+					{0, 1}, {1, 0});
+			}
+
+			if (ImGui::CollapsingHeader("Sky Map",
+				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+			{
+				ImGui::Image((void *)programData.renderer.fboSkyBox.color, {256, 256},
 					{0, 1}, {1, 0});
 			}
 

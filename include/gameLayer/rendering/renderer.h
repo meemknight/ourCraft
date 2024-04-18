@@ -97,6 +97,7 @@ struct Renderer
 		uniform u_lightPos = -1;
 		uniform u_sunShadowTexture = -1;
 		uniform u_brdf = -1;
+		uniform u_skyTexture = -1;
 		uniform u_inverseViewProjMat = -1;
 		GLuint u_shadingSettings = 0;
 		GLuint shadingSettingsBuffer = 0;
@@ -131,6 +132,9 @@ struct Renderer
 	{
 		Shader shader;
 		uniform u_hbao;
+		uniform u_currentViewSpace;
+		GLuint u_shadingSettings = 0;
+
 	}applyHBAOShader;
 
 	struct ZpassShader
@@ -190,6 +194,7 @@ struct Renderer
 
 	FBO fboHBAO;
 	FBO fboMain;
+	FBO fboSkyBox;
 	FBO fboCoppy;
 	FBO fboLastFrame;
 	FBO fboLastFramePositions;

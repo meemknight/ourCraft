@@ -343,6 +343,8 @@ void main()
 
 	occlusion = (occlusion / kernelSize);
 
+	occlusion = pow(occlusion,0.9);
+
 	fragColor.rgba = vec4(occlusion,0,0,1);
 
 	//fragColor = v_texCoords.y;
