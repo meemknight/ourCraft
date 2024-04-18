@@ -317,14 +317,18 @@ void serverWorkerUpdate(
 
 	std::vector<SendBlocksBack> sendNewBlocksToPlayers;
 
+	int chunksGenerated = 0;
+	int chunksLoaded = 0;
+
 	int count = sd.waitingTasks.size();
-	for (int taskIndex = 0; taskIndex < std::min(count, 15); taskIndex++)
+	for (int taskIndex = 0; taskIndex < std::min(count, 25); taskIndex++)
 	{
 		auto &i = sd.waitingTasks.front();
 
 		if (i.t.type == Task::generateChunk)
 		{
 			auto client = getClient(i.cid); //todo this could fail when players leave so return pointer and check
+			bool wasGenerated = 0;
 
 			if (checkIfPlayerShouldGetChunk(client.positionForChunkGeneration,
 				{i.t.pos.x, i.t.pos.z}, client.playerData.chunkDistance))
@@ -332,10 +336,11 @@ void serverWorkerUpdate(
 				PL::Profiler profiler;
 
 				profiler.start();
-				bool wasGenerated = 0;
 				auto rez = sd.chunkCache.getOrCreateChunk(i.t.pos.x, i.t.pos.z, wg, structuresManager, biomesManager,
 					sendNewBlocksToPlayers, true, nullptr, worldSaver, &wasGenerated);
 				profiler.end();
+
+				chunksLoaded++;
 
 				//if (wasGenerated)
 				//{
@@ -353,14 +358,12 @@ void serverWorkerUpdate(
 
 
 				{
-					lockConnectionsMutex();
 					auto client = getClientNotLocked(i.cid);
 					if (client)
 					{
 						sendPacketAndCompress(client->peer, packet, (char *)rez,
 							sizeof(Packet_RecieveChunk), true, channelChunksAndBlocks);
 					}
-					unlockConnectionsMutex();
 				}
 
 			}
@@ -370,7 +373,7 @@ void serverWorkerUpdate(
 					i.t.pos.x << " " << i.t.pos.z << " dist: " << client.playerData.chunkDistance << "\n";
 			}
 
-
+			if (wasGenerated) { chunksGenerated++; }
 		}
 		else
 			if (i.t.type == Task::placeBlock)
@@ -385,7 +388,6 @@ void serverWorkerUpdate(
 
 				//todo check if place is legal
 				bool noNeedToNotifyUndo = 0;
-				lockConnectionsMutex();
 
 				auto client = getClientNotLocked(i.cid);
 
@@ -437,13 +439,11 @@ void serverWorkerUpdate(
 
 				}
 
-				unlockConnectionsMutex();
 
 			}
 			else if (i.t.type == Task::droppedItemEntity)
 			{
 
-				lockConnectionsMutex();
 				auto client = getClientNotLocked(i.cid);
 
 				//todo some logic
@@ -458,7 +458,7 @@ void serverWorkerUpdate(
 						serverAllows = false; 
 					}
 
-					auto newId = getEntityIdSafeAndIncrement();
+					auto newId = getEntityIdAndIncrement();
 
 					if (computeRevisionStuff(*client, true && serverAllows, i.t.eventId,
 						&i.t.entityId, &newId))
@@ -497,14 +497,13 @@ void serverWorkerUpdate(
 
 				}
 
-				unlockConnectionsMutex();
 
 			}
 
 		sd.waitingTasks.erase(sd.waitingTasks.begin());
 
 		//we generate only one chunk per loop
-		if (i.t.type == Task::generateChunk)
+		if (chunksGenerated >= 1 || chunksLoaded >= 5)
 		{
 			break;
 		}
@@ -539,7 +538,7 @@ void serverWorkerUpdate(
 				z.position = position;
 				z.lastPosition = position;
 
-				spawnZombie(sd.chunkCache, z, getEntityIdSafeAndIncrement());
+				spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement());
 			}
 
 

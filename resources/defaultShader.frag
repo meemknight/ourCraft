@@ -122,10 +122,10 @@ float computeFog(float dist)
 	if(rezClose > 0.9){rezClose = 1;}
 	rezClose = rezClose / 4.f;
 	rezClose = rezClose + 0.75f;
-
+	rezClose = 1;
 
 	float rez = exp(-pow(dist*(1.f/u_fogDistance), fogGradient));
-	if(rez > 0.9){rez = 1.f;}
+	if(rez > 0.8){rez = 1.f;}
 	return pow(rez,2) * rezClose;
 }
 
@@ -1040,7 +1040,8 @@ void main()
 
 	const bool blockIsInWater = ((v_flags & 2) != 0);
 	const float baseAmbient = 0.1;
-	vec3 computedAmbient = vec3(toLinear(v_ambient * (1.f-baseAmbient) + baseAmbient));
+	const float multiplier = 0.9;
+	vec3 computedAmbient = vec3(toLinear(v_ambient * multiplier * (1.f-baseAmbient) + baseAmbient));
 	if(blockIsInWater)
 	{
 		computedAmbient *= vec3(0.38,0.4,0.42);
@@ -1079,7 +1080,7 @@ void main()
 
 		if(v_skyLightUnchanged > 5)
 		{
-			vec3 sunLightColor = vec3(1.5);
+			vec3 sunLightColor = vec3(3.5);
 			sunLightColor *= 1-((15-v_skyLightUnchanged)/9.f);
 			sunLightColor *= ((v_ambientInt/15.f)*0.6 + 0.4f);
 

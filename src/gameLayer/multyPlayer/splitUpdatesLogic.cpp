@@ -52,155 +52,185 @@ int tryTakeTask()
 void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
 	ServerChunkStorer &chunkCache)
 {
-	::tickDeltaTime = tickDeltaTime;
-	::currentTimer = currentTimer;
 
-	PL::Profiler pl;
 
-	pl.start();
-
-	chunkRegionsData.clear();
-	chunkRegionsData.reserve(10);
-
-#pragma region start bfs
-
-	std::unordered_map<glm::ivec2, int> visited;
-
-	for (auto i : chunkCache.savedChunks)
+	if (1)
 	{
-		if (!i.second->otherData.shouldUnload)
+		::tickDeltaTime = tickDeltaTime;
+		::currentTimer = currentTimer;
+
+		PL::Profiler pl;
+
+		pl.start();
+
+		chunkRegionsData.clear();
+		chunkRegionsData.reserve(10);
+
+	#pragma region start bfs
+
+		std::unordered_map<glm::ivec2, int> visited;
+
+		for (auto i : chunkCache.savedChunks)
 		{
-
-			auto find = visited.find(i.first);
-
-			if (find == visited.end())
+			if (!i.second->otherData.shouldUnload)
 			{
-				chunkRegionsData.push_back({});
-				
-				int currentIndex = chunkRegionsData.size() - 1;
 
-				visited.insert({i.first, currentIndex});
+				auto find = visited.find(i.first);
 
-				chunkRegionsData[currentIndex].chunkCache.
-					savedChunks.insert(i);
-
-				std::deque<glm::ivec2> toLook;
-				toLook.push_back({i.first + glm::ivec2(1,0)});
-				toLook.push_back({i.first + glm::ivec2(0,1)});
-				toLook.push_back({i.first + glm::ivec2(-1,0)});
-				toLook.push_back({i.first + glm::ivec2(0,-1)});
-				toLook.push_back({i.first + glm::ivec2(1,1)});
-				toLook.push_back({i.first + glm::ivec2(-1,1)});
-				toLook.push_back({i.first + glm::ivec2(1,-1)});
-				toLook.push_back({i.first + glm::ivec2(-1,-1)});
-
-				//start BFS
-				while(!toLook.empty())
+				if (find == visited.end())
 				{
-					auto el = toLook.back();
-					toLook.pop_back();
+					chunkRegionsData.push_back({});
 
-					auto found = visited.find(el);
+					int currentIndex = chunkRegionsData.size() - 1;
 
-					if (found != visited.end())
+					visited.insert({i.first, currentIndex});
+
+					chunkRegionsData[currentIndex].chunkCache.
+						savedChunks.insert(i);
+
+					std::deque<glm::ivec2> toLook;
+					toLook.push_back({i.first + glm::ivec2(1,0)});
+					toLook.push_back({i.first + glm::ivec2(0,1)});
+					toLook.push_back({i.first + glm::ivec2(-1,0)});
+					toLook.push_back({i.first + glm::ivec2(0,-1)});
+					toLook.push_back({i.first + glm::ivec2(1,1)});
+					toLook.push_back({i.first + glm::ivec2(-1,1)});
+					toLook.push_back({i.first + glm::ivec2(1,-1)});
+					toLook.push_back({i.first + glm::ivec2(-1,-1)});
+
+					//start BFS
+					while (!toLook.empty())
 					{
-						permaAssertComment(found->second == currentIndex, "error in the split chunks algorithm");
-					}
-					else
-					{
-						auto foundChunk = chunkCache.savedChunks.find(el);
-						if (foundChunk != chunkCache.savedChunks.end())
+						auto el = toLook.back();
+						toLook.pop_back();
+
+						auto found = visited.find(el);
+
+						if (found != visited.end())
 						{
-							if(!foundChunk->second->otherData.shouldUnload)
+							permaAssertComment(found->second == currentIndex, "error in the split chunks algorithm");
+						}
+						else
+						{
+							auto foundChunk = chunkCache.savedChunks.find(el);
+							if (foundChunk != chunkCache.savedChunks.end())
 							{
-								visited.insert({el, currentIndex});
+								if (!foundChunk->second->otherData.shouldUnload)
+								{
+									visited.insert({el, currentIndex});
 
-								chunkRegionsData[currentIndex].chunkCache.
-									savedChunks.insert(*foundChunk);
+									chunkRegionsData[currentIndex].chunkCache.
+										savedChunks.insert(*foundChunk);
 
-								toLook.push_back({el + glm::ivec2(1,0)});
-								toLook.push_back({el + glm::ivec2(0,1)});
-								toLook.push_back({el + glm::ivec2(-1,0)});
-								toLook.push_back({el + glm::ivec2(0,-1)});
-								toLook.push_back({el + glm::ivec2(1,1)});
-								toLook.push_back({el + glm::ivec2(-1,1)});
-								toLook.push_back({el + glm::ivec2(1,-1)});
-								toLook.push_back({el + glm::ivec2(-1,-1)});
+									toLook.push_back({el + glm::ivec2(1,0)});
+									toLook.push_back({el + glm::ivec2(0,1)});
+									toLook.push_back({el + glm::ivec2(-1,0)});
+									toLook.push_back({el + glm::ivec2(0,-1)});
+									toLook.push_back({el + glm::ivec2(1,1)});
+									toLook.push_back({el + glm::ivec2(-1,1)});
+									toLook.push_back({el + glm::ivec2(1,-1)});
+									toLook.push_back({el + glm::ivec2(-1,-1)});
+								}
+
 							}
 
 						}
 
-					}
 
+					}
 
 				}
 
 			}
 
+
+		}
+
+	#pragma endregion
+
+
+
+		taskTaken.resize(chunkRegionsData.size());
+		for (auto &i : taskTaken) { i = 0; }
+
+	#pragma region set threads count
+		{
+
+			regionsAverageCounter[counterPosition] = chunkRegionsData.size();
+
+			if (counterPosition == 49)
+			{
+				float average = 0;
+				for (int i = 0; i < 50; i++)
+				{
+					average += regionsAverageCounter[i];
+				}
+
+				average /= 50;
+
+				int averageInt = std::roundf(average);
+
+				threadPool.setThreadsNumber(averageInt - 1);
+				counterPosition = 0;
+			}
+			else
+			{
+				counterPosition++;
+			}
+		}
+	#pragma endregion
+
+
+		//start race
+		threadPool.setThrerIsWork();
+
+		auto rez = pl.end();
+		//std::cout << threadPool.currentCounter << std::fixed
+		//	<< " Duration ms: " << (rez.timeSeconds/1000.f) << '\n';
+
+		while (true)
+		{
+			int taskIndex = tryTakeTask();
+			if (taskIndex < 0) { break; }
+
+			//std::cout << "main took task " << taskIndex << '\n';
+
+			//tick
+			doGameTick(tickDeltaTime, currentTimer,
+				chunkRegionsData[taskIndex].chunkCache,
+				chunkRegionsData[taskIndex].orphanEntities);
 		}
 
 
+		threadPool.waitForEveryoneToFinish();
+
+		//todo save orphan entities to disk...
+
 	}
-
-#pragma endregion
-
-
-
-	taskTaken.resize(chunkRegionsData.size());
-	for (auto &i : taskTaken) { i = 0; }
-
-#pragma region set threads count
+	else
 	{
+		ServerChunkStorer copy;
+		EntityData orphans;
 
-		regionsAverageCounter[counterPosition] = chunkRegionsData.size();
-
-		if (counterPosition == 49)
+		for (auto &i : chunkCache.savedChunks)
 		{
-			float average = 0;
-			for (int i = 0; i < 50; i++)
+
+			if (i.second && !i.second->otherData.shouldUnload)
 			{
-				average += regionsAverageCounter[i];
+				copy.savedChunks.insert(i);
 			}
 
-			average /= 50;
-
-			int averageInt = std::roundf(average);
-
-			threadPool.setThreadsNumber(averageInt - 1);
-			counterPosition = 0;
 		}
-		else
-		{
-			counterPosition++;
-		}
-	}
-#pragma endregion
 
-
-	//start race
-	threadPool.setThrerIsWork();
-
-	auto rez = pl.end();
-	std::cout << threadPool.currentCounter << std::fixed
-		<< " Duration ms: " << (rez.timeSeconds/1000.f) << '\n';
-
-	while (true)
-	{
-		int taskIndex = tryTakeTask();
-		if (taskIndex < 0) { break; }
-		
-		//std::cout << "main took task " << taskIndex << '\n';
-
-		//tick
 		doGameTick(tickDeltaTime, currentTimer,
-			chunkRegionsData[taskIndex].chunkCache,
-			chunkRegionsData[taskIndex].orphanEntities);
+			copy,
+			orphans);
+
+
 	}
 
 
-	threadPool.waitForEveryoneToFinish();
-
-	//todo save orphan entities to disk...
+	
 
 
 }

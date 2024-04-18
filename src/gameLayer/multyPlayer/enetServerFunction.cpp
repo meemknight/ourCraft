@@ -24,23 +24,17 @@
 
 //todo add to a struct
 ENetHost *server = 0;
-std::mutex connectionsMutex; //todo remove 
 std::unordered_map<CID, Client> connections;
 static CID pids = 1;
 static std::uint64_t entityId = RESERVED_CLIENTS_ID + 1;
 static std::thread enetServerThread;
 
-std::mutex entityIdMutex; //todo remove
 std::uint64_t getEntityIdNowLocked() { return entityId; }
-void lockEntityIdMutex() { entityIdMutex.lock(); }
-void unlockEntityIdMutex() { entityIdMutex.unlock(); }
 
-std::uint64_t getEntityIdSafeAndIncrement()
+std::uint64_t getEntityIdAndIncrement()
 {
-	lockEntityIdMutex();
 	std::uint64_t id = entityId;
 	entityId++;
-	unlockEntityIdMutex();
 	return entityId;
 }
 
@@ -57,9 +51,7 @@ void broadCastNotLocked(Packet p, void *data, size_t size, ENetPeer *peerToIgnor
 
 void broadCast(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel)
 {
-	connectionsMutex.lock();
 	broadCastNotLocked(p, data, size, peerToIgnore, reliable, channel);
-	connectionsMutex.unlock();
 }
 
 bool checkIfPlayerShouldGetChunk(glm::ivec2 playerPos2D,
@@ -79,9 +71,7 @@ bool checkIfPlayerShouldGetChunk(glm::ivec2 playerPos2D,
 
 Client getClient(CID cid)
 {
-	connectionsMutex.lock();
 	Client rez = connections[cid];
-	connectionsMutex.unlock();
 	return rez;
 }
 
@@ -92,29 +82,15 @@ Client *getClientNotLocked(CID cid)
 	return &it->second;
 }
 
-void lockConnectionsMutex()
-{
-	connectionsMutex.lock();
-}
-
-void unlockConnectionsMutex()
-{
-	connectionsMutex.unlock();
-}
-
 std::unordered_map<CID, Client> getAllClients()
 {
-	connectionsMutex.lock();
 	auto rez = connections;
-	connectionsMutex.unlock();
 	return rez;
 }
 
 void insertConnection(CID cid, Client c)
 {
-	connectionsMutex.lock();
 	connections.insert({cid, c});
-	connectionsMutex.unlock();
 }
 
 void sentNewConnectionMessage(ENetPeer *peer, Client c, CID cid)
@@ -149,7 +125,7 @@ void broadcastNewConnectionMessage(ENetPeer *peerToIgnore, Client c, CID cid)
 void addConnection(ENetHost *server, ENetEvent &event)
 {
 
-	auto id = getEntityIdSafeAndIncrement();
+	auto id = getEntityIdAndIncrement();
 
 	glm::dvec3 spawnPosition(0, 107, 0);
 
@@ -226,9 +202,7 @@ void removeConnection(ENetHost *server, ENetEvent &event)
 
 			broadCastNotLocked(p, &data, sizeof(data), 0, true, channelHandleConnections);
 
-			lockConnectionsMutex();
 			connections.erase(connections.find(c.first));
-			unlockConnectionsMutex();
 			break;
 		}
 	}
@@ -269,7 +243,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			bool error = 0;
 
 			{
-				connectionsMutex.lock();
+
 				auto it = connections.find(p.cid);
 				if (it == connections.end())
 				{
@@ -282,7 +256,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 					//std::cout << packetData.playersPositionAtRequest.x << "\n";
 					squareDistance = it->second.playerData.chunkDistance;
 				}
-				connectionsMutex.unlock();
+
 			}
 
 			if (!error)
@@ -317,7 +291,6 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 
 			Client clientCopy = {};
 
-			connectionsMutex.lock();
 			
 			auto it = connections.find(p.cid);
 			if (it == connections.end())
@@ -346,7 +319,6 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 
 			}
 
-			connectionsMutex.unlock();
 
 			if (packetData.timer + 16 * 4 > getTimer())
 			{
@@ -475,7 +447,9 @@ void enetServerFunction()
 		//waitTimer = std::max(std::min(waitTimer-1, 10), 0);
 		
 		int waitTime = 3;
-		while (enet_host_service(server, &event, waitTime) > 0 && enetServerRunning)
+		int tries = 10;
+		while (((enet_host_service(server, &event, waitTime) > 0) || (waitTime=0, tries-- > 0) ) 
+			&& enetServerRunning)
 		{
 			//we wait only the first time, than we want to let the server update happen.
 			waitTime = 0;
