@@ -54,7 +54,7 @@ uniform sampler2D u_sunShadowTexture;
 uniform sampler2D u_brdf;
 
 
-const float fogGradient = 16;
+const float fogGradient = 32;
 
 
 uniform sampler2D u_depthTexture;
@@ -125,7 +125,7 @@ float computeFog(float dist)
 	rezClose = 1;
 
 	float rez = exp(-pow(dist*(1.f/u_fogDistance), fogGradient));
-	if(rez > 0.8){rez = 1.f;}
+	if(rez > 0.8){rez = pow(rez,0.5f);}
 	return pow(rez,2) * rezClose;
 }
 

@@ -21,7 +21,7 @@ uniform ShadingSettings
 	int u_shaders;
 };
 
-const float fogGradient = 4;
+const float fogGradient = 16;
 
 float computeFog(float dist)
 {
