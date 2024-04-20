@@ -13,6 +13,8 @@ struct Model
 	GLuint indexBuffer = 0;
 	GLuint vao = 0;
 	size_t vertexCount = 0;
+	std::vector<glm::mat4> transforms;
+
 };
 
 

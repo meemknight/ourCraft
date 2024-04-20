@@ -16,6 +16,7 @@
 #include <gameplay/entityManagerClient.h>
 #include <rendering/frustumCulling.h>
 #include <rendering/model.h>
+#include <glm/gtx/quaternion.hpp>
 
 #define GET_UNIFORM(s, n) n = s.getUniform(#n);
 #define GET_UNIFORM2(s, n) s. n = s.shader.getUniform(#n);
@@ -882,6 +883,7 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(entityRenderer.basicEntityShader, u_cameraPositionFloat);
 	GET_UNIFORM2(entityRenderer.basicEntityShader, u_texture);
 	GET_UNIFORM2(entityRenderer.basicEntityShader, u_view);
+	GET_UNIFORM2(entityRenderer.basicEntityShader, u_skinningMatrix);
 	
 
 #pragma endregion
@@ -1485,9 +1487,20 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 			}
 
+			auto newTransforms = modelsManager.human.transforms;
+
+			newTransforms[2] = modelsManager.human.transforms[2] * glm::rotate(glm::radians(30.f), glm::vec3{1,0,0});
+
+			newTransforms[0] = modelsManager.human.transforms[0] * glm::toMat4(
+				glm::quatLookAt(glm::normalize(glm::vec3(-0.5,0.2,-0.3)), glm::vec3(0,1,0)) );
+
 
 			glBindVertexArray(modelsManager.human.vao);
 			entityRenderer.basicEntityShader.shader.bind();
+
+			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
+				newTransforms.size(), GL_FALSE, &newTransforms[0][0][0]);
+
 			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
 			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_view, 1, GL_FALSE, &viewMatrix[0][0]);
 			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE, 
