@@ -543,60 +543,60 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	}
 
 
-	auto drawPlayerBox = [&](glm::dvec3 pos, glm::vec3 boxSize)
-	{
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2),
-			pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2));
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2),
-			pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2));
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2),
-			pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2));
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2),
-			pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2));
-
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2),
-			pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2));
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2),
-			pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2));
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2),
-			pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2));
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2),
-			pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2));
-
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2),
-			pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2));
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2),
-			pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2));
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2),
-			pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2));
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2),
-			pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2));
-	};
-
-	for (auto &p : gameData.entityManager.players)
-	{
-		programData.pointDebugRenderer.
-			renderPoint(gameData.c, p.second.getRubberBandPosition());
-
-		auto boxSize = glm::vec3(0.8, 1.8, 0.8);
-		auto pos = p.second.getRubberBandPosition();
-
-		drawPlayerBox(pos, boxSize);
-	}
-
-	for (auto &p : gameData.entityManager.zombies)
-	{
-		//std::cout << p.second.getPosition().x << ' ' << 
-		//	p.second.getPosition().y << " " << p.second.getPosition().z << "\n";
-
-		programData.pointDebugRenderer.
-			renderPoint(gameData.c, p.second.getRubberBandPosition());
-
-		auto boxSize = glm::vec3(0.8, 1.8, 0.8);
-		auto pos = p.second.getRubberBandPosition();
-
-		drawPlayerBox(pos, boxSize);
-	}
+	//auto drawPlayerBox = [&](glm::dvec3 pos, glm::vec3 boxSize)
+	//{
+	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2),
+	//		pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2));
+	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2),
+	//		pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2));
+	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2),
+	//		pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2));
+	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2),
+	//		pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2));
+	//
+	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2),
+	//		pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2));
+	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2),
+	//		pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2));
+	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2),
+	//		pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2));
+	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2),
+	//		pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2));
+	//
+	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2),
+	//		pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2));
+	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2),
+	//		pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2));
+	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2),
+	//		pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2));
+	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2),
+	//		pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2));
+	//};
+	//
+	//for (auto &p : gameData.entityManager.players)
+	//{
+	//	programData.pointDebugRenderer.
+	//		renderPoint(gameData.c, p.second.getRubberBandPosition());
+	//
+	//	auto boxSize = glm::vec3(0.8, 1.8, 0.8);
+	//	auto pos = p.second.getRubberBandPosition();
+	//
+	//	drawPlayerBox(pos, boxSize);
+	//}
+	//
+	//for (auto &p : gameData.entityManager.zombies)
+	//{
+	//	//std::cout << p.second.getPosition().x << ' ' << 
+	//	//	p.second.getPosition().y << " " << p.second.getPosition().z << "\n";
+	//
+	//	programData.pointDebugRenderer.
+	//		renderPoint(gameData.c, p.second.getRubberBandPosition());
+	//
+	//	auto boxSize = glm::vec3(0.8, 1.8, 0.8);
+	//	auto pos = p.second.getRubberBandPosition();
+	//
+	//	drawPlayerBox(pos, boxSize);
+	//}
 
 	
 	//programData.gyzmosRenderer.drawLine(

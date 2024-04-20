@@ -1,3 +1,9 @@
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/mat3x3.hpp>
+#include <glm/gtx/transform.hpp>
 #include <rendering/model.h>
 #include <iostream>
 #include <assimp/Importer.hpp>
@@ -6,6 +12,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/gtc/type_ptr.hpp> // for glm::make_mat4
+#include <glm/gtx/quaternion.hpp>
 
 glm::mat4 aiToGlm(const aiMatrix4x4 &matrix)
 {
@@ -36,16 +43,16 @@ void ModelsManager::loadAllModels()
 {
 
 
-	//load textures
+	auto loadTexture = [&](const char *path, 
+		gl2d::Texture &texture,
+		GLuint64 &handle)
 	{
+		texture.loadFromFile(path, true, false);
 
-		steveTexture.loadFromFile(RESOURCES_PATH "models/steve.png", true, false);
-		//steveTexture.loadFromFile(RESOURCES_PATH "models/otherskin.png", true, false);
-		
-		if (steveTexture.id)
+		if (texture.id)
 		{
 
-			steveTexture.bind();
+			texture.bind();
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
@@ -54,14 +61,22 @@ void ModelsManager::loadAllModels()
 
 			glGenerateMipmap(GL_TEXTURE_2D);
 
-			steveTextureHandle = glGetTextureHandleARB(steveTexture.id);
-			glMakeTextureHandleResidentARB(steveTextureHandle);
-			std::cout << "Loaded steve texture!\n";
+			handle = glGetTextureHandleARB(texture.id);
+			glMakeTextureHandleResidentARB(handle);
 		}
 		else
 		{
-			std::cout << "Error steve texture!\n";
+			//todo error report
+			std::cout << "Error loading: " << path << "\n";
 		}
+	};
+
+
+	//load textures
+	{
+		loadTexture(RESOURCES_PATH "models/steve.png", steveTexture, steveTextureHandle);
+		loadTexture(RESOURCES_PATH "models/zombie.png", zombieTexture, zombieTextureHandle);
+		
 
 	}
 
@@ -73,12 +88,6 @@ void ModelsManager::loadAllModels()
 
 	importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT); // Remove lines and points
 	importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, aiComponent_NORMALS | aiComponent_BONEWEIGHTS | aiComponent_ANIMATIONS);
-
-
-
-	//const aiScene *scene = importer.ReadFile(RESOURCES_PATH "models/easymodel.glb", flags);
-	const aiScene *scene = importer.ReadFile(RESOURCES_PATH "models/human.glb", flags);
-
 
 	struct Data
 	{
@@ -94,120 +103,199 @@ void ModelsManager::loadAllModels()
 	std::vector<unsigned int> indices;
 	indices.reserve(400);
 
-	if (scene)
+	auto loadModel = [&](const char *path, Model &model)
 	{
+		vertexes.clear();
+		indices.clear();
 
-		glGenVertexArrays(1, &human.vao);
-		glBindVertexArray(human.vao);
+		const aiScene *scene = importer.ReadFile(path, flags);
 
-		glGenBuffers(1, &human.geometry);
-		glGenBuffers(1, &human.indexBuffer);
-
-		glBindBuffer(GL_ARRAY_BUFFER, human.geometry);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, human.indexBuffer);
-
-		
-		
-		std::cout << "count : " << scene->mNumMeshes << "\n";
-
-		std::cout << "childrens : " << scene->mRootNode->mNumChildren << "\n";
-
-		unsigned int vertexOffset = 0;
-
-		for (unsigned int i = 0; i < scene->mRootNode->mNumChildren; ++i)
+		if (scene)
 		{
-			
-			const aiNode *node = scene->mRootNode->mChildren[i];
-			//const aiMesh *mesh = scene->mMeshes[i];
-			const aiMesh *mesh = scene->mMeshes[node->mMeshes[0]];
 
-			//const aiNode *node = scene->mRootNode->FindNode(mesh->mName);
-			//const aiNode *node = findNodeContainingMesh(scene->mRootNode, mesh);
-			if (!node)
-			{ std::cout << "no no no!\n"; }
-			aiMatrix4x4 transform = node->mTransformation;
-			human.transforms.push_back(glm::transpose(aiToGlm(transform)));
+			glGenVertexArrays(1, &model.vao);
+			glBindVertexArray(model.vao);
 
-			std::cout << node << "\n";
-			std::cout << aiToGlm(transform)[0][0] << " " << aiToGlm(transform)[0][1] << " " << aiToGlm(transform)[0][2] << " " << aiToGlm(transform)[0][3] << '\n';
-			std::cout << aiToGlm(transform)[1][0] << " " << aiToGlm(transform)[1][1] << " " << aiToGlm(transform)[1][2] << " " << aiToGlm(transform)[1][3] << '\n';
-			std::cout << aiToGlm(transform)[2][0] << " " << aiToGlm(transform)[2][1] << " " << aiToGlm(transform)[2][2] << " " << aiToGlm(transform)[2][3] << '\n';
-			std::cout << aiToGlm(transform)[3][0] << " " << aiToGlm(transform)[3][1] << " " << aiToGlm(transform)[3][2] << " " << aiToGlm(transform)[3][3] << '\n';
+			glGenBuffers(1, &model.geometry);
+			glGenBuffers(1, &model.indexBuffer);
 
-			std::cout << "-----\n";
+			glBindBuffer(GL_ARRAY_BUFFER, model.geometry);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model.indexBuffer);
 
-			for (unsigned int m = 0; m < mesh->mNumVertices; ++m)
+			unsigned int vertexOffset = 0;
+
+			for (unsigned int i = 0; i < scene->mRootNode->mNumChildren; ++i)
 			{
-				Data vertex;
 
-				vertex.boneIndex = i;
+				const aiNode *node = scene->mRootNode->mChildren[i];
 
-				// Positions
-				vertex.position.x = mesh->mVertices[m].x;
-				vertex.position.y = mesh->mVertices[m].y;
-				vertex.position.z = mesh->mVertices[m].z;
-
-				// Normals
-				vertex.normal.x = mesh->mNormals[m].x;
-				vertex.normal.y = mesh->mNormals[m].y;
-				vertex.normal.z = mesh->mNormals[m].z;
-
-				// UVs (if present)
-				if (mesh->HasTextureCoords(0))
+				for (int m = 0; m < node->mNumMeshes; m++)
 				{
-					vertex.uv.x = mesh->mTextureCoords[0][m].x;
-					vertex.uv.y = mesh->mTextureCoords[0][m].y;
-				}
-				else
-				{
-					vertex.uv = glm::vec2(0.0f, 0.0f);
+					const aiMesh *mesh = scene->mMeshes[node->mMeshes[m]];
+
+					aiMatrix4x4 transform = node->mTransformation;
+					model.transforms.push_back(glm::transpose(aiToGlm(transform)));
+
+
+					for (unsigned int v = 0; v < mesh->mNumVertices; ++v)
+					{
+						Data vertex;
+
+						vertex.boneIndex = i;
+
+						// Positions
+						vertex.position.x = mesh->mVertices[v].x;
+						vertex.position.y = mesh->mVertices[v].y;
+						vertex.position.z = mesh->mVertices[v].z;
+
+						// Normals
+						vertex.normal.x = mesh->mNormals[v].x;
+						vertex.normal.y = mesh->mNormals[v].y;
+						vertex.normal.z = mesh->mNormals[v].z;
+
+						// UVs (if present)
+						if (mesh->HasTextureCoords(0))
+						{
+							vertex.uv.x = mesh->mTextureCoords[0][v].x;
+							vertex.uv.y = mesh->mTextureCoords[0][v].y;
+						}
+						else
+						{
+							vertex.uv = glm::vec2(0.0f, 0.0f);
+						}
+
+						vertexes.push_back(vertex);
+					}
+
+					for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
+					{
+						const aiFace &face = mesh->mFaces[i];
+						for (unsigned int j = 0; j < face.mNumIndices; ++j)
+						{
+							indices.push_back(face.mIndices[j] + vertexOffset);
+						}
+					}
+
+					vertexOffset += mesh->mNumVertices;
 				}
 
-				vertexes.push_back(vertex);
+
 			}
 
-			for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
-			{
-				const aiFace &face = mesh->mFaces[i];
-				for (unsigned int j = 0; j < face.mNumIndices; ++j)
-				{
-					indices.push_back(face.mIndices[j] + vertexOffset);
-				}
-			}
 
-			vertexOffset += mesh->mNumVertices;
+			model.vertexCount = indices.size();
+
+			glBufferData(GL_ARRAY_BUFFER, vertexes.size() * sizeof(Data), vertexes.data(), GL_STATIC_DRAW);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 9, 0);
+			glEnableVertexAttribArray(1);
+			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 9, (void *)(sizeof(float) * 3));
+			glEnableVertexAttribArray(2);
+			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 9, (void *)(sizeof(float) * 6));
+			glEnableVertexAttribArray(3);
+			glVertexAttribIPointer(3, 1, GL_INT, sizeof(float) * 9, (void *)(sizeof(float) * 8));
+
+
+			glBindVertexArray(0);
+
 		}
-		
-
-		human.vertexCount = indices.size();
-
-		std::cout << "Vertexes: " << vertexes.size() << "\n";
-		std::cout << "Indices: " << indices.size() << "\n";
-		std::cout << "Matrixes: " << human.transforms.size() << "\n";
-		glBufferData(GL_ARRAY_BUFFER, vertexes.size() * sizeof(Data), vertexes.data(), GL_STATIC_DRAW);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
-
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float)*9, 0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 9, (void*)(sizeof(float) * 3));
-		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 9, (void*)(sizeof(float) * 6));
-		glEnableVertexAttribArray(3);
-		glVertexAttribIPointer(3, 1, GL_INT, sizeof(float) * 9, (void *)(sizeof(float) * 8));
+		else
+		{
+			std::cout << "noSchene in" << path << "\n";
+			std::cout << importer.GetErrorString() << "\n";
+		}
 
 
-		glBindVertexArray(0);
+	};
 
-	}
-	else
-	{
-		std::cout << "noSchene:(((((\n";
-		std::cout << importer.GetErrorString() << "\n";
-	}
+
+	loadModel(RESOURCES_PATH "models/human.glb", human);
 
 
 	importer.FreeScene();
 
+
+}
+
+void animatePlayerLegs(glm::mat4 *poseVector,
+	float &currentAngle, int &direction, float deltaTime)
+{
+
+	if (direction == 0)
+	{
+		if (currentAngle)
+		{
+			if (currentAngle > 0)
+			{
+				currentAngle -= deltaTime;
+				if (currentAngle < 0)
+				{
+					currentAngle = 0;
+				}
+			}
+			else
+			{
+				currentAngle += deltaTime;
+				if (currentAngle > 0)
+				{
+					currentAngle = 0;
+				}
+			}
+		
+		}
+	}
+	{
+		currentAngle += deltaTime * direction;
+
+		if (direction == 1)
+		{
+			if (currentAngle >= glm::radians(40.f))
+			{
+				currentAngle = glm::radians(40.f);
+				direction = -1;
+			}
+		}
+		else
+		{
+			if (currentAngle <= glm::radians(-40.f))
+			{
+				currentAngle = glm::radians(-40.f);
+				direction = 1;
+			}
+		}
+
+	}
+
+	
+	poseVector[0]; //head
+	poseVector[1]; //torso
+	poseVector[2]; //right hand
+	poseVector[3]; //left hand
+	poseVector[4]; //right leg
+	poseVector[5]; //left leg
+
+	poseVector[4] = poseVector[4] * glm::rotate(currentAngle, glm::vec3{1.f,0.f,0.f});
+	poseVector[5] = poseVector[5] * glm::rotate(-currentAngle, glm::vec3{1.f,0.f,0.f});
+
+}
+
+static const auto frontHands = glm::rotate(glm::radians(90.f), glm::vec3{1.f,0.f,0.f});
+
+void animatePlayerHandsZombie(glm::mat4 *poseVector, float &currentAngle, float deltaTime)
+{
+
+	currentAngle += deltaTime;
+	if (currentAngle > glm::radians(360.f))
+	{
+		currentAngle -= glm::radians(360.f);
+	}
+
+	auto a = glm::quatLookAt(glm::normalize(glm::vec3(-sin(currentAngle), cos(currentAngle), 4)), glm::vec3(0, 1, 0));
+	auto b = glm::quatLookAt(glm::normalize(glm::vec3(-sin(currentAngle+10), cos(currentAngle+10), 4)), glm::vec3(0,1,0));
+
+	poseVector[2] = poseVector[2] * frontHands * glm::rotate(cos(currentAngle) * 0.02f, glm::vec3{1.f,0.f,0.f}) * glm::rotate(cos(currentAngle+5) * 0.05f, glm::vec3{0.f,0.f,1.f});
+	poseVector[3] = poseVector[3] * frontHands * glm::rotate(cos(currentAngle+10) * 0.02f, glm::vec3{1.f,0.f,0.f}) * glm::rotate(cos(currentAngle+15) * 0.05f, glm::vec3{0.f,0.f,1.f});
 
 }

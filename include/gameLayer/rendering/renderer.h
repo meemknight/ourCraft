@@ -178,6 +178,7 @@ struct Renderer
 			glm::dvec3 position;
 		};
 
+		//todo remove
 		std::vector<ItemEntityRenderData> itemEntitiesToRender;
 
 

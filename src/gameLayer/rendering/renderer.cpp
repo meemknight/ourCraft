@@ -1402,27 +1402,26 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	auto renderEntities = [&]()
 	{
-		{
-			//glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
-			glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
+		//glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
 
-			glDepthFunc(GL_LESS);
-
-
-			entityRenderer.blockEntityshader.shader.bind();
-
-			glBindVertexArray(entityRenderer.blockEntityshader.vaoCube);
+		glDepthFunc(GL_LESS);
 
 
-			glUniformMatrix4fv(entityRenderer.blockEntityshader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
-			glUniformMatrix4fv(entityRenderer.blockEntityshader.u_view, 1, GL_FALSE, &viewMatrix[0][0]);
-			glUniformMatrix4fv(entityRenderer.blockEntityshader.u_modelMatrix, 1, GL_FALSE,
-				glm::value_ptr(glm::scale(glm::vec3{0.4f})));
-			glUniform3fv(entityRenderer.blockEntityshader.u_cameraPositionFloat, 1, &posFloat[0]);
-			glUniform3iv(entityRenderer.blockEntityshader.u_cameraPositionInt, 1, &posInt[0]);
+		entityRenderer.blockEntityshader.shader.bind();
 
-			//debug stuff
-			if(0)
+		glBindVertexArray(entityRenderer.blockEntityshader.vaoCube);
+
+
+		glUniformMatrix4fv(entityRenderer.blockEntityshader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
+		glUniformMatrix4fv(entityRenderer.blockEntityshader.u_view, 1, GL_FALSE, &viewMatrix[0][0]);
+		glUniformMatrix4fv(entityRenderer.blockEntityshader.u_modelMatrix, 1, GL_FALSE,
+			glm::value_ptr(glm::scale(glm::vec3{0.4f})));
+		glUniform3fv(entityRenderer.blockEntityshader.u_cameraPositionFloat, 1, &posFloat[0]);
+		glUniform3iv(entityRenderer.blockEntityshader.u_cameraPositionInt, 1, &posInt[0]);
+
+		//debug stuff
+		if(0)
 			{
 				//todo something better here lol
 				std::uint64_t textures[6] = {};
@@ -1454,11 +1453,11 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 			}
 
-			//real entities
-			{
+		//real entities
+		{
 
-				//todo instance rendering
-				for (auto &e : entityManager.droppedItems)
+			//todo instance rendering
+			for (auto &e : entityManager.droppedItems)
 				{
 					//todo something better here lol
 					std::uint64_t textures[6] = {};
@@ -1485,51 +1484,76 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 					glDrawArrays(GL_TRIANGLES, 0, 36);
 				}
 
-			}
-
-			auto newTransforms = modelsManager.human.transforms;
-
-			newTransforms[2] = modelsManager.human.transforms[2] * glm::rotate(glm::radians(30.f), glm::vec3{1,0,0});
-
-			newTransforms[0] = modelsManager.human.transforms[0] * glm::toMat4(
-				glm::quatLookAt(glm::normalize(glm::vec3(-0.5,0.2,-0.3)), glm::vec3(0,1,0)) );
-
-
-			glBindVertexArray(modelsManager.human.vao);
-			entityRenderer.basicEntityShader.shader.bind();
-
-			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
-				newTransforms.size(), GL_FALSE, &newTransforms[0][0][0]);
-
-			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
-			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_view, 1, GL_FALSE, &viewMatrix[0][0]);
-			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE, 
-				&glm::mat4(1.f)[0][0]);
-			glUniform3fv(entityRenderer.basicEntityShader.u_cameraPositionFloat, 1, &posFloat[0]);
-			glUniform3iv(entityRenderer.basicEntityShader.u_cameraPositionInt, 1, &posInt[0]);
-
-			glUniformHandleui64ARB(entityRenderer.basicEntityShader.u_texture, modelsManager.steveTextureHandle);
-			
-
-			//render player entities
-			for (auto &e : entityRenderer.itemEntitiesToRender)
-			{
-				glm::vec3 entityFloat = {};
-				glm::ivec3 entityInt = {};
-				decomposePosition(e.position, entityFloat, entityInt);
-
-				glUniform3fv(entityRenderer.basicEntityShader.u_entityPositionFloat, 1, &entityFloat[0]);
-				glUniform3iv(entityRenderer.basicEntityShader.u_entityPositionInt, 1, &entityInt[0]);
-
-				glDrawElements(GL_TRIANGLES, modelsManager.human.vertexCount, GL_UNSIGNED_INT, nullptr);
-			}
-
-
-			entityRenderer.itemEntitiesToRender.clear();
-
-
-			glBindVertexArray(0);
 		}
+
+		//auto newTransforms = modelsManager.human.transforms;
+		//newTransforms[2] = modelsManager.human.transforms[2] * glm::rotate(glm::radians(30.f), glm::vec3{1,0,0});
+		//newTransforms[0] = modelsManager.human.transforms[0] * glm::toMat4(
+		//	glm::quatLookAt(glm::normalize(glm::vec3(-0.5,0.2,-0.3)), glm::vec3(0,1,0)) );
+
+
+		glBindVertexArray(modelsManager.human.vao);
+		entityRenderer.basicEntityShader.shader.bind();
+
+		auto poseCopy = modelsManager.human.transforms;
+
+		static float currentAngle = 0;
+		static float currentAngle2 = 0;
+		static int direction = 1;
+
+		animatePlayerLegs(poseCopy.data(), currentAngle, direction, deltaTime);
+		animatePlayerHandsZombie(poseCopy.data(), currentAngle2, deltaTime);
+
+		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
+			poseCopy.size(), GL_FALSE, &poseCopy[0][0][0]);
+
+
+		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
+		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_view, 1, GL_FALSE, &viewMatrix[0][0]);
+		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE, 
+			&glm::mat4(1.f)[0][0]);
+		glUniform3fv(entityRenderer.basicEntityShader.u_cameraPositionFloat, 1, &posFloat[0]);
+		glUniform3iv(entityRenderer.basicEntityShader.u_cameraPositionInt, 1, &posInt[0]);
+
+		glUniformHandleui64ARB(entityRenderer.basicEntityShader.u_texture, modelsManager.steveTextureHandle);
+		
+		auto renderPlayerModel = [&](glm::dvec3 pos)
+		{
+			glm::vec3 entityFloat = {};
+			glm::ivec3 entityInt = {};
+			decomposePosition(pos, entityFloat, entityInt);
+
+			glUniform3fv(entityRenderer.basicEntityShader.u_entityPositionFloat, 1, &entityFloat[0]);
+			glUniform3iv(entityRenderer.basicEntityShader.u_entityPositionInt, 1, &entityInt[0]);
+
+			glDrawElements(GL_TRIANGLES, modelsManager.human.vertexCount, GL_UNSIGNED_INT, nullptr);
+		};
+
+
+		for (auto &e : entityRenderer.itemEntitiesToRender)
+		{
+			renderPlayerModel(e.position);
+		}
+
+
+		//render player entities
+		for (auto &e : entityManager.players)
+		{
+			renderPlayerModel(e.second.getRubberBandPosition());
+		}
+
+		glUniformHandleui64ARB(entityRenderer.basicEntityShader.u_texture, modelsManager.zombieTextureHandle);
+
+		for (auto &e : entityManager.zombies)
+		{
+			renderPlayerModel(e.second.getRubberBandPosition());
+		}
+
+
+		entityRenderer.itemEntitiesToRender.clear();
+
+
+		glBindVertexArray(0);
 	};
 
 	auto copyToMainFbo = [&]()

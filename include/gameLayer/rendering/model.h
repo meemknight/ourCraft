@@ -30,4 +30,14 @@ struct ModelsManager
 
 	gl2d::Texture steveTexture;
 	GLuint64 steveTextureHandle;
+
+	gl2d::Texture zombieTexture;
+	GLuint64 zombieTextureHandle;
+
 };
+
+
+void animatePlayerLegs(glm::mat4 *poseVector, float &currentAngle, int &direction, float deltaTime);
+
+
+void animatePlayerHandsZombie(glm::mat4 *poseVector, float &currentAngle, float deltaTime);
