@@ -237,14 +237,25 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 				glm::ivec3 absolutPositionLight)
 			{
 				auto &b = neighbour->unsafeGet(lightBlock.x, lightBlock.y, lightBlock.z);
+				auto &b2 = chunk->unsafeGet(darkBlock.x, darkBlock.y, darkBlock.z);
+
 				if (b.getSkyLight() > 1)
 				{
-					auto &b2 = chunk->unsafeGet(darkBlock.x, darkBlock.y, darkBlock.z);
 					if (!b2.isOpaque())
 					{
 						lightSystem.addSunLight(*this, 
 							{absolutPositionLight.x, absolutPositionLight.y, absolutPositionLight.z},
 							b.getSkyLight());
+					}
+				}
+
+				if (b.getLight() > 1)
+				{
+					if (!b2.isOpaque())
+					{
+						lightSystem.addLight(*this,
+							{absolutPositionLight.x, absolutPositionLight.y, absolutPositionLight.z},
+							b.getLight());
 					}
 				}
 			};

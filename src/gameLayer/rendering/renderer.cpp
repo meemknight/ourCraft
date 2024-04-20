@@ -15,6 +15,7 @@
 #include <platformTools.h>
 #include <gameplay/entityManagerClient.h>
 #include <rendering/frustumCulling.h>
+#include <rendering/model.h>
 
 #define GET_UNIFORM(s, n) n = s.getUniform(#n);
 #define GET_UNIFORM2(s, n) s. n = s.shader.getUniform(#n);
@@ -700,11 +701,11 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	//GLuint vertexBufferCube = 0;
 	//GLuint indexBufferCube = 0;
 
-	glCreateVertexArrays(1, &entityRenderer.basicEntityshader.vaoCube);
-	glBindVertexArray(entityRenderer.basicEntityshader.vaoCube);
+	glCreateVertexArrays(1, &entityRenderer.blockEntityshader.vaoCube);
+	glBindVertexArray(entityRenderer.blockEntityshader.vaoCube);
 
-	glGenBuffers(1, &entityRenderer.basicEntityshader.vertexBufferCube);
-	glBindBuffer(GL_ARRAY_BUFFER, entityRenderer.basicEntityshader.vertexBufferCube);
+	glGenBuffers(1, &entityRenderer.blockEntityshader.vertexBufferCube);
+	glBindBuffer(GL_ARRAY_BUFFER, entityRenderer.blockEntityshader.vertexBufferCube);
 
 	//glBufferData(GL_ARRAY_BUFFER, sizeof(cubeEntityData), cubeEntityData, GL_STATIC_DRAW);
 
@@ -852,22 +853,34 @@ void Renderer::reloadShaders()
 
 #pragma region basic entity renderer
 
-	entityRenderer.basicEntityshader.shader.clear();
+	entityRenderer.blockEntityshader.shader.clear();
 
-	entityRenderer.basicEntityshader.shader.loadShaderProgramFromFile
+	entityRenderer.blockEntityshader.shader.loadShaderProgramFromFile
+	(RESOURCES_PATH "shaders/blockEntity.vert", RESOURCES_PATH "shaders/blockEntity.frag");
+	entityRenderer.blockEntityshader.shader.bind();
+
+	GET_UNIFORM2(entityRenderer.blockEntityshader, u_entityPositionInt);
+	GET_UNIFORM2(entityRenderer.blockEntityshader, u_entityPositionFloat);
+	GET_UNIFORM2(entityRenderer.blockEntityshader, u_viewProjection);
+	GET_UNIFORM2(entityRenderer.blockEntityshader, u_modelMatrix);
+	GET_UNIFORM2(entityRenderer.blockEntityshader, u_cameraPositionInt);
+	GET_UNIFORM2(entityRenderer.blockEntityshader, u_cameraPositionFloat);
+	GET_UNIFORM2(entityRenderer.blockEntityshader, u_texture);
+	GET_UNIFORM2(entityRenderer.blockEntityshader, u_view);
+
+
+	entityRenderer.basicEntityShader.shader.clear();
+	entityRenderer.basicEntityShader.shader.loadShaderProgramFromFile
 	(RESOURCES_PATH "shaders/basicEntity.vert", RESOURCES_PATH "shaders/basicEntity.frag");
-	entityRenderer.basicEntityshader.shader.bind();
+	entityRenderer.basicEntityShader.shader.bind();
 
-	GET_UNIFORM2(entityRenderer.basicEntityshader, u_entityPositionInt);
-	GET_UNIFORM2(entityRenderer.basicEntityshader, u_entityPositionFloat);
-	GET_UNIFORM2(entityRenderer.basicEntityshader, u_viewProjection);
-	GET_UNIFORM2(entityRenderer.basicEntityshader, u_modelMatrix);
-	GET_UNIFORM2(entityRenderer.basicEntityshader, u_cameraPositionInt);
-	GET_UNIFORM2(entityRenderer.basicEntityshader, u_cameraPositionFloat);
-	GET_UNIFORM2(entityRenderer.basicEntityshader, u_texture);
-	GET_UNIFORM2(entityRenderer.basicEntityshader, u_view);
-
-
+	GET_UNIFORM2(entityRenderer.basicEntityShader, u_entityPositionInt);
+	GET_UNIFORM2(entityRenderer.basicEntityShader, u_entityPositionFloat);
+	GET_UNIFORM2(entityRenderer.basicEntityShader, u_viewProjection);
+	GET_UNIFORM2(entityRenderer.basicEntityShader, u_modelMatrix);
+	GET_UNIFORM2(entityRenderer.basicEntityShader, u_cameraPositionInt);
+	GET_UNIFORM2(entityRenderer.basicEntityShader, u_cameraPositionFloat);
+	
 #pragma endregion
 
 #pragma region post process
@@ -910,7 +923,7 @@ struct DrawElementsIndirectCommand
 };
 
 void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSystem, Camera &c,
-	ProgramData &programData, BlocksLoader &blocksLoader, ClientEntityManager &entityManager
+	ProgramData &programData, BlocksLoader &blocksLoader, ClientEntityManager &entityManager, ModelsManager &modelsManager
 	, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos, bool underWater, int screenX, int screenY,
 	float deltaTime)
 {
@@ -1391,17 +1404,17 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			glDepthFunc(GL_LESS);
 
 
-			entityRenderer.basicEntityshader.shader.bind();
+			entityRenderer.blockEntityshader.shader.bind();
 
-			glBindVertexArray(entityRenderer.basicEntityshader.vaoCube);
+			glBindVertexArray(entityRenderer.blockEntityshader.vaoCube);
 
 
-			glUniformMatrix4fv(entityRenderer.basicEntityshader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
-			glUniformMatrix4fv(entityRenderer.basicEntityshader.u_view, 1, GL_FALSE, &viewMatrix[0][0]);
-			glUniformMatrix4fv(entityRenderer.basicEntityshader.u_modelMatrix, 1, GL_FALSE,
+			glUniformMatrix4fv(entityRenderer.blockEntityshader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
+			glUniformMatrix4fv(entityRenderer.blockEntityshader.u_view, 1, GL_FALSE, &viewMatrix[0][0]);
+			glUniformMatrix4fv(entityRenderer.blockEntityshader.u_modelMatrix, 1, GL_FALSE,
 				glm::value_ptr(glm::scale(glm::vec3{0.4f})));
-			glUniform3fv(entityRenderer.basicEntityshader.u_cameraPositionFloat, 1, &posFloat[0]);
-			glUniform3iv(entityRenderer.basicEntityshader.u_cameraPositionInt, 1, &posInt[0]);
+			glUniform3fv(entityRenderer.blockEntityshader.u_cameraPositionFloat, 1, &posFloat[0]);
+			glUniform3iv(entityRenderer.blockEntityshader.u_cameraPositionInt, 1, &posInt[0]);
 
 			//debug stuff
 			{
@@ -1413,7 +1426,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 					textures[i] = blocksLoader.gpuIds[getGpuIdIndexForBlock(BlockTypes::bookShelf, i)];
 				}
 
-				glUniformHandleui64vARB(entityRenderer.basicEntityshader.u_texture, 6, textures);
+				glUniformHandleui64vARB(entityRenderer.blockEntityshader.u_texture, 6, textures);
 
 
 				//todo instance rendering
@@ -1426,14 +1439,13 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 					entityFloat += glm::vec3(0, 0.2, 0);
 
-					glUniform3fv(entityRenderer.basicEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
-					glUniform3iv(entityRenderer.basicEntityshader.u_entityPositionInt, 1, &entityInt[0]);
+					glUniform3fv(entityRenderer.blockEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
+					glUniform3iv(entityRenderer.blockEntityshader.u_entityPositionInt, 1, &entityInt[0]);
 
 					glDrawArrays(GL_TRIANGLES, 0, 36);
 
 				}
 
-				entityRenderer.itemEntitiesToRender.clear();
 			}
 
 			//real entities
@@ -1451,7 +1463,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 							[getGpuIdIndexForBlock(e.second.entity.type, i)];
 					}
 
-					glUniformHandleui64vARB(entityRenderer.basicEntityshader.u_texture, 6, textures);
+					glUniformHandleui64vARB(entityRenderer.blockEntityshader.u_texture, 6, textures);
 
 					glm::vec3 entityFloat = {};
 					glm::ivec3 entityInt = {};
@@ -1461,13 +1473,40 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 					entityFloat += glm::vec3(0, 0.2, 0);
 
-					glUniform3fv(entityRenderer.basicEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
-					glUniform3iv(entityRenderer.basicEntityshader.u_entityPositionInt, 1, &entityInt[0]);
+					glUniform3fv(entityRenderer.blockEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
+					glUniform3iv(entityRenderer.blockEntityshader.u_entityPositionInt, 1, &entityInt[0]);
 
 					glDrawArrays(GL_TRIANGLES, 0, 36);
 				}
 
 			}
+
+
+			glBindVertexArray(modelsManager.human.vao);
+			entityRenderer.basicEntityShader.shader.bind();
+			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
+			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,
+				glm::value_ptr(glm::scale(glm::vec3{0.4f})));
+			glUniform3fv(entityRenderer.basicEntityShader.u_cameraPositionFloat, 1, &posFloat[0]);
+			glUniform3iv(entityRenderer.basicEntityShader.u_cameraPositionInt, 1, &posInt[0]);
+
+			//render player entities
+			for (auto &e : entityRenderer.itemEntitiesToRender)
+			{
+				glm::vec3 entityFloat = {};
+				glm::ivec3 entityInt = {};
+				decomposePosition(e.position, entityFloat, entityInt);
+
+				glUniform3fv(entityRenderer.blockEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
+				glUniform3iv(entityRenderer.blockEntityshader.u_entityPositionInt, 1, &entityInt[0]);
+
+				glDrawElements(GL_TRIANGLES, modelsManager.human.vertexCount, GL_UNSIGNED_INT, nullptr);
+			}
+
+
+			entityRenderer.itemEntitiesToRender.clear();
+
+
 			glBindVertexArray(0);
 		}
 	};

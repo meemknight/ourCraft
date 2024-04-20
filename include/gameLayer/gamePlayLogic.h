@@ -3,6 +3,8 @@
 #include "rendering/renderer.h"
 #include "blocksLoader.h"
 #include <structure.h>
+#include <rendering/model.h>
+
 struct ProgramData
 {
 	gl2d::Renderer2D renderer2d;
@@ -10,7 +12,7 @@ struct ProgramData
 	GyzmosRenderer gyzmosRenderer;
 	PointDebugRenderer pointDebugRenderer;
 	BlocksLoader blocksLoader;
-	
+	ModelsManager modelsManager;
 
 	gl2d::Font font;
 	gl2d::Texture texture;

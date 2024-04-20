@@ -1,4 +1,5 @@
-#version 330 core
+#version 430 core
+
 
 layout(location = 0) in vec3 shape;
 layout(location = 1) in vec3 normal;
@@ -15,6 +16,7 @@ uniform ivec3 u_cameraPositionInt;
 uniform vec3 u_cameraPositionFloat;
 
 out vec2 v_uv;
+flat out int v_id;
 out vec3 v_vertexPosition;
 
 void main()
@@ -30,6 +32,7 @@ void main()
 	
 	gl_Position = posProjection;
 	v_uv = uv;
+	v_id = gl_VertexID;
 
 	v_vertexPosition = posViewSemi.xyz;
 }

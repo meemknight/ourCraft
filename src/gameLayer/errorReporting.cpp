@@ -12,8 +12,8 @@ void createErrorFile()
 
 void reportError(const char *message)
 {
-	std::fstream f(RESOURCES_PATH "../errorLogs.txt", std::ios::app);
-	f << message << "\n";
-	f.close();
+	//std::fstream f(RESOURCES_PATH "../errorLogs.txt", std::ios::app);
+	//f << message << "\n";
+	//f.close();
 	std::cout << message << "\n";
 }

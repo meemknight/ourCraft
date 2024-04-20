@@ -4,6 +4,10 @@
 #include <lightSystem.h>
 #include <iostream>
 #include <rendering/bigGpuBuffer.h>
+#include <platformTools.h>
+
+#undef max
+#undef min
 
 Block *Chunk::safeGet(int x, int y, int z)
 {
@@ -28,6 +32,36 @@ static std::vector<TransparentCandidate> transparentCandidates;
 static std::vector<int> opaqueGeometry;
 static std::vector<int> transparentGeometry;
 static std::vector<glm::ivec4> lights;
+
+void arangeData(std::vector<int> &currentVector)
+{
+	glm::ivec4 *geometryArray = reinterpret_cast<glm::ivec4 *>(opaqueGeometry.data());
+	permaAssertComment(opaqueGeometry.size() % 4 == 0, "baking vector corrupted...");
+	size_t numElements = opaqueGeometry.size() / 4;
+
+	// Custom comparator function for sorting
+	auto comparator = [](const glm::ivec4 &a, const glm::ivec4 &b)
+	{
+		int firstPart = ((short *)&a.x)[0];
+		int secondPart = ((short *)&b.x)[0];
+
+		//return firstPart < secondPart;
+
+		if (firstPart != secondPart)
+			return firstPart < secondPart;
+		else
+		{
+			firstPart = ((short *)&a.x)[1];
+			secondPart = ((short *)&b.x)[1];
+			return firstPart < secondPart;
+		};
+
+	};
+
+	// Sort the array of glm::ivec4
+	std::sort(geometryArray, geometryArray + numElements, comparator);
+
+}
 
 //todo a counter to know if I have transparent geometry in this chunk
 bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, 
@@ -376,6 +410,8 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 					}
 				}
 
+		//trying to place the data in a better way for the gpu
+		arangeData(opaqueGeometry);
 	}
 
 	if (updateTransparency)

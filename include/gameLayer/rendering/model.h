@@ -1,0 +1,30 @@
+#pragma once
+#include <glad/glad.h>
+#include <vector>
+
+
+
+
+
+struct Model
+{
+
+	GLuint geometry = 0;
+	GLuint indexBuffer = 0;
+	GLuint vao = 0;
+	size_t vertexCount = 0;
+};
+
+
+
+
+struct ModelsManager
+{
+
+
+	void loadAllModels();
+
+	Model human;
+
+
+};

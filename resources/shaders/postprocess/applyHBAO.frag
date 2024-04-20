@@ -25,7 +25,7 @@ const float fogGradient = 16;
 
 float computeFog(float dist)
 {
-	float rez = exp(-pow(dist*(1/(u_fogDistance-16)), fogGradient));
+	float rez = exp(-pow(dist*(1/(u_fogDistance-32)), fogGradient));
 	if(rez > 0.9){return 1;};
 	return rez;
 }

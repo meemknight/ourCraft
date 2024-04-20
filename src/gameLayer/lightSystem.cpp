@@ -537,7 +537,8 @@ void LightSystem::setSunlightForAnEntireChunk(Chunk &chunk, ChunkSystem &chunkSy
 		{
 			if (!chunk.unsafeGet(xPos - xStart, CHUNK_HEIGHT - 1, zPos - ZStart).isOpaque())
 			{
-				addSunLightAndPropagateDown(chunkSystem, {xPos, CHUNK_HEIGHT - 1, zPos}, 15);
+				addSunLight(chunkSystem, {xPos, CHUNK_HEIGHT - 1, zPos}, 15);
+				//addSunLightAndPropagateDown(chunkSystem, {xPos, CHUNK_HEIGHT - 1, zPos}, 15);
 			}
 		}
 

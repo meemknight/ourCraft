@@ -26,6 +26,25 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
+# Configure Assimp
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ZLIB ON CACHE BOOL "" FORCE) # Make sure zlib is enabled if you're linking against libzstd_static
+set(ASSIMP_BUILD_NO_EXCEPTIONS ON CACHE BOOL "" FORCE) 
+set(ASSIMP_BUILD_OBJ_IMPORTER ON CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_OBJ_EXPORTER OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_MTL_IMPORTER ON CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_MTL_EXPORTER OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_GLTF_IMPORTER ON CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_GLTF_EXPORTER OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_GLTFB_IMPORTER ON CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_GLTFB_EXPORTER OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
+add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
+option(ASSIMP_BUILD_STATIC_LIB "If the library shall be built as static library." ON)
+set(ASSIMP_BUILD_ZLIB "1" CACHE STRING "If zlib is used, static linking. Specify Zlib < 1.3")
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+
 
 add_subdirectory(thirdparty/glfw-3.3.7)
 add_subdirectory(thirdparty/glad)
@@ -39,12 +58,13 @@ add_subdirectory(thirdparty/fastNoiseSIMD)
 add_subdirectory(thirdparty/FastNoise2)
 add_subdirectory(thirdparty/enet-1.3.17)
 add_subdirectory(thirdparty/glui)
-#add_subdirectory(thirdparty/assimp-5.2.4)
+add_subdirectory(thirdparty/assimp-5.2.4)
 add_subdirectory(thirdparty/magic_enum-0.9.3)
 add_subdirectory(thirdparty/safeSave)
 add_subdirectory(thirdparty/profilerLib)
 add_subdirectory(thirdparty/zstd-1.5.5/build/cmake)
 add_subdirectory(noiseTool)
+
 
 
 # Define MY_SOURCES to be a list of all the source files for my game 
@@ -88,5 +108,5 @@ target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURC
 
 target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE glm glfw glad stb_image stb_truetype 
 	gl2d raudio imgui fastNoiseSIMD FastNoise2 enet glui magic_enum safeSave profilerLib 
-	libzstd_static)
+	libzstd_static assimp)
 

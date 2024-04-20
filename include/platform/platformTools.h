@@ -1,7 +1,7 @@
 #pragma once
 
 //note this should be included last
-
+#define NOMINMAX
 #include "config.h"
 #include <signal.h>
 #include <string.h>

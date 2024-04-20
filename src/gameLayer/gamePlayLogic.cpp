@@ -504,7 +504,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		//programData.renderer.render(data, gameData.c, programData.texture);
 		programData.renderer.renderFromBakedData(gameData.sunShadow,gameData.chunkSystem, 
-			gameData.c, programData, programData.blocksLoader, gameData.entityManager, gameData.showLightLevels, 
+			gameData.c, programData, programData.blocksLoader, gameData.entityManager,
+			programData.modelsManager, gameData.showLightLevels, 
 			gameData.skyLightIntensity, gameData.point, underWater, w, h, deltaTime);
 
 		gameData.c.lastFrameViewProjMatrix =

@@ -10,6 +10,7 @@ struct ChunkSystem;
 struct ProgramData;
 struct SunShadow;
 struct ClientEntityManager;
+struct ModelsManager;
 
 using uniform = GLint;
 
@@ -170,15 +171,29 @@ struct Renderer
 			GLuint vertexBufferCube = 0;
 			GLuint indexBufferCube = 0;
 
-		}basicEntityshader;
+		}blockEntityshader;
 
 		struct ItemEntityRenderData
 		{
 			glm::dvec3 position;
 		};
 
-
 		std::vector<ItemEntityRenderData> itemEntitiesToRender;
+
+
+		struct BasicEntityShader
+		{
+			Shader shader;
+
+			uniform u_entityPositionInt;
+			uniform u_entityPositionFloat;
+			uniform u_viewProjection;
+			uniform u_modelMatrix;
+			uniform u_cameraPositionInt;
+			uniform u_cameraPositionFloat;
+
+		}basicEntityShader;
+		
 
 	}entityRenderer;
 
@@ -207,7 +222,8 @@ struct Renderer
 
 	void renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSystem, Camera &c,
 		ProgramData &programData, BlocksLoader &blocksLoader,
-		ClientEntityManager &entityManager, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos,
+		ClientEntityManager &entityManager, ModelsManager &modelsManager,
+		bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos,
 		bool underWater, int screenX, int screenY, float deltaTime);
 	
 	void renderShadow(SunShadow &sunShadow,

@@ -71,6 +71,7 @@ bool initGame()
 	programData.renderer.create(programData.blocksLoader);
 	programData.gyzmosRenderer.create();
 	programData.pointDebugRenderer.create();
+	programData.modelsManager.loadAllModels();
 
 
 	if (enet_initialize() != 0)
