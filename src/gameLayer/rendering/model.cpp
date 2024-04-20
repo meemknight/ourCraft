@@ -10,6 +10,36 @@ void ModelsManager::loadAllModels()
 {
 
 
+	//load textures
+	{
+
+		steveTexture.loadFromFile(RESOURCES_PATH "models/steve.png", true, false);
+		//steveTexture.loadFromFile(RESOURCES_PATH "models/otherskin.png", true, false);
+		
+		if (steveTexture.id)
+		{
+
+			steveTexture.bind();
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 6.f);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 6.f);
+
+			glGenerateMipmap(GL_TEXTURE_2D);
+
+			steveTextureHandle = glGetTextureHandleARB(steveTexture.id);
+			glMakeTextureHandleResidentARB(steveTextureHandle);
+			std::cout << "Loaded steve texture!\n";
+		}
+		else
+		{
+			std::cout << "Error steve texture!\n";
+		}
+
+	}
+
+
 	Assimp::Importer importer;
 
 	// Step 2: Specify Import Options
@@ -20,7 +50,7 @@ void ModelsManager::loadAllModels()
 
 
 
-	// Step 3: Load the Model
+	//const aiScene *scene = importer.ReadFile(RESOURCES_PATH "models/easymodel.glb", flags);
 	const aiScene *scene = importer.ReadFile(RESOURCES_PATH "models/human.glb", flags);
 
 
@@ -44,10 +74,10 @@ void ModelsManager::loadAllModels()
 		glBindVertexArray(human.vao);
 
 		glGenBuffers(1, &human.geometry);
-		glGenBuffers(1, &human.vao);
+		glGenBuffers(1, &human.indexBuffer);
 
 		glBindBuffer(GL_ARRAY_BUFFER, human.geometry);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, human.vao);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, human.indexBuffer);
 
 		
 		std::cout << "yessss :)))\n";
@@ -101,8 +131,10 @@ void ModelsManager::loadAllModels()
 			vertexOffset += mesh->mNumVertices;
 		}
 
-		human.vertexCount = vertexOffset;
+		human.vertexCount = indices.size();
 
+		std::cout << "Vertexes: " << vertexes.size() << "\n";
+		std::cout << "Indices: " << indices.size() << "\n";
 		glBufferData(GL_ARRAY_BUFFER, vertexes.size() * sizeof(Data), vertexes.data(), GL_STATIC_DRAW);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 

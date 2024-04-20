@@ -1,7 +1,7 @@
 #pragma once
 #include <glad/glad.h>
 #include <vector>
-
+#include <gl2d/gl2d.h>
 
 
 
@@ -26,5 +26,6 @@ struct ModelsManager
 
 	Model human;
 
-
+	gl2d::Texture steveTexture;
+	GLuint64 steveTextureHandle;
 };

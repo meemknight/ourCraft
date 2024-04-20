@@ -46,6 +46,7 @@ set(ASSIMP_BUILD_ZLIB "1" CACHE STRING "If zlib is used, static linking. Specify
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
 
+
 add_subdirectory(thirdparty/glfw-3.3.7)
 add_subdirectory(thirdparty/glad)
 add_subdirectory(thirdparty/stb_image)
@@ -109,4 +110,5 @@ target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURC
 target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE glm glfw glad stb_image stb_truetype 
 	gl2d raudio imgui fastNoiseSIMD FastNoise2 enet glui magic_enum safeSave profilerLib 
 	libzstd_static assimp)
+
 

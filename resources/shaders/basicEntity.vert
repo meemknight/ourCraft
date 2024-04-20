@@ -16,6 +16,7 @@ uniform vec3 u_cameraPositionFloat;
 
 out vec2 v_uv;
 out vec3 v_vertexPosition;
+out vec3 v_normals;
 
 void main()
 {
@@ -32,4 +33,6 @@ void main()
 	v_uv = uv;
 
 	v_vertexPosition = posViewSemi.xyz;
+
+	v_normals = normalize((transpose(inverse(u_modelMatrix)) * vec4(normal, 0.0)).xyz);
 }

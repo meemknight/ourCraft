@@ -880,7 +880,10 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(entityRenderer.basicEntityShader, u_modelMatrix);
 	GET_UNIFORM2(entityRenderer.basicEntityShader, u_cameraPositionInt);
 	GET_UNIFORM2(entityRenderer.basicEntityShader, u_cameraPositionFloat);
+	GET_UNIFORM2(entityRenderer.basicEntityShader, u_texture);
+	GET_UNIFORM2(entityRenderer.basicEntityShader, u_view);
 	
+
 #pragma endregion
 
 #pragma region post process
@@ -1399,7 +1402,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	{
 		{
 			//glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
-			glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fboOnlyFirstTarget);
+			glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
 
 			glDepthFunc(GL_LESS);
 
@@ -1417,6 +1420,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			glUniform3iv(entityRenderer.blockEntityshader.u_cameraPositionInt, 1, &posInt[0]);
 
 			//debug stuff
+			if(0)
 			{
 				//todo something better here lol
 				std::uint64_t textures[6] = {};
@@ -1485,10 +1489,14 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			glBindVertexArray(modelsManager.human.vao);
 			entityRenderer.basicEntityShader.shader.bind();
 			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
-			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,
-				glm::value_ptr(glm::scale(glm::vec3{0.4f})));
+			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_view, 1, GL_FALSE, &viewMatrix[0][0]);
+			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE, 
+				&glm::mat4(1.f)[0][0]);
 			glUniform3fv(entityRenderer.basicEntityShader.u_cameraPositionFloat, 1, &posFloat[0]);
 			glUniform3iv(entityRenderer.basicEntityShader.u_cameraPositionInt, 1, &posInt[0]);
+
+			glUniformHandleui64ARB(entityRenderer.basicEntityShader.u_texture, modelsManager.steveTextureHandle);
+			
 
 			//render player entities
 			for (auto &e : entityRenderer.itemEntitiesToRender)
@@ -1497,8 +1505,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 				glm::ivec3 entityInt = {};
 				decomposePosition(e.position, entityFloat, entityInt);
 
-				glUniform3fv(entityRenderer.blockEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
-				glUniform3iv(entityRenderer.blockEntityshader.u_entityPositionInt, 1, &entityInt[0]);
+				glUniform3fv(entityRenderer.basicEntityShader.u_entityPositionFloat, 1, &entityFloat[0]);
+				glUniform3iv(entityRenderer.basicEntityShader.u_entityPositionInt, 1, &entityInt[0]);
 
 				glDrawElements(GL_TRIANGLES, modelsManager.human.vertexCount, GL_UNSIGNED_INT, nullptr);
 			}

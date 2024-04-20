@@ -1,11 +1,41 @@
-#version 330 core
+#version 430 core
+#extension GL_ARB_bindless_texture: require
 
 layout (location = 0) out vec4 color;
+layout (location = 1) out vec4 out_screenSpacePositions;
+layout (location = 2) out ivec3 out_normals;
+
+uniform sampler2D u_texture;
+in vec2 v_uv;
+in vec3 v_normals;
+in vec3 v_vertexPosition;
+ 
+uniform mat4 u_view;
+
+ivec3 fromFloatTouShort(vec3 a)
+{
+	//[-1 1] -> [0 2]
+	a += 1.f;
+
+	//[0 2] -> [0 1]
+	a /= 2.f;
+
+	//[0 1] -> [0 65536]
+	a *= 65536;
+
+	return ivec3(a);
+}
 
 
 void main()
 {
 
-	color.rgba = vec4(1,0,0,1);
+	color.rgba = texture2D(sampler2D(u_texture), v_uv).rgba;
+	//color.rgba = vec4(v_uv,0,1);
 
+	if(color.a < 0.5)discard;
+
+	out_screenSpacePositions.xyzw = vec4((u_view * vec4(v_vertexPosition,1)).xyz,1);
+	//out_screenSpacePositions.xyzw = vec4(0,1,0,1);
+	out_normals = fromFloatTouShort(v_normals);
 }

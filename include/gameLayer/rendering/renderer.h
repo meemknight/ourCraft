@@ -191,6 +191,8 @@ struct Renderer
 			uniform u_modelMatrix;
 			uniform u_cameraPositionInt;
 			uniform u_cameraPositionFloat;
+			uniform u_texture;
+			uniform u_view;
 
 		}basicEntityShader;
 		
