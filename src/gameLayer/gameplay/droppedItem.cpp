@@ -14,7 +14,7 @@ void DroppedItem::update(float deltaTime, decltype(chunkGetterSignature) *chunkG
 }
 
 void DroppedItemServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
-	ServerChunkStorer &serverChunkStorer)
+	ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng)
 {
 	entity.update(deltaTime, chunkGetter);
 }

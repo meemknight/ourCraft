@@ -253,6 +253,29 @@ bool spawnZombie(
 }
 
 
+bool spawnPig(
+	ServerChunkStorer &chunkManager,
+	Pig pig, std::uint64_t newId)
+{
+	//todo also send packets
+	auto chunkPos = determineChunkThatIsEntityIn(pig.position);
+	auto c = chunkManager.getChunkOrGetNull(chunkPos.x, chunkPos.y);
+
+	if (c)
+	{
+		PigServer e = {};
+		e.entity = pig;
+		c->entityData.pigs.insert({newId, e});
+	}
+	else
+	{
+		return 0;
+	}
+
+	return 1;
+}
+
+
 
 //todo this things will get removed!!!!!!!!!!
 ServerSettings getServerSettingsCopy()
@@ -526,19 +549,21 @@ void serverWorkerUpdate(
 
 			static bool did = 0;
 
-			if (settings.perClientSettings.begin()->second.spawnZombie && !did)
+			if (settings.perClientSettings.begin()->second.spawnZombie)
 			{
+				settings.perClientSettings.begin()->second.spawnZombie = false;
+
 				did = true;
 
 				auto c = getAllClients();
 
 
-				Zombie z;
+				Pig p;
 				glm::dvec3 position = c.begin()->second.playerData.position;
-				z.position = position;
-				z.lastPosition = position;
+				p.position = position;
+				p.lastPosition = position;
 
-				spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement());
+				spawnPig(sd.chunkCache, p, getEntityIdAndIncrement());
 			}
 
 
@@ -552,7 +577,10 @@ void serverWorkerUpdate(
 
 		//todo error and warning logs for server.
 
-		splitUpdatesLogic(sd.tickDeltaTime, currentTimer, sd.chunkCache);
+		//todo sthing better here
+		static std::minstd_rand rng(std::random_device{}());
+
+		splitUpdatesLogic(sd.tickDeltaTime, currentTimer, sd.chunkCache, rng());
 
 		sd.tickDeltaTime = 0;
 	}

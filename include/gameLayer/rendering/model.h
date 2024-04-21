@@ -28,12 +28,17 @@ struct ModelsManager
 
 	Model human;
 
+	Model pig;
+
 	gl2d::Texture steveTexture;
 	GLuint64 steveTextureHandle;
 
 	gl2d::Texture zombieTexture;
 	GLuint64 zombieTextureHandle;
 
+
+	gl2d::Texture pigTexture;
+	GLuint64 pigTextureHandle;
 };
 
 

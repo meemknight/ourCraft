@@ -11,6 +11,7 @@ struct PerTickData
 {
 	ServerChunkStorer chunkCache;
 	EntityData orphanEntities;
+	unsigned int seed = 1;
 };
 
 static ThreadPool threadPool;
@@ -50,12 +51,13 @@ int tryTakeTask()
 
 
 void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
-	ServerChunkStorer &chunkCache)
+	ServerChunkStorer &chunkCache, unsigned int seed)
 {
-
 
 	if (1)
 	{
+		std::minstd_rand rng(seed);
+
 		::tickDeltaTime = tickDeltaTime;
 		::currentTimer = currentTimer;
 
@@ -153,6 +155,11 @@ void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
 		taskTaken.resize(chunkRegionsData.size());
 		for (auto &i : taskTaken) { i = 0; }
 
+		for (auto &c : chunkRegionsData)
+		{
+			c.seed = rng();
+		}
+
 	#pragma region set threads count
 		{
 
@@ -198,7 +205,9 @@ void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
 			//tick
 			doGameTick(tickDeltaTime, currentTimer,
 				chunkRegionsData[taskIndex].chunkCache,
-				chunkRegionsData[taskIndex].orphanEntities);
+				chunkRegionsData[taskIndex].orphanEntities,
+				chunkRegionsData[taskIndex].seed
+				);
 		}
 
 
@@ -224,7 +233,8 @@ void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
 
 		doGameTick(tickDeltaTime, currentTimer,
 			copy,
-			orphans);
+			orphans,
+			seed);
 
 
 	}
@@ -255,7 +265,8 @@ void workerThread(int index)
 				//tick
 				doGameTick(tickDeltaTime, currentTimer,
 					chunkRegionsData[taskIndex].chunkCache,
-					chunkRegionsData[taskIndex].orphanEntities);
+					chunkRegionsData[taskIndex].orphanEntities,
+					chunkRegionsData[taskIndex].seed);
 			}
 
 			//done work

@@ -264,10 +264,11 @@ void recieveDataClient(ENetEvent &event,
 					found->second.rubberBand
 						.add(found->second.entity.position - entity->position);
 					
-					entityManager.players[entity->entityId].getPosition()
+					found->second.getPosition()
 						= entity->position;
 				
-
+					found->second.entity.bodyOrientation = entity->bodyOrientation;
+					found->second.entity.lookDirectionAnimation = entity->lookDirection;
 				}
 				else
 				{
@@ -317,6 +318,23 @@ void recieveDataClient(ENetEvent &event,
 			float restantTimer = computeRestantTimer(p->timer, yourTimer);
 
 			entityManager.addOrUpdateZombie(p->eid, p->entity, restantTimer);
+
+			break;
+		}
+
+		case headerUpdatePig:
+		{
+			Packet_UpdatePig *p = (Packet_UpdatePig *)data;
+			if (sizeof(Packet_UpdatePig) != size) { break; }
+
+			//todo dont break if reliable
+			if (p->timer + 16 < yourTimer)
+			{
+				break; //drop too old packets
+			}
+			float restantTimer = computeRestantTimer(p->timer, yourTimer);
+
+			entityManager.addOrUpdatePig(p->eid, p->entity, restantTimer);
 
 			break;
 		}

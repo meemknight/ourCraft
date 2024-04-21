@@ -47,6 +47,7 @@ struct GameData
 	glm::dvec3 entityTest = {-4, 113, 3};
 	bool renderBox = 0;
 	bool renderPlayerPos = 0;
+	bool renderColliders = 0;
 	
 	bool colidable = 1;
 
@@ -187,7 +188,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.undoQueue.currentEventId.revision++;
 		}
 
-
+		//player sends updates to server
 		{
 
 			static float timer = 0.016;
@@ -210,6 +211,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				data.playerData.position = gameData.entityManager.localPlayer.position;
 				data.playerData.chunkDistance = gameData.chunkSystem.squareSize;
 				data.timer = gameData.serverTimer;
+				data.playerData.bodyOrientation = gameData.entityManager.localPlayer.bodyOrientation;
+				data.playerData.lookDirection = gameData.entityManager.localPlayer.lookDirectionAnimation;
 
 				sendPacket(getServer(),
 					formatPacket(headerSendPlayerData), (char *)&data, sizeof(data), 0,
@@ -307,13 +310,17 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 
 		//gameData.c.moveFPS(moveDir);
-		gameData.entityManager.localPlayer.moveFPS(moveDir);
+		gameData.entityManager.localPlayer.moveFPS(moveDir, gameData.c.viewDirection);
 
+		setBodyAndLookOrientation(gameData.entityManager.localPlayer.bodyOrientation,
+			gameData.entityManager.localPlayer.lookDirectionAnimation, moveDir, gameData.c.viewDirection);
+
+		//gameData.entityManager.localPlayer.bodyOrientation = 
+		//gameData.entityManager.localPlayer.lookDirection = 
 
 		bool rotate = !gameData.escapePressed;
 		if (platform::isRMouseHeld()) { rotate = true; }
 		gameData.c.rotateFPS(platform::getRelMousePosition(), 0.25f * deltaTime, rotate);
-		gameData.entityManager.localPlayer.lookDirection = gameData.c.viewDirection;
 		
 		if (!gameData.escapePressed)
 		{
@@ -543,62 +550,78 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	}
 
 
-	//auto drawPlayerBox = [&](glm::dvec3 pos, glm::vec3 boxSize)
-	//{
-	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2),
-	//		pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2));
-	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2),
-	//		pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2));
-	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2),
-	//		pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2));
-	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2),
-	//		pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2));
-	//
-	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2),
-	//		pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2));
-	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2),
-	//		pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2));
-	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2),
-	//		pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2));
-	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2),
-	//		pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2));
-	//
-	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2),
-	//		pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2));
-	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2),
-	//		pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2));
-	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2),
-	//		pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2));
-	//	programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2),
-	//		pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2));
-	//};
-	//
-	//for (auto &p : gameData.entityManager.players)
-	//{
-	//	programData.pointDebugRenderer.
-	//		renderPoint(gameData.c, p.second.getRubberBandPosition());
-	//
-	//	auto boxSize = glm::vec3(0.8, 1.8, 0.8);
-	//	auto pos = p.second.getRubberBandPosition();
-	//
-	//	drawPlayerBox(pos, boxSize);
-	//}
-	//
-	//for (auto &p : gameData.entityManager.zombies)
-	//{
-	//	//std::cout << p.second.getPosition().x << ' ' << 
-	//	//	p.second.getPosition().y << " " << p.second.getPosition().z << "\n";
-	//
-	//	programData.pointDebugRenderer.
-	//		renderPoint(gameData.c, p.second.getRubberBandPosition());
-	//
-	//	auto boxSize = glm::vec3(0.8, 1.8, 0.8);
-	//	auto pos = p.second.getRubberBandPosition();
-	//
-	//	drawPlayerBox(pos, boxSize);
-	//}
-
+	auto drawPlayerBox = [&](glm::dvec3 pos, glm::vec3 boxSize)
+	{
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2),
+			pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2));
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2),
+			pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2));
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2),
+			pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2));
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2),
+			pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2));
 	
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2),
+			pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2));
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2),
+			pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2));
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2),
+			pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2));
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2),
+			pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2));
+	
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2),
+			pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2));
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2),
+			pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2));
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2),
+			pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2));
+		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2),
+			pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2));
+	};
+	
+	if (gameData.renderColliders)
+	{
+
+		for (auto &p : gameData.entityManager.pigs)
+		{
+			programData.pointDebugRenderer.
+				renderPoint(gameData.c, p.second.getRubberBandPosition());
+		
+			auto boxSize = glm::vec3(0.8, 0.8, 0.8);
+			auto pos = p.second.getRubberBandPosition();
+		
+			drawPlayerBox(pos, boxSize);
+		}
+
+		for (auto &p : gameData.entityManager.players)
+		{
+			programData.pointDebugRenderer.
+				renderPoint(gameData.c, p.second.getRubberBandPosition());
+		
+			auto boxSize = glm::vec3(0.8, 1.8, 0.8);
+			auto pos = p.second.getRubberBandPosition();
+		
+			drawPlayerBox(pos, boxSize);
+		}
+		
+		for (auto &p : gameData.entityManager.zombies)
+		{
+			//std::cout << p.second.getPosition().x << ' ' << 
+			//	p.second.getPosition().y << " " << p.second.getPosition().z << "\n";
+		
+			programData.pointDebugRenderer.
+				renderPoint(gameData.c, p.second.getRubberBandPosition());
+		
+			auto boxSize = glm::vec3(0.8, 1.8, 0.8);
+			auto pos = p.second.getRubberBandPosition();
+		
+			drawPlayerBox(pos, boxSize);
+		}
+
+	}
+
+
 	//programData.gyzmosRenderer.drawLine(
 	//	gameData.point,
 	//	glm::vec3(gameData.point) + glm::vec3(gameData.pointSize));
@@ -646,6 +669,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				ImGui::DragInt3("Point size", &gameData.pointSize[0]);
 				ImGui::Checkbox("Render Box", &gameData.renderBox);
 				ImGui::Checkbox("Render Player Pos", &gameData.renderPlayerPos);
+				ImGui::Checkbox("Render Coliders", &gameData.renderColliders);
 
 				ImGui::DragScalarN("Entity pos test", ImGuiDataType_Double,
 					&gameData.entityTest[0], 3, 0.1);

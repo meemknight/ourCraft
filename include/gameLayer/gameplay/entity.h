@@ -1,7 +1,7 @@
 #pragma once 
 #include <gameplay/physics.h>
 #include <glm/glm.hpp>
-
+#include <random>
 
 
 //basic entity structure
@@ -45,6 +45,7 @@ void computeRubberBand(
 
 
 
+//todo add a way to add some static collider sizes
 struct PhysicalEntity
 {
 	glm::dvec3 position = {};
@@ -105,3 +106,13 @@ constexpr bool hasRestantTimer = false;
 
 template <typename T>
 constexpr bool hasRestantTimer<T, std::void_t<decltype(std::declval<T>().restantTime)>> = true;
+
+
+int getRandomNumber(std::minstd_rand &rng, int min, int max);
+
+float getRandomNumberFloat(std::minstd_rand &rng, float min, float max);
+
+glm::vec2 getRandomUnitVector(std::minstd_rand &rng);
+
+void setBodyAndLookOrientation(glm::vec2 &bodyOrientation, glm::vec3 &lookDirection, glm::vec3 moveDir,
+	glm::vec3 cameraLook);

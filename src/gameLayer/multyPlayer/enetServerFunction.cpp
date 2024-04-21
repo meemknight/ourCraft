@@ -315,6 +315,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 				{
 					//nothing changed
 				}
+
 				it->second.playerData = packetData.playerData;
 
 			}
@@ -329,6 +330,8 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 					Packet_ClientRecieveOtherPlayerPosition sendData;
 					sendData.entityId = clientCopy.entityId;
 					sendData.position = packetData.playerData.position;
+					sendData.bodyOrientation = packetData.playerData.bodyOrientation;
+					sendData.lookDirection = packetData.playerData.lookDirection;
 
 					Packet p;
 					p.cid = 0;
@@ -521,6 +524,8 @@ void enetServerFunction()
 								Packet_ClientRecieveOtherPlayerPosition sendData;
 								sendData.entityId = other.second.entityId;
 								sendData.position = other.second.playerData.position;
+								sendData.lookDirection = other.second.playerData.lookDirection;
+								sendData.bodyOrientation = other.second.playerData.bodyOrientation;
 
 								Packet p;
 								p.cid = 0;

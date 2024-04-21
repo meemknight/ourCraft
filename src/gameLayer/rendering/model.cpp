@@ -76,6 +76,7 @@ void ModelsManager::loadAllModels()
 	{
 		loadTexture(RESOURCES_PATH "models/steve.png", steveTexture, steveTextureHandle);
 		loadTexture(RESOURCES_PATH "models/zombie.png", zombieTexture, zombieTextureHandle);
+		loadTexture(RESOURCES_PATH "models/pig.png", pigTexture, pigTextureHandle);
 		
 
 	}
@@ -212,8 +213,12 @@ void ModelsManager::loadAllModels()
 
 
 	loadModel(RESOURCES_PATH "models/human.glb", human);
+	importer.FreeScene();
 
+	loadModel(RESOURCES_PATH "models/pig.glb", pig);
+	
 
+	//todo check if it frees all of them
 	importer.FreeScene();
 
 

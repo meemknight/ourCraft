@@ -28,47 +28,27 @@ bool checkIfPlayerShouldGetEntity(glm::ivec2 playerPos2D,
 void ClientEntityManager::dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int playerSquareDistance)
 {
 
-	for (auto it = players.begin(); it != players.end(); )
+	auto doChecking = [&](auto &container)
 	{
-		if (!checkIfPlayerShouldGetEntity(playerPos2D, it->second.getPosition(),
-			playerSquareDistance, 0))
+		for (auto it = container.begin(); it != container.end(); )
 		{
-			it = players.erase(it);
-			std::cout << "Dropped player\n";
+			if (!checkIfPlayerShouldGetEntity(playerPos2D, it->second.getPosition(),
+				playerSquareDistance, 0))
+			{
+				it = container.erase(it);
+			}
+			else
+			{
+				++it;
+			}
 		}
-		else
-		{
-			++it;
-		}
-	}
+	};
 
-	for (auto it = droppedItems.begin(); it != droppedItems.end(); )
-	{
-		if (!checkIfPlayerShouldGetEntity(playerPos2D, it->second.getPosition(),
-			playerSquareDistance, 0))
-		{
-			it = droppedItems.erase(it);
-			//std::cout << "Dropped dropped item\n";
-		}
-		else
-		{
-			++it;
-		}
-	}
+	doChecking(players);
+	doChecking(droppedItems);
+	doChecking(zombies);
+	doChecking(pigs);
 
-	for (auto it = zombies.begin(); it != zombies.end(); )
-	{
-		if (!checkIfPlayerShouldGetEntity(playerPos2D, it->second.getPosition(),
-			playerSquareDistance, 0))
-		{
-			it = zombies.erase(it);
-			//std::cout << "Dropped zombie\n";
-		}
-		else
-		{
-			++it;
-		}
-	}
 	
 }
 
@@ -184,6 +164,25 @@ void ClientEntityManager::addOrUpdateZombie(std::uint64_t eid, Zombie entity,
 	}
 }
 
+void ClientEntityManager::addOrUpdatePig(std::uint64_t eid, Pig entity, float restantTimer)
+{
+	auto found = pigs.find(eid);
+
+	if (found == pigs.end())
+	{
+		pigs[eid].entity = entity;
+		pigs[eid].restantTime = restantTimer;
+	}
+	else
+	{
+		found->second.rubberBand
+			.add(found->second.entity.position - entity.position);
+
+		found->second.entity = entity;
+		found->second.restantTime = restantTimer;
+	}
+}
+
 void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2))
 {
 
@@ -201,6 +200,15 @@ void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)
 		entity.second.restantTime = 0;
 	};
 
+	auto genericUpdateLoop = [&](auto &container)
+	{
+		for (auto &e : container)
+		{
+			genericUpdate(e);
+		}
+	};
+
+
 	for (auto &player : players)
 	{
 
@@ -209,15 +217,8 @@ void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)
 
 	}
 
-	for (auto &item : droppedItems)
-	{
-		genericUpdate(item);
-	}
-
-	for (auto &zombie : zombies)
-	{
-		genericUpdate(zombie);
-	}
-
+	genericUpdateLoop(droppedItems);
+	genericUpdateLoop(zombies);
+	genericUpdateLoop(pigs);
 
 }

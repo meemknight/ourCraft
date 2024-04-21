@@ -7,6 +7,7 @@
 #include <gameplay/droppedItem.h>
 #include <gameplay/player.h>
 #include <gameplay/zombie.h>
+#include <gameplay/pig.h>
 
 struct UndoQueue;
 
@@ -25,6 +26,7 @@ struct ClientEntityManager
 	
 	std::unordered_map<std::uint64_t, DroppedItemClient> droppedItems;
 	std::unordered_map<std::uint64_t, ZombieClient> zombies;
+	std::unordered_map<std::uint64_t, PigClient> pigs;
 
 	LocalPlayer localPlayer;
 
@@ -41,7 +43,9 @@ struct ClientEntityManager
 	
 	void addOrUpdateDroppedItem(std::uint64_t eid, DroppedItem droppedItem, UndoQueue &undoQueue, float restantTimer);
 
-	void addOrUpdateZombie(std::uint64_t eid, Zombie entity,float restantTimer);
+	void addOrUpdateZombie(std::uint64_t eid, Zombie entity, float restantTimer);
+
+	void addOrUpdatePig(std::uint64_t eid, Pig entity, float restantTimer);
 
 	void doAllUpdates(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2));
 };

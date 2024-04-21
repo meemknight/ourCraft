@@ -27,6 +27,6 @@ struct ThreadPool
 void closeThreadPool();
 
 void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
-	ServerChunkStorer &chunkCache);
+	ServerChunkStorer &chunkCache, unsigned int seed);
 
 

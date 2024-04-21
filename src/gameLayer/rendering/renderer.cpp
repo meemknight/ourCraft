@@ -1501,8 +1501,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		static float currentAngle2 = 0;
 		static int direction = 1;
 
-		animatePlayerLegs(poseCopy.data(), currentAngle, direction, deltaTime);
-		animatePlayerHandsZombie(poseCopy.data(), currentAngle2, deltaTime);
+		//animatePlayerLegs(poseCopy.data(), currentAngle, direction, deltaTime);
+		//animatePlayerHandsZombie(poseCopy.data(), currentAngle2, deltaTime);
 
 		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
 			poseCopy.size(), GL_FALSE, &poseCopy[0][0][0]);
@@ -1517,7 +1517,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		glUniformHandleui64ARB(entityRenderer.basicEntityShader.u_texture, modelsManager.steveTextureHandle);
 		
-		auto renderPlayerModel = [&](glm::dvec3 pos)
+		auto renderModel = [&](glm::dvec3 pos, int vertexCount)
 		{
 			glm::vec3 entityFloat = {};
 			glm::ivec3 entityInt = {};
@@ -1526,31 +1526,66 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			glUniform3fv(entityRenderer.basicEntityShader.u_entityPositionFloat, 1, &entityFloat[0]);
 			glUniform3iv(entityRenderer.basicEntityShader.u_entityPositionInt, 1, &entityInt[0]);
 
-			glDrawElements(GL_TRIANGLES, modelsManager.human.vertexCount, GL_UNSIGNED_INT, nullptr);
+			glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, nullptr);
 		};
 
 
 		for (auto &e : entityRenderer.itemEntitiesToRender)
 		{
-			renderPlayerModel(e.position);
+			renderModel(e.position, modelsManager.human.vertexCount);
 		}
 
 
 		//render player entities
 		for (auto &e : entityManager.players)
 		{
-			renderPlayerModel(e.second.getRubberBandPosition());
+			auto rotMatrix = glm::rotate(-std::atan2(e.second.entity.bodyOrientation.y, e.second.entity.bodyOrientation.x)
+				- glm::radians(90.f),
+				glm::vec3(0, 1, 0));
+
+
+			poseCopy[0] = modelsManager.human.transforms[0] * glm::toMat4(
+				glm::quatLookAt(glm::normalize(e.second.entity.lookDirectionAnimation), glm::vec3(0, 1, 0)))
+				;
+
+			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
+				poseCopy.size(), GL_FALSE, &poseCopy[0][0][0]);
+			
+			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,
+				&rotMatrix
+				[0][0]);
+
+			renderModel(e.second.getRubberBandPosition(), modelsManager.human.vertexCount);
 		}
+
+		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
+			modelsManager.human.transforms.size(), GL_FALSE, &modelsManager.human.transforms[0][0][0]);
 
 		glUniformHandleui64ARB(entityRenderer.basicEntityShader.u_texture, modelsManager.zombieTextureHandle);
 
+		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,
+			&glm::mat4(1.f)
+			[0][0]);
+
 		for (auto &e : entityManager.zombies)
 		{
-			renderPlayerModel(e.second.getRubberBandPosition());
+			renderModel(e.second.getRubberBandPosition(), modelsManager.human.vertexCount);
 		}
 
-
 		entityRenderer.itemEntitiesToRender.clear();
+		
+
+		glBindVertexArray(modelsManager.pig.vao);
+		glUniformHandleui64ARB(entityRenderer.basicEntityShader.u_texture, modelsManager.pigTextureHandle);
+
+		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
+			modelsManager.pig.transforms.size(), GL_FALSE, &modelsManager.pig.transforms[0][0][0]);
+
+		for (auto &e : entityManager.pigs)
+		{
+			renderModel(e.second.getRubberBandPosition(), modelsManager.pig.vertexCount);
+		}
+
 
 
 		glBindVertexArray(0);

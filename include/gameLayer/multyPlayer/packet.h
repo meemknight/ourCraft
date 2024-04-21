@@ -10,6 +10,7 @@
 #include <gameplay/droppedItem.h>
 #include <gameplay/player.h>
 #include <gameplay/zombie.h>
+#include <gameplay/pig.h>
 
 using EventCounter = unsigned int;
 using RevisionNumber = unsigned int;
@@ -59,6 +60,7 @@ enum
 	headerDisconnectOtherPlayer, 
 	headerConnectOtherPlayer,
 	headerUpdateZombie,
+	headerUpdatePig,
 };
 
 enum 
@@ -96,6 +98,13 @@ struct Packet_UpdateZombie
 	std::uint64_t timer = 0;
 };
 
+
+struct Packet_UpdatePig
+{
+	Pig entity = {};
+	std::uint64_t eid = 0;
+	std::uint64_t timer = 0;
+};
 
 struct Packet_ReceiveCIDAndData
 {
@@ -144,6 +153,9 @@ struct Packet_ClientRecieveOtherPlayerPosition
 {
 	glm::dvec3 position = {};
 	std::uint64_t entityId = 0;
+
+	glm::vec3 lookDirection = {0,0,-1};
+	glm::vec2 bodyOrientation = {0, -1};
 };
 
 struct Packet_HeaderConnectOtherPlayer

@@ -4,9 +4,9 @@
 #include <multyPlayer/enetServerFunction.h>
 
 
-template <class T, int Packet_Type, class E>
+template <class T, class E>
 void genericBroadcastEntityUpdateFromServerToPlayer(E &e, bool reliable,
-	std::uint64_t currentTimer)
+	std::uint64_t currentTimer, int Packet_Type)
 {
 
 	Packet packet;
@@ -26,7 +26,7 @@ void genericBroadcastEntityUpdateFromServerToPlayer(E &e, bool reliable,
 template<class T>
 void genericCallUpdateForEntity(T &e,
 	float deltaTime, ChunkData *(chunkGetter)(glm::ivec2),
-	ServerChunkStorer &chunkCache)
+	ServerChunkStorer &chunkCache, std::minstd_rand &rng)
 {
 	float time = deltaTime;
 	if constexpr (hasRestantTimer<decltype(e.second)>)
@@ -36,7 +36,7 @@ void genericCallUpdateForEntity(T &e,
 
 	if (time > 0)
 	{
-		e.second.update(time, chunkGetter, chunkCache);
+		e.second.update(time, chunkGetter, chunkCache, rng);
 	}
 
 	if constexpr (hasRestantTimer<decltype(e.second)>)
@@ -48,8 +48,10 @@ void genericCallUpdateForEntity(T &e,
 
 
 void doGameTick(float deltaTime, std::uint64_t currentTimer,
-	ServerChunkStorer &chunkCache, EntityData &orphanEntities)
+	ServerChunkStorer &chunkCache, EntityData &orphanEntities, unsigned int seed)
 {
+	std::minstd_rand rng(seed);
+
 
 	static thread_local ServerChunkStorer *chunkCacheGlobal = 0;
 
@@ -83,58 +85,43 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 
 		auto initialChunk = c.first;
 
-		for (auto it = entityData.droppedItems.begin(); it != entityData.droppedItems.end(); )
+		auto genericLoopOverEntities = [&](auto &container, 
+			auto &orphanContainer, auto packetType, auto packetId)
 		{
-			auto &e = *it;
-
-			genericCallUpdateForEntity(e, deltaTime, chunkGetter, chunkCache);
-			auto newChunk = determineChunkThatIsEntityIn(e.second.getPosition());
-
-			//todo this should take into acount if that player should recieve it
-			genericBroadcastEntityUpdateFromServerToPlayer
-				< Packet_RecieveDroppedItemUpdate,
-				headerClientRecieveDroppedItemUpdate>(e, false, currentTimer);
-
-			if (initialChunk != newChunk)
+			for (auto it = container.begin(); it != container.end(); )
 			{
-				orphanEntities.droppedItems.insert(
-					{e.first, e.second});
+				auto &e = *it;
 
-				it = entityData.droppedItems.erase(it);
+				genericCallUpdateForEntity(e, deltaTime, chunkGetter, chunkCache, rng);
+				auto newChunk = determineChunkThatIsEntityIn(e.second.getPosition());
+
+				//todo this should take into acount if that player should recieve it
+				genericBroadcastEntityUpdateFromServerToPlayer
+					< decltype(packetType)>(e, false, currentTimer, packetId);
+
+				if (initialChunk != newChunk)
+				{
+					orphanContainer.insert(
+						{e.first, e.second});
+
+					it = container.erase(it);
+				}
+				else
+				{
+					++it;
+				}
 			}
-			else
-			{
-				++it;
-			}
+		};
 
-		}
+		genericLoopOverEntities(entityData.droppedItems, orphanEntities.droppedItems,
+			Packet_RecieveDroppedItemUpdate{}, headerClientRecieveDroppedItemUpdate);
 
-		for (auto it = entityData.zombies.begin(); it != entityData.zombies.end(); )
-		{
-			auto &e = *it;
+		genericLoopOverEntities(entityData.zombies, orphanEntities.zombies,
+			Packet_UpdateZombie{}, headerUpdateZombie);
 
-			genericCallUpdateForEntity(e, deltaTime, chunkGetter, chunkCache);
-			auto newChunk = determineChunkThatIsEntityIn(e.second.getPosition());
-
-			//todo this should take into acount if that player should recieve it
-			genericBroadcastEntityUpdateFromServerToPlayer
-				< Packet_UpdateZombie,
-				headerUpdateZombie>(e, false, currentTimer);
-
-			if (initialChunk != newChunk)
-			{
-				orphanEntities.zombies.insert(
-					{e.first, e.second});
-
-				it = entityData.zombies.erase(it);
-
-				//std::cout << "Orphaned!\n";
-			}
-			else
-			{
-				++it;
-			}
-		}
+		genericLoopOverEntities(entityData.pigs, orphanEntities.pigs,
+			Packet_UpdatePig{}, headerUpdatePig);
+	
 
 	}
 

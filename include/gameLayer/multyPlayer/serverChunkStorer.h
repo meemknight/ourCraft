@@ -7,6 +7,7 @@
 #include <multyPlayer/chunkSaver.h>
 #include <gameplay/droppedItem.h>
 #include <gameplay/zombie.h>
+#include <gameplay/pig.h>
 
 
 //https://www.geeksforgeeks.org/how-to-create-an-unordered_map-of-user-defined-class-in-cpp/
@@ -85,6 +86,7 @@ struct EntityData
 {
 	std::unordered_map<std::uint64_t, DroppedItemServer> droppedItems;
 	std::unordered_map<std::uint64_t, ZombieServer> zombies;
+	std::unordered_map<std::uint64_t, PigServer> pigs;
 };
 
 
