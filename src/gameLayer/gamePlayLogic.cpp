@@ -684,6 +684,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
 			{
 				ImGui::Checkbox("Colidable", &gameData.colidable);
+				ImGui::Checkbox("Fly", &gameData.fly);
 
 				ImGui::DragScalarN("Player Body pos", ImGuiDataType_Double,
 					&gameData.entityManager.localPlayer.position[0], 3, 0.01);
@@ -979,8 +980,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			}
 
-			ImGui::Checkbox("Unified geometry pool",
-				&programData.renderer.unifiedGeometry);
+			//ImGui::Checkbox("Unified geometry pool",
+			//	&programData.renderer.unifiedGeometry);
 
 			ImGui::Checkbox("Sort chunks",
 				&programData.renderer.sortChunks);

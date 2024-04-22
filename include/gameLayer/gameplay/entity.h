@@ -341,6 +341,6 @@ glm::vec2 getRandomUnitVector(std::minstd_rand &rng);
 glm::vec3 getRandomUnitVector3(std::minstd_rand &rng);
 
 
-void adjustVectorTowardsDirection(glm::vec3 &vector, glm::vec3 desiredDirection = {0,0,-1}, float threshold = glm::radians(100.f));
+void adjustVectorTowardsDirection(glm::vec3 &vector, glm::vec3 desiredDirection = {0,0,-1}, float threshold = glm::radians(85.f));
 
 glm::vec3 getRandomUnitVector3Oriented(std::minstd_rand &rng, glm::vec3 targetDirection = {0,0,-1}, float maxAngle = 3.14159/3.f);

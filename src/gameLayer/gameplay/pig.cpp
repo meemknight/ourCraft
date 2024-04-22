@@ -4,7 +4,7 @@
 #include <iostream>
 #include <glm/glm.hpp>
 #include <multyPlayer/tick.h>
-
+#include <chunkSystem.h>
 
 void Pig::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
 {
@@ -49,6 +49,11 @@ glm::ivec2 checkOffsets[9] = {
 
 static thread_local std::vector<std::uint64_t> playersClose;
 
+bool checkPlayerDistance(glm::dvec3 a, glm::dvec3 b)
+{
+	return glm::length(a - b) <= 15.f;
+}
+
 void PigServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
 	ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng)
 {
@@ -56,6 +61,7 @@ void PigServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGet
 
 	waitTime -= deltaTime;
 	changeHeadTimer -= deltaTime;
+	randomJumpTimer -= deltaTime;
 
 	if (waitTime < 0)
 	{
@@ -65,13 +71,98 @@ void PigServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGet
 		if (moving)
 		{
 			direction = getRandomUnitVector(rng);
+			moveSpeed = getRandomNumberFloat(rng, 0.9, 1.5);
 		}
 	}
 
 	if (moving)
 	{
 
-		float moveSpeed = 1;
+		//check falling
+
+		auto pos = getPosition();
+		pos.x += direction.x;
+		pos.z += direction.y;
+		pos.y += 0.6;
+
+		auto chunkPos = determineChunkThatIsEntityIn(pos);
+		auto c = chunkGetter(chunkPos);
+		if (c)
+		{
+			auto blockPos = fromBlockPosToBlockPosInChunk(glm::ivec3(pos));
+			auto b = c->safeGet(blockPos);
+
+			if (b && b->isColidable())
+			{
+				blockPos.y++;
+				auto b = c->safeGet(blockPos);
+				if (b && b->isColidable())
+				{
+					//wall
+					direction = {};
+					waitTime = 0;
+				}
+				else
+				{
+					if (getRandomNumber(rng, 0, 10) % 2)
+					{
+						changeHeadTimer = getRandomNumberFloat(rng, 0.5, 1.5); //look up
+						entity.lookDirectionAnimation = getRandomUnitVector3Oriented(rng, {0,0.5,-1}, 0.2);
+						playerFollow = 0;
+					}
+
+					entity.forces.jump();
+				}
+
+			}
+			else if(b)
+			{
+
+				//block under
+				blockPos.y--;
+				auto b = c->safeGet(blockPos);
+
+				//void
+				if (!b)
+				{
+					direction = {};
+					waitTime = 0;
+				}
+				else if(!b->isColidable())
+				{
+					
+					if (glm::dot(entity.lookDirectionAnimation, {0,-0.5,-1}) < 0.7)
+					{
+						changeHeadTimer = getRandomNumberFloat(rng, 0.5, 1.5); //look down
+						entity.lookDirectionAnimation = getRandomUnitVector3Oriented(rng, {0,-0.5,-1}, 0.2);
+						playerFollow = 0;
+					}
+					
+				
+					//bigger fall under
+					blockPos.y--;
+					auto b = c->safeGet(blockPos);
+
+					if (!b || !b->isColidable())
+					{
+						direction = {};
+						waitTime = 0;
+					}
+				
+				}
+
+
+			}
+
+
+
+		}
+		else
+		{
+			direction = {};
+			waitTime = 0;
+		}
+
 
 		auto move = moveSpeed * deltaTime * direction;
 		getPosition().x += move.x;
@@ -83,13 +174,30 @@ void PigServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGet
 	else
 	{
 		entity.movementSpeedForLegsAnimations = 0.f;
+
 	}
+
+#pragma region random jump
+	if (randomJumpTimer < 0)
+	{
+		randomJumpTimer += getRandomNumberFloat(rng, 1, 10);
+		if (getRandomNumber(rng, 0, 9) == 1)
+		{
+			entity.forces.jump();
+
+		}
+	}
+#pragma endregion
+
+
+#pragma region head orientation
 
 	if (changeHeadTimer < 0)
 	{
 
 		playersClose.clear();
 
+		//todo also check distance < 15 blocks
 		for (auto offset : checkOffsets)
 		{
 			glm::ivec2 pos = chunkPosition + offset;
@@ -98,7 +206,10 @@ void PigServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGet
 			{
 				for (auto &p : c->entityData.players)
 				{
-					playersClose.push_back(p.first);
+					if (checkPlayerDistance(p.second.position, getPosition()))
+					{
+						playersClose.push_back(p.first);
+					}
 				}
 			}
 		}
@@ -159,7 +270,8 @@ void PigServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGet
 			{
 				for (auto &p : c->entityData.players)
 				{
-					if (p.first == playerFollow)
+					
+					if (p.first == playerFollow && checkPlayerDistance(p.second.position, getPosition()))
 					{
 						found = &p.second;
 						break;
@@ -193,6 +305,8 @@ void PigServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGet
 		}
 
 	}
+
+#pragma endregion
 
 
 	entity.update(deltaTime, chunkGetter);

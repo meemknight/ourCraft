@@ -31,6 +31,8 @@ struct PigServer: public ServerEntity<Pig>
 	glm::vec2 direction = {};
 	int moving = 0;
 	float waitTime = 1;
+	float randomJumpTimer = 1;
+	float moveSpeed = 1.f;
 
 	float changeHeadTimer = 1;
 

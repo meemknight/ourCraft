@@ -30,6 +30,7 @@ struct MotionState
 	void setColidesLeft(bool b) { colides ^=  0b000010; }
 	void setColidesRight(bool b) { colides ^= 0b000001; }
 
+	void jump();
 };
 
 

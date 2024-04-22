@@ -414,3 +414,12 @@ void applyImpulse(MotionState &force, glm::vec3 impulse, float mass)
 {
 	force.velocity += impulse * mass;
 }
+
+void MotionState::jump()
+{
+	if (colidesBottom())
+	{
+		applyImpulse(*this, glm::vec3{0,5,0});
+		setColidesBottom(false);
+	}
+}

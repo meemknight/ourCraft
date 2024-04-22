@@ -203,12 +203,7 @@ void setBodyAndLookOrientation(glm::vec2 &bodyOrientation, glm::vec3 &lookDirect
 
 void PhysicalEntity::jump()
 {
-	if (forces.colidesBottom())
-	{
-		//std::cout << "Jump\n";
-		applyImpulse(forces, glm::vec3{0,5,0});
-	}
-
+	forces.jump();
 }
 
 void adjustVectorTowardsDirection(glm::vec3 &vector, glm::vec3 desiredDirection, float threshold)
