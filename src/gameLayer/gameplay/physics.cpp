@@ -81,6 +81,11 @@ bool resolveConstrains(
 
 end:
 
+
+
+
+
+
 	//clamp the box if needed
 	//if (pos.x < 0) { pos.x = 0; }
 	//if (pos.x + dimensions.x > (mapData.w) * BLOCK_SIZE) { pos.x = ((mapData.w) * BLOCK_SIZE) - dimensions.x; }
@@ -111,19 +116,36 @@ bool checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
 		newPos.x = performCollision({pos.x, lastPos.y, lastPos.z}, lastPos, colliderSize, {delta.x, 0, 0},
 			chunkGetter, rez, forces, deltaTime, drag).x;
 	}
+	else
+	{
+		//check for collisions
+		//performCollision({pos.x, lastPos.y, lastPos.z}, lastPos, colliderSize, {0.001, 0, 0},
+		//	chunkGetter, rez, forces, deltaTime, drag);
+		//performCollision({pos.x, lastPos.y, lastPos.z}, lastPos, colliderSize, {-0.001, 0, 0},
+		//	chunkGetter, rez, forces, deltaTime, drag);
+	}
+
+	if (delta.z)
+	{
+		newPos.z = performCollision({newPos.x, lastPos.y, pos.z}, lastPos, colliderSize, {0, 0, delta.z},
+			chunkGetter, rez, forces, deltaTime, drag).z;
+	}
+	else
+	{
+		//check for collisions
+		//performCollision({newPos.x, newPos.y, pos.z}, lastPos, colliderSize, {0, 0, 0.001},
+		//	chunkGetter, rez, forces, deltaTime, drag).z;
+		//performCollision({newPos.x, newPos.y, pos.z}, lastPos, colliderSize, {0, 0, -0.001},
+		//	chunkGetter, rez, forces, deltaTime, drag).z;
+	}
 
 	if (delta.y)
 	{
-		newPos.y = performCollision({newPos.x, pos.y, lastPos.z}, lastPos, colliderSize, {0, delta.y, 0},
+		newPos.y = performCollision({newPos.x, pos.y, newPos.z}, lastPos, colliderSize, {0, delta.y, 0},
 			chunkGetter, rez, forces, deltaTime, drag).y;
 	}
 	
-	if (delta.z)
-	{
-		newPos.z = performCollision({newPos.x, newPos.y, pos.z}, lastPos, colliderSize, {0, 0, delta.z},
-			chunkGetter, rez, forces, deltaTime, drag).z;
-	}
-	
+
 	pos = newPos;
 
 	if (forces)
@@ -264,8 +286,8 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 									{
 										if (forces)
 										{
-											drag.y = DRAG_CONSTANT;
-											drag.z = DRAG_CONSTANT;
+											//drag.y = DRAG_CONSTANT;
+											//drag.z = DRAG_CONSTANT;
 
 											forces->acceleration.x = 0;
 											forces->velocity.x = 0;
@@ -273,13 +295,13 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 
 										if (delta.x < 0) // moving left
 										{
-											forces->setColidesLeft(true);
+											if (forces)forces->setColidesLeft(true);
 											pos.x = x * BLOCK_SIZE + BLOCK_SIZE / 2.0 + size.x / 2.0;
 											goto end;
 										}
 										else
 										{
-											forces->setColidesRight(true);
+											if (forces)forces->setColidesRight(true);
 											pos.x = x * BLOCK_SIZE - BLOCK_SIZE / 2.0 - size.x / 2.0;
 											goto end;
 										}
@@ -298,13 +320,13 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 
 										if (delta.y < 0) //moving down
 										{
-											forces->setColidesBottom(true);
+											if(forces)forces->setColidesBottom(true);
 											pos.y = y * BLOCK_SIZE + BLOCK_SIZE / 2.0;
 											goto end;
 										}
 										else //moving up
 										{
-											forces->setColidesTop(true);
+											if (forces)forces->setColidesTop(true);
 											pos.y = y * BLOCK_SIZE - BLOCK_SIZE / 2.0 - size.y;
 											goto end;
 										}
@@ -314,8 +336,8 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 									{
 										if (forces)
 										{
-											drag.x = DRAG_CONSTANT;
-											drag.y = DRAG_CONSTANT;
+											//drag.x = DRAG_CONSTANT;
+											//drag.y = DRAG_CONSTANT;
 
 											forces->acceleration.z = 0;
 											forces->velocity.z = 0;
@@ -323,13 +345,13 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 
 										if (delta.z < 0) // moving left
 										{
-											forces->setColidesFront(true);
+											if (forces)forces->setColidesFront(true);
 											pos.z = z * BLOCK_SIZE + BLOCK_SIZE / 2.0 + size.z / 2.0;
 											goto end;
 										}
 										else
 										{
-											forces->setColidesBack(true);
+											if (forces)forces->setColidesBack(true);
 											pos.z = z * BLOCK_SIZE - BLOCK_SIZE / 2.0 - size.z / 2.0;
 											goto end;
 										}

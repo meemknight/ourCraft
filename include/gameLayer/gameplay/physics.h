@@ -15,18 +15,18 @@ struct MotionState
 	bool colidesLeftRight() { return colidesLeft() || colidesRight(); }
 	bool colidesFrontBack() { return colidesFront() || colidesBack(); }
 
-	bool colidesFront() { return colides && 0b1; }
-	bool colidesBack() { return colides && 0b01; }
-	bool colidesTop() { return colides && 0b001; }
-	bool colidesBottom() { return colides && 0b0001; }
-	bool colidesLeft() { return colides && 0b00001; }
-	bool colidesRight() { return colides && 0b000001; }
+	bool colidesFront() { return colides & 0b100000; }
+	bool colidesBack() { return colides &  0b010000; }
+	bool colidesTop() { return colides &   0b001000; }
+	bool colidesBottom() { return colides &0b000100; }
+	bool colidesLeft() { return colides &  0b000010; }
+	bool colidesRight() { return colides & 0b000001; }
 
-	void setColidesFront(bool b) { colides ^= 0b1; }
-	void setColidesBack(bool b) { colides ^= 0b01; }
-	void setColidesTop(bool b) { colides ^= 0b001; }
-	void setColidesBottom(bool b) { colides ^= 0b0001; }
-	void setColidesLeft(bool b) { colides ^= 0b00001; }
+	void setColidesFront(bool b) { colides ^= 0b100000; }
+	void setColidesBack(bool b) { colides ^=  0b010000; }
+	void setColidesTop(bool b) { colides ^=   0b001000; }
+	void setColidesBottom(bool b) { colides ^=0b000100; }
+	void setColidesLeft(bool b) { colides ^=  0b000010; }
 	void setColidesRight(bool b) { colides ^= 0b000001; }
 
 };
