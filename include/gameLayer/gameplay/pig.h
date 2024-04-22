@@ -32,9 +32,12 @@ struct PigServer: public ServerEntity<Pig>
 	int moving = 0;
 	float waitTime = 1;
 
+	float changeHeadTimer = 1;
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
 		ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng);
+
+	std::uint64_t playerFollow = 0;
 
 
 };

@@ -46,3 +46,4 @@ struct PlayerData
 	glm::dvec3 position = {};
 	//...
 };
+

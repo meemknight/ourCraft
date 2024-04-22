@@ -104,7 +104,30 @@ struct RubberBandOrientation <T, std::enable_if_t<hasBodyOrientation<T>>>
 		rubberBandOrientation.y = std::sin(angleCurrent);	
 
 		//rubberBandOrientation = glm::mix(bodyOrientation, rubberBandOrientation, 0.2);
-		rubberBandLookDirectionAnimation = glm::mix(lookDirectionAnimation, rubberBandLookDirectionAnimation, 0.2);
+		//rubberBandLookDirectionAnimation = glm::mix(lookDirectionAnimation, rubberBandLookDirectionAnimation, 0.2);
+
+
+		//head
+		float angle = glm::acos(glm::dot(lookDirectionAnimation, rubberBandLookDirectionAnimation));
+
+		if (angle > 0)
+		{
+
+			float rotationSpeed = 3.141592653 * deltaTime * 1.f;
+
+			float rotationAngle = rotationSpeed;
+
+			if (rotationAngle > angle) { rubberBandLookDirectionAnimation = lookDirectionAnimation; }
+			else
+			{
+				// Calculate the rotation axis
+				glm::vec3 rotationAxis = glm::cross(rubberBandLookDirectionAnimation, lookDirectionAnimation);
+				// Rotate the vector towards the desired direction
+				rubberBandLookDirectionAnimation = glm::rotate(rubberBandLookDirectionAnimation, rotationAngle, glm::normalize(rotationAxis));
+			}
+			
+		}
+
 
 		rubberBandOrientation = normalize(rubberBandOrientation);
 		rubberBandLookDirectionAnimation = normalize(rubberBandLookDirectionAnimation);
@@ -309,3 +332,15 @@ glm::vec2 getRandomUnitVector(std::minstd_rand &rng);
 
 void setBodyAndLookOrientation(glm::vec2 &bodyOrientation, glm::vec3 &lookDirection, glm::vec3 moveDir,
 	glm::vec3 cameraLook);
+
+
+void removeBodyRotationFromHead(glm::vec3 &lookDirection);
+void removeBodyRotationFromHead(glm::vec2 &bodyOrientation, glm::vec3 &lookDirection);
+
+glm::vec2 getRandomUnitVector(std::minstd_rand &rng);
+glm::vec3 getRandomUnitVector3(std::minstd_rand &rng);
+
+
+void adjustVectorTowardsDirection(glm::vec3 &vector, glm::vec3 desiredDirection = {0,0,-1}, float threshold = glm::radians(100.f));
+
+glm::vec3 getRandomUnitVector3Oriented(std::minstd_rand &rng, glm::vec3 targetDirection = {0,0,-1}, float maxAngle = 3.14159/3.f);

@@ -4,6 +4,7 @@
 #include <multyPlayer/serverChunkStorer.h>
 #include <thread>
 
+struct Client;
 
 struct ThreadPool
 {
@@ -27,6 +28,6 @@ struct ThreadPool
 void closeThreadPool();
 
 void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
-	ServerChunkStorer &chunkCache, unsigned int seed);
+	ServerChunkStorer &chunkCache, unsigned int seed, std::unordered_map<CID, Client> &clients);
 
 

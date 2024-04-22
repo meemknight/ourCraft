@@ -66,6 +66,60 @@ glm::vec2 getRandomUnitVector(std::minstd_rand &rng)
 	return glm::normalize(glm::vec2(x, y));
 }
 
+glm::vec3 getRandomUnitVector3(std::minstd_rand &rng)
+{
+	// Generate two random angles in radians
+	std::uniform_real_distribution<float> dist(0.0f, 2.0f * 3.14159265359f);
+	float theta = dist(rng);  // azimuthal angle
+	float phi = dist(rng);    // polar angle
+
+	// Convert spherical coordinates to Cartesian coordinates
+	float x = std::sin(phi) * std::cos(theta);
+	float y = std::sin(phi) * std::sin(theta);
+	float z = std::cos(phi);
+
+	// Return the resulting unit vector
+	return glm::normalize(glm::vec3(x, y, z));
+}
+
+glm::vec3 getRandomUnitVector3Oriented(std::minstd_rand &rng, glm::vec3 targetDirection, float maxAngle)
+{
+
+	// Generate a random axis perpendicular to the target direction
+	glm::vec3 randomAxis = glm::normalize(glm::cross(targetDirection, glm::vec3(1.0f, 0.0f, 0.0f)));
+	if (glm::length(randomAxis) < 0.1f)
+	{
+		randomAxis = glm::normalize(glm::cross(targetDirection, glm::vec3(0.0f, 1.0f, 0.0f)));
+	}
+
+	// Generate a random angle within the range [-maxAngle, maxAngle]
+	std::uniform_real_distribution<float> dist(-maxAngle, maxAngle);
+	std::uniform_real_distribution<float> dist2(0, 3.14159265359*2);
+	float angle1 = dist(rng);
+
+	// Rotate the target direction by the random angle around the random axis
+	glm::quat rotation1 = glm::angleAxis(angle1, randomAxis);
+	glm::vec3 rotatedDirection = glm::rotate(rotation1, targetDirection);
+
+	// Generate a random angle between 0 and 360 degrees
+	float angle2 = dist2(rng);
+
+	// Rotate the direction around the initial direction by the random angle
+	glm::quat rotation2 = glm::angleAxis(angle2, targetDirection);
+	rotatedDirection = glm::rotate(rotation2, rotatedDirection);
+
+	return glm::normalize(rotatedDirection);
+
+}
+
+void removeBodyRotationFromHead(glm::vec2 &bodyOrientation, glm::vec3 &lookDirection)
+{
+	float rotation = -std::atan2(bodyOrientation.y, bodyOrientation.x) - glm::radians(90.f);
+	lookDirection = glm::rotateY(lookDirection, -rotation);
+}
+
+
+
 glm::vec2 fromDirectionToAngles(glm::vec3 direction)
 {
 	if (direction == glm::vec3(0, 1, 0))
@@ -89,7 +143,7 @@ glm::vec2 fromDirectionToAngles(glm::vec3 direction)
 	}
 }
 
-void removeBodyRotationFromHead(glm::vec2 &bodyOrientation, glm::vec3 &lookDirection)
+void removeBodyRotationFromHead(glm::vec3 &lookDirection)
 {
 	float zenith = fromDirectionToAngles(lookDirection).x;
 
@@ -153,6 +207,26 @@ void PhysicalEntity::jump()
 	{
 		//std::cout << "Jump\n";
 		applyImpulse(forces, glm::vec3{0,5,0});
+	}
+
+}
+
+void adjustVectorTowardsDirection(glm::vec3 &vector, glm::vec3 desiredDirection, float threshold)
+{
+	// Calculate the angle between the vector and the desired direction
+	float angle = glm::acos(glm::dot(glm::normalize(vector), glm::normalize(desiredDirection)));
+
+	// If the angle is bigger than the threshold, rotate the vector towards the desired direction
+	if (angle > threshold)
+	{
+		// Calculate the rotation axis
+		glm::vec3 rotationAxis = glm::cross(vector, desiredDirection);
+
+		// Calculate the rotation angle to reach the threshold
+		float rotationAngle = threshold - angle;
+
+		// Rotate the vector towards the desired direction
+		vector = glm::rotate(vector, -rotationAngle, glm::normalize(rotationAxis));
 	}
 
 }

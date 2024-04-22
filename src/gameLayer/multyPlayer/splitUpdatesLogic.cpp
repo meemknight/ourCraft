@@ -1,4 +1,5 @@
 #define GLM_ENABLE_EXPERIMENTAL
+#include <multyPlayer/enetServerFunction.h>
 #include <glm/gtx/hash.hpp>
 #include <multyPlayer/splitUpdatesLogic.h>
 #include <multyPlayer/tick.h>
@@ -6,6 +7,8 @@
 #include <platform/platformTools.h>
 #include <profilerLib.h>
 #include <iostream>
+
+struct Client;
 
 struct PerTickData
 {
@@ -51,8 +54,27 @@ int tryTakeTask()
 
 
 void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
-	ServerChunkStorer &chunkCache, unsigned int seed)
+	ServerChunkStorer &chunkCache, unsigned int seed, std::unordered_map<CID, Client> &clients)
 {
+
+	
+	for (auto &c : chunkCache.savedChunks)
+	{
+		c.second->entityData.players.clear();
+	}
+
+	for (auto &client : clients)
+	{
+
+		auto cPos = determineChunkThatIsEntityIn(client.second.playerData.position);
+
+		auto chunk = chunkCache.getChunkOrGetNull(cPos.x, cPos.y);
+
+		permaAssertComment(chunk, "A chunk that a player is in unloaded...");
+
+		chunk->entityData.players.insert({client.second.entityId, client.second.playerData});
+
+	}
 
 	if (1)
 	{

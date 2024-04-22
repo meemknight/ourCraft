@@ -580,7 +580,9 @@ void serverWorkerUpdate(
 		//todo sthing better here
 		static std::minstd_rand rng(std::random_device{}());
 
-		splitUpdatesLogic(sd.tickDeltaTime, currentTimer, sd.chunkCache, rng());
+		//todo get all clients should probably dissapear.
+		auto c = getAllClients();
+		splitUpdatesLogic(sd.tickDeltaTime, currentTimer, sd.chunkCache, rng(), c);
 
 		sd.tickDeltaTime = 0;
 	}

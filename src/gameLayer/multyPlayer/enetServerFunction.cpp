@@ -82,6 +82,7 @@ Client *getClientNotLocked(CID cid)
 	return &it->second;
 }
 
+//todo change to not return a copy
 std::unordered_map<CID, Client> getAllClients()
 {
 	auto rez = connections;
