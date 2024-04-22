@@ -48,6 +48,7 @@ struct GameData
 	bool renderBox = 0;
 	bool renderPlayerPos = 0;
 	bool renderColliders = 0;
+	bool fly = 0;
 	
 	bool colidable = 1;
 
@@ -296,21 +297,45 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		{
 			moveDir.x += speed;
 		}
-		if (platform::isKeyHeld(platform::Button::LeftShift)
-			|| platform::getControllerButtons().buttons[platform::ControllerButtons::RBumper].held
-			)
+
+		if (gameData.fly)
 		{
-			moveDir.y -= speed;
+			if (platform::isKeyHeld(platform::Button::LeftShift)
+				|| platform::getControllerButtons().buttons[platform::ControllerButtons::RBumper].held
+				)
+			{
+				moveDir.y -= speed;
+			}
+			if (platform::isKeyHeld(platform::Button::Space)
+				|| platform::getControllerButtons().buttons[platform::ControllerButtons::LBumper].held
+				)
+			{
+				moveDir.y += speed;
+			}
 		}
-		if (platform::isKeyHeld(platform::Button::Space)
-			|| platform::getControllerButtons().buttons[platform::ControllerButtons::LBumper].held
-			)
+		else
 		{
-			moveDir.y += speed;
+			if (platform::isKeyPressedOn(platform::Button::Space)
+				|| platform::getControllerButtons().buttons[platform::ControllerButtons::LBumper].held
+				)
+			{
+				gameData.entityManager.localPlayer.jump();
+			}
+		}
+
+		std::cout << gameData.entityManager.localPlayer.forces.colidesBottom() << "\n";
+
+
+		if (gameData.fly)
+		{
+			gameData.entityManager.localPlayer.flyFPS(moveDir, gameData.c.viewDirection);
+		}
+		else
+		{
+			gameData.entityManager.localPlayer.moveFPS(moveDir, gameData.c.viewDirection);
 		}
 
 		//gameData.c.moveFPS(moveDir);
-		gameData.entityManager.localPlayer.moveFPS(moveDir, gameData.c.viewDirection);
 
 		setBodyAndLookOrientation(gameData.entityManager.localPlayer.bodyOrientation,
 			gameData.entityManager.localPlayer.lookDirectionAnimation, moveDir, gameData.c.viewDirection);
@@ -348,11 +373,19 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			}
 		};
 
+
+		gameData.entityManager.localPlayer.updateForces(deltaTime, !gameData.fly);
+
+
 		if (gameData.colidable)
 		{
 			gameData.entityManager.localPlayer
 				.resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime, 
 				glm::vec3(0.8, 1.8, 0.8));
+		}
+		else
+		{
+			gameData.entityManager.localPlayer.updatePositions();
 		}
 
 		gameData.c.position = gameData.entityManager.localPlayer.position

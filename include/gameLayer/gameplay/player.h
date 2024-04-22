@@ -10,8 +10,9 @@ struct Player : public PhysicalEntity
 	glm::vec3 lookDirectionAnimation = {0,0,-1};
 	glm::vec2 bodyOrientation = {0, -1};
 
-	void moveFPS(glm::vec3 direction, glm::vec3 lookDirection);
+	void flyFPS(glm::vec3 direction, glm::vec3 lookDirection);
 
+	void moveFPS(glm::vec3 direction, glm::vec3 lookDirection);
 
 
 };

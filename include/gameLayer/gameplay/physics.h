@@ -22,6 +22,13 @@ struct MotionState
 	bool colidesLeft() { return colides && 0b00001; }
 	bool colidesRight() { return colides && 0b000001; }
 
+	void setColidesFront(bool b) { colides ^= 0b1; }
+	void setColidesBack(bool b) { colides ^= 0b01; }
+	void setColidesTop(bool b) { colides ^= 0b001; }
+	void setColidesBottom(bool b) { colides ^= 0b0001; }
+	void setColidesLeft(bool b) { colides ^= 0b00001; }
+	void setColidesRight(bool b) { colides ^= 0b000001; }
+
 };
 
 

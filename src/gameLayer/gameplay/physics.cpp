@@ -40,6 +40,8 @@ bool resolveConstrains(
 	float distance = glm::length(lastPos - pos);
 	const float BLOCK_SIZE = 1;
 
+	forces->colides = 0;
+
 	if (distance < BLOCK_SIZE)
 	{
 		rez = checkCollisionBrute(pos,
@@ -271,13 +273,13 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 
 										if (delta.x < 0) // moving left
 										{
-											//leftTouch = 1;
+											forces->setColidesLeft(true);
 											pos.x = x * BLOCK_SIZE + BLOCK_SIZE / 2.0 + size.x / 2.0;
 											goto end;
 										}
 										else
 										{
-											//rightTouch = 1;
+											forces->setColidesRight(true);
 											pos.x = x * BLOCK_SIZE - BLOCK_SIZE / 2.0 - size.x / 2.0;
 											goto end;
 										}
@@ -296,11 +298,13 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 
 										if (delta.y < 0) //moving down
 										{
+											forces->setColidesBottom(true);
 											pos.y = y * BLOCK_SIZE + BLOCK_SIZE / 2.0;
 											goto end;
 										}
 										else //moving up
 										{
+											forces->setColidesTop(true);
 											pos.y = y * BLOCK_SIZE - BLOCK_SIZE / 2.0 - size.y;
 											goto end;
 										}
@@ -319,13 +323,13 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 
 										if (delta.z < 0) // moving left
 										{
-											//leftTouch = 1;
+											forces->setColidesFront(true);
 											pos.z = z * BLOCK_SIZE + BLOCK_SIZE / 2.0 + size.z / 2.0;
 											goto end;
 										}
 										else
 										{
-											//rightTouch = 1;
+											forces->setColidesBack(true);
 											pos.z = z * BLOCK_SIZE - BLOCK_SIZE / 2.0 - size.z / 2.0;
 											goto end;
 										}

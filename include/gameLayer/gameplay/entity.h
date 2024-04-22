@@ -68,7 +68,12 @@ struct PhysicalEntity
 		lastPosition = position;
 	}
 
+	void updatePositions()
+	{
+		lastPosition = position;
+	}
 
+	void jump();
 };
 
 

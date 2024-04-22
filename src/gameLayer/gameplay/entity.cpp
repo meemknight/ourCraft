@@ -146,3 +146,13 @@ void setBodyAndLookOrientation(glm::vec2 &bodyOrientation, glm::vec3 &lookDirect
 	removeBodyRotationFromHead(bodyOrientation, lookDirection);
 
 }
+
+void PhysicalEntity::jump()
+{
+	if (forces.colidesBottom())
+	{
+		//std::cout << "Jump\n";
+		applyImpulse(forces, glm::vec3{0,5,0});
+	}
+
+}
