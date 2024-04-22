@@ -125,7 +125,7 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 
 	}
 
-
+	
 	//re set entities in their new chunk
 	for (auto it = orphanEntities.droppedItems.begin();
 		it != orphanEntities.droppedItems.end();)
@@ -160,6 +160,25 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 		{
 			chunk->entityData.zombies.insert({e.first, e.second});
 			it = orphanEntities.zombies.erase(it);
+		}
+		else
+		{
+			//save entity to disk!
+			it++;
+		}
+	}
+
+	for (auto it = orphanEntities.pigs.begin();
+		it != orphanEntities.pigs.end();)
+	{
+		auto &e = *it;
+
+		auto pos = determineChunkThatIsEntityIn(e.second.getPosition());
+		auto chunk = chunkCache.getChunkOrGetNull(pos.x, pos.y);
+		if (chunk)
+		{
+			chunk->entityData.pigs.insert({e.first, e.second});
+			it = orphanEntities.pigs.erase(it);
 		}
 		else
 		{

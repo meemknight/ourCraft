@@ -6,7 +6,8 @@
 
 
 
-struct Pig: public PhysicalEntity, public HasOrientationAndHeadTurnDirection
+struct Pig: public PhysicalEntity, public HasOrientationAndHeadTurnDirection,
+	public MovementSpeedForLegsAnimations
 {
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
@@ -20,6 +21,7 @@ struct PigClient: public ClientEntity<Pig>
 	
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 
+	void setEntityMatrix(glm::mat4 *skinningMatrix);
 };
 
 

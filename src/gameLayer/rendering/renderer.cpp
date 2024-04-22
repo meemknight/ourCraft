@@ -1581,20 +1581,18 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
 			modelsManager.pig.transforms.size(), GL_FALSE, &modelsManager.pig.transforms[0][0][0]);
 
-		poseCopy = modelsManager.pig.transforms;
 
 		for (auto &e : entityManager.pigs)
 		{
 			auto orientation = e.second.getRubberBandOrientation();
-			auto lookDirection = e.second.getRubberBandLookDirection();
 
 			auto rotMatrix = glm::rotate(-std::atan2(orientation.y, orientation.x)
 				- glm::radians(90.f),
 				glm::vec3(0, 1, 0));
 
+			poseCopy = modelsManager.pig.transforms;
 
-			poseCopy[0] = modelsManager.pig.transforms[0] * glm::toMat4(
-				glm::quatLookAt(glm::normalize(lookDirection), glm::vec3(0, 1, 0)));
+			e.second.setEntityMatrix(poseCopy.data());
 
 			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
 				poseCopy.size(), GL_FALSE, &poseCopy[0][0][0]);
@@ -1602,7 +1600,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,
 				&rotMatrix
 				[0][0]);
-
 
 
 			renderModel(e.second.getRubberBandPosition(), modelsManager.pig.vertexCount);

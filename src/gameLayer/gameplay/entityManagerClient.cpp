@@ -204,6 +204,12 @@ void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)
 				entity.second.entity.lookDirectionAnimation);
 		}
 
+		if constexpr (hasMovementSpeedForLegsAnimations<decltype(entity.second.entity)>)
+		{
+			entity.second.legAnimator.updateLegAngle(deltaTime, entity.second.entity.
+				movementSpeedForLegsAnimations);
+		}
+
 		entity.second.restantTime = 0;
 	};
 

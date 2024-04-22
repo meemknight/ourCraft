@@ -2,7 +2,7 @@
 #include <gameplay/physics.h>
 #include <glm/glm.hpp>
 #include <random>
-
+#include <glm/gtx/rotate_vector.hpp>
 
 //basic entity structure
 //
@@ -46,8 +46,6 @@ struct HasOrientationAndHeadTurnDirection
 {
 	glm::vec2 bodyOrientation = {0,-1};
 	glm::vec3 lookDirectionAnimation = {0,0,-1};
-
-
 };
 
 template <typename T, typename = void>
@@ -57,13 +55,21 @@ template <typename T>
 constexpr bool hasBodyOrientation<T, std::void_t<decltype(std::declval<T>().bodyOrientation)>> = true;
 
 
-template <typename T, typename Enable = void>
-struct RubberBandOrientation
+struct MovementSpeedForLegsAnimations
 {
-
-	// Stub implementation for when T doesn't have bodyOrientation
+	float movementSpeedForLegsAnimations = 0;
 };
 
+template <typename T, typename = void>
+constexpr bool hasMovementSpeedForLegsAnimations = false;
+
+template <typename T>
+constexpr bool hasMovementSpeedForLegsAnimations<T, std::void_t<decltype(std::declval<T>().movementSpeedForLegsAnimations)>> = true;
+
+
+template <typename T, typename Enable = void>
+struct RubberBandOrientation
+{};
 
 template <typename T>
 struct RubberBandOrientation <T, std::enable_if_t<hasBodyOrientation<T>>>
@@ -75,7 +81,29 @@ struct RubberBandOrientation <T, std::enable_if_t<hasBodyOrientation<T>>>
 	void computeRubberBandOrientation(float deltaTime, glm::vec2 bodyOrientation,
 		glm::vec3 lookDirectionAnimation)
 	{
-		rubberBandOrientation = glm::mix(bodyOrientation, rubberBandOrientation, 0.2);
+
+		float angleBody = std::atan2(bodyOrientation.y, bodyOrientation.x);
+		float angleCurrent = std::atan2(rubberBandOrientation.y, rubberBandOrientation.x);
+
+
+		float rotationSpeed = 3.141592653 * deltaTime * 2.f;
+
+		if (angleCurrent > angleBody)
+		{
+			angleCurrent -= rotationSpeed;
+			if (angleCurrent < angleBody) { angleCurrent = angleBody; }
+		}
+		else if (angleCurrent < angleBody)
+		{
+			angleCurrent += rotationSpeed;
+			if (angleCurrent > angleBody) { angleCurrent = angleBody; }
+		}
+
+		// Calculate new orientation
+		rubberBandOrientation.x = std::cos(angleCurrent);
+		rubberBandOrientation.y = std::sin(angleCurrent);	
+
+		//rubberBandOrientation = glm::mix(bodyOrientation, rubberBandOrientation, 0.2);
 		rubberBandLookDirectionAnimation = glm::mix(lookDirectionAnimation, rubberBandLookDirectionAnimation, 0.2);
 
 		rubberBandOrientation = normalize(rubberBandOrientation);
@@ -84,6 +112,82 @@ struct RubberBandOrientation <T, std::enable_if_t<hasBodyOrientation<T>>>
 
 };
 
+
+template <typename T, typename Enable = void>
+struct LegsAnimator
+{};
+
+
+template <typename T>
+struct LegsAnimator <T, std::enable_if_t< hasMovementSpeedForLegsAnimations<T>>>
+{
+
+	float legAngle = 0;
+	int legsAnimatorDirection = 0;
+
+	void updateLegAngle(float deltaTime, float speed)
+	{
+
+		if (!speed)
+		{
+			legsAnimatorDirection = 0;
+		}
+		else if(!legsAnimatorDirection)
+		{
+			legsAnimatorDirection = 1;
+		}
+
+		if (legsAnimatorDirection == 0)
+		{
+			if (legAngle)
+			{
+				if (legAngle > 0)
+				{
+					legAngle -= deltaTime * 2.f;
+					if (legAngle < 0)
+					{
+						legAngle = 0;
+					}
+				}
+				else
+				{
+					legAngle += deltaTime * 2.f;
+					if (legAngle > 0)
+					{
+						legAngle = 0;
+					}
+				}
+
+			}
+		}
+		{
+			deltaTime *= speed;
+
+			legAngle += deltaTime * legsAnimatorDirection;
+
+			if (legsAnimatorDirection == 1)
+			{
+				if (legAngle >= glm::radians(40.f))
+				{
+					legAngle = glm::radians(40.f);
+					legsAnimatorDirection = -1;
+				}
+			}
+			else
+			{
+				if (legAngle <= glm::radians(-40.f))
+				{
+					legAngle = glm::radians(-40.f);
+					legsAnimatorDirection = 1;
+				}
+			}
+
+		}
+
+	}
+
+
+};
 
 
 //todo add a way to add some static collider sizes
@@ -139,6 +243,7 @@ struct ClientEntity
 
 	RubberBandOrientation<T> rubberBandOrientation = {};
 
+	LegsAnimator<T> legAnimator = {};
 
 	glm::dvec3 getRubberBandPosition()
 	{
@@ -171,6 +276,20 @@ struct ClientEntity
 		else
 		{
 			return {0,0,-1};
+		}
+	}
+
+	//todo maybe an update internal here for all this components
+
+	float getLegsAngle()
+	{
+		if constexpr (hasMovementSpeedForLegsAnimations<T>)
+		{
+			return legAnimator.legAngle;
+		}
+		else
+		{
+			return 0.f;
 		}
 	}
 };
