@@ -127,7 +127,7 @@ void ClientEntityManager::addOrUpdateDroppedItem(std::uint64_t eid,
 	else
 	{
 		found->second.rubberBand
-			.add(found->second.entity.position - droppedItem.position);
+			.addToRubberBand(found->second.entity.position - droppedItem.position);
 
 		found->second.entity = droppedItem;
 		found->second.restantTime = restantTimer;
@@ -157,7 +157,7 @@ void ClientEntityManager::addOrUpdateZombie(std::uint64_t eid, Zombie entity,
 	else
 	{
 		found->second.rubberBand
-			.add(found->second.entity.position - entity.position);
+			.addToRubberBand(found->second.entity.position - entity.position);
 
 		found->second.entity = entity;
 		found->second.restantTime = restantTimer;
@@ -176,7 +176,7 @@ void ClientEntityManager::addOrUpdatePig(std::uint64_t eid, Pig entity, float re
 	else
 	{
 		found->second.rubberBand
-			.add(found->second.entity.position - entity.position);
+			.addToRubberBand(found->second.entity.position - entity.position);
 
 		found->second.entity = entity;
 		found->second.restantTime = restantTimer;
@@ -195,7 +195,14 @@ void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)
 			entity.second.update(timer, chunkGetter);
 		}
 
-		entity.second.rubberBand.computeRubberBand(entity.second.entity.position, deltaTime);
+		entity.second.rubberBand.computeRubberBand(deltaTime);
+
+		if constexpr (hasBodyOrientation<decltype(entity.second.entity)>)
+		{
+			entity.second.rubberBandOrientation.computeRubberBandOrientation(deltaTime,
+				entity.second.entity.bodyOrientation,
+				entity.second.entity.lookDirectionAnimation);
+		}
 
 		entity.second.restantTime = 0;
 	};
@@ -213,7 +220,7 @@ void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)
 	{
 
 		player.second.rubberBand.computeRubberBand(
-			player.second.entity.position, deltaTime);
+			deltaTime);
 
 	}
 

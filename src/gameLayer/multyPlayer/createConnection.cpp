@@ -262,7 +262,7 @@ void recieveDataClient(ENetEvent &event,
 					}
 					
 					found->second.rubberBand
-						.add(found->second.entity.position - entity->position);
+						.addToRubberBand(found->second.entity.position - entity->position);
 					
 					found->second.getPosition()
 						= entity->position;

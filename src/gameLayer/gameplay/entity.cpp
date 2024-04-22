@@ -9,7 +9,7 @@
 
 //todo entities should freeze their state completely when chunks are missing
 
-void computeRubberBand(RubberBand &rubberBand, glm::dvec3 &position, float deltaTime)
+void computeRubberBand(RubberBand &rubberBand, float deltaTime)
 {
 	if (rubberBand.initialSize)
 	{
@@ -46,9 +46,9 @@ float getRandomNumberFloat(std::minstd_rand &rng, float min, float max)
 	return dist(rng);
 }
 
-void RubberBand::computeRubberBand(glm::dvec3 &position, float deltaTime)
+void RubberBand::computeRubberBand(float deltaTime)
 {
-	::computeRubberBand(*this, position, deltaTime);
+	::computeRubberBand(*this, deltaTime);
 }
 
 

@@ -22,6 +22,30 @@ void PigServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGet
 {
 
 
+	waitTime -= deltaTime;
+
+	if (waitTime < 0)
+	{
+		moving = getRandomNumber(rng, 0, 1);
+		waitTime += getRandomNumberFloat(rng, 1, 8);
+
+		if (moving)
+		{
+			direction = getRandomUnitVector(rng);
+		}
+	}
+
+	if (moving)
+	{
+		auto move = 1.f * deltaTime * direction;
+		getPosition().x += move.x;
+		getPosition().z += move.y;
+
+		entity.bodyOrientation = move;
+		entity.lookDirectionAnimation;
+	}
+
+
 	entity.update(deltaTime, chunkGetter);
 
 }

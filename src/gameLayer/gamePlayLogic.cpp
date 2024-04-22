@@ -48,7 +48,7 @@ struct GameData
 	bool renderBox = 0;
 	bool renderPlayerPos = 0;
 	bool renderColliders = 0;
-	bool fly = 0;
+	bool fly = 1;
 	
 	bool colidable = 1;
 
@@ -322,8 +322,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				gameData.entityManager.localPlayer.jump();
 			}
 		}
-
-		std::cout << gameData.entityManager.localPlayer.forces.colidesBottom() << "\n";
 
 
 		if (gameData.fly)

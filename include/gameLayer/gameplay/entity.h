@@ -33,15 +33,56 @@ struct RubberBand
 	//glm::dvec3 position = {};
 	//float timer = 0; //the timer should be one for now
 
-	void computeRubberBand(glm::dvec3 &position, float deltaTime);
+	void computeRubberBand(float deltaTime);
 
-	void add(glm::dvec3 direction) { this->direction += direction; initialSize = glm::length(direction); }
+	void addToRubberBand(glm::dvec3 direction) { this->direction += direction; initialSize = glm::length(direction); }
 };
 
 void computeRubberBand(
-	RubberBand &rubberBand,
-	glm::dvec3 &position, float deltaTime);
+	RubberBand &rubberBand, float deltaTime);
 
+
+struct HasOrientationAndHeadTurnDirection
+{
+	glm::vec2 bodyOrientation = {0,-1};
+	glm::vec3 lookDirectionAnimation = {0,0,-1};
+
+
+};
+
+template <typename T, typename = void>
+constexpr bool hasBodyOrientation = false;
+
+template <typename T>
+constexpr bool hasBodyOrientation<T, std::void_t<decltype(std::declval<T>().bodyOrientation)>> = true;
+
+
+template <typename T, typename Enable = void>
+struct RubberBandOrientation
+{
+
+	// Stub implementation for when T doesn't have bodyOrientation
+};
+
+
+template <typename T>
+struct RubberBandOrientation <T, std::enable_if_t<hasBodyOrientation<T>>>
+{
+	glm::vec2 rubberBandOrientation = {0, -1};
+	glm::vec3 rubberBandLookDirectionAnimation = {0,0,-1};
+
+
+	void computeRubberBandOrientation(float deltaTime, glm::vec2 bodyOrientation,
+		glm::vec3 lookDirectionAnimation)
+	{
+		rubberBandOrientation = glm::mix(bodyOrientation, rubberBandOrientation, 0.2);
+		rubberBandLookDirectionAnimation = glm::mix(lookDirectionAnimation, rubberBandLookDirectionAnimation, 0.2);
+
+		rubberBandOrientation = normalize(rubberBandOrientation);
+		rubberBandLookDirectionAnimation = normalize(rubberBandLookDirectionAnimation);
+	}
+
+};
 
 
 
@@ -77,6 +118,7 @@ struct PhysicalEntity
 };
 
 
+
 template <class T>
 struct ServerEntity
 {
@@ -95,6 +137,9 @@ struct ClientEntity
 	RubberBand rubberBand = {};
 	float restantTime = 0;
 
+	RubberBandOrientation<T> rubberBandOrientation = {};
+
+
 	glm::dvec3 getRubberBandPosition()
 	{
 		return rubberBand.direction + entity.position;
@@ -103,6 +148,30 @@ struct ClientEntity
 	glm::dvec3 &getPosition()
 	{
 		return entity.position;
+	}
+
+	glm::vec2 getRubberBandOrientation()
+	{
+		if constexpr (hasBodyOrientation<T>)
+		{
+			return rubberBandOrientation.rubberBandOrientation;
+		}
+		else
+		{
+			return {0,-1};
+		}
+	}
+
+	glm::vec3 getRubberBandLookDirection()
+	{
+		if constexpr (hasBodyOrientation<T>)
+		{
+			return rubberBandOrientation.rubberBandLookDirectionAnimation;
+		}
+		else
+		{
+			return {0,0,-1};
+		}
 	}
 };
 
