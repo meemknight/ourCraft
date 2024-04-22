@@ -1,8 +1,7 @@
 #pragma once
 #include <gameplay/entity.h>
 #include <random>
-
-
+#include <gameplay/ai.h>
 
 
 
@@ -25,21 +24,15 @@ struct PigClient: public ClientEntity<Pig>
 };
 
 
-struct PigServer: public ServerEntity<Pig>
+
+struct PigServer: public ServerEntity<Pig>, public AnimalBehaviour < PigServer, PigDefaultSettings >
 {
 
-	glm::vec2 direction = {};
-	int moving = 0;
-	float waitTime = 1;
-	float randomJumpTimer = 1;
-	float moveSpeed = 1.f;
 
-	float changeHeadTimer = 1;
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
 		ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng);
 
-	std::uint64_t playerFollow = 0;
 
 
 };
