@@ -10,7 +10,7 @@
 struct PigDefaultSettings
 {
 	constexpr static float minSpeed = 0.9;
-	constexpr static float maxSpeed = 0.9;
+	constexpr static float maxSpeed = 1.5;
 };
 
 template <class E, class SETTINGS>
