@@ -44,7 +44,7 @@ struct ConnectionData
 {
 	ENetHost *client = 0;
 	ENetPeer *server = 0;
-	int32_t cid = 0;
+	std::uint64_t cid = 0;
 	std::vector<Chunk *> recievedChunks = {};
 	std::vector<Packet_PlaceBlocks> recievedBlocks = {};
 	bool conected = false;

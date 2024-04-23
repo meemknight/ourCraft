@@ -12,7 +12,6 @@ constexpr std::uint64_t RESERVED_CLIENTS_ID = 100000;
 struct Client;
 struct EventId;
 
-using CID = int32_t;
 
 bool isServerRunning();
 bool startServer();
@@ -34,7 +33,7 @@ struct PerClientServerSettings
 
 struct ServerSettings
 {
-	std::unordered_map<CID, PerClientServerSettings> perClientSettings;
+	std::unordered_map<std::uint64_t, PerClientServerSettings> perClientSettings;
 
 	int targetTicksPerSeccond = 20;
 	bool busyWait = 1;
@@ -54,9 +53,9 @@ std::uint64_t getTimer();
 
 
 
-void addCidToServerSettings(CID cid);
+void addCidToServerSettings(std::uint64_t cid);
 
-void removeCidFromServerSettings(CID cid);
+void removeCidFromServerSettings(std::uint64_t cid);
 
 ServerSettings getServerSettingsCopy();
 

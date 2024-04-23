@@ -24,8 +24,7 @@
 
 //todo add to a struct
 ENetHost *server = 0;
-std::unordered_map<CID, Client> connections;
-static CID pids = 1;
+std::unordered_map<std::uint64_t, Client> connections;
 static std::uint64_t entityId = RESERVED_CLIENTS_ID + 1;
 static std::thread enetServerThread;
 
@@ -69,13 +68,13 @@ bool checkIfPlayerShouldGetChunk(glm::ivec2 playerPos2D,
 	}
 }
 
-Client getClient(CID cid)
+Client getClient(std::uint64_t cid)
 {
 	Client rez = connections[cid];
 	return rez;
 }
 
-Client *getClientNotLocked(CID cid)
+Client *getClientNotLocked(std::uint64_t cid)
 {
 	auto it = connections.find(cid);
 	if (it == connections.end()) { return 0; }
@@ -83,24 +82,23 @@ Client *getClientNotLocked(CID cid)
 }
 
 //todo change to not return a copy
-std::unordered_map<CID, Client> getAllClients()
+std::unordered_map<std::uint64_t, Client> getAllClients()
 {
 	auto rez = connections;
 	return rez;
 }
 
-void insertConnection(CID cid, Client c)
+void insertConnection(std::uint64_t cid, Client c)
 {
 	connections.insert({cid, c});
 }
 
-void sentNewConnectionMessage(ENetPeer *peer, Client c, CID cid)
+void sentNewConnectionMessage(ENetPeer *peer, Client c)
 {
 	Packet p;
 	p.header = headerConnectOtherPlayer;
 	
 	Packet_HeaderConnectOtherPlayer data;
-	data.cid = cid;
 	data.position = c.playerData.entity.position;
 	data.entityId = c.entityId;
 
@@ -108,13 +106,12 @@ void sentNewConnectionMessage(ENetPeer *peer, Client c, CID cid)
 		sizeof(data), true, channelHandleConnections);
 }
 
-void broadcastNewConnectionMessage(ENetPeer *peerToIgnore, Client c, CID cid)
+void broadcastNewConnectionMessage(ENetPeer *peerToIgnore, Client c, std::uint64_t cid)
 {
 	Packet p;
 	p.header = headerConnectOtherPlayer;
 
 	Packet_HeaderConnectOtherPlayer data;
-	data.cid = cid;
 	data.position = c.playerData.entity.position;
 	data.entityId = c.entityId;
 
@@ -126,7 +123,7 @@ void broadcastNewConnectionMessage(ENetPeer *peerToIgnore, Client c, CID cid)
 void addConnection(ENetHost *server, ENetEvent &event)
 {
 
-	auto id = getEntityIdAndIncrement();
+	std::uint64_t id = getEntityIdAndIncrement();
 
 	glm::dvec3 spawnPosition(0, 107, 0);
 
@@ -134,15 +131,13 @@ void addConnection(ENetHost *server, ENetEvent &event)
 		Client c{event.peer};
 		c.playerData.entity.position = spawnPosition;
 		c.entityId = id;
-		insertConnection(pids, c);
+		insertConnection(id, c);
 	}
 
-	CID currentCid = pids;
 	{
 		Packet p;
 		p.header = headerReceiveCIDAndData;
-		p.cid = pids;
-		pids++;
+		p.cid = id;
 	
 		Packet_ReceiveCIDAndData packetToSend = {};
 		packetToSend.playersPosition = spawnPosition;
@@ -172,18 +167,18 @@ void addConnection(ENetHost *server, ENetEvent &event)
 	//send others to this
 	for (auto &c : connections)
 	{
-		if (c.first != currentCid)
+		if (c.first != id)
 		{
-			sentNewConnectionMessage(event.peer, c.second, c.first);
+			sentNewConnectionMessage(event.peer, c.second);
 		}
 
 	}
 
-	addCidToServerSettings(currentCid);
+	addCidToServerSettings(id);
 
 	//send this to others
-	Client c = *getClientNotLocked(currentCid);
-	broadcastNewConnectionMessage(event.peer, c, currentCid);
+	Client c = *getClientNotLocked(id);
+	broadcastNewConnectionMessage(event.peer, c, id);
 
 }
 
@@ -389,6 +384,9 @@ static std::atomic<bool> enetServerRunning = false;
 void enetServerFunction()
 {
 	std::cout << "Successfully started server!\n";
+
+
+	entityId = RESERVED_CLIENTS_ID + 1;
 
 
 	StructuresManager structuresManager;
@@ -607,7 +605,6 @@ bool startEnetListener(ENetHost *_server)
 {
 	server = _server;
 	connections = {};
-	pids = 1;
 
 	bool expected = 0;
 	if (enetServerRunning.compare_exchange_strong(expected, 1))

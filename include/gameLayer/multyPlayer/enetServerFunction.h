@@ -11,7 +11,7 @@ void closeEnetListener();
 struct ServerTask
 {
 	Task t;
-	CID cid;
+	std::uint64_t cid;
 };
 
 struct Client
@@ -22,15 +22,15 @@ struct Client
 	//char clientName[56] = {};
 	RevisionNumber revisionNumber = 1;
 
-	std::uint64_t entityId = 0;
+	std::uint64_t entityId = 0; //todo remove if possible
 
 	PlayerServer playerData;
 	glm::ivec2 positionForChunkGeneration = {};
 };
 
-Client getClient(CID cid);
-Client *getClientNotLocked(CID cid);
-std::unordered_map<CID, Client> getAllClients();
+Client getClient(std::uint64_t cid);
+Client *getClientNotLocked(std::uint64_t cid);
+std::unordered_map<std::uint64_t, Client> getAllClients();
 
 
 void broadCast(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel);

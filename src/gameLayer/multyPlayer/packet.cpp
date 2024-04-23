@@ -98,7 +98,7 @@ void sendPacket(ENetPeer *to, Packet p,
 		flag = ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT;
 	}
 
-	ENetPacket *packet = enet_packet_create(nullptr, size + sizeof(packet), flag);
+	ENetPacket *packet = enet_packet_create(nullptr, size + sizeof(Packet), flag);
 
 	memcpy(packet->data, &p, sizeof(Packet));
 	memcpy(packet->data + sizeof(Packet), data, size);

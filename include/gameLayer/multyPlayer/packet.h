@@ -27,7 +27,7 @@ struct EventId
 struct Packet
 {
 	uint32_t header = 0;
-	CID cid = 0;
+	std::uint64_t cid = 0;
 	char *getData()
 	{
 		return (char *)((&cid) + 1);
@@ -106,6 +106,7 @@ struct Packet_UpdatePig
 	std::uint64_t timer = 0;
 };
 
+//todo you should recieve a Player Entity here so just remove this packet
 struct Packet_ReceiveCIDAndData
 {
 	glm::dvec3 playersPosition = {};
@@ -161,7 +162,6 @@ struct Packet_HeaderConnectOtherPlayer
 	//todo send Player or just reuse the thing from above
 	glm::dvec3 position = {};
 	std::uint64_t entityId = 0;
-	CID cid = 0;
 };
 
 //used by the client to talk to the server

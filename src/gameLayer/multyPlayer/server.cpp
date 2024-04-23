@@ -662,12 +662,12 @@ std::uint64_t getTimer()
 }
 
 
-void addCidToServerSettings(CID cid)
+void addCidToServerSettings(std::uint64_t cid)
 {
 	sd.settings.perClientSettings.insert({cid, {}});
 }
 
-void removeCidFromServerSettings(CID cid)
+void removeCidFromServerSettings(std::uint64_t cid)
 {
 	sd.settings.perClientSettings.erase(cid);
 }
