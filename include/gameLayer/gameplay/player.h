@@ -31,7 +31,7 @@ struct LocalPlayer
 };
 
 //todo update function
-struct PlayerClient: public ClientEntity<Player>
+struct PlayerClient: public ClientEntity<Player, PlayerClient>
 {};
 
 //todo update function

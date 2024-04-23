@@ -15,7 +15,7 @@ struct Pig: public PhysicalEntity, public HasOrientationAndHeadTurnDirection,
 };
 
 
-struct PigClient: public ClientEntity<Pig>
+struct PigClient: public ClientEntity<Pig, PigClient>
 {
 	
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);

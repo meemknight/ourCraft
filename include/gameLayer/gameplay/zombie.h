@@ -10,7 +10,7 @@ struct Zombie: public PhysicalEntity
 };
 
 
-struct ZombieClient: public ClientEntity<Zombie>
+struct ZombieClient: public ClientEntity<Zombie, ZombieClient>
 {
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 };

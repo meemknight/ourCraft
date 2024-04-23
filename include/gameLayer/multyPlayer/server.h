@@ -15,6 +15,7 @@ struct EventId;
 
 bool isServerRunning();
 bool startServer();
+int getServerTicksPerSeccond();
 void clearSD(WorldSaver &worldSaver);
 int getChunkCapacity();
 void closeServer();
@@ -28,7 +29,7 @@ struct PerClientServerSettings
 	bool validateStuff = true;
 	bool spawnZombie = false;
 
-	glm::dvec3 outPlayerPos; //just for printing (todo remove)
+	glm::dvec3 outPlayerPos;
 };
 
 struct ServerSettings

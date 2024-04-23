@@ -186,38 +186,12 @@ void ClientEntityManager::addOrUpdatePig(std::uint64_t eid, Pig entity, float re
 void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2))
 {
 
-	auto genericUpdate = [&](auto &entity)
-	{
-		float timer = deltaTime + entity.second.restantTime;
-
-		if (timer > 0)
-		{
-			entity.second.update(timer, chunkGetter);
-		}
-
-		entity.second.rubberBand.computeRubberBand(deltaTime);
-
-		if constexpr (hasBodyOrientation<decltype(entity.second.entity)>)
-		{
-			entity.second.rubberBandOrientation.computeRubberBandOrientation(deltaTime,
-				entity.second.entity.bodyOrientation,
-				entity.second.entity.lookDirectionAnimation);
-		}
-
-		if constexpr (hasMovementSpeedForLegsAnimations<decltype(entity.second.entity)>)
-		{
-			entity.second.legAnimator.updateLegAngle(deltaTime, entity.second.entity.
-				movementSpeedForLegsAnimations);
-		}
-
-		entity.second.restantTime = 0;
-	};
 
 	auto genericUpdateLoop = [&](auto &container)
 	{
 		for (auto &e : container)
 		{
-			genericUpdate(e);
+			e.second.clientEntityUpdate(deltaTime, chunkGetter);
 		}
 	};
 

@@ -257,7 +257,7 @@ struct ServerEntity
 	}
 };
 
-template <class T>
+template <class T, class BASE_CLIENT>
 struct ClientEntity
 {
 	T entity = {};
@@ -315,6 +315,38 @@ struct ClientEntity
 			return 0.f;
 		}
 	}
+
+
+	void clientEntityUpdate(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2))
+	{
+		float timer = deltaTime + restantTime;
+
+		BASE_CLIENT *baseClient = (BASE_CLIENT*)this;
+
+		if (timer > 0)
+		{
+			baseClient->update(timer, chunkGetter);
+		}
+
+		rubberBand.computeRubberBand(deltaTime);
+
+		if constexpr (hasBodyOrientation<T>)
+		{
+			rubberBandOrientation.computeRubberBandOrientation(deltaTime,
+				entity.bodyOrientation,
+				entity.lookDirectionAnimation);
+		}
+
+		if constexpr (hasMovementSpeedForLegsAnimations<T>)
+		{
+			legAnimator.updateLegAngle(deltaTime, entity.
+				movementSpeedForLegsAnimations);
+		}
+
+		restantTime = 0;
+
+	};
+
 };
 
 template <typename T, typename = void>

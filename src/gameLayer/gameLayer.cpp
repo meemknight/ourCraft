@@ -17,7 +17,7 @@
 #include "rendering/Ui.h"
 #include "glui/glui.h"
 #include "gamePlayLogic.h"
-
+#include "multyPlayer/splitUpdatesLogic.h"
 
 ProgramData programData;
 
@@ -188,7 +188,10 @@ bool gameLogic(float deltaTime)
 			ImGui::Begin("Server window");
 
 			ImGui::Text("Server Chunk Capacity: %d", getChunkCapacity());
+			ImGui::Text("Server Ticke per seccond: %d", getServerTicksPerSeccond());
+			ImGui::Text("Server Worker tick threads: %d", getThredPoolSize());
 
+			
 
 			for (auto &c : s.perClientSettings)
 			{

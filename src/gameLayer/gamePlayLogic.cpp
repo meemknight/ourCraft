@@ -117,7 +117,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			auto time = gameData.undoQueue.events[0].createTime;
 
 			//todo Request the server for a hard reset rather than a timeout?
-			if ((getTimer() - time) > 8000)
+			if ((getTimer() - time) > 10'000)
 			{
 				std::cout << "Client timeouted because of validate events!\n";
 				return 0;

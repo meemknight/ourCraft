@@ -76,7 +76,6 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 #pragma region entity updates
 
 
-
 	for (auto &c : chunkCache.savedChunks)
 	{	
 		if (c.second->otherData.shouldUnload) { continue; }
@@ -126,66 +125,104 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 	}
 
 	
+	auto resetEntitiesInTheirNewChunk = [&](auto &container, auto memberSelector)
+	{
+
+		for (auto it = container.begin();
+			it != container.end();)
+		{
+			auto &e = *it;
+
+			auto pos = determineChunkThatIsEntityIn(e.second.getPosition());
+			auto chunk = chunkCache.getChunkOrGetNull(pos.x, pos.y);
+
+			if (chunk)
+			{
+				auto member = memberSelector(chunk->entityData);
+				member->insert({e.first, e.second});
+				//chunk->entityData.droppedItems.insert({e.first, e.second});
+				it = container.erase(it);
+			}
+			else
+			{
+				//save entity to disk!
+				it++;
+			}
+		}
+
+
+	};
+	
+	
+	resetEntitiesInTheirNewChunk(orphanEntities.droppedItems, 
+		[](auto &entityData) { return &entityData.droppedItems; });
+
+	resetEntitiesInTheirNewChunk(orphanEntities.zombies,
+		[](auto &entityData) { return &entityData.zombies; });
+	
+	resetEntitiesInTheirNewChunk(orphanEntities.pigs,
+		[](auto &entityData) { return &entityData.pigs; });
+
 	//re set entities in their new chunk
-	for (auto it = orphanEntities.droppedItems.begin();
-		it != orphanEntities.droppedItems.end();)
-	{
-		auto &e = *it;
+	//for (auto it = orphanEntities.droppedItems.begin();
+	//	it != orphanEntities.droppedItems.end();)
+	//{
+	//	auto &e = *it;
+	//
+	//	auto pos = determineChunkThatIsEntityIn(e.second.getPosition());
+	//	auto chunk = chunkCache.getChunkOrGetNull(pos.x, pos.y);
+	//
+	//	if (chunk)
+	//	{
+	//		chunk->entityData.droppedItems.insert({e.first, e.second});
+	//		it = orphanEntities.droppedItems.erase(it);
+	//	}
+	//	else
+	//	{
+	//		//save entity to disk!
+	//		it++;
+	//	}
+	//}
 
-		auto pos = determineChunkThatIsEntityIn(e.second.getPosition());
-		auto chunk = chunkCache.getChunkOrGetNull(pos.x, pos.y);
 
-		if (chunk)
-		{
-			chunk->entityData.droppedItems.insert({e.first, e.second});
-			it = orphanEntities.droppedItems.erase(it);
-		}
-		else
-		{
-			//save entity to disk!
-			it++;
-		}
-	}
-
-
-	for (auto it = orphanEntities.zombies.begin();
-		it != orphanEntities.zombies.end();)
-	{
-		auto &e = *it;
-
-		auto pos = determineChunkThatIsEntityIn(e.second.getPosition());
-		auto chunk = chunkCache.getChunkOrGetNull(pos.x, pos.y);
-
-		if (chunk)
-		{
-			chunk->entityData.zombies.insert({e.first, e.second});
-			it = orphanEntities.zombies.erase(it);
-		}
-		else
-		{
-			//save entity to disk!
-			it++;
-		}
-	}
-
-	for (auto it = orphanEntities.pigs.begin();
-		it != orphanEntities.pigs.end();)
-	{
-		auto &e = *it;
-
-		auto pos = determineChunkThatIsEntityIn(e.second.getPosition());
-		auto chunk = chunkCache.getChunkOrGetNull(pos.x, pos.y);
-		if (chunk)
-		{
-			chunk->entityData.pigs.insert({e.first, e.second});
-			it = orphanEntities.pigs.erase(it);
-		}
-		else
-		{
-			//save entity to disk!
-			it++;
-		}
-	}
+	//for (auto it = orphanEntities.zombies.begin();
+	//	it != orphanEntities.zombies.end();)
+	//{
+	//	auto &e = *it;
+	//
+	//	auto pos = determineChunkThatIsEntityIn(e.second.getPosition());
+	//	auto chunk = chunkCache.getChunkOrGetNull(pos.x, pos.y);
+	//
+	//	if (chunk)
+	//	{
+	//		chunk->entityData.zombies.insert({e.first, e.second});
+	//		it = orphanEntities.zombies.erase(it);
+	//	}
+	//	else
+	//	{
+	//		//save entity to disk!
+	//		it++;
+	//	}
+	//}
+	//
+	//for (auto it = orphanEntities.pigs.begin();
+	//	it != orphanEntities.pigs.end();)
+	//{
+	//	auto &e = *it;
+	//
+	//	auto pos = determineChunkThatIsEntityIn(e.second.getPosition());
+	//	auto chunk = chunkCache.getChunkOrGetNull(pos.x, pos.y);
+	//	if (chunk)
+	//	{
+	//		chunk->entityData.pigs.insert({e.first, e.second});
+	//		it = orphanEntities.pigs.erase(it);
+	//	}
+	//	else
+	//	{
+	//		//save entity to disk!
+	//		it++;
+	//	}
+	//}
 
 
 #pragma endregion

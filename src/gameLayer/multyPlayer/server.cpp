@@ -82,6 +82,13 @@ struct ServerData
 
 }sd;
 
+int outTicksPerSeccond = 0;
+
+int getServerTicksPerSeccond()
+{
+	return outTicksPerSeccond;
+}
+
 void clearSD(WorldSaver &worldSaver)
 {
 	sd.chunkCache.saveAllChunks(worldSaver);
@@ -255,7 +262,7 @@ bool spawnZombie(
 
 bool spawnPig(
 	ServerChunkStorer &chunkManager,
-	Pig pig, std::uint64_t newId)
+	Pig pig)
 {
 	//todo also send packets
 	auto chunkPos = determineChunkThatIsEntityIn(pig.position);
@@ -265,7 +272,7 @@ bool spawnPig(
 	{
 		PigServer e = {};
 		e.entity = pig;
-		c->entityData.pigs.insert({newId, e});
+		c->entityData.pigs.insert({getEntityIdAndIncrement(), e});
 	}
 	else
 	{
@@ -277,7 +284,7 @@ bool spawnPig(
 
 
 
-//todo this things will get removed!!!!!!!!!!
+//todo this things will get removed, maybe
 ServerSettings getServerSettingsCopy()
 {
 	return sd.settings;
@@ -563,7 +570,7 @@ void serverWorkerUpdate(
 				p.position = position;
 				p.lastPosition = position;
 
-				spawnPig(sd.chunkCache, p, getEntityIdAndIncrement());
+				spawnPig(sd.chunkCache, p);
 			}
 
 
@@ -598,6 +605,7 @@ void serverWorkerUpdate(
 		sd.seccondsTimer -= 1;
 		//std::cout << "Server ticks per seccond: " << ticksPerSeccond << "\n";
 		//std::cout << "Server runs per seccond: " << runsPerSeccond << "\n";
+		outTicksPerSeccond = sd.ticksPerSeccond;
 		sd.ticksPerSeccond = 0;
 		sd.runsPerSeccond = 0;
 	}
