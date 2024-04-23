@@ -22,8 +22,6 @@ struct Client
 	//char clientName[56] = {};
 	RevisionNumber revisionNumber = 1;
 
-	std::uint64_t entityId = 0; //todo remove if possible
-
 	PlayerServer playerData;
 	glm::ivec2 positionForChunkGeneration = {};
 };

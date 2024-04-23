@@ -78,9 +78,11 @@ bool initGameplay(ProgramData &programData, const char *c)
 	gameData = GameData();
 	gameData.c.position = glm::vec3(0, 65, 0);
 
-	gameData.entityManager.localPlayer.entity.position = playerData.playersPosition;
-	gameData.entityManager.localPlayer.entity.lastPosition = playerData.playersPosition;
+	gameData.entityManager.localPlayer.entity = playerData.entity;
 	gameData.entityManager.localPlayer.entityId = playerData.yourPlayerEntityId;
+
+	//todo restant timer here ...
+	//playerData.timer;
 
 
 	gameData.chunkSystem.init(20);

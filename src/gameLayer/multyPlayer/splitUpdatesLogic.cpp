@@ -72,7 +72,7 @@ void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
 
 		permaAssertComment(chunk, "A chunk that a player is in unloaded...");
 
-		chunk->entityData.players.insert({client.second.entityId, client.second.playerData});
+		chunk->entityData.players.insert({client.first, client.second.playerData});
 
 	}
 

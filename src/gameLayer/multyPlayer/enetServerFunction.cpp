@@ -93,14 +93,15 @@ void insertConnection(std::uint64_t cid, Client c)
 	connections.insert({cid, c});
 }
 
-void sentNewConnectionMessage(ENetPeer *peer, Client c)
+void sentNewConnectionMessage(ENetPeer *peer, Client c, std::uint64_t eid)
 {
 	Packet p;
-	p.header = headerConnectOtherPlayer;
+	p.header = headerClientRecieveOtherPlayerPosition;
 	
-	Packet_HeaderConnectOtherPlayer data;
-	data.position = c.playerData.entity.position;
-	data.entityId = c.entityId;
+	Packet_ClientRecieveOtherPlayerPosition data;
+	data.entity = c.playerData.entity;
+	data.eid = eid;
+	data.timer = getTimer();
 
 	sendPacket(peer, p, (const char *)&data,
 		sizeof(data), true, channelHandleConnections);
@@ -109,11 +110,11 @@ void sentNewConnectionMessage(ENetPeer *peer, Client c)
 void broadcastNewConnectionMessage(ENetPeer *peerToIgnore, Client c, std::uint64_t cid)
 {
 	Packet p;
-	p.header = headerConnectOtherPlayer;
+	p.header = headerClientRecieveOtherPlayerPosition;
 
-	Packet_HeaderConnectOtherPlayer data;
-	data.position = c.playerData.entity.position;
-	data.entityId = c.entityId;
+	Packet_ClientRecieveOtherPlayerPosition data;
+	data.entity = c.playerData.entity;
+	data.eid = cid;
 
 	//no need to lock because this is the thread to modify the data
 	broadCastNotLocked(p, &data,
@@ -130,7 +131,7 @@ void addConnection(ENetHost *server, ENetEvent &event)
 	{
 		Client c{event.peer};
 		c.playerData.entity.position = spawnPosition;
-		c.entityId = id;
+		c.playerData.entity.lastPosition = spawnPosition;
 		insertConnection(id, c);
 	}
 
@@ -140,9 +141,10 @@ void addConnection(ENetHost *server, ENetEvent &event)
 		p.cid = id;
 	
 		Packet_ReceiveCIDAndData packetToSend = {};
-		packetToSend.playersPosition = spawnPosition;
+		packetToSend.entity = getClient(id).playerData.entity;
 		packetToSend.yourPlayerEntityId = id;
-	
+		packetToSend.timer = getTimer();
+
 		//send own cid
 		sendPacket(event.peer, p, (const char *)&packetToSend,
 			sizeof(packetToSend), true, channelHandleConnections);
@@ -169,7 +171,7 @@ void addConnection(ENetHost *server, ENetEvent &event)
 	{
 		if (c.first != id)
 		{
-			sentNewConnectionMessage(event.peer, c.second);
+			sentNewConnectionMessage(event.peer, c.second, c.first);
 		}
 
 	}
@@ -194,7 +196,7 @@ void removeConnection(ENetHost *server, ENetEvent &event)
 			p.cid = c.first;
 
 			Packet_DisconectOtherPlayer data;
-			data.EID = c.second.entityId;
+			data.EID = c.first;
 
 			broadCastNotLocked(p, &data, sizeof(data), 0, true, channelHandleConnections);
 
@@ -286,7 +288,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 
 
 			Client clientCopy = {};
-
+			std::uint64_t clientCopyCid = 0;
 			
 			auto it = connections.find(p.cid);
 			if (it == connections.end())
@@ -301,6 +303,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 
 
 					clientCopy = it->second;
+					clientCopyCid = it->first;
 
 					//todo something better here...
 					auto s = getServerSettingsCopy();
@@ -321,12 +324,12 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			{
 
 				//broadcast player movement
-				if (clientCopy.entityId)
+				if (clientCopyCid)
 				{
 					Packet_ClientRecieveOtherPlayerPosition sendData;
 
 					sendData.timer = getTimer();
-					sendData.eid = clientCopy.entityId;
+					sendData.eid = clientCopyCid;
 					sendData.entity = clientCopy.playerData.entity;
 
 					Packet p;
@@ -521,7 +524,7 @@ void enetServerFunction()
 								)
 							{
 								Packet_ClientRecieveOtherPlayerPosition sendData;
-								sendData.eid = other.second.entityId;
+								sendData.eid = other.first;
 								sendData.timer = getTimer();
 								sendData.entity = other.second.playerData.entity;
 

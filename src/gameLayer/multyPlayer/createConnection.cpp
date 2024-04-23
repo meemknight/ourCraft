@@ -347,19 +347,6 @@ void recieveDataClient(ENetEvent &event,
 			break;
 		}
 
-		case headerConnectOtherPlayer:
-		{
-
-			Packet_HeaderConnectOtherPlayer *player= (Packet_HeaderConnectOtherPlayer *)data;
-
-			if (size == sizeof(Packet_HeaderConnectOtherPlayer))
-			{
-				entityManager.players[player->entityId].entity.position = player->position;
-			}
-
-		};
-		break;
-
 		//disconnect other player
 		case headerDisconnectOtherPlayer:
 		{

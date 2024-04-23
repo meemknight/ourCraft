@@ -58,7 +58,6 @@ enum
 	headerClientRecieveDroppedItemUpdate,
 	headerClientUpdateTimer,
 	headerDisconnectOtherPlayer, 
-	headerConnectOtherPlayer,
 	headerUpdateZombie,
 	headerUpdatePig,
 };
@@ -106,10 +105,10 @@ struct Packet_UpdatePig
 	std::uint64_t timer = 0;
 };
 
-//todo you should recieve a Player Entity here so just remove this packet
 struct Packet_ReceiveCIDAndData
 {
-	glm::dvec3 playersPosition = {};
+	Player entity = {};
+	std::uint64_t timer = 0;
 	std::uint64_t yourPlayerEntityId = 0;
 
 };
@@ -150,18 +149,12 @@ struct Packer_SendPlayerData
 
 };
 
+
 struct Packet_ClientRecieveOtherPlayerPosition
 {
 	Player entity = {};
 	std::uint64_t eid = 0;
 	std::uint64_t timer = 0;
-};
-
-struct Packet_HeaderConnectOtherPlayer
-{
-	//todo send Player or just reuse the thing from above
-	glm::dvec3 position = {};
-	std::uint64_t entityId = 0;
 };
 
 //used by the client to talk to the server
