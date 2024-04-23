@@ -14,36 +14,26 @@ struct Player : public PhysicalEntity
 
 	void moveFPS(glm::vec3 direction, glm::vec3 lookDirection);
 
+	int chunkDistance = 10; //remove this from here?
 
 };
 
 
-
 //this is the player struct when playing locally
-struct LocalPlayer : public Player
+struct LocalPlayer
 {
+	Player entity = {};
+
 	std::uint64_t entityId = 0;
 
 	//dodo add some other data here like inventory
 
 };
 
+//todo update function
 struct PlayerClient: public ClientEntity<Player>
-{
+{};
 
-
-
-};
-
-
-//this is what we send through the network
-struct PlayerData
-{
-	glm::vec3 lookDirection = {0,0,-1};
-	glm::vec2 bodyOrientation = {0, -1};
-
-	int chunkDistance = 10; //remove this from here?
-	glm::dvec3 position = {};
-	//...
-};
-
+//todo update function
+struct PlayerServer: public ServerEntity<Player>
+{};

@@ -189,7 +189,7 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 			{
 				for (auto &p : c->entityData.players)
 				{
-					if (checkPlayerDistance(p.second.position, baseEntity->getPosition()))
+					if (checkPlayerDistance(p.second.entity.position, baseEntity->getPosition()))
 					{
 						playersClose.push_back(p.first);
 					}
@@ -244,7 +244,7 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 
 	if (playerFollow)
 	{
-		PlayerData *found = 0;
+		PlayerServer *found = 0;
 		for (auto offset : checkOffsets)
 		{
 			glm::ivec2 pos = chunkPosition + offset;
@@ -254,7 +254,7 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 				for (auto &p : c->entityData.players)
 				{
 
-					if (p.first == playerFollow && checkPlayerDistance(p.second.position, baseEntity->getPosition()))
+					if (p.first == playerFollow && checkPlayerDistance(p.second.entity.position, baseEntity->getPosition()))
 					{
 						found = &p.second;
 						break;
@@ -273,7 +273,7 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 		else
 		{
 
-			glm::vec3 vireDirection = found->position - baseEntity->getPosition();
+			glm::vec3 vireDirection = found->entity.position - baseEntity->getPosition();
 			float l = glm::length(vireDirection);
 			if (l > 0.01)
 			{

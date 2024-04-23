@@ -66,7 +66,7 @@ void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
 	for (auto &client : clients)
 	{
 
-		auto cPos = determineChunkThatIsEntityIn(client.second.playerData.position);
+		auto cPos = determineChunkThatIsEntityIn(client.second.playerData.entity.position);
 
 		auto chunk = chunkCache.getChunkOrGetNull(cPos.x, cPos.y);
 

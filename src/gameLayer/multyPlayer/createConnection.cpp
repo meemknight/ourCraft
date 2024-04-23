@@ -240,35 +240,34 @@ void recieveDataClient(ENetEvent &event,
 			//	break; //drop too old packets
 			//}
 
-			if (entityManager.localPlayer.entityId == entity->entityId)
+			if (entityManager.localPlayer.entityId == entity->eid)
 			{
 				//update local player
-
-				entityManager.localPlayer.position = entity->position;
-				entityManager.localPlayer.lastPosition = entity->position;
+				entityManager.localPlayer.entity = entity->entity;
 			}
 			else
 			{
 				if (checkIfPlayerShouldGetEntity({playerPosition.x, playerPosition.z},
-					entity->position, squareDistance, 0))
+					entity->entity.position, squareDistance, 0))
 				{
 
-					auto found = entityManager.players.find(entity->entityId);
+					auto found = entityManager.players.find(entity->eid);
 					
 					if (found == entityManager.players.end())
 					{
-						entityManager.players[entity->entityId] = {};
-						found = entityManager.players.find(entity->entityId);
+						entityManager.players[entity->eid] = {};
+						found = entityManager.players.find(entity->eid);
 					}
 					
 					found->second.rubberBand
-						.addToRubberBand(found->second.entity.position - entity->position);
+						.addToRubberBand(found->second.entity.position - entity->entity.position);
+
+					found->second.entity = entity->entity;
+
+					float restantTimer = computeRestantTimer(entity->timer, yourTimer);
 					
-					found->second.getPosition()
-						= entity->position;
-				
-					found->second.entity.bodyOrientation = entity->bodyOrientation;
-					found->second.entity.lookDirectionAnimation = entity->lookDirection;
+					found->second.restantTime = restantTimer;
+
 				}
 				else
 				{

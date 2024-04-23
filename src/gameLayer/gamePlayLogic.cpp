@@ -78,8 +78,8 @@ bool initGameplay(ProgramData &programData, const char *c)
 	gameData = GameData();
 	gameData.c.position = glm::vec3(0, 65, 0);
 
-	gameData.entityManager.localPlayer.position = playerData.playersPosition;
-	gameData.entityManager.localPlayer.lastPosition = playerData.playersPosition;
+	gameData.entityManager.localPlayer.entity.position = playerData.playersPosition;
+	gameData.entityManager.localPlayer.entity.lastPosition = playerData.playersPosition;
 	gameData.entityManager.localPlayer.entityId = playerData.yourPlayerEntityId;
 
 
@@ -123,7 +123,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 
 		clientMessageLoop(validateEvent, inValidateRevision,
-			gameData.entityManager.localPlayer.position, gameData.chunkSystem.squareSize,
+			gameData.entityManager.localPlayer.entity.position, gameData.chunkSystem.squareSize,
 			gameData.entityManager, gameData.undoQueue, gameData.serverTimer, disconnect);
 
 		if (disconnect) { return 0; }
@@ -181,8 +181,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			}
 
-			gameData.entityManager.localPlayer.position = gameData.undoQueue.events[0].playerPos;
-			gameData.entityManager.localPlayer.lastPosition = gameData.undoQueue.events[0].playerPos;
+			gameData.entityManager.localPlayer.entity.position = gameData.undoQueue.events[0].playerPos;
+			gameData.entityManager.localPlayer.entity.lastPosition = gameData.undoQueue.events[0].playerPos;
 
 			gameData.undoQueue.events.clear();
 
@@ -194,7 +194,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			static float timer = 0.016;
 
-			if (gameData.entityManager.localPlayer.position != gameData.lastSendPos)
+			///todo a common method to check if data was modified
+			if (gameData.entityManager.localPlayer.entity.position != gameData.lastSendPos)
 			{
 				timer -= deltaTime;
 			}
@@ -209,17 +210,17 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				//timer = 0.316;
 
 				Packer_SendPlayerData data;
-				data.playerData.position = gameData.entityManager.localPlayer.position;
-				data.playerData.chunkDistance = gameData.chunkSystem.squareSize;
 				data.timer = gameData.serverTimer;
-				data.playerData.bodyOrientation = gameData.entityManager.localPlayer.bodyOrientation;
-				data.playerData.lookDirection = gameData.entityManager.localPlayer.lookDirectionAnimation;
+
+				//todo SET THIS ALSO SOMEWHERE ELSE LOL!!!!
+				gameData.entityManager.localPlayer.entity.chunkDistance = gameData.chunkSystem.squareSize;
+				data.playerData = gameData.entityManager.localPlayer.entity;
 
 				sendPacket(getServer(),
 					formatPacket(headerSendPlayerData), (char *)&data, sizeof(data), 0,
 					channelPlayerPositions);
 
-				gameData.lastSendPos = gameData.entityManager.localPlayer.position;
+				gameData.lastSendPos = gameData.entityManager.localPlayer.entity.position;
 			}
 
 
@@ -319,24 +320,24 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				|| platform::getControllerButtons().buttons[platform::ControllerButtons::LBumper].held
 				)
 			{
-				gameData.entityManager.localPlayer.jump();
+				gameData.entityManager.localPlayer.entity.jump();
 			}
 		}
 
 
 		if (gameData.fly)
 		{
-			gameData.entityManager.localPlayer.flyFPS(moveDir, gameData.c.viewDirection);
+			gameData.entityManager.localPlayer.entity.flyFPS(moveDir, gameData.c.viewDirection);
 		}
 		else
 		{
-			gameData.entityManager.localPlayer.moveFPS(moveDir, gameData.c.viewDirection);
+			gameData.entityManager.localPlayer.entity.moveFPS(moveDir, gameData.c.viewDirection);
 		}
 
 		//gameData.c.moveFPS(moveDir);
 
-		setBodyAndLookOrientation(gameData.entityManager.localPlayer.bodyOrientation,
-			gameData.entityManager.localPlayer.lookDirectionAnimation, moveDir, gameData.c.viewDirection);
+		setBodyAndLookOrientation(gameData.entityManager.localPlayer.entity.bodyOrientation,
+			gameData.entityManager.localPlayer.entity.lookDirectionAnimation, moveDir, gameData.c.viewDirection);
 
 		//gameData.entityManager.localPlayer.bodyOrientation = 
 		//gameData.entityManager.localPlayer.lookDirection = 
@@ -372,21 +373,21 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		};
 
 
-		gameData.entityManager.localPlayer.updateForces(deltaTime, !gameData.fly);
+		gameData.entityManager.localPlayer.entity.updateForces(deltaTime, !gameData.fly);
 
 
 		if (gameData.colidable)
 		{
 			gameData.entityManager.localPlayer
-				.resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime, 
+				.entity.resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime,
 				glm::vec3(0.8, 1.8, 0.8));
 		}
 		else
 		{
-			gameData.entityManager.localPlayer.updatePositions();
+			gameData.entityManager.localPlayer.entity.updatePositions();
 		}
 
-		gameData.c.position = gameData.entityManager.localPlayer.position
+		gameData.c.position = gameData.entityManager.localPlayer.entity.position
 			+ glm::dvec3(0,1.5,0);
 
 		gameData.entityManager.doAllUpdates(deltaTime, chunkGetter);
@@ -402,7 +403,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	if (platform::isKeyPressedOn(platform::Button::Q))
 	{
 		gameData.entityManager.dropItemByClient(
-			gameData.entityManager.localPlayer.position,
+			gameData.entityManager.localPlayer.entity.position,
 			BlockTypes::diamond_ore, gameData.undoQueue, gameData.c.viewDirection * 5.f,
 			gameData.serverTimer);
 	}
@@ -472,12 +473,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			{
 				if (blockToPlace)
 					gameData.chunkSystem.placeBlockByClient(*blockToPlace, blockTypeToPlace,
-					gameData.undoQueue, gameData.entityManager.localPlayer.position, gameData.lightSystem);
+					gameData.undoQueue, gameData.entityManager.localPlayer.entity.position, gameData.lightSystem);
 			}
 			else if (platform::isLMouseReleased())
 			{
 				gameData.chunkSystem.placeBlockByClient(rayCastPos, BlockTypes::air,
-					gameData.undoQueue, gameData.entityManager.localPlayer.position, gameData.lightSystem);
+					gameData.undoQueue, gameData.entityManager.localPlayer.entity.position, gameData.lightSystem);
 			}
 		}
 
@@ -687,8 +688,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				ImGui::Checkbox("Fly", &gameData.fly);
 
 				ImGui::DragScalarN("Player Body pos", ImGuiDataType_Double,
-					&gameData.entityManager.localPlayer.position[0], 3, 0.01);
-				gameData.entityManager.localPlayer.lastPosition = gameData.entityManager.localPlayer.position;
+					&gameData.entityManager.localPlayer.entity.position[0], 3, 0.01);
+				gameData.entityManager.localPlayer.entity.lastPosition 
+					= gameData.entityManager.localPlayer.entity.position;
 
 				ImGui::Text("camera float: %f, %f, %f", posFloat.x, posFloat.y, posFloat.z);
 				ImGui::Text("camera int: %d, %d, %d", posInt.x, posInt.y, posInt.z);
@@ -823,7 +825,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 									gameData.chunkSystem.placeBlockByClient(pos, s->unsafeGet(x, y, z),
 										gameData.undoQueue, 
-										gameData.entityManager.localPlayer.position, gameData.lightSystem);
+										gameData.entityManager.localPlayer.entity.position, gameData.lightSystem);
 								}
 
 						gameData.pointSize = s->size;

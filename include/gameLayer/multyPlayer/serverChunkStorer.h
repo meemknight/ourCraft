@@ -89,7 +89,7 @@ struct EntityData
 	std::unordered_map<std::uint64_t, ZombieServer> zombies;
 	std::unordered_map<std::uint64_t, PigServer> pigs;
 
-	std::unordered_map <std::uint64_t, PlayerData> players;
+	std::unordered_map <std::uint64_t, PlayerServer> players;
 };
 
 

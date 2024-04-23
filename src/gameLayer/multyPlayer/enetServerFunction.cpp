@@ -101,7 +101,7 @@ void sentNewConnectionMessage(ENetPeer *peer, Client c, CID cid)
 	
 	Packet_HeaderConnectOtherPlayer data;
 	data.cid = cid;
-	data.position = c.playerData.position;
+	data.position = c.playerData.entity.position;
 	data.entityId = c.entityId;
 
 	sendPacket(peer, p, (const char *)&data,
@@ -115,7 +115,7 @@ void broadcastNewConnectionMessage(ENetPeer *peerToIgnore, Client c, CID cid)
 
 	Packet_HeaderConnectOtherPlayer data;
 	data.cid = cid;
-	data.position = c.playerData.position;
+	data.position = c.playerData.entity.position;
 	data.entityId = c.entityId;
 
 	//no need to lock because this is the thread to modify the data
@@ -132,7 +132,7 @@ void addConnection(ENetHost *server, ENetEvent &event)
 
 	{
 		Client c{event.peer};
-		c.playerData.position = spawnPosition;
+		c.playerData.entity.position = spawnPosition;
 		c.entityId = id;
 		insertConnection(pids, c);
 	}
@@ -255,7 +255,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 				{
 					it->second.positionForChunkGeneration = packetData.playersPositionAtRequest;
 					//std::cout << packetData.playersPositionAtRequest.x << "\n";
-					squareDistance = it->second.playerData.chunkDistance;
+					squareDistance = it->second.playerData.entity.chunkDistance;
 				}
 
 			}
@@ -301,7 +301,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			else
 			{
 
-				if (it->second.playerData.position != packetData.playerData.position)
+				if (it->second.playerData.entity.position != packetData.playerData.position)
 				{
 
 
@@ -317,7 +317,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 					//nothing changed
 				}
 
-				it->second.playerData = packetData.playerData;
+				it->second.playerData.entity = packetData.playerData;
 
 			}
 
@@ -329,10 +329,10 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 				if (clientCopy.entityId)
 				{
 					Packet_ClientRecieveOtherPlayerPosition sendData;
-					sendData.entityId = clientCopy.entityId;
-					sendData.position = packetData.playerData.position;
-					sendData.bodyOrientation = packetData.playerData.bodyOrientation;
-					sendData.lookDirection = packetData.playerData.lookDirection;
+
+					sendData.timer = getTimer();
+					sendData.eid = clientCopy.entityId;
+					sendData.entity = clientCopy.playerData.entity;
 
 					Packet p;
 					p.cid = 0;
@@ -518,15 +518,14 @@ void enetServerFunction()
 						{
 
 							if (checkIfPlayerShouldGetEntity(
-								{c.second.playerData.position.x, c.second.playerData.position.z},
-								other.second.playerData.position, c.second.playerData.chunkDistance, 0)
+								{c.second.playerData.entity.position.x, c.second.playerData.entity.position.z},
+								other.second.playerData.entity.position, c.second.playerData.entity.chunkDistance, 0)
 								)
 							{
 								Packet_ClientRecieveOtherPlayerPosition sendData;
-								sendData.entityId = other.second.entityId;
-								sendData.position = other.second.playerData.position;
-								sendData.lookDirection = other.second.playerData.lookDirection;
-								sendData.bodyOrientation = other.second.playerData.bodyOrientation;
+								sendData.eid = other.second.entityId;
+								sendData.timer = getTimer();
+								sendData.entity = other.second.playerData.entity;
 
 								Packet p;
 								p.cid = 0;

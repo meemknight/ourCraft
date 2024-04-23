@@ -24,7 +24,7 @@ struct Client
 
 	std::uint64_t entityId = 0;
 
-	PlayerData playerData; //todo remove maybe?
+	PlayerServer playerData;
 	glm::ivec2 positionForChunkGeneration = {};
 };
 

@@ -12,12 +12,6 @@
 struct UndoQueue;
 
 
-struct ReservedIDsRange
-{
-	std::uint64_t idStart = 0;
-	size_t count = 0;
-};
-
 
 struct ClientEntityManager
 {

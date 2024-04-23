@@ -354,7 +354,7 @@ void serverWorkerUpdate(
 			bool wasGenerated = 0;
 
 			if (checkIfPlayerShouldGetChunk(client.positionForChunkGeneration,
-				{i.t.pos.x, i.t.pos.z}, client.playerData.chunkDistance))
+				{i.t.pos.x, i.t.pos.z}, client.playerData.entity.chunkDistance))
 			{
 				PL::Profiler profiler;
 
@@ -393,7 +393,7 @@ void serverWorkerUpdate(
 			else
 			{
 				std::cout << "Chunk rejected because player too far: " <<
-					i.t.pos.x << " " << i.t.pos.z << " dist: " << client.playerData.chunkDistance << "\n";
+					i.t.pos.x << " " << i.t.pos.z << " dist: " << client.playerData.entity.chunkDistance << "\n";
 			}
 
 			if (wasGenerated) { chunksGenerated++; }
@@ -559,7 +559,7 @@ void serverWorkerUpdate(
 
 
 				Pig p;
-				glm::dvec3 position = c.begin()->second.playerData.position;
+				glm::dvec3 position = c.begin()->second.playerData.entity.position;
 				p.position = position;
 				p.lastPosition = position;
 
@@ -675,7 +675,6 @@ void removeCidFromServerSettings(CID cid)
 
 
 
-
 //adds loaded chunks.
 void updateLoadedChunks(
 	WorldGenerator &wg,
@@ -695,10 +694,10 @@ void updateLoadedChunks(
 	for (auto &c : clientsCopy)
 	{
 		
-		glm::ivec2 pos(divideChunk(c.second.playerData.position.x), 
-			divideChunk(c.second.playerData.position.z));
+		glm::ivec2 pos(divideChunk(c.second.playerData.entity.position.x),
+			divideChunk(c.second.playerData.entity.position.z));
 		
-		int distance = (c.second.playerData.chunkDistance/2) + 1;
+		int distance = (c.second.playerData.entity.chunkDistance/2) + 1;
 
 		for (int i = -distance; i <= distance; i++)
 			for (int j = -distance; j <= distance; j++)
