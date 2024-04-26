@@ -18,6 +18,7 @@
 #include "glui/glui.h"
 #include "gamePlayLogic.h"
 #include "multyPlayer/splitUpdatesLogic.h"
+#include <rendering/renderSettings.h>
 
 ProgramData programData;
 
@@ -27,13 +28,12 @@ bool initGame()
 
 	createErrorFile();
 	
-	glui::gluiInit();
 
 	//gl2d::setVsync(false);
 	programData.renderer2d.create();
 	programData.font.createFromFile(RESOURCES_PATH "roboto_black.ttf");
-	programData.texture.loadFromFile(RESOURCES_PATH "blocks.png", true, false);
 	programData.uiTexture.loadFromFile(RESOURCES_PATH "ui0.png", true, true);
+	programData.buttonTexture.loadFromFile(RESOURCES_PATH "beacon_button_default.png", true, true);
 	programData.numbersTexture.loadFromFile(RESOURCES_PATH "numbers.png", true, true);
 	//programData.dudv.loadFromFile(RESOURCES_PATH "otherTextures/test.jpg", true, true);
 	programData.dudv.loadFromFile(RESOURCES_PATH "otherTextures/waterDUDV.png", false, true);
@@ -56,16 +56,6 @@ bool initGame()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-	{
-		programData.texture.bind();
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.f);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 4.f);
-
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
 
 	programData.blocksLoader.loadAllTextures();
 	programData.renderer.create(programData.blocksLoader);
@@ -87,7 +77,7 @@ bool initGame()
 
 	//glEnable(GL_LINE_WIDTH);
 	glLineWidth(4);
-
+	
 
 	return true;
 }
@@ -138,8 +128,10 @@ bool gameLogic(float deltaTime)
 
 	if (!gameStarted)
 	{
-		glui::Begin(1);
-		if (glui::Button("Host game", Colors_Gray))
+		programData.menuRenderer.Begin(1);
+		programData.menuRenderer.SetAlignModeFixedSizeWidgets({0,150});
+
+		if (programData.menuRenderer.Button("Host game", Colors_Gray, programData.buttonTexture))
 		{
 			if (!startServer())
 			{
@@ -157,7 +149,8 @@ bool gameLogic(float deltaTime)
 			}
 
 		}
-		if (glui::Button("Join game", Colors_Gray))
+		if (programData.menuRenderer.Button("Join game", Colors_Gray,
+			programData.buttonTexture))
 		{
 			if (initGameplay(programData, ipString))
 			{
@@ -169,14 +162,18 @@ bool gameLogic(float deltaTime)
 			}
 		}
 		
-		glui::InputText("IP: ", ipString, sizeof(ipString));
+		programData.menuRenderer.InputText("IP: ", ipString, sizeof(ipString), 
+			Colors_Gray, programData.buttonTexture, false);
+
+
+		displayRenderSettingsMenuButton(programData);
 
 		if (!lastError.empty())
 		{
-			glui::Text(lastError, glm::vec4(1, 0, 0, 1));
+			programData.menuRenderer.Text(lastError, glm::vec4(1, 0, 0, 1));
 		}
 
-		glui::End();
+		programData.menuRenderer.End();
 	}
 	else
 	{
@@ -228,7 +225,7 @@ bool gameLogic(float deltaTime)
 #pragma region set finishing stuff
 	gl2d::enableNecessaryGLFeatures();
 
-	glui::renderFrame(programData.renderer2d, programData.font, platform::getRelMousePosition(),
+	programData.menuRenderer.renderFrame(programData.renderer2d, programData.font, platform::getRelMousePosition(),
 		platform::isLMousePressed(), platform::isLMouseHeld(), platform::isLMouseReleased(),
 		platform::isKeyReleased(platform::Button::Escape), platform::getTypedInput(), deltaTime);
 

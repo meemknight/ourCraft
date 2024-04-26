@@ -1,5 +1,6 @@
 #pragma once
 #include <gl2d/gl2d.h>
+#include <glui/glui.h>
 #include "rendering/renderer.h"
 #include "blocksLoader.h"
 #include <structure.h>
@@ -8,6 +9,7 @@
 struct ProgramData
 {
 	gl2d::Renderer2D renderer2d;
+	glui::RendererUi menuRenderer;
 	Renderer renderer;
 	GyzmosRenderer gyzmosRenderer;
 	PointDebugRenderer pointDebugRenderer;
@@ -15,8 +17,8 @@ struct ProgramData
 	ModelsManager modelsManager;
 
 	gl2d::Font font;
-	gl2d::Texture texture;
 	gl2d::Texture uiTexture;
+	gl2d::Texture buttonTexture;
 	gl2d::Texture numbersTexture;
 	gl2d::Texture causticsTexture;
 	gl2d::Texture dudv;

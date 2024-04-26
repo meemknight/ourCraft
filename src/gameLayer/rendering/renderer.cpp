@@ -1020,8 +1020,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform1i(zpassShader.u_renderOnlyWater, 0);
 		glUniform1f(zpassShader.u_timeGrass, timeGrass);
 
-
-		programData.texture.bind(0);
+		//todo fix the texture binding stuff
 		programData.numbersTexture.bind(1);
 
 		defaultShader.shader.bind();

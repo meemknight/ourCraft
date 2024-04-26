@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////
-//gl2d.h				1.5.2
+//gl2d.h				1.6.1
 //Copyright(c) 2020 - 2024 Luta Vlad
 //https://github.com/meemknight/gl2d
 //
@@ -11,7 +11,7 @@
 //		texture transparency
 //	draw text with font and shadows
 //	camera
-//	shaders
+//	custom shaders + post processing effects!
 //	setVsync
 //	texture atlases and loading textures with \
 //		padding to fix visual bugs when using \
@@ -19,6 +19,7 @@
 //	draw to screen of frame buffer that	can \
 //		be used as a texture
 //
+// 
 //	a particle system that can use a custom \
 //	shader and apply a pixelate effect
 //
@@ -85,13 +86,33 @@ namespace gl2d
 	//returns false on fail
 	bool setVsync(bool b);
 
+	///////////////////// SHADERS ///////////////////
+#pragma region shaders
+
 	struct ShaderProgram
 	{
-		GLuint id;
-		int u_sampler;
+		GLuint id = 0;
+		int u_sampler = 0;
+
+		void bind() { glUseProgram(id); };
+
+		void clear() { glDeleteProgram(id); *this = {}; }
 	};
 
 	ShaderProgram createShaderProgram(const char *vertex, const char *fragment);
+
+	ShaderProgram createShaderFromFile(const char *filePath);
+
+	ShaderProgram createShader(const char *fragment);
+
+	//the only diufference between a normal shader and a post process shader,
+	//is that that post process loads a vertex shader that doesn't acces color or texture uv,
+	//it just renders to the entire screen, and passes the texture position to the fragment.
+	ShaderProgram createPostProcessShaderFromFile(const char *filePath);
+
+	ShaderProgram createPostProcessShader(const char *fragment);
+
+#pragma endregion
 
 	struct Camera;
 
@@ -146,6 +167,7 @@ namespace gl2d
 			bool useMipMaps = GL2D_DEFAULT_TEXTURE_LOAD_MODE_USE_MIPMAPS)
 			{ loadFromFile(file, pixelated, useMipMaps); }
 
+		//returns the texture dimensions
 		glm::ivec2 GetSize();
 
 		//Note: This function expects a buffer of bytes in GL_RGBA format
@@ -182,13 +204,13 @@ namespace gl2d
 		//you can also optionally get the width and the height of the texture using outSize
 		size_t getMemorySize(int mipLevel = 0, glm::ivec2 *outSize = 0);
 
-		//readt the texture data back into RAM, you need to specify
+		//reads the texture data back into RAM, you need to specify
 		//the buffer to read into yourself, allocate it using
 		//getMemorySize to know the size in bytes.
 		//The data will be in RGBA format, one byte each component
 		void readTextureData(void *buffer, int mipLevel = 0);
 
-		//readt the texture data back into RAM
+		//reads the texture data back into RAM
 		//The data will be in RGBA format, one byte each component
 		//You can also optionally get the width and the height of the texture using outSize
 		std::vector<unsigned char> readTextureData(int mipLevel = 0, glm::ivec2 *outSize = 0);
@@ -482,7 +504,7 @@ namespace gl2d
 		}
 
 		void renderRectangle(const Rect transforms, const Color4f colors[4], const glm::vec2 origin = { 0,0 }, const float rotationDegrees = 0);
-		inline void renderRectangle(const Rect transforms, const Color4f colors, const glm::vec2 origin = { 0,0 }, const float rotationDegrees = 0)
+		inline void renderRectangle(const Rect transforms, const Color4f colors = {1,1,1,1}, const glm::vec2 origin = {0,0}, const float rotationDegrees = 0)
 		{
 			Color4f c[4] = { colors,colors,colors,colors };
 			renderRectangle(transforms, c, origin, rotationDegrees);
@@ -490,7 +512,7 @@ namespace gl2d
 
 		//abs rotation means that the rotaion is relative to the screen rather than object
 		void renderRectangleAbsRotation(const Rect transforms, const Color4f colors[4], const glm::vec2 origin = { 0,0 }, const float rotationDegrees = 0);
-		inline void renderRectangleAbsRotation(const Rect transforms, const Color4f colors, const glm::vec2 origin = { 0,0 }, const float rotationDegrees = 0)
+		inline void renderRectangleAbsRotation(const Rect transforms, const Color4f colors = {1,1,1,1}, const glm::vec2 origin = { 0,0 }, const float rotationDegrees = 0)
 		{
 			Color4f c[4] = { colors,colors,colors,colors };
 			renderRectangleAbsRotation(transforms, c, origin, rotationDegrees);
@@ -518,6 +540,9 @@ namespace gl2d
 		//will reset on the current stack
 		void resetCameraAndShader();
 
+		//The framebuffer need to have the same size as the input!
+		void renderPostProcess(ShaderProgram shader, Texture input, FrameBuffer result = {});
+
 		//Only when this function is called it draws to the screen the things rendered.
 		//If clearDrawData is false, the rendering information will be kept.
 		//Usefull if you want to render something twice or render again on top for some reason
@@ -526,6 +551,25 @@ namespace gl2d
 		//Renders to a fbo instead of the screen. The fbo is just a texture.
 		//If clearDrawData is false, the rendering information will be kept.
 		void flushFBO(FrameBuffer frameBuffer, bool clearDrawData = true);
+
+		void renderFrameBufferToTheEntireScreen(gl2d::FrameBuffer fbo, gl2d::FrameBuffer screen = {});
+
+		void renderTextureToTheEntireScreen(gl2d::Texture t, gl2d::FrameBuffer screen = {});
+
+		gl2d::FrameBuffer postProcessFbo1 = {};
+		gl2d::FrameBuffer postProcessFbo2 = {};
+		
+		//internal use
+		bool internalPostProcessFlip = 0;
+
+		//the FBO size should be equal to the current configured w and h of the renderer
+		void flushPostProcess(const std::vector<ShaderProgram> &postProcesses, 
+			FrameBuffer frameBuffer = {}, bool clearDrawData = true);
+
+		//the FBO size should be equal to the current configured w and h of the renderer
+		void postProcessOverATexture(const std::vector<ShaderProgram> &postProcesses,
+			gl2d::Texture in,
+			FrameBuffer frameBuffer = {});
 	};
 
 	void enableNecessaryGLFeatures();

@@ -1,5 +1,5 @@
-//////////////////////////////////////////////////
-//gl2d.cpp				1.5.2
+/////////////////////////////////////////////////////////////////
+//gl2d.cpp				1.6.1
 //Copyright(c) 2020 - 2024 Luta Vlad
 //https://github.com/meemknight/gl2d
 // 
@@ -60,13 +60,15 @@
 // 1.5.2
 // read texture data + report error if opengl not loaded
 // 
-/////////////////////////////////////////////////////////
+// 1.6.0
+// Added post processing API + Improvements in custom shaders usage
+// 
+////////////////////////////////////////////////////////////////////////
 
 
 //	todo
 //
 //	add particle demo
-//	shaders demo
 //	add matrices transforms
 //	flags for vbos
 //	
@@ -91,6 +93,7 @@
 #endif
 
 #undef max
+#undef min
 
 
 namespace gl2d
@@ -109,11 +112,13 @@ namespace gl2d
 		"in vec2 texturePositions;\n"
 		"out vec4 v_color;\n"
 		"out vec2 v_texture;\n"
+		"out vec2 v_positions;\n"
 		"void main()\n"
 		"{\n"
 		"	gl_Position = vec4(quad_positions, 0, 1);\n"
 		"	v_color = quad_colors;\n"
 		"	v_texture = texturePositions;\n"
+		"	v_positions = gl_Position.xy;\n"
 		"}\n";
 
 	static const char* defaultFragmentShader =
@@ -126,6 +131,21 @@ namespace gl2d
 		"void main()\n"
 		"{\n"
 		"    color = v_color * texture2D(u_sampler, v_texture);\n"
+		"}\n";
+
+	static const char *defaultVertexPostProcessShader =
+		GL2D_OPNEGL_SHADER_VERSION "\n"
+		GL2D_OPNEGL_SHADER_PRECISION "\n"
+		"in vec2 quad_positions;\n"
+		"out vec2 v_positions;\n"
+		"out vec2 v_texture;\n"
+		"out vec4 v_color;\n"
+		"void main()\n"
+		"{\n"
+		"	gl_Position = vec4(quad_positions, 0, 1);\n"
+		"	v_positions = gl_Position.xy;\n"
+		"	v_color = vec4(1,1,1,1);\n"
+		"	v_texture = (gl_Position.xy + vec2(1))/2.f;\n"
 		"}\n";
 
 #pragma endregion
@@ -273,7 +293,7 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 	void clearnup()
 	{
 		white1pxSquareTexture.cleanup();
-		glDeleteShader(defaultShader.id);
+		defaultShader.clear();
 		hasInitialized = false;
 	}
 
@@ -318,6 +338,30 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 	///////////////////// Shader /////////////////////
 #pragma region shader
 
+	void validateProgram(GLuint id)
+	{
+		int info = 0;
+		glGetProgramiv(id, GL_LINK_STATUS, &info);
+
+		if (info != GL_TRUE)
+		{
+			char *message = 0;
+			int   l = 0;
+
+			glGetProgramiv(id, GL_INFO_LOG_LENGTH, &l);
+
+			message = new char[l];
+
+			glGetProgramInfoLog(id, l, &l, message);
+
+			errorFunc(message, userDefinedData);
+
+			delete[] message;
+		}
+
+		glValidateProgram(id);
+	}
+
 	ShaderProgram createShaderProgram(const char *vertex, const char *fragment)
 	{
 		ShaderProgram shader = {0};
@@ -338,30 +382,75 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 		glDeleteShader(vertexId);
 		glDeleteShader(fragmentId);
 
-		int info = 0;
-		glGetProgramiv(shader.id, GL_LINK_STATUS, &info);
-
-		if (info != GL_TRUE)
-		{
-			char *message = 0;
-			int   l = 0;
-
-			glGetProgramiv(shader.id, GL_INFO_LOG_LENGTH, &l);
-
-			message = new char[l];
-
-			glGetProgramInfoLog(shader.id, l, &l, message);
-
-			errorFunc(message, userDefinedData);
-
-			delete[] message;
-		}
-
-		glValidateProgram(shader.id);
+		validateProgram(shader.id);
 
 		shader.u_sampler = glGetUniformLocation(shader.id, "u_sampler");
 
 		return shader;
+	}
+
+	ShaderProgram createShaderFromFile(const char *filePath)
+	{
+		std::ifstream fileFont(filePath, std::ios::binary);
+
+		if (!fileFont.is_open())
+		{
+			std::string e = "error openning: "; e += filePath;
+			errorFunc(e.c_str(), userDefinedData);
+			return {};
+		}
+
+		int fileSize = 0;
+		fileFont.seekg(0, std::ios::end);
+		fileSize = (int)fileFont.tellg();
+		fileFont.seekg(0, std::ios::beg);
+		char *fileData = new char[fileSize + 1]; //null terminated
+		fileFont.read((char *)fileData, fileSize);
+		fileFont.close();
+		fileData[fileSize] = 0; //null terminated
+
+		auto rez = createShader(fileData);
+
+		delete[] fileData;
+
+		return rez;
+	}
+
+	ShaderProgram createShader(const char *fragment)
+	{
+		return createShaderProgram(defaultVertexShader, fragment);
+	}
+
+	ShaderProgram createPostProcessShaderFromFile(const char *filePath)
+	{
+		std::ifstream fileFont(filePath, std::ios::binary);
+
+		if (!fileFont.is_open())
+		{
+			std::string e = "error openning: "; e += filePath;
+			errorFunc(e.c_str(), userDefinedData);
+			return {};
+		}
+
+		int fileSize = 0;
+		fileFont.seekg(0, std::ios::end);
+		fileSize = (int)fileFont.tellg();
+		fileFont.seekg(0, std::ios::beg);
+		char *fileData = new char[fileSize+1]; //null terminated
+		fileFont.read((char *)fileData, fileSize);
+		fileFont.close();
+		fileData[fileSize] = 0; //null terminated
+
+		auto rez = createPostProcessShader(fileData);
+
+		delete[] fileData;
+
+		return rez;
+	}
+
+	ShaderProgram createPostProcessShader(const char *fragment)
+	{
+		return createShaderProgram(defaultVertexPostProcessShader, fragment);
 	}
 
 #pragma endregion
@@ -519,11 +608,15 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 		if (!hasInitialized)
 		{
 			errorFunc("Library not initialized. Have you forgotten to call gl2d::init() ?", userDefinedData);
+			renderer.clearDrawData();
+			return;
 		}
 
 		if (!renderer.vao)
 		{
 			errorFunc("Renderer not initialized. Have you forgotten to call gl2d::Renderer2D::create() ?", userDefinedData);
+			renderer.clearDrawData();
+			return;
 		}
 
 		if (renderer.windowH == 0 || renderer.windowW == 0)
@@ -614,6 +707,7 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 		if (frameBuffer.fbo == 0) 
 		{
 			errorFunc("Framebuffer not initialized", userDefinedData);
+			return;
 		}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer.fbo);
@@ -622,6 +716,187 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 		internalFlush(*this, clearDrawData);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, defaultFBO);
+	}
+
+	void Renderer2D::renderFrameBufferToTheEntireScreen(gl2d::FrameBuffer fbo, gl2d::FrameBuffer screen)
+	{
+		renderTextureToTheEntireScreen(fbo.texture, screen);
+	}
+
+	//doesn't bind or unbind stuff, except the vertex array,
+	//doesn't set the viewport
+	void renderQuadToScreenInternal(gl2d::Renderer2D &renderer)
+	{
+		static float positions[12] = {
+		-1, 1,
+		-1, -1,
+		1, 1,
+
+		1, 1,
+		-1, -1,
+		1, -1,};
+
+		//not used
+		static float colors[6 * 4] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,};
+		static float texCoords[12] = {
+			0, 1,
+			0, 0,
+			1, 1,
+
+			1, 1,
+			0, 0,
+			1, 0,
+		};
+
+
+		glBindVertexArray(renderer.vao);
+
+
+		glBindBuffer(GL_ARRAY_BUFFER, renderer.buffers[Renderer2DBufferType::quadPositions]);
+		glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(glm::vec2), positions, GL_STREAM_DRAW);
+
+		glBindBuffer(GL_ARRAY_BUFFER, renderer.buffers[Renderer2DBufferType::quadColors]);
+		glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(glm::vec4), colors, GL_STREAM_DRAW);
+
+		glBindBuffer(GL_ARRAY_BUFFER, renderer.buffers[Renderer2DBufferType::texturePositions]);
+		glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(glm::vec2), texCoords, GL_STREAM_DRAW);
+
+		{
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+		}
+	}
+
+	void Renderer2D::renderTextureToTheEntireScreen(gl2d::Texture t, gl2d::FrameBuffer screen)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, screen.fbo);
+
+		enableNecessaryGLFeatures();
+
+		if (!hasInitialized)
+		{
+			errorFunc("Library not initialized. Have you forgotten to call gl2d::init() ?", userDefinedData);
+			return;
+		}
+
+		if (!vao)
+		{
+			errorFunc("Renderer not initialized. Have you forgotten to call gl2d::Renderer2D::create() ?", userDefinedData);
+			return;
+		}
+
+		if (!currentShader.id)
+		{
+			errorFunc("Post Process Shader not created.", userDefinedData);
+			return;
+		}
+
+		glm::ivec2 size = {windowW, windowH};
+
+		if (screen.fbo) 
+		{
+			size = screen.texture.GetSize();
+		}
+		if (size.x == 0 || size.y == 0)
+		{
+			return;
+		}
+
+		glViewport(0, 0, size.x, size.y);
+
+		glUseProgram(currentShader.id);
+		glUniform1i(currentShader.u_sampler, 0);
+		t.bind();
+
+		renderQuadToScreenInternal(*this);
+
+		glBindVertexArray(0);
+
+	}
+
+	void Renderer2D::flushPostProcess(const std::vector<ShaderProgram> &postProcesses,
+		FrameBuffer frameBuffer, bool clearDrawData)
+	{
+
+		if (postProcesses.empty())
+		{
+			if (clearDrawData)
+			{
+				this->clearDrawData();
+				return;
+			}
+		}
+
+		if (!postProcessFbo1.fbo) { postProcessFbo1.create(0,0); }
+
+		postProcessFbo1.resize(windowW, windowH);
+		postProcessFbo1.clear();
+
+		flushFBO(postProcessFbo1, clearDrawData);
+
+		internalPostProcessFlip = 1;
+		postProcessOverATexture(postProcesses, postProcessFbo1.texture, frameBuffer);
+
+	}
+
+	void Renderer2D::postProcessOverATexture(const std::vector<ShaderProgram> &postProcesses, 
+		gl2d::Texture in,
+		FrameBuffer frameBuffer)
+	{
+		if (postProcesses.empty())
+			{return;}
+
+
+		if (!postProcessFbo1.fbo) { postProcessFbo1.create(0, 0); }
+		if (!postProcessFbo2.fbo && postProcesses.size() > 1)
+			{ postProcessFbo2.create(0, 0); }
+		
+		if (internalPostProcessFlip == 0) 
+		{
+			postProcessFbo1.resize(windowW, windowH);
+			postProcessFbo1.clear();
+			postProcessFbo2.resize(windowW, windowH);
+			postProcessFbo2.clear();
+		}
+		else if(postProcessFbo2.fbo)
+		{
+			//postProcessFbo1 has already been resized
+			postProcessFbo2.resize(windowW, windowH);
+			postProcessFbo2.clear();
+		}
+
+		for (int i = 0; i < postProcesses.size(); i++)
+		{
+			gl2d::FrameBuffer output;
+			gl2d::Texture input;
+
+			if (internalPostProcessFlip == 0)
+			{
+				input = postProcessFbo2.texture;
+				output = postProcessFbo1;
+			}
+			else
+			{
+				input = postProcessFbo1.texture;
+				output = postProcessFbo2;
+			}
+
+			if (i == 0)
+			{
+				input = in;
+			}
+
+			if (i == postProcesses.size() - 1)
+			{
+				output = frameBuffer;
+			}
+			output.clear();
+			
+			renderPostProcess(postProcesses[i], input, output);
+			internalPostProcessFlip = !internalPostProcessFlip;
+		}
+
+
+		internalPostProcessFlip = 0;
 	}
 
 	void enableNecessaryGLFeatures()
@@ -1187,6 +1462,10 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 	{
 		glDeleteVertexArrays(1, &vao);
 		glDeleteBuffers(Renderer2DBufferType::bufferSize, buffers);
+
+		postProcessFbo1.cleanup();
+		postProcessFbo2.cleanup();
+		internalPostProcessFlip = 0;
 	}
 
 	void Renderer2D::pushShader(ShaderProgram s)
@@ -1559,7 +1838,8 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 	}
 
 	void Renderer2D::renderText(glm::vec2 position, const char *text, const Font font,
-		const Color4f color, const float size, const float spacing, const float line_space, bool showInCenter,
+		const Color4f color, const float size, const float spacing, 
+		const float line_space, bool showInCenter,
 		const Color4f ShadowColor
 		, const Color4f LightColor
 	)
@@ -1576,6 +1856,15 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 		float linePositionY = position.y;
 
 		if (showInCenter)
+		{
+			auto textSize = this->getTextSize(text, font, size, spacing, line_space);
+
+			position.x -= textSize.x/2.f;
+			position.y += textSize.y/2.f;
+		}
+
+
+		if (0)
 		{
 			//This is the y position we render at because it advances when we encounter newlines
 
@@ -1762,6 +2051,52 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 	{
 		currentCamera = defaultCamera;
 		currentShader = defaultShader;
+	}
+
+	void Renderer2D::renderPostProcess(ShaderProgram shader, 
+		Texture input, FrameBuffer result)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, result.fbo);
+
+		enableNecessaryGLFeatures();
+
+		if (!hasInitialized)
+		{
+			errorFunc("Library not initialized. Have you forgotten to call gl2d::init() ?", userDefinedData);
+			return;
+		}
+
+		if (!vao)
+		{
+			errorFunc("Renderer not initialized. Have you forgotten to call gl2d::Renderer2D::create() ?", userDefinedData);
+			return;
+		}
+
+		if (!shader.id)
+		{
+			errorFunc("Post Process Shader not created.", userDefinedData);
+			return;
+		}
+
+		auto size = input.GetSize();
+
+		if (size.x == 0 || size.y == 0)
+		{
+			return;
+		}
+
+		glViewport(0, 0, size.x, size.y);
+
+		glUseProgram(shader.id);
+		glUniform1i(shader.u_sampler, 0);
+
+		input.bind();
+
+		renderQuadToScreenInternal(*this);
+
+		glBindVertexArray(0);
+
+	
 	}
 
 #pragma endregion
