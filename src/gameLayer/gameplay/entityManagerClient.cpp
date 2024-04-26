@@ -198,12 +198,13 @@ void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)
 
 	for (auto &player : players)
 	{
-
+	
 		player.second.rubberBand.computeRubberBand(
 			deltaTime);
-
+	
 	}
 
+	genericUpdateLoop(players);
 	genericUpdateLoop(droppedItems);
 	genericUpdateLoop(zombies);
 	genericUpdateLoop(pigs);

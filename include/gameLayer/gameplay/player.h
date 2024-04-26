@@ -30,9 +30,10 @@ struct LocalPlayer
 
 };
 
-//todo update function
 struct PlayerClient: public ClientEntity<Player, PlayerClient>
-{};
+{
+	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter) {};
+};
 
 //todo update function
 struct PlayerServer: public ServerEntity<Player>
