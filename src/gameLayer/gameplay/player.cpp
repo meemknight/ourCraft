@@ -35,3 +35,8 @@ void Player::moveFPS(glm::vec3 direction, glm::vec3 lookDirection)
 
 	this->position += move;
 }
+
+void PlayerClient::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
+{
+
+}

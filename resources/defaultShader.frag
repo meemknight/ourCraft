@@ -34,6 +34,9 @@ uniform ShadingSettings
 	float u_underwaterDarkenDistance;
 	float u_fogGradientUnderWater;
 	int u_shaders;
+	float u_fogCloseGradient;
+	int u_shadows;
+
 };
 
 
@@ -54,7 +57,6 @@ uniform sampler2D u_sunShadowTexture;
 uniform sampler2D u_brdf;
 
 
-const float fogGradient = 32;
 
 
 uniform sampler2D u_depthTexture;
@@ -117,14 +119,18 @@ bool isWater()
 
 float computeFog(float dist)
 {
+	float rezClose = 1;
 
-	float rezClose = exp(-pow(dist*(1.f/64), 32));
-	if(rezClose > 0.9){rezClose = 1;}
-	rezClose = rezClose / 4.f;
-	rezClose = rezClose + 0.75f;
-	rezClose = 1;
+	if(u_fogCloseGradient!=0)
+	{
+		rezClose = exp(-pow(dist*(1.f/64), u_fogCloseGradient));
+		if(rezClose > 0.95){rezClose = 1;}
+		rezClose = rezClose / 4.f;
+		rezClose = rezClose + 0.75f;
+	}
 
-	float rez = exp(-pow(dist*(1.f/u_fogDistance), fogGradient));
+
+	float rez = exp(-pow(dist*(1.f/u_fogDistance), 64));
 	if(rez > 0.8){rez = pow(rez,0.5f);}
 	return pow(rez,2) * rezClose;
 }
@@ -917,7 +923,10 @@ float getShadowDistance(vec3 pos)
 
 float shadowCalc2(float dotLightNormal)
 {
+	
+	if(u_shadows == 0){ return 1.f; }
 
+	if(u_shadows == 1){return shadowCalc(dotLightNormal);}
 
 	vec3 projCoords = v_fragPosLightSpace.xyz * 0.5 + 0.5;
 	projCoords.z = min(projCoords.z, 1.0);

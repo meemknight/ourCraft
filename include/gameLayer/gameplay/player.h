@@ -32,7 +32,7 @@ struct LocalPlayer
 
 struct PlayerClient: public ClientEntity<Player, PlayerClient>
 {
-	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter) {};
+	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 };
 
 //todo update function

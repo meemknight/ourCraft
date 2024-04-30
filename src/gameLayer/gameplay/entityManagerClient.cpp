@@ -186,7 +186,6 @@ void ClientEntityManager::addOrUpdatePig(std::uint64_t eid, Pig entity, float re
 void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2))
 {
 
-
 	auto genericUpdateLoop = [&](auto &container)
 	{
 		for (auto &e : container)
@@ -196,13 +195,14 @@ void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)
 	};
 
 
-	for (auto &player : players)
-	{
-	
-		player.second.rubberBand.computeRubberBand(
-			deltaTime);
-	
-	}
+	//todo check rubberband for player
+	//for (auto &player : players)
+	//{
+	//
+	//	player.second.rubberBand.computeRubberBand(
+	//		deltaTime);
+	//
+	//}
 
 	genericUpdateLoop(players);
 	genericUpdateLoop(droppedItems);
@@ -210,3 +210,10 @@ void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)
 	genericUpdateLoop(pigs);
 
 }
+
+
+
+
+
+
+

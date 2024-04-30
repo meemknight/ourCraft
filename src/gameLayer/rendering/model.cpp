@@ -74,7 +74,8 @@ void ModelsManager::loadAllModels()
 
 	//load textures
 	{
-		loadTexture(RESOURCES_PATH "models/steve.png", steveTexture, steveTextureHandle);
+		//loadTexture(RESOURCES_PATH "models/steve.png", steveTexture, steveTextureHandle);
+		loadTexture(RESOURCES_PATH "models/giggasteve.png", steveTexture, steveTextureHandle);
 		loadTexture(RESOURCES_PATH "models/zombie.png", zombieTexture, zombieTextureHandle);
 		loadTexture(RESOURCES_PATH "models/pig.png", pigTexture, pigTextureHandle);
 		

@@ -594,9 +594,9 @@ void Renderer::create(BlocksLoader &blocksLoader)
 
 	skyBoxRenderer.create();
 	skyBoxLoaderAndDrawer.createGpuData();
-	skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/skybox.png", defaultSkyBox);
+	//skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/skybox.png", defaultSkyBox);
 	//skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/nightsky.png", defaultSkyBox);
-	//skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/twilightsky.png", defaultSkyBox);
+	skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/twilightsky.png", defaultSkyBox);
 	sunTexture.loadFromFile(RESOURCES_PATH "sky/sun.png", false, false);
 
 	brdfTexture.loadFromFile(RESOURCES_PATH "otherTextures/brdf.png", false, false);
@@ -1500,6 +1500,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		static float currentAngle2 = 0;
 		static int direction = 1;
 
+
 		//animatePlayerLegs(poseCopy.data(), currentAngle, direction, deltaTime);
 		//animatePlayerHandsZombie(poseCopy.data(), currentAngle2, deltaTime);
 
@@ -1514,7 +1515,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform3fv(entityRenderer.basicEntityShader.u_cameraPositionFloat, 1, &posFloat[0]);
 		glUniform3iv(entityRenderer.basicEntityShader.u_cameraPositionInt, 1, &posInt[0]);
 
-		glUniformHandleui64ARB(entityRenderer.basicEntityShader.u_texture, modelsManager.steveTextureHandle);
+		glUniformHandleui64ARB(entityRenderer.basicEntityShader.u_texture, 
+			modelsManager.steveTextureHandle);
 		
 		auto renderModel = [&](glm::dvec3 pos, int vertexCount)
 		{
@@ -1533,7 +1535,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		{
 			renderModel(e.position, modelsManager.human.vertexCount);
 		}
-
+		entityRenderer.itemEntitiesToRender.clear();
 
 		//render player entities
 		for (auto &e : entityManager.players)
@@ -1566,12 +1568,17 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			&glm::mat4(1.f)
 			[0][0]);
 
+
+		animatePlayerLegs(poseCopy.data(), currentAngle, direction, deltaTime);
+		animatePlayerHandsZombie(poseCopy.data(), currentAngle2, deltaTime);
+
+		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
+			poseCopy.size(), GL_FALSE, &poseCopy[0][0][0]);
 		for (auto &e : entityManager.zombies)
 		{
 			renderModel(e.second.getRubberBandPosition(), modelsManager.human.vertexCount);
 		}
 
-		entityRenderer.itemEntitiesToRender.clear();
 		
 
 		glBindVertexArray(modelsManager.pig.vao);

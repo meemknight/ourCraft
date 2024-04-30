@@ -1,5 +1,6 @@
 #include <rendering/renderSettings.h>
 #include <gamePlayLogic.h>
+#include <intrin.h>
 
 void displayRenderSettingsMenuButton(ProgramData &programData)
 {
@@ -45,7 +46,6 @@ void displayRenderSettingsMenu(ProgramData &programData)
 		&programData.renderer.defaultShader.shadingSettings.fogGradientUnderWater,
 		0, 32, Colors_White, programData.buttonTexture, Colors_Gray);
 
-
 	static int index = 0;
 	static glm::vec4 colors[] = {{0.6,0.9,0.6,1}, Colors_Red};
 
@@ -70,11 +70,19 @@ good performance.\n-Fancy: significant performance cost but looks very nice.");
 	
 	programData.menuRenderer.newColum(2);
 	
-	programData.menuRenderer.BeginMenu("Volumetric", Colors_Gray, programData.buttonTexture);
-	programData.menuRenderer.Text("Volumetric Settings...", Colors_White);
+	//programData.menuRenderer.BeginMenu("Volumetric", Colors_Gray, programData.buttonTexture);
+	//programData.menuRenderer.Text("Volumetric Settings...", Colors_White);
+	programData.menuRenderer.sliderFloat("Fog gradient (O to disable it)", 
+		&programData.renderer.defaultShader.shadingSettings.fogCloseGradient,
+		0, 64, Colors_White, programData.buttonTexture, Colors_Gray);
+	//programData.menuRenderer.EndMenu();
 
-
-	programData.menuRenderer.EndMenu();
+	static glm::vec4 colorsShadows[] = {{0.0,1,0.0,1}, {0.8,0.6,0.6,1}, {0.9,0.3,0.3,1}};
+	programData.menuRenderer.toggleOptions("Shadows: ", "Off|Hard|Soft",
+		&programData.renderer.defaultShader.shadingSettings.shadows, true,
+		Colors_White, colorsShadows, programData.buttonTexture,
+		Colors_Gray, "Shadows can affect the performance significantly."
+	);
 
 
 

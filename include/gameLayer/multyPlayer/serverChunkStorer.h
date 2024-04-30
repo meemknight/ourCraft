@@ -82,7 +82,6 @@ struct GhostBlock
 };
 
 
-//todo remove cid and use eid?
 struct EntityData
 {
 	std::unordered_map<std::uint64_t, DroppedItemServer> droppedItems;

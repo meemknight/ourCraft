@@ -535,7 +535,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		gameData.sunShadow.update();
 
-		if (programData.renderer.renderShadows)
+		if (programData.renderer.defaultShader.shadingSettings.shadows)
 		{
 			programData.renderer.renderShadow(gameData.sunShadow,
 				gameData.chunkSystem, gameData.c, programData);
@@ -1000,9 +1000,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			ImGui::Checkbox("Frustum culling",
 				&programData.renderer.frustumCulling);
-
-			ImGui::Checkbox("Shadows",
-				&programData.renderer.renderShadows);
 
 			ImGui::Checkbox("Water Refraction",
 				&programData.renderer.waterRefraction);
