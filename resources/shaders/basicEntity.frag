@@ -28,11 +28,16 @@ ivec3 fromFloatTouShort(vec3 a)
 
 flat in int test;
 
+readonly restrict layout(std430) buffer u_entityTextureSamplerers
+{
+	uvec2 textureSamplerers[];
+};
 
 void main()
 {
 
 	color.rgba = texture2D(u_texture, v_uv).rgba;
+	//color.rgba = texture2D(sampler2D(textureSamplerers[1]), v_uv).rgba;
 	//color.rgba = vec4(v_uv,0,1);
 
 	if(color.a < 0.5)discard;

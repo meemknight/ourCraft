@@ -12,7 +12,10 @@ struct Zombie: public PhysicalEntity
 
 struct ZombieClient: public ClientEntity<Zombie, ZombieClient>
 {
+	float currentHandsAngle = 0;
+
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
+	void setEntityMatrix(glm::mat4 *skinningMatrix);
 };
 
 struct ZombieServer: public ServerEntity<Zombie>
@@ -28,3 +31,4 @@ struct ZombieServer: public ServerEntity<Zombie>
 		ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng);
 };
 
+void animatePlayerHandsZombie(glm::mat4 *poseVector, float &currentAngle, float deltaTime);

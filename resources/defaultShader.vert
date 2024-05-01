@@ -290,11 +290,11 @@ void main()
 	{
 		v_normal = normals[in_faceOrientation];
 	}
-	//else
-	//if(in_faceOrientation >= 22)
-	//{
-	//	v_normal = normals[in_faceOrientation-22];
-	//}
+	else
+	if(in_faceOrientation >= 22 && in_faceOrientation < 28) //water
+	{
+		v_normal = normals[in_faceOrientation-22];
+	}
 	else
 	{
 		vec3 pos1 = vec3(0);

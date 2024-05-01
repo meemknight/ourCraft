@@ -1,4 +1,4 @@
-#version 330 core
+#version 430 core
 
 layout(location = 0) in vec3 shape;
 layout(location = 1) in vec3 normal;
@@ -15,12 +15,24 @@ uniform mat4 u_modelMatrix;
 uniform ivec3 u_cameraPositionInt;
 uniform vec3 u_cameraPositionFloat;
 
+uniform int u_bonesPerModel;
+
 out vec2 v_uv;
 out vec3 v_vertexPosition;
 out vec3 v_normals;
 flat out int test;
 
-uniform mat4 u_skinningMatrix[10];
+readonly restrict layout(std430) buffer u_skinningMatrix
+{
+	mat4 skinningMatrix[];
+};
+
+
+readonly restrict layout(std430) buffer u_perEntityData
+{
+	ivec3 entityPositionInt;
+	vec3 entityPositionFloat;
+};
 
 void main()
 {
@@ -28,10 +40,10 @@ void main()
 	vec3 diffI = u_entityPositionInt - u_cameraPositionInt;
 	vec3 diffF = diffI - u_cameraPositionFloat + u_entityPositionFloat;
 	
-	mat4 skinningMatrix = u_skinningMatrix[bone];
+	mat4 currentSkinningMatrix = skinningMatrix[bone];
 	test = bone;
 
-	mat4 finalModel = u_modelMatrix * skinningMatrix;
+	mat4 finalModel = u_modelMatrix * currentSkinningMatrix;
 
 	vec4 posViewSemi = vec4(diffF + vec3(finalModel * vec4(shape, 1)), 1);
 

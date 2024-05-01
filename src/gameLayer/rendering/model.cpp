@@ -42,11 +42,47 @@ const aiNode *findNodeContainingMesh(const aiNode *node, const aiMesh *mesh)
 void ModelsManager::loadAllModels()
 {
 
-
-	auto loadTexture = [&](const char *path, 
-		gl2d::Texture &texture,
-		GLuint64 &handle)
+	//load default texture
 	{
+		unsigned char data[16] = {};
+
+		{
+			int i = 0;
+			data[i++] = 0;
+			data[i++] = 0;
+			data[i++] = 0;
+			data[i++] = 255;
+
+			data[i++] = 146;
+			data[i++] = 52;
+			data[i++] = 235;
+			data[i++] = 255;
+
+			data[i++] = 146;
+			data[i++] = 52;
+			data[i++] = 235;
+			data[i++] = 255;
+
+			data[i++] = 0;
+			data[i++] = 0;
+			data[i++] = 0;
+			data[i++] = 255;
+		}
+
+		gl2d::Texture t;
+		t.createFromBuffer((char *)data, 2, 2, true, false);
+
+		texturesIds.push_back(t.id);
+		auto handle = glGetTextureHandleARB(t.id);
+		glMakeTextureHandleResidentARB(handle);
+		gpuIds.push_back(handle);
+	}
+
+	auto loadTexture = [&](const char *path)
+	{
+		gl2d::Texture texture = {};
+		GLuint64 handle = 0;
+
 		texture.loadFromFile(path, true, false);
 
 		if (texture.id)
@@ -68,16 +104,23 @@ void ModelsManager::loadAllModels()
 		{
 			//todo error report
 			std::cout << "Error loading: " << path << "\n";
+
+			handle = gpuIds[0];
+			texture.id = texturesIds[0];
 		}
+
+		gpuIds.push_back(handle);
+		texturesIds.push_back(texture.id);
 	};
 
 
 	//load textures
 	{
+		//the order matters!!!!
 		//loadTexture(RESOURCES_PATH "models/steve.png", steveTexture, steveTextureHandle);
-		loadTexture(RESOURCES_PATH "models/giggasteve.png", steveTexture, steveTextureHandle);
-		loadTexture(RESOURCES_PATH "models/zombie.png", zombieTexture, zombieTextureHandle);
-		loadTexture(RESOURCES_PATH "models/pig.png", pigTexture, pigTextureHandle);
+		loadTexture(RESOURCES_PATH "models/giggasteve.png");
+		loadTexture(RESOURCES_PATH "models/zombie.png");
+		loadTexture(RESOURCES_PATH "models/pig.png");
 		
 
 	}
@@ -223,6 +266,21 @@ void ModelsManager::loadAllModels()
 	importer.FreeScene();
 
 
+	setupSSBO();
+}
+
+void ModelsManager::setupSSBO()
+{
+
+	if (!texturesSSBO)
+	{
+		glGenBuffers(1, &texturesSSBO);
+	}
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, texturesSSBO);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, gpuIds.size() * sizeof(gpuIds[0]), gpuIds.data(), GL_STATIC_DRAW);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, texturesSSBO); //todo add some constatns here
+
 }
 
 void animatePlayerLegs(glm::mat4 *poseVector,
@@ -287,21 +345,4 @@ void animatePlayerLegs(glm::mat4 *poseVector,
 
 }
 
-static const auto frontHands = glm::rotate(glm::radians(90.f), glm::vec3{1.f,0.f,0.f});
 
-void animatePlayerHandsZombie(glm::mat4 *poseVector, float &currentAngle, float deltaTime)
-{
-
-	currentAngle += deltaTime;
-	if (currentAngle > glm::radians(360.f))
-	{
-		currentAngle -= glm::radians(360.f);
-	}
-
-	auto a = glm::quatLookAt(glm::normalize(glm::vec3(-sin(currentAngle), cos(currentAngle), 4)), glm::vec3(0, 1, 0));
-	auto b = glm::quatLookAt(glm::normalize(glm::vec3(-sin(currentAngle+10), cos(currentAngle+10), 4)), glm::vec3(0,1,0));
-
-	poseVector[2] = poseVector[2] * frontHands * glm::rotate(cos(currentAngle) * 0.02f, glm::vec3{1.f,0.f,0.f}) * glm::rotate(cos(currentAngle+5) * 0.05f, glm::vec3{0.f,0.f,1.f});
-	poseVector[3] = poseVector[3] * frontHands * glm::rotate(cos(currentAngle+10) * 0.02f, glm::vec3{1.f,0.f,0.f}) * glm::rotate(cos(currentAngle+15) * 0.05f, glm::vec3{0.f,0.f,1.f});
-
-}

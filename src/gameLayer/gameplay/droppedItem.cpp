@@ -24,3 +24,7 @@ void DroppedItemClient::update(float deltaTime,
 {
 	entity.update(deltaTime, chunkGetter);
 }
+
+void DroppedItemClient::setEntityMatrix(glm::mat4 *skinningMatrix)
+{
+}

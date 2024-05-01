@@ -196,8 +196,12 @@ struct Renderer
 			uniform u_cameraPositionFloat;
 			uniform u_texture;
 			uniform u_view;
-			uniform u_skinningMatrix;
+			uniform u_bonesPerModel;
 
+			GLuint u_skinningMatrix = GL_INVALID_INDEX;
+			GLuint u_entityTextureSamplerers = GL_INVALID_INDEX;
+			GLuint u_perEntityData = GL_INVALID_INDEX;
+				
 		}basicEntityShader;
 		
 
@@ -231,6 +235,10 @@ struct Renderer
 		bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos,
 		bool underWater, int screenX, int screenY, float deltaTime);
 	
+	void renderEntities(float deltaTime, ModelsManager &modelsManager,
+		BlocksLoader &blocksLoader, ClientEntityManager &entityManager,
+		glm::mat4 &vp, glm::mat4 &viewMatrix, glm::vec3 posFloat, glm::ivec3 posInt);
+
 	void renderShadow(SunShadow &sunShadow,
 		ChunkSystem &chunkSystem, Camera &c, ProgramData &programData);
 
@@ -254,6 +262,9 @@ struct Renderer
 	
 	GLuint vaoQuad = 0;
 	GLuint vertexBufferQuad = 0;
+
+	GLuint skinningMatrixSSBO = 0;
+	GLuint perEntityDataSSBO = 0;
 };
 
 struct GyzmosRenderer

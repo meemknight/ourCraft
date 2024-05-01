@@ -14,6 +14,7 @@ struct DroppedItem: public PhysicalEntity
 struct DroppedItemClient: public ClientEntity<DroppedItem, DroppedItemClient>
 {
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
+	void setEntityMatrix(glm::mat4 *skinningMatrix);
 };
 
 struct DroppedItemServer : public ServerEntity<DroppedItem>

@@ -750,7 +750,19 @@ void Renderer::create(BlocksLoader &blocksLoader)
 
 	glBindVertexArray(0);
 
+
+
+	glGenBuffers(1, &skinningMatrixSSBO);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, skinningMatrixSSBO);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, skinningMatrixSSBO);
+	
+
+	glGenBuffers(1, &perEntityDataSSBO);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, perEntityDataSSBO);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, perEntityDataSSBO);
+
 #pragma endregion
+
 
 
 
@@ -812,7 +824,7 @@ void Renderer::reloadShaders()
 	glBindBufferBase(GL_UNIFORM_BUFFER, 
 		defaultShader.u_shadingSettings, defaultShader.shadingSettingsBuffer);
 
-
+	//todo enum for all samplers
 	defaultShader.u_vertexData = getStorageBlockIndex(defaultShader.shader.id, "u_vertexData");
 	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_vertexData, 1);
 
@@ -821,7 +833,6 @@ void Renderer::reloadShaders()
 
 	defaultShader.u_textureSamplerers = getStorageBlockIndex(defaultShader.shader.id, "u_textureSamplerers");
 	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_textureSamplerers, 3);
-
 
 	defaultShader.u_lights = getStorageBlockIndex(defaultShader.shader.id, "u_lights");
 	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_lights, 4);
@@ -883,8 +894,18 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(entityRenderer.basicEntityShader, u_cameraPositionFloat);
 	GET_UNIFORM2(entityRenderer.basicEntityShader, u_texture);
 	GET_UNIFORM2(entityRenderer.basicEntityShader, u_view);
-	GET_UNIFORM2(entityRenderer.basicEntityShader, u_skinningMatrix);
+	GET_UNIFORM2(entityRenderer.basicEntityShader, u_bonesPerModel);
 	
+	//
+	entityRenderer.basicEntityShader.u_entityTextureSamplerers = getStorageBlockIndex(entityRenderer.basicEntityShader.shader.id, "u_entityTextureSamplerers");
+	glShaderStorageBlockBinding(entityRenderer.basicEntityShader.shader.id, entityRenderer.basicEntityShader.u_entityTextureSamplerers, 5);
+
+	entityRenderer.basicEntityShader.u_skinningMatrix = getStorageBlockIndex(entityRenderer.basicEntityShader.shader.id, "u_skinningMatrix");
+	glShaderStorageBlockBinding(entityRenderer.basicEntityShader.shader.id, entityRenderer.basicEntityShader.u_skinningMatrix, 6);
+
+	entityRenderer.basicEntityShader.u_perEntityData = getStorageBlockIndex(entityRenderer.basicEntityShader.shader.id, "u_perEntityData");
+	glShaderStorageBlockBinding(entityRenderer.basicEntityShader.shader.id, entityRenderer.basicEntityShader.u_perEntityData, 7);
+
 
 #pragma endregion
 
@@ -1020,8 +1041,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform1i(zpassShader.u_renderOnlyWater, 0);
 		glUniform1f(zpassShader.u_timeGrass, timeGrass);
 
-		//todo fix the texture binding stuff
-		programData.numbersTexture.bind(1);
+
 
 		defaultShader.shader.bind();
 		glUniformMatrix4fv(defaultShader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
@@ -1054,36 +1074,42 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniformMatrix4fv(defaultShader.u_lastViewProj, 1, 0,
 			&(c.lastFrameViewProjMatrix)[0][0]);
 
-		programData.dudv.bind(4);
-		glUniform1i(defaultShader.u_dudv, 4);
+	#pragma region textures
 
-		programData.dudvNormal.bind(5);
-		glUniform1i(defaultShader.u_dudvNormal, 5);
+		programData.numbersTexture.bind(0);
 
-		programData.causticsTexture.bind(6);
-		glUniform1i(defaultShader.u_caustics, 6);
+		programData.dudv.bind(1);
+		glUniform1i(defaultShader.u_dudv, 1);
+
+		programData.dudvNormal.bind(2);
+		glUniform1i(defaultShader.u_dudvNormal, 2);
+
+		programData.causticsTexture.bind(3);
+		glUniform1i(defaultShader.u_caustics, 3);
+
+		glActiveTexture(GL_TEXTURE0 + 4);
+		glBindTexture(GL_TEXTURE_2D, sunShadow.shadowMap.depth);
+		glUniform1i(defaultShader.u_sunShadowTexture, 4);
+
+		glActiveTexture(GL_TEXTURE0 + 5);
+		glBindTexture(GL_TEXTURE_2D, fboLastFrame.color);
+		glUniform1i(defaultShader.u_lastFrameColor, 5);
+
+		glActiveTexture(GL_TEXTURE0 + 6);
+		glBindTexture(GL_TEXTURE_2D, fboLastFramePositions.color);
+		glUniform1i(defaultShader.u_lastFramePositionViewSpace, 6);
 
 		glActiveTexture(GL_TEXTURE0 + 7);
-		glBindTexture(GL_TEXTURE_2D, sunShadow.shadowMap.depth);
-		glUniform1i(defaultShader.u_sunShadowTexture, 7);
-		glUniform1f(defaultShader.u_timeGrass, timeGrass);
+		glBindTexture(GL_TEXTURE_2D, brdfTexture.id);
+		glUniform1i(defaultShader.u_brdf, 7);
 
 		glActiveTexture(GL_TEXTURE0 + 8);
-		glBindTexture(GL_TEXTURE_2D, fboLastFrame.color);
-		glUniform1i(defaultShader.u_lastFrameColor, 8);
-
-		glActiveTexture(GL_TEXTURE0 + 9);
-		glBindTexture(GL_TEXTURE_2D, fboLastFramePositions.color);
-		glUniform1i(defaultShader.u_lastFramePositionViewSpace, 9);
-
-		glActiveTexture(GL_TEXTURE0 + 10);
-		glBindTexture(GL_TEXTURE_2D, brdfTexture.id);
-		glUniform1i(defaultShader.u_brdf, 10);
-
-		glActiveTexture(GL_TEXTURE0 + 11);
 		glBindTexture(GL_TEXTURE_2D, fboSkyBox.color);
-		glUniform1i(defaultShader.u_skyTexture, 11);
-		
+		glUniform1i(defaultShader.u_skyTexture, 8);
+
+	#pragma endregion
+
+		glUniform1f(defaultShader.u_timeGrass, timeGrass);
 
 		glUniformMatrix4fv(defaultShader.u_cameraProjection, 1, GL_FALSE, glm::value_ptr(c.getProjectionMatrix()));
 
@@ -1399,223 +1425,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		renderStaticGeometry();
 	};
 
-	auto renderEntities = [&]()
-	{
-		//glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
-		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
-
-		glDepthFunc(GL_LESS);
-
-
-		entityRenderer.blockEntityshader.shader.bind();
-
-		glBindVertexArray(entityRenderer.blockEntityshader.vaoCube);
-
-
-		glUniformMatrix4fv(entityRenderer.blockEntityshader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
-		glUniformMatrix4fv(entityRenderer.blockEntityshader.u_view, 1, GL_FALSE, &viewMatrix[0][0]);
-		glUniformMatrix4fv(entityRenderer.blockEntityshader.u_modelMatrix, 1, GL_FALSE,
-			glm::value_ptr(glm::scale(glm::vec3{0.4f})));
-		glUniform3fv(entityRenderer.blockEntityshader.u_cameraPositionFloat, 1, &posFloat[0]);
-		glUniform3iv(entityRenderer.blockEntityshader.u_cameraPositionInt, 1, &posInt[0]);
-
-		//debug stuff
-		if(0)
-			{
-				//todo something better here lol
-				std::uint64_t textures[6] = {};
-
-				for (int i = 0; i < 6; i++)
-				{
-					textures[i] = blocksLoader.gpuIds[getGpuIdIndexForBlock(BlockTypes::bookShelf, i)];
-				}
-
-				glUniformHandleui64vARB(entityRenderer.blockEntityshader.u_texture, 6, textures);
-
-
-				//todo instance rendering
-				for (auto &e : entityRenderer.itemEntitiesToRender)
-				{
-					glm::vec3 entityFloat = {};
-					glm::ivec3 entityInt = {};
-
-					decomposePosition(e.position, entityFloat, entityInt);
-
-					entityFloat += glm::vec3(0, 0.2, 0);
-
-					glUniform3fv(entityRenderer.blockEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
-					glUniform3iv(entityRenderer.blockEntityshader.u_entityPositionInt, 1, &entityInt[0]);
-
-					glDrawArrays(GL_TRIANGLES, 0, 36);
-
-				}
-
-			}
-
-		//real entities
-		{
-
-			//todo instance rendering
-			for (auto &e : entityManager.droppedItems)
-				{
-					//todo something better here lol
-					std::uint64_t textures[6] = {};
-
-					for (int i = 0; i < 6; i++)
-					{
-						textures[i] = blocksLoader.gpuIds
-							[getGpuIdIndexForBlock(e.second.entity.type, i)];
-					}
-
-					glUniformHandleui64vARB(entityRenderer.blockEntityshader.u_texture, 6, textures);
-
-					glm::vec3 entityFloat = {};
-					glm::ivec3 entityInt = {};
-
-					//decomposePosition(e.second.item.position, entityFloat, entityInt);
-					decomposePosition(e.second.getRubberBandPosition(), entityFloat, entityInt);
-
-					entityFloat += glm::vec3(0, 0.2, 0);
-
-					glUniform3fv(entityRenderer.blockEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
-					glUniform3iv(entityRenderer.blockEntityshader.u_entityPositionInt, 1, &entityInt[0]);
-
-					glDrawArrays(GL_TRIANGLES, 0, 36);
-				}
-
-		}
-
-		//auto newTransforms = modelsManager.human.transforms;
-		//newTransforms[2] = modelsManager.human.transforms[2] * glm::rotate(glm::radians(30.f), glm::vec3{1,0,0});
-		//newTransforms[0] = modelsManager.human.transforms[0] * glm::toMat4(
-		//	glm::quatLookAt(glm::normalize(glm::vec3(-0.5,0.2,-0.3)), glm::vec3(0,1,0)) );
-
-
-		glBindVertexArray(modelsManager.human.vao);
-		entityRenderer.basicEntityShader.shader.bind();
-
-		auto poseCopy = modelsManager.human.transforms;
-
-		static float currentAngle = 0;
-		static float currentAngle2 = 0;
-		static int direction = 1;
-
-
-		//animatePlayerLegs(poseCopy.data(), currentAngle, direction, deltaTime);
-		//animatePlayerHandsZombie(poseCopy.data(), currentAngle2, deltaTime);
-
-		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
-			poseCopy.size(), GL_FALSE, &poseCopy[0][0][0]);
-
-
-		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
-		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_view, 1, GL_FALSE, &viewMatrix[0][0]);
-		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE, 
-			&glm::mat4(1.f)[0][0]);
-		glUniform3fv(entityRenderer.basicEntityShader.u_cameraPositionFloat, 1, &posFloat[0]);
-		glUniform3iv(entityRenderer.basicEntityShader.u_cameraPositionInt, 1, &posInt[0]);
-
-		glUniformHandleui64ARB(entityRenderer.basicEntityShader.u_texture, 
-			modelsManager.steveTextureHandle);
-		
-		auto renderModel = [&](glm::dvec3 pos, int vertexCount)
-		{
-			glm::vec3 entityFloat = {};
-			glm::ivec3 entityInt = {};
-			decomposePosition(pos, entityFloat, entityInt);
-
-			glUniform3fv(entityRenderer.basicEntityShader.u_entityPositionFloat, 1, &entityFloat[0]);
-			glUniform3iv(entityRenderer.basicEntityShader.u_entityPositionInt, 1, &entityInt[0]);
-
-			glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, nullptr);
-		};
-
-
-		for (auto &e : entityRenderer.itemEntitiesToRender)
-		{
-			renderModel(e.position, modelsManager.human.vertexCount);
-		}
-		entityRenderer.itemEntitiesToRender.clear();
-
-		//render player entities
-		for (auto &e : entityManager.players)
-		{
-			auto rotMatrix = glm::rotate(-std::atan2(e.second.entity.bodyOrientation.y, e.second.entity.bodyOrientation.x)
-				- glm::radians(90.f),
-				glm::vec3(0, 1, 0));
-
-
-			poseCopy[0] = modelsManager.human.transforms[0] * glm::toMat4(
-				glm::quatLookAt(glm::normalize(e.second.entity.lookDirectionAnimation), glm::vec3(0, 1, 0)))
-				;
-
-			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
-				poseCopy.size(), GL_FALSE, &poseCopy[0][0][0]);
-			
-			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,
-				&rotMatrix
-				[0][0]);
-
-			renderModel(e.second.getRubberBandPosition(), modelsManager.human.vertexCount);
-		}
-
-		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
-			modelsManager.human.transforms.size(), GL_FALSE, &modelsManager.human.transforms[0][0][0]);
-
-		glUniformHandleui64ARB(entityRenderer.basicEntityShader.u_texture, modelsManager.zombieTextureHandle);
-
-		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,
-			&glm::mat4(1.f)
-			[0][0]);
-
-
-		animatePlayerLegs(poseCopy.data(), currentAngle, direction, deltaTime);
-		animatePlayerHandsZombie(poseCopy.data(), currentAngle2, deltaTime);
-
-		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
-			poseCopy.size(), GL_FALSE, &poseCopy[0][0][0]);
-		for (auto &e : entityManager.zombies)
-		{
-			renderModel(e.second.getRubberBandPosition(), modelsManager.human.vertexCount);
-		}
-
-		
-
-		glBindVertexArray(modelsManager.pig.vao);
-		glUniformHandleui64ARB(entityRenderer.basicEntityShader.u_texture, modelsManager.pigTextureHandle);
-
-		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
-			modelsManager.pig.transforms.size(), GL_FALSE, &modelsManager.pig.transforms[0][0][0]);
-
-
-		for (auto &e : entityManager.pigs)
-		{
-			auto orientation = e.second.getRubberBandOrientation();
-
-			auto rotMatrix = glm::rotate(-std::atan2(orientation.y, orientation.x)
-				- glm::radians(90.f),
-				glm::vec3(0, 1, 0));
-
-			poseCopy = modelsManager.pig.transforms;
-
-			e.second.setEntityMatrix(poseCopy.data());
-
-			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
-				poseCopy.size(), GL_FALSE, &poseCopy[0][0][0]);
-
-			glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,
-				&rotMatrix
-				[0][0]);
-
-
-			renderModel(e.second.getRubberBandPosition(), modelsManager.pig.vertexCount);
-		}
-
-
-
-		glBindVertexArray(0);
-	};
-
 	auto copyToMainFbo = [&]()
 	{
 		fboMain.writeAllToOtherFbo(0, screenX, screenY);
@@ -1638,13 +1447,13 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform1i(defaultShader.u_depthPeelwaterPass, 0);
 		glUniform1i(defaultShader.u_hasPeelInformation, hasPeelInformation);
 
-		glActiveTexture(GL_TEXTURE0 + 3);
+		glActiveTexture(GL_TEXTURE0 + 10);
 		glBindTexture(GL_TEXTURE_2D, fboCoppy.color);
-		glUniform1i(defaultShader.u_PeelTexture, 3);
+		glUniform1i(defaultShader.u_PeelTexture, 10);
 
-		glActiveTexture(GL_TEXTURE0 + 2);
+		glActiveTexture(GL_TEXTURE0 + 9);
 		glBindTexture(GL_TEXTURE_2D, fboCoppy.depth);
-		glUniform1i(defaultShader.u_depthTexture, 2);
+		glUniform1i(defaultShader.u_depthTexture, 9);
 
 
 		glDepthFunc(GL_LESS);
@@ -1667,7 +1476,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 
 	#pragma region render entities
-		renderEntities();
+		renderEntities(deltaTime, modelsManager, blocksLoader,
+			entityManager, vp, viewMatrix, posFloat, posInt);
 	#pragma endregion
 
 
@@ -1702,9 +1512,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glColorMask(1, 1, 1, 1);
 		glUniform1i(defaultShader.u_depthPeelwaterPass, true);
 
-		glActiveTexture(GL_TEXTURE0 + 2);
+		glActiveTexture(GL_TEXTURE0 + 9);
 		glBindTexture(GL_TEXTURE_2D, fboCoppy.depth);
-		glUniform1i(defaultShader.u_depthTexture, 2);
+		glUniform1i(defaultShader.u_depthTexture, 9);
 
 		glDepthFunc(GL_LESS);
 		glDisable(GL_CULL_FACE); //todo change
@@ -1734,7 +1544,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		solidPass();
 
-		renderEntities();
+		renderEntities(deltaTime, modelsManager, blocksLoader,
+			entityManager, vp, viewMatrix, posFloat, posInt);
 
 		fboCoppy.copyDepthFromOtherFBO(fboMain.fbo, screenX, screenY);
 
@@ -1807,6 +1618,291 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
 	glBindVertexArray(0);
+
+}
+
+void Renderer::renderEntities(
+	float deltaTime,
+	ModelsManager &modelsManager,
+	BlocksLoader &blocksLoader, ClientEntityManager &entityManager,
+	glm::mat4 &vp,
+	glm::mat4 &viewMatrix,
+	glm::vec3 posFloat,
+	glm::ivec3 posInt
+	)
+{
+
+#pragma region setup pipeline
+
+	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
+	glDepthFunc(GL_LESS);
+
+#pragma endregion
+
+
+#pragma region cubeEntities
+	{
+
+		entityRenderer.blockEntityshader.shader.bind();
+
+		glBindVertexArray(entityRenderer.blockEntityshader.vaoCube);
+
+
+		glUniformMatrix4fv(entityRenderer.blockEntityshader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
+		glUniformMatrix4fv(entityRenderer.blockEntityshader.u_view, 1, GL_FALSE, &viewMatrix[0][0]);
+		glUniformMatrix4fv(entityRenderer.blockEntityshader.u_modelMatrix, 1, GL_FALSE,
+			glm::value_ptr(glm::scale(glm::vec3{0.4f})));
+		glUniform3fv(entityRenderer.blockEntityshader.u_cameraPositionFloat, 1, &posFloat[0]);
+		glUniform3iv(entityRenderer.blockEntityshader.u_cameraPositionInt, 1, &posInt[0]);
+
+		//debug stuff
+		if (0)
+		{
+			//todo something better here lol
+			std::uint64_t textures[6] = {};
+
+			for (int i = 0; i < 6; i++)
+			{
+				textures[i] = blocksLoader.gpuIds[getGpuIdIndexForBlock(BlockTypes::bookShelf, i)];
+			}
+
+			glUniformHandleui64vARB(entityRenderer.blockEntityshader.u_texture, 6, textures);
+
+
+			//todo instance rendering
+			for (auto &e : entityRenderer.itemEntitiesToRender)
+			{
+				glm::vec3 entityFloat = {};
+				glm::ivec3 entityInt = {};
+
+				decomposePosition(e.position, entityFloat, entityInt);
+
+				entityFloat += glm::vec3(0, 0.2, 0);
+
+				glUniform3fv(entityRenderer.blockEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
+				glUniform3iv(entityRenderer.blockEntityshader.u_entityPositionInt, 1, &entityInt[0]);
+
+				glDrawArrays(GL_TRIANGLES, 0, 36);
+
+			}
+
+		}
+
+		//real entities
+		{
+
+			//todo instance rendering
+			for (auto &e : entityManager.droppedItems)
+			{
+				//todo something better here lol
+				std::uint64_t textures[6] = {};
+
+				for (int i = 0; i < 6; i++)
+				{
+					textures[i] = blocksLoader.gpuIds
+						[getGpuIdIndexForBlock(e.second.entity.type, i)];
+				}
+
+				glUniformHandleui64vARB(entityRenderer.blockEntityshader.u_texture, 6, textures);
+
+				glm::vec3 entityFloat = {};
+				glm::ivec3 entityInt = {};
+
+				//decomposePosition(e.second.item.position, entityFloat, entityInt);
+				decomposePosition(e.second.getRubberBandPosition(), entityFloat, entityInt);
+
+				entityFloat += glm::vec3(0, 0.2, 0);
+
+				glUniform3fv(entityRenderer.blockEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
+				glUniform3iv(entityRenderer.blockEntityshader.u_entityPositionInt, 1, &entityInt[0]);
+
+				glDrawArrays(GL_TRIANGLES, 0, 36);
+			}
+
+		}
+
+
+	}
+#pragma endregion
+
+
+#pragma region other entities setup shader
+	
+	entityRenderer.basicEntityShader.shader.bind();
+
+	glUniformMatrix4fv(entityRenderer.basicEntityShader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
+	glUniformMatrix4fv(entityRenderer.basicEntityShader.u_view, 1, GL_FALSE, &viewMatrix[0][0]);
+	glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,
+		&glm::mat4(1.f)[0][0]);
+	glUniform3fv(entityRenderer.basicEntityShader.u_cameraPositionFloat, 1, &posFloat[0]);
+	glUniform3iv(entityRenderer.basicEntityShader.u_cameraPositionInt, 1, &posInt[0]);
+
+#pragma endregion
+
+
+	auto renderModel = [&](glm::dvec3 pos, int vertexCount)
+	{
+		glm::vec3 entityFloat = {};
+		glm::ivec3 entityInt = {};
+		decomposePosition(pos, entityFloat, entityInt);
+
+		glUniform3fv(entityRenderer.basicEntityShader.u_entityPositionFloat, 1, &entityFloat[0]);
+		glUniform3iv(entityRenderer.basicEntityShader.u_entityPositionInt, 1, &entityInt[0]);
+
+		glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, nullptr);
+	};
+
+
+	static std::vector<glm::mat4> skinningMatrix;
+	skinningMatrix.clear();
+
+	auto renderAllEntitiesOfOneType = [&](Model &model, auto &container, int textureIndex)
+	{
+		
+		glBindVertexArray(model.vao);
+
+		glUniformHandleui64ARB(entityRenderer.basicEntityShader.u_texture,
+			modelsManager.gpuIds[textureIndex]);
+
+		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,
+			&glm::mat4(1.f)
+			[0][0]);
+
+		glUniform1i(entityRenderer.basicEntityShader.u_bonesPerModel, model.transforms.size());
+
+
+		//skinningMatrix.resize(model.transforms.size() *container.size());
+		//
+		//for (auto &e : container)
+		//{
+		//
+		//
+		//}
+
+
+		for (auto &e : container)
+		{
+			auto rotMatrix = e.second.getBodyRotationMatrix();
+			auto poseCopy = model.transforms;
+
+			e.second.setEntityMatrix(poseCopy.data());
+
+			for (int i = 0; i < poseCopy.size(); i++)
+			{
+				poseCopy[i] = rotMatrix * poseCopy[i];
+			}
+
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, skinningMatrixSSBO);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, skinningMatrixSSBO);
+			glBufferData(GL_SHADER_STORAGE_BUFFER, poseCopy.size() * sizeof(glm::mat4),
+				&poseCopy[0][0][0], GL_STREAM_DRAW);
+
+			renderModel(e.second.getPosition(), model.vertexCount);
+		}
+
+	};
+
+	//todo remove
+	entityRenderer.itemEntitiesToRender.clear();
+
+	renderAllEntitiesOfOneType(modelsManager.human, entityManager.players, ModelsManager::SteveTexture);
+	renderAllEntitiesOfOneType(modelsManager.human, entityManager.zombies, ModelsManager::ZombieTexture);
+	renderAllEntitiesOfOneType(modelsManager.pig, entityManager.pigs, ModelsManager::PigTexture);
+
+
+	//glBindVertexArray(modelsManager.human.vao);
+	//
+	//auto poseCopy = modelsManager.human.transforms;
+	//
+	//
+	//glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
+	//	poseCopy.size(), GL_FALSE, &poseCopy[0][0][0]);
+	//
+	//
+	//
+	//glUniformHandleui64ARB(entityRenderer.basicEntityShader.u_texture,
+	//	modelsManager.gpuIds[ModelsManager::SteveTexture]);
+	//
+	//
+	//
+	//for (auto &e : entityRenderer.itemEntitiesToRender)
+	//{
+	//	renderModel(e.position, modelsManager.human.vertexCount);
+	//}
+	//entityRenderer.itemEntitiesToRender.clear();
+	//
+	////render player entities
+	//for (auto &e : entityManager.players)
+	//{
+	//
+	//	auto rotMatrix = e.second.getBodyRotationMatrix();
+	//
+	//	poseCopy[0] = modelsManager.human.transforms[0] * glm::toMat4(
+	//		glm::quatLookAt(glm::normalize(e.second.entity.lookDirectionAnimation), glm::vec3(0, 1, 0)))
+	//		;
+	//
+	//	glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
+	//		poseCopy.size(), GL_FALSE, &poseCopy[0][0][0]);
+	//
+	//	glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,
+	//		&rotMatrix
+	//		[0][0]);
+	//
+	//	renderModel(e.second.getRubberBandPosition(), modelsManager.human.vertexCount);
+	//}
+	//
+	//glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
+	//	modelsManager.human.transforms.size(), GL_FALSE, &modelsManager.human.transforms[0][0][0]);
+	//
+	//glUniformHandleui64ARB(entityRenderer.basicEntityShader.u_texture,
+	//	modelsManager.gpuIds[ModelsManager::ZombieTexture]);
+	//
+	//glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,
+	//	&glm::mat4(1.f)
+	//	[0][0]);
+	//
+	//
+	//glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
+	//	poseCopy.size(), GL_FALSE, &poseCopy[0][0][0]);
+	//for (auto &e : entityManager.zombies)
+	//{
+	//	renderModel(e.second.getRubberBandPosition(), modelsManager.human.vertexCount);
+	//}
+	//
+	//
+	//
+	//glBindVertexArray(modelsManager.pig.vao);
+	//glUniformHandleui64ARB(entityRenderer.basicEntityShader.u_texture, modelsManager.gpuIds[ModelsManager::PigTexture]);
+	//
+	//glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
+	//	modelsManager.pig.transforms.size(), GL_FALSE, &modelsManager.pig.transforms[0][0][0]);
+	//
+	//
+	//for (auto &e : entityManager.pigs)
+	//{
+	//	auto orientation = e.second.getRubberBandOrientation();
+	//
+	//	auto rotMatrix = e.second.getBodyRotationMatrix();
+	//
+	//	poseCopy = modelsManager.pig.transforms;
+	//
+	//	e.second.setEntityMatrix(poseCopy.data());
+	//
+	//	glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
+	//		poseCopy.size(), GL_FALSE, &poseCopy[0][0][0]);
+	//
+	//	glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,
+	//		&rotMatrix
+	//		[0][0]);
+	//
+	//
+	//	renderModel(e.second.getRubberBandPosition(), modelsManager.pig.vertexCount);
+	//}
+
+
+
+	glBindVertexArray(0);
+
 
 }
 

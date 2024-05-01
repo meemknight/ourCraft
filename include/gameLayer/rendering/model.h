@@ -30,19 +30,23 @@ struct ModelsManager
 
 	Model pig;
 
-	gl2d::Texture steveTexture;
-	GLuint64 steveTextureHandle;
 
-	gl2d::Texture zombieTexture;
-	GLuint64 zombieTextureHandle;
+	enum TexturesLoaded
+	{
+		DefaultTexture,
+		SteveTexture,
+		ZombieTexture,
+		PigTexture,
+	};
+
+	std::vector<GLuint64> gpuIds;
+	std::vector<GLuint> texturesIds;
+
+	GLuint texturesSSBO = 0;
 
 
-	gl2d::Texture pigTexture;
-	GLuint64 pigTextureHandle;
+	void setupSSBO();
 };
 
 
 void animatePlayerLegs(glm::mat4 *poseVector, float &currentAngle, int &direction, float deltaTime);
-
-
-void animatePlayerHandsZombie(glm::mat4 *poseVector, float &currentAngle, float deltaTime);

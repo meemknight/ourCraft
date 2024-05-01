@@ -6,8 +6,7 @@ layout (location = 1) out vec4 out_screenSpacePositions;
 layout (location = 2) out ivec3 out_normals;
 
 
-layout(binding = 0) uniform sampler2D u_texture;
-layout(binding = 1) uniform sampler2D u_numbers;
+layout(binding = 0) uniform sampler2D u_numbers;
 
 in vec2 v_uv;
 in float v_ambient;
