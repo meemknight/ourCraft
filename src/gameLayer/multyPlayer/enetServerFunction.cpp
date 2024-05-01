@@ -20,7 +20,7 @@
 #include <fstream>
 #include <sstream>
 #include <multyPlayer/splitUpdatesLogic.h>
-
+#include <filesystem>
 
 //todo add to a struct
 ENetHost *server = 0;
@@ -397,6 +397,8 @@ void enetServerFunction()
 	WorldSaver worldSaver;
 
 	worldSaver.savePath = RESOURCES_PATH "saves/";
+	std::filesystem::create_directory(worldSaver.savePath);
+
 	if (!structuresManager.loadAllStructures())
 	{
 		exit(0); //todo error out

@@ -1,6 +1,7 @@
 #pragma once
 #include "blocks.h"
 #include <bitset>
+#include <glm/glm.hpp>
 
 struct BigGpuBuffer;
 
@@ -118,3 +119,15 @@ struct Chunk
 };
 
 #undef DECLARE_FLAG
+
+
+
+int modBlockToChunk(int x);
+int divideChunk(int x);
+glm::ivec2 fromBlockPosToChunkPos(glm::ivec3 blockPos);
+glm::ivec2 fromBlockPosToChunkPos(int x, int z);
+
+//this is the index inside the chunk [0-15], y remains the same
+glm::ivec3 fromBlockPosToBlockPosInChunk(glm::ivec3 blockPos);
+
+int divideMetaChunk(int chunkPos);

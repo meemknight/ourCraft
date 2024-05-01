@@ -4,8 +4,7 @@
 #include <random>
 #include <glm/gtx/rotate_vector.hpp>
 #include <gameplay/entity.h>
-
-
+#include <chunk.h>
 
 struct PigDefaultSettings
 {

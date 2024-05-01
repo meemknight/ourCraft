@@ -209,7 +209,7 @@ struct Renderer
 
 	bool unifiedGeometry = 0;
 	bool sortChunks = 1;
-	bool zprepass = 0;
+	bool zprepass = 1;
 	bool frustumCulling = 1;
 	bool waterRefraction = 1;
 
