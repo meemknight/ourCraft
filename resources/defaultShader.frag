@@ -670,12 +670,12 @@ vec3 applyNormalMap(vec3 inNormal)
 	vec3 normal;
 	if( isWater() && (u_shaders!=0) )
 	{
-		vec2 firstDudv = texture(sampler2D(u_dudvNormal), getDudvCoords3(waterSpeed/3.f)).rg;
-		normal = texture(sampler2D(u_dudvNormal), getDudvCoords5(waterSpeed*2)+firstDudv*0.04 ).rgb;
+		vec2 firstDudv = texture(u_dudvNormal, getDudvCoords3(waterSpeed/3.f)).rg;
+		normal = texture(u_dudvNormal, getDudvCoords5(waterSpeed*2)+firstDudv*0.04 ).rgb;
 
-		//normal = texture(sampler2D(u_dudvNormal), getDudvCoords(waterSpeed)).rgb*1;
-		////normal += texture(sampler2D(u_dudvNormal), getDudvCoords2(10)).rgb;
-		//normal += texture(sampler2D(u_dudvNormal), getDudvCoords3(waterSpeed)).rgb*0.5;
+		//normal = texture(u_dudvNormal, getDudvCoords(waterSpeed)).rgb*1;
+		////normal += texture(u_dudvNormal, getDudvCoords2(10)).rgb;
+		//normal += texture(u_dudvNormal, getDudvCoords3(waterSpeed)).rgb*0.5;
 
 		//normal = normalize(normal);
 
@@ -1205,10 +1205,10 @@ void main()
 		if(blockIsInWater)
 		{
 			vec2 dudv = vec2(0);
-			dudv += texture(sampler2D(u_dudv), getDudvCoords(waterSpeed*2)).rg;
-			dudv += texture(sampler2D(u_dudv), getDudvCoords5(waterSpeed)).rg*1;
-			//dudv += texture(sampler2D(u_dudv), getDudvCoords2(waterSpeed*0.1)).rg * 0.4;
-			//dudv *= texture(sampler2D(u_dudv), getDudvCoords2(1)).rg;
+			dudv += texture(u_dudv, getDudvCoords(waterSpeed*2)).rg;
+			dudv += texture(u_dudv, getDudvCoords5(waterSpeed)).rg*1;
+			//dudv += texture(u_dudv, getDudvCoords2(waterSpeed*0.1)).rg * 0.4;
+			//dudv *= texture(u_dudv, getDudvCoords2(1)).rg;
 
 			vec2 coords = getDudvCoords(1) * causticsTextureScale + dudv / 10;
 			//vec2 coords = dudv * ;
@@ -1454,14 +1454,14 @@ void main()
 
 				
 				//visualize dudv
-				//out_color.rgb = texture(sampler2D(u_dudv), getDudvCoords3(1)).rgb;
+				//out_color.rgb = texture(u_dudv, getDudvCoords3(1)).rgb;
 				//out_color.a = 1;
 				//return;
 
 				vec2 dudv = vec2(0);
-				dudv += texture(sampler2D(u_dudv), getDudvCoords(waterSpeed)).rg;
-				dudv += texture(sampler2D(u_dudv), getDudvCoords2(dudv.x)).rg * 0.01;
-				//dudv += texture(sampler2D(u_dudv), getDudvCoords3(1)).rg;
+				dudv += texture(u_dudv, getDudvCoords(waterSpeed)).rg;
+				dudv += texture(u_dudv, getDudvCoords2(dudv.x)).rg * 0.01;
+				//dudv += texture(u_dudv, getDudvCoords3(1)).rg;
 				vec2 dudvConv = (dudv * 2) - 1;
 				vec2 distorsionCoord = dudvConv * 0.007;	
 				float distortDepth = getLastDepthLiniarized(p + distorsionCoord, nonLinear);

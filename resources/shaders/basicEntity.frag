@@ -32,7 +32,7 @@ flat in int test;
 void main()
 {
 
-	color.rgba = texture2D(sampler2D(u_texture), v_uv).rgba;
+	color.rgba = texture2D(u_texture, v_uv).rgba;
 	//color.rgba = vec4(v_uv,0,1);
 
 	if(color.a < 0.5)discard;
