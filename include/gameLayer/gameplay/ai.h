@@ -6,6 +6,7 @@
 #include <gameplay/entity.h>
 #include <chunk.h>
 
+
 struct PigDefaultSettings
 {
 	constexpr static float minSpeed = 0.9;
@@ -36,6 +37,18 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 	decltype(chunkGetterSignature) *chunkGetter, 
 	ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng)
 {
+
+	static glm::ivec2 checkOffsets[9] = {
+		glm::ivec2(0,0),
+		glm::ivec2(1,0),
+		glm::ivec2(-1,0),
+		glm::ivec2(0,1),
+		glm::ivec2(0,-1),
+		glm::ivec2(1,-1),
+		glm::ivec2(-1,-1),
+		glm::ivec2(1,1),
+		glm::ivec2(-1,1),
+	};
 	
 	E *baseEntity = (E *)(this);
 

@@ -337,6 +337,7 @@ RECENT REVISION HISTORY:
 //    very big.
 
 #include <memory>
+#include <cstring>
 
 inline void *STBIMAGE_CUSTOM_REALOC(void *p, size_t oldSize, size_t newsz)
 {

@@ -34,17 +34,7 @@ void PigClient::setEntityMatrix(glm::mat4 *skinningMatrix)
 
 }
 
-glm::ivec2 checkOffsets[9] = {
-	glm::ivec2(0,0),
-	glm::ivec2(1,0),
-	glm::ivec2(-1,0),
-	glm::ivec2(0,1),
-	glm::ivec2(0,-1),
-	glm::ivec2(1,-1),
-	glm::ivec2(-1,-1),
-	glm::ivec2(1,1),
-	glm::ivec2(-1,1),
-};
+
 
 static thread_local std::vector<std::uint64_t> playersClose;
 
