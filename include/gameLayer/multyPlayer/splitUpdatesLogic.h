@@ -3,6 +3,7 @@
 #include <multyPlayer/chunkSaver.h>
 #include <multyPlayer/serverChunkStorer.h>
 #include <thread>
+#include <atomic>
 
 struct Client;
 

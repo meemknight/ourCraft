@@ -1,5 +1,4 @@
 #pragma once
-#include <intrin.h>
 #include <chrono>
 
 ///////////////////////////////////////////
@@ -28,7 +27,7 @@ namespace PL
 	struct ProfileRezults
 	{
 		float timeSeconds=0;
-		unsigned int cpuClocks=0;
+		//unsigned int cpuClocks=0;
 	};
 
 #if !PROFILER_LIB_REMOVE_IMPLEMENTATION
@@ -41,14 +40,14 @@ namespace PL
 		bool started = 0;
 
 		std::chrono::steady_clock::time_point startTime;
-		__int64 cycleCount = {};
+		//__int64 cycleCount = {};
 
 		void start()
 		{
 			started = true;
 			rezult = {};
 			startTime = std::chrono::high_resolution_clock::now();
-			cycleCount = __rdtsc();
+			//cycleCount = __rdtsc();
 		}
 
 		ProfileRezults end()
@@ -62,11 +61,11 @@ namespace PL
 				started = false;
 			}
 
-			__int64 endCycleCount = __rdtsc();
+			//__int64 endCycleCount = __rdtsc();
 
 			auto endTime = std::chrono::high_resolution_clock::now();
 
-			cycleCount = endCycleCount - cycleCount;
+			//cycleCount = endCycleCount - cycleCount;
 			
 			
 			auto duration = 
@@ -77,7 +76,7 @@ namespace PL
 			ProfileRezults r = {};
 
 			r.timeSeconds = duration.count();
-			r.cpuClocks = cycleCount;
+			//r.cpuClocks = cycleCount;
 
 			rezult = r;
 
@@ -116,7 +115,8 @@ namespace PL
 		{
 			if (index == 0)
 			{
-				return { 0,0 };
+				//return { 0,0 };
+				return { 0 };
 			}
 
 			long double time = 0;
@@ -125,11 +125,11 @@ namespace PL
 			for(int i=0;i<index;i++)
 			{
 				time += rezults[i].timeSeconds;
-				cpuTime += rezults[i].cpuClocks;
+				//cpuTime += rezults[i].cpuClocks;
 			}
 
-
-			return { (float)(time / index), cpuTime /index };
+			//return { (float)(time / index), cpuTime /index };
+			return { (float)(time / index) };
 		}
 		
 		void resetData()
