@@ -36,11 +36,6 @@ void PigClient::setEntityMatrix(glm::mat4 *skinningMatrix)
 
 
 
-bool checkPlayerDistance(glm::dvec3 a, glm::dvec3 b)
-{
-	return glm::length(a - b) <= 15.f;
-}
-
 void PigServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
 	ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng)
 {

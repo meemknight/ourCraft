@@ -5,7 +5,7 @@
 #include <glm/gtx/rotate_vector.hpp>
 #include <gameplay/entity.h>
 #include <chunk.h>
-
+#include <gameplay/player.h>
 
 struct PigDefaultSettings
 {
@@ -38,6 +38,11 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 	decltype(chunkGetterSignature) *chunkGetter, 
 	ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng)
 {
+
+	auto checkPlayerDistance = [](glm::dvec3 a, glm::dvec3 b)
+	{
+		return glm::length(a - b) <= 15.f;
+	};
 
 	static glm::ivec2 checkOffsets[9] = {
 		glm::ivec2(0,0),
