@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.1)
 project(fastNoiseSIMD)
 
+
+if (UNIX)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -msse4.1")
+endif (UNIX)
+
 # Define MY_SOURCES to be a list of all the source files for my game 
 file(GLOB_RECURSE MY_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/FastNoiseSIMD/*.cpp")
 

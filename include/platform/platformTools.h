@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <string.h>
 #include <stdio.h>
+#include <cstring>
 
 inline size_t constexpr KB(size_t x) { return x * 1024ull; }
 inline size_t constexpr MB(size_t x) { return KB(x) * 1024ull; }

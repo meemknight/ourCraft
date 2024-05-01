@@ -10,6 +10,8 @@
 #include <fstream>
 #include <vector>
 #include <unordered_map>
+#include <cstring>
+#include <cstdint>
 
 #ifdef _MSC_VER
 #pragma warning( disable : 26812 )

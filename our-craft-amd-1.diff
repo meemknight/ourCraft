@@ -1,0 +1,54 @@
+ resources/defaultShader.frag       | 12 ++++++------
+ resources/shaders/basicEntity.frag |  2 +-
+ 2 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/resources/defaultShader.frag b/resources/defaultShader.frag
+index 51b2e1b..a58d31b 100644
+--- a/resources/defaultShader.frag
++++ b/resources/defaultShader.frag
+@@ -670,8 +670,8 @@ vec3 applyNormalMap(vec3 inNormal)
+ 	vec3 normal;
+ 	if( isWater() && (u_shaders!=0) )
+ 	{
+-		vec2 firstDudv = texture(sampler2D(u_dudvNormal), getDudvCoords3(waterSpeed/3.f)).rg;
+-		normal = texture(sampler2D(u_dudvNormal), getDudvCoords5(waterSpeed*2)+firstDudv*0.04 ).rgb;
++		vec2 firstDudv = texture(u_dudvNormal, getDudvCoords3(waterSpeed/3.f)).rg;
++		normal = texture(u_dudvNormal, getDudvCoords5(waterSpeed*2)+firstDudv*0.04 ).rgb;
+ 
+ 		//normal = texture(sampler2D(u_dudvNormal), getDudvCoords(waterSpeed)).rgb*1;
+ 		////normal += texture(sampler2D(u_dudvNormal), getDudvCoords2(10)).rgb;
+@@ -1205,8 +1205,8 @@ void main()
+ 		if(blockIsInWater)
+ 		{
+ 			vec2 dudv = vec2(0);
+-			dudv += texture(sampler2D(u_dudv), getDudvCoords(waterSpeed*2)).rg;
+-			dudv += texture(sampler2D(u_dudv), getDudvCoords5(waterSpeed)).rg*1;
++			dudv += texture(u_dudv, getDudvCoords(waterSpeed*2)).rg;
++			dudv += texture(u_dudv, getDudvCoords5(waterSpeed)).rg*1;
+ 			//dudv += texture(sampler2D(u_dudv), getDudvCoords2(waterSpeed*0.1)).rg * 0.4;
+ 			//dudv *= texture(sampler2D(u_dudv), getDudvCoords2(1)).rg;
+ 
+@@ -1459,8 +1459,8 @@ void main()
+ 				//return;
+ 
+ 				vec2 dudv = vec2(0);
+-				dudv += texture(sampler2D(u_dudv), getDudvCoords(waterSpeed)).rg;
+-				dudv += texture(sampler2D(u_dudv), getDudvCoords2(dudv.x)).rg * 0.01;
++				dudv += texture(u_dudv, getDudvCoords(waterSpeed)).rg;
++				dudv += texture(u_dudv, getDudvCoords2(dudv.x)).rg * 0.01;
+ 				//dudv += texture(sampler2D(u_dudv), getDudvCoords3(1)).rg;
+ 				vec2 dudvConv = (dudv * 2) - 1;
+ 				vec2 distorsionCoord = dudvConv * 0.007;	
+diff --git a/resources/shaders/basicEntity.frag b/resources/shaders/basicEntity.frag
+index af37216..7fa91ad 100644
+--- a/resources/shaders/basicEntity.frag
++++ b/resources/shaders/basicEntity.frag
+@@ -32,7 +32,7 @@ flat in int test;
+ void main()
+ {
+ 
+-	color.rgba = texture2D(sampler2D(u_texture), v_uv).rgba;
++	color.rgba = texture2D(u_texture, v_uv).rgba;
+ 	//color.rgba = vec4(v_uv,0,1);
+ 
+ 	if(color.a < 0.5)discard;
