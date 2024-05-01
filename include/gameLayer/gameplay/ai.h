@@ -32,6 +32,7 @@ struct AnimalBehaviour
 
 };
 
+
 template<class E, class SETTINGS>
 inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 	decltype(chunkGetterSignature) *chunkGetter, 
@@ -49,6 +50,9 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 		glm::ivec2(1,1),
 		glm::ivec2(-1,1),
 	};
+
+	std::vector<std::uint64_t> playersClose;
+
 	
 	E *baseEntity = (E *)(this);
 

@@ -36,8 +36,6 @@ void PigClient::setEntityMatrix(glm::mat4 *skinningMatrix)
 
 
 
-static thread_local std::vector<std::uint64_t> playersClose;
-
 bool checkPlayerDistance(glm::dvec3 a, glm::dvec3 b)
 {
 	return glm::length(a - b) <= 15.f;
