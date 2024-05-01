@@ -69,7 +69,7 @@ namespace PL
 			
 			
 			auto duration = 
-				std::chrono::duration_cast< std::chrono::duration<float > >
+				std::chrono::duration_cast< std::chrono::duration<float> >
 				(endTime - startTime);
 
 
