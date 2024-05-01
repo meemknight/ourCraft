@@ -156,6 +156,20 @@ void decomposePosition(glm::dvec3 in, glm::vec3 &floatPart, glm::ivec3 &intPart)
 	floatPart = doublePosition;
 }
 
+void decomposePosition(glm::dvec3 in, glm::vec4 &floatPart, glm::ivec4 &intPart)
+{
+	intPart.r = glm::floor(in.r);
+	intPart.g = glm::floor(in.g);
+	intPart.b = glm::floor(in.b);
+
+	glm::dvec3 doublePosition = in;
+	doublePosition -= glm::vec3(intPart);
+	floatPart.r = doublePosition.r;
+	floatPart.g = doublePosition.g;
+	floatPart.b = doublePosition.b;
+
+}
+
 glm::ivec3 from3DPointToBlock(glm::dvec3 in)
 {
 	in += glm::dvec3(0.5, 0.5, 0.5);

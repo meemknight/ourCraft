@@ -188,13 +188,10 @@ struct Renderer
 		{
 			Shader shader;
 
-			uniform u_entityPositionInt;
-			uniform u_entityPositionFloat;
 			uniform u_viewProjection;
 			uniform u_modelMatrix;
 			uniform u_cameraPositionInt;
 			uniform u_cameraPositionFloat;
-			uniform u_texture;
 			uniform u_view;
 			uniform u_bonesPerModel;
 

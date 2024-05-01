@@ -6,10 +6,6 @@ layout(location = 2) in vec2 uv;
 layout(location = 3) in int bone;
 
 
-uniform ivec3 u_entityPositionInt;
-uniform vec3 u_entityPositionFloat;
-
-
 uniform mat4 u_viewProjection;
 uniform mat4 u_modelMatrix;
 uniform ivec3 u_cameraPositionInt;
@@ -28,19 +24,37 @@ readonly restrict layout(std430) buffer u_skinningMatrix
 };
 
 
+struct PerEntityData
+{
+	int entityPositionIntX;
+	int entityPositionIntY;
+	int entityPositionIntZ;
+
+	float entityPositionFloatX;
+	float entityPositionFloatY;
+	float entityPositionFloatZ;
+
+	uvec2 textureSampler;
+};
+
+flat out uvec2 v_textureSampler;
+
 readonly restrict layout(std430) buffer u_perEntityData
 {
-	ivec3 entityPositionInt;
-	vec3 entityPositionFloat;
+	PerEntityData entityData[];
 };
 
 void main()
 {
+	ivec3 entityPosInt = ivec3(entityData[gl_InstanceID].entityPositionIntX, entityData[gl_InstanceID].entityPositionIntY, entityData[gl_InstanceID].entityPositionIntZ);
+	vec3 entityPosFloat = vec3(entityData[gl_InstanceID].entityPositionFloatX, entityData[gl_InstanceID].entityPositionFloatY, entityData[gl_InstanceID].entityPositionFloatZ);
 
-	vec3 diffI = u_entityPositionInt - u_cameraPositionInt;
-	vec3 diffF = diffI - u_cameraPositionFloat + u_entityPositionFloat;
+	v_textureSampler = entityData[gl_InstanceID].textureSampler;
+
+	vec3 diffI = entityPosInt - u_cameraPositionInt;
+	vec3 diffF = diffI - u_cameraPositionFloat + entityPosFloat;
 	
-	mat4 currentSkinningMatrix = skinningMatrix[bone];
+	mat4 currentSkinningMatrix = skinningMatrix[bone + gl_InstanceID * u_bonesPerModel];
 	test = bone;
 
 	mat4 finalModel = u_modelMatrix * currentSkinningMatrix;

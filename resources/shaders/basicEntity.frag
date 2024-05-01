@@ -5,7 +5,6 @@ layout (location = 0) out vec4 color;
 layout (location = 1) out vec4 out_screenSpacePositions;
 layout (location = 2) out ivec3 out_normals;
 
-uniform sampler2D u_texture;
 in vec2 v_uv;
 in vec3 v_normals;
 in vec3 v_vertexPosition;
@@ -33,10 +32,13 @@ readonly restrict layout(std430) buffer u_entityTextureSamplerers
 	uvec2 textureSamplerers[];
 };
 
+flat in uvec2 v_textureSampler;
+
+
 void main()
 {
 
-	color.rgba = texture2D(u_texture, v_uv).rgba;
+	color.rgba = texture2D(sampler2D(v_textureSampler), v_uv).rgba;
 	//color.rgba = texture2D(sampler2D(textureSamplerers[1]), v_uv).rgba;
 	//color.rgba = vec4(v_uv,0,1);
 

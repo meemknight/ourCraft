@@ -886,13 +886,10 @@ void Renderer::reloadShaders()
 	(RESOURCES_PATH "shaders/basicEntity.vert", RESOURCES_PATH "shaders/basicEntity.frag");
 	entityRenderer.basicEntityShader.shader.bind();
 
-	GET_UNIFORM2(entityRenderer.basicEntityShader, u_entityPositionInt);
-	GET_UNIFORM2(entityRenderer.basicEntityShader, u_entityPositionFloat);
-	GET_UNIFORM2(entityRenderer.basicEntityShader, u_viewProjection);
-	GET_UNIFORM2(entityRenderer.basicEntityShader, u_modelMatrix);
 	GET_UNIFORM2(entityRenderer.basicEntityShader, u_cameraPositionInt);
 	GET_UNIFORM2(entityRenderer.basicEntityShader, u_cameraPositionFloat);
-	GET_UNIFORM2(entityRenderer.basicEntityShader, u_texture);
+	GET_UNIFORM2(entityRenderer.basicEntityShader, u_viewProjection);
+	GET_UNIFORM2(entityRenderer.basicEntityShader, u_modelMatrix);
 	GET_UNIFORM2(entityRenderer.basicEntityShader, u_view);
 	GET_UNIFORM2(entityRenderer.basicEntityShader, u_bonesPerModel);
 	
@@ -1746,23 +1743,28 @@ void Renderer::renderEntities(
 		glm::ivec3 entityInt = {};
 		decomposePosition(pos, entityFloat, entityInt);
 
-		glUniform3fv(entityRenderer.basicEntityShader.u_entityPositionFloat, 1, &entityFloat[0]);
-		glUniform3iv(entityRenderer.basicEntityShader.u_entityPositionInt, 1, &entityInt[0]);
 
 		glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, nullptr);
 	};
 
 
+	struct PerEntityData
+	{
+		glm::ivec3 entityPositionInt = {}; 
+		glm::vec3 entityPositionFloat = {};
+		GLuint64 textureId;
+	};
+
 	static std::vector<glm::mat4> skinningMatrix;
 	skinningMatrix.clear();
+
+	static std::vector<PerEntityData> entityData;
+	entityData.clear();
 
 	auto renderAllEntitiesOfOneType = [&](Model &model, auto &container, int textureIndex)
 	{
 		
 		glBindVertexArray(model.vao);
-
-		glUniformHandleui64ARB(entityRenderer.basicEntityShader.u_texture,
-			modelsManager.gpuIds[textureIndex]);
 
 		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,
 			&glm::mat4(1.f)
@@ -1770,35 +1772,52 @@ void Renderer::renderEntities(
 
 		glUniform1i(entityRenderer.basicEntityShader.u_bonesPerModel, model.transforms.size());
 
+		skinningMatrix.clear();
+		entityData.clear();
 
-		//skinningMatrix.resize(model.transforms.size() *container.size());
-		//
-		//for (auto &e : container)
-		//{
-		//
-		//
-		//}
-
-
+		skinningMatrix.reserve(model.transforms.size() *container.size());
+		entityData.reserve(model.transforms.size() *container.size());
+		
 		for (auto &e : container)
 		{
 			auto rotMatrix = e.second.getBodyRotationMatrix();
-			auto poseCopy = model.transforms;
 
-			e.second.setEntityMatrix(poseCopy.data());
-
-			for (int i = 0; i < poseCopy.size(); i++)
+			for (int i = 0; i < model.transforms.size(); i++)
 			{
-				poseCopy[i] = rotMatrix * poseCopy[i];
+				skinningMatrix.push_back(rotMatrix * model.transforms[i]);
 			}
 
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, skinningMatrixSSBO);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, skinningMatrixSSBO);
-			glBufferData(GL_SHADER_STORAGE_BUFFER, poseCopy.size() * sizeof(glm::mat4),
-				&poseCopy[0][0][0], GL_STREAM_DRAW);
+			e.second.setEntityMatrix(skinningMatrix.data() + (skinningMatrix.size() - model.transforms.size()));
 
-			renderModel(e.second.getPosition(), model.vertexCount);
+			PerEntityData data = {};
+			data.textureId = modelsManager.gpuIds[textureIndex];
+
+			decomposePosition(e.second.getRubberBandPosition(), data.entityPositionFloat, data.entityPositionInt);
+			entityData.push_back(data);
 		}
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, skinningMatrixSSBO);
+		//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, skinningMatrixSSBO);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, skinningMatrix.size() * sizeof(glm::mat4),
+			&skinningMatrix[0][0][0], GL_STREAM_DRAW);
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, perEntityDataSSBO);
+		//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, perEntityDataSSBO);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, entityData.size() * sizeof(entityData[0]),
+			entityData.data(), GL_STREAM_DRAW);
+
+
+		//int instance = 0;
+		//for (auto &e : container)
+		//{
+		//	glUniform1i(entityRenderer.basicEntityShader.u_instance, instance);
+		//	renderModel(e.second.getRubberBandPosition(), model.vertexCount);
+		//
+		//	instance++;
+		//}
+
+		glDrawElementsInstanced(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, nullptr,
+			container.size());
 
 	};
 
@@ -1874,9 +1893,6 @@ void Renderer::renderEntities(
 	//glBindVertexArray(modelsManager.pig.vao);
 	//glUniformHandleui64ARB(entityRenderer.basicEntityShader.u_texture, modelsManager.gpuIds[ModelsManager::PigTexture]);
 	//
-	//glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
-	//	modelsManager.pig.transforms.size(), GL_FALSE, &modelsManager.pig.transforms[0][0][0]);
-	//
 	//
 	//for (auto &e : entityManager.pigs)
 	//{
@@ -1884,12 +1900,14 @@ void Renderer::renderEntities(
 	//
 	//	auto rotMatrix = e.second.getBodyRotationMatrix();
 	//
-	//	poseCopy = modelsManager.pig.transforms;
+	//	auto poseCopy = modelsManager.pig.transforms;
 	//
 	//	e.second.setEntityMatrix(poseCopy.data());
 	//
-	//	glUniformMatrix4fv(entityRenderer.basicEntityShader.u_skinningMatrix,
-	//		poseCopy.size(), GL_FALSE, &poseCopy[0][0][0]);
+	//	glBindBuffer(GL_SHADER_STORAGE_BUFFER, skinningMatrixSSBO);
+	//	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, skinningMatrixSSBO);
+	//	glBufferData(GL_SHADER_STORAGE_BUFFER, poseCopy.size() * sizeof(glm::mat4),
+	//		&poseCopy[0][0][0], GL_STREAM_DRAW);
 	//
 	//	glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,
 	//		&rotMatrix

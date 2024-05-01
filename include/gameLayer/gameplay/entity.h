@@ -319,17 +319,11 @@ struct ClientEntity
 	glm::mat4 getBodyRotationMatrix()
 	{
 
-		if constexpr (hasBodyOrientation<T>)
-		{
-			auto rotMatrix = glm::rotate(-std::atan2(entity.bodyOrientation.y, entity.bodyOrientation.x)
-				- glm::radians(90.f),
-				glm::vec3(0, 1, 0));
-			return rotMatrix;
-		}
-		else
-		{
-			return glm::mat4(1.f);
-		}
+		auto orient = getRubberBandOrientation();
+		auto rotMatrix = glm::rotate(-std::atan2(orient.y, orient.x)
+			- glm::radians(90.f),
+			glm::vec3(0, 1, 0));
+		return rotMatrix;
 
 	}
 
