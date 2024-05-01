@@ -14,4 +14,4 @@ void doGameTick(float deltaTime,
 
 
 
-glm::ivec2 determineChunkThatIsEntityIn(glm::dvec3 position);
+

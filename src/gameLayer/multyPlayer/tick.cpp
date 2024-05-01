@@ -233,7 +233,3 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 	chunkCacheGlobal = 0;
 }
 
-glm::ivec2 determineChunkThatIsEntityIn(glm::dvec3 position)
-{
-	return {divideChunk(position.x), divideChunk(position.z)};
-}

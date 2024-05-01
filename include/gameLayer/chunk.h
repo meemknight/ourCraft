@@ -3,11 +3,10 @@
 #include <bitset>
 #include <glm/glm.hpp>
 
+#include <metrics.h>
+
 struct BigGpuBuffer;
 
-constexpr int CHUNK_SIZE = 16;
-constexpr int META_CHUNK_SIZE = 32;
-constexpr int CHUNK_HEIGHT = 256;
 
 struct ChunkData
 {
@@ -122,12 +121,3 @@ struct Chunk
 
 
 
-int modBlockToChunk(int x);
-int divideChunk(int x);
-glm::ivec2 fromBlockPosToChunkPos(glm::ivec3 blockPos);
-glm::ivec2 fromBlockPosToChunkPos(int x, int z);
-
-//this is the index inside the chunk [0-15], y remains the same
-glm::ivec3 fromBlockPosToBlockPosInChunk(glm::ivec3 blockPos);
-
-int divideMetaChunk(int chunkPos);

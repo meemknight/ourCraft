@@ -7,6 +7,7 @@
 #include <chunk.h>
 #include <gameplay/player.h>
 
+
 struct PigDefaultSettings
 {
 	constexpr static float minSpeed = 0.9;
