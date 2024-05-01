@@ -39,7 +39,8 @@ namespace PL
 		ProfileRezults rezult;
 		bool started = 0;
 
-		std::chrono::steady_clock::time_point startTime;
+		std::chrono::time_point<std::chrono::high_resolution_clock>
+			startTime = std::chrono::high_resolution_clock::now();
 		//__int64 cycleCount = {};
 
 		void start()
