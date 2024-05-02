@@ -8,19 +8,18 @@
 #include <gameplay/player.h>
 #include <gameplay/zombie.h>
 #include <gameplay/pig.h>
+#include <gameplay/allentities.h>
+
 
 struct UndoQueue;
 
 
 
-struct ClientEntityManager
+struct ClientEntityManager : public EntityDataClient
 {
 
-	std::unordered_map<std::uint64_t, PlayerClient> players;
-	
-	std::unordered_map<std::uint64_t, DroppedItemClient> droppedItems;
-	std::unordered_map<std::uint64_t, ZombieClient> zombies;
-	std::unordered_map<std::uint64_t, PigClient> pigs;
+
+
 
 	LocalPlayer localPlayer;
 

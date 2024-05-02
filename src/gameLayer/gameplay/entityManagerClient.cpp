@@ -4,6 +4,7 @@
 #include <iostream>
 #include "multyPlayer/undoQueue.h"
 #include <multyPlayer/createConnection.h>
+#include <utility>
 
 
 
@@ -25,29 +26,58 @@ bool checkIfPlayerShouldGetEntity(glm::ivec2 playerPos2D,
 	
 }
 
+
+template<class T>
+void genericDropEntitiesThatAreTooFar(T &container, glm::ivec2 playerPos2D, int playerSquareDistance)
+{
+	for (auto it = container.begin(); it != container.end(); )
+	{
+		if (!checkIfPlayerShouldGetEntity(playerPos2D, it->second.getPosition(),
+			playerSquareDistance, 0))
+		{
+			it = container.erase(it);
+		}
+		else
+		{
+			++it;
+		}
+	}
+};
+
+template <int... Is>
+void callGenericDropEntitiesThatAreTooFar(std::integer_sequence<int, Is...>, ClientEntityManager &c,
+	glm::ivec2 playerPos2D, int playerSquareDistance)
+{
+	(genericDropEntitiesThatAreTooFar(*c.entityGetter<Is>(), playerPos2D, playerSquareDistance), ...);
+}
+
 void ClientEntityManager::dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int playerSquareDistance)
 {
 
-	auto doChecking = [&](auto &container)
-	{
-		for (auto it = container.begin(); it != container.end(); )
-		{
-			if (!checkIfPlayerShouldGetEntity(playerPos2D, it->second.getPosition(),
-				playerSquareDistance, 0))
-			{
-				it = container.erase(it);
-			}
-			else
-			{
-				++it;
-			}
-		}
-	};
+	//auto doChecking = [&](auto &container)
+	//{
+	//	for (auto it = container.begin(); it != container.end(); )
+	//	{
+	//		if (!checkIfPlayerShouldGetEntity(playerPos2D, it->second.getPosition(),
+	//			playerSquareDistance, 0))
+	//		{
+	//			it = container.erase(it);
+	//		}
+	//		else
+	//		{
+	//			++it;
+	//		}
+	//	}
+	//};
+	//
+	//doChecking(players);
+	//doChecking(droppedItems);
+	//doChecking(zombies);
+	//doChecking(pigs);
 
-	doChecking(players);
-	doChecking(droppedItems);
-	doChecking(zombies);
-	doChecking(pigs);
+	callGenericDropEntitiesThatAreTooFar(std::make_integer_sequence<int, EntitiesTypesCount>(),
+		*this,
+		playerPos2D, playerSquareDistance);
 
 	
 }
@@ -102,27 +132,58 @@ bool ClientEntityManager::dropItemByClient(glm::dvec3 position, BlockType blockT
 	return true;
 }
 
+
+
+template<class T>
+bool genericRemoveEntity(T &container, std::uint64_t entityId)
+{
+	auto found = container.find(entityId);
+	if (found != container.end())
+	{
+		container.erase(found);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+};
+
+//this can't remove the player
+template <int... Is>
+void callGenericRemoveEntity(std::integer_sequence<int, Is...>, ClientEntityManager &c,
+	std::uint64_t entityId)
+{
+	bool stopCalling = false;
+	((stopCalling = genericRemoveEntity(*c.entityGetter<Is+1>(), entityId)) || ...);
+}
+
 void ClientEntityManager::removeEntity(std::uint64_t entityId)
 {
 
-	auto tryRemove = [&](auto &container)
-	{
-		auto found = container.find(entityId);
-		if (found != container.end())
-		{
-			container.erase(found);
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	};
-	
-	if (!tryRemove(droppedItems))
-	if (!tryRemove(zombies))
-	if (!tryRemove(pigs))
-	{}
+	//auto tryRemove = [&](auto &container)
+	//{
+	//	auto found = container.find(entityId);
+	//	if (found != container.end())
+	//	{
+	//		container.erase(found);
+	//		return true;
+	//	}
+	//	else
+	//	{
+	//		return false;
+	//	}
+	//};
+	//
+	//if (!tryRemove(droppedItems))
+	//if (!tryRemove(zombies))
+	//if (!tryRemove(pigs))
+	//{}
+
+	//this can't remove the player
+	callGenericRemoveEntity(std::make_integer_sequence<int, EntitiesTypesCount-1>(), 
+		*this, entityId);
+
 
 }
 
@@ -207,31 +268,33 @@ void ClientEntityManager::addOrUpdatePig(std::uint64_t eid, Pig entity, float re
 	}
 }
 
+
+
+template<class T>
+void genericUpdateLoop(T &container, float deltaTime, ChunkData *(chunkGetter)(glm::ivec2))
+{
+	for (auto &e : container)
+	{
+		e.second.clientEntityUpdate(deltaTime, chunkGetter);
+	}
+};
+
+template <int... Is>
+void callGenericUpdateLoop(std::integer_sequence<int, Is...>, float deltaTime,
+	ChunkData *(chunkGetter)(glm::ivec2), ClientEntityManager &c)
+{
+	(genericUpdateLoop(*c.entityGetter<Is>(), deltaTime, chunkGetter),  ...);
+}
+
+
 void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2))
 {
 
-	auto genericUpdateLoop = [&](auto &container)
-	{
-		for (auto &e : container)
-		{
-			e.second.clientEntityUpdate(deltaTime, chunkGetter);
-		}
-	};
+
+	callGenericUpdateLoop(std::make_integer_sequence<int, EntitiesTypesCount>(), 
+		deltaTime, chunkGetter, *this);
 
 
-	//todo check rubberband for player
-	//for (auto &player : players)
-	//{
-	//
-	//	player.second.rubberBand.computeRubberBand(
-	//		deltaTime);
-	//
-	//}
-
-	genericUpdateLoop(players);
-	genericUpdateLoop(droppedItems);
-	genericUpdateLoop(zombies);
-	genericUpdateLoop(pigs);
 
 }
 

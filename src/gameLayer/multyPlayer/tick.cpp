@@ -64,6 +64,44 @@ bool genericCallUpdateForEntity(T &e,
 
 
 
+template<class T, class U>
+void genericResetEntitiesInTheirNewChunk(T &container, U memberSelector, ServerChunkStorer &chunkCache)
+{
+	for (auto it = container.begin();
+		it != container.end();)
+	{
+		auto &e = *it;
+
+		auto pos = determineChunkThatIsEntityIn(e.second.getPosition());
+		auto chunk = chunkCache.getChunkOrGetNull(pos.x, pos.y);
+
+		if (chunk)
+		{
+			auto member = memberSelector(chunk->entityData);
+			member->insert({e.first, e.second});
+			//chunk->entityData.droppedItems.insert({e.first, e.second});
+			it = container.erase(it);
+		}
+		else
+		{
+			//save entity to disk outside the thread.
+			it++;
+		}
+	}
+};
+
+
+template <int... Is>
+void callGenericResetEntitiesInTheirNewChunk(std::integer_sequence<int, Is...>, EntityData &c,
+	ServerChunkStorer &chunkCache)
+{
+	(genericResetEntitiesInTheirNewChunk(*c.entityGetter<Is + 1>(),
+		[](auto &entityData) { return entityData.entityGetter<Is + 1>(); },
+		chunkCache), ...);
+}
+
+
+
 void doGameTick(float deltaTime, std::uint64_t currentTimer,
 	ServerChunkStorer &chunkCache, EntityData &orphanEntities, unsigned int seed)
 {
@@ -159,41 +197,10 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 
 	}
 	
-	auto resetEntitiesInTheirNewChunk = [&](auto &container, auto memberSelector)
-	{
-
-		for (auto it = container.begin();
-			it != container.end();)
-		{
-			auto &e = *it;
-
-			auto pos = determineChunkThatIsEntityIn(e.second.getPosition());
-			auto chunk = chunkCache.getChunkOrGetNull(pos.x, pos.y);
-
-			if (chunk)
-			{
-				auto member = memberSelector(chunk->entityData);
-				member->insert({e.first, e.second});
-				//chunk->entityData.droppedItems.insert({e.first, e.second});
-				it = container.erase(it);
-			}
-			else
-			{
-				//save entity to disk outside the thread.
-				it++;
-			}
-		}
-	};
 	
-	
-	resetEntitiesInTheirNewChunk(orphanEntities.droppedItems, 
-		[](auto &entityData) { return &entityData.droppedItems; });
+	callGenericResetEntitiesInTheirNewChunk(std::make_integer_sequence<int, EntitiesTypesCount - 1>(),
+		orphanEntities, chunkCache);
 
-	resetEntitiesInTheirNewChunk(orphanEntities.zombies,
-		[](auto &entityData) { return &entityData.zombies; });
-	
-	resetEntitiesInTheirNewChunk(orphanEntities.pigs,
-		[](auto &entityData) { return &entityData.pigs; });
 
 #pragma endregion
 

@@ -18,12 +18,12 @@ bool DroppedItemServer::update(float deltaTime, decltype(chunkGetterSignature) *
 	std::unordered_set<std::uint64_t> &othersDeleted)
 {
 
-	//stayTimer -= deltaTime;
-	//
-	//if (stayTimer < 0)
-	//{
-	//	return 0;
-	//}
+	stayTimer -= deltaTime;
+	
+	if (stayTimer < 0)
+	{
+		return 0;
+	}
 
 	glm::ivec2 chunkPosition = determineChunkThatIsEntityIn(getPosition());
 
