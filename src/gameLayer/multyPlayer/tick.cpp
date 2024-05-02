@@ -70,7 +70,7 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 		}
 	};
 
-	//todo when a player joins, send him all of the entities
+
 
 
 #pragma region entity updates
@@ -120,7 +120,6 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 
 		genericLoopOverEntities(entityData.pigs, orphanEntities.pigs,
 			Packet_UpdatePig{}, headerUpdatePig);
-	
 
 	}
 
@@ -145,12 +144,10 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 			}
 			else
 			{
-				//save entity to disk!
+				//save entity to disk outside the thread.
 				it++;
 			}
 		}
-
-
 	};
 	
 	
@@ -162,68 +159,6 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 	
 	resetEntitiesInTheirNewChunk(orphanEntities.pigs,
 		[](auto &entityData) { return &entityData.pigs; });
-
-	//re set entities in their new chunk
-	//for (auto it = orphanEntities.droppedItems.begin();
-	//	it != orphanEntities.droppedItems.end();)
-	//{
-	//	auto &e = *it;
-	//
-	//	auto pos = determineChunkThatIsEntityIn(e.second.getPosition());
-	//	auto chunk = chunkCache.getChunkOrGetNull(pos.x, pos.y);
-	//
-	//	if (chunk)
-	//	{
-	//		chunk->entityData.droppedItems.insert({e.first, e.second});
-	//		it = orphanEntities.droppedItems.erase(it);
-	//	}
-	//	else
-	//	{
-	//		//save entity to disk!
-	//		it++;
-	//	}
-	//}
-
-
-	//for (auto it = orphanEntities.zombies.begin();
-	//	it != orphanEntities.zombies.end();)
-	//{
-	//	auto &e = *it;
-	//
-	//	auto pos = determineChunkThatIsEntityIn(e.second.getPosition());
-	//	auto chunk = chunkCache.getChunkOrGetNull(pos.x, pos.y);
-	//
-	//	if (chunk)
-	//	{
-	//		chunk->entityData.zombies.insert({e.first, e.second});
-	//		it = orphanEntities.zombies.erase(it);
-	//	}
-	//	else
-	//	{
-	//		//save entity to disk!
-	//		it++;
-	//	}
-	//}
-	//
-	//for (auto it = orphanEntities.pigs.begin();
-	//	it != orphanEntities.pigs.end();)
-	//{
-	//	auto &e = *it;
-	//
-	//	auto pos = determineChunkThatIsEntityIn(e.second.getPosition());
-	//	auto chunk = chunkCache.getChunkOrGetNull(pos.x, pos.y);
-	//	if (chunk)
-	//	{
-	//		chunk->entityData.pigs.insert({e.first, e.second});
-	//		it = orphanEntities.pigs.erase(it);
-	//	}
-	//	else
-	//	{
-	//		//save entity to disk!
-	//		it++;
-	//	}
-	//}
-
 
 #pragma endregion
 

@@ -9,6 +9,7 @@
 #include <lightSystem.h>
 #include <platformTools.h>
 #include <cmath>
+#include <gameplay/gameplayRules.h>
 
 Chunk *ChunkSystem::getChunksInMatrixSpaceUnsafe(int x, int z)
 {
@@ -1030,39 +1031,53 @@ void ChunkSystem::dropChunkAtIndexSafe(int index, BigGpuBuffer *gpuBuffer)
 }
 
 
-void ChunkSystem::placeBlockByClient(glm::ivec3 pos, BlockType type, UndoQueue &undoQueue, glm::dvec3 playerPos
+bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, BlockType type, 
+	UndoQueue &undoQueue, glm::dvec3 playerPos
 	, LightSystem &lightSystem)
 {
-	//todo were we will check legality locally
 	Chunk *chunk = 0;
 	auto b = getBlockSafeAndChunk(pos.x, pos.y, pos.z, chunk);
 	
 	if (b != nullptr)
 	{
-		Task task;
-		task.type = Task::placeBlock;
-		task.pos = pos;
-		task.blockType = type;
-		task.eventId = undoQueue.currentEventId;
-		submitTaskClient(task);
 
-		undoQueue.addPlaceBlockEvent(pos, b->type, type, playerPos);
+		//todo check mob colisions
 
-		changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->type, type, lightSystem);
 
-		b->type = type;
-		if (b->isOpaque()) { b->lightLevel = 0; }
+		if (canBlockBePlaced(type, b->type))
+		{
+			Task task;
+			task.type = Task::placeBlock;
+			task.pos = pos;
+			task.blockType = type;
+			task.eventId = undoQueue.currentEventId;
+			submitTaskClient(task);
 
-		setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
+			undoQueue.addPlaceBlockEvent(pos, b->type, type, playerPos);
 
+			changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->type, type, lightSystem);
+
+			b->type = type;
+			if (b->isOpaque()) { b->lightLevel = 0; }
+
+			setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
+
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 	
+	return false;
 }
 
 
 void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, BlockType type, LightSystem &lightSystem)
 {
-	//todo were we will check legality locally
+
+	//this is forcely placed by server
 	Chunk *chunk = 0;
 	auto b = getBlockSafeAndChunk(pos.x, pos.y, pos.z, chunk);
 

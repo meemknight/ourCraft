@@ -60,6 +60,7 @@ enum
 	headerDisconnectOtherPlayer, 
 	headerUpdateZombie,
 	headerUpdatePig,
+	headerCompoundPacket,
 };
 
 enum 

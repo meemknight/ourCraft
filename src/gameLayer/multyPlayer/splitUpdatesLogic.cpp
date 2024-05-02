@@ -57,7 +57,8 @@ int getThredPoolSize()
 }
 
 void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
-	ServerChunkStorer &chunkCache, unsigned int seed, std::unordered_map<std::uint64_t, Client> &clients)
+	ServerChunkStorer &chunkCache, unsigned int seed, std::unordered_map<std::uint64_t, Client> &clients,
+	WorldSaver &worldSaver)
 {
 
 	
@@ -176,7 +177,6 @@ void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
 	#pragma endregion
 
 
-
 		taskTaken.resize(chunkRegionsData.size());
 		for (auto &i : taskTaken) { i = 0; }
 
@@ -240,31 +240,78 @@ void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
 
 		//todo save orphan entities to disk...
 
-	}
-	else
-	{
-		ServerChunkStorer copy;
-		EntityData orphans;
-
-		for (auto &i : chunkCache.savedChunks)
+		auto resetEntitiesInTheirNewChunk = [&](auto &container, auto memberSelector)
 		{
 
-			if (i.second && !i.second->otherData.shouldUnload)
+			for (auto it = container.begin();
+				it != container.end();)
 			{
-				copy.savedChunks.insert(i);
+				auto &e = *it;
+
+				auto pos = determineChunkThatIsEntityIn(e.second.getPosition());
+				auto chunk = chunkCache.getChunkOrGetNull(pos.x, pos.y);
+
+				if (chunk)
+				{
+					auto member = memberSelector(chunk->entityData);
+					member->insert({e.first, e.second});
+				}
+				else
+				{
+
+					//todo change and make in 2 steps
+					worldSaver.appendEntitiesForChunk(pos);
+					//todo save entity to disk here!.
+				}
+
+				it++;
+
 			}
+		};
+
+		for (auto &c : chunkRegionsData)
+		{
+			//save this entities to disk or other chunks...
+
+			resetEntitiesInTheirNewChunk(c.orphanEntities.droppedItems,
+				[](auto &entityData) { return &entityData.droppedItems; });
+
+			resetEntitiesInTheirNewChunk(c.orphanEntities.zombies,
+				[](auto &entityData) { return &entityData.zombies; });
+
+			resetEntitiesInTheirNewChunk(c.orphanEntities.pigs,
+				[](auto &entityData) { return &entityData.pigs; });
+
 
 		}
 
-		doGameTick(tickDeltaTime, currentTimer,
-			copy,
-			orphans,
-			seed);
-
+		chunkRegionsData.clear();
+	}
+	else
+	{
+		//deprecated
+		// 
+		//ServerChunkStorer copy;
+		//EntityData orphans;
+		//
+		//for (auto &i : chunkCache.savedChunks)
+		//{
+		//
+		//	if (i.second && !i.second->otherData.shouldUnload)
+		//	{
+		//		copy.savedChunks.insert(i);
+		//	}
+		//
+		//}
+		//
+		//doGameTick(tickDeltaTime, currentTimer,
+		//	copy,
+		//	orphans,
+		//	seed);
 
 	}
 
-
+	
 	
 
 

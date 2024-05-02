@@ -25,7 +25,7 @@ struct ZombieServer: public ServerEntity<Zombie>
 	int moving = 0;
 	float waitTime = 1;
 
-
+	void appendDataToDisk(std::ofstream &f, std::uint64_t eId);
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
 		ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng);

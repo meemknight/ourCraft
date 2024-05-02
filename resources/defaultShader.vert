@@ -283,7 +283,7 @@ void main()
 
 	v_uv = calculateUVs(gl_VertexID);
 	
-	//todo optimize this
+	//todo don't do animations at far distances.
 	//calculate normals	
 
 	if(in_faceOrientation < 6)

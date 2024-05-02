@@ -27,8 +27,14 @@ struct PigServer: public ServerEntity<Pig>, public AnimalBehaviour < PigServer, 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
 		ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng);
 
+	void appendDataToDisk(std::ofstream &f, std::uint64_t eId);
 
 };
+
+
+
+
+
 
 
 

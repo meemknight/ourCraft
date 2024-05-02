@@ -2,6 +2,7 @@
 #include <glm/vec2.hpp>
 #include <filesystem>
 #include <iostream>
+#include <multyPlayer/serverChunkStorer.h>
 
 constexpr unsigned int CHUNK_PACK = 4;
 
@@ -15,15 +16,47 @@ constexpr int headDist = 1 + (CHUNK_PACK * CHUNK_PACK * sizeof(glm::ivec2));
 //	/*chunks count*/ /*			Chunk positions			*/ /* fully loaded*/ /* chunk data  */
 //
 /////////////////////////////////////////////////////////////////////////////
+
+
+
+glm::ivec2 determineFilePos(glm::ivec2 chunkPos)
+{
+	glm::vec2 floatPos = chunkPos;
+	floatPos /= CHUNK_PACK;
+	const glm::ivec2 filePos = {floorf(floatPos.x), floorf(floatPos.y)};
+	return filePos;
+}
+
+
+void saveEntityIntoOppenedFile(std::ofstream &f)
+{
+
+}
+
+
+template<class T>
+void saveOneEntityTypeIntoOpenFile(std::ofstream &f, T &entityContainer)
+{
+	for (auto &e : entityContainer)
+	{
+		e.second.appendDataToDisk(f, e.first);
+	}
+}
+
+void saveAllEntitiesIntoOpenFile(std::ofstream &f, EntityData &entityData)
+{
+
+	saveOneEntityTypeIntoOpenFile(f, entityData.droppedItems);
+	saveOneEntityTypeIntoOpenFile(f, entityData.zombies);
+	saveOneEntityTypeIntoOpenFile(f, entityData.pigs);
+
+
+}
+
 bool WorldSaver::loadChunk(ChunkData &c)
 {
-	//todo move into a function
-	const glm::ivec2 pos = {c.x, c.z};
 
-	glm::vec2 floatPos = pos;
-	floatPos /= CHUNK_PACK;
-
-	const glm::ivec2 filePos = {floorf(floatPos.x), floorf(floatPos.y)};
+	glm::ivec2 filePos = determineFilePos({c.x, c.z});
 
 	std::string fileName;
 	fileName.reserve(256);
@@ -62,7 +95,7 @@ bool WorldSaver::loadChunk(ChunkData &c)
 	int loadIndex = -1;
 	for (int i = 0; i < count; i++)
 	{
-		if (positions[i] == pos)
+		if (positions[i] == glm::ivec2{c.x, c.z})
 		{
 			loadIndex = i;
 			break;
@@ -88,11 +121,7 @@ void WorldSaver::saveChunk(ChunkData &c)
 {
 
 	const glm::ivec2 pos = {c.x, c.z};
-
-	glm::vec2 floatPos = pos;
-	floatPos /= CHUNK_PACK;
-
-	const glm::ivec2 filePos = {floorf(floatPos.x), floorf(floatPos.y)};
+	const glm::ivec2 filePos = determineFilePos(pos);
 
 	std::string fileName;
 	fileName.reserve(256);
@@ -181,6 +210,144 @@ void WorldSaver::saveChunk(ChunkData &c)
 		//const char* test = "12345678";
 		//f.write(test, 8);
 		//f.write((char*)&pos.x, sizeof(pos.x));
+		f.close();
+	}
+
+}
+
+bool fileIsEmpty(std::ifstream &f)
+{
+	return f.peek() == std::ifstream::traits_type::eof();
+}
+
+void WorldSaver::loadEntityData(EntityData &entityData,
+	glm::ivec2 chunkPosition)
+{
+	const glm::ivec2 pos = {chunkPosition};
+	const glm::ivec2 filePos = (pos);
+
+	std::string fileName;
+	fileName.reserve(256);
+	fileName = savePath;
+	fileName += "/c";
+	fileName += std::to_string(filePos.x);
+	fileName += '_';
+	fileName += std::to_string(filePos.y);
+	fileName += ".entity";
+
+	std::ifstream f(fileName, std::ios::binary);
+
+	if (f.is_open())
+	{
+
+		if(!fileIsEmpty(f))
+		while (!f.eof())
+		{
+			Marker m = 0;
+			bool success = 0;
+			if (readMarker(f, m))
+			{
+				if (m != 0)
+				{
+					std::uint64_t eid = 0;
+					if (success = (readEntityId(f, eid) && eid != 0))
+					{
+
+						switch (m)
+						{
+
+						case Markers::droppedItem:
+						{
+							DroppedItemServer item;
+							if (success = item.loadFromDisk(f))
+							{
+								entityData.droppedItems.insert({eid,item});
+							}
+						}
+						break;
+
+
+						default:
+						success = false;
+						};
+
+
+					}
+				}else
+				{
+					success = false;
+				}
+
+			}
+			else
+			{
+				break;
+			}
+
+			if (!success)
+			{
+				std::cout << "file corupted!\n";
+				break;
+			}
+
+		}
+			
+		f.close();
+
+	}
+	
+
+
+}
+
+void WorldSaver::saveEntitiesForChunk(SavedChunk &c)
+{
+	const glm::ivec2 pos = {c.chunk.x, c.chunk.z};
+	const glm::ivec2 filePos = (pos);
+
+	std::string fileName;
+	fileName.reserve(256);
+	fileName = savePath;
+	fileName += "/c";
+	fileName += std::to_string(filePos.x);
+	fileName += '_';
+	fileName += std::to_string(filePos.y);
+	fileName += ".entity";
+
+	std::ofstream f;
+	f.open(fileName, std::ios::binary | std::ios::trunc);
+
+	if (f.is_open())
+	{
+		saveAllEntitiesIntoOpenFile(f, c.entityData);
+		f.close();
+	}
+
+
+}
+
+//todo
+void WorldSaver::appendEntitiesForChunk(glm::ivec2 chunkPos)
+{
+
+	const glm::ivec2 filePos = (chunkPos);
+
+	std::string fileName;
+	fileName.reserve(256);
+	fileName = savePath;
+	fileName += "/c";
+	fileName += std::to_string(filePos.x);
+	fileName += '_';
+	fileName += std::to_string(filePos.y);
+	fileName += ".entity";
+
+	std::ofstream f;
+	f.open(fileName, std::ios::binary | std::ios::app);
+
+	if (f.is_open())
+	{
+
+
 		f.close();
 	}
 

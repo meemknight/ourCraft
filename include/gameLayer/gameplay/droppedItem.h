@@ -23,5 +23,9 @@ struct DroppedItemServer : public ServerEntity<DroppedItem>
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
 		ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng);
+
+	void appendDataToDisk(std::ofstream &f, std::uint64_t eId);
+
+	bool loadFromDisk(std::ifstream &f);
 };
 

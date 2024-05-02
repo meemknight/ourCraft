@@ -19,6 +19,16 @@ void DroppedItemServer::update(float deltaTime, decltype(chunkGetterSignature) *
 	entity.update(deltaTime, chunkGetter);
 }
 
+void DroppedItemServer::appendDataToDisk(std::ofstream &f, std::uint64_t eId)
+{
+	basicEntitySave(f, Markers::droppedItem, eId, &entity, sizeof(entity));
+}
+
+bool DroppedItemServer::loadFromDisk(std::ifstream &f)
+{
+	return readData(f, &entity, sizeof(entity));
+}
+
 void DroppedItemClient::update(float deltaTime, 
 	decltype(chunkGetterSignature) *chunkGetter)
 {

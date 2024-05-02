@@ -104,6 +104,7 @@ struct SavedChunk
 	
 		//dirty means we should resave it to the disk
 		bool dirty = 0;
+		bool dirtyEntity = 0;
 		bool shouldUnload = 0;
 
 
@@ -154,10 +155,9 @@ struct ServerChunkStorer
 
 	void placeGhostBlocksForChunk(int posX, int posZ, ChunkData &c);
 
-
 	void cleanup();
 
-	void saveNextChunk(WorldSaver &worldSaver, int count = 1);
+	bool saveNextChunk(WorldSaver &worldSaver, int count = 1, int entitySaver = 1);
 
 	void saveChunk(WorldSaver &worldSaver, SavedChunk *savedChunks);
 

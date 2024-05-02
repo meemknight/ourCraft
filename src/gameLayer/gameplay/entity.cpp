@@ -9,6 +9,45 @@
 
 //todo entities should freeze their state completely when chunks are missing
 
+void appendMarker(std::ofstream &f, Marker marker)
+{
+	appendData(f, &marker, sizeof(Marker));
+}
+
+void appendEntityId(std::ofstream &f, std::uint64_t id)
+{
+	appendData(f, &id, sizeof(id));
+}
+
+void appendData(std::ofstream &f, void *data, size_t size)
+{
+	f.write((char*)data, size);
+}
+
+void basicEntitySave(std::ofstream &f, Marker marker, std::uint64_t id, void *data, size_t size)
+{
+	appendMarker(f, marker);
+	appendEntityId(f, id);
+	appendData(f, data, size);
+
+}
+
+bool readMarker(std::ifstream &f, Marker &marker)
+{
+	return readData(f, &marker, sizeof(Marker));
+}
+
+bool readEntityId(std::ifstream &f, std::uint64_t &id)
+{
+	return readData(f, &id, sizeof(id));
+}
+
+bool readData(std::ifstream &f, void *data, size_t size)
+{
+	f.read((char*)data, size);
+	return f.gcount() == size && !f.fail();
+}
+
 void computeRubberBand(RubberBand &rubberBand, float deltaTime)
 {
 	if (rubberBand.initialSize)

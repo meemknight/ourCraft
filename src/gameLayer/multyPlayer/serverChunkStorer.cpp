@@ -65,6 +65,8 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 			//std::cout << "Loaded!\n";
 		}
 
+		worldSaver.loadEntityData(rez->entityData, {posX, posZ});
+
 		savedChunks[pos] = rez;
 
 
@@ -1037,19 +1039,32 @@ void ServerChunkStorer::cleanup()
 
 
 
-void ServerChunkStorer::saveNextChunk(WorldSaver &worldSaver, int count)
+bool ServerChunkStorer::saveNextChunk(WorldSaver &worldSaver, int count, int entitySaver)
 {
+	bool succeeded = 0;
 	for (auto &c : savedChunks)
 	{
-		if (c.second->otherData.dirty)
+		if (c.second->otherData.dirty && count > 0)
 		{
 
 			saveChunk(worldSaver, c.second);
+			succeeded = true;
 
 			count--;
-			if (count <= 0)break;
 		}
+		else if (c.second->otherData.dirtyEntity && entitySaver > 0)
+		{
+			worldSaver.saveEntitiesForChunk(*c.second);
+			c.second->otherData.dirtyEntity = 0;
+			succeeded = true;
+
+			entitySaver--;
+		}
+		else if(count <= 0 && entitySaver <= 0) 
+		{ break; }
 	}
+
+	return succeeded;
 }
 
 
@@ -1057,7 +1072,9 @@ void ServerChunkStorer::saveNextChunk(WorldSaver &worldSaver, int count)
 void ServerChunkStorer::saveChunk(WorldSaver &worldSaver, SavedChunk *savedChunks)
 {
 	worldSaver.saveChunk(savedChunks->chunk);
+	worldSaver.saveEntitiesForChunk(*savedChunks);
 	savedChunks->otherData.dirty = false;
+	savedChunks->otherData.dirtyEntity = false;
 }
 
 
@@ -1070,6 +1087,11 @@ void ServerChunkStorer::saveAllChunks(WorldSaver &worldSaver)
 		{
 			saveChunk(worldSaver, c.second);
 		}
+		else
+		{
+			worldSaver.saveEntitiesForChunk(*c.second);
+			c.second->otherData.dirtyEntity = false;
+		}
 	}
 }
 
@@ -1081,12 +1103,13 @@ int ServerChunkStorer::unloadChunksThatNeedUnloading(WorldSaver &worldSaver, int
 		auto &c = *it;
 		if (c.second->otherData.shouldUnload)
 		{
+			count++;
+
 			if (c.second->otherData.dirty)
 			{
 				saveChunk(worldSaver, c.second);
 			}
 
-			//todo also save entities
 			delete c.second;
 			it = savedChunks.erase(it); // Erase the element
 

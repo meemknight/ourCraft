@@ -80,6 +80,9 @@ struct ServerData
 	int runsPerSeccond = 0;
 	float seccondsTimer = 0;
 
+	float saveEntitiesTimer = 5;
+
+
 }sd;
 
 int outTicksPerSeccond = 0;
@@ -284,7 +287,6 @@ bool spawnPig(
 
 
 
-//todo this things will get removed, maybe
 ServerSettings getServerSettingsCopy()
 {
 	return sd.settings;
@@ -317,6 +319,7 @@ void serverWorkerUpdate(
 	sd.tickTimer += deltaTime;
 	sd.seccondsTimer += deltaTime;
 	sd.tickDeltaTime += deltaTime;
+	sd.saveEntitiesTimer -= deltaTime;
 #pragma endregion
 
 	auto &settings = sd.settings;
@@ -565,18 +568,19 @@ void serverWorkerUpdate(
 				auto c = getAllClients();
 
 
-				Pig p;
-				glm::dvec3 position = c.begin()->second.playerData.entity.position;
-				p.position = position;
-				p.lastPosition = position;
-				spawnPig(sd.chunkCache, p);
-
-
-				//Zombie z;
+				//Pig p;
 				//glm::dvec3 position = c.begin()->second.playerData.entity.position;
-				//z.position = position;
-				//z.lastPosition = position;
-				//spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement());
+				//p.position = position;
+				//p.lastPosition = position;
+				//spawnPig(sd.chunkCache, p);
+
+
+				Zombie z;
+				glm::dvec3 position = c.begin()->second.playerData.entity.position;
+				z.position = position;
+				z.lastPosition = position;
+				spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement());
+
 			}
 
 
@@ -586,7 +590,7 @@ void serverWorkerUpdate(
 		updateLoadedChunks(wg, structuresManager, biomesManager, sendNewBlocksToPlayers,
 			worldSaver);
 	
-		sd.chunkCache.unloadChunksThatNeedUnloading(worldSaver, 100);
+		sd.chunkCache.unloadChunksThatNeedUnloading(worldSaver, 10);
 
 		//todo error and warning logs for server.
 
@@ -595,7 +599,7 @@ void serverWorkerUpdate(
 
 		//todo get all clients should probably dissapear.
 		auto c = getAllClients();
-		splitUpdatesLogic(sd.tickDeltaTime, currentTimer, sd.chunkCache, rng(), c);
+		splitUpdatesLogic(sd.tickDeltaTime, currentTimer, sd.chunkCache, rng(), c, worldSaver);
 
 		sd.tickDeltaTime = 0;
 	}
@@ -662,6 +666,16 @@ void serverWorkerUpdate(
 	//save one chunk on disk
 	sd.chunkCache.saveNextChunk(worldSaver);
 
+	if (sd.saveEntitiesTimer <= 0)
+	{
+		sd.saveEntitiesTimer = 5;
+
+		for (auto &c : sd.chunkCache.savedChunks)
+		{
+			c.second->otherData.dirtyEntity = true;
+		}
+
+	}
 
 }
 

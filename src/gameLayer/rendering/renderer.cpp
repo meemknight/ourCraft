@@ -2141,7 +2141,7 @@ glm::mat4 calculateLightProjectionMatrix(Camera &camera, glm::vec3 lightDir,
 			maxVal.y = newVecValues.y;
 		}
 
-		{//todo this size probably can be far-close
+		{//this size probably can be far-close
 			float ratio = longestDiagonal / thirdSize;
 
 			glm::vec2 newVecValues = {minVal.z, maxVal.z};

@@ -46,3 +46,7 @@ void PigServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGet
 	entity.update(deltaTime, chunkGetter);
 
 }
+
+void PigServer::appendDataToDisk(std::ofstream &f, std::uint64_t eId)
+{
+}

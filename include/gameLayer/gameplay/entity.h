@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <random>
 #include <glm/gtx/rotate_vector.hpp>
+#include <fstream>
 
 //basic entity structure
 //
@@ -10,19 +11,50 @@
 //	struct Zombie: public PhysicalEntity
 //	{
 //		//update method needed
-//		void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
+//		void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
+//			ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng);
+// 
+//		//save method needed
+//		void appendDataToDisk(std::ofstream &f, std::uint64_t eId);
 //	};
 //
 //
 //	than add the updates in do all updates in entity maanger client
 //	and also in the server game tick update.
 //
-//
+
+
+namespace Markers
+{
+	enum
+	{
+		none = 0,
+		droppedItem,
+
+
+	};
+};
+
+using Marker = unsigned int;
+
+void appendMarker(std::ofstream &f, Marker marker);
+
+void appendEntityId(std::ofstream &f, std::uint64_t id);
+
+void appendData(std::ofstream &f, void *data, size_t size);
+
+void basicEntitySave(std::ofstream &f, Marker marker, std::uint64_t id, void *data, size_t size);
+
+
+bool readMarker(std::ifstream &f, Marker &marker);
+
+bool readEntityId(std::ifstream &f, std::uint64_t &id);
+
+bool readData(std::ifstream &f, void *data, size_t size);
 
 
 
 struct ServerChunkStorer;
-
 
 struct RubberBand
 {
