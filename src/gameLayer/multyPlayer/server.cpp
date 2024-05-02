@@ -94,6 +94,7 @@ int getServerTicksPerSeccond()
 
 void clearSD(WorldSaver &worldSaver)
 {
+	worldSaver.saveEntityId(getCurrentEntityId());
 	sd.chunkCache.saveAllChunks(worldSaver);
 	sd.chunkCache.cleanup();
 	closeThreadPool();
@@ -265,7 +266,7 @@ bool spawnZombie(
 
 bool spawnPig(
 	ServerChunkStorer &chunkManager,
-	Pig pig)
+	Pig pig, WorldSaver &worldSaver)
 {
 	//todo also send packets
 	auto chunkPos = determineChunkThatIsEntityIn(pig.position);
@@ -275,7 +276,7 @@ bool spawnPig(
 	{
 		PigServer e = {};
 		e.entity = pig;
-		c->entityData.pigs.insert({getEntityIdAndIncrement(), e});
+		c->entityData.pigs.insert({getEntityIdAndIncrement(worldSaver), e});
 	}
 	else
 	{
@@ -491,7 +492,7 @@ void serverWorkerUpdate(
 						serverAllows = false; 
 					}
 
-					auto newId = getEntityIdAndIncrement();
+					auto newId = getEntityIdAndIncrement(worldSaver);
 
 					if (computeRevisionStuff(*client, true && serverAllows, i.t.eventId,
 						&i.t.entityId, &newId))
@@ -579,7 +580,7 @@ void serverWorkerUpdate(
 				glm::dvec3 position = c.begin()->second.playerData.entity.position;
 				z.position = position;
 				z.lastPosition = position;
-				spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement());
+				spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement(worldSaver));
 
 			}
 

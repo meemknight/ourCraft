@@ -37,5 +37,8 @@ void broadCastNotLocked(Packet p, void *data, size_t size, ENetPeer *peerToIgnor
 bool checkIfPlayerShouldGetChunk(glm::ivec2 playerPos2D,
 	glm::ivec2 chunkPos, int playerSquareDistance);
 
-std::uint64_t getEntityIdNowLocked();
-std::uint64_t getEntityIdAndIncrement();
+
+std::uint64_t getEntityIdAndIncrement(WorldSaver &worldSaver);
+
+std::uint64_t getCurrentEntityId();
+

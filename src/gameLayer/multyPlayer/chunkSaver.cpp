@@ -370,3 +370,38 @@ void WorldSaver::loadChunkAtIndex(std::fstream &f, ChunkData &c, int index)
 	f.seekg(headDist + (chunkDataSize * index), std::ios_base::beg);
 	f.read((char *)c.blocks, chunkDataSize);
 }
+
+void WorldSaver::saveEntityId(std::uint64_t eid)
+{
+	std::string fileName;
+	fileName.reserve(256);
+	fileName = savePath;
+	fileName += "/eid.bin";
+	std::ofstream f;
+	f.open(fileName, std::ios::binary | std::ios::trunc);
+
+	appendData(f, &eid, sizeof(eid));
+
+	f.close();
+}
+
+//todo try to recover if fails
+bool WorldSaver::loadEntityId(std::uint64_t &eid)
+{
+
+	std::string fileName;
+	fileName.reserve(256);
+	fileName = savePath;
+	fileName += "/eid.bin";
+	std::ifstream f;
+	f.open(fileName, std::ios::binary);
+	bool success = 0;
+
+	if (f.is_open())
+	{
+		success = readData(f, &eid, sizeof(eid));
+		f.close();
+	}
+
+	return success;
+}

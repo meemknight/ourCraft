@@ -28,12 +28,19 @@ std::unordered_map<std::uint64_t, Client> connections;
 static std::uint64_t entityId = RESERVED_CLIENTS_ID + 1;
 static std::thread enetServerThread;
 
-std::uint64_t getEntityIdNowLocked() { return entityId; }
 
-std::uint64_t getEntityIdAndIncrement()
+std::uint64_t getEntityIdAndIncrement(WorldSaver &worldSaver)
 {
 	std::uint64_t id = entityId;
 	entityId++;
+
+	worldSaver.saveEntityId(entityId);
+
+	return entityId;
+}
+
+std::uint64_t getCurrentEntityId()
+{
 	return entityId;
 }
 
@@ -121,10 +128,10 @@ void broadcastNewConnectionMessage(ENetPeer *peerToIgnore, Client c, std::uint64
 		sizeof(data), peerToIgnore, true, channelHandleConnections);
 }
 
-void addConnection(ENetHost *server, ENetEvent &event)
+void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 {
 
-	std::uint64_t id = getEntityIdAndIncrement();
+	std::uint64_t id = getEntityIdAndIncrement(worldSaver);
 
 	glm::dvec3 spawnPosition(0, 107, 0);
 
@@ -441,6 +448,16 @@ void enetServerFunction()
 	std::vector<ServerTask> serverTasks;
 	serverTasks.reserve(100);
 
+	if (!worldSaver.loadEntityId(entityId))
+	{
+		//todo try to fix corupted data here.
+		entityId = RESERVED_CLIENTS_ID + 1;
+	}else
+	if (entityId < RESERVED_CLIENTS_ID + 1)
+	{
+		entityId = RESERVED_CLIENTS_ID + 1;
+	}
+
 	while (enetServerRunning)
 	{
 		auto stop = std::chrono::high_resolution_clock::now();
@@ -465,7 +482,7 @@ void enetServerFunction()
 			{
 				case ENET_EVENT_TYPE_CONNECT:
 				{
-					addConnection(server, event);
+					addConnection(server, event, worldSaver);
 
 					std::cout << "Successfully connected!\n";
 
