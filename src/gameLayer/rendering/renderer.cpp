@@ -1830,7 +1830,6 @@ void Renderer::renderEntities(
 
 
 
-
 	glBindVertexArray(0);
 
 

@@ -740,7 +740,7 @@ void updateLoadedChunks(
 					auto finalPos = pos + glm::ivec2(i, j);
 					auto c = sd.chunkCache.getOrCreateChunk(finalPos.x, finalPos.y,
 						wg, structureManager, biomesManager, sendNewBlocksToPlayers, true,
-						nullptr, worldSaver, false
+						nullptr, worldSaver, nullptr
 						);
 
 					if (c)

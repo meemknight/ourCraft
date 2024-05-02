@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <iostream>
 #include <multyPlayer/serverChunkStorer.h>
+#include <cmath>
 
 constexpr unsigned int CHUNK_PACK = 4;
 
