@@ -102,6 +102,30 @@ bool ClientEntityManager::dropItemByClient(glm::dvec3 position, BlockType blockT
 	return true;
 }
 
+void ClientEntityManager::removeEntity(std::uint64_t entityId)
+{
+
+	auto tryRemove = [&](auto &container)
+	{
+		auto found = container.find(entityId);
+		if (found != container.end())
+		{
+			container.erase(found);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	};
+	
+	if (!tryRemove(droppedItems))
+	if (!tryRemove(zombies))
+	if (!tryRemove(pigs))
+	{}
+
+}
+
 void ClientEntityManager::removeDroppedItem(std::uint64_t entityId)
 {
 	auto f = droppedItems.find(entityId);

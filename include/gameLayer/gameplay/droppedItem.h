@@ -21,8 +21,11 @@ struct DroppedItemServer : public ServerEntity<DroppedItem>
 {
 	float restantTime = 0;
 
-	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
-		ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng);
+	float stayTimer = 5;
+
+	bool update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
+		ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng, std::uint64_t yourEID,
+		std::unordered_set<std::uint64_t> &othersDeleted);
 
 	void appendDataToDisk(std::ofstream &f, std::uint64_t eId);
 

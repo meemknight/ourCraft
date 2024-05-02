@@ -347,6 +347,17 @@ void recieveDataClient(ENetEvent &event,
 			break;
 		}
 
+		case headerRemoveEntity:
+		{
+			if (sizeof(Packet_RemoveEntity) != size) { break; } //todo logs or something
+
+			Packet_RemoveEntity *p = (Packet_RemoveEntity *)data;
+
+			entityManager.removeEntity(p->EID);
+
+			break;
+		}
+
 		//disconnect other player
 		case headerDisconnectOtherPlayer:
 		{

@@ -4,6 +4,7 @@
 #include <random>
 #include <glm/gtx/rotate_vector.hpp>
 #include <fstream>
+#include <unordered_set>
 
 //basic entity structure
 //

@@ -27,8 +27,10 @@ struct ZombieServer: public ServerEntity<Zombie>
 
 	void appendDataToDisk(std::ofstream &f, std::uint64_t eId);
 
-	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
-		ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng);
+	bool update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
+		ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng, std::uint64_t yourEID,
+		std::unordered_set<std::uint64_t> &othersDeleted);
+
 };
 
 void animatePlayerHandsZombie(glm::mat4 *poseVector, float &currentAngle, float deltaTime);

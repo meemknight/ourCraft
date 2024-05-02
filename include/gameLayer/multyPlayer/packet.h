@@ -60,6 +60,7 @@ enum
 	headerDisconnectOtherPlayer, 
 	headerUpdateZombie,
 	headerUpdatePig,
+	headerRemoveEntity,
 	headerCompoundPacket,
 };
 
@@ -96,6 +97,11 @@ struct Packet_UpdateZombie
 	Zombie entity = {};
 	std::uint64_t eid = 0;
 	std::uint64_t timer = 0;
+};
+
+struct Packet_RemoveEntity
+{
+	std::uint64_t EID = 0;
 };
 
 

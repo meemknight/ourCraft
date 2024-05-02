@@ -36,8 +36,9 @@ void PigClient::setEntityMatrix(glm::mat4 *skinningMatrix)
 
 
 
-void PigServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
-	ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng)
+bool PigServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
+	ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng, std::uint64_t yourEID,
+	std::unordered_set<std::uint64_t> &othersDeleted)
 {
 
 	updateAnimalBehaviour(deltaTime, chunkGetter, serverChunkStorer, rng);
@@ -45,6 +46,8 @@ void PigServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGet
 
 	entity.update(deltaTime, chunkGetter);
 
+
+	return true;
 }
 
 void PigServer::appendDataToDisk(std::ofstream &f, std::uint64_t eId)

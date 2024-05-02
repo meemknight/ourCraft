@@ -19,14 +19,27 @@ void genericBroadcastEntityUpdateFromServerToPlayer(E &e, bool reliable,
 
 	broadCast(packet, &packetData, sizeof(packetData),
 		nullptr, reliable, channelEntityPositions);
+}
 
+void genericBroadcastEntityDeleteFromServerToPlayer(std::uint64_t eid, bool reliable)
+{
+	Packet packet;
+	packet.header = headerRemoveEntity;
+
+	Packet_RemoveEntity data;
+	data.EID = eid;
+
+	broadCast(packet, &data, sizeof(data),
+		nullptr, reliable, channelEntityPositions);
 }
 
 
 template<class T>
-void genericCallUpdateForEntity(T &e,
+bool genericCallUpdateForEntity(T &e,
 	float deltaTime, ChunkData *(chunkGetter)(glm::ivec2),
-	ServerChunkStorer &chunkCache, std::minstd_rand &rng)
+	ServerChunkStorer &chunkCache, std::minstd_rand &rng, 
+	std::unordered_set<std::uint64_t> &othersDeleted
+	)
 {
 	float time = deltaTime;
 	if constexpr (hasRestantTimer<decltype(e.second)>)
@@ -34,15 +47,19 @@ void genericCallUpdateForEntity(T &e,
 		time = deltaTime + e.second.restantTime;
 	}
 
+	bool rez = 1;
 	if (time > 0)
 	{
-		e.second.update(time, chunkGetter, chunkCache, rng);
+		rez = e.second.update(time, chunkGetter, chunkCache, rng, e.first,
+			othersDeleted);
 	}
 
 	if constexpr (hasRestantTimer<decltype(e.second)>)
 	{
 		e.second.restantTime = 0;
 	}
+
+	return rez;
 };
 
 
@@ -75,6 +92,7 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 
 #pragma region entity updates
 
+	std::unordered_set<std::uint64_t> othersDeleted;
 
 	for (auto &c : chunkCache.savedChunks)
 	{	
@@ -91,24 +109,36 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 			{
 				auto &e = *it;
 
-				genericCallUpdateForEntity(e, deltaTime, chunkGetter, chunkCache, rng);
+				bool rez = genericCallUpdateForEntity(e, deltaTime, chunkGetter, chunkCache, rng, othersDeleted);
 				auto newChunk = determineChunkThatIsEntityIn(e.second.getPosition());
 
-				//todo this should take into acount if that player should recieve it
-				genericBroadcastEntityUpdateFromServerToPlayer
-					< decltype(packetType)>(e, false, currentTimer, packetId);
-
-				if (initialChunk != newChunk)
+				if (!rez)
 				{
-					orphanContainer.insert(
-						{e.first, e.second});
 
+					genericBroadcastEntityDeleteFromServerToPlayer(it->first, true);
+
+					//remove entity
 					it = container.erase(it);
 				}
 				else
 				{
-					++it;
+					//todo this should take into acount if that player should recieve it
+					genericBroadcastEntityUpdateFromServerToPlayer
+						< decltype(packetType)>(e, false, currentTimer, packetId);
+
+					if (initialChunk != newChunk)
+					{
+						orphanContainer.insert(
+							{e.first, e.second});
+
+						it = container.erase(it);
+					}
+					else
+					{
+						++it;
+					}
 				}
+				
 			}
 		};
 
@@ -123,6 +153,11 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 
 	}
 
+	for (auto eid : othersDeleted)
+	{
+		genericBroadcastEntityDeleteFromServerToPlayer(eid, true);
+
+	}
 	
 	auto resetEntitiesInTheirNewChunk = [&](auto &container, auto memberSelector)
 	{

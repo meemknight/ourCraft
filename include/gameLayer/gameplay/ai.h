@@ -5,7 +5,8 @@
 #include <glm/gtx/rotate_vector.hpp>
 #include <gameplay/entity.h>
 #include <chunk.h>
-#include <gameplay/player.h>
+#include <gameplay/player.h>	
+#include <array>
 
 
 struct PigDefaultSettings
@@ -33,6 +34,22 @@ struct AnimalBehaviour
 
 };
 
+inline std::array<glm::ivec2, 9> *getChunkNeighboursOffsets()
+{
+	static std::array<glm::ivec2, 9> checkOffsets = {
+		glm::ivec2(0,0),
+		glm::ivec2(1,0),
+		glm::ivec2(-1,0),
+		glm::ivec2(0,1),
+		glm::ivec2(0,-1),
+		glm::ivec2(1,-1),
+		glm::ivec2(-1,-1),
+		glm::ivec2(1,1),
+		glm::ivec2(-1,1),
+	};
+
+	return &checkOffsets;
+};
 
 template<class E, class SETTINGS>
 inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
@@ -45,17 +62,6 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 		return glm::length(a - b) <= 15.f;
 	};
 
-	static glm::ivec2 checkOffsets[9] = {
-		glm::ivec2(0,0),
-		glm::ivec2(1,0),
-		glm::ivec2(-1,0),
-		glm::ivec2(0,1),
-		glm::ivec2(0,-1),
-		glm::ivec2(1,-1),
-		glm::ivec2(-1,-1),
-		glm::ivec2(1,1),
-		glm::ivec2(-1,1),
-	};
 
 	std::vector<std::uint64_t> playersClose;
 
@@ -203,7 +209,7 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 		playersClose.clear();
 
 		//todo also check distance < 15 blocks
-		for (auto offset : checkOffsets)
+		for (auto offset : *getChunkNeighboursOffsets())
 		{
 			glm::ivec2 pos = chunkPosition + offset;
 			auto c = serverChunkStorer.getChunkOrGetNull(pos.x, pos.y);
@@ -267,7 +273,7 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 	if (playerFollow)
 	{
 		PlayerServer *found = 0;
-		for (auto offset : checkOffsets)
+		for (auto offset : *getChunkNeighboursOffsets())
 		{
 			glm::ivec2 pos = chunkPosition + offset;
 			auto c = serverChunkStorer.getChunkOrGetNull(pos.x, pos.y);

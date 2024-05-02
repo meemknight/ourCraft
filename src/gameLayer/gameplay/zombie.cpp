@@ -53,8 +53,9 @@ void ZombieServer::appendDataToDisk(std::ofstream &f, std::uint64_t eId)
 {
 }
 
-void ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
-	ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng)
+bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
+	ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng, std::uint64_t yourEID,
+	std::unordered_set<std::uint64_t> &othersDeleted)
 {
 
 	//waitTime -= deltaTime;
@@ -80,5 +81,7 @@ void ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 	getPosition().x += 4 * deltaTime;
 
 	entity.update(deltaTime, chunkGetter);
+
+	return true;
 }
 
