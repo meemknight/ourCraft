@@ -72,7 +72,95 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 		if (foundNode != path.second.end())
 		{
-	     	glm::vec3 d = glm::dvec3(foundNode->second.returnPos) - getPosition();
+
+			std::pair<glm::ivec3, PathFindingNode> interPolateNode = *foundNode;
+			std::pair<glm::ivec3, PathFindingNode> interPolateNodeNotGood = *foundNode;
+
+			int originalHeight = pos.y;
+
+			int maxCounterLoop = 100;
+			while (maxCounterLoop > 0) 
+			{
+				maxCounterLoop--;
+
+				if (originalHeight != interPolateNodeNotGood.second.returnPos.y)
+				{
+					break;
+				}
+
+				auto newFoundNode = path.second.find(interPolateNodeNotGood.second.returnPos);
+
+				if (newFoundNode != path.second.end())
+				{
+					if (newFoundNode->second.level > 0)
+					{
+						
+						glm::dvec3 direction = glm::dvec3(newFoundNode->second.returnPos) - getPosition();
+
+						direction.y = 0;
+						direction = glm::normalize(direction);
+
+						bool problems = 0;
+
+						//try interpolation
+						int maxCounter = 100;//so we don't get infinite loops
+						for (glm::dvec3 start = getPosition(); maxCounter>0;maxCounter--)
+						{
+							start += direction * 0.6;
+
+							glm::dvec3 direction2 = glm::dvec3(newFoundNode->second.returnPos) - start;
+							direction2.y = 0;
+
+							if (glm::dot(direction, direction2) < 0.f) { break; }
+
+							glm::ivec3 blockPos = fromBlockPosToBlockPosInChunk(start);
+							blockPos.y += 1;
+
+							auto b = serverChunkStorer.getBlockSafe(blockPos);
+							if (b && b->isColidable())
+							{
+								problems = true;
+								break;
+							}
+							
+							//blockPos.y -= 2;
+							//auto b2 = serverChunkStorer.getBlockSafe(blockPos);
+							//if (!b2 || !b2->isColidable())
+							//{
+							//	problems = true;
+							//	break;
+							//}
+
+						}
+						
+						if (problems)
+						{
+							interPolateNodeNotGood = *newFoundNode;
+						}
+						else
+						{
+							interPolateNodeNotGood = *newFoundNode;
+							interPolateNode = *newFoundNode;
+						}
+
+						if (maxCounter <= 0) { break; }
+
+					}
+					else
+					{
+						break;
+					}
+				}
+				else
+				{
+					break;
+				}
+
+			}
+
+
+	     	glm::vec3 d = glm::dvec3(interPolateNode.second.returnPos)
+				- getPosition();
 			d.y = 0;
 
 			direction.x = d.x;

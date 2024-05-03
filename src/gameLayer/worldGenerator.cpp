@@ -2,6 +2,7 @@
 #include "FastNoiseSIMD.h"
 #include "FastNoise/FastNoise.h"
 #include <cmath>
+#include <algorithm>
 
 constexpr int startLevel = 45;
 constexpr int waterLevel = 65;
