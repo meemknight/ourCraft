@@ -1,10 +1,13 @@
 #pragma once 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
 #include <gameplay/physics.h>
 #include <glm/glm.hpp>
 #include <random>
 #include <glm/gtx/rotate_vector.hpp>
 #include <fstream>
 #include <unordered_set>
+#include <rendering/camera.h>
 
 //basic entity structure
 //
@@ -54,6 +57,12 @@ bool readEntityId(std::ifstream &f, std::uint64_t &id);
 bool readData(std::ifstream &f, void *data, size_t size);
 
 
+
+struct PathFindingNode
+{
+	glm::ivec3 returnPos = {};
+	int level = 0;
+};
 
 struct ServerChunkStorer;
 

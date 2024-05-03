@@ -139,7 +139,8 @@ struct ServerChunkStorer
 		std::vector<glm::ivec3> *controlBlocks);
 
 
-	//todo rename? or what? there are checks here so
+	Block *getBlockSafe(glm::ivec3 pos);
+
 	Block *tryGetBlockIfChunkExistsNoChecks(glm::ivec3 pos);
 
 

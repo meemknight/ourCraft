@@ -558,29 +558,26 @@ void serverWorkerUpdate(
 
 		{
 
-			static bool did = 0;
-
 			if (settings.perClientSettings.begin()->second.spawnZombie)
 			{
 				settings.perClientSettings.begin()->second.spawnZombie = false;
 
-				did = true;
 
 				auto c = getAllClients();
 
 
-				Pig p;
-				glm::dvec3 position = c.begin()->second.playerData.entity.position;
-				p.position = position;
-				p.lastPosition = position;
-				spawnPig(sd.chunkCache, p, worldSaver);
-
-
-				//Zombie z;
+				//Pig p;
 				//glm::dvec3 position = c.begin()->second.playerData.entity.position;
-				//z.position = position;
-				//z.lastPosition = position;
-				//spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement(worldSaver));
+				//p.position = position;
+				//p.lastPosition = position;
+				//spawnPig(sd.chunkCache, p, worldSaver);
+
+
+				Zombie z;
+				glm::dvec3 position = c.begin()->second.playerData.entity.position;
+				z.position = position;
+				z.lastPosition = position;
+				spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement(worldSaver));
 
 			}
 

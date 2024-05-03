@@ -74,7 +74,7 @@ void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
 
 		auto chunk = chunkCache.getChunkOrGetNull(cPos.x, cPos.y);
 
-		permaAssertComment(chunk, "A chunk that a player is in unloaded...");
+		permaAssertComment(chunk, "Error, A chunk that a player is in unloaded...");
 
 		chunk->entityData.players.insert({client.first, client.second.playerData});
 
@@ -184,6 +184,12 @@ void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
 		{
 			c.seed = rng();
 		}
+
+		//todo fix lol
+		//if (chunkRegionsData.size() > 1)
+		//{
+		//	std::cout << chunkRegionsData.size() << "!!!\n";
+		//}
 
 	#pragma region set threads count
 		{
@@ -311,7 +317,13 @@ void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
 
 	}
 
-	
+	for (auto &c : chunkCache.savedChunks)
+	{
+		for (auto &p : c.second->entityData.players)
+		{
+			clients[p.first].playerData = p.second;
+		}
+	}
 	
 
 

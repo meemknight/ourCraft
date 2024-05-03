@@ -55,8 +55,37 @@ void ZombieServer::appendDataToDisk(std::ofstream &f, std::uint64_t eId)
 
 bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
 	ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng, std::uint64_t yourEID,
-	std::unordered_set<std::uint64_t> &othersDeleted)
+	std::unordered_set<std::uint64_t> &othersDeleted,
+	std::unordered_map<std::uint64_t, std::unordered_map<glm::ivec3, PathFindingNode>> &pathFinding
+)
 {
+
+	direction = {0,0};
+	if (!pathFinding.empty())
+	{
+
+		auto &path = *pathFinding.begin();
+
+		auto pos = from3DPointToBlock(getPosition());
+
+		auto foundNode = path.second.find(pos);
+
+		if (foundNode != path.second.end())
+		{
+	     	glm::vec3 d = glm::dvec3(foundNode->second.returnPos) - getPosition();
+			d.y = 0;
+
+			direction.x = d.x;
+			direction.y = d.z;
+
+			if (glm::length(direction) != 0)
+			{
+				direction = glm::normalize(direction);
+			}
+		}
+
+	}
+
 
 	//waitTime -= deltaTime;
 	//
@@ -78,7 +107,9 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 	//	getPosition().z += move.y;
 	//}
 
-	getPosition().x += 4 * deltaTime;
+	auto move = 2.f * deltaTime * direction;
+	getPosition().x += move.x;
+	getPosition().z += move.y;
 
 	entity.update(deltaTime, chunkGetter);
 

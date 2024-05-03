@@ -1636,12 +1636,14 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		warpShader.shader.bind();
 
+		glm::vec3 underWater = defaultShader.shadingSettings.underWaterColor;
+
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, fboMain.color);
 		glUniform1i(warpShader.u_color, 0);
 		glUniform1f(warpShader.u_time, timeGrass); //todo change
-		glUniform3f(warpShader.u_underwaterColor, defaultShader.shadingSettings.underWaterColor.x,
-			defaultShader.shadingSettings.underWaterColor.y, defaultShader.shadingSettings.underWaterColor.z);
+		glUniform3f(warpShader.u_underwaterColor, underWater.x,
+			underWater.y, underWater.z);
 
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, fboMain.secondaryColor);

@@ -56,7 +56,7 @@ void main()
 
 		//optional extra fog under water
 		//outColor.rgb = mix(outColor.rgb, u_underwaterColor, (1-computeFogUnderWater(dist)) * 0.9);
-
+ 
 
 	}
 
