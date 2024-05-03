@@ -44,6 +44,7 @@ bool initGame()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	
 	programData.causticsTexture.loadFromFile(RESOURCES_PATH "otherTextures/caustics.jpg", false, true);
+	//programData.causticsTexture.loadFromFile(RESOURCES_PATH "otherTextures/caustics3.png", false, true);
 	//programData.causticsTexture.loadFromFile(RESOURCES_PATH "otherTextures/test.jpg", false, true);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);

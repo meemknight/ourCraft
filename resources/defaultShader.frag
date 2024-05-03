@@ -1030,6 +1030,11 @@ vec2 reprojectViewSpace(vec2 currentTextureSpacePos)
 
 //position view space -> proj matrix -> perspective divide -> ndc
 
+float luminosity(vec3 a)
+{
+	return dot(a, vec3(0.21,0.72,0.07));
+}
+
 
 void main()
 {
@@ -1209,7 +1214,7 @@ void main()
 			//dudv += texture(u_dudv, getDudvCoords2(waterSpeed*0.1)).rg * 0.4;
 			//dudv *= texture(u_dudv, getDudvCoords2(1)).rg;
 
-			vec2 coords = getDudvCoords(1) * causticsTextureScale + dudv / 10;
+			vec2 coords = getDudvCoords(5.f) * causticsTextureScale + dudv / 10;
 			//vec2 coords = dudv * ;
 			
 
@@ -1313,9 +1318,18 @@ void main()
 
 		if(u_underWater != 0)
 		{
+
+
+			float finalCoeficient = (computeFogUnderWater(viewLength)) * u_underwaterDarkenStrength 
+								+ (1-u_underwaterDarkenStrength);
+
+			float causticsBias = luminosity(causticsColor);
+
+			finalCoeficient += causticsBias * 0.1;
+
+			finalCoeficient = clamp(finalCoeficient, 0, 1);
 			out_color.rgb = mix(u_underWaterColor.rgb, out_color.rgb, 
-								vec3(computeFogUnderWater(viewLength)) * u_underwaterDarkenStrength 
-								+ (1-u_underwaterDarkenStrength)
+								finalCoeficient
 							);
 		}
 
@@ -1543,8 +1557,10 @@ void main()
 		}
 
 
+		//fog
 		if(u_underWater == 0)
 		{
+
 			out_color.rgb = mix(skyBoxColor, out_color.rgb, 
 								computeFog(viewLength)
 							);

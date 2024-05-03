@@ -931,6 +931,15 @@ void Renderer::reloadShaders()
 	glBindBufferBase(GL_UNIFORM_BUFFER,
 		applyHBAOShader.u_shadingSettings, defaultShader.shadingSettingsBuffer);
 
+
+	warpShader.shader.clear();
+	warpShader.shader.loadShaderProgramFromFile(
+		RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
+		RESOURCES_PATH "shaders/postProcess/warp.frag");
+	GET_UNIFORM2(warpShader, u_color);
+	GET_UNIFORM2(warpShader, u_time);
+
+
 #pragma endregion
 	
 }
@@ -1429,6 +1438,12 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		fboLastFramePositions.copyColorFromOtherFBO(fboMain.fboOnlySecondTarget, screenX, screenY);
 	};
 
+	auto copyToMainFboOnlyLastFrameStuff = [&]()
+	{
+		fboLastFrame.copyColorFromOtherFBO(fboMain.fboOnlyFirstTarget, screenX, screenY);
+		fboLastFramePositions.copyColorFromOtherFBO(fboMain.fboOnlySecondTarget, screenX, screenY);
+	};
+
 	auto renderTransparentGeometryPhaze = [&](bool hasPeelInformation)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
@@ -1530,10 +1545,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	#pragma endregion
 
 
-	#pragma region copy to main fbo 8
-		copyToMainFbo();
-	#pragma endregion
-
 	}
 	else
 	{
@@ -1548,15 +1559,12 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		renderTransparentGeometryPhaze(false);
 
-		copyToMainFbo();
 
 	}
 
+#pragma region post process
 
-
-#pragma region HBAO
-
-
+	//hbao
 	if (1)
 	{
 		glViewport(0, 0, fboHBAO.size.x, fboHBAO.size.y);
@@ -1591,7 +1599,10 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		//apply hbao
 		glDisable(GL_DEPTH_TEST);
 		glViewport(0, 0, screenX, screenY);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fboOnlyFirstTarget);
+		
+		
 		applyHBAOShader.shader.bind();
 		glEnable(GL_BLEND);
 		glActiveTexture(GL_TEXTURE0);
@@ -1601,17 +1612,44 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, fboMain.secondaryColor);
 		glUniform1i(applyHBAOShader.u_currentViewSpace, 1);
-		
 
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-		glEnable(GL_DEPTH_TEST);
 
 	};
+
+	//warp
+	if (underWater)
+	{
+		glBindVertexArray(vaoQuad);
+
+		glDisable(GL_BLEND);
+		glDisable(GL_DEPTH_TEST);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		warpShader.shader.bind();
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, fboMain.color);
+		glUniform1i(warpShader.u_color, 0);
+		glUniform1f(warpShader.u_time, timeGrass); //todo change
+
+
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+		copyToMainFboOnlyLastFrameStuff();
+	}
+	else
+	{
+		copyToMainFbo();
+	}
 
 #pragma endregion
 
 
+
+	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
 	glBindVertexArray(0);

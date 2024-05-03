@@ -140,6 +140,13 @@ struct Renderer
 
 	}applyHBAOShader;
 
+	struct WarpShader
+	{
+		Shader shader;
+		uniform u_color = 0;
+		uniform u_time = 0;
+	}warpShader;
+
 	struct ZpassShader
 	{
 		Shader shader;
