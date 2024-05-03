@@ -256,7 +256,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				int heightOffset = height + wg.densityHeightoffset;
 				int difference = y - heightOffset;
 				float differenceMultiplier =
-					glm::clamp(pow(abs(difference) / squishFactor, wg.densitySquishPower),
+					glm::clamp(std::pow(std::abs(difference) / squishFactor, wg.densitySquishPower),
 					1.f, 10.f);
 
 				if (difference > 0)

@@ -198,12 +198,25 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 
 			glm::ivec3 pos = from3DPointToBlock(playersPosition.begin()->pos);
 
-			PathFindingNode root;
-			root.returnPos = pos;
-			root.level = 0;
+			//project players position down down
+			for(int i=1; i<4; i++)
+			{
 
-			queue.push_back(root);
-			positions.emplace(pos, root);
+				auto b = chunkCache.getBlockSafe(pos - glm::ivec3(0,i,0));
+
+				if (!b) { break; }
+
+				if (b->isColidable())
+				{
+					PathFindingNode root;
+					root.returnPos = pos - glm::ivec3(0, i-1, 0);
+					root.level = 0;
+
+					queue.push_back(root);
+					positions.emplace(pos - glm::ivec3(0, i-1, 0), root);
+					break;
+				}
+			}
 
 			while (!queue.empty())
 			{

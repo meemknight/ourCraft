@@ -195,6 +195,20 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 	//	getPosition().z += move.y;
 	//}
 
+	//jump
+	{
+		auto blockPos = getPosition();
+		blockPos.x += direction.x;
+		blockPos.z += direction.y;
+
+		auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos));
+
+		if (b && b->isColidable())
+		{
+			entity.forces.jump();
+		}
+	}
+
 	auto move = 2.f * deltaTime * direction;
 	getPosition().x += move.x;
 	getPosition().z += move.y;
