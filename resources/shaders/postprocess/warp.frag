@@ -7,6 +7,9 @@ noperspective in vec2 v_texCoords;
 uniform sampler2D u_color;
 uniform float u_time;
 
+uniform vec3 u_underwaterColor;
+uniform sampler2D u_currentViewSpace;
+
 
 //https://www.shadertoy.com/view/XttyRX
 #define tau 6.28318530718
@@ -15,9 +18,18 @@ float sin01(float x) {
 	return (sin(x*tau)+1.)/2.;
 }
 
+
+float u_underwaterDarkenDistance = 32;
+float u_fogGradientUnderWater = 2;
+
+float computeFogUnderWater(float dist)
+{
+	float rez = exp(-pow(dist*(1/u_underwaterDarkenDistance), u_fogGradientUnderWater));
+	return pow(rez,4);
+}
+
 void main()
 {
-
  
 	float t = u_time * 1.0f;
 	
@@ -30,10 +42,27 @@ void main()
 	texCoords.xy += sin01(texCoords.x*turbulence + t) * amplitude;
 	texCoords.xy -= sin01(texCoords.y*turbulence + t) * amplitude;
 
-
 	texCoords = (texCoords + 1.f) /2.f;
 
-	outColor = texture2D(u_color, texCoords);
+	float dist = -texture2D(u_currentViewSpace, texCoords).z;
+	
+
+	if(dist <= 0.001)
+	{
+		outColor = vec4(u_underwaterColor, 1.f);
+	}else
+	{
+		outColor = texture2D(u_color, texCoords);
+
+		//optional extra fog under water
+		//outColor.rgb = mix(outColor.rgb, u_underwaterColor, (1-computeFogUnderWater(dist)) * 0.9);
+
+
+	}
+
+
+
+
 
 }
 

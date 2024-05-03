@@ -587,6 +587,10 @@ void Renderer::create(BlocksLoader &blocksLoader)
 
 	fboCoppy.create(true, true);
 	fboMain.create(true, true, GL_RGB16F, GL_RGB16UI);
+	glBindTexture(GL_TEXTURE_2D, fboMain.secondaryColor);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
 	fboLastFrame.create(true, false);
 	fboLastFramePositions.create(GL_RGB16F, false);
 	fboHBAO.create(GL_RED, false);
@@ -938,6 +942,8 @@ void Renderer::reloadShaders()
 		RESOURCES_PATH "shaders/postProcess/warp.frag");
 	GET_UNIFORM2(warpShader, u_color);
 	GET_UNIFORM2(warpShader, u_time);
+	GET_UNIFORM2(warpShader, u_underwaterColor);
+	GET_UNIFORM2(warpShader, u_currentViewSpace);
 
 
 #pragma endregion
@@ -1634,6 +1640,12 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glBindTexture(GL_TEXTURE_2D, fboMain.color);
 		glUniform1i(warpShader.u_color, 0);
 		glUniform1f(warpShader.u_time, timeGrass); //todo change
+		glUniform3f(warpShader.u_underwaterColor, defaultShader.shadingSettings.underWaterColor.x,
+			defaultShader.shadingSettings.underWaterColor.y, defaultShader.shadingSettings.underWaterColor.z);
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, fboMain.secondaryColor);
+		glUniform1i(warpShader.u_currentViewSpace, 1);
 
 
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

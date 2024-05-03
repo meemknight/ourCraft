@@ -145,6 +145,8 @@ struct Renderer
 		Shader shader;
 		uniform u_color = 0;
 		uniform u_time = 0;
+		uniform u_currentViewSpace = 0;
+		uniform u_underwaterColor = 0;
 	}warpShader;
 
 	struct ZpassShader
