@@ -53,113 +53,191 @@ void ZombieServer::appendDataToDisk(std::ofstream &f, std::uint64_t eId)
 {
 }
 
+//todo temporary allocator
 bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
 	ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng, std::uint64_t yourEID,
 	std::unordered_set<std::uint64_t> &othersDeleted,
-	std::unordered_map<std::uint64_t, std::unordered_map<glm::ivec3, PathFindingNode>> &pathFinding
+	std::unordered_map<std::uint64_t, std::unordered_map<glm::ivec3, PathFindingNode>> &pathFinding,
+	std::unordered_map<std::uint64_t, glm::dvec3> &playersPosition
 )
 {
 
-	direction = {0,0};
-	if (!pathFinding.empty())
+	constexpr float followDistance = 32;
+	constexpr float keepFollowDistance = 42;
+	glm::dvec3 playerLockedOnPosition = getPosition();
+
+	if (!playerLockedOn)
 	{
 
-		auto &path = *pathFinding.begin();
+		//std temporary allocator
+		std::vector<std::uint64_t> close;
 
-		auto pos = from3DPointToBlock(getPosition());
+		for (auto &p : playersPosition)
+		{
+			if (glm::distance(p.second, getPosition()) <= followDistance)
+			{
+				close.push_back(p.first);
+			}
+		}
 
-		auto foundNode = path.second.find(pos);
+		if (!close.empty())
+		{
+			playerLockedOn = close[rng() % close.size()];
+		}
+			
+	}
+	
+	{
+		auto found = playersPosition.find(playerLockedOn);
 
-		if (foundNode != path.second.end())
+		if (found == playersPosition.end())
+		{
+			playerLockedOn = 0;
+		}
+		else
+		{
+			if (glm::distance(found->second, getPosition()) <= keepFollowDistance)
+			{
+				playerLockedOnPosition = found->second;
+			}
+			else
+			{
+				playerLockedOn = 0;
+			}
+		}
+	}
+
+
+	direction = {0,0};
+
+
+	if (playerLockedOn)
+	{
+
+
+		bool pathFindingSucceeded = 0;
+
+		auto path = pathFinding.find(playerLockedOn);
+
+		if (path != pathFinding.end())
 		{
 
-			std::pair<glm::ivec3, PathFindingNode> interPolateNode = *foundNode;
-			std::pair<glm::ivec3, PathFindingNode> interPolateNodeNotGood = *foundNode;
 
-			int originalHeight = pos.y;
+			auto pos = from3DPointToBlock(getPosition());
 
-			int maxCounterLoop = 100;
-			while (maxCounterLoop > 0) 
+			auto foundNode = path->second.find(pos);
+
+			if (foundNode != path->second.end())
 			{
-				maxCounterLoop--;
 
-				if (originalHeight != interPolateNodeNotGood.second.returnPos.y)
+				std::pair<glm::ivec3, PathFindingNode> interPolateNode = *foundNode;
+				std::pair<glm::ivec3, PathFindingNode> interPolateNodeNotGood = *foundNode;
+
+				int originalHeight = pos.y;
+
+				int maxCounterLoop = 100;
+				while (maxCounterLoop-- > 0) 
 				{
-					break;
-				}
 
-				auto newFoundNode = path.second.find(interPolateNodeNotGood.second.returnPos);
-
-				if (newFoundNode != path.second.end())
-				{
-					if (newFoundNode->second.level > 0)
+					if (originalHeight != interPolateNodeNotGood.second.returnPos.y)
 					{
-						
-						glm::dvec3 direction = glm::dvec3(newFoundNode->second.returnPos) - getPosition();
+						break;
+					}
 
-						direction.y = 0;
-						direction = glm::normalize(direction);
+					auto newFoundNode = path->second.find(interPolateNodeNotGood.second.returnPos);
 
-						bool problems = 0;
-
-						//try interpolation
-						int maxCounter = 100;//so we don't get infinite loops
-						for (glm::dvec3 start = getPosition(); maxCounter>0;maxCounter--)
+					if (newFoundNode != path->second.end())
+					{
+						if (newFoundNode->second.level > 0)
 						{
-							start += direction * 0.6;
+							
+							glm::dvec3 direction = glm::dvec3(newFoundNode->second.returnPos) - getPosition();
 
-							glm::dvec3 direction2 = glm::dvec3(newFoundNode->second.returnPos) - start;
-							direction2.y = 0;
+							direction.y = 0;
+							direction = glm::normalize(direction);
 
-							if (glm::dot(direction, direction2) < 0.f) { break; }
+							bool problems = 0;
 
-							glm::ivec3 blockPos = fromBlockPosToBlockPosInChunk(start);
-							blockPos.y += 1;
-
-							auto b = serverChunkStorer.getBlockSafe(blockPos);
-							if (b && b->isColidable())
+							//try interpolation
+							int maxCounter = 100;//so we don't get infinite loops
+							for (glm::dvec3 start = getPosition(); maxCounter>0;maxCounter--)
 							{
-								problems = true;
-								break;
+								start += direction * 0.6;
+
+								glm::dvec3 direction2 = glm::dvec3(newFoundNode->second.returnPos) - start;
+								direction2.y = 0;
+
+								if (glm::dot(direction, direction2) < 0.f) { break; }
+
+								glm::ivec3 blockPos = fromBlockPosToBlockPosInChunk(start);
+								blockPos.y += 1;
+
+								auto b = serverChunkStorer.getBlockSafe(blockPos);
+								if (b && b->isColidable())
+								{
+									problems = true;
+									break;
+								}
+								
+								//blockPos.y -= 2;
+								//auto b2 = serverChunkStorer.getBlockSafe(blockPos);
+								//if (!b2 || !b2->isColidable())
+								//{
+								//	problems = true;
+								//	break;
+								//}
+
 							}
 							
-							//blockPos.y -= 2;
-							//auto b2 = serverChunkStorer.getBlockSafe(blockPos);
-							//if (!b2 || !b2->isColidable())
-							//{
-							//	problems = true;
-							//	break;
-							//}
+							if (problems)
+							{
+								interPolateNodeNotGood = *newFoundNode;
+							}
+							else
+							{
+								interPolateNodeNotGood = *newFoundNode;
+								interPolateNode = *newFoundNode;
+							}
 
-						}
-						
-						if (problems)
-						{
-							interPolateNodeNotGood = *newFoundNode;
+							if (maxCounter <= 0) { break; }
+
 						}
 						else
 						{
-							interPolateNodeNotGood = *newFoundNode;
-							interPolateNode = *newFoundNode;
+							break;
 						}
-
-						if (maxCounter <= 0) { break; }
-
 					}
 					else
 					{
 						break;
 					}
-				}
-				else
-				{
-					break;
+
 				}
 
+
+		     	glm::vec3 d = glm::dvec3(interPolateNode.second.returnPos)
+					- getPosition();
+				d.y = 0;
+
+				direction.x = d.x;
+				direction.y = d.z;
+
+				if (glm::length(direction) != 0)
+				{
+					direction = glm::normalize(direction);
+
+					pathFindingSucceeded = true;
+				}
 			}
 
+		};
 
-	     	glm::vec3 d = glm::dvec3(interPolateNode.second.returnPos)
+
+		if (!pathFindingSucceeded)
+		{
+			//std::cout << "yess ";
+
+			glm::vec3 d = playerLockedOnPosition
 				- getPosition();
 			d.y = 0;
 
@@ -170,9 +248,10 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 			{
 				direction = glm::normalize(direction);
 			}
+
 		}
 
-	}
+	};
 
 
 	//waitTime -= deltaTime;

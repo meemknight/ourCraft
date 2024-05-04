@@ -27,7 +27,8 @@ struct PigServer: public ServerEntity<Pig>, public AnimalBehaviour < PigServer, 
 	bool update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
 		ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng, std::uint64_t yourEID,
 		std::unordered_set<std::uint64_t> &othersDeleted,
-		std::unordered_map<std::uint64_t, std::unordered_map<glm::ivec3, PathFindingNode>> &pathFinding
+		std::unordered_map<std::uint64_t, std::unordered_map<glm::ivec3, PathFindingNode>> &pathFinding,
+		std::unordered_map<std::uint64_t, glm::dvec3> &playersPosition
 		);
 
 	void appendDataToDisk(std::ofstream &f, std::uint64_t eId);

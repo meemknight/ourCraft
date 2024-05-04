@@ -25,12 +25,15 @@ struct ZombieServer: public ServerEntity<Zombie>
 	int moving = 0;
 	float waitTime = 1;
 
+	std::uint64_t playerLockedOn = 0;
+
 	void appendDataToDisk(std::ofstream &f, std::uint64_t eId);
 
 	bool update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
 		ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng, std::uint64_t yourEID,
 		std::unordered_set<std::uint64_t> &othersDeleted,
-		std::unordered_map<std::uint64_t, std::unordered_map<glm::ivec3, PathFindingNode>> &pathFinding);
+		std::unordered_map<std::uint64_t, std::unordered_map<glm::ivec3, PathFindingNode>> &pathFinding,
+		std::unordered_map<std::uint64_t, glm::dvec3> &playersPosition);
 
 };
 

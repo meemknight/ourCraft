@@ -232,6 +232,9 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 			if ((sides[i] != nullptr
 				&& (!(sides[i])->isOpaque() && sides[i]->type != b.type)
+				)||
+				(
+					isWater && i == 2 //display water if there is a block on top
 				)
 				|| (
 				//(i == 3 && y == 0) ||		//display the bottom face
@@ -241,11 +244,16 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 			{
 
 				//no faces in between water
-				if (isWater && sides[i]->type == BlockTypes::water) { continue; }
+				if (isWater && sides[i] && sides[i]->type == BlockTypes::water) { continue; }
 
-				if (isWater && (!sides[2] || sides[2]->type != BlockTypes::water))
+				if (isWater)
 				{
+					//if (!sides[2] || sides[2]->type != BlockTypes::water)
+					//{
+					//	currentVector->push_back(mergeShorts(i + 22, getGpuIdIndexForBlock(b.type, i)));
+					//}
 					currentVector->push_back(mergeShorts(i + 22, getGpuIdIndexForBlock(b.type, i)));
+
 				}
 				else
 				{

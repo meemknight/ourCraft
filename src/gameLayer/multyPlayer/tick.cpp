@@ -43,7 +43,8 @@ bool genericCallUpdateForEntity(T &e,
 	float deltaTime, ChunkData *(chunkGetter)(glm::ivec2),
 	ServerChunkStorer &chunkCache, std::minstd_rand &rng, 
 	std::unordered_set<std::uint64_t> &othersDeleted,
-	std::unordered_map<std::uint64_t, std::unordered_map<glm::ivec3, PathFindingNode>> &pathFinding
+	std::unordered_map<std::uint64_t, std::unordered_map<glm::ivec3, PathFindingNode>> &pathFinding,
+	std::unordered_map<std::uint64_t, glm::dvec3> &playersPosition
 	)
 {
 	float time = deltaTime;
@@ -55,8 +56,9 @@ bool genericCallUpdateForEntity(T &e,
 	bool rez = 1;
 	if (time > 0)
 	{
+		//todo pack things into a struct
 		rez = e.second.update(time, chunkGetter, chunkCache, rng, e.first,
-			othersDeleted, pathFinding);
+			othersDeleted, pathFinding, playersPosition);
 	}
 
 	if constexpr (hasRestantTimer<decltype(e.second)>)
@@ -130,19 +132,14 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 		}
 	};
 
-	struct PositionAndEID
-	{
-		glm::dvec3 pos;
-		std::uint64_t eid;
-	};
 
-	std::vector<PositionAndEID> playersPosition;
+	std::unordered_map<std::uint64_t, glm::dvec3> playersPosition;
 
 	for (auto &c : chunkCache.savedChunks)
 	{
 		for (auto &p : c.second->entityData.players)
 		{
-			playersPosition.push_back({p.second.getPosition(), p.first});
+			playersPosition.insert({p.first, p.second.getPosition()});
 		}
 	}
 
@@ -155,6 +152,46 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 	{
 		std::deque<PathFindingNode> queue;
 		std::unordered_map<glm::ivec3, PathFindingNode> positions;
+		
+		auto addNode = [&](PathFindingNode node, glm::ivec3 displacement)
+		{
+			PathFindingNode newEntry;
+			newEntry.returnPos = node.returnPos;
+			newEntry.level = node.level + 1;
+
+			positions.emplace(node.returnPos + displacement, newEntry);
+
+			if (node.level < 35)
+			{
+				newEntry.returnPos = node.returnPos + displacement;
+				queue.push_back(newEntry);
+			}
+		};
+
+		auto checkDown = [&](PathFindingNode node, glm::ivec3 disp) //-> bool
+		{
+			glm::ivec3 displacement = glm::ivec3(0, -1, 0) + disp;
+
+			auto found = positions.find(node.returnPos + displacement);
+			if (found == positions.end())
+			{
+				auto b = chunkCache.getBlockSafe(node.returnPos + displacement);
+				if (b && !b->isColidable())
+				{
+					auto b2 = chunkCache.getBlockSafe(node.returnPos + glm::ivec3(0, -2, 0));
+					if (b2 && b2->isColidable())
+					{
+						addNode(node, displacement);
+					}
+				}
+				//else
+				//{
+				//	return true;
+				//}
+			}
+
+			//return false;
+		};
 
 		auto checkSides = [&](PathFindingNode node, glm::ivec3 displacement)
 		{
@@ -169,21 +206,16 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 					if (!bUp || !bUp->isColidable())
 					{
 						auto bDown = chunkCache.getBlockSafe(node.returnPos + displacement + glm::ivec3(0, -1, 0));
-						if (bDown && bDown->isColidable())
+						auto bDown2 = chunkCache.getBlockSafe(node.returnPos + 
+							displacement + glm::ivec3(0, -2, 0));
+
+						if ((bDown && bDown->isColidable())
+							|| (bDown2 && bDown2->isColidable())
+							)
 						{
+							addNode(node, displacement);
 
-							PathFindingNode newEntry;
-							newEntry.returnPos = node.returnPos;
-							newEntry.level = node.level + 1;
-
-							positions.emplace(node.returnPos + displacement, newEntry);
-
-							if (node.level < 40)
-							{
-								newEntry.returnPos = node.returnPos + displacement;
-								queue.push_back(newEntry);
-							}
-
+							checkDown(node, displacement);
 						}
 
 					}
@@ -192,11 +224,24 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 			}
 		};
 
+		auto checkUp = [&](PathFindingNode node, glm::ivec3 displacement)
+		{
+			auto found = positions.find(node.returnPos + displacement);
+			if (found == positions.end())
+			{
+				auto b = chunkCache.getBlockSafe(node.returnPos + displacement);
+				if (b && !b->isColidable())
+				{
+					addNode(node, displacement);
+				}
+			}
+		};
+
 
 		if (!playersPosition.empty())
 		{
 
-			glm::ivec3 pos = from3DPointToBlock(playersPosition.begin()->pos);
+			glm::ivec3 pos = from3DPointToBlock(playersPosition.begin()->second);
 
 			//project players position down down
 			for(int i=1; i<4; i++)
@@ -223,16 +268,24 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 				PathFindingNode node = queue.front();
 				queue.pop_front();
 
-
 				checkSides(node, {1,0,0});
 				checkSides(node, {-1,0,0});
 				checkSides(node, {0,0,1});
 				checkSides(node, {0,0,-1});
 
+				auto bDown = chunkCache.getBlockSafe(node.returnPos + glm::ivec3(0,-1,0));
+				if (bDown && bDown->isColidable())
+				{
+					checkUp(node, {0,1,0});
+					//checkUp(node, {0,2,0});
+					//checkUp(node, {0,3,0});
+					//checkUp(node, {0,4,0});
+					//checkUp(node, {0,5,0});
+				}
 
 			}
 
-			pathFinding.emplace(playersPosition.begin()->eid, std::move(positions));
+			pathFinding.emplace(playersPosition.begin()->first, std::move(positions));
 		}
 	
 	};
@@ -261,8 +314,9 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 			{
 				auto &e = *it;
 
-				bool rez = genericCallUpdateForEntity(e, deltaTime, chunkGetter, chunkCache, rng, othersDeleted,
-					pathFinding);
+				bool rez = genericCallUpdateForEntity(e, deltaTime, chunkGetter,
+					chunkCache, rng, othersDeleted,
+					pathFinding, playersPosition);
 				auto newChunk = determineChunkThatIsEntityIn(e.second.getPosition());
 
 				if (!rez)

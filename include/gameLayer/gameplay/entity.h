@@ -64,6 +64,13 @@ struct PathFindingNode
 	int level = 0;
 };
 
+struct PositionAndEID
+{
+	glm::dvec3 pos;
+	std::uint64_t eid;
+};
+
+
 struct ServerChunkStorer;
 
 struct RubberBand
