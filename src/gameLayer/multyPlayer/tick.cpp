@@ -102,8 +102,8 @@ template <int... Is>
 void callGenericResetEntitiesInTheirNewChunk(std::integer_sequence<int, Is...>, EntityData &c,
 	ServerChunkStorer &chunkCache)
 {
-	(genericResetEntitiesInTheirNewChunk(*c.entityGetter<Is + 1>(),
-		[](auto &entityData) { return entityData.entityGetter<Is + 1>(); },
+	(genericResetEntitiesInTheirNewChunk(*c.template entityGetter<Is + 1>(),
+		[](auto &entityData) { return entityData.template entityGetter<Is + 1>(); },
 		chunkCache), ...);
 }
 
@@ -161,7 +161,7 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 
 			positions.emplace(node.returnPos + displacement, newEntry);
 
-			if (node.level < 35)
+			if (node.level < 80)
 			{
 				newEntry.returnPos = node.returnPos + displacement;
 				queue.push_back(newEntry);

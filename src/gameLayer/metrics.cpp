@@ -1,10 +1,11 @@
 #include <metrics.h>
 #include <cmath>
+#include <math.h>
 
 
 int divideChunk(int x)
 {
-	return (int)std::floorf((float)x / (float)CHUNK_SIZE);
+	return (int)floorf((float)x / (float)CHUNK_SIZE);
 }
 glm::ivec2 fromBlockPosToChunkPos(glm::ivec3 blockPos)
 {
@@ -23,7 +24,7 @@ glm::ivec3 fromBlockPosToBlockPosInChunk(glm::ivec3 blockPos)
 
 int divideMetaChunk(int chunkPos)
 {
-	return (int)std::floorf((float)chunkPos / (float)META_CHUNK_SIZE);
+	return (int)floorf((float)chunkPos / (float)META_CHUNK_SIZE);
 }
 
 

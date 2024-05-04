@@ -110,12 +110,12 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 	direction = {0,0};
 
+	bool pathFindingSucceeded = 0;
 
 	if (playerLockedOn)
 	{
 
 
-		bool pathFindingSucceeded = 0;
 
 		auto path = pathFinding.find(playerLockedOn);
 
@@ -135,7 +135,9 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 				int originalHeight = pos.y;
 
+				//interpolate
 				int maxCounterLoop = 100;
+				if(1) 
 				while (maxCounterLoop-- > 0) 
 				{
 
@@ -154,52 +156,95 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 							glm::dvec3 direction = glm::dvec3(newFoundNode->second.returnPos) - getPosition();
 
 							direction.y = 0;
-							direction = glm::normalize(direction);
 
-							bool problems = 0;
-
-							//try interpolation
-							int maxCounter = 100;//so we don't get infinite loops
-							for (glm::dvec3 start = getPosition(); maxCounter>0;maxCounter--)
+							if (glm::length(direction))
 							{
-								start += direction * 0.6;
 
-								glm::dvec3 direction2 = glm::dvec3(newFoundNode->second.returnPos) - start;
-								direction2.y = 0;
 
-								if (glm::dot(direction, direction2) < 0.f) { break; }
+								direction = glm::normalize(direction);
 
-								glm::ivec3 blockPos = fromBlockPosToBlockPosInChunk(start);
-								blockPos.y += 1;
+								bool problems = 0;
 
-								auto b = serverChunkStorer.getBlockSafe(blockPos);
-								if (b && b->isColidable())
+								//try interpolation
+								int maxCounter = 300;//so we don't get infinite loops
+
+								glm::dvec3 start = getPosition();
+
+								glm::dvec3 leftVector = -glm::cross(direction, glm::dvec3(0, 1, 0));
+
+								glm::dvec3 start2 = start - leftVector * 0.15;
+								start += leftVector * 0.15;
+
+								for (; maxCounter > 0; maxCounter--)
 								{
-									problems = true;
-									break;
+									start += direction * 0.1;
+									start2 += direction * 0.1;
+
+									glm::dvec3 direction2 = glm::dvec3(newFoundNode->second.returnPos) - start;
+									direction2.y = 0;
+
+									if (glm::dot(direction, direction2) < 0.f) { break; }
+
+									auto checkOneDirection = [&](glm::ivec3 blockPos)
+									{
+										blockPos.y += 1;
+										auto b = serverChunkStorer.getBlockSafe(blockPos);
+										if (b && b->isColidable())
+										{
+											problems = true;
+											return true;
+										}
+										return false;
+									};
+
+									auto pos1 = fromBlockPosToBlockPosInChunk(start);
+									auto pos2 = fromBlockPosToBlockPosInChunk(start2);
+
+									if (pos1 != pos2)
+									{
+										if (checkOneDirection(pos1))
+										{
+											break;
+										}
+										if (checkOneDirection(pos2))
+										{
+											break;
+										}
+									}
+									else
+									{
+										if (checkOneDirection(pos1))
+										{
+											break;
+										}
+									}
+
+									
+									//blockPos.y -= 2;
+									//auto b2 = serverChunkStorer.getBlockSafe(blockPos);
+									//if (!b2 || !b2->isColidable())
+									//{
+									//	problems = true;
+									//	break;
+									//}
+
 								}
-								
-								//blockPos.y -= 2;
-								//auto b2 = serverChunkStorer.getBlockSafe(blockPos);
-								//if (!b2 || !b2->isColidable())
-								//{
-								//	problems = true;
-								//	break;
-								//}
 
-							}
-							
-							if (problems)
-							{
-								interPolateNodeNotGood = *newFoundNode;
-							}
-							else
-							{
-								interPolateNodeNotGood = *newFoundNode;
-								interPolateNode = *newFoundNode;
-							}
+								if (maxCounter <= 0) { break; }
 
-							if (maxCounter <= 0) { break; }
+								if (problems)
+								{
+									interPolateNodeNotGood = *newFoundNode;
+									//break; //worse interpolation but less lickely to have problems
+								}
+								else
+								{
+									interPolateNodeNotGood = *newFoundNode;
+									interPolateNode = *newFoundNode;
+								}
+
+
+							};
 
 						}
 						else
@@ -233,6 +278,7 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 		};
 
 
+		if(1)
 		if (!pathFindingSucceeded)
 		{
 			//std::cout << "yess ";
@@ -254,25 +300,21 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 	};
 
 
-	//waitTime -= deltaTime;
-	//
-	//if (waitTime < 0)
-	//{
-	//	moving = getRandomNumber(rng, 0, 1);
-	//	waitTime += getRandomNumberFloat(rng, 1, 8);
-	//
-	//	if (moving)
-	//	{
-	//		direction = getRandomUnitVector(rng);
-	//	}
-	//}
-	//
-	//if (moving)
-	//{
-	//	auto move = 1.f * deltaTime * direction;
-	//	getPosition().x += move.x;
-	//	getPosition().z += move.y;
-	//}
+	if (!playerLockedOn)
+	{
+		waitTime -= deltaTime;
+
+		if (waitTime < 0)
+		{
+			moving = getRandomNumber(rng, 0, 1);
+			waitTime += getRandomNumberFloat(rng, 1, 8);
+
+			if (moving)
+			{
+				direction = getRandomUnitVector(rng);
+			}
+		}
+	};
 
 	//jump
 	{
@@ -284,9 +326,56 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 		if (b && b->isColidable())
 		{
-			entity.forces.jump();
+
+			//don't jump too tall walls lol
+			auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos) + glm::ivec3(0,1,0));
+			if (!b || !b->isColidable())
+			{
+				auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos) + glm::ivec3(0, 2, 0));
+				if (!b || !b->isColidable())
+				{
+					entity.forces.jump();
+				}
+			}
+
 		}
 	}
+
+	//don't fall into gaps when not following player
+	if(0)
+	if(!pathFindingSucceeded)
+	{
+		auto blockPos = getPosition();
+		blockPos.x += direction.x;
+		blockPos.z += direction.y;
+
+		//block under
+		blockPos.y--;
+		auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos));
+
+		//void
+		if (!b)
+		{
+			direction = {};
+			waitTime = 0;
+		}
+		else if (!b->isColidable())
+		{
+
+			//bigger fall under?
+			blockPos.y--;
+			auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos));
+
+			if (!b || !b->isColidable())
+			{
+				direction = {};
+				waitTime = 0;
+			}
+		}
+
+
+	}
+
 
 	auto move = 2.f * deltaTime * direction;
 	getPosition().x += move.x;

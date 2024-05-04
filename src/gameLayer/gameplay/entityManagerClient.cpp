@@ -48,7 +48,7 @@ template <int... Is>
 void callGenericDropEntitiesThatAreTooFar(std::integer_sequence<int, Is...>, ClientEntityManager &c,
 	glm::ivec2 playerPos2D, int playerSquareDistance)
 {
-	(genericDropEntitiesThatAreTooFar(*c.entityGetter<Is>(), playerPos2D, playerSquareDistance), ...);
+	(genericDropEntitiesThatAreTooFar(*c.template entityGetter<Is>(), playerPos2D, playerSquareDistance), ...);
 }
 
 void ClientEntityManager::dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int playerSquareDistance)
@@ -155,7 +155,7 @@ void callGenericRemoveEntity(std::integer_sequence<int, Is...>, ClientEntityMana
 	std::uint64_t entityId)
 {
 	bool stopCalling = false;
-	((stopCalling = genericRemoveEntity(*c.entityGetter<Is+1>(), entityId)) || ...);
+	((stopCalling = genericRemoveEntity(*c.template entityGetter<Is+1>(), entityId)) || ...);
 }
 
 void ClientEntityManager::removeEntity(std::uint64_t entityId)
@@ -283,7 +283,7 @@ template <int... Is>
 void callGenericUpdateLoop(std::integer_sequence<int, Is...>, float deltaTime,
 	ChunkData *(chunkGetter)(glm::ivec2), ClientEntityManager &c)
 {
-	(genericUpdateLoop(*c.entityGetter<Is>(), deltaTime, chunkGetter),  ...);
+	(genericUpdateLoop(*c.template entityGetter<Is>(), deltaTime, chunkGetter),  ...);
 }
 
 

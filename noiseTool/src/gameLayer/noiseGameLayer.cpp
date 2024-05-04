@@ -355,7 +355,7 @@ void recreate()
 				//		colorData[y * size.x + i] = glm::vec4(7, 7, 7, 255) / 255.f; //cave
 				//	}
 				//}
-
+				
 			}
 
 			int y = 255;
@@ -415,7 +415,7 @@ void recreate()
 				bias = glm::clamp(bias, 0.f, 1.f);
 				bias = 1.f - bias;
 
-				bias = std::powf(bias, wg.spagettiNoiseBiasPower);
+				bias = powf(bias, wg.spagettiNoiseBiasPower);
 
 				if (density > wg.spagettiNoiseBias * bias)
 				{

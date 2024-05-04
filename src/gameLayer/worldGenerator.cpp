@@ -2,6 +2,7 @@
 #include "FastNoiseSIMD.h"
 #include "FastNoise/FastNoise.h"
 #include <cmath>
+#include <math.h>
 #include <algorithm>
 
 constexpr int startLevel = 45;
@@ -82,7 +83,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	{
 		spagettiNoise[i] += 1;
 		spagettiNoise[i] /= 2;
-		spagettiNoise[i] = std::powf(spagettiNoise[i], wg.spagettiNoisePower);
+		spagettiNoise[i] = powf(spagettiNoise[i], wg.spagettiNoisePower);
 		spagettiNoise[i] = wg.spagettiNoiseSplines.applySpline(spagettiNoise[i]);
 	}
 	
@@ -101,7 +102,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	{
 		temperatureNoise[i] += 1;
 		temperatureNoise[i] /= 2;
-		temperatureNoise[i] = std::powf(temperatureNoise[i], wg.temperaturePower);
+		temperatureNoise[i] = powf(temperatureNoise[i], wg.temperaturePower);
 		temperatureNoise[i] = wg.temperatureSplines.applySpline(temperatureNoise[i]);
 	}
 
@@ -111,7 +112,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	{
 		humidityNoise[i] += 1;
 		humidityNoise[i] /= 2;
-		humidityNoise[i] = std::powf(humidityNoise[i], wg.humidityPower);
+		humidityNoise[i] = powf(humidityNoise[i], wg.humidityPower);
 		humidityNoise[i] = wg.humiditySplines.applySpline(humidityNoise[i]);
 	}
 
@@ -132,7 +133,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	{
 		vegetationNoise[i] += 1;
 		vegetationNoise[i] /= 2;
-		vegetationNoise[i] = std::powf(vegetationNoise[i], wg.vegetationPower);
+		vegetationNoise[i] = powf(vegetationNoise[i], wg.vegetationPower);
 		vegetationNoise[i] = wg.vegetationSplines.applySpline(vegetationNoise[i]);
 	}
 
@@ -140,7 +141,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	{
 		continentalness[i] += 1;
 		continentalness[i] /= 2;
-		continentalness[i] = std::powf(continentalness[i], wg.continentalPower);
+		continentalness[i] = powf(continentalness[i], wg.continentalPower);
 		continentalness[i] = wg.continentalSplines.applySpline(continentalness[i]);
 	}
 
@@ -148,7 +149,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	{
 		peaksAndValies[i] += 1;
 		peaksAndValies[i] /= 2;
-		peaksAndValies[i] = std::powf(peaksAndValies[i], wg.peaksValiesPower);
+		peaksAndValies[i] = powf(peaksAndValies[i], wg.peaksValiesPower);
 
 		float val = peaksAndValies[i];
 
@@ -161,7 +162,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	{
 		wierdness[i] += 1;
 		wierdness[i] /= 2;
-		wierdness[i] = std::powf(wierdness[i], wg.wierdnessPower);
+		wierdness[i] = powf(wierdness[i], wg.wierdnessPower);
 
 		float val = wierdness[i];
 
@@ -171,7 +172,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	{
 		densityNoise[i] += 1;
 		densityNoise[i] /= 2;
-		densityNoise[i] = std::powf(densityNoise[i], wg.stone3Dpower);
+		densityNoise[i] = powf(densityNoise[i], wg.stone3Dpower);
 		densityNoise[i] = wg.stone3DnoiseSplines.applySpline(densityNoise[i]);
 	}
 
@@ -256,7 +257,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				int heightOffset = height + wg.densityHeightoffset;
 				int difference = y - heightOffset;
 				float differenceMultiplier =
-					glm::clamp(std::pow(std::abs(difference) / squishFactor, wg.densitySquishPower),
+					glm::clamp(powf(std::abs(difference) / squishFactor, wg.densitySquishPower),
 					1.f, 10.f);
 
 				if (difference > 0)

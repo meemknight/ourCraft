@@ -1,6 +1,5 @@
 #include <rendering/renderSettings.h>
 #include <gamePlayLogic.h>
-#include <intrin.h>
 
 void displayRenderSettingsMenuButton(ProgramData &programData)
 {
