@@ -434,6 +434,8 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 				for (int y = 0; y < CHUNK_HEIGHT; y++)
 				{
 					auto &b = unsafeGet(x, y, z);
+					if (b.type == 0)
+						continue;
 
 					//transparent geometry doesn't include air
 					if (b.isTransparentGeometry())

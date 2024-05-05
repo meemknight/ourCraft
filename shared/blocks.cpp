@@ -13,18 +13,6 @@ bool isBlockMesh(BlockType type)
 
 bool isTransparentGeometry(BlockType type) 
 {
-    // I think 'air' shouldn't even be a thing to be honest, you're just trolling yourself
-    // Because then you introduce these 'air' blocks that are actually just empty voids that shouldn't even be considered as real.
-    // And now you're wasting CPU time calculating nothing.
-    if (type == 0) {
-        static int count = 0;
-        count += 1;
-        if (count % 100000 == 0)
-            printf("useless calculation count: %i\n", count);
-
-        return false;
-    }
-
     return (blockProperties[type] & Mask::IS_TRANSPARENT_MASK) != 0;
 }
 
