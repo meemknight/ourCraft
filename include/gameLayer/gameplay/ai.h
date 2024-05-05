@@ -103,11 +103,11 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 			auto blockPos = fromBlockPosToBlockPosInChunk(glm::ivec3(pos));
 			auto b = c->safeGet(blockPos);
 
-			if (b && b->isColidable())
+			if (b && b->isCollidable())
 			{
 				blockPos.y++;
 				auto b = c->safeGet(blockPos);
-				if (b && b->isColidable())
+				if (b && b->isCollidable())
 				{
 					//wall
 					direction = {};
@@ -139,7 +139,7 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 					direction = {};
 					waitTime = 0;
 				}
-				else if (!b->isColidable())
+				else if (!b->isCollidable())
 				{
 
 					if (glm::dot(baseEntity->entity.lookDirectionAnimation, {0,-0.5,-1}) < 0.7)
@@ -154,7 +154,7 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 					blockPos.y--;
 					auto b = c->safeGet(blockPos);
 
-					if (!b || !b->isColidable())
+					if (!b || !b->isCollidable())
 					{
 						direction = {};
 						waitTime = 0;

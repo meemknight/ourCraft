@@ -146,7 +146,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 								auto &b = i->unsafeGet(x, y, z);
 
-								if (isLightEmitor(b.type))
+								if (isLightEmitter(b.type))
 								{
 									lightSystem.addLight(*this,
 										{i->data.x * CHUNK_SIZE + x, y, i->data.z * CHUNK_SIZE + z},
@@ -994,12 +994,12 @@ void ChunkSystem::changeBlockLightStuff(glm::ivec3 pos, int currentSkyLightLevel
 
 	}
 
-	if (isLightEmitor(oldType) && !isLightEmitor(newType))
+	if (isLightEmitter(oldType) && !isLightEmitter(newType))
 	{
 		//remove light
 		lightSystem.removeLight(*this, pos, currentNormalLightLevel);
 	}
-	else if (!isLightEmitor(oldType) && isLightEmitor(newType))
+	else if (!isLightEmitter(oldType) && isLightEmitter(newType))
 	{
 		lightSystem.addLight(*this, pos, 15);
 	}
