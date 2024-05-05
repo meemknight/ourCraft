@@ -5,6 +5,18 @@
 #include <glad/glad.h>
 #include <glm/vec3.hpp>
 
+const struct Mask {
+	static constexpr uint32_t IS_OPAQUE_MASK = 1 << 0;
+	static constexpr uint32_t IS_TRANSPARENT_MASK = 1 << 1;
+	static constexpr uint32_t IS_LIGHT_EMITTER_MASK = 1 << 2;
+	static constexpr uint32_t IS_ANIMATED_MASK = 1 << 3;
+	static constexpr uint32_t IS_GRASS_MESH_MASK = 1 << 4;
+	static constexpr uint32_t IS_CROSS_MESH_MASK = 1 << 5;
+	static constexpr uint32_t IS_COLLIDABLE_MASK = 1 << 6;
+	static constexpr uint32_t IS_CONTROL_BLOCK_MASK = 1 << 7;
+};
+
+
 enum BlockTypes
 {
 	air = 0,
@@ -60,6 +72,59 @@ enum BlockTypes
 	BlocksCount
 };
 
+const uint32_t blockProperties[BlocksCount] = {
+	NULL, // air
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK,     // grassBlock
+	Mask::IS_COLLIDABLE_MASK, // dirt
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK,     // stone
+	Mask::IS_TRANSPARENT_MASK | Mask::IS_COLLIDABLE_MASK,// ice
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK,  // woodLog
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK,  // wooden_plank
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK,  // cobblestone
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK,  // gold_block
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK,  // bricks
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK,  // sand
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK,  // sand_stone
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK,  // snow_dirt
+	Mask::IS_ANIMATED_MASK | Mask::IS_COLLIDABLE_MASK,// leaves
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK,  // gold_ore
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK,  // coal_ore
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK,  // stoneBrick
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK,  // iron_ore
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK,  // diamond_ore
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK,  // bookShelf
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK,  // birch_wood
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK,  // gravel
+	Mask::IS_GRASS_MESH_MASK, // grass
+	Mask::IS_GRASS_MESH_MASK, // rose
+	Mask::IS_TRANSPARENT_MASK, // water
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK,  // jungle_log
+	Mask::IS_ANIMATED_MASK | Mask::IS_COLLIDABLE_MASK,// jungle_leaves
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK,  // palm_log
+	Mask::IS_ANIMATED_MASK | Mask::IS_COLLIDABLE_MASK,// palm_leaves
+	Mask::IS_GRASS_MESH_MASK, // cactus_bud
+	Mask::IS_GRASS_MESH_MASK, // dead_bush
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK, // jungle_planks
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK, // clay
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK, // hardened_clay
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK, // mud
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK, // packed_mud
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK, // mud_bricks
+	Mask::IS_CONTROL_BLOCK_MASK, // control1
+	Mask::IS_CONTROL_BLOCK_MASK, // control2
+	Mask::IS_CONTROL_BLOCK_MASK, // control3
+	Mask::IS_CONTROL_BLOCK_MASK, // control4
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK, // snow_block
+	Mask::IS_ANIMATED_MASK | Mask::IS_COLLIDABLE_MASK, // birch_leaves
+	Mask::IS_OPAQUE_MASK | Mask::IS_COLLIDABLE_MASK, // spruce_log
+	Mask::IS_ANIMATED_MASK | Mask::IS_COLLIDABLE_MASK, // spruce_leaves
+	Mask::IS_ANIMATED_MASK | Mask::IS_COLLIDABLE_MASK, // spruce_leaves_red
+	Mask::IS_LIGHT_EMITTER_MASK | Mask::IS_COLLIDABLE_MASK, // glowstone
+	Mask::IS_TRANSPARENT_MASK | Mask::IS_COLLIDABLE_MASK, // glass
+	NULL, // testBlock (this is not used anywhere?)
+	Mask::IS_LIGHT_EMITTER_MASK // torch
+};
+
 using BlockType = uint16_t;
 
 bool isBlockMesh(BlockType type);
@@ -70,13 +135,13 @@ bool isControlBlock(BlockType type);
 
 bool isOpaque(BlockType type);
 
-bool isLightEmitor(BlockType type);
+bool isLightEmitter(BlockType type);
 
 bool isTransparentGeometry(BlockType type);
 
 bool isGrassMesh(BlockType type);
 
-bool isColidable(BlockType type);
+bool isCollidable(BlockType type);
 
 struct Block
 {
@@ -90,13 +155,10 @@ struct Block
 		return ::isOpaque(type);
 	}
 
-	//rename is animated leaves
+	//rename is animated leaves (why?)
 	bool isAnimatedBlock()
 	{
-		return
-			type == BlockTypes::leaves || type == BlockTypes::jungle_leaves 
-			|| type == BlockTypes::palm_leaves || type == BlockTypes::birch_leaves
-		|| type == BlockTypes::spruce_leaves || type == BlockTypes::spruce_leaves_red;
+		return (blockProperties[type] & Mask::IS_ANIMATED_MASK) != 0;
 	}
 
 	bool isTransparentGeometry()
@@ -109,9 +171,9 @@ struct Block
 		return ::isGrassMesh(type);
 	}
 
-	bool isLightEmitor()
+	bool isLightEmitter()
 	{
-		return ::isLightEmitor(type);
+		return ::isLightEmitter(type);
 	}
 
 	unsigned char getSkyLight()
@@ -149,9 +211,9 @@ struct Block
 		return ::isCrossMesh(type);
 	}
 
-	bool isColidable()
+	bool isCollidable()
 	{
-		return ::isColidable(type);
+		return ::isCollidable(type);
 	}
 
 };

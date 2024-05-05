@@ -184,7 +184,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 						15, 15);
 
 				}
-				else if (isLightEmitor(b.type))
+				else if (isLightEmitter(b.type))
 				{
 					pushFlagsLightAndPosition(*currentVector, position, 0, isInWater,
 						b.getSkyLight(), 15);
@@ -411,7 +411,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 							}
 						}
 
-						if (b.isLightEmitor())
+						if (b.isLightEmitter())
 						{
 							lights.push_back({x + data.x * CHUNK_SIZE, y, z + data.z * CHUNK_SIZE,0});
 						}
@@ -434,6 +434,8 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 				for (int y = 0; y < CHUNK_HEIGHT; y++)
 				{
 					auto &b = unsafeGet(x, y, z);
+					if (b.type == 0)
+						continue;
 
 					//transparent geometry doesn't include air
 					if (b.isTransparentGeometry())

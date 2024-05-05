@@ -1,71 +1,47 @@
 #include "blocks.h"
 #include <algorithm>
 
+bool isOpaque(BlockType type) 
+{
+    return (blockProperties[type] & Mask::IS_OPAQUE_MASK) != 0;
+}
+
 bool isBlockMesh(BlockType type)
 {
-	return !isCrossMesh(type);
+    return !isCrossMesh(type); // dirty hack for now?
 }
 
-bool isCrossMesh(BlockType type)
+bool isTransparentGeometry(BlockType type) 
 {
-	return isGrassMesh(type);
+    return (blockProperties[type] & Mask::IS_TRANSPARENT_MASK) != 0;
 }
 
-bool isControlBlock(BlockType type)
+bool isLightEmitter(BlockType type) 
 {
-	return 
-		type == BlockTypes::control1 || 
-		type == BlockTypes::control2 || 
-		type == BlockTypes::control3 || 
-		type == BlockTypes::control4;
+    return (blockProperties[type] & Mask::IS_LIGHT_EMITTER_MASK) != 0;
 }
 
-bool isOpaque(BlockType type)
+bool isAnimatedBlock(BlockType type) 
 {
-	//todo all leaves ?
-
-	return
-		type != BlockTypes::air
-		&& type != BlockTypes::leaves
-		&& type != BlockTypes::jungle_leaves
-		&& type != BlockTypes::palm_leaves
-		&& type != BlockTypes::birch_leaves
-		&& type != BlockTypes::spruce_leaves
-		&& type != BlockTypes::spruce_leaves_red
-		&& type != BlockTypes::glowstone
-		&& type != BlockTypes::torch
-		&& !(isTransparentGeometry(type))
-		&& !(isGrassMesh(type));
+    return (blockProperties[type] & Mask::IS_ANIMATED_MASK) != 0;
 }
 
-bool isLightEmitor(BlockType type)
+bool isGrassMesh(BlockType type) 
 {
-	return type == BlockTypes::glowstone 
-		|| type == BlockTypes::torch;
+    return (blockProperties[type] & Mask::IS_GRASS_MESH_MASK) != 0;
 }
 
-bool isTransparentGeometry(BlockType type)
+bool isCrossMesh(BlockType type) 
 {
-	return type == BlockTypes::ice || type == BlockTypes::water || type == BlockTypes::glass;
+    return (blockProperties[type] & Mask::IS_CROSS_MESH_MASK) != 0;
 }
 
-bool isGrassMesh(BlockType type)
+bool isCollidable(BlockType type) 
 {
-	return type == BlockTypes::grass
-		|| type == BlockTypes::rose
-		|| type == BlockTypes::cactus_bud
-		|| type == BlockTypes::dead_bush
-		;
+    return (blockProperties[type] & Mask::IS_COLLIDABLE_MASK) != 0;
 }
 
-bool isColidable(BlockType type)
+bool isControlBlock(BlockType type) 
 {
-	return
-		type != BlockTypes::air &&
-		type != BlockTypes::grass &&
-		type != BlockTypes::rose &&
-		type != BlockTypes::cactus_bud &&
-		type != BlockTypes::dead_bush &&
-		type != BlockTypes::torch &&
-		type != BlockTypes::water;
+    return (blockProperties[type] & Mask::IS_CONTROL_BLOCK_MASK) != 0;
 }

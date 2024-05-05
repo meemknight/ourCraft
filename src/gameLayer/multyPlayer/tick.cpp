@@ -176,10 +176,10 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 			if (found == positions.end())
 			{
 				auto b = chunkCache.getBlockSafe(node.returnPos + displacement);
-				if (b && !b->isColidable())
+				if (b && !b->isCollidable())
 				{
 					auto b2 = chunkCache.getBlockSafe(node.returnPos + glm::ivec3(0, -2, 0));
-					if (b2 && b2->isColidable())
+					if (b2 && b2->isCollidable())
 					{
 						addNode(node, displacement);
 					}
@@ -199,18 +199,18 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 			if (found == positions.end())
 			{
 				auto b = chunkCache.getBlockSafe(node.returnPos + displacement);
-				if (b && !b->isColidable())
+				if (b && !b->isCollidable())
 				{
 
 					auto bUp = chunkCache.getBlockSafe(node.returnPos + displacement + glm::ivec3(0, 1, 0));
-					if (!bUp || !bUp->isColidable())
+					if (!bUp || !bUp->isCollidable())
 					{
 						auto bDown = chunkCache.getBlockSafe(node.returnPos + displacement + glm::ivec3(0, -1, 0));
 						auto bDown2 = chunkCache.getBlockSafe(node.returnPos + 
 							displacement + glm::ivec3(0, -2, 0));
 
-						if ((bDown && bDown->isColidable())
-							|| (bDown2 && bDown2->isColidable())
+						if ((bDown && bDown->isCollidable())
+							|| (bDown2 && bDown2->isCollidable())
 							)
 						{
 							addNode(node, displacement);
@@ -230,7 +230,7 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 			if (found == positions.end())
 			{
 				auto b = chunkCache.getBlockSafe(node.returnPos + displacement);
-				if (b && !b->isColidable())
+				if (b && !b->isCollidable())
 				{
 					addNode(node, displacement);
 				}
@@ -251,7 +251,7 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 
 				if (!b) { break; }
 
-				if (b->isColidable())
+				if (b->isCollidable())
 				{
 					PathFindingNode root;
 					root.returnPos = pos - glm::ivec3(0, i-1, 0);
@@ -274,7 +274,7 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 				checkSides(node, {0,0,-1});
 
 				auto bDown = chunkCache.getBlockSafe(node.returnPos + glm::ivec3(0,-1,0));
-				if (bDown && bDown->isColidable())
+				if (bDown && bDown->isCollidable())
 				{
 					checkUp(node, {0,1,0});
 					//checkUp(node, {0,2,0});

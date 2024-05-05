@@ -273,7 +273,7 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 						}
 						//todo remove later and use unsafe get
 						
-						if (b->isColidable())
+						if (b->isCollidable())
 						{
 
 

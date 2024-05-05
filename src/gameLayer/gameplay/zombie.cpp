@@ -189,7 +189,7 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 									{
 										blockPos.y += 1;
 										auto b = serverChunkStorer.getBlockSafe(blockPos);
-										if (b && b->isColidable())
+										if (b && b->isCollidable())
 										{
 											problems = true;
 											return true;
@@ -222,7 +222,7 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 									
 									//blockPos.y -= 2;
 									//auto b2 = serverChunkStorer.getBlockSafe(blockPos);
-									//if (!b2 || !b2->isColidable())
+									//if (!b2 || !b2->isCollidable())
 									//{
 									//	problems = true;
 									//	break;
@@ -324,15 +324,15 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 		auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos));
 
-		if (b && b->isColidable())
+		if (b && b->isCollidable())
 		{
 
 			//don't jump too tall walls lol
 			auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos) + glm::ivec3(0,1,0));
-			if (!b || !b->isColidable())
+			if (!b || !b->isCollidable())
 			{
 				auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos) + glm::ivec3(0, 2, 0));
-				if (!b || !b->isColidable())
+				if (!b || !b->isCollidable())
 				{
 					entity.forces.jump();
 				}
@@ -359,14 +359,14 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 			direction = {};
 			waitTime = 0;
 		}
-		else if (!b->isColidable())
+		else if (!b->isCollidable())
 		{
 
 			//bigger fall under?
 			blockPos.y--;
 			auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos));
 
-			if (!b || !b->isColidable())
+			if (!b || !b->isCollidable())
 			{
 				direction = {};
 				waitTime = 0;
