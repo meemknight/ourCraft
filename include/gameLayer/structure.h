@@ -9,14 +9,14 @@ struct StructureData
 
 	//data is held outside
 
-	BlockType &unsafeGet(int x, int y, int z)
+	BlockType& unsafeGet(int x, int y, int z)
 	{
 		assert(x >= 0 && y >= 0 && z >= 0 && x < size.x && y < size.y && z < size.z);
 
-		return ((BlockType*)(this + 1))[y + z * size.y + x * size.y*size.z];
+		return ((BlockType*)(this + 1))[y + z * size.y + x * size.y * size.z];
 	}
 
-	BlockType &unsafeGetRotated(int x, int y, int z, int r)
+	BlockType& unsafeGetRotated(int x, int y, int z, int r)
 	{
 		if (r == 0)
 		{
@@ -41,7 +41,7 @@ struct StructureData
 
 	}
 
-	BlockType *safeGet(int x, int y, int z)
+	BlockType* safeGet(int x, int y, int z)
 	{
 		if (x < 0 || y < 0 || z < 0 || x >= size.x || y >= size.y || z >= size.z)
 		{
@@ -58,16 +58,17 @@ struct StructuresManager
 {
 
 	bool loadAllStructures();
-
-	std::vector<StructureData *> trees;
-	std::vector<StructureData *> jungleTrees;
-	std::vector<StructureData *> palmTrees;
-	std::vector<StructureData *> treeHouses;
-	std::vector<StructureData *> smallPyramids;
-	std::vector<StructureData *> birchTrees;
-	std::vector<StructureData *> igloos;
-	std::vector<StructureData *> spruceTrees;
+	std::vector<const char*> structurePaths = {
+		RESOURCES_PATH "gameData/structures/trees",
+		RESOURCES_PATH "gameData/structures/jungleTrees",
+		RESOURCES_PATH "gameData/structures/palm",
+		RESOURCES_PATH "gameData/structures/treeHouses",
+		RESOURCES_PATH "gameData/structures/smallpyramid",
+		RESOURCES_PATH "gameData/structures/birch",
+		RESOURCES_PATH "gameData/structures/igloo",
+		RESOURCES_PATH "gameData/structures/spruce"
+	};
+	std::vector<std::vector<StructureData*>> allStructures;
 
 	void clear();
 };
-
