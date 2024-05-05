@@ -886,101 +886,53 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 }
 
 bool ServerChunkStorer::generateStructure(StructureToGenerate s,
-	StructuresManager &structureManager,
-	std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks,
-	std::vector<SendBlocksBack> &sendNewBlocksToPlayers, 
-	std::vector<glm::ivec3> *controlBlocks)
+	StructuresManager& structureManager,
+	std::unordered_set<glm::ivec2, Ivec2Hash>& newCreatedChunks,
+	std::vector<SendBlocksBack>& sendNewBlocksToPlayers,
+	std::vector<glm::ivec3>* controlBlocks)
 {
+
 	auto chooseRandomElement = [](float randVal, int elementCount)
-	{
-		return int(floor(randVal * elementCount));
+		{
+			static std::random_device rd;
+			static std::mt19937 gen(rd());
+			std::uniform_int_distribution<int> dist(0, elementCount - 1);
+			return dist(gen);
+		};
+
+	// Map structure types to indices in the allStructures vector
+	const std::unordered_map<int, size_t> typeToIndex = {
+		{Structure_Tree, 0},
+		{Structure_JungleTree, 1},
+		{Structure_PalmTree, 2},
+		{Structure_TreeHouse, 3},
+		{Structure_Pyramid, 4},
+		{Structure_BirchTree, 5},
+		{Structure_Igloo, 6},
+		{Structure_Spruce, 7}
 	};
 
-
-	if (s.type == Structure_Tree)
-	{
-
-		auto tree = structureManager.trees
-			[chooseRandomElement(s.randomNumber1, structureManager.trees.size())];
-
-		return generateStructure(s, tree,
-			chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers,
-			controlBlocks);
-	}
-	else
-		if (s.type == Structure_JungleTree)
-		{
-
-			auto tree = structureManager.jungleTrees
-				[chooseRandomElement(s.randomNumber1, structureManager.jungleTrees.size())];
-
-			return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
-		}if (s.type == Structure_PalmTree)
-		{
-
-			auto tree = structureManager.palmTrees
-				[chooseRandomElement(s.randomNumber1, structureManager.palmTrees.size())];
-
-			return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks,
-				sendNewBlocksToPlayers, controlBlocks);
-
-		}if (s.type == Structure_TreeHouse)
-		{
-
-			auto tree = structureManager.treeHouses
-				[chooseRandomElement(s.randomNumber1, structureManager.treeHouses.size())];
-
-			return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks,
-				sendNewBlocksToPlayers, controlBlocks);
-
-		}if (s.type == Structure_Pyramid)
-		{
-
-			auto tree = structureManager.smallPyramids
-				[chooseRandomElement(s.randomNumber1, structureManager.smallPyramids.size())];
-
-			return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks,
-				sendNewBlocksToPlayers, controlBlocks);
-
-		}if (s.type == Structure_BirchTree)
-		{
-			auto tree = structureManager.birchTrees
-				[chooseRandomElement(s.randomNumber1, structureManager.birchTrees.size())];
-
-			return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
-				newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
-
-		}if (s.type == Structure_Igloo)
-		{
-			auto tree = structureManager.igloos
-				[chooseRandomElement(s.randomNumber1, structureManager.igloos.size())];
-
-			return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
-				newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
-
-		}
-		if (s.type == Structure_Spruce)
-		{
-			auto tree = structureManager.spruceTrees
-				[chooseRandomElement(s.randomNumber1, structureManager.spruceTrees.size())];
-
-			if (s.randomNumber3 > 0.5)
-			{
+	auto it = typeToIndex.find(s.type);
+	if (it != typeToIndex.end()) {
+		size_t index = it->second;
+		const auto& structures = structureManager.allStructures[index];
+		if (!structures.empty()) {
+			auto tree = structures[chooseRandomElement(s.randomNumber1, structures.size())];
+			if (s.type == Structure_Spruce && s.randomNumber3 > 0.5) {
 				return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
 					newCreatedChunks, sendNewBlocksToPlayers, controlBlocks, true,
 					BlockTypes::spruce_leaves, BlockTypes::spruce_leaves_red);
 			}
-			else
-			{
+			else {
 				return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
 					newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
 			}
-
 		}
+	}
 
-
-		return 0;
+	return false;
 }
+
 
 Block *ServerChunkStorer::getBlockSafe(glm::ivec3 pos)
 {
