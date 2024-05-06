@@ -404,7 +404,18 @@ void enetServerFunction()
 	WorldSaver worldSaver;
 
 	worldSaver.savePath = RESOURCES_PATH "saves/";
-	std::filesystem::create_directory(worldSaver.savePath);
+
+	{
+		std::error_code err = {};
+		std::filesystem::create_directory(worldSaver.savePath, err);
+		if (err) 
+		{ 
+			std::cout << err << "\n";
+			//todo error report and close this thing gracefully please
+			exit(0); 
+		}
+	}
+
 
 	if (!structuresManager.loadAllStructures())
 	{

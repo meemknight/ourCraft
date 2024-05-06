@@ -7,17 +7,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 #make shure the runtime library is statically linked
-#set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebug$<$<CONFIG:Debug>:Debug>")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-#if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-#	if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-#		set(CMAKE_MSVC_RUNTIME_LIBRARY "Multi-Threaded Debug")
-#	elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-#		set(CMAKE_MSVC_RUNTIME_LIBRARY "Multi-Threaded")
-#	endif()
-#endif()
+
 
 project(ourCraft)
 
@@ -25,6 +18,7 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
 # Configure Assimp
 set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
@@ -68,7 +62,7 @@ add_subdirectory(noiseTool)
 
 
 
-# Define MY_SOURCES to be a list of all the source files for my game 
+# MY_SOURCES is a list of all the source files for my game 
 file(GLOB_RECURSE MY_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 file(GLOB_RECURSE SHARED_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shared/*.cpp")
 

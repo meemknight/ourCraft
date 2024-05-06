@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <platformTools.h>
 #include <deque>
+#include <string>
 
 struct CharEquals
 {

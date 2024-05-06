@@ -5,6 +5,7 @@
 
 void WorldGenerator::init()
 {
+
 	continentalnessNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	peaksValiesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	wierdnessNoise = FastNoiseSIMD::NewFastNoiseSIMD();

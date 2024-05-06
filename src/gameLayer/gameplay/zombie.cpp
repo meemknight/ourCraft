@@ -172,8 +172,8 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 								glm::dvec3 leftVector = -glm::cross(direction, glm::dvec3(0, 1, 0));
 
-								glm::dvec3 start2 = start - leftVector * 0.15;
-								start += leftVector * 0.15;
+								glm::dvec3 start2 = start;
+								//start += leftVector * 0.15;
 
 								for (; maxCounter > 0; maxCounter--)
 								{
@@ -187,13 +187,20 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 									auto checkOneDirection = [&](glm::ivec3 blockPos)
 									{
-										blockPos.y += 1;
-										auto b = serverChunkStorer.getBlockSafe(blockPos);
+										auto b = serverChunkStorer.getBlockSafe(blockPos + glm::ivec3(0,1,0));
 										if (b && b->isColidable())
 										{
 											problems = true;
 											return true;
 										}
+
+										b = serverChunkStorer.getBlockSafe(blockPos + glm::ivec3(0,-1,0));
+										if (!b || !b->isColidable())
+										{
+											problems = true;
+											return true;
+										}
+
 										return false;
 									};
 
@@ -219,7 +226,6 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 										}
 									}
 
-									
 									//blockPos.y -= 2;
 									//auto b2 = serverChunkStorer.getBlockSafe(blockPos);
 									//if (!b2 || !b2->isColidable())

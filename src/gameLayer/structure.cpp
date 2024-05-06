@@ -1,13 +1,23 @@
 #include <structure.h>
 #include <safeSave.h>
 #include <filesystem>
+#include <iostream>
 
 bool StructuresManager::loadAllStructures()
 {
 
 	auto loadFolder = [](const char *path, std::vector<StructureData*> &structures) 
 	{
-		auto it = std::filesystem::directory_iterator(path); //todo check errors
+		std::error_code err = {};
+		auto it = std::filesystem::directory_iterator(path, err);
+
+		if (err)
+		{
+			//todo err out
+			std::cout << err.message() << "\n";
+			return 0;
+		}
+
 		for (const auto &entry : it)
 		{
 			if (entry.is_regular_file())
@@ -31,6 +41,8 @@ bool StructuresManager::loadAllStructures()
 				structures.push_back((StructureData *)sData);
 			}
 		}
+
+		return 1;
 	};
 
 	loadFolder(RESOURCES_PATH "gameData/structures/trees", trees);
@@ -42,7 +54,6 @@ bool StructuresManager::loadAllStructures()
 	loadFolder(RESOURCES_PATH "gameData/structures/igloo", igloos);
 	loadFolder(RESOURCES_PATH "gameData/structures/spruce", spruceTrees);
 	
-
 	if (trees.empty()) { return 0; }
 	if (jungleTrees.empty()) { return 0; }
 	if (palmTrees.empty()) { return 0; }
