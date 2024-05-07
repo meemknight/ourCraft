@@ -756,7 +756,7 @@ void ChunkSystem::getBlockSafeWithNeigbhoursStopIfCenterFails(int x, int y, int 
 			bottom = nullptr;
 		}
 
-		if (y < CHUNK_SIZE - 1)
+		if (y < CHUNK_HEIGHT - 1)
 		{
 			top = &centerChunk->unsafeGet(centerInChunkPosX, y + 1, centerInChunkPosZ);
 		}
