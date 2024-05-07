@@ -247,7 +247,6 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 						l.intensity = b2Level;
 						l.pos = p;
 						ligtsToAdd.push_back(l);
-						//b2->setlightLevel(b2Level); //it already is
 					}
 				}
 			};

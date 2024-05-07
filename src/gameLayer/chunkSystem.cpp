@@ -566,6 +566,8 @@ void ChunkSystem::setChunkAndNeighboursFlagDirtyFromBlockPos(int x, int z)
 
 	for (int i = 0; i < o; i++)
 	{
+		//todo well this can easily get optimized.
+
 		auto c = getChunkSafeFromBlockPos(x + offsets[i].x, z + offsets[i].y);
 		if (c)
 		{
