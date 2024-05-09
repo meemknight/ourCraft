@@ -56,3 +56,11 @@ bool PigServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGet
 void PigServer::appendDataToDisk(std::ofstream &f, std::uint64_t eId)
 {
 }
+
+void PigServer::configureSpawnSettings(std::minstd_rand &rng)
+{
+
+	AnimalBehaviour::configureSpawnSettings(rng);
+
+
+}

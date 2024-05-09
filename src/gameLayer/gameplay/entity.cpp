@@ -157,7 +157,20 @@ void removeBodyRotationFromHead(glm::vec2 &bodyOrientation, glm::vec3 &lookDirec
 	lookDirection = glm::rotateY(lookDirection, -rotation);
 }
 
+void addFear(unsigned short &current, unsigned short base, float ammount)
+{
+	unsigned short ammountShort = fromFloatToUShort(ammount);
 
+	int newFear = (int)base + (int)ammountShort;
+	if (newFear > USHORT_MAX)
+	{
+		current = USHRT_MAX;
+	}
+	else
+	{
+		current = std::max(current, (unsigned short)newFear);
+	}
+}
 
 glm::vec2 fromDirectionToAngles(glm::vec3 direction)
 {

@@ -28,15 +28,19 @@ struct PerClientServerSettings
 
 	bool validateStuff = true;
 	bool spawnZombie = false;
+	bool spawnPig = false;
 
 	glm::dvec3 outPlayerPos;
 };
+
+
+
+constexpr static int targetTicksPerSeccond = 20;
 
 struct ServerSettings
 {
 	std::unordered_map<std::uint64_t, PerClientServerSettings> perClientSettings;
 
-	int targetTicksPerSeccond = 20;
 	bool busyWait = 1;
 
 };

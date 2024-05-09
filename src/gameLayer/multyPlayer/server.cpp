@@ -266,9 +266,12 @@ bool spawnZombie(
 
 bool spawnPig(
 	ServerChunkStorer &chunkManager,
-	Pig pig, WorldSaver &worldSaver)
+	Pig pig, WorldSaver &worldSaver,
+	std::minstd_rand &rng)
 {
 	//todo also send packets
+	//todo generic spawn for any entity
+
 	auto chunkPos = determineChunkThatIsEntityIn(pig.position);
 	auto c = chunkManager.getChunkOrGetNull(chunkPos.x, chunkPos.y);
 
@@ -276,6 +279,8 @@ bool spawnPig(
 	{
 		PigServer e = {};
 		e.entity = pig;
+		e.configureSpawnSettings(rng);
+
 		c->entityData.pigs.insert({getEntityIdAndIncrement(worldSaver), e});
 	}
 	else
@@ -550,9 +555,12 @@ void serverWorkerUpdate(
 
 #pragma region gameplay tick
 
-	if (sd.tickTimer > 1.f / settings.targetTicksPerSeccond)
+	static std::minstd_rand rng(std::random_device{}());
+
+
+	if (sd.tickTimer > 1.f / targetTicksPerSeccond)
 	{
-		sd.tickTimer -= (1.f / settings.targetTicksPerSeccond);
+		sd.tickTimer -= (1.f / targetTicksPerSeccond);
 		sd.ticksPerSeccond++;
 
 
@@ -565,22 +573,24 @@ void serverWorkerUpdate(
 
 				auto c = getAllClients();
 
-
-				//Pig p;
-				//glm::dvec3 position = c.begin()->second.playerData.entity.position;
-				//p.position = position;
-				//p.lastPosition = position;
-				//spawnPig(sd.chunkCache, p, worldSaver);
-
-
 				Zombie z;
 				glm::dvec3 position = c.begin()->second.playerData.entity.position;
 				z.position = position;
 				z.lastPosition = position;
 				spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement(worldSaver));
-
 			}
 
+			if (settings.perClientSettings.begin()->second.spawnPig)
+			{
+				settings.perClientSettings.begin()->second.spawnPig = false;
+				auto c = getAllClients();
+
+				Pig p;
+				glm::dvec3 position = c.begin()->second.playerData.entity.position;
+				p.position = position;
+				p.lastPosition = position;
+				spawnPig(sd.chunkCache, p, worldSaver, rng);
+			}
 
 		}
 
@@ -592,8 +602,6 @@ void serverWorkerUpdate(
 
 		//todo error and warning logs for server.
 
-		//todo sthing better here
-		static std::minstd_rand rng(std::random_device{}());
 
 		//todo get all clients should probably dissapear.
 		auto c = getAllClients();

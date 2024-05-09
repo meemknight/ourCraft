@@ -9,28 +9,77 @@
 #include <array>
 
 
+
+struct Personality
+{
+	unsigned short fearfull = fromFloatToUShort(0.5f);
+	unsigned short curious = fromFloatToUShort(0.5f);
+	unsigned short energetic = fromFloatToUShort(0.5f);
+	unsigned short playfull = fromFloatToUShort(0.5f);
+
+	constexpr Personality() {};
+
+
+	constexpr Personality(float f, float c, float e, float p)
+	{
+		fearfull = fromFloatToUShort(f);
+		curious = fromFloatToUShort(c);
+		energetic = fromFloatToUShort(e);
+		playfull = fromFloatToUShort(p);
+	};
+
+};
+
+
+
 struct PigDefaultSettings
 {
-	constexpr static float minSpeed = 0.9;
-	constexpr static float maxSpeed = 1.5;
+
+	constexpr static float minSpeed = 5.0;
+	constexpr static float maxSpeed = 8.0;
+
+	constexpr static unsigned short minFearfull = fromFloatToUShort(0.76f);
+	constexpr static unsigned short maxFearfull = fromFloatToUShort(0.76f);
+
+	constexpr static unsigned short minCurious = fromFloatToUShort(0.5f);
+	constexpr static unsigned short maxCurious = fromFloatToUShort(0.5f);
+
+	constexpr static unsigned short minEnergetic = fromFloatToUShort(0.5f);
+	constexpr static unsigned short maxEnergetic = fromFloatToUShort(0.5f);
+
+	constexpr static unsigned short minPlayfull = fromFloatToUShort(0.5f);
+	constexpr static unsigned short maxPlayfull = fromFloatToUShort(0.5f);
+
 };
+
+
 
 template <class E, class SETTINGS>
 struct AnimalBehaviour
 {
 
+	Personality personalityBase;
+
+
+	unsigned short fearLevel = fromFloatToUShort(0.5f);
+
+	float speedBase = 1.f;
+
+
 	glm::vec2 direction = {};
 	int moving = 0;
+	float currentMoveSpeed = 0;
+
 	float waitTime = 1;
 	float randomJumpTimer = 1;
-	float moveSpeed = 1.f;
 	float changeHeadTimer = 1;
 	std::uint64_t playerFollow = 0;
-
 
 	void updateAnimalBehaviour(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
 		ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng);
 
+
+	inline void configureSpawnSettings(std::minstd_rand &rng);
 
 };
 
@@ -56,6 +105,8 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 	decltype(chunkGetterSignature) *chunkGetter, 
 	ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng)
 {
+	E *baseEntity = (E *)(this);
+	glm::ivec2 chunkPosition = determineChunkThatIsEntityIn(baseEntity->getPosition());
 
 	auto checkPlayerDistance = [](glm::dvec3 a, glm::dvec3 b)
 	{
@@ -63,27 +114,145 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 	};
 
 
-	std::vector<std::uint64_t> playersClose;
+#pragma region get close players
+	std::vector<std::pair<std::uint64_t, glm::dvec3>> playersClose;
 
-	
-	E *baseEntity = (E *)(this);
+	glm::dvec3 closestPlayerPosition = {};
+	bool thereIsClosestPlayer = false;
+	float closesestDist = 1000000000000.f;
 
-	glm::ivec2 chunkPosition = determineChunkThatIsEntityIn(baseEntity->getPosition());
+	//todo also check distance < 15 blocks
+	for (auto offset : *getChunkNeighboursOffsets())
+	{
+		glm::ivec2 pos = chunkPosition + offset;
+		auto c = serverChunkStorer.getChunkOrGetNull(pos.x, pos.y);
+		if (c)
+		{
+			for (auto &p : c->entityData.players)
+			{
+				float distance = glm::length(p.second.entity.position - baseEntity->getPosition());
+
+				if (distance <= 15)
+				{
+					playersClose.push_back({p.first, p.second.entity.position});
+					thereIsClosestPlayer = true;
+
+					if (distance < closesestDist)
+					{
+						closesestDist = distance;
+						closestPlayerPosition = p.second.entity.position;
+					}
+				}
+			}
+		}
+	}
+#pragma endregion
+
+
+
 
 	waitTime -= deltaTime;
 	changeHeadTimer -= deltaTime;
 	randomJumpTimer -= deltaTime;
 
-	if (waitTime < 0)
-	{
-		moving = getRandomNumber(rng, 0, 100) % 2;
-		waitTime = getRandomNumberFloat(rng, 1, 4);
+	bool fleeing = false;
+	bool carefull = false;
 
-		if (moving)
+
+	auto stopOrChangeDirectionIfFlee = [&]()
+	{
+		if (fleeing)
 		{
-			direction = getRandomUnitVector(rng);
-			moveSpeed = getRandomNumberFloat(rng, SETTINGS::minSpeed, SETTINGS::maxSpeed);
+			if (getRandomNumber(rng, 0, 10) % 2)
+			{
+				direction = {direction.y, -direction.x};
+			}
+			else
+			{
+				direction = {-direction.y, direction.x};
+			}
 		}
+		else
+		{
+			direction = {};
+			waitTime = 0;
+		}
+	};
+
+	if (fromUShortToFloat(fearLevel) >= 0.9)
+	{
+		fleeing = true;
+	}
+	else if (fromUShortToFloat(fearLevel) >= 0.75)
+	{
+		if (thereIsClosestPlayer && closesestDist < 7)
+		{
+			fleeing = true;
+		}
+	}
+	else if (fromUShortToFloat(fearLevel) >= 0.60)
+	{
+		carefull = true; //todo implement
+	}
+
+
+	if (fleeing)
+	{
+		currentMoveSpeed = speedBase;
+		moving = true;
+
+
+		if (waitTime < 0)
+		{
+			waitTime = waitTime = getRandomNumberFloat(rng, 0.5, 2.0);
+
+
+			if (thereIsClosestPlayer)
+			{
+				glm::vec3 newDir = baseEntity->getPosition() - closestPlayerPosition;
+				newDir.y = 0;
+
+				float l = glm::length(newDir);
+				if (l)
+				{
+					newDir /= l;
+					direction.x = newDir.x;
+					direction.y = newDir.z;
+				}
+				else
+				{
+					direction = {1,0};
+				}
+			}
+			else
+			{
+				direction = getRandomUnitVector(rng);
+			}
+
+		};
+	}
+	else
+	{
+		if (waitTime < 0)
+		{
+			moving = getRandomNumber(rng, 0, 100) % 2;
+			waitTime = getRandomNumberFloat(rng, 1, 4);
+
+			if (moving)
+			{
+				direction = getRandomUnitVector(rng);
+
+				currentMoveSpeed = getRandomNumberFloat(rng, speedBase / 2.f, speedBase / 3.f);
+
+				currentMoveSpeed = std::min(getRandomNumberFloat(rng, speedBase / 2.f, speedBase / 3.f), currentMoveSpeed);
+			}
+		}
+	}
+
+	
+	if (direction == glm::vec2{0,0})
+	{
+		moving = 0;
 	}
 
 	if (moving)
@@ -110,8 +279,7 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 				if (b && b->isColidable())
 				{
 					//wall
-					direction = {};
-					waitTime = 0;
+					stopOrChangeDirectionIfFlee();
 				}
 				else
 				{
@@ -136,8 +304,7 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 				//void
 				if (!b)
 				{
-					direction = {};
-					waitTime = 0;
+					stopOrChangeDirectionIfFlee();
 				}
 				else if (!b->isColidable())
 				{
@@ -154,6 +321,7 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 					blockPos.y--;
 					auto b = c->safeGet(blockPos);
 
+					if(!fleeing)
 					if (!b || !b->isColidable())
 					{
 						direction = {};
@@ -175,12 +343,12 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 		}
 
 
-		auto move = moveSpeed * deltaTime * direction;
+		auto move = currentMoveSpeed * deltaTime * direction;
 		baseEntity->getPosition().x += move.x;
 		baseEntity->getPosition().z += move.y;
 
 		baseEntity->entity.bodyOrientation = move;
-		baseEntity->entity.movementSpeedForLegsAnimations = 2.f * moveSpeed;
+		baseEntity->entity.movementSpeedForLegsAnimations = 2.f * currentMoveSpeed;
 	}
 	else
 	{
@@ -189,10 +357,24 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 	}
 
 #pragma region random jump
+
+	if (fleeing)
+	{
+		randomJumpTimer = std::min(randomJumpTimer, 4.f);
+	}
+
 	if (randomJumpTimer < 0)
 	{
-		randomJumpTimer += getRandomNumberFloat(rng, 1, 10);
-		if (getRandomNumber(rng, 0, 9) == 1)
+		if (fleeing)
+		{
+			randomJumpTimer += getRandomNumberFloat(rng, 0.5, 4);
+		}
+		else
+		{
+			randomJumpTimer += getRandomNumberFloat(rng, 1, 10);
+		}
+
+		if (fleeing || getRandomNumber(rng, 0, 9) == 1)
 		{
 			baseEntity->entity.forces.jump();
 
@@ -206,24 +388,7 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 	if (changeHeadTimer < 0)
 	{
 
-		playersClose.clear();
 
-		//todo also check distance < 15 blocks
-		for (auto offset : *getChunkNeighboursOffsets())
-		{
-			glm::ivec2 pos = chunkPosition + offset;
-			auto c = serverChunkStorer.getChunkOrGetNull(pos.x, pos.y);
-			if (c)
-			{
-				for (auto &p : c->entityData.players)
-				{
-					if (checkPlayerDistance(p.second.entity.position, baseEntity->getPosition()))
-					{
-						playersClose.push_back(p.first);
-					}
-				}
-			}
-		}
 
 		int headRandomDecision = 0;
 
@@ -254,11 +419,11 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 			if (playersClose.size() > 1)
 			{
 				playerIndex = getRandomNumber(rng, 0, playersClose.size() - 1);
-				playerFollow = playersClose[playerIndex];
+				playerFollow = playersClose[playerIndex].first;
 			}
 			else
 			{
-				playerFollow = playersClose[0];
+				playerFollow = playersClose[0].first;
 			}
 			changeHeadTimer = getRandomNumberFloat(rng, 1, 6);
 
@@ -272,28 +437,19 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 
 	if (playerFollow)
 	{
-		PlayerServer *found = 0;
-		for (auto offset : *getChunkNeighboursOffsets())
+		bool foundPlayer = 0;
+		glm::dvec3 foundPosition = {};
+		for (auto &p : playersClose)
 		{
-			glm::ivec2 pos = chunkPosition + offset;
-			auto c = serverChunkStorer.getChunkOrGetNull(pos.x, pos.y);
-			if (c)
+			if (p.first == playerFollow)
 			{
-				for (auto &p : c->entityData.players)
-				{
-
-					if (p.first == playerFollow && checkPlayerDistance(p.second.entity.position, baseEntity->getPosition()))
-					{
-						found = &p.second;
-						break;
-					}
-				}
-				if (found) { break; }
+				foundPlayer = true;
+				foundPosition = p.second;
+				break;
 			}
 		}
 
-
-		if (!found)
+		if (!foundPlayer)
 		{
 			playerFollow = 0;
 			changeHeadTimer -= 1;
@@ -301,7 +457,7 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 		else
 		{
 
-			glm::vec3 vireDirection = found->entity.position - baseEntity->getPosition();
+			glm::vec3 vireDirection = foundPosition - baseEntity->getPosition();
 			float l = glm::length(vireDirection);
 			if (l > 0.01)
 			{
@@ -319,5 +475,73 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 
 #pragma endregion
 
+
+#pragma region update feelings
+
+
+	//add fear if players close
+	{
+
+		{
+			if (closesestDist <= 7.f)
+			{
+				addFear(fearLevel, personalityBase.fearfull, 0.1);
+			}
+		}
+
+
+	}
+
+	//std::cout << fromUShortToFloat(fearLevel) << "\n";
+
+	//bring fear down
+	{
+
+		int changePerSeccond = ((USHORT_MAX / 2) / 20) / targetTicksPerSeccond;
+
+
+		if (fearLevel < personalityBase.fearfull)
+		{
+			if (int(fearLevel) + changePerSeccond > personalityBase.fearfull)
+			{
+				fearLevel = personalityBase.fearfull;
+			}
+			else
+			{
+				fearLevel += changePerSeccond;
+			}
+		}
+		else if (fearLevel > personalityBase.fearfull)
+		{
+			if (int(fearLevel) - changePerSeccond < (int)personalityBase.fearfull)
+			{
+				fearLevel = personalityBase.fearfull;
+			}
+			else
+			{
+				fearLevel -= changePerSeccond;
+			}
+		}
+
+	}
+#pragma endregion
+
+
+
+}
+
+template<class E, class SETTINGS>
+inline void AnimalBehaviour<E, SETTINGS>::configureSpawnSettings(std::minstd_rand &rng)
+{
+	std::cout << "YES \n";
+
+	personalityBase.curious = getRandomNumber(rng, SETTINGS::minCurious, SETTINGS::maxCurious);
+	personalityBase.energetic = getRandomNumber(rng, SETTINGS::minEnergetic, SETTINGS::maxEnergetic);
+	personalityBase.fearfull = getRandomNumber(rng, SETTINGS::minFearfull, SETTINGS::maxFearfull);
+	personalityBase.playfull = getRandomNumber(rng, SETTINGS::minPlayfull, SETTINGS::maxPlayfull);
+	
+	
+	fearLevel = personalityBase.fearfull;
+	speedBase = getRandomNumberFloat(rng, SETTINGS::minSpeed, SETTINGS::maxSpeed);
 
 }

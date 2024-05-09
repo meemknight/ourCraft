@@ -435,3 +435,31 @@ glm::vec3 getRandomUnitVector3(std::minstd_rand &rng);
 void adjustVectorTowardsDirection(glm::vec3 &vector, glm::vec3 desiredDirection = {0,0,-1}, float threshold = glm::radians(85.f));
 
 glm::vec3 getRandomUnitVector3Oriented(std::minstd_rand &rng, glm::vec3 targetDirection = {0,0,-1}, float maxAngle = 3.14159/3.f);
+
+constexpr static unsigned short USHORT_MAX = 65'535;
+
+constexpr float fromUchartoFloat(unsigned char a)
+{
+	return (a) / 255.f;
+}
+
+constexpr float fromUShortToFloat(unsigned short a)
+{
+	return (a) / (float)USHORT_MAX;
+}
+
+constexpr unsigned short fromFloatToUShort(float a)
+{
+	static_assert(sizeof(unsigned short) == 2); //well if you have an error here I'm sorry for you :)), replace unsigned shorts with std::uint16_t;
+
+	a = std::clamp(a, 0.f, 1.f);
+	return a * (float)USHORT_MAX;
+}
+
+constexpr unsigned char fromFloattoUchar(float a)
+{
+	a = std::clamp(a, 0.f, 1.f);
+	return a * 255;
+}
+
+void addFear(unsigned short &current, unsigned short base, float ammount);

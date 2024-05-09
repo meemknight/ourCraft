@@ -22,7 +22,8 @@ struct PigClient: public ClientEntity<Pig, PigClient>
 
 
 
-struct PigServer: public ServerEntity<Pig>, public AnimalBehaviour < PigServer, PigDefaultSettings >
+struct PigServer: public ServerEntity<Pig>,
+	public AnimalBehaviour < PigServer, PigDefaultSettings >
 {
 	bool update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
 		ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng, std::uint64_t yourEID,
@@ -32,6 +33,8 @@ struct PigServer: public ServerEntity<Pig>, public AnimalBehaviour < PigServer, 
 		);
 
 	void appendDataToDisk(std::ofstream &f, std::uint64_t eId);
+
+	void configureSpawnSettings(std::minstd_rand &rng);
 
 };
 

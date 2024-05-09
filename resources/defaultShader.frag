@@ -1222,6 +1222,8 @@ void main()
 			causticsColor.g = pow(texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)).g, causticsLightPower) * causticsLightStrength;
 			causticsColor.b = pow(texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)*2.0).b, causticsLightPower) * causticsLightStrength;
 
+
+			//causticsColor = max(causticsColor, vec3(0,0,0));
 			//out_color.rgb = texture(u_caustics, coords).rgb;
 			//out_color.a = 1;
 			//return ;
@@ -1256,9 +1258,10 @@ void main()
 		//light = 0;
 
 		//sun light
+		vec3 sunLightColor = vec3(1.5);
 		if(v_skyLightUnchanged > 5)
 		{
-			vec3 sunLightColor = vec3(1.5);
+			
 			sunLightColor *= 1-((15-v_skyLightUnchanged)/9.f);
 			sunLightColor *= ((v_ambientInt/15.f)*0.6 + 0.4f);
 
@@ -1322,10 +1325,10 @@ void main()
 
 			float finalCoeficient = (computeFogUnderWater(viewLength)) * u_underwaterDarkenStrength 
 								+ (1-u_underwaterDarkenStrength);
-
-			float causticsBias = luminosity(causticsColor);
-
-			finalCoeficient += causticsBias * 0.1;
+			//
+			//float causticsBias = luminosity(sunLightColor *causticsColor);
+			//
+			//finalCoeficient += causticsBias * 0.01;
 
 			finalCoeficient = clamp(finalCoeficient, 0, 1);
 			out_color.rgb = mix(u_underWaterColor.rgb, out_color.rgb, 
@@ -1476,7 +1479,7 @@ void main()
 				dudv += texture(u_dudv, getDudvCoords2(dudv.x)).rg * 0.01;
 				//dudv += texture(u_dudv, getDudvCoords3(1)).rg;
 				vec2 dudvConv = (dudv * 2) - 1;
-				vec2 distorsionCoord = dudvConv * 0.007;	
+				vec2 distorsionCoord = dudvConv * 0.009;	
 				float distortDepth = getLastDepthLiniarized(p + distorsionCoord, nonLinear);
 
 				
@@ -1598,8 +1601,8 @@ void main()
 const float INFINITY = 1.f/0.f;
 const float SSR_minRayStep = 1.0;
 const int	SSR_maxSteps = 50;
-const int	SSR_numBinarySearchSteps = 10;
-const float SSR_maxRayStep = 10.2;
+const int	SSR_numBinarySearchSteps = 20;
+const float SSR_maxRayStep = 100.2;
 const float SSR_maxRayDelta = 10.0;
 
 //old
