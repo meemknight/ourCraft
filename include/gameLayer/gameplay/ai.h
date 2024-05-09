@@ -14,7 +14,6 @@ struct Personality
 {
 	unsigned short fearfull = fromFloatToUShort(0.5f);
 	unsigned short curious = fromFloatToUShort(0.5f);
-	unsigned short energetic = fromFloatToUShort(0.5f);
 	unsigned short playfull = fromFloatToUShort(0.5f);
 
 	constexpr Personality() {};
@@ -24,7 +23,6 @@ struct Personality
 	{
 		fearfull = fromFloatToUShort(f);
 		curious = fromFloatToUShort(c);
-		energetic = fromFloatToUShort(e);
 		playfull = fromFloatToUShort(p);
 	};
 
@@ -35,20 +33,17 @@ struct Personality
 struct PigDefaultSettings
 {
 
-	constexpr static float minSpeed = 5.0;
-	constexpr static float maxSpeed = 8.0;
+	constexpr static float minSpeed = 4.0;
+	constexpr static float maxSpeed = 7.0;
 
-	constexpr static unsigned short minFearfull = fromFloatToUShort(0.4f);
-	constexpr static unsigned short maxFearfull = fromFloatToUShort(0.8f);
+	constexpr static unsigned short minFearfull = fromFloatToUShort(0.3f);
+	constexpr static unsigned short maxFearfull = fromFloatToUShort(0.6f);
 
 	constexpr static unsigned short minCurious = fromFloatToUShort(0.0f);
 	constexpr static unsigned short maxCurious = fromFloatToUShort(0.6f);
 
-	constexpr static unsigned short minEnergetic = fromFloatToUShort(0.5f);
-	constexpr static unsigned short maxEnergetic = fromFloatToUShort(0.5f);
-
-	constexpr static unsigned short minPlayfull = fromFloatToUShort(0.5f);
-	constexpr static unsigned short maxPlayfull = fromFloatToUShort(0.5f);
+	constexpr static unsigned short minPlayfull = fromFloatToUShort(0.0f);
+	constexpr static unsigned short maxPlayfull = fromFloatToUShort(0.6f);
 
 };
 
@@ -333,8 +328,8 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 			}
 			else
 			{
-				moving = getRandomNumber(rng, 0, 100) % 2;
-				waitTime = getRandomNumberFloat(rng, 1, 4);
+				moving = getRandomChance(rng, 0.5 + fromUShortToFloat(personalityBase.playfull)*0.4 );
+				waitTime = getRandomNumberFloat(rng, 1, 6);
 
 				if (moving)
 				{
@@ -342,11 +337,21 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 
 					currentMoveSpeed = getRandomNumberFloat(rng, speedBase / 2.f, speedBase / 3.f);
 
-					currentMoveSpeed = std::min(getRandomNumberFloat(rng, speedBase / 2.f, speedBase / 3.f), currentMoveSpeed);
+					//not playfull entities run less
+					if (fromUShortToFloat(personalityBase.playfull) < 0.5)
+					{
+						currentMoveSpeed = std::min(getRandomNumberFloat(rng, speedBase / 2.f, speedBase / 3.f), currentMoveSpeed);
+					}
+
+					//playfull entities run more
+					currentMoveSpeed *= (fromUShortToFloat(personalityBase.playfull) / 2.f + 0.9f);
 				}
 			}
 
-
+			if (waitTime > 5.f)
+			{
+				waitTime -= personalityBase.playfull * 2;
+			}
 
 		
 		}
@@ -479,10 +484,11 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 		}
 		else
 		{
-			randomJumpTimer += getRandomNumberFloat(rng, 1, 10);
+			randomJumpTimer += 
+				getRandomNumberFloat(rng, 1, (10 - fromUShortToFloat(personalityBase.playfull) * 6.f));
 		}
 
-		if (fleeing || getRandomNumber(rng, 0, 9) == 1)
+		if (fleeing || getRandomNumber(rng, 0, 9 - fromUShortToFloat(personalityBase.playfull) * 5) == 1)
 		{
 			baseEntity->entity.forces.jump();
 
@@ -602,11 +608,16 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 						changeHeadTimer = getRandomNumberFloat(rng, 1, 6);
 
 					}
+
+					//curious entities look around more often.
+					if (changeHeadTimer > 2.f)
+					{
+						changeHeadTimer -= personalityBase.curious;
+					}
 				}
 
 				
 			}
-
 
 
 
@@ -690,7 +701,6 @@ inline void AnimalBehaviour<E, SETTINGS>::configureSpawnSettings(std::minstd_ran
 	//std::cout << "YES \n";
 
 	personalityBase.curious = getRandomNumber(rng, SETTINGS::minCurious, SETTINGS::maxCurious);
-	personalityBase.energetic = getRandomNumber(rng, SETTINGS::minEnergetic, SETTINGS::maxEnergetic);
 	personalityBase.fearfull = getRandomNumber(rng, SETTINGS::minFearfull, SETTINGS::maxFearfull);
 	personalityBase.playfull = getRandomNumber(rng, SETTINGS::minPlayfull, SETTINGS::maxPlayfull);
 	
