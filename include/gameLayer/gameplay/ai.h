@@ -38,11 +38,11 @@ struct PigDefaultSettings
 	constexpr static float minSpeed = 5.0;
 	constexpr static float maxSpeed = 8.0;
 
-	constexpr static unsigned short minFearfull = fromFloatToUShort(0.76f);
-	constexpr static unsigned short maxFearfull = fromFloatToUShort(0.76f);
+	constexpr static unsigned short minFearfull = fromFloatToUShort(0.4f);
+	constexpr static unsigned short maxFearfull = fromFloatToUShort(0.8f);
 
-	constexpr static unsigned short minCurious = fromFloatToUShort(0.5f);
-	constexpr static unsigned short maxCurious = fromFloatToUShort(0.5f);
+	constexpr static unsigned short minCurious = fromFloatToUShort(0.0f);
+	constexpr static unsigned short maxCurious = fromFloatToUShort(0.6f);
 
 	constexpr static unsigned short minEnergetic = fromFloatToUShort(0.5f);
 	constexpr static unsigned short maxEnergetic = fromFloatToUShort(0.5f);
@@ -74,6 +74,8 @@ struct AnimalBehaviour
 	float randomJumpTimer = 1;
 	float changeHeadTimer = 1;
 	std::uint64_t playerFollow = 0;
+	std::uint64_t approachingPlayer = 0;
+
 
 	void updateAnimalBehaviour(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
 		ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng);
@@ -118,6 +120,7 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 	std::vector<std::pair<std::uint64_t, glm::dvec3>> playersClose;
 
 	glm::dvec3 closestPlayerPosition = {};
+	std::uint64_t closestPlayer = {};
 	bool thereIsClosestPlayer = false;
 	float closesestDist = 1000000000000.f;
 
@@ -141,13 +144,13 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 					{
 						closesestDist = distance;
 						closestPlayerPosition = p.second.entity.position;
+						closestPlayer = p.first;
 					}
 				}
 			}
 		}
 	}
 #pragma endregion
-
 
 
 
@@ -179,6 +182,46 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 		}
 	};
 
+	//todo refactor and use position
+	auto lookAtPlayer = [&](std::uint64_t player)
+	{
+		bool foundPlayer = 0;
+		glm::dvec3 foundPosition = {};
+		for (auto &p : playersClose)
+		{
+			if (p.first == player)
+			{
+				foundPlayer = true;
+				foundPosition = p.second;
+				break;
+			}
+		}
+
+		if (!foundPlayer)
+		{
+			return false;
+		}
+		else
+		{
+
+			glm::vec3 vireDirection = foundPosition + glm::dvec3(0, 1.0, 0) - baseEntity->getPosition();
+			float l = glm::length(vireDirection);
+			if (l > 0.01)
+			{
+				vireDirection /= l;
+				baseEntity->entity.lookDirectionAnimation = vireDirection;
+			}
+
+			removeBodyRotationFromHead(baseEntity->entity.bodyOrientation, baseEntity->entity.lookDirectionAnimation);
+
+			//don't break their neck lol
+			adjustVectorTowardsDirection(baseEntity->entity.lookDirectionAnimation);
+		}
+
+		return true;
+	};
+
+
 	if (fromUShortToFloat(fearLevel) >= 0.9)
 	{
 		fleeing = true;
@@ -195,7 +238,9 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 		carefull = true; //todo implement
 	}
 
+	//approachingPlayer = closestPlayer; //todo
 
+	if (fleeing) { approachingPlayer = false; }
 	if (fleeing)
 	{
 		currentMoveSpeed = speedBase;
@@ -231,21 +276,79 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 
 		};
 	}
-	else
+	else if (approachingPlayer)
 	{
+		bool foundPlayer = 0;
+		glm::dvec3 foundPosition = {};
+		for (auto &p : playersClose)
+		{
+			if (p.first == approachingPlayer)
+			{
+				foundPlayer = true;
+				foundPosition = p.second;
+				break;
+			}
+		}
+
+		if (!foundPlayer)
+		{
+			approachingPlayer = 0;
+			moving = 0;
+			waitTime = 0;
+		}
+		else
+		{
+			moving = 1;
+			
+			glm::vec3 newDir = closestPlayerPosition - baseEntity->getPosition();
+			newDir.y = 0;
+
+			float l = glm::length(newDir);
+			if (l > 1.9f)
+			{
+				newDir /= l;
+				direction.x = newDir.x;
+				direction.y = newDir.z;
+			}
+			else
+			{
+				moving = 0;
+			}
+		}
+
+		if (waitTime < 0) { approachingPlayer = false; }
+
+	}else
+	{
+
 		if (waitTime < 0)
 		{
-			moving = getRandomNumber(rng, 0, 100) % 2;
-			waitTime = getRandomNumberFloat(rng, 1, 4);
 
-			if (moving)
+			if (playersClose.size() && getRandomChance(rng, 0.4 * 
+				fromUchartoFloat(personalityBase.curious)))
 			{
-				direction = getRandomUnitVector(rng);
-
-				currentMoveSpeed = getRandomNumberFloat(rng, speedBase / 2.f, speedBase / 3.f);
-
-				currentMoveSpeed = std::min(getRandomNumberFloat(rng, speedBase / 2.f, speedBase / 3.f), currentMoveSpeed);
+				//follow player.
+				waitTime = getRandomNumberFloat(rng, 4, 12); 
+				approachingPlayer = playersClose[getRandomNumber(rng, 0, playersClose.size())].first;
 			}
+			else
+			{
+				moving = getRandomNumber(rng, 0, 100) % 2;
+				waitTime = getRandomNumberFloat(rng, 1, 4);
+
+				if (moving)
+				{
+					direction = getRandomUnitVector(rng);
+
+					currentMoveSpeed = getRandomNumberFloat(rng, speedBase / 2.f, speedBase / 3.f);
+
+					currentMoveSpeed = std::min(getRandomNumberFloat(rng, speedBase / 2.f, speedBase / 3.f), currentMoveSpeed);
+				}
+			}
+
+
+
+		
 		}
 	}
 
@@ -342,8 +445,13 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 			waitTime = 0;
 		}
 
-
 		auto move = currentMoveSpeed * deltaTime * direction;
+
+		if (carefull)
+		{
+			move *= 0.6;
+		}
+
 		baseEntity->getPosition().x += move.x;
 		baseEntity->getPosition().z += move.y;
 
@@ -385,93 +493,139 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 
 #pragma region head orientation
 
-	if (changeHeadTimer < 0)
+	if (fleeing)
 	{
+		changeHeadTimer = std::min(changeHeadTimer, 1.5f);
+	}
 
+	if (carefull)
+	{
+		changeHeadTimer = std::min(changeHeadTimer, 2.5f);
+	}
 
+	if (approachingPlayer)
+	{
+		lookAtPlayer(approachingPlayer);
+	}
+	else
+	{
+		if (changeHeadTimer < 0)
+		{
 
-		int headRandomDecision = 0;
+			int headRandomDecision = 0;
 
-		if (!playersClose.empty())
-		{
-			headRandomDecision = getRandomNumber(rng, 0, 100) % 5;
-		}
-		else
-		{
-			headRandomDecision = getRandomNumber(rng, 0, 100) % 4;
-		}
-
-		if (headRandomDecision == 0 || headRandomDecision == 1)
-		{
-			//look forward
-			changeHeadTimer = getRandomNumberFloat(rng, 1, 8);
-			baseEntity->entity.lookDirectionAnimation = getRandomUnitVector3Oriented(rng, {0,0.1,-1}, 3.14159 / 5.f);
-		}
-		else if (headRandomDecision == 2 || headRandomDecision == 3)
-		{
-			//look random
-			changeHeadTimer = getRandomNumberFloat(rng, 1, 4);
-			baseEntity->entity.lookDirectionAnimation = getRandomUnitVector3Oriented(rng, {0,0.1,-1});
-		}
-		else
-		{
-			int playerIndex = 0;
-			if (playersClose.size() > 1)
+			if (fleeing)
 			{
-				playerIndex = getRandomNumber(rng, 0, playersClose.size() - 1);
-				playerFollow = playersClose[playerIndex].first;
+
+				if (thereIsClosestPlayer)
+				{
+					if (getRandomNumber(rng, 0, 100) % 2)
+					{
+						baseEntity->entity.lookDirectionAnimation = getRandomUnitVector3Oriented(rng, {0,0.3,-1}, 3.14159 / 5.f);
+					}
+					else
+					{
+						playerFollow = closestPlayer;
+					}
+				}
+				else
+				{
+					baseEntity->entity.lookDirectionAnimation = getRandomUnitVector3Oriented(rng, {0,0.3,-1}, 3.14159 / 5.f);
+				}
+
+				changeHeadTimer = getRandomNumberFloat(rng, 0.5, 1.5);
 			}
 			else
 			{
-				playerFollow = playersClose[0].first;
+
+				//if carefull they will lickely look at the closest player
+				if (carefull)
+				{
+					changeHeadTimer = getRandomNumberFloat(rng, 1, 2.5);
+
+					if (closestPlayer)
+					{
+						if (getRandomNumber(rng, 0, 100) % 2)
+						{
+							//look at player
+							playerFollow = closestPlayer;
+						}
+						else
+						{
+							//look random
+							baseEntity->entity.lookDirectionAnimation = getRandomUnitVector3Oriented(rng, {0,0.1,-1}, 3.14159 / 5.f);
+						}
+					}
+					else
+					{
+						//look random
+						baseEntity->entity.lookDirectionAnimation = getRandomUnitVector3Oriented(rng, {0,0.1,-1});
+					}
+
+
+				}
+				else
+				{
+					if (!playersClose.empty())
+					{
+						headRandomDecision = getRandomNumber(rng, 0, 100) % 5;
+					}
+					else
+					{
+						headRandomDecision = getRandomNumber(rng, 0, 100) % 4;
+					}
+
+					if (headRandomDecision == 0 || headRandomDecision == 1)
+					{
+						//look forward
+						changeHeadTimer = getRandomNumberFloat(rng, 1, 8);
+						baseEntity->entity.lookDirectionAnimation = getRandomUnitVector3Oriented(rng, {0,0.1,-1}, 3.14159 / 5.f);
+					}
+					else if (headRandomDecision == 2 || headRandomDecision == 3)
+					{
+						//look random
+						changeHeadTimer = getRandomNumberFloat(rng, 1, 4);
+						baseEntity->entity.lookDirectionAnimation = getRandomUnitVector3Oriented(rng, {0,0.1,-1});
+					}
+					else
+					{
+						int playerIndex = 0;
+						if (playersClose.size() > 1)
+						{
+							playerIndex = getRandomNumber(rng, 0, playersClose.size() - 1);
+							playerFollow = playersClose[playerIndex].first;
+						}
+						else
+						{
+							playerFollow = playersClose[0].first;
+						}
+						changeHeadTimer = getRandomNumberFloat(rng, 1, 6);
+
+					}
+				}
+
+				
 			}
-			changeHeadTimer = getRandomNumberFloat(rng, 1, 6);
-
-		}
 
 
-		//don't break their neck lol
-		adjustVectorTowardsDirection(baseEntity->entity.lookDirectionAnimation);
 
-	}
-
-	if (playerFollow)
-	{
-		bool foundPlayer = 0;
-		glm::dvec3 foundPosition = {};
-		for (auto &p : playersClose)
-		{
-			if (p.first == playerFollow)
-			{
-				foundPlayer = true;
-				foundPosition = p.second;
-				break;
-			}
-		}
-
-		if (!foundPlayer)
-		{
-			playerFollow = 0;
-			changeHeadTimer -= 1;
-		}
-		else
-		{
-
-			glm::vec3 vireDirection = foundPosition - baseEntity->getPosition();
-			float l = glm::length(vireDirection);
-			if (l > 0.01)
-			{
-				vireDirection /= l;
-				baseEntity->entity.lookDirectionAnimation = vireDirection;
-			}
-
-			removeBodyRotationFromHead(baseEntity->entity.bodyOrientation, baseEntity->entity.lookDirectionAnimation);
 
 			//don't break their neck lol
 			adjustVectorTowardsDirection(baseEntity->entity.lookDirectionAnimation);
+
 		}
 
+		if (playerFollow)
+		{
+			if(!lookAtPlayer(playerFollow))
+			{
+				playerFollow = 0;
+				changeHeadTimer -= 1;
+			}
+		}
 	}
+
+	
 
 #pragma endregion
 
@@ -533,7 +687,7 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 template<class E, class SETTINGS>
 inline void AnimalBehaviour<E, SETTINGS>::configureSpawnSettings(std::minstd_rand &rng)
 {
-	std::cout << "YES \n";
+	//std::cout << "YES \n";
 
 	personalityBase.curious = getRandomNumber(rng, SETTINGS::minCurious, SETTINGS::maxCurious);
 	personalityBase.energetic = getRandomNumber(rng, SETTINGS::minEnergetic, SETTINGS::maxEnergetic);

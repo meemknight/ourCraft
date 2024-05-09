@@ -157,6 +157,12 @@ void removeBodyRotationFromHead(glm::vec2 &bodyOrientation, glm::vec3 &lookDirec
 	lookDirection = glm::rotateY(lookDirection, -rotation);
 }
 
+bool getRandomChance(std::minstd_rand &rng, float chance)
+{
+	float dice = getRandomNumberFloat(rng, 0.0, 1.0);
+	return dice < chance;
+}
+
 void addFear(unsigned short &current, unsigned short base, float ammount)
 {
 	unsigned short ammountShort = fromFloatToUShort(ammount);

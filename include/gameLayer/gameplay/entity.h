@@ -419,6 +419,8 @@ int getRandomNumber(std::minstd_rand &rng, int min, int max);
 
 float getRandomNumberFloat(std::minstd_rand &rng, float min, float max);
 
+bool getRandomChance(std::minstd_rand &rng, float chance);
+
 glm::vec2 getRandomUnitVector(std::minstd_rand &rng);
 
 void setBodyAndLookOrientation(glm::vec2 &bodyOrientation, glm::vec3 &lookDirection, glm::vec3 moveDir,
