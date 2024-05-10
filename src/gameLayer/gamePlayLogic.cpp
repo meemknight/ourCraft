@@ -25,6 +25,7 @@
 #include <thread>
 #include <gameplay/physics.h>
 #include <gameplay/entityManagerClient.h>
+#include <gameplay/items.h>
 
 struct GameData
 {
@@ -62,6 +63,12 @@ struct GameData
 
 	int currentItemSelected = 0;
 
+	PlayerInventory inventory;
+
+
+	bool insideInventoryMenu = 0;
+
+
 }gameData;
 
 
@@ -89,6 +96,14 @@ bool initGameplay(ProgramData &programData, const char *c)
 	gameData.chunkSystem.init(20);
 
 	gameData.sunShadow.init();
+
+
+	gameData.inventory.items[0] = Item(grassBlock);
+	gameData.inventory.items[4] = Item(testBlock);
+	gameData.inventory.items[6] = Item(torch);
+	gameData.inventory.items[7] = Item(spruce_leaves_red);
+	gameData.inventory.items[8] = Item(rose);
+
 
 	return true;
 }
@@ -249,12 +264,35 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma region input
 
+
+	//inventory and menu stuff
+	if(!gameData.escapePressed)
+	if (platform::isKeyReleased(platform::Button::E))
+	{
+		gameData.insideInventoryMenu = !gameData.insideInventoryMenu;
+	}
+
+	if (gameData.insideInventoryMenu)
+	{
+		if (platform::isKeyReleased(platform::Button::Escape))
+		{
+			gameData.insideInventoryMenu = false;
+		}
+	}
+	else
+	{
+		if (platform::isKeyReleased(platform::Button::Escape))
+		{
+			gameData.escapePressed = !gameData.escapePressed;
+		}
+	}
+
+	platform::showMouse(gameData.escapePressed || gameData.insideInventoryMenu);
+
+
 	static float moveSpeed = 20.f;
 
-	if (platform::isKeyReleased(platform::Button::Escape))
-	{
-		gameData.escapePressed = !gameData.escapePressed;
-	}
+	
 
 	if (platform::isKeyReleased(platform::Button::I))
 	{
@@ -266,9 +304,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		programData.renderer.reloadShaders();
 	}
 
-	platform::showMouse(gameData.escapePressed);
 
 	//move
+	if(!gameData.insideInventoryMenu)
 	{
 		float speed = moveSpeed * deltaTime;
 		glm::vec3 moveDir = {};
@@ -359,6 +397,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 	//keyPad
+	if (!gameData.insideInventoryMenu)
 	{
 
 		for (int i = 0; i < 9; i++)
@@ -420,6 +459,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma region drop items
 	
+	if (!gameData.insideInventoryMenu)
 	if (platform::isKeyPressedOn(platform::Button::Q))
 	{
 		gameData.entityManager.dropItemByClient(
@@ -1046,7 +1086,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 #pragma region ui
-	programData.ui.renderGameUI(deltaTime, w, h, gameData.currentItemSelected);
+	programData.ui.renderGameUI(deltaTime, w, h, gameData.currentItemSelected, 
+		gameData.inventory, programData.blocksLoader, gameData.insideInventoryMenu);
 #pragma endregion
 
 	gameData.gameplayFrameProfiler.endFrame();

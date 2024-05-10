@@ -207,7 +207,8 @@ namespace glui
 		{
 			//renderer.renderRectangle(transform, newColor, {}, 0.f, t);
 			//renderer.render9Patch2(transform, newColor, {}, 0.f, t, GL2D_DefaultTextureCoords, {2.f/26.f, 24.f / 26.f,24.f / 26.f,2.f / 26.f});
-			renderer.render9Patch2(transform, newColor, {}, 0.f, t, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
+			//renderer.render9Patch2(transform, newColor, {}, 0.f, t, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
+			renderer.render9Patch(transform, 20,  newColor, {}, 0.f, t, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
 		
 		}
 	}
@@ -2044,6 +2045,11 @@ namespace glui
 	{
 		dimensions.y = dist;
 		YcenterState = 2;
+		return *this;
+	}
+	Box &Box::yBottomPerc(float perc)
+	{
+		yBottom(perc * height);
 		return *this;
 	}
 	Box &Box::xDimensionPixels(int dim)

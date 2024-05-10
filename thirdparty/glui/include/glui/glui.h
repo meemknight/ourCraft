@@ -227,6 +227,7 @@ namespace glui
 		Box &yTopPerc(float perc = 0);
 		Box &xRight(int dist = 0);
 		Box &yBottom(int dist = 0);
+		Box &yBottomPerc(float perc = 0);
 
 		Box &xDimensionPixels(int dim);
 		Box &yDimensionPixels(int dim);

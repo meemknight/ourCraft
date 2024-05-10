@@ -3,6 +3,8 @@
 #include "glm/vec2.hpp"
 #include <glui/glui.h>
 
+struct PlayerInventory;
+struct BlocksLoader;
 
 
 struct UiENgine
@@ -22,12 +24,18 @@ struct UiENgine
 
 	gl2d::Texture itemsBar;
 	gl2d::Texture itemsHighlighter;
+	gl2d::Texture itemsBarInventory;
+	gl2d::Texture oneInventorySlot;
 
 	glm::vec2 itemsBarSize;
 	glm::vec2 itemsHighlighterSize;
+	glm::vec2 itemsBarInventorySize;
+	glm::vec2 oneInventorySlotSize;
+
 
 
 	void renderGameUI(float deltaTime, 
-		int w, int h, int itemSelected);
+		int w, int h, int itemSelected, PlayerInventory &inventory,
+		BlocksLoader &blocksLoader, bool insideInventory);
 
 };
