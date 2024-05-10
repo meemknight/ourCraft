@@ -5,25 +5,24 @@
 #include "blocksLoader.h"
 #include <structure.h>
 #include <rendering/model.h>
+#include <rendering/UiEngine.h>
 
 struct ProgramData
 {
-	gl2d::Renderer2D renderer2d;
-	glui::RendererUi menuRenderer;
+
+	UiENgine ui;
+
 	Renderer renderer;
 	GyzmosRenderer gyzmosRenderer;
 	PointDebugRenderer pointDebugRenderer;
 	BlocksLoader blocksLoader;
 	ModelsManager modelsManager;
 
-	gl2d::Font font;
-	gl2d::Texture uiTexture;
-	gl2d::Texture buttonTexture;
+
 	gl2d::Texture numbersTexture;
 	gl2d::Texture causticsTexture;
 	gl2d::Texture dudv;
 	gl2d::Texture dudvNormal;
-	gl2d::TextureAtlas uiAtlas{6, 1};
 	int currentFps = 0;
 };
 

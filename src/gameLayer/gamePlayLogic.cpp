@@ -10,7 +10,7 @@
 #include "multyPlayer/server.h"
 #include "multyPlayer/createConnection.h"
 #include <enet/enet.h>
-#include "rendering/Ui.h"
+#include "rendering/UiEngine.h"
 #include "glui/glui.h"
 #include <imgui.h>
 #include <iostream>
@@ -60,6 +60,7 @@ struct GameData
 	glm::dvec3 lastSendPos = {-INFINITY,0,0};
 
 
+	int currentItemSelected = 0;
 
 }gameData;
 
@@ -347,7 +348,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		bool rotate = !gameData.escapePressed;
 		if (platform::isRMouseHeld()) { rotate = true; }
 		gameData.c.rotateFPS(platform::getRelMousePosition(), 0.25f * deltaTime, rotate);
-		
+
 		if (!gameData.escapePressed)
 		{
 			platform::setRelMousePosition(w / 2, h / 2);
@@ -355,6 +356,23 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 
 	}
+
+
+	//keyPad
+	{
+
+		for (int i = 0; i < 9; i++)
+		{
+			if(platform::isKeyPressedOn(platform::Button::NR1 + i))
+			{
+				gameData.currentItemSelected = i;
+			}
+		}
+
+	}
+
+
+
 #pragma endregion
 
 
@@ -1028,17 +1046,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 #pragma region ui
-	if (w != 0 && h != 0)
-	{	
-
-		Ui::Frame f({0,0, w, h});
-
-		programData.renderer2d.renderRectangle(
-			Ui::Box().xCenter().yCenter().xDimensionPixels(30).yAspectRatio(1.f),
-			programData.uiTexture, Colors_White, {}, 0, 
-			programData.uiAtlas.get(2, 0)
-		);
-	}
+	programData.ui.renderGameUI(deltaTime, w, h, gameData.currentItemSelected);
 #pragma endregion
 
 	gameData.gameplayFrameProfiler.endFrame();

@@ -14,7 +14,7 @@
 #include "multyPlayer/server.h"
 #include "multyPlayer/createConnection.h"
 #include <enet/enet.h>
-#include "rendering/Ui.h"
+#include "rendering/UiEngine.h"
 #include "glui/glui.h"
 #include "gamePlayLogic.h"
 #include "multyPlayer/splitUpdatesLogic.h"
@@ -30,10 +30,8 @@ bool initGame()
 	
 
 	//gl2d::setVsync(false);
-	programData.renderer2d.create();
-	programData.font.createFromFile(RESOURCES_PATH "roboto_black.ttf");
-	programData.uiTexture.loadFromFile(RESOURCES_PATH "ui0.png", true, true);
-	programData.buttonTexture.loadFromFile(RESOURCES_PATH "beacon_button_default.png", true, true);
+	programData.ui.init();
+
 	programData.numbersTexture.loadFromFile(RESOURCES_PATH "numbers.png", true, true);
 	//programData.dudv.loadFromFile(RESOURCES_PATH "otherTextures/test.jpg", true, true);
 	programData.dudv.loadFromFile(RESOURCES_PATH "otherTextures/waterDUDV.png", false, true);
@@ -90,7 +88,7 @@ bool gameLogic(float deltaTime)
 	w = platform::getWindowSizeX();
 	h = platform::getWindowSizeY();
 
-	programData.renderer2d.updateWindowMetrics(w, h);
+	programData.ui.renderer2d.updateWindowMetrics(w, h);
 
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -129,10 +127,10 @@ bool gameLogic(float deltaTime)
 
 	if (!gameStarted)
 	{
-		programData.menuRenderer.Begin(1);
-		programData.menuRenderer.SetAlignModeFixedSizeWidgets({0,150});
+		programData.ui.menuRenderer.Begin(1);
+		programData.ui.menuRenderer.SetAlignModeFixedSizeWidgets({0,150});
 
-		if (programData.menuRenderer.Button("Host game", Colors_Gray, programData.buttonTexture))
+		if (programData.ui.menuRenderer.Button("Host game", Colors_Gray, programData.ui.buttonTexture))
 		{
 			if (!startServer())
 			{
@@ -150,8 +148,8 @@ bool gameLogic(float deltaTime)
 			}
 
 		}
-		if (programData.menuRenderer.Button("Join game", Colors_Gray,
-			programData.buttonTexture))
+		if (programData.ui.menuRenderer.Button("Join game", Colors_Gray,
+			programData.ui.buttonTexture))
 		{
 			if (initGameplay(programData, ipString))
 			{
@@ -163,18 +161,18 @@ bool gameLogic(float deltaTime)
 			}
 		}
 		
-		programData.menuRenderer.InputText("IP: ", ipString, sizeof(ipString), 
-			Colors_Gray, programData.buttonTexture, false);
+		programData.ui.menuRenderer.InputText("IP: ", ipString, sizeof(ipString),
+			Colors_Gray, programData.ui.buttonTexture, false);
 
 
 		displayRenderSettingsMenuButton(programData);
 
 		if (!lastError.empty())
 		{
-			programData.menuRenderer.Text(lastError, glm::vec4(1, 0, 0, 1));
+			programData.ui.menuRenderer.Text(lastError, glm::vec4(1, 0, 0, 1));
 		}
 
-		programData.menuRenderer.End();
+		programData.ui.menuRenderer.End();
 	}
 	else
 	{
@@ -227,11 +225,11 @@ bool gameLogic(float deltaTime)
 #pragma region set finishing stuff
 	gl2d::enableNecessaryGLFeatures();
 
-	programData.menuRenderer.renderFrame(programData.renderer2d, programData.font, platform::getRelMousePosition(),
+	programData.ui.menuRenderer.renderFrame(programData.ui.renderer2d, programData.ui.font, platform::getRelMousePosition(),
 		platform::isLMousePressed(), platform::isLMouseHeld(), platform::isLMouseReleased(),
 		platform::isKeyReleased(platform::Button::Escape), platform::getTypedInput(), deltaTime);
 
-	programData.renderer2d.flush();
+	programData.ui.renderer2d.flush();
 
 	return true;
 #pragma endregion
