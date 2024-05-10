@@ -96,6 +96,12 @@ void platform::internal::setRightMouseState(int newState)
 }
 
 
+float scrollY = 0;
+void scrollCallback(GLFWwindow *window, double xoffset, double yoffset)
+{
+	scrollY = yoffset;
+}
+
 void platform::internal::updateAllButtons(float deltaTime)
 {
 	for (int i = 0; i < platform::Button::BUTTONS_COUNT; i++)
@@ -144,7 +150,14 @@ void platform::internal::updateAllButtons(float deltaTime)
 
 	}
 
+	scrollY = 0;
+}
 
+
+
+float platform::getScroll()
+{
+	return scrollY;
 }
 
 void platform::internal::resetInputsToZero()
@@ -159,6 +172,8 @@ void platform::internal::resetInputsToZero()
 	resetButtonToZero(leftMouse);
 	resetButtonToZero(rightMouse);
 	
+	scrollY = 0;
+
 	controllerButtons.setAllToZero();
 }
 

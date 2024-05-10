@@ -17,13 +17,13 @@ enum ItemTypes
 struct Item
 {
 	Item() {};
-	Item(unsigned short type, unsigned char counter = 0):type(type), counter(counter) {};
+	Item(unsigned short type, unsigned char counter = 1):type(type), counter(counter) {};
 
 	unsigned short type = 0;
 	std::vector<unsigned char> metaData;
-	unsigned char counter = 0;
+	unsigned char counter = 1;
 
-
+	bool isBlock();
 };
 
 struct PlayerInventory
@@ -31,6 +31,7 @@ struct PlayerInventory
 	
 	Item items[36] = {};
 	
+	Item heldInMouse = {};
 
 
 	//todo

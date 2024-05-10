@@ -50,6 +50,45 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 	, int itemSelected, PlayerInventory &inventory, BlocksLoader &blocksLoader,
 	bool insideInventory)
 {
+
+	auto renderOneItem = [&](glm::vec4 itemBox, Item & item, float in = 8.f / 22.f)
+	{
+		if (item.type == 0)return;
+
+		if (item.type < BlocksCount)
+		{
+
+			gl2d::Texture t;
+			t.id = blocksLoader.texturesIds[getGpuIdIndexForBlock(item.type, 0)];
+
+			//we have a block
+			renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, in), t);
+
+
+		}
+		else
+		{
+			//we have an item
+
+		}
+
+		if (item.counter != 1)
+		{
+			itemBox = shrinkRectanglePercentage(itemBox, in);
+			itemBox.x += itemBox.z / 1.4;
+			itemBox.y += itemBox.w / 1.4;
+
+			std::string s = std::to_string(item.counter);
+			if (item.counter < 10) { s = " " + s; }
+
+			renderer2d.renderText({itemBox}, s.c_str(),
+				font, {1,1,1,1}, 0.9 * (itemBox.z/100.f));
+
+		}
+
+	};
+
+
 	if (w != 0 && h != 0)
 	{
 
@@ -71,27 +110,29 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			//renderer2d.renderRectangle(
 			//	inventoryBox, buttonTexture);
 
+			int oneItemSize = 0;
+
 			{
 				glui::Frame insideInventory(inventoryBox);
 
 
 				auto hotBarBox = glui::Box().xCenter().yBottomPerc(-0.05).xDimensionPercentage(0.9).
-					yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x);
+					yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
 
 				renderer2d.renderRectangle(hotBarBox, itemsBarInventory);
 
 
-				auto inventoryBox = glui::Box().xCenter().yBottomPerc(-0.17).xDimensionPercentage(0.9).
+				auto inventoryBars = glui::Box().xCenter().yBottomPerc(-0.17).xDimensionPercentage(0.9).
 					yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
-				renderer2d.renderRectangle(inventoryBox, itemsBarInventory);
+				renderer2d.renderRectangle(inventoryBars, itemsBarInventory);
 
-				inventoryBox.y -= inventoryBox.w;
-				renderer2d.renderRectangle(inventoryBox, itemsBarInventory);
+				auto inventoryBars2 = inventoryBars;
+				inventoryBars2.y -= inventoryBars2.w;
+				renderer2d.renderRectangle(inventoryBars2, itemsBarInventory);
 
-				inventoryBox.y -= inventoryBox.w;
-				renderer2d.renderRectangle(inventoryBox, itemsBarInventory);
-
-				inventoryBox.y -= inventoryBox.w * 0.5;
+				auto inventoryBars3 = inventoryBars2;
+				inventoryBars3.y -= inventoryBars3.w;
+				renderer2d.renderRectangle(inventoryBars3, itemsBarInventory);
 
 
 				//upper part
@@ -137,10 +178,41 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 					renderer2d.renderRectangle(fourthCrafting, oneInventorySlot);
 
 
+
+				
+
 				}
 
 
+				//render items
+				auto renderItems = [&](int start, glm::ivec4 box)
+				{
+					auto itemBox = box;
+					itemBox.z = itemBox.w;
+					for (int i = start; i < start+9; i++)
+					{
+						if (inventory.items[i].type)
+						{
+							itemBox.x = box.x + itemBox.z * (i-start);
+							renderOneItem(itemBox, inventory.items[i], 4.f / 22.f);
+						}
+					}
+				};
+
+				oneItemSize = hotBarBox.w;
+				
+				renderItems(0, hotBarBox);
+				renderItems(9, inventoryBars);
+				renderItems(18, inventoryBars2);
+				renderItems(27, inventoryBars3);
+
 			}
+
+			auto mousePos = platform::getRelMousePosition();
+			glm::vec4 itemPos(mousePos.x - oneItemSize/2.f, mousePos.y - oneItemSize/2.f,
+				oneItemSize, oneItemSize);
+			renderOneItem(itemPos, inventory.heldInMouse, 0);
+
 
 		}
 		else
@@ -151,7 +223,6 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 				uiTexture, Colors_White, {}, 0,
 				uiAtlas.get(2, 0)
 			);
-
 
 
 
@@ -169,36 +240,12 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			itemBox.z = itemBox.w;
 			for (int i = 0; i < 9; i++)
 			{
-
 				if (inventory.items[i].type)
 				{
-
-
-					if (inventory.items[i].type < BlocksCount)
-					{
-
-
-						gl2d::Texture t;
-						t.id = blocksLoader.texturesIds[getGpuIdIndexForBlock(inventory.items[i].type, 0)];
-
-						//we have a block
-						itemBox.x = itemsBarBox.x + itemBoxAdvance * i;
-						renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, 8.f / 22.f), t);
-
-
-					}
-					else
-					{
-						//we have an item
-
-
-					}
-
-
+					itemBox.x = itemsBarBox.x + itemBoxAdvance * i;
+					renderOneItem(itemBox, inventory.items[i]);
 				}
-
 			}
-
 
 			auto selectedBox = itemsBarBox;
 			selectedBox.z = selectedBox.w;

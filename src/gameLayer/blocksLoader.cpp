@@ -840,9 +840,7 @@ void BlocksLoader::loadAllTextures()
 
 		}
 
-
 	}
-
 
 }
 

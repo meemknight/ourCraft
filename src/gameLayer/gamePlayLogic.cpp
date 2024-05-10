@@ -98,11 +98,21 @@ bool initGameplay(ProgramData &programData, const char *c)
 	gameData.sunShadow.init();
 
 
-	gameData.inventory.items[0] = Item(grassBlock);
+	gameData.inventory.items[0] = Item(grassBlock, 20);
+	gameData.inventory.items[1] = Item(grassBlock, 2);
+	gameData.inventory.items[2] = Item(grassBlock, 64);
+	gameData.inventory.items[3] = Item(grassBlock, 1);
 	gameData.inventory.items[4] = Item(testBlock);
 	gameData.inventory.items[6] = Item(torch);
 	gameData.inventory.items[7] = Item(spruce_leaves_red);
 	gameData.inventory.items[8] = Item(rose);
+	gameData.inventory.items[9] = Item(BlockTypes::bookShelf);
+	gameData.inventory.items[17] = Item(BlockTypes::diamond_ore);
+	gameData.inventory.items[18] = Item(BlockTypes::cactus_bud);
+	gameData.inventory.items[27] = Item(BlockTypes::birch_wood);
+	gameData.inventory.items[34] = Item(BlockTypes::clay);
+	gameData.inventory.items[35] = Item(BlockTypes::glass);
+	//gameData.inventory.heldInMouse = Item(BlockTypes::glass);
 
 
 	return true;
@@ -402,11 +412,23 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		for (int i = 0; i < 9; i++)
 		{
-			if(platform::isKeyPressedOn(platform::Button::NR1 + i))
+			if (platform::isKeyPressedOn(platform::Button::NR1 + i))
 			{
 				gameData.currentItemSelected = i;
 			}
 		}
+
+		auto scroll = platform::getScroll();
+		if (scroll < -0.5)
+		{
+			gameData.currentItemSelected++;
+		}
+		else if (scroll > 0.5)
+		{
+			gameData.currentItemSelected--;
+		}
+
+		gameData.currentItemSelected = std::clamp(gameData.currentItemSelected, 0, 8);
 
 	}
 
@@ -487,13 +509,22 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	}
 
+
 	if (!gameData.escapePressed)
 	{
-		static int blockTypeToPlace = BlockTypes::glowstone;
-		if (platform::isKeyReleased(platform::Button::Z)) { blockTypeToPlace--; }
-		if (platform::isKeyReleased(platform::Button::X)) { blockTypeToPlace++; }
 
-		blockTypeToPlace = glm::clamp(blockTypeToPlace, 1, BlocksCount - 1);
+		auto &item = gameData.inventory.items[gameData.currentItemSelected];
+
+		if (item.isBlock())
+		{
+			if (platform::isKeyReleased(platform::Button::Z)) { item.type--; }
+			if (platform::isKeyReleased(platform::Button::X)) { item.type++; }
+
+			item.type = glm::clamp(item.type, (unsigned short)1u, 
+				(unsigned short)(BlocksCount - 1u));
+		}
+
+
 
 		if (platform::isKeyHeld(platform::Button::LeftCtrl)
 			&& (platform::isLMousePressed() || platform::isRMousePressed())
@@ -504,7 +535,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				auto b = gameData.chunkSystem.getBlockSafe(rayCastPos);
 				if (b)
 				{
-					blockTypeToPlace = b->type;
+					item.type = b->type;
+					item.counter = 1;
 				}
 			}
 
@@ -532,7 +564,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			if (platform::isRMouseReleased())
 			{
 				if (blockToPlace)
-					gameData.chunkSystem.placeBlockByClient(*blockToPlace, blockTypeToPlace,
+					gameData.chunkSystem.placeBlockByClient(*blockToPlace, item.type,
 					gameData.undoQueue, gameData.entityManager.localPlayer.entity.position, gameData.lightSystem);
 			}
 			else if (platform::isLMouseReleased())

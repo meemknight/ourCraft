@@ -200,6 +200,9 @@ void characterCallback(GLFWwindow *window, unsigned int codepoint)
 	}
 }
 
+void scrollCallback(GLFWwindow *window, double xoffset, double yoffset);
+
+
 #pragma region platform functions
 
 GLFWwindow *wind = 0;
@@ -303,6 +306,7 @@ namespace platform
 		return 1;
 	}
 
+
 };
 #pragma endregion
 
@@ -349,6 +353,7 @@ int main()
 	glfwSetWindowSizeCallback(wind, windowSizeCallback);
 	glfwSetCursorPosCallback(wind, cursorPositionCallback);
 	glfwSetCharCallback(wind, characterCallback);
+	glfwSetScrollCallback(wind, scrollCallback);
 
 	permaAssertComment(gladLoadGL(), "err initializing glad");
 
