@@ -26,11 +26,13 @@ struct UiENgine
 	gl2d::Texture itemsHighlighter;
 	gl2d::Texture itemsBarInventory;
 	gl2d::Texture oneInventorySlot;
+	gl2d::Texture playerCell;
 
 	glm::vec2 itemsBarSize;
 	glm::vec2 itemsHighlighterSize;
 	glm::vec2 itemsBarInventorySize;
 	glm::vec2 oneInventorySlotSize;
+	glm::vec2 playerCellSize;
 
 
 

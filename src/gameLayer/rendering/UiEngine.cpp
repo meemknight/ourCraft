@@ -41,6 +41,9 @@ void UiENgine::init()
 	oneInventorySlot.loadFromFile(RESOURCES_PATH "assets/textures/ui/ui4.png", true, true);
 	oneInventorySlotSize = oneInventorySlot.GetSize();
 
+	playerCell.loadFromFile(RESOURCES_PATH "assets/textures/ui/ui5.png", true, true);
+	playerCellSize = playerCell.GetSize();
+
 }
 
 void UiENgine::renderGameUI(float deltaTime, int w, int h
@@ -105,7 +108,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 					glm::vec4 playerBox = armourBox;
 					playerBox.x += playerBox.z;
 					playerBox.w *= 4;
-					playerBox.z *= 2.5;
+					playerBox.z = (playerBox.w / playerCellSize.y) * playerCellSize.x;
 
 					renderer2d.renderRectangle(armourBox, oneInventorySlot);
 
@@ -118,8 +121,20 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 					armourBox.y += armourBox.w;
 					renderer2d.renderRectangle(armourBox, oneInventorySlot);
 
+					renderer2d.renderRectangle(playerBox, playerCell);
 
-					renderer2d.renderRectangle(playerBox, {0,0,0,1});
+
+
+					//crafting
+					auto craftingStart = glui::Box().xLeftPerc(0.6).yTopPerc(0.2).xDimensionPercentage(1.f / 9.f).
+						yAspectRatio(1.f)();
+					renderer2d.renderRectangle(craftingStart, oneInventorySlot);
+					auto secondCrafting = craftingStart; secondCrafting.x += craftingStart.z;
+					renderer2d.renderRectangle(secondCrafting, oneInventorySlot);
+					auto thirdCrafting = craftingStart; thirdCrafting.y += craftingStart.w;
+					renderer2d.renderRectangle(thirdCrafting, oneInventorySlot);
+					auto fourthCrafting = craftingStart; fourthCrafting.x += craftingStart.z; fourthCrafting.y += craftingStart.w;
+					renderer2d.renderRectangle(fourthCrafting, oneInventorySlot);
 
 
 				}
