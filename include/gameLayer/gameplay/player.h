@@ -1,7 +1,7 @@
 #pragma once
 #include <gameplay/entity.h>
 #include <multyPlayer/server.h>
-
+#include <gameplay/items.h>
 
 //this is the shared data
 struct Player : public PhysicalEntity
@@ -22,9 +22,12 @@ struct Player : public PhysicalEntity
 //this is the player struct when playing locally
 struct LocalPlayer
 {
+	PlayerInventory inventory;
+
 	Player entity = {};
 
 	std::uint64_t entityId = 0;
+
 
 	//dodo add some other data here like inventory
 
@@ -38,4 +41,9 @@ struct PlayerClient: public ClientEntity<Player, PlayerClient>
 
 //todo update function
 struct PlayerServer: public ServerEntity<Player>
-{};
+{
+
+
+	PlayerInventory inventory;
+
+};

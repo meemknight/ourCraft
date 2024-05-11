@@ -26,8 +26,8 @@ struct EventId
 
 struct Packet
 {
-	uint32_t header = 0;
 	std::uint64_t cid = 0;
+	uint32_t header = 0;
 	char *getData()
 	{
 		return (char *)((&cid) + 1);
@@ -41,7 +41,7 @@ struct Packet
 
 };
 
-enum
+enum : std::uint32_t
 {
 	headerNone = 0,
 	headerReceiveCIDAndData,
@@ -56,6 +56,7 @@ enum
 	headerSendPlayerData,
 	headerClientRecieveOtherPlayerPosition,
 	headerClientRecieveDroppedItemUpdate,
+	headerClientRecieveAllInventory,
 	headerClientUpdateTimer,
 	headerDisconnectOtherPlayer, 
 	headerUpdateZombie,
@@ -198,6 +199,10 @@ void *unCompressData(const char *data, size_t compressedSize, size_t &originalSi
 void sendPacketAndCompress(ENetPeer *to, Packet p, const char *data, size_t size, bool reliable, int channel);
 
 void sendPacket(ENetPeer *to, Packet p, const char *data, size_t size, bool reliable, int channel);
+
+void sendPacket(ENetPeer *to, uint32_t header, void *data, size_t size, bool reliable, int channel);
+
+
 char *parsePacket(ENetEvent &event, Packet &p, size_t &dataSize);
 
 float computeRestantTimer(std::uint64_t older, std::uint64_t newer);

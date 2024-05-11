@@ -137,7 +137,7 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 				//interpolate
 				int maxCounterLoop = 100;
 				if(1) 
-				while (maxCounterLoop-- > 0) 
+				while (maxCounterLoop-- > 0)
 				{
 
 					if (originalHeight != interPolateNodeNotGood.second.returnPos.y)
@@ -241,7 +241,7 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 								if (problems)
 								{
-									std::cout << "Problems! ";
+									//std::cout << "Problems! ";
 									interPolateNodeNotGood = *newFoundNode;
 									//break; //worse interpolation but less lickely to have problems
 								}

@@ -128,17 +128,17 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 		{
 			for (auto &p : c->entityData.players)
 			{
-				float distance = glm::length(p.second.entity.position - baseEntity->getPosition());
+				float distance = glm::length(p.second->entity.position - baseEntity->getPosition());
 
 				if (distance <= 15)
 				{
-					playersClose.push_back({p.first, p.second.entity.position});
+					playersClose.push_back({p.first, p.second->entity.position});
 					thereIsClosestPlayer = true;
 
 					if (distance < closesestDist)
 					{
 						closesestDist = distance;
-						closestPlayerPosition = p.second.entity.position;
+						closestPlayerPosition = p.second->entity.position;
 						closestPlayer = p.first;
 					}
 				}

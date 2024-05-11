@@ -76,7 +76,7 @@ void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
 
 		permaAssertComment(chunk, "Error, A chunk that a player is in unloaded...");
 
-		chunk->entityData.players.insert({client.first, client.second.playerData});
+		chunk->entityData.players.insert({client.first, &client.second.playerData});
 
 	}
 
@@ -317,13 +317,15 @@ void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
 
 	}
 
-	for (auto &c : chunkCache.savedChunks)
-	{
-		for (auto &p : c.second->entityData.players)
-		{
-			clients[p.first].playerData = p.second;
-		}
-	}
+
+	//not needed anymore
+	//for (auto &c : chunkCache.savedChunks)
+	//{
+	//	for (auto &p : c.second->entityData.players)
+	//	{
+	//		clients[p.first].playerData = p.second;
+	//	}
+	//}
 	
 
 

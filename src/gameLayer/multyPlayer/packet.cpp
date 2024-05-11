@@ -106,6 +106,14 @@ void sendPacket(ENetPeer *to, Packet p,
 	enet_peer_send(to, channel, packet);
 }
 
+void sendPacket(ENetPeer *to, uint32_t header, void *data, size_t size, bool reliable, int channel)
+{
+	Packet packet;
+	packet.header = header;
+
+	sendPacket(to, packet, (const char*)data, size, reliable, channel);
+}
+
 char *parsePacket(ENetEvent &event, Packet &p, size_t &dataSize)
 {
 	size_t size = event.packet->dataLength;

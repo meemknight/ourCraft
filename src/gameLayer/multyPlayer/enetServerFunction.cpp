@@ -95,7 +95,7 @@ std::unordered_map<std::uint64_t, Client> getAllClients()
 	return rez;
 }
 
-void insertConnection(std::uint64_t cid, Client c)
+void insertConnection(std::uint64_t cid, Client &c)
 {
 	connections.insert({cid, c});
 }
@@ -139,6 +139,22 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 		Client c{event.peer};
 		c.playerData.entity.position = spawnPosition;
 		c.playerData.entity.lastPosition = spawnPosition;
+		
+		c.playerData.inventory.items[0] = Item(grassBlock, 20);
+		c.playerData.inventory.items[1] = Item(grassBlock, 2);
+		c.playerData.inventory.items[2] = Item(grassBlock, 64);
+		c.playerData.inventory.items[3] = Item(grassBlock, 1);
+		c.playerData.inventory.items[4] = Item(testBlock);
+		c.playerData.inventory.items[6] = Item(torch);
+		c.playerData.inventory.items[7] = Item(spruce_leaves_red);
+		c.playerData.inventory.items[8] = Item(rose);
+		c.playerData.inventory.items[9] = Item(BlockTypes::bookShelf);
+		c.playerData.inventory.items[17] = Item(BlockTypes::diamond_ore);
+		c.playerData.inventory.items[18] = Item(BlockTypes::cactus_bud);
+		c.playerData.inventory.items[27] = Item(BlockTypes::birch_wood);
+		c.playerData.inventory.items[34] = Item(BlockTypes::clay);
+		c.playerData.inventory.items[35] = Item(BlockTypes::glass);
+
 		insertConnection(id, c);
 	}
 
@@ -157,7 +173,7 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 			sizeof(packetToSend), true, channelHandleConnections);
 	}
 
-	//todo send entities to this new connection
+	//todo maybe send entities to this new connection?
 
 
 	{
@@ -171,6 +187,17 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 
 		sendPacket(event.peer, packet, (const char *)&packetData,
 			sizeof(packetData), true, channelHandleConnections);
+	}
+
+	//send inventory
+	{
+
+		std::vector<unsigned char> data;
+		connections[id].playerData.inventory.formatIntoData(data);
+
+		sendPacket(event.peer, headerClientRecieveAllInventory, data.data(), data.size(), true,
+			channelHandleConnections);
+
 	}
 
 	//send others to this

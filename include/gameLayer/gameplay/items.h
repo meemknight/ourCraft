@@ -24,12 +24,20 @@ struct Item
 	unsigned char counter = 1;
 
 	bool isBlock();
+
+	//this is used for pakcet sending and saving
+	void formatIntoData(std::vector<unsigned char> &data);
+
+	//returns how much has been read or -1 if fail
+	int readFromData(void *data, size_t size);
+
 };
 
 struct PlayerInventory
 {
 	
-	Item items[36] = {};
+	constexpr static int INVENTORY_CAPACITY = 36;
+	Item items[INVENTORY_CAPACITY] = {};
 	
 	Item heldInMouse = {};
 
@@ -37,4 +45,8 @@ struct PlayerInventory
 	//todo
 	void sanitize() {};
 	
+	//doesn't clear data vector!!
+	void formatIntoData(std::vector<unsigned char> &data);
+
+	bool readFromData(void *data, size_t size);
 };

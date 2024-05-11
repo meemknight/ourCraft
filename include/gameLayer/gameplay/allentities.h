@@ -42,7 +42,7 @@ struct EntityGetter
 
 struct EntityData: public EntityGetter<EntityData>
 {
-	std::unordered_map <std::uint64_t, PlayerServer> players;
+	std::unordered_map <std::uint64_t, PlayerServer*> players;
 
 	std::unordered_map<std::uint64_t, DroppedItemServer> droppedItems;
 	std::unordered_map<std::uint64_t, ZombieServer> zombies;

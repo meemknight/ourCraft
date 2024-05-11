@@ -139,7 +139,7 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 	{
 		for (auto &p : c.second->entityData.players)
 		{
-			playersPosition.insert({p.first, p.second.getPosition()});
+			playersPosition.insert({p.first, p.second->getPosition()});
 		}
 	}
 

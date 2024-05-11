@@ -377,6 +377,14 @@ void recieveDataClient(ENetEvent &event,
 		}
 		break;
 
+		case headerClientRecieveAllInventory:
+		{
+			//todo request a hard reset if this fails
+			entityManager.localPlayer.inventory.readFromData(data, size);
+
+		}
+		break;
+
 		default:
 		break;
 

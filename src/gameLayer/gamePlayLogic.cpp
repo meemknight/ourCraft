@@ -63,7 +63,6 @@ struct GameData
 
 	int currentItemSelected = 0;
 
-	PlayerInventory inventory;
 
 
 	bool insideInventoryMenu = 0;
@@ -98,20 +97,7 @@ bool initGameplay(ProgramData &programData, const char *c)
 	gameData.sunShadow.init();
 
 
-	gameData.inventory.items[0] = Item(grassBlock, 20);
-	gameData.inventory.items[1] = Item(grassBlock, 2);
-	gameData.inventory.items[2] = Item(grassBlock, 64);
-	gameData.inventory.items[3] = Item(grassBlock, 1);
-	gameData.inventory.items[4] = Item(testBlock);
-	gameData.inventory.items[6] = Item(torch);
-	gameData.inventory.items[7] = Item(spruce_leaves_red);
-	gameData.inventory.items[8] = Item(rose);
-	gameData.inventory.items[9] = Item(BlockTypes::bookShelf);
-	gameData.inventory.items[17] = Item(BlockTypes::diamond_ore);
-	gameData.inventory.items[18] = Item(BlockTypes::cactus_bud);
-	gameData.inventory.items[27] = Item(BlockTypes::birch_wood);
-	gameData.inventory.items[34] = Item(BlockTypes::clay);
-	gameData.inventory.items[35] = Item(BlockTypes::glass);
+
 	//gameData.inventory.heldInMouse = Item(BlockTypes::glass);
 
 
@@ -128,6 +114,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		gameData.c.aspectRatio = (float)w / h;
 	}
 	glViewport(0, 0, w, h);
+
+	auto &player = gameData.entityManager.localPlayer;
 
 
 #pragma region server stuff
@@ -513,7 +501,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	if (!gameData.escapePressed)
 	{
 
-		auto &item = gameData.inventory.items[gameData.currentItemSelected];
+		auto &item = player.inventory.items[gameData.currentItemSelected];
 
 		if (item.isBlock())
 		{
@@ -1119,7 +1107,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma region ui
 	programData.ui.renderGameUI(deltaTime, w, h, gameData.currentItemSelected, 
-		gameData.inventory, programData.blocksLoader, gameData.insideInventoryMenu);
+		player.inventory, programData.blocksLoader, gameData.insideInventoryMenu);
 #pragma endregion
 
 	gameData.gameplayFrameProfiler.endFrame();
