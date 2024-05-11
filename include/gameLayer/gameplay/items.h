@@ -31,7 +31,13 @@ struct Item
 	//returns how much has been read or -1 if fail
 	int readFromData(void *data, size_t size);
 
+	void sanitize();
+
+	unsigned char getStackSize();
+
 };
+
+
 
 struct PlayerInventory
 {
@@ -44,11 +50,11 @@ struct PlayerInventory
 
 	Item *getItemFromIndex(int index);
 
-	//todo
-	void sanitize() {};
-	
 	//doesn't clear data vector!!
 	void formatIntoData(std::vector<unsigned char> &data);
 
 	bool readFromData(void *data, size_t size);
+
+	void sanitize();
+
 };

@@ -87,6 +87,7 @@ bool initGameplay(ProgramData &programData, const char *c)
 
 	gameData.entityManager.localPlayer.entity = playerData.entity;
 	gameData.entityManager.localPlayer.entityId = playerData.yourPlayerEntityId;
+	gameData.entityManager.localPlayer.otherPlayerSettings = playerData.otherSettings;
 
 	//todo restant timer here ...
 	//playerData.timer;
@@ -518,10 +519,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			&& (platform::isLMousePressed() || platform::isRMousePressed())
 			)
 		{
-			if (blockToPlace)
+			if (player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE
+				&&
+				blockToPlace)
 			{
-
-				//todo if creative
 
 				auto b = gameData.chunkSystem.getBlockSafe(rayCastPos);
 				if (b)
@@ -1149,18 +1150,41 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 					}
 
+				}
+			}
+		}
+		else if (platform::isRMousePressed())
+		{
 
+			if (cursorSelected >= 0)
+			{
+				Item *selected = player.inventory.getItemFromIndex(cursorSelected);
+				Item *cursor = &player.inventory.heldInMouse;
+
+				if (cursor->type != 0)
+				{
+					//place one
+					placeItem(player.inventory, PlayerInventory::CURSOR_INDEX, cursorSelected, 1);
+
+				}
+				else
+				{
+
+					//grab
+					grabItem(player.inventory, cursorSelected, PlayerInventory::CURSOR_INDEX, selected->counter/2);
 
 				}
 
+
 			}
+
 
 
 		}
 
 	}
 
-	//todo sanitize
+	player.inventory.sanitize();
 
 #pragma endregion
 

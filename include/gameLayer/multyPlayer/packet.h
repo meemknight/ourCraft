@@ -54,6 +54,7 @@ enum : std::uint32_t
 	headerValidateEventAndChangeID,
 	headerInValidateEvent,
 	headerSendPlayerData,
+	headerSendPlayerOtherData,
 	headerClientRecieveOtherPlayerPosition,
 	headerClientRecieveDroppedItemUpdate,
 	headerClientRecieveAllInventory,
@@ -140,6 +141,7 @@ struct Packet_UpdatePig
 struct Packet_ReceiveCIDAndData
 {
 	Player entity = {};
+	OtherPlayerSettings otherSettings = {};
 	std::uint64_t timer = 0;
 	std::uint64_t yourPlayerEntityId = 0;
 

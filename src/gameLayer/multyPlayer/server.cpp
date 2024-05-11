@@ -575,13 +575,13 @@ void serverWorkerUpdate(
 							else if(to->type == from->type)
 							{
 
-								if (to->counter >= 64)
+								if (to->counter >= to->getStackSize())
 								{
 									sendPlayerInventory(*client, channelChunksAndBlocks);
 								}
 
 								int total = (int)to->counter + (int)i.t.blockCount;
-								if (total <= 64)
+								if (total <= to->getStackSize())
 								{
 									to->counter += i.t.blockCount;
 									from->counter -= i.t.blockCount;
@@ -617,14 +617,25 @@ void serverWorkerUpdate(
 
 				if (client)
 				{
-					Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
-
-					if (to)
+					if (client->playerData.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE)
 					{
-						*to = {};
-						to->counter = i.t.blockCount;
-						to->type = i.t.itemType;
+
+						Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
+
+						if (to)
+						{
+							*to = {};
+							to->counter = i.t.blockCount;
+							to->type = i.t.itemType;
+						}
+
 					}
+					else
+					{
+						sendPlayerInventory(*client, channelChunksAndBlocks);
+						//todo send other player data
+					}
+
 				}
 
 			}
@@ -673,9 +684,9 @@ void serverWorkerUpdate(
 
 	if (sd.tickTimer > 1.f / targetTicksPerSeccond)
 	{
+
 		sd.tickTimer -= (1.f / targetTicksPerSeccond);
 		sd.ticksPerSeccond++;
-
 
 		{
 
@@ -727,6 +738,12 @@ void serverWorkerUpdate(
 
 		//todo get all clients should probably dissapear.
 		auto c = getAllClients();
+
+		for (auto &c : getAllClients())
+		{
+			c.second.playerData.inventory.sanitize();
+		}
+
 		splitUpdatesLogic(sd.tickDeltaTime, currentTimer, sd.chunkCache, rng(), c, worldSaver);
 
 		sd.tickDeltaTime = 0;

@@ -22,3 +22,12 @@ todo big refactor for SKYBOX! + fix sun and fog and underwater stuff and day nig
 todo propper player and zombie rendering
 
 todo propper line drawing for placing blocks and for drawing collisions and others
+
+
+
+# Smaller:
+
+- todo: fix camera move when exiting inventory
+- todo: send player other info function
+- todo: start working at item dropping + survival mode, don't forget that rejecting a dropped item should recreate inventory
+

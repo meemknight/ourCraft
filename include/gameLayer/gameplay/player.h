@@ -18,6 +18,15 @@ struct Player : public PhysicalEntity
 
 };
 
+//here we store things like gamemode
+struct OtherPlayerSettings
+{
+	constexpr static int SURVIVAL = 0;
+	constexpr static int CREATIVE = 1;
+
+	unsigned char gameMode = 0;
+
+};
 
 //this is the player struct when playing locally
 struct LocalPlayer
@@ -28,10 +37,12 @@ struct LocalPlayer
 
 	std::uint64_t entityId = 0;
 
-
+	OtherPlayerSettings otherPlayerSettings = {};
 	//dodo add some other data here like inventory
 
 };
+
+
 
 struct PlayerClient: public ClientEntity<Player, PlayerClient>
 {
@@ -43,6 +54,7 @@ struct PlayerClient: public ClientEntity<Player, PlayerClient>
 struct PlayerServer: public ServerEntity<Player>
 {
 
+	OtherPlayerSettings otherPlayerSettings = {};
 
 	PlayerInventory inventory;
 

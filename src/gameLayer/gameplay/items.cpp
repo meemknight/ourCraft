@@ -54,6 +54,32 @@ int Item::readFromData(void *data, size_t size)
 
 }
 
+void Item::sanitize()
+{
+	if (counter == 0)
+	{
+		type = 0;
+		metaData.clear();
+	}
+	else
+	{
+		//todo check if item should have meta data
+
+
+		if (counter > getStackSize())
+		{
+			counter = getStackSize();
+		}
+
+	}
+
+}
+
+unsigned char Item::getStackSize()
+{
+	return 64;
+}
+
 
 Item *PlayerInventory::getItemFromIndex(int index)
 {
@@ -117,4 +143,16 @@ bool PlayerInventory::readFromData(void *data, size_t size)
 
 	
 	return true;
+}
+
+void PlayerInventory::sanitize()
+{
+
+	for (int i = 0; i < INVENTORY_CAPACITY; i++)
+	{
+		items[i].sanitize();
+	}
+
+	heldInMouse.sanitize();
+
 }

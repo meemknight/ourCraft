@@ -335,12 +335,12 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 				{
 					direction = getRandomUnitVector(rng);
 
-					currentMoveSpeed = getRandomNumberFloat(rng, speedBase / 2.f, speedBase / 3.f);
+					currentMoveSpeed = getRandomNumberFloat(rng, speedBase / 3.f, speedBase / 2.f);
 
 					//not playfull entities run less
 					if (fromUShortToFloat(personalityBase.playfull) < 0.5)
 					{
-						currentMoveSpeed = std::min(getRandomNumberFloat(rng, speedBase / 2.f, speedBase / 3.f), currentMoveSpeed);
+						currentMoveSpeed = std::min(getRandomNumberFloat(rng, speedBase / 3.f, speedBase / 2.f), currentMoveSpeed);
 					}
 
 					//playfull entities run more

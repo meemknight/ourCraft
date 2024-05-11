@@ -150,7 +150,9 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 		Client c{event.peer};
 		c.playerData.entity.position = spawnPosition;
 		c.playerData.entity.lastPosition = spawnPosition;
-		
+
+		c.playerData.otherPlayerSettings.gameMode = OtherPlayerSettings::CREATIVE;
+
 		c.playerData.inventory.items[0] = Item(grassBlock, 20);
 		c.playerData.inventory.items[1] = Item(grassBlock, 2);
 		c.playerData.inventory.items[2] = Item(grassBlock, 64);
@@ -178,10 +180,13 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 		packetToSend.entity = getClient(id).playerData.entity;
 		packetToSend.yourPlayerEntityId = id;
 		packetToSend.timer = getTimer();
+		packetToSend.otherSettings = getClient(id).playerData.otherPlayerSettings;
 
 		//send own cid
 		sendPacket(event.peer, p, (const char *)&packetToSend,
 			sizeof(packetToSend), true, channelHandleConnections);
+
+
 	}
 
 	//todo maybe send entities to this new connection?

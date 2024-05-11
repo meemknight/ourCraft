@@ -596,7 +596,7 @@ bool createConnection(Packet_ReceiveCIDAndData &playerData, const char *c)
 }
 
 
-bool placeItem(PlayerInventory &inventory, int from, int to)
+bool placeItem(PlayerInventory &inventory, int from, int to, int counter)
 {
 
 	auto fromItem = inventory.getItemFromIndex(from);
@@ -605,13 +605,24 @@ bool placeItem(PlayerInventory &inventory, int from, int to)
 	if (fromItem && toItem)
 	{
 
+		if (counter == 0)
+		{
+			counter = fromItem->counter;
+		}
+
+		if (counter > fromItem->counter) { return 0; }
+
 		if (toItem->type == 0)
 		{
-			*toItem = std::move(*fromItem);
-			*fromItem = {};
+
+			*toItem = *fromItem;
+			toItem->counter = counter;
+			fromItem->counter -= counter;
+
+			if (fromItem->counter == 0) { *fromItem = {}; }
 
 			Packet_ClientMovedItem packet;
-			packet.counter = toItem->counter;
+			packet.counter = counter;
 			packet.from = from;
 			packet.to = to;
 			packet.itemType = toItem->type;
@@ -625,13 +636,13 @@ bool placeItem(PlayerInventory &inventory, int from, int to)
 
 			//see how many I can move
 
-			if (toItem->counter < 64)
+			if (toItem->counter < toItem->getStackSize())
 			{
-				if (toItem->counter + fromItem->counter > 64)
+				if (toItem->counter + counter > toItem->getStackSize())
 				{
-					int moved = 64 - toItem->counter;
-					int overrun = toItem->counter + fromItem->counter - 64;
-					toItem->counter = 64;
+					int moved = toItem->getStackSize() - toItem->counter;
+					int overrun = toItem->counter + counter - toItem->getStackSize();
+					toItem->counter = toItem->getStackSize();
 					fromItem->counter = overrun;
 
 					std::cout << moved << "\n";
@@ -648,9 +659,11 @@ bool placeItem(PlayerInventory &inventory, int from, int to)
 				}
 				else
 				{
-					int addCounter = fromItem->counter;
-					toItem->counter += fromItem->counter;
-					*fromItem = {};
+					int addCounter = counter;
+					toItem->counter += counter;
+					fromItem->counter -= counter;
+
+					if (fromItem->counter == 0) { *fromItem = {}; }
 
 					Packet_ClientMovedItem packet;
 					packet.counter = addCounter;
@@ -674,7 +687,7 @@ bool placeItem(PlayerInventory &inventory, int from, int to)
 }
 
 
-bool grabItem(PlayerInventory &inventory, int from, int to)
+bool grabItem(PlayerInventory &inventory, int from, int to, int counter)
 {
 
 	auto fromItem = inventory.getItemFromIndex(from);
@@ -683,13 +696,24 @@ bool grabItem(PlayerInventory &inventory, int from, int to)
 	if (fromItem && toItem && (fromItem != toItem))
 	{
 
+		if (counter == 0)
+		{
+			counter = fromItem->counter;
+		}
+
+		if (counter > fromItem->counter) { return 0; }
+
+
 		if (toItem->type == 0 && fromItem->type != 0)
 		{
-			*toItem = std::move(*fromItem);
-			*fromItem = {};
+			*toItem = *fromItem;
+			toItem->counter = counter;
+			fromItem->counter -= counter;
+
+			if (fromItem->counter == 0) { *fromItem = {}; }
 
 			Packet_ClientMovedItem packet;
-			packet.counter = toItem->counter;
+			packet.counter = counter;
 			packet.from = from;
 			packet.to = to;
 			packet.itemType = toItem->type;
