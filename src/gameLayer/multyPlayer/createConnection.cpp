@@ -596,6 +596,115 @@ bool createConnection(Packet_ReceiveCIDAndData &playerData, const char *c)
 }
 
 
+bool placeItem(PlayerInventory &inventory, int from, int to)
+{
+
+	auto fromItem = inventory.getItemFromIndex(from);
+	auto toItem = inventory.getItemFromIndex(to);
+
+	if (fromItem && toItem)
+	{
+
+		if (toItem->type == 0)
+		{
+			*toItem = std::move(*fromItem);
+			*fromItem = {};
+
+			Packet_ClientMovedItem packet;
+			packet.counter = toItem->counter;
+			packet.from = from;
+			packet.to = to;
+			packet.itemType = toItem->type;
+
+			sendPacket(clientData.server, headerClientMovedItem, clientData.cid,
+				&packet, sizeof(packet), true, channelChunksAndBlocks);
+			return 1;
+		}
+		else if(toItem->type == fromItem->type)
+		{
+
+			//see how many I can move
+
+			if (toItem->counter < 64)
+			{
+				if (toItem->counter + fromItem->counter > 64)
+				{
+					int moved = 64 - toItem->counter;
+					int overrun = toItem->counter + fromItem->counter - 64;
+					toItem->counter = 64;
+					fromItem->counter = overrun;
+
+					std::cout << moved << "\n";
+
+					Packet_ClientMovedItem packet;
+					packet.counter = moved;
+					packet.from = from;
+					packet.to = to;
+					packet.itemType = toItem->type;
+
+					sendPacket(clientData.server, headerClientMovedItem, clientData.cid,
+						&packet, sizeof(packet), true, channelChunksAndBlocks);
+					return 1;
+				}
+				else
+				{
+					int addCounter = fromItem->counter;
+					toItem->counter += fromItem->counter;
+					*fromItem = {};
+
+					Packet_ClientMovedItem packet;
+					packet.counter = addCounter;
+					packet.from = from;
+					packet.to = to;
+					packet.itemType = toItem->type;
+
+					sendPacket(clientData.server, headerClientMovedItem, clientData.cid,
+						&packet, sizeof(packet), true, channelChunksAndBlocks);
+					return 1;
+				}
+			}
+
+		}
+
+
+
+	}
+
+	return 0;
+}
+
+
+bool grabItem(PlayerInventory &inventory, int from, int to)
+{
+
+	auto fromItem = inventory.getItemFromIndex(from);
+	auto toItem = inventory.getItemFromIndex(to);
+
+	if (fromItem && toItem && (fromItem != toItem))
+	{
+
+		if (toItem->type == 0 && fromItem->type != 0)
+		{
+			*toItem = std::move(*fromItem);
+			*fromItem = {};
+
+			Packet_ClientMovedItem packet;
+			packet.counter = toItem->counter;
+			packet.from = from;
+			packet.to = to;
+			packet.itemType = toItem->type;
+
+			sendPacket(clientData.server, headerClientMovedItem, clientData.cid,
+				&packet, sizeof(packet), true, channelChunksAndBlocks);
+			return 1;
+		}
+
+	}
+
+	return 0;
+}
+
+
 bool forceOverWriteItem(PlayerInventory &inventory, int index, Item &item)
 {
 

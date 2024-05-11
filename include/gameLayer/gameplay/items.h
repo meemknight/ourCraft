@@ -37,6 +37,7 @@ struct PlayerInventory
 {
 	
 	constexpr static int INVENTORY_CAPACITY = 36;
+	constexpr static int CURSOR_INDEX = 36;
 	Item items[INVENTORY_CAPACITY] = {};
 	
 	Item heldInMouse = {};

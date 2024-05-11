@@ -555,7 +555,7 @@ void serverWorkerUpdate(
 
 						//todo this can be abstracted
 						if (from->type != i.t.itemType
-							|| (from->counter > i.t.blockCount)
+							|| (i.t.blockCount > from->counter)
 							)
 						{
 							//this is a desync, resend inventory.
@@ -574,6 +574,11 @@ void serverWorkerUpdate(
 							}
 							else if(to->type == from->type)
 							{
+
+								if (to->counter >= 64)
+								{
+									sendPlayerInventory(*client, channelChunksAndBlocks);
+								}
 
 								int total = (int)to->counter + (int)i.t.blockCount;
 								if (total <= 64)

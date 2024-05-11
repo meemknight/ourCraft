@@ -62,6 +62,8 @@ std::vector<Chunk *> getRecievedChunks();
 std::vector<Packet_PlaceBlocks> getRecievedBlocks();
 ConnectionData getConnectionData();
 bool createConnection(Packet_ReceiveCIDAndData &playerData, const char *c);
+bool placeItem(PlayerInventory &inventory, int from, int to);
+bool grabItem(PlayerInventory &inventory, int from, int to);
 bool forceOverWriteItem(PlayerInventory &inventory, int index, Item &item);
 void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision
 	,glm::ivec3 playerPosition, int squareDistance, ClientEntityManager& entityManager,

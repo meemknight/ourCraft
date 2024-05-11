@@ -1121,6 +1121,52 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma endregion
 
+
+#pragma region move items in inventory
+	if (gameData.insideInventoryMenu)
+	{
+		
+		if (platform::isLMousePressed())
+		{
+
+			if (cursorSelected >= 0)
+			{
+				Item *selected = player.inventory.getItemFromIndex(cursorSelected);
+				Item *cursor = &player.inventory.heldInMouse;
+
+				if (selected && selected != cursor)
+				{
+
+					if (cursor->type == 0)
+					{
+						//grab
+						grabItem(player.inventory, cursorSelected, PlayerInventory::CURSOR_INDEX);
+					}
+					else
+					{
+						//place
+						placeItem(player.inventory, PlayerInventory::CURSOR_INDEX, cursorSelected);
+
+					}
+
+
+
+				}
+
+			}
+
+
+		}
+
+	}
+
+	//todo sanitize
+
+#pragma endregion
+
+
+
+
 	gameData.gameplayFrameProfiler.endFrame();
 	gameData.gameplayFrameProfiler.startFrame();
 	gameData.gameplayFrameProfiler.startSubProfile("swap chain and others");

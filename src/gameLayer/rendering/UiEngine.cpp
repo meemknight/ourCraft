@@ -131,6 +131,9 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						if (glui::aabb(itemBox, mousePos))
 						{
 							cursorItemIndex = i;
+
+							renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, (2.f / 22.f)),
+								{0.7,0.7,0.7,0.5});
 						}
 					}
 				};
