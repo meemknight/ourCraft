@@ -87,6 +87,7 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 			
 	}
 	
+
 	{
 		auto found = playersPosition.find(playerLockedOn);
 
@@ -107,15 +108,13 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 		}
 	}
 
+	bool closeToPlayer = playerLockedOn && (glm::length(playerLockedOnPosition - getPosition()) > 1.2f);
 
 	direction = {0,0};
 
 	bool pathFindingSucceeded = 0;
-
-	if (playerLockedOn)
+	if (playerLockedOn && closeToPlayer)
 	{
-
-
 
 		auto path = pathFinding.find(playerLockedOn);
 
@@ -153,15 +152,17 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 						if (newFoundNode->second.level > 0)
 						{
 							
-							glm::dvec3 direction = glm::dvec3(newFoundNode->second.returnPos) - getPosition();
+							glm::dvec3 direction = glm::dvec3(newFoundNode->second.returnPos) + glm::dvec3(0,0.5,0)
+								- getPosition();
 
 							direction.y = 0;
 
-							if (glm::length(direction))
+							float checklength = glm::length(direction);
+
+							if (checklength)
 							{
-
-
-								direction = glm::normalize(direction);
+								//normalize
+								direction /= checklength;
 
 								bool problems = 0;
 
@@ -169,21 +170,21 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 								int maxCounter = 300;//so we don't get infinite loops
 
 								glm::dvec3 start = getPosition();
+								start.y += 0.1;
 
 								glm::dvec3 leftVector = -glm::cross(direction, glm::dvec3(0, 1, 0));
 
 								glm::dvec3 start2 = start;
 								//start += leftVector * 0.15;
 
-								for (; maxCounter > 0; maxCounter--)
+								for (int i = 0; i< (checklength*10)-2; i++)
 								{
 									start += direction * 0.1;
 									start2 += direction * 0.1;
 
-									glm::dvec3 direction2 = glm::dvec3(newFoundNode->second.returnPos) - start;
-									direction2.y = 0;
-
-									if (glm::dot(direction, direction2) < 0.f) { break; }
+									//glm::dvec3 direction2 = glm::dvec3(newFoundNode->second.returnPos) - start;
+									//direction2.y = 0;
+									//if (glm::dot(direction, direction2) < 0.f) { break; }
 
 									auto checkOneDirection = [&](glm::ivec3 blockPos)
 									{
@@ -204,8 +205,8 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 										return false;
 									};
 
-									auto pos1 = fromBlockPosToBlockPosInChunk(start);
-									auto pos2 = fromBlockPosToBlockPosInChunk(start2);
+									auto pos1 = from3DPointToBlock(start);
+									auto pos2 = from3DPointToBlock(start2);
 
 									if (pos1 != pos2)
 									{
@@ -240,6 +241,7 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 								if (problems)
 								{
+									std::cout << "Problems! ";
 									interPolateNodeNotGood = *newFoundNode;
 									//break; //worse interpolation but less lickely to have problems
 								}
