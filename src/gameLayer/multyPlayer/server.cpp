@@ -538,6 +538,114 @@ void serverWorkerUpdate(
 
 
 			}
+			else if (i.t.type == Task::clientMovedItem)
+			{
+				
+				auto client = getClientNotLocked(i.cid);
+
+				if (client)
+				{
+
+					Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
+					Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
+
+					//todo they should always be sanitized so we should check during task creation if they are
+					if (from && to)
+					{
+
+						//todo this can be abstracted
+						if (from->type != i.t.itemType
+							|| (from->counter > i.t.blockCount)
+							)
+						{
+							//this is a desync, resend inventory.
+							sendPlayerInventory(*client, channelChunksAndBlocks);
+						}
+						else
+						{
+
+							if (to->type == 0)
+							{
+								*to = *from;
+								to->counter = i.t.blockCount;
+								from->counter -= i.t.blockCount;
+
+								if (!from->counter) { *from = {}; }
+							}
+							else if(to->type == from->type)
+							{
+
+								int total = (int)to->counter + (int)i.t.blockCount;
+								if (total <= 64)
+								{
+									to->counter += i.t.blockCount;
+									from->counter -= i.t.blockCount;
+
+									if (!from->counter) { *from = {}; }
+								}
+								else
+								{
+									//this is a desync, resend inventory.
+									sendPlayerInventory(*client, channelChunksAndBlocks);
+								}
+
+							}
+							else
+							{
+								//this is a desync, resend inventory.
+								sendPlayerInventory(*client, channelChunksAndBlocks);
+							}
+
+						}
+
+					}
+
+				};
+
+			}
+			else if (i.t.type == Task::clientOverwriteItem)
+			{
+
+				//todo if creative.
+
+				auto client = getClientNotLocked(i.cid);
+
+				if (client)
+				{
+					Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
+
+					if (to)
+					{
+						*to = {};
+						to->counter = i.t.blockCount;
+						to->type = i.t.itemType;
+					}
+				}
+
+			}
+			else if (i.t.type == Task::clientSwapItems)
+			{
+
+				auto client = getClientNotLocked(i.cid);
+
+				if (client)
+				{
+
+					Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
+					Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
+
+					if (from && to)
+					{
+						Item copy;
+						copy = std::move(*from);
+						*from = std::move(*to);
+						*to = std::move(copy);
+					}
+
+				}
+
+			}
+
 
 		sd.waitingTasks.erase(sd.waitingTasks.begin());
 
@@ -591,6 +699,15 @@ void serverWorkerUpdate(
 				p.lastPosition = position;
 				spawnPig(sd.chunkCache, p, worldSaver, rng);
 			}
+
+			if (settings.perClientSettings.begin()->second.resendInventory)
+			{
+				settings.perClientSettings.begin()->second.resendInventory = false;
+				auto c = getAllClients();
+
+				sendPlayerInventory(c.begin()->second, channelChunksAndBlocks);
+			}
+
 
 		}
 

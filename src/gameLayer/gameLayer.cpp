@@ -198,6 +198,7 @@ bool gameLogic(float deltaTime)
 				ImGui::Checkbox("Allow validate moves", &c.second.validateStuff);
 				ImGui::Checkbox("Spawn zombie", &c.second.spawnZombie);
 				ImGui::Checkbox("Spawn pig", &c.second.spawnPig);
+				ImGui::Checkbox("Resend inventory", &c.second.resendInventory);
 				ImGui::Separator();
 				ImGui::PopID();
 			}

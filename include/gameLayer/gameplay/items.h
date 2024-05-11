@@ -41,6 +41,7 @@ struct PlayerInventory
 	
 	Item heldInMouse = {};
 
+	Item *getItemFromIndex(int index);
 
 	//todo
 	void sanitize() {};

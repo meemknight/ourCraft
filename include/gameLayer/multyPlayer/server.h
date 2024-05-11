@@ -29,6 +29,7 @@ struct PerClientServerSettings
 	bool validateStuff = true;
 	bool spawnZombie = false;
 	bool spawnPig = false;
+	bool resendInventory = false;
 
 	glm::dvec3 outPlayerPos;
 };

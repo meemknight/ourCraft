@@ -15,6 +15,9 @@ struct Task
 		none = 0,
 		placeBlock,
 		droppedItemEntity,
+		clientMovedItem,
+		clientOverwriteItem,
+		clientSwapItems,
 		generateChunk
 	};
 
@@ -28,6 +31,9 @@ struct Task
 	std::uint64_t entityId;
 	MotionState motionState;
 	std::uint64_t timer;
+	unsigned char from;
+	unsigned char to;
+	unsigned short itemType = 0;
 
 };
 
@@ -56,6 +62,7 @@ std::vector<Chunk *> getRecievedChunks();
 std::vector<Packet_PlaceBlocks> getRecievedBlocks();
 ConnectionData getConnectionData();
 bool createConnection(Packet_ReceiveCIDAndData &playerData, const char *c);
+bool forceOverWriteItem(PlayerInventory &inventory, int index, Item &item);
 void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision
 	,glm::ivec3 playerPosition, int squareDistance, ClientEntityManager& entityManager,
 	UndoQueue &undoQueue, std::uint64_t &serverTimer, bool &disconnect);

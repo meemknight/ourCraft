@@ -128,6 +128,17 @@ void broadcastNewConnectionMessage(ENetPeer *peerToIgnore, Client c, std::uint64
 		sizeof(data), peerToIgnore, true, channelHandleConnections);
 }
 
+void sendPlayerInventory(Client &client, int channel)
+{
+
+	std::vector<unsigned char> data;
+	client.playerData.inventory.formatIntoData(data);
+	
+	sendPacket(client.peer, headerClientRecieveAllInventory, data.data(), data.size(), true,
+		channel);
+
+}
+
 void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 {
 
@@ -191,13 +202,7 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 
 	//send inventory
 	{
-
-		std::vector<unsigned char> data;
-		connections[id].playerData.inventory.formatIntoData(data);
-
-		sendPacket(event.peer, headerClientRecieveAllInventory, data.data(), data.size(), true,
-			channelHandleConnections);
-
+		sendPlayerInventory(connections[id], channelHandleConnections);
 	}
 
 	//send others to this
@@ -247,6 +252,13 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 	Packet p;
 	size_t size = 0;
 	auto data = parsePacket(event, p, size);
+
+
+	if (connections.find(p.cid) == connections.end())
+	{
+		reportError((std::string("packet recieved with a CID that doesn't exist: ") + std::to_string(p.cid) + "\n").c_str());
+		return;
+	}
 
 	//validate data
 	//no need for mutex here fortunatelly because this thread is the one that modifies the connections?
@@ -399,6 +411,61 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.timer = packetData->timer;
 
 			serverTasks.push_back(serverTask);
+			break;
+
+		}
+
+		//inventory stuff
+		case headerClientMovedItem:
+		{
+			if (size != sizeof(Packet_ClientMovedItem))
+			{
+				//todo hard reset on errors.
+				reportError("corrupted packet or something Packet_ClientDroppedItem");
+				break;
+			}
+			Packet_ClientMovedItem *packetData = (Packet_ClientMovedItem *)data;
+
+			serverTask.t.type = Task::clientMovedItem;
+			serverTask.t.itemType = packetData->itemType;
+			serverTask.t.from = packetData->from;
+			serverTask.t.to = packetData->to;
+			serverTask.t.blockCount = packetData->counter;
+			serverTasks.push_back(serverTask);
+
+			break;
+		}
+
+		case headerClientOverWriteItem:
+		{
+			if (size != sizeof(Packet_ClientOverWriteItem))
+			{
+				break;
+			}
+
+			Packet_ClientOverWriteItem *packetData = (Packet_ClientOverWriteItem *)data;
+			serverTask.t.type = Task::clientOverwriteItem;
+			serverTask.t.itemType = packetData->itemType;
+			serverTask.t.to = packetData->to;
+			serverTask.t.blockCount = packetData->counter;
+			serverTasks.push_back(serverTask);
+
+			break;
+		}
+
+		case headerClientSwapItems:
+		{
+			if (size != sizeof(Packet_ClientSwapItems))
+			{
+				break;
+			}
+
+			Packet_ClientSwapItems *packetData = (Packet_ClientSwapItems *)data;
+			serverTask.t.type = Task::clientSwapItems;
+			serverTask.t.from = packetData->from;
+			serverTask.t.to = packetData->to;
+			serverTasks.push_back(serverTask);
+
 			break;
 
 		}

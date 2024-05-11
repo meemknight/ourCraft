@@ -58,6 +58,9 @@ enum : std::uint32_t
 	headerClientRecieveDroppedItemUpdate,
 	headerClientRecieveAllInventory,
 	headerClientUpdateTimer,
+	headerClientMovedItem,
+	headerClientOverWriteItem,
+	headerClientSwapItems,
 	headerDisconnectOtherPlayer, 
 	headerUpdateZombie,
 	headerUpdatePig,
@@ -91,6 +94,27 @@ struct Packet_RecieveDroppedItemUpdate
 	DroppedItem entity = {};
 	std::uint64_t eid = 0;
 	std::uint64_t timer = 0;
+};
+
+struct Packet_ClientMovedItem
+{
+	unsigned short itemType;
+	unsigned char from;
+	unsigned char to;
+	unsigned char counter;
+};
+
+struct Packet_ClientOverWriteItem
+{
+	unsigned short itemType;
+	unsigned char to;
+	unsigned char counter;
+};
+
+struct Packet_ClientSwapItems
+{
+	unsigned char from;
+	unsigned char to;
 };
 
 struct Packet_UpdateZombie
@@ -200,7 +224,10 @@ void sendPacketAndCompress(ENetPeer *to, Packet p, const char *data, size_t size
 
 void sendPacket(ENetPeer *to, Packet p, const char *data, size_t size, bool reliable, int channel);
 
+//ton't use in client code!!
 void sendPacket(ENetPeer *to, uint32_t header, void *data, size_t size, bool reliable, int channel);
+
+void sendPacket(ENetPeer *to, uint32_t header, std::uint64_t cid, void *data, size_t size, bool reliable, int channel);
 
 
 char *parsePacket(ENetEvent &event, Packet &p, size_t &dataSize);

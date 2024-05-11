@@ -106,12 +106,22 @@ void sendPacket(ENetPeer *to, Packet p,
 	enet_peer_send(to, channel, packet);
 }
 
+//ton't use in client code!!
 void sendPacket(ENetPeer *to, uint32_t header, void *data, size_t size, bool reliable, int channel)
 {
 	Packet packet;
 	packet.header = header;
 
 	sendPacket(to, packet, (const char*)data, size, reliable, channel);
+}
+
+void sendPacket(ENetPeer *to, uint32_t header, std::uint64_t cid, void *data, size_t size, bool reliable, int channel)
+{
+	Packet packet;
+	packet.header = header;
+	packet.cid = cid;
+
+	sendPacket(to, packet, (const char *)data, size, reliable, channel);
 }
 
 char *parsePacket(ENetEvent &event, Packet &p, size_t &dataSize)

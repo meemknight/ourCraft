@@ -24,6 +24,7 @@ namespace glui
 {
 
 	void defaultErrorFunc(const char *msg);
+	bool aabb(glm::vec4 transform, glm::vec2 point);
 	using errorFuncType = decltype(defaultErrorFunc);
 
 	struct RendererUi

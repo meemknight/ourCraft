@@ -48,8 +48,10 @@ void UiENgine::init()
 
 void UiENgine::renderGameUI(float deltaTime, int w, int h
 	, int itemSelected, PlayerInventory &inventory, BlocksLoader &blocksLoader,
-	bool insideInventory)
+	bool insideInventory, int &cursorItemIndex)
 {
+	cursorItemIndex = -2;
+	auto mousePos = platform::getRelMousePosition();
 
 	auto renderOneItem = [&](glm::vec4 itemBox, Item & item, float in = 8.f / 22.f)
 	{
@@ -110,9 +112,30 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			//renderer2d.renderRectangle(
 			//	inventoryBox, buttonTexture);
 
+			if (glui::aabb(inventoryBox, mousePos))
+			{
+				cursorItemIndex = -1;
+			}
+
 			int oneItemSize = 0;
 
 			{
+
+				auto checkInside = [&](int start, glm::ivec4 box)
+				{
+					auto itemBox = box;
+					itemBox.z = itemBox.w;
+					for (int i = start; i < start + 9; i++)
+					{
+						itemBox.x = box.x + itemBox.z * (i - start);
+						if (glui::aabb(itemBox, mousePos))
+						{
+							cursorItemIndex = i;
+						}
+					}
+				};
+
+
 				glui::Frame insideInventory(inventoryBox);
 
 
@@ -120,7 +143,6 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 					yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
 
 				renderer2d.renderRectangle(hotBarBox, itemsBarInventory);
-
 
 				auto inventoryBars = glui::Box().xCenter().yBottomPerc(-0.17).xDimensionPercentage(0.9).
 					yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
@@ -134,6 +156,10 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 				inventoryBars3.y -= inventoryBars3.w;
 				renderer2d.renderRectangle(inventoryBars3, itemsBarInventory);
 
+				checkInside(0, hotBarBox);
+				checkInside(9, inventoryBars);
+				checkInside(18, inventoryBars2);
+				checkInside(27, inventoryBars3);
 
 				//upper part
 				{
@@ -208,7 +234,6 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 			}
 
-			auto mousePos = platform::getRelMousePosition();
 			glm::vec4 itemPos(mousePos.x - oneItemSize/2.f, mousePos.y - oneItemSize/2.f,
 				oneItemSize, oneItemSize);
 			renderOneItem(itemPos, inventory.heldInMouse, 0);

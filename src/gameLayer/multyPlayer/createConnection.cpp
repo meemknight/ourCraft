@@ -7,6 +7,7 @@
 #include <multyPlayer/undoQueue.h>
 #include <errorReporting.h>
 #include <platformTools.h>
+#include <gameplay/items.h>
 
 
 static ConnectionData clientData;
@@ -594,3 +595,29 @@ bool createConnection(Packet_ReceiveCIDAndData &playerData, const char *c)
 	return true;
 }
 
+
+bool forceOverWriteItem(PlayerInventory &inventory, int index, Item &item)
+{
+
+	auto to = inventory.getItemFromIndex(index);
+
+	if (to)
+	{
+		*to = item;
+
+		Packet_ClientOverWriteItem packet;
+		packet.counter = item.counter;
+		packet.itemType = item.type;
+		packet.to = index;
+
+		sendPacket(clientData.server, headerClientOverWriteItem, clientData.cid,
+			&packet, sizeof(packet), true, channelChunksAndBlocks);
+
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+
+}

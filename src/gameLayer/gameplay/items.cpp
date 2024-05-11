@@ -27,12 +27,12 @@ void Item::formatIntoData(std::vector<unsigned char> &data)
 
 int Item::readFromData(void *data, size_t size)
 {
+	*this = {};
+
 	if (size < sizeof(unsigned short))
 	{
 		return -1;
 	}
-
-	*this = {};
 
 	readDataUnsafe(data, type);
 
@@ -47,13 +47,28 @@ int Item::readFromData(void *data, size_t size)
 			return -1;
 		}
 
-		readDataUnsafe(data, counter);
+		readDataUnsafe((unsigned char*)data + 2, counter);
 
 		return 3; //one short + one char
 	}
 
 }
 
+
+Item *PlayerInventory::getItemFromIndex(int index)
+{
+
+	if (index < PlayerInventory::INVENTORY_CAPACITY)
+	{
+		return &items[index];
+	}
+	else if (index == PlayerInventory::INVENTORY_CAPACITY)
+	{
+		return &heldInMouse;
+	}
+
+	return nullptr;
+}
 
 void PlayerInventory::formatIntoData(std::vector<unsigned char> &data)
 {

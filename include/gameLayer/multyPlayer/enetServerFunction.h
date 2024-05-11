@@ -30,6 +30,8 @@ Client getClient(std::uint64_t cid);
 Client *getClientNotLocked(std::uint64_t cid);
 std::unordered_map<std::uint64_t, Client> getAllClients();
 
+void sendPlayerInventory(Client &client, int channel);
+
 
 void broadCast(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel);
 void broadCastNotLocked(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel);

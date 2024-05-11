@@ -520,11 +520,18 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		{
 			if (blockToPlace)
 			{
+
+				//todo if creative
+
 				auto b = gameData.chunkSystem.getBlockSafe(rayCastPos);
 				if (b)
 				{
-					item.type = b->type;
-					item.counter = 1;
+					Item newItem(b->type);
+
+					item = newItem;
+
+					forceOverWriteItem(player.inventory, gameData.currentItemSelected, item);
+
 				}
 			}
 
@@ -1106,8 +1113,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 #pragma region ui
+
+	int cursorSelected = -2;
+
 	programData.ui.renderGameUI(deltaTime, w, h, gameData.currentItemSelected, 
-		player.inventory, programData.blocksLoader, gameData.insideInventoryMenu);
+		player.inventory, programData.blocksLoader, gameData.insideInventoryMenu, cursorSelected);
+
 #pragma endregion
 
 	gameData.gameplayFrameProfiler.endFrame();
