@@ -470,13 +470,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma region drop items
 	
-	if (!gameData.insideInventoryMenu)
+	if (!gameData.insideInventoryMenu && !gameData.escapePressed)
 	if (platform::isKeyPressedOn(platform::Button::Q))
 	{
 		gameData.entityManager.dropItemByClient(
 			gameData.entityManager.localPlayer.entity.position,
-			BlockTypes::diamond_ore, gameData.undoQueue, gameData.c.viewDirection * 5.f,
-			gameData.serverTimer);
+			gameData.currentItemSelected, gameData.undoQueue, gameData.c.viewDirection * 5.f,
+			gameData.serverTimer, player.inventory, player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE, 1);
 	}
 
 #pragma endregion

@@ -497,12 +497,29 @@ void serverWorkerUpdate(
 						serverAllows = false; 
 					}
 
+
+					auto from = client->playerData.inventory.getItemFromIndex(i.t.from);
+
+					if (!from) { serverAllows = false; }
+					else
+					{
+						if (from->type != i.t.blockType)
+						{
+							serverAllows = false;
+						}
+						else if(from->counter < i.t.blockCount)
+						{
+							serverAllows = false;
+						}
+					}
+
 					auto newId = getEntityIdAndIncrement(worldSaver);
 
 					if (computeRevisionStuff(*client, true && serverAllows, i.t.eventId,
 						&i.t.entityId, &newId))
 					{
 
+						//todo meta data here
 						DroppedItemServer newEntity = {};
 						newEntity.entity.count = i.t.blockCount;
 						newEntity.entity.position = i.t.doublePos;
@@ -527,6 +544,11 @@ void serverWorkerUpdate(
 
 						//std::cout << "restant: " << newEntity.restantTime << "\n";
 
+						if (client->playerData.otherPlayerSettings.gameMode != OtherPlayerSettings::CREATIVE)
+						{
+							from->counter -= i.t.blockCount;
+							if (!from->counter) { *from = {}; }
+						}
 
 					}
 

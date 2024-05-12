@@ -5,7 +5,7 @@
 #include "multyPlayer/undoQueue.h"
 #include <multyPlayer/createConnection.h>
 #include <utility>
-
+#include <gameplay/items.h>
 
 
 bool checkIfPlayerShouldGetEntity(glm::ivec2 playerPos2D,
@@ -93,9 +93,17 @@ std::uint64_t ClientEntityManager::consumeId()
 	return rez;
 }
 
-bool ClientEntityManager::dropItemByClient(glm::dvec3 position, BlockType blockType, UndoQueue &undoQueue
-	, glm::vec3 throwForce, std::uint64_t timer)
+bool ClientEntityManager::dropItemByClient(glm::dvec3 position, unsigned char inventorySlot, UndoQueue &undoQueue
+	, glm::vec3 throwForce, std::uint64_t timer, PlayerInventory &inventory, bool isCreative, int count)
 {
+
+
+	auto from = inventory.getItemFromIndex(inventorySlot);
+	if (!from) { return 0; }
+
+	if (!from->type) { return 0; }
+	
+	if (count > from->counter) { return 0; }
 
 	std::uint64_t newEntityId = consumeId();
 
@@ -104,30 +112,53 @@ bool ClientEntityManager::dropItemByClient(glm::dvec3 position, BlockType blockT
 	MotionState ms = {};
 	ms.velocity = throwForce;
 
-	Task task = {};
-	task.type = Task::droppedItemEntity;
-	task.doublePos = position + glm::dvec3{0,1,0};
-	task.blockType = blockType;
-	task.eventId = undoQueue.currentEventId;
-	task.blockCount = 1;
-	task.entityId = newEntityId;
-	task.motionState = ms;
-	task.timer = timer;
-	submitTaskClient(task);
+	//Task task = {};
+	//task.type = Task::droppedItemEntity;
+	//task.doublePos = position + glm::dvec3{0,1,0};
+	//task.blockType = blockType;
+	//task.eventId = undoQueue.currentEventId;
+	//task.blockCount = 1;
+	//task.entityId = newEntityId;
+	//task.motionState = ms;
+	//task.timer = timer;
+	//submitTaskClient(task);
+	Packet p;
+	p.cid = getConnectionData().cid;
+	p.header = headerClientDroppedItem;
 
+	Packet_ClientDroppedItem packetData = {};
+	packetData.position = position;
+	packetData.inventorySlot = inventorySlot;
+	packetData.count = count;
+	packetData.eventId = undoQueue.currentEventId;
+	packetData.entityID = newEntityId;
+	packetData.motionState = ms;
+	packetData.timer = timer;
+	packetData.type = from->type;
+
+	sendPacket(getServer(), p, (char *)&packetData, sizeof(packetData), true,
+		channelChunksAndBlocks);
 
 	undoQueue.addDropItemFromInventoryEvent(position + glm::dvec3{0,1,0}, position, newEntityId);
 
 	{
+		//todo add meta data here
+
 		DroppedItem newEntity = {};
-		newEntity.count = 1;
+		newEntity.count = count;
 		newEntity.position = position;
 		newEntity.lastPosition = position;
-		newEntity.type = blockType;
+		newEntity.type = from->type;
 		newEntity.forces = ms;
 
 		droppedItems[newEntityId].entity = newEntity;
 	}
+
+	if (!isCreative)
+	{
+		from->counter -= count;
+		if (!from->counter) { *from = {}; }
+	};
 
 	return true;
 }

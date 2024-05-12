@@ -21,7 +21,7 @@ struct DroppedItemServer : public ServerEntity<DroppedItem>
 {
 	float restantTime = 0;
 
-	float stayTimer = 5;
+	float stayTimer = 5 * 60;
 
 	bool update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
 		ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng, std::uint64_t yourEID,

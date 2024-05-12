@@ -12,7 +12,7 @@
 
 
 struct UndoQueue;
-
+struct PlayerInventory;
 
 
 struct ClientEntityManager : public EntityDataClient
@@ -30,7 +30,8 @@ struct ClientEntityManager : public EntityDataClient
 	std::uint64_t consumeId();
 
 	bool dropItemByClient(glm::dvec3 position, 
-		BlockType blockType, UndoQueue &undoQueue, glm::vec3 throwForce, std::uint64_t timer);
+		unsigned char inventorySlot, UndoQueue &undoQueue, glm::vec3 throwForce, std::uint64_t timer,
+		PlayerInventory &inventory, bool isCreative, int count);
 
 	void removeEntity(std::uint64_t entityId);
 

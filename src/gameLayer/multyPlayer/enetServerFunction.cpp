@@ -409,11 +409,12 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.type = Task::droppedItemEntity;
 			serverTask.t.doublePos = packetData->position;
 			serverTask.t.blockCount = packetData->count;
-			serverTask.t.blockType = packetData->blockType;
+			serverTask.t.from = packetData->inventorySlot;
 			serverTask.t.entityId = packetData->entityID;
 			serverTask.t.eventId = packetData->eventId;
 			serverTask.t.motionState = packetData->motionState;
 			serverTask.t.timer = packetData->timer;
+			serverTask.t.blockType = packetData->type;
 
 			serverTasks.push_back(serverTask);
 			break;

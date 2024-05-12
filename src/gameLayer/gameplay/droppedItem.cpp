@@ -20,7 +20,7 @@ bool DroppedItemServer::update(float deltaTime, decltype(chunkGetterSignature) *
 	std::unordered_map<std::uint64_t, glm::dvec3> &playersPosition
 )
 {
-
+	//todo use persistent timer
 	stayTimer -= deltaTime;
 	
 	if (stayTimer < 0)
@@ -40,12 +40,26 @@ bool DroppedItemServer::update(float deltaTime, decltype(chunkGetterSignature) *
 			{
 				if (p.first != yourEID)
 				{
-					if (glm::distance(getPosition(), p.second.getPosition()) < 1.f)
+					if (glm::distance(getPosition(), p.second.getPosition()) < 1.f && entity.type == p.second.entity.type)
 					{
-						//merge the 2 items
-						othersDeleted.insert(p.first);
-						c->entityData.droppedItems.erase(p.first);
-						break;
+
+						//todo change 64
+						if (entity.count + p.second.entity.count < 64)
+						{
+							//merge the 2 items
+							entity.count += p.second.entity.count;
+							othersDeleted.insert(p.first);
+							c->entityData.droppedItems.erase(p.first);
+							break;
+						}
+						else if(entity.count < 64 && p.second.entity.count < 64)
+						{
+							//steal sum
+							p.second.entity.count = (entity.count + p.second.entity.count) - 64;
+							entity.count = 64;
+						}
+
+						
 					};
 
 				}

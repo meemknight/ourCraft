@@ -206,8 +206,9 @@ struct Packet_ClientDroppedItem
 	EventId eventId = {}; //event id is used by the player
 	std::uint64_t entityID = 0;
 	std::uint64_t timer = 0;
-	BlockType blockType = {};
+	unsigned char inventorySlot = 0;
 	unsigned char count = 0;
+	unsigned short type = 0;
 	MotionState motionState = {};
 };
 

@@ -12,6 +12,7 @@
 
 static ConnectionData clientData;
 
+//todo this will get removed, for some things at least
 void submitTaskClient(Task &t)
 {
 	auto data = getConnectionData();
@@ -46,20 +47,21 @@ void submitTaskClient(Task &t)
 	}
 	default:
 
+	//todo remove
 	case Task::droppedItemEntity:
 	{
-		p.header = headerClientDroppedItem;
-		Packet_ClientDroppedItem packetData = {};
-		packetData.position = t.doublePos;
-		packetData.blockType = t.blockType;
-		packetData.count = t.blockCount;
-		packetData.eventId = t.eventId;
-		packetData.entityID = t.entityId;
-		packetData.motionState = t.motionState;
-		packetData.timer = t.timer;
-
-		sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1,
-			channelChunksAndBlocks);
+		//p.header = headerClientDroppedItem;
+		//Packet_ClientDroppedItem packetData = {};
+		//packetData.position = t.doublePos;
+		//packetData.blockType = t.blockType;
+		//packetData.count = t.blockCount;
+		//packetData.eventId = t.eventId;
+		//packetData.entityID = t.entityId;
+		//packetData.motionState = t.motionState;
+		//packetData.timer = t.timer;
+		//
+		//sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1,
+		//	channelChunksAndBlocks);
 	}
 
 	break;
