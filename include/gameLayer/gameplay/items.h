@@ -1,6 +1,7 @@
 #pragma once
 #include <blocks.h>
 #include <vector>
+#include <string>
 
 
 constexpr static unsigned short ItemsStartPoint = 4'096;
@@ -9,10 +10,12 @@ enum ItemTypes
 {
 
 	stick = ItemsStartPoint,
-
+	wooddenSword,
+	lastItem,
 
 };
 
+const char *getItemTextureName(int itemId);
 
 struct Item
 {
@@ -35,9 +38,26 @@ struct Item
 
 	unsigned char getStackSize();
 
+	bool canHaveMetaData();
+
+	bool hasDurability();
+
+	unsigned short getDurability();
+
+	void setDurability(unsigned short durability);
+
+	std::string formatMetaDataToString();
 };
 
+template<class T>
+void addMetaData(std::vector<unsigned char> &vector, T data)
+{
+	vector.resize(vector.size() + sizeof(T));
+	std::memcpy(&vector[vector.size() - sizeof(T)], &data, sizeof(T));
+}
 
+
+Item itemCreator(unsigned short type);
 
 struct PlayerInventory
 {

@@ -3,7 +3,81 @@
 #include <gameplay/items.h>
 #include <blocksLoader.h>
 
+float determineTextSize(gl2d::Renderer2D &renderer, const std::string &str,
+	gl2d::Font &f, glm::vec4 transform, bool minimize = true)
+{
+	float size = 4;
 
+	auto s = renderer.getTextSize(str.c_str(), f, size);
+
+	float ratioX = transform.z / s.x;
+	float ratioY = transform.w / s.y;
+
+
+	if (ratioX > 1 && ratioY > 1)
+	{
+
+		///keep size
+		//return size;
+
+		//else
+		//{
+		//	if (ratioX > ratioY)
+		//	{
+		//		return size * ratioY;
+		//	}
+		//	else
+		//	{
+		//		return size * ratioX;
+		//	}
+		//}
+
+	}
+	else
+	{
+		if (ratioX < ratioY)
+		{
+			size *= ratioX;
+		}
+		else
+		{
+			size *= ratioY;
+		}
+	}
+
+	if (minimize)
+	{
+		size *= 0.9;
+	}
+	else
+	{
+		size *= 0.9;
+	}
+
+	return size;
+}
+
+void renderTextIntoBox(gl2d::Renderer2D &renderer, const std::string &str,
+	gl2d::Font &f, glm::vec4 transform, glm::vec4 color, bool minimize = true, bool alignLeft = false)
+{
+	auto newS = determineTextSize(renderer, str, f, transform, minimize);
+
+	glm::vec2 pos = glm::vec2(transform);
+
+	if (!alignLeft)
+	{
+		pos.x += transform.z / 2.f;
+		pos.y += transform.w / 3.f;
+		renderer.renderText(pos, str.c_str(), f, color, newS);
+	}
+	else
+	{
+		//pos.x += transform.z * 0.02;
+		pos.y += transform.w * 0.4;
+		renderer.renderText(pos, str.c_str(), f, color, newS, 4, 3, false);
+	}
+
+}
 
 glm::vec4 shrinkRectanglePercentage(glm::vec4 in, float perc)
 {
@@ -51,6 +125,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 	bool insideInventory, int &cursorItemIndex)
 {
 	cursorItemIndex = -2;
+	glm::vec4 cursorItemIndexBox = {};
 	auto mousePos = platform::getRelMousePosition();
 
 	auto renderOneItem = [&](glm::vec4 itemBox, Item & item, float in = 8.f / 22.f)
@@ -71,7 +146,11 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 		else
 		{
 			//we have an item
+			gl2d::Texture t;
+			t.id = blocksLoader.texturesIdsItems[item.type - ItemsStartPoint];
 
+			//we have a block
+			renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, in), t);
 		}
 
 		if (item.counter != 1)
@@ -131,7 +210,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						if (glui::aabb(itemBox, mousePos))
 						{
 							cursorItemIndex = i;
-
+							cursorItemIndexBox = itemBox;
 							renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, (2.f / 22.f)),
 								{0.7,0.7,0.7,0.5});
 						}
@@ -212,7 +291,6 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 				}
 
-
 				//render items
 				auto renderItems = [&](int start, glm::ivec4 box)
 				{
@@ -237,10 +315,37 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 			}
 
+
 			glm::vec4 itemPos(mousePos.x - oneItemSize/2.f, mousePos.y - oneItemSize/2.f,
 				oneItemSize, oneItemSize);
 			renderOneItem(itemPos, inventory.heldInMouse, 0);
 
+			if (cursorItemIndex >= 0 && !inventory.heldInMouse.type)
+			{
+
+				auto item = inventory.getItemFromIndex(cursorItemIndex);
+
+				if (item && item->type && item->metaData.size())
+				{
+
+					auto box = cursorItemIndexBox;
+
+					box.x += box.z * 0.5;
+					box.y += box.w * 0.8;
+					box.w *= 1;
+					box.z *= 1.8;
+
+					renderer2d.render9Patch(box,
+						24, {0.3,0.2,0.2,0.8}, {}, 0.f, buttonTexture, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
+
+					std::string text = item->formatMetaDataToString();
+
+					renderTextIntoBox(renderer2d, text, font, box, Colors_White, true, true);
+					
+
+				}
+
+			}
 
 		}
 		else

@@ -18,6 +18,21 @@ void Item::formatIntoData(std::vector<unsigned char> &data)
 		writeData(data, type);
 		writeData(data, counter);
 
+		
+		if (type == wooddenSword)
+		{
+			if (metaData.size() == 2)
+			{
+				unsigned short durability = 0;
+				readDataUnsafe(metaData.data(), durability);
+				writeData(data, durability);
+			}
+			else
+			{
+				assert(0); //todo something better here
+			}
+		}
+
 		//todo more stuff here
 	}
 
@@ -49,9 +64,29 @@ int Item::readFromData(void *data, size_t size)
 
 		readDataUnsafe((unsigned char*)data + 2, counter);
 
-		return 3; //one short + one char
+
+		if (type == wooddenSword)
+		{
+			if (size < 5)
+			{
+				return -1;
+			}
+			unsigned short durability = 0;
+			readDataUnsafe((unsigned char *)data + 3, durability);
+			writeData(metaData, durability);
+
+			return 5;
+		}
+		else
+		{
+			return 3; //one short + one char
+		}
+
 	}
 
+
+	//unreachable
+	assert(0);
 }
 
 void Item::sanitize()
@@ -64,20 +99,91 @@ void Item::sanitize()
 	else
 	{
 		//todo check if item should have meta data
-
+		if (!canHaveMetaData())
+		{
+			metaData.clear();
+		}
 
 		if (counter > getStackSize())
 		{
 			counter = getStackSize();
 		}
-
 	}
 
 }
 
 unsigned char Item::getStackSize()
 {
-	return 64;
+	if (type == wooddenSword)
+	{
+		return 1;
+	}
+	else
+	{
+		return 64;
+	}
+
+}
+
+bool Item::canHaveMetaData()
+{
+	if (type == wooddenSword)
+	{
+		return 1;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool Item::hasDurability()
+{
+	if (type == wooddenSword)
+	{
+		return 1;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+unsigned short Item::getDurability()
+{
+	if (hasDurability() && metaData.size() >= 2)
+	{
+		unsigned short durability = 0;
+		readDataUnsafe(metaData.data(), durability);
+		return durability;
+	}
+
+	return 0;
+}
+
+void Item::setDurability(unsigned short durability)
+{
+	if (hasDurability())
+	{
+		if (metaData.size() < 2)
+		{
+			metaData.resize(2);
+		}
+
+		writeDataUnsafe(metaData.data(), durability);
+	}
+}
+
+std::string Item::formatMetaDataToString()
+{
+	if (type == wooddenSword)
+	{
+		unsigned short durability = getDurability();
+
+		return std::string("Durability: ") + std::to_string(durability);
+	}
+
+	return "";
 }
 
 
@@ -155,4 +261,32 @@ void PlayerInventory::sanitize()
 
 	heldInMouse.sanitize();
 
+}
+
+
+const char *itemsNames[] = 
+{
+	"stick.png",
+	"wood_sword.png"
+};
+
+const char *getItemTextureName(int itemId)
+{
+	static_assert(sizeof(itemsNames) / sizeof(itemsNames[0]) == lastItem - ItemsStartPoint);
+
+	return itemsNames[itemId-ItemsStartPoint];
+}
+
+Item itemCreator(unsigned short type)
+{
+	Item ret(type);
+
+
+	if (type == ItemTypes::wooddenSword)
+	{
+		//durability
+		addMetaData(ret.metaData, unsigned short(256));
+	}
+
+	return ret;
 }

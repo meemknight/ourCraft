@@ -1746,11 +1746,24 @@ void Renderer::renderEntities(
 				//todo something better here lol
 				std::uint64_t textures[6] = {};
 
-				for (int i = 0; i < 6; i++)
+				if (e.second.entity.type >= ItemsStartPoint)
 				{
-					textures[i] = blocksLoader.gpuIds
-						[getGpuIdIndexForBlock(e.second.entity.type, i)];
+					for (int i = 0; i < 6; i++)
+					{
+						textures[i] = blocksLoader.gpuIdsItems
+							[e.second.entity.type - ItemsStartPoint];
+					}
 				}
+				else
+				{
+					for (int i = 0; i < 6; i++)
+					{
+						textures[i] = blocksLoader.gpuIds
+							[getGpuIdIndexForBlock(e.second.entity.type, i)];
+					}
+				}
+
+			
 
 				glUniformHandleui64vARB(entityRenderer.blockEntityshader.u_texture, 6, textures);
 

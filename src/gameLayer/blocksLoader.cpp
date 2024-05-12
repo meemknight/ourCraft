@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <errorReporting.h>
+#include <gameplay/items.h>
 
 const char *texturesNames[] = {
 	
@@ -509,7 +510,6 @@ void BlocksLoader::loadAllTextures()
 
 
 
-
 	//default texture
 	{
 		unsigned char data[16] = {};
@@ -629,7 +629,7 @@ void BlocksLoader::loadAllTextures()
 
 		gpuIds.push_back(handle);
 
-	return 1;
+		return 1;
 	};
 
 	for (int i = 0; i < count; i++)
@@ -841,6 +841,42 @@ void BlocksLoader::loadAllTextures()
 		}
 
 	}
+
+
+
+
+
+	//load items
+	for (int i = ItemsStartPoint; i < lastItem; i++)
+	{
+		path = RESOURCES_PATH;
+		path += "assets/textures/items/";
+		path += getItemTextureName(i);
+
+		gl2d::Texture t;
+
+		if (!loadFromFileWithAplhaFixing(t, path.c_str(), true, false, false)) 
+		{
+			texturesIdsItems.push_back(texturesIds[0]);
+			gpuIdsItems.push_back(gpuIds[0]);
+		}
+		else
+		{
+			t.bind();
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+			glGenerateMipmap(GL_TEXTURE_2D);
+
+			texturesIdsItems.push_back(t.id);
+
+			auto handle = glGetTextureHandleARB(t.id);
+			glMakeTextureHandleResidentARB(handle);
+
+			gpuIdsItems.push_back(handle);
+		}
+	}
+
 
 }
 

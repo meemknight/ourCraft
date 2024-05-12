@@ -1,10 +1,11 @@
 #pragma once
 #include <gameplay/entity.h>
+#include <gameplay/items.h>
 
 
 struct DroppedItem: public PhysicalEntity
 {
-	BlockType type = 0;
+	unsigned short type = 0;
 	unsigned char count = 0;
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
@@ -17,8 +18,19 @@ struct DroppedItemClient: public ClientEntity<DroppedItem, DroppedItemClient>
 	void setEntityMatrix(glm::mat4 *skinningMatrix);
 };
 
-struct DroppedItemServer : public ServerEntity<DroppedItem>
+struct DroppedItemServer
 {
+
+	DroppedItem getDataToSend();
+
+	PhysicalEntity entity;
+	Item item;
+
+	glm::dvec3 &getPosition()
+	{
+		return entity.position;
+	}
+
 	float restantTime = 0;
 
 	float stayTimer = 5 * 60;

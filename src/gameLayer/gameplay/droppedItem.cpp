@@ -13,6 +13,19 @@ void DroppedItem::update(float deltaTime, decltype(chunkGetterSignature) *chunkG
 
 }
 
+DroppedItem DroppedItemServer::getDataToSend()
+{
+	DroppedItem ret;
+	ret.type = item.type;
+	ret.count = item.counter;
+
+	ret.forces = entity.forces;
+	ret.lastPosition = entity.lastPosition;
+	ret.position = entity.position;
+
+	return ret;
+}
+
 bool DroppedItemServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
 	ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng, std::uint64_t yourEID,
 	std::unordered_set<std::uint64_t> &othersDeleted,
@@ -40,23 +53,23 @@ bool DroppedItemServer::update(float deltaTime, decltype(chunkGetterSignature) *
 			{
 				if (p.first != yourEID)
 				{
-					if (glm::distance(getPosition(), p.second.getPosition()) < 1.f && entity.type == p.second.entity.type)
+					if (glm::distance(getPosition(), p.second.getPosition()) < 1.f && item.type == p.second.item.type)
 					{
 
-						//todo change 64
-						if (entity.count + p.second.entity.count < 64)
+						const int stackSize = p.second.item.getStackSize();
+						if (item.counter + p.second.item.counter < stackSize)
 						{
 							//merge the 2 items
-							entity.count += p.second.entity.count;
+							item.counter += p.second.item.counter;
 							othersDeleted.insert(p.first);
 							c->entityData.droppedItems.erase(p.first);
 							break;
 						}
-						else if(entity.count < 64 && p.second.entity.count < 64)
+						else if(item.counter < stackSize && p.second.item.counter < stackSize)
 						{
 							//steal sum
-							p.second.entity.count = (entity.count + p.second.entity.count) - 64;
-							entity.count = 64;
+							p.second.item.counter = (item.counter + p.second.item.counter) - stackSize;
+							item.counter = stackSize;
 						}
 
 						
@@ -69,9 +82,9 @@ bool DroppedItemServer::update(float deltaTime, decltype(chunkGetterSignature) *
 
 
 
+	entity.updateForces(deltaTime, true);
+	entity.resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime, {0.4,0.4,0.4});
 
-
-	entity.update(deltaTime, chunkGetter);
 
 	return true;
 }

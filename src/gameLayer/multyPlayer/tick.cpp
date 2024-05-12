@@ -18,7 +18,15 @@ void genericBroadcastEntityUpdateFromServerToPlayer(E &e, bool reliable,
 
 	T packetData;
 	packetData.eid = e.first;
-	packetData.entity = e.second.entity;
+
+	if constexpr (hasGetDataToSend<decltype(e.second)>)
+	{
+		packetData.entity = e.second.getDataToSend();
+	}else
+	{
+		packetData.entity = e.second.entity;
+	}
+
 	packetData.timer = currentTimer;
 
 	broadCast(packet, &packetData, sizeof(packetData),

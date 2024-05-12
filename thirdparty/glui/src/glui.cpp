@@ -310,7 +310,6 @@ namespace glui
 			pos.y += transform.w * 0.4;
 			renderer.renderText(pos, newStr.c_str(), f, color, newS, 4, 3, false);
 		}
-
 		
 	}
 

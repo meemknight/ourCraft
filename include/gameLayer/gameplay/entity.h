@@ -116,6 +116,13 @@ template <typename T>
 constexpr bool hasMovementSpeedForLegsAnimations<T, std::void_t<decltype(std::declval<T>().movementSpeedForLegsAnimations)>> = true;
 
 
+template <typename T, typename = void>
+constexpr bool hasGetDataToSend = false;
+
+template <typename T>
+constexpr bool hasGetDataToSend<T, std::void_t<decltype(std::declval<T>().getDataToSend())>> = true;
+
+
 template <typename T, typename Enable = void>
 struct RubberBandOrientation
 {};
@@ -295,6 +302,8 @@ struct PhysicalEntity
 
 
 
+//dropped item doesn't inherit from this class, so if you want
+//to add something here make another type of server entity.
 template <class T>
 struct ServerEntity
 {

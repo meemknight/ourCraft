@@ -523,7 +523,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				&&
 				blockToPlace)
 			{
-
 				auto b = gameData.chunkSystem.getBlockSafe(rayCastPos);
 				if (b)
 				{
@@ -557,9 +556,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 		else if (!platform::isKeyHeld(platform::Button::LeftCtrl))
 		{
+
 			if (platform::isRMouseReleased())
 			{
-				if (blockToPlace)
+				if (blockToPlace && item.isBlock())
 					gameData.chunkSystem.placeBlockByClient(*blockToPlace, item.type,
 					gameData.undoQueue, gameData.entityManager.localPlayer.entity.position, gameData.lightSystem);
 			}

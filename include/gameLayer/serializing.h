@@ -13,6 +13,13 @@ void writeData(std::vector<unsigned char> &vector, T data)
 }
 
 template <class T>
+void writeDataUnsafe(void *into, T data)
+{
+	memcpy(into, &data, sizeof(data));
+}
+
+
+template <class T>
 void readDataUnsafe(void *data, T &t)
 {
 	memcpy(&t, data, sizeof(T));

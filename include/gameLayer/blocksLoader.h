@@ -10,6 +10,12 @@ struct BlocksLoader
 
 	void loadAllTextures();
 
+
+	std::vector<GLuint64> gpuIdsItems;
+	std::vector<GLuint> texturesIdsItems;
+
+
+
 };
 
 uint16_t getGpuIdIndexForBlock(short type, int face);

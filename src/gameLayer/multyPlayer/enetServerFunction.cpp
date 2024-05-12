@@ -165,6 +165,10 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 		c.playerData.inventory.items[17] = Item(BlockTypes::diamond_ore);
 		c.playerData.inventory.items[18] = Item(BlockTypes::cactus_bud);
 		c.playerData.inventory.items[27] = Item(BlockTypes::birch_wood);
+		c.playerData.inventory.items[28] = itemCreator(ItemTypes::wooddenSword);
+		c.playerData.inventory.items[29] = itemCreator(ItemTypes::wooddenSword);
+		c.playerData.inventory.items[30] = itemCreator(ItemTypes::wooddenSword);
+		c.playerData.inventory.items[31] = itemCreator(ItemTypes::wooddenSword);
 		c.playerData.inventory.items[34] = Item(BlockTypes::clay);
 		c.playerData.inventory.items[35] = Item(BlockTypes::glass);
 

@@ -97,13 +97,14 @@ bool ClientEntityManager::dropItemByClient(glm::dvec3 position, unsigned char in
 	, glm::vec3 throwForce, std::uint64_t timer, PlayerInventory &inventory, bool isCreative, int count)
 {
 
-
 	auto from = inventory.getItemFromIndex(inventorySlot);
 	if (!from) { return 0; }
 
 	if (!from->type) { return 0; }
 	
 	if (count > from->counter) { return 0; }
+
+	if (count == 0) { count = from->counter; }
 
 	std::uint64_t newEntityId = consumeId();
 

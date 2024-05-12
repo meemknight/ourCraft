@@ -519,16 +519,16 @@ void serverWorkerUpdate(
 						&i.t.entityId, &newId))
 					{
 
-						//todo meta data here
 						DroppedItemServer newEntity = {};
-						newEntity.entity.count = i.t.blockCount;
+						newEntity.item.counter = i.t.blockCount;
+						newEntity.item.type = i.t.blockType;
+						newEntity.item.metaData = from->metaData;
+
 						newEntity.entity.position = i.t.doublePos;
 						newEntity.entity.lastPosition = i.t.doublePos;
-						newEntity.entity.type = i.t.blockType;
 						newEntity.entity.forces = i.t.motionState;
 						//newEntity.restantTime = computeRestantTimer(currentTimer, i.t.timer);
 						newEntity.restantTime = computeRestantTimer(i.t.timer, currentTimer);
-
 
 						auto chunkPosition = determineChunkThatIsEntityIn(i.t.doublePos);
 
