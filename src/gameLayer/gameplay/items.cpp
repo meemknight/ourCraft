@@ -264,6 +264,47 @@ void PlayerInventory::sanitize()
 }
 
 
+int PlayerInventory::tryPickupItem(const Item &item)
+{
+	int currentCounter = 0;
+	int itemCounter = item.counter;
+
+	for (int i = 0; i < INVENTORY_CAPACITY; i++)
+	{
+		if (!items[i].type)
+		{
+			items[i] = item;
+			return itemCounter + currentCounter;
+		}
+		else if (items[i].type == item.type)
+		{
+
+			if (items[i].counter < items[i].getStackSize())
+			{
+
+				if (items[i].counter + itemCounter <= items[i].getStackSize())
+				{
+					items[i].counter += itemCounter;
+					return itemCounter + currentCounter;
+				}
+				else
+				{
+					int taken = items[i].getStackSize() - items[i].counter;
+					currentCounter += taken;
+					items[i].counter = items[i].getStackSize();
+					itemCounter -= taken;
+					//take as much as possible and continue
+				}
+
+			}
+
+		}
+	}
+
+	return 0;
+}
+
+
 const char *itemsNames[] = 
 {
 	"stick.png",

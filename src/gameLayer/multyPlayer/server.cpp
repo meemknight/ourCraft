@@ -581,7 +581,7 @@ void serverWorkerUpdate(
 							)
 						{
 							//this is a desync, resend inventory.
-							sendPlayerInventory(*client, channelChunksAndBlocks);
+							sendPlayerInventory(*client);
 						}
 						else
 						{
@@ -599,7 +599,7 @@ void serverWorkerUpdate(
 
 								if (to->counter >= to->getStackSize())
 								{
-									sendPlayerInventory(*client, channelChunksAndBlocks);
+									sendPlayerInventory(*client);
 								}
 
 								int total = (int)to->counter + (int)i.t.blockCount;
@@ -613,14 +613,14 @@ void serverWorkerUpdate(
 								else
 								{
 									//this is a desync, resend inventory.
-									sendPlayerInventory(*client, channelChunksAndBlocks);
+									sendPlayerInventory(*client);
 								}
 
 							}
 							else
 							{
 								//this is a desync, resend inventory.
-								sendPlayerInventory(*client, channelChunksAndBlocks);
+								sendPlayerInventory(*client);
 							}
 
 						}
@@ -654,7 +654,7 @@ void serverWorkerUpdate(
 					}
 					else
 					{
-						sendPlayerInventory(*client, channelChunksAndBlocks);
+						sendPlayerInventory(*client);
 						//todo send other player data
 					}
 
@@ -743,7 +743,7 @@ void serverWorkerUpdate(
 				settings.perClientSettings.begin()->second.resendInventory = false;
 				auto c = getAllClients();
 
-				sendPlayerInventory(c.begin()->second, channelChunksAndBlocks);
+				sendPlayerInventory(c.begin()->second);
 			}
 
 

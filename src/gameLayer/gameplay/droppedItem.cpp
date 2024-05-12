@@ -1,6 +1,6 @@
 #include <gameplay/droppedItem.h>
 #include <multyPlayer/serverChunkStorer.h>
-
+#include <multyPlayer/enetServerFunction.h>
 
 
 void DroppedItem::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
@@ -35,6 +35,11 @@ bool DroppedItemServer::update(float deltaTime, decltype(chunkGetterSignature) *
 {
 	//todo use persistent timer
 	stayTimer -= deltaTime;
+	
+	if (dontPickTimer>0)
+	dontPickTimer -= deltaTime;
+
+	
 	
 	if (stayTimer < 0)
 	{
@@ -80,6 +85,39 @@ bool DroppedItemServer::update(float deltaTime, decltype(chunkGetterSignature) *
 		}
 	}
 
+
+	if(dontPickTimer<=0)
+	for (auto &p : playersPosition)
+	{
+		if (glm::distance(getPosition(), p.second) < 1.f)
+		{
+
+			auto client = getClientNotLocked(p.first);
+
+			if (client)
+			{
+
+				//pickupped this item
+				int pickupped = client->playerData.inventory.tryPickupItem(item);
+				if (pickupped)
+				{
+					sendPlayerInventory(*client);
+
+					item.counter -= pickupped;
+					if(item.counter <= 0)
+					{
+						return 0;
+					}
+				}
+
+			}
+
+		}
+	}
+
+	//
+	//auto client = getClient(0);
+	//sendPlayerInventory(client);
 
 
 	entity.updateForces(deltaTime, true);

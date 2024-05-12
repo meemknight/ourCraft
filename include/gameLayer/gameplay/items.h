@@ -77,4 +77,7 @@ struct PlayerInventory
 
 	void sanitize();
 
+	//returns how many items were picked!
+	int tryPickupItem(const Item &item);
+
 };

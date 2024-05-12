@@ -75,6 +75,7 @@ bool checkIfPlayerShouldGetChunk(glm::ivec2 playerPos2D,
 	}
 }
 
+//todo this should dissapear
 Client getClient(std::uint64_t cid)
 {
 	Client rez = connections[cid];
