@@ -32,7 +32,7 @@ struct ClientEntityManager : public EntityDataClient
 	//leave count 0 to drop the full stack
 	bool dropItemByClient(glm::dvec3 position, 
 		unsigned char inventorySlot, UndoQueue &undoQueue, glm::vec3 throwForce, std::uint64_t timer,
-		PlayerInventory &inventory, bool isCreative, int count);
+		PlayerInventory &inventory, int count);
 
 	void removeEntity(std::uint64_t entityId);
 

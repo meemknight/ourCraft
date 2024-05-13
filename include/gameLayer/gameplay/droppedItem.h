@@ -9,6 +9,10 @@ struct DroppedItem: public PhysicalEntity
 	unsigned char count = 0;
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
+
+
+	static glm::vec3 getMaxColliderSize();
+
 };
 
 
@@ -20,6 +24,8 @@ struct DroppedItemClient: public ClientEntity<DroppedItem, DroppedItemClient>
 
 struct DroppedItemServer
 {
+
+	static glm::vec3 getMaxColliderSize();
 
 	DroppedItem getDataToSend();
 

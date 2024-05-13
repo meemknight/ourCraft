@@ -1,9 +1,78 @@
 #include "multyPlayer/serverChunkStorer.h"
 #include <iostream>
 #include <chunkSystem.h>
+#include <gameplay/physics.h>
 
 #include <platformTools.h>
 
+
+std::vector<ColidableEntry> ServerChunkStorer::getCollisionsListThatCanPush(glm::dvec3 position, glm::vec3 colider
+	, std::uint64_t eidToIgnore)
+{
+	std::vector<ColidableEntry> ret;
+	std::vector<SavedChunk *> chunks;
+	chunks.reserve(9);
+	ret.reserve(4);
+
+	//todo optimize, make this function not check chunks and lists that can't possibly colide
+	auto chunkPosition = determineChunkThatIsEntityIn(position);
+	for (auto offset : *getChunkNeighboursOffsets())
+	{
+		glm::ivec2 pos = chunkPosition + offset;
+		auto c = getChunkOrGetNull(pos.x, pos.y);
+		if (c)
+		{
+			chunks.push_back(c);
+		}
+	}
+	
+
+	auto checkEntities = [&](auto container)
+	{
+		for (auto &e : container)
+		{
+
+			if (boxColide(position, colider, e.second.getPosition(), e.second.entity.getColliderSize())
+				&& eidToIgnore != e.first
+				)
+			{
+				ColidableEntry other;
+				other.eid = e.first;
+				other.position = e.second.getPosition();
+				other.collider = e.second.entity.getColliderSize();
+				ret.push_back(other);
+			}
+
+		}
+	};
+
+
+	for (auto &c : chunks)
+	{
+
+		for (auto &e : c->entityData.players)
+		{
+
+			if (boxColide(position, colider, e.second->getPosition(), e.second->entity.getColliderSize())
+				&& eidToIgnore != e.first
+				)
+			{
+				ColidableEntry other;
+				other.eid = e.first;
+				other.position = e.second->getPosition();
+				other.collider = e.second->entity.getColliderSize();
+				ret.push_back(other);
+			}
+
+		}
+
+		checkEntities(c->entityData.pigs);
+		checkEntities(c->entityData.zombies);
+
+	}
+
+	return ret;
+}
 
 SavedChunk *ServerChunkStorer::getChunkOrGetNull(int posX, int posZ)
 {

@@ -443,14 +443,17 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		};
 
 
-		gameData.entityManager.localPlayer.entity.updateForces(deltaTime, !gameData.fly);
+		PhysicalSettings settings;
+		settings.sideFriction = 0;
+
+		gameData.entityManager.localPlayer.entity.updateForces(deltaTime, !gameData.fly, settings);
 
 
 		if (gameData.colidable)
 		{
 			gameData.entityManager.localPlayer
 				.entity.resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime,
-				glm::vec3(0.8, 1.8, 0.8));
+				gameData.entityManager.localPlayer.entity.getColliderSize(), settings);
 		}
 		else
 		{
@@ -474,9 +477,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	if (platform::isKeyPressedOn(platform::Button::Q))
 	{
 		gameData.entityManager.dropItemByClient(
-			gameData.entityManager.localPlayer.entity.position,
+			gameData.entityManager.localPlayer.entity.position + glm::dvec3(0,1.5,0),
 			gameData.currentItemSelected, gameData.undoQueue, gameData.c.viewDirection * 5.f,
-			gameData.serverTimer, player.inventory, player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE, 1);
+			gameData.serverTimer, player.inventory, !platform::isKeyHeld(platform::Button::LeftCtrl));
 	}
 
 #pragma endregion
@@ -719,7 +722,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			programData.pointDebugRenderer.
 				renderPoint(gameData.c, p.second.getRubberBandPosition());
 		
-			auto boxSize = glm::vec3(0.8, 1.8, 0.8);
+			auto boxSize = p.second.entity.getColliderSize();
 			auto pos = p.second.getRubberBandPosition();
 		
 			drawPlayerBox(pos, boxSize);
@@ -733,7 +736,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			programData.pointDebugRenderer.
 				renderPoint(gameData.c, p.second.getRubberBandPosition());
 		
-			auto boxSize = glm::vec3(0.8, 1.8, 0.8);
+			auto boxSize = p.second.entity.getColliderSize();
 			auto pos = p.second.getRubberBandPosition();
 		
 			drawPlayerBox(pos, boxSize);

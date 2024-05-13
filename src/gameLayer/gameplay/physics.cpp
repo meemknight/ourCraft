@@ -4,7 +4,7 @@
 #include <iostream>
 
 
-
+//used for air friction
 void applyDrag(glm::vec3 &force, glm::vec3 drag)
 {
 	auto lastForce = force;
@@ -15,6 +15,7 @@ void applyDrag(glm::vec3 &force, glm::vec3 drag)
 	if ((lastForce.z < 0 && force.z > 0) || (lastForce.z > 0 && force.z < 0)) { force.z = 0; }
 }
 
+//used for surface friction
 void applyDrag2(glm::vec3 &force, glm::vec3 drag)
 {
 
@@ -33,7 +34,7 @@ void applyDrag2(glm::vec3 &force, glm::vec3 drag)
 bool resolveConstrains(
 	glm::dvec3 &pos, glm::dvec3 &lastPos,
 	decltype(chunkGetterSignature) *chunkGetter, 
-	MotionState *forces, float deltaTime, glm::vec3 colliderSize)
+	MotionState *forces, float deltaTime, glm::vec3 colliderSize, PhysicalSettings physicalSettings)
 {
 	bool rez = 0;
 
@@ -46,7 +47,7 @@ bool resolveConstrains(
 	{
 		rez = checkCollisionBrute(pos,
 			lastPos,
-			chunkGetter, forces, deltaTime, colliderSize
+			chunkGetter, forces, deltaTime, colliderSize, physicalSettings
 		);
 	}
 	else
@@ -63,7 +64,7 @@ bool resolveConstrains(
 			newPos += delta;
 			glm::dvec3 posTest = newPos;
 			rez = checkCollisionBrute(newPos,
-				lastPos, chunkGetter, forces, deltaTime, colliderSize
+				lastPos, chunkGetter, forces, deltaTime, colliderSize, physicalSettings
 				);
 
 			if (newPos != posTest)
@@ -76,7 +77,7 @@ bool resolveConstrains(
 
 		rez = checkCollisionBrute(pos,
 			lastPos,
-			chunkGetter, forces, deltaTime, colliderSize);
+			chunkGetter, forces, deltaTime, colliderSize, physicalSettings);
 	}
 
 end:
@@ -96,7 +97,7 @@ end:
 
 bool checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
 	decltype(chunkGetterSignature) *chunkGetter, MotionState *forces, float deltaTime
-	, glm::vec3 colliderSize)
+	, glm::vec3 colliderSize, PhysicalSettings physicalSettings)
 {
 	glm::dvec3 delta = pos - lastPos;
 	const float BLOCK_SIZE = 1;
@@ -114,7 +115,7 @@ bool checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
 	if (delta.x)
 	{
 		newPos.x = performCollision({pos.x, lastPos.y, lastPos.z}, lastPos, colliderSize, {delta.x, 0, 0},
-			chunkGetter, rez, forces, deltaTime, drag).x;
+			chunkGetter, rez, forces, deltaTime, drag, physicalSettings).x;
 	}
 	else
 	{
@@ -128,7 +129,7 @@ bool checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
 	if (delta.z)
 	{
 		newPos.z = performCollision({newPos.x, lastPos.y, pos.z}, lastPos, colliderSize, {0, 0, delta.z},
-			chunkGetter, rez, forces, deltaTime, drag).z;
+			chunkGetter, rez, forces, deltaTime, drag, physicalSettings).z;
 	}
 	else
 	{
@@ -142,7 +143,7 @@ bool checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
 	if (delta.y)
 	{
 		newPos.y = performCollision({newPos.x, pos.y, newPos.z}, lastPos, colliderSize, {0, delta.y, 0},
-			chunkGetter, rez, forces, deltaTime, drag).y;
+			chunkGetter, rez, forces, deltaTime, drag, physicalSettings).y;
 	}
 	
 
@@ -177,21 +178,6 @@ bool checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
 }
 
 
-bool aabb(glm::vec4 b1, glm::vec4 b2)
-{
-	if (((b1.x - b2.x < b2.z)
-		&& b2.x - b1.x < b1.z
-		)
-		&& ((b1.y - b2.y < b2.w)
-		&& b2.y - b1.y < b1.w
-		)
-		)
-	{
-		return 1;
-	}
-	return 0;
-}
-
 bool boxColide(glm::dvec3 p1, glm::vec3 s1,
 	glm::dvec3 p2, glm::vec3 s2)
 {
@@ -222,13 +208,33 @@ bool boxColide(glm::dvec3 p1, glm::vec3 s1,
 
 }
 
+
+//todo implement
+glm::vec3 boxColideDistance(const glm::dvec3 &p1, const glm::vec3 &s1,
+	const glm::dvec3 &p2, const glm::vec3 &s2)
+{
+	const double delta = -0.000001;
+
+	glm::vec3 halfSize1 = s1 / 2.0f;
+	glm::vec3 halfSize2 = s2 / 2.0f;
+
+	glm::vec3 distance = glm::abs(glm::vec3(p2 - p1) - halfSize1 - halfSize2);
+	glm::vec3 overlap(0.0f);
+
+	overlap.x = std::max(0.0f, halfSize1.x + halfSize2.x - distance.x);
+	overlap.y = std::max(0.0f, halfSize1.y + halfSize2.y - distance.y);
+	overlap.z = std::max(0.0f, halfSize1.z + halfSize2.z - distance.z);
+
+	return overlap;
+}
+
 glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, glm::dvec3 delta,
 	decltype(chunkGetterSignature) *chunkGetter, bool &chunkLoaded, MotionState *forces, float deltaTime,
-	glm::vec3 &drag)
+	glm::vec3 &drag, PhysicalSettings physicalSettings)
 {
 	chunkLoaded = true;
 
-	const float DRAG_CONSTANT = 4.f;
+	
 
 	const float BLOCK_SIZE = 1.f;
 
@@ -286,8 +292,8 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 									{
 										if (forces)
 										{
-											//drag.y = DRAG_CONSTANT;
-											//drag.z = DRAG_CONSTANT;
+											drag.y = std::max(BLOCK_DEFAULT_FRICTION * physicalSettings.sideFriction, drag.y);
+											drag.z = std::max(BLOCK_DEFAULT_FRICTION * physicalSettings.sideFriction, drag.z);
 
 											forces->acceleration.x = 0;
 											forces->velocity.x = 0;
@@ -311,8 +317,8 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 									{
 										if (forces)
 										{
-											drag.x = DRAG_CONSTANT;
-											drag.z = DRAG_CONSTANT;
+											drag.x = std::max(BLOCK_DEFAULT_FRICTION, drag.x);
+											drag.z = std::max(BLOCK_DEFAULT_FRICTION, drag.z);
 
 											forces->acceleration.y = 0;
 											forces->velocity.y = 0;
@@ -336,8 +342,8 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 									{
 										if (forces)
 										{
-											//drag.x = DRAG_CONSTANT;
-											//drag.y = DRAG_CONSTANT;
+											drag.x = std::max(drag.x, BLOCK_DEFAULT_FRICTION * physicalSettings.sideFriction);
+											drag.y = std::max(drag.y, BLOCK_DEFAULT_FRICTION * physicalSettings.sideFriction);
 
 											forces->acceleration.z = 0;
 											forces->velocity.z = 0;
@@ -382,30 +388,43 @@ end:
 }
 
 
-void updateForces(glm::dvec3 &pos, MotionState &forces, float deltaTime, bool applyGravity)
+void updateForces(glm::dvec3 &pos, MotionState &forces, float deltaTime, bool applyGravity, PhysicalSettings physicalSettings)
 {
-	updateForces(pos, forces.velocity, forces.acceleration, deltaTime, applyGravity);
+	updateForces(pos, forces.velocity, forces.acceleration, deltaTime, applyGravity, physicalSettings);
 }
 
 
 void updateForces(glm::dvec3 &pos, glm::vec3 &velocity, glm::vec3 &acceleration,
-	float deltaTime, bool applyGravity)
+	float deltaTime, bool applyGravity, PhysicalSettings physicalSettings)
 {
 	if (applyGravity)
 	{
-		acceleration += glm::vec3(0, -9.8, 0);
+		acceleration += glm::vec3(0, GRAVITY * physicalSettings.gravityModifier, 0);
 	}
-	acceleration = glm::clamp(acceleration, glm::vec3(-1000), glm::vec3(1000));
+
+	acceleration = glm::clamp(acceleration, glm::vec3(-MAX_ACCELERATION), glm::vec3(MAX_ACCELERATION));
 
 	velocity += acceleration * deltaTime;
-	velocity = glm::clamp(velocity, glm::vec3(-1000), glm::vec3(1000));
+	velocity = glm::clamp(velocity, glm::vec3(-MAX_VELOCITY), glm::vec3(MAX_VELOCITY));
 
 	pos += velocity * deltaTime;
 
-	const float drag = 0.1f;
-	glm::vec3 dragForce = drag * -velocity * glm::abs(velocity) * 0.5f;
+	glm::vec3 dragForce = AIR_DRAG_COEFICIENT * -velocity * glm::abs(velocity) * 0.5f;
 
-	applyDrag(velocity, dragForce * deltaTime);
+	float length = glm::length(dragForce);
+
+	if (length)
+	{
+		if (length > MAX_AIR_DRAG)
+		{
+			dragForce /= length;
+			dragForce *= MAX_AIR_DRAG;
+		}
+
+		applyDrag(velocity, dragForce * deltaTime);
+
+	}
+
 
 	acceleration = {};
 }
@@ -415,11 +434,39 @@ void applyImpulse(MotionState &force, glm::vec3 impulse, float mass)
 	force.velocity += impulse * mass;
 }
 
-void MotionState::jump()
+void MotionState::jump(float impulse)
 {
 	if (colidesBottom())
 	{
-		applyImpulse(*this, glm::vec3{0,5,0});
+		applyImpulse(*this, glm::vec3{0,impulse,0});
 		setColidesBottom(false);
 	}
+}
+
+
+void colideWithOthers(glm::dvec3 &pos, glm::vec3 collider, MotionState &forces, std::vector<ColidableEntry> &others)
+{
+
+	for (auto &o : others)
+	{
+		glm::vec3 delta = pos - o.position;
+
+		delta.y *= OTHERS_PUSHING_YOU_BUAS_Y_DOWN;
+
+		float l = glm::length(delta);
+
+		if (l == 0)
+		{
+			delta = {0.5,0,0.5};
+		}
+		else
+		{
+			delta /= l;
+		}
+
+		delta *= OTHERS_PUSHING_YOU_FORCE;
+
+		applyImpulse(forces, delta);
+	}
+
 }

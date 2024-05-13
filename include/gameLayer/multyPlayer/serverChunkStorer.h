@@ -7,6 +7,7 @@
 #include <multyPlayer/chunkSaver.h>
 #include <gameplay/droppedItem.h>
 #include <gameplay/allentities.h>
+#include <gameplay/physics.h>
 
 
 //https://www.geeksforgeeks.org/how-to-create-an-unordered_map-of-user-defined-class-in-cpp/
@@ -109,8 +110,12 @@ struct SendBlocksBack
 	BlockType block;
 };
 
+
 struct ServerChunkStorer
 {
+
+	std::vector<ColidableEntry> getCollisionsListThatCanPush(glm::dvec3 position, 
+		glm::vec3 colider, std::uint64_t eidToIgnore);
 
 	std::unordered_map<glm::ivec2, std::unordered_map<BlockInChunkPos, GhostBlock, BlockInChunkHash>,
 		Ivec2Hash>
@@ -160,3 +165,20 @@ struct ServerChunkStorer
 };
 
 
+
+inline std::array<glm::ivec2, 9> *getChunkNeighboursOffsets()
+{
+	static std::array<glm::ivec2, 9> checkOffsets = {
+		glm::ivec2(0,0),
+		glm::ivec2(1,0),
+		glm::ivec2(-1,0),
+		glm::ivec2(0,1),
+		glm::ivec2(0,-1),
+		glm::ivec2(1,-1),
+		glm::ivec2(-1,-1),
+		glm::ivec2(1,1),
+		glm::ivec2(-1,1),
+	};
+
+	return &checkOffsets;
+};

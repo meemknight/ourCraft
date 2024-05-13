@@ -276,18 +276,18 @@ struct PhysicalEntity
 	glm::dvec3 lastPosition = {};
 	MotionState forces = {};
 
-	void updateForces(float deltaTime, bool applyGravity)
+	void updateForces(float deltaTime, bool applyGravity, PhysicalSettings physicalSettings = {})
 	{
-		::updateForces(position, forces, deltaTime, applyGravity);
+		::updateForces(position, forces, deltaTime, applyGravity, physicalSettings);
 	}
 
 	void resolveConstrainsAndUpdatePositions(
 		decltype(chunkGetterSignature) *chunkGetter,
-		float deltaTime, glm::vec3 colliderSize
+		float deltaTime, glm::vec3 colliderSize, PhysicalSettings physicalSettings = {}
 	)
 	{
 		resolveConstrains(position, lastPosition, chunkGetter,
-			&forces, deltaTime, colliderSize);
+			&forces, deltaTime, colliderSize, physicalSettings);
 
 		lastPosition = position;
 	}
@@ -297,7 +297,7 @@ struct PhysicalEntity
 		lastPosition = position;
 	}
 
-	void jump();
+	void jump(float impulse = BASIC_JUMP_IMPULSE);
 };
 
 
@@ -313,6 +313,7 @@ struct ServerEntity
 	{
 		return entity.position;
 	}
+
 };
 
 template <class T, class BASE_CLIENT>

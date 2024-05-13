@@ -8,10 +8,22 @@
 
 void Pig::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
 {
-	updateForces(deltaTime, true);
+	PhysicalSettings ps;
+	ps.gravityModifier = 0.9;
+	updateForces(deltaTime, true, ps);
 
+	resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime, getColliderSize());
 
-	resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime, {0.8,0.8,0.8});
+}
+
+glm::vec3 Pig::getColliderSize()
+{
+	return getMaxColliderSize();
+}
+
+glm::vec3 Pig::getMaxColliderSize()
+{
+	return glm::vec3(0.8, 0.8, 0.8);
 }
 
 void PigClient::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
@@ -47,8 +59,10 @@ bool PigServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGet
 	updateAnimalBehaviour(deltaTime, chunkGetter, serverChunkStorer, rng);
 
 
-	entity.update(deltaTime, chunkGetter);
+	auto collisions = serverChunkStorer.getCollisionsListThatCanPush(getPosition(), entity.getColliderSize(), yourEID);
+	colideWithOthers(getPosition(), entity.getColliderSize(), entity.forces, collisions);
 
+	entity.update(deltaTime, chunkGetter);
 
 	return true;
 }

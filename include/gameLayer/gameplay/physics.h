@@ -4,6 +4,36 @@
 #include <glm/vec3.hpp>
 #include <chunk.h>
 
+
+
+struct ColidableEntry
+{
+	std::uint64_t eid = 0;
+	glm::dvec3 position = {};
+	glm::vec3 collider = {};
+};
+
+
+struct PhysicalSettings
+{
+
+	float gravityModifier = 1;
+	float sideFriction = 1;
+
+};
+
+constexpr static float BLOCK_DEFAULT_FRICTION = 8.f;
+constexpr static float MAX_AIR_DRAG = 12.f;
+constexpr static float AIR_DRAG_COEFICIENT = 0.1f;
+constexpr static float GRAVITY = -9.8 * 2.2;
+constexpr static float MAX_ACCELERATION = 1000;
+constexpr static float MAX_VELOCITY = 1000;
+constexpr static float BASIC_JUMP_IMPULSE = 8;
+constexpr static float OTHERS_PUSHING_YOU_FORCE = 0.7f;
+constexpr static float OTHERS_PUSHING_YOU_BUAS_Y_DOWN = 0.1f;
+
+
+
 ChunkData *chunkGetterSignature(glm::ivec2 chunkPos);
 
 struct MotionState
@@ -30,7 +60,7 @@ struct MotionState
 	void setColidesLeft(bool b) { colides ^=  0b000010; }
 	void setColidesRight(bool b) { colides ^= 0b000001; }
 
-	void jump();
+	void jump(float impulse = BASIC_JUMP_IMPULSE);
 };
 
 
@@ -38,21 +68,30 @@ struct MotionState
 bool resolveConstrains(
 	glm::dvec3 &pos, glm::dvec3 &lastPos,
 	decltype(chunkGetterSignature) *chunkGetter,
-	MotionState *forces, float deltaTime, glm::vec3 colliderSize);
+	MotionState *forces, float deltaTime, glm::vec3 colliderSize, PhysicalSettings physicalSettings = {});
 
 //returns false if chunk was not loaded
 bool checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
 	decltype(chunkGetterSignature) *chunkGetter, MotionState *forces, float deltaTime,
-	glm::vec3 colliderSize);
+	glm::vec3 colliderSize, PhysicalSettings physicalSettings);
 
 
 glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, glm::dvec3 delta,
 	decltype(chunkGetterSignature) *chunkGetter, bool &chunkLoaded, MotionState *forces, float deltaTime,
-	glm::vec3 &drag);
+	glm::vec3 &drag, PhysicalSettings physicalSettings);
 
-void updateForces(glm::dvec3 &pos, MotionState &forces, float deltaTime, bool applyGravity);
+void updateForces(glm::dvec3 &pos, MotionState &forces, float deltaTime, bool applyGravity, PhysicalSettings physicalSettings = {});
 
-void updateForces(glm::dvec3 &pos, glm::vec3 &velocity, glm::vec3 &acceleration, float deltaTime, bool applyGravity);
+void updateForces(glm::dvec3 &pos, glm::vec3 &velocity, glm::vec3 &acceleration, float deltaTime, bool applyGravity, PhysicalSettings physicalSettings = {});
 
 void applyImpulse(MotionState &force, glm::vec3 impulse, float mass = 1.f);
 
+
+//others are already supposed to be colliding
+void colideWithOthers(glm::dvec3 &pos, glm::vec3 collider, MotionState &forces, std::vector<ColidableEntry> &others);
+
+bool boxColide(glm::dvec3 p1, glm::vec3 s1,
+	glm::dvec3 p2, glm::vec3 s2);
+
+glm::vec3 boxColideDistance(const glm::dvec3 &p1, const glm::vec3 &s1,
+	const glm::dvec3 &p2, const glm::vec3 &s2);

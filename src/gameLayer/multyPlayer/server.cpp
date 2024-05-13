@@ -544,11 +544,9 @@ void serverWorkerUpdate(
 
 						//std::cout << "restant: " << newEntity.restantTime << "\n";
 
-						if (client->playerData.otherPlayerSettings.gameMode != OtherPlayerSettings::CREATIVE)
-						{
-							from->counter -= i.t.blockCount;
-							if (!from->counter) { *from = {}; }
-						}
+						//substract item from inventory
+						from->counter -= i.t.blockCount;
+						if (!from->counter) { *from = {}; }
 
 					}
 

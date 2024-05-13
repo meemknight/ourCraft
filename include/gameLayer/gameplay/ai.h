@@ -80,22 +80,6 @@ struct AnimalBehaviour
 
 };
 
-inline std::array<glm::ivec2, 9> *getChunkNeighboursOffsets()
-{
-	static std::array<glm::ivec2, 9> checkOffsets = {
-		glm::ivec2(0,0),
-		glm::ivec2(1,0),
-		glm::ivec2(-1,0),
-		glm::ivec2(0,1),
-		glm::ivec2(0,-1),
-		glm::ivec2(1,-1),
-		glm::ivec2(-1,-1),
-		glm::ivec2(1,1),
-		glm::ivec2(-1,1),
-	};
-
-	return &checkOffsets;
-};
 
 template<class E, class SETTINGS>
 inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
@@ -119,7 +103,6 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 	bool thereIsClosestPlayer = false;
 	float closesestDist = 1000000000000.f;
 
-	//todo also check distance < 15 blocks
 	for (auto offset : *getChunkNeighboursOffsets())
 	{
 		glm::ivec2 pos = chunkPosition + offset;

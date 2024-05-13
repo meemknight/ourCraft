@@ -259,9 +259,9 @@ void setBodyAndLookOrientation(glm::vec2 &bodyOrientation, glm::vec3 &lookDirect
 
 }
 
-void PhysicalEntity::jump()
+void PhysicalEntity::jump(float impulse)
 {
-	forces.jump();
+	forces.jump(impulse);
 }
 
 void adjustVectorTowardsDirection(glm::vec3 &vector, glm::vec3 desiredDirection, float threshold)

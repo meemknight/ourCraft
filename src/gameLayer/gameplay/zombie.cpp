@@ -28,8 +28,18 @@ void Zombie::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter
 
 	updateForces(deltaTime, true);
 
-	resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime, {0.8, 1.8, 0.8});
+	resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime, getColliderSize());
 
+}
+
+glm::vec3 Zombie::getColliderSize()
+{
+	return getMaxColliderSize();
+}
+
+glm::vec3 Zombie::getMaxColliderSize()
+{
+	return glm::vec3(0.8, 1.8, 0.8);
 }
 
 void ZombieClient::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
@@ -66,6 +76,8 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 	constexpr float keepFollowDistance = 42;
 	glm::dvec3 playerLockedOnPosition = getPosition();
 
+	/*
+
 	if (!playerLockedOn)
 	{
 
@@ -87,7 +99,6 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 			
 	}
 	
-
 	{
 		auto found = playersPosition.find(playerLockedOn);
 
@@ -307,7 +318,6 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 	};
 
-
 	if (!playerLockedOn)
 	{
 		waitTime -= deltaTime;
@@ -350,7 +360,7 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 	}
 
 	//don't fall into gaps when not following player
-	if(0)
+	if(1)
 	if(!pathFindingSucceeded)
 	{
 		auto blockPos = getPosition();
@@ -388,6 +398,15 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 	auto move = 2.f * deltaTime * direction;
 	getPosition().x += move.x;
 	getPosition().z += move.y;
+
+	*/
+
+
+	auto collisions = serverChunkStorer.getCollisionsListThatCanPush(getPosition(), entity.getColliderSize(),
+		yourEID);
+
+	colideWithOthers(getPosition(), entity.getColliderSize(), entity.forces, collisions);
+
 
 	entity.update(deltaTime, chunkGetter);
 

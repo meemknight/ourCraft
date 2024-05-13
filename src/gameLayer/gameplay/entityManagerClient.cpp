@@ -94,7 +94,7 @@ std::uint64_t ClientEntityManager::consumeId()
 }
 
 bool ClientEntityManager::dropItemByClient(glm::dvec3 position, unsigned char inventorySlot, UndoQueue &undoQueue
-	, glm::vec3 throwForce, std::uint64_t timer, PlayerInventory &inventory, bool isCreative, int count)
+	, glm::vec3 throwForce, std::uint64_t timer, PlayerInventory &inventory, int count)
 {
 
 	auto from = inventory.getItemFromIndex(inventorySlot);
@@ -155,11 +155,8 @@ bool ClientEntityManager::dropItemByClient(glm::dvec3 position, unsigned char in
 		droppedItems[newEntityId].entity = newEntity;
 	}
 
-	if (!isCreative)
-	{
-		from->counter -= count;
-		if (!from->counter) { *from = {}; }
-	};
+	from->counter -= count;
+	if (!from->counter) { *from = {}; }
 
 	return true;
 }

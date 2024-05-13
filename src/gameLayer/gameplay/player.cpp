@@ -38,6 +38,16 @@ void Player::moveFPS(glm::vec3 direction, glm::vec3 lookDirection)
 	this->position += move;
 }
 
+glm::vec3 Player::getColliderSize()
+{
+	return getMaxColliderSize();
+}
+
+glm::vec3 Player::getMaxColliderSize()
+{
+	return glm::vec3(0.8, 1.8, 0.8);
+}
+
 void PlayerClient::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
 {
 

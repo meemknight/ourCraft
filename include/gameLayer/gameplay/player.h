@@ -16,6 +16,9 @@ struct Player : public PhysicalEntity
 
 	int chunkDistance = 10; //remove this from here?
 
+	glm::vec3 getColliderSize();
+
+	static glm::vec3 getMaxColliderSize();
 };
 
 //here we store things like gamemode

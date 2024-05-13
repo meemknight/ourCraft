@@ -6,11 +6,22 @@
 void DroppedItem::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
 {
 
-	updateForces(deltaTime, true);
+	//THIS IS SHARED CODE!!!!
+	PhysicalSettings ps;
+	ps.gravityModifier = 1.f / 2.2f;
+	updateForces(deltaTime, true, ps);
+	resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime, getMaxColliderSize(), ps);
 
-	resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime, {0.4,0.4,0.4});
+}
 
+glm::vec3 DroppedItem::getMaxColliderSize()
+{
+	return {0.4,0.4,0.4};
+}
 
+glm::vec3 DroppedItemServer::getMaxColliderSize()
+{
+	return {0.4,0.4,0.4};
 }
 
 DroppedItem DroppedItemServer::getDataToSend()
@@ -119,9 +130,16 @@ bool DroppedItemServer::update(float deltaTime, decltype(chunkGetterSignature) *
 	//auto client = getClient(0);
 	//sendPlayerInventory(client);
 
+	
+	//THIS IS SHARED CODE!!!!
+	PhysicalSettings ps;
+	ps.gravityModifier = 1.f / 2.2f;
+	entity.updateForces(deltaTime, true, ps);
 
-	entity.updateForces(deltaTime, true);
-	entity.resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime, {0.4,0.4,0.4});
+	auto collisions = serverChunkStorer.getCollisionsListThatCanPush(getPosition(), getMaxColliderSize(), yourEID);
+	colideWithOthers(getPosition(), getMaxColliderSize(), entity.forces, collisions);
+
+	entity.resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime, getMaxColliderSize(), ps);
 
 
 	return true;
