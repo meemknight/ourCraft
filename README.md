@@ -5,6 +5,11 @@ This time I want to add a lot of harder-to-implement features like transparent b
 
 Go check out the videos on [YouTube about it](https://www.youtube.com/watch?v=StNAG_tLEoU&list=PLKUl_fMWLdH-0H-tz0S144g5xXliHOIxC&index=4)!
 
+
+![image](https://github.com/meemknight/ourCraft/assets/36445656/7e57cdc4-6f6c-4cc9-bce5-c8ff9131ab55)
+
+![image](https://github.com/meemknight/ourCraft/assets/36445656/fd5ad17e-1bee-441d-8747-d4df4fdb850c)
+
 ![image](https://github.com/meemknight/ourCraft/assets/36445656/3f6c8976-8f63-4259-a1de-3305c4c52467)
 
 
@@ -12,32 +17,33 @@ Features and todos:
 
 - [ ] Rendering system
   - [x] Basic features:
-    - [x] Camera
-    - [x] Texture atlas
-    - [x] Render block faces instanced   
-  - [ ] Advanced features:
-	- [ ] 3D models
+	- [x] Camera
+	- [x] Texture atlas
+	- [x] Render block faces instanced   
+	- [x] 3D models
 	- [x] Animations
 	- [x] Transparency
 	- [x] Skybox
   - [ ] Shaders:
+  	- [x] Animated nice water 😻
 	- [x] No visual artifacts on textures
 	- [x] PBR pipeline
 	- [x] Lights
+  	- [ ] Lights stored in cube maps
 	- [ ] Sky Box reflection
-	- [ ] SSR
-	- [ ] HBAO / SSAO / or even better SSDO
+	- [x] SSR
+	- [x] HBAO / SSAO
 	- [x] HDR, ACES tone mapping
 	- [ ] Bloom
 	- [ ] Automatic exposure
 	- [ ] Lens flare
-	- [ ] Color grading
+	- [x] Color grading
 	- [ ] Fog
-	- [ ] Underwater fog -(todo improve)
-	- [ ] Sun Shadows (cascaded shadow maps)
+	- [x] Underwater fog -(todo improve)
 	- [ ] God rays	
 	- [x] Fake Shadows for all light types (todo improve)
-  	- [ ] Shadiows
+  	- [x] Shadows (todo optimize)
+   	- [ ] Cascaded shadow maps
 	- [ ] Depth of field (maybe blur far stuff)
 	- [ ] world curvature maybe?
 
@@ -49,19 +55,11 @@ Features and todos:
   - [x] Server knows player position to optimize chunk logic stuff
   - [x] Undo Stuff On client
   - [ ] Buffering
-  - [ ] Rubber banding
-  - [ ] Entities
+  - [x] Rubber banding
+  - [x] Entities
 
 
 
-
-todo for shaders:
-
- - [ ] Make water more shiny (specular reflection)
- - [ ] Make water move faster
- - [ ] Make water wripels a little smaller?
- - [ ] Make water geometry actually move
- - [ ] Sepparate underwater color
 
 
 
