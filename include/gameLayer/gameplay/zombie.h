@@ -3,7 +3,7 @@
 #include <random>
 
 
-struct Zombie: public PhysicalEntity
+struct Zombie: public PhysicalEntity, public CanPushOthers
 {
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);

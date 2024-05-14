@@ -57,9 +57,18 @@ uint grassMask[] =
 	1,
 };
 
-uint waterMask[] =
+int waterMask[] =
 {
-	1,1,0,0, 0,1,1,0, 1,1,1,1, 0,0,0,0, 0,1,1,0, 1,1,0,0
+	1,1,0,0, 0,1,1,0, 1,1,1,1, 0,0,0,0, 0,1,1,0, 1,1,0,0,  
+
+	//1,1,0,0, 0,1,1,0, 0,1,1,0, 1,1,0,0,
+	// 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
+
+	//1,1,-1,-1, -1,1,1,-1, -1,1,1,-1, 1,1,-1,-1,
+	// 0,0,-1,-1, -1,0,0,-1, -1,0,0,-1, 0,0,-1,-1,
+
+	 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
+	 0,0,1,1, 1,0,0,1, 1,0,0,1, 0,0,1,1,
 };
 
 float biasUp(float a)
@@ -80,7 +89,7 @@ vec3 calculateVertexPos(int vertexId)
 
 	if(in_faceOrientation >= 22) //water
 	{
-		uint mask = waterMask[(in_faceOrientation-22)*4+vertexId];
+		int mask = waterMask[(in_faceOrientation-22)*4+vertexId];
 
 		vertexShape.x += vertexData[(in_faceOrientation) * 3 * 4 + vertexId * 3 + 0];
 		vertexShape.y += vertexData[(in_faceOrientation) * 3 * 4 + vertexId * 3 + 1];

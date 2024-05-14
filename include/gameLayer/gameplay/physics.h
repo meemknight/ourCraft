@@ -22,7 +22,6 @@ struct PhysicalSettings
 
 };
 
-constexpr static float BLOCK_DEFAULT_FRICTION = 8.f;
 constexpr static float MAX_AIR_DRAG = 12.f;
 constexpr static float AIR_DRAG_COEFICIENT = 0.1f;
 constexpr static float GRAVITY = -9.8 * 2.2;

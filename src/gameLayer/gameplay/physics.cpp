@@ -210,23 +210,23 @@ bool boxColide(glm::dvec3 p1, glm::vec3 s1,
 
 
 //todo implement
-glm::vec3 boxColideDistance(const glm::dvec3 &p1, const glm::vec3 &s1,
-	const glm::dvec3 &p2, const glm::vec3 &s2)
-{
-	const double delta = -0.000001;
-
-	glm::vec3 halfSize1 = s1 / 2.0f;
-	glm::vec3 halfSize2 = s2 / 2.0f;
-
-	glm::vec3 distance = glm::abs(glm::vec3(p2 - p1) - halfSize1 - halfSize2);
-	glm::vec3 overlap(0.0f);
-
-	overlap.x = std::max(0.0f, halfSize1.x + halfSize2.x - distance.x);
-	overlap.y = std::max(0.0f, halfSize1.y + halfSize2.y - distance.y);
-	overlap.z = std::max(0.0f, halfSize1.z + halfSize2.z - distance.z);
-
-	return overlap;
-}
+//glm::vec3 boxColideDistance(const glm::dvec3 &p1, const glm::vec3 &s1,
+//	const glm::dvec3 &p2, const glm::vec3 &s2)
+//{
+//	const double delta = -0.000001;
+//
+//	glm::vec3 halfSize1 = s1 / 2.0f;
+//	glm::vec3 halfSize2 = s2 / 2.0f;
+//
+//	glm::vec3 distance = glm::abs(glm::vec3(p2 - p1) - halfSize1 - halfSize2);
+//	glm::vec3 overlap(0.0f);
+//
+//	overlap.x = std::max(0.0f, halfSize1.x + halfSize2.x - distance.x);
+//	overlap.y = std::max(0.0f, halfSize1.y + halfSize2.y - distance.y);
+//	overlap.z = std::max(0.0f, halfSize1.z + halfSize2.z - distance.z);
+//
+//	return overlap;
+//}
 
 glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, glm::dvec3 delta,
 	decltype(chunkGetterSignature) *chunkGetter, bool &chunkLoaded, MotionState *forces, float deltaTime,
@@ -281,7 +281,7 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 						
 						if (b->isColidable())
 						{
-
+							float friction = b->getFriction();
 
 							if (boxColide(pos, size, {x,y - BLOCK_SIZE/2.f,z}, glm::vec3(BLOCK_SIZE)))
 							{
@@ -292,8 +292,8 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 									{
 										if (forces)
 										{
-											drag.y = std::max(BLOCK_DEFAULT_FRICTION * physicalSettings.sideFriction, drag.y);
-											drag.z = std::max(BLOCK_DEFAULT_FRICTION * physicalSettings.sideFriction, drag.z);
+											drag.y = std::max(friction * physicalSettings.sideFriction, drag.y);
+											drag.z = std::max(friction * physicalSettings.sideFriction, drag.z);
 
 											forces->acceleration.x = 0;
 											forces->velocity.x = 0;
@@ -317,8 +317,8 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 									{
 										if (forces)
 										{
-											drag.x = std::max(BLOCK_DEFAULT_FRICTION, drag.x);
-											drag.z = std::max(BLOCK_DEFAULT_FRICTION, drag.z);
+											drag.x = std::max(friction, drag.x);
+											drag.z = std::max(friction, drag.z);
 
 											forces->acceleration.y = 0;
 											forces->velocity.y = 0;
@@ -342,8 +342,8 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 									{
 										if (forces)
 										{
-											drag.x = std::max(drag.x, BLOCK_DEFAULT_FRICTION * physicalSettings.sideFriction);
-											drag.y = std::max(drag.y, BLOCK_DEFAULT_FRICTION * physicalSettings.sideFriction);
+											drag.x = std::max(drag.x, friction * physicalSettings.sideFriction);
+											drag.y = std::max(drag.y, friction * physicalSettings.sideFriction);
 
 											forces->acceleration.z = 0;
 											forces->velocity.z = 0;

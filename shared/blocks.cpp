@@ -1,6 +1,9 @@
 #include "blocks.h"
 #include <algorithm>
 
+constexpr static float BLOCK_DEFAULT_FRICTION = 8.f;
+
+
 bool isBlockMesh(BlockType type)
 {
 	return !isCrossMesh(type);
@@ -68,4 +71,14 @@ bool isColidable(BlockType type)
 		type != BlockTypes::dead_bush &&
 		type != BlockTypes::torch &&
 		type != BlockTypes::water;
+}
+
+float Block::getFriction()
+{
+	if (type == BlockTypes::ice)
+	{
+		return 1.f;
+	}
+
+	return BLOCK_DEFAULT_FRICTION;
 }

@@ -124,7 +124,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 	, int itemSelected, PlayerInventory &inventory, BlocksLoader &blocksLoader,
 	bool insideInventory, int &cursorItemIndex)
 {
-	cursorItemIndex = -2;
+	cursorItemIndex = -1;
 	glm::vec4 cursorItemIndexBox = {};
 	auto mousePos = platform::getRelMousePosition();
 
@@ -193,7 +193,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 			if (glui::aabb(inventoryBox, mousePos))
 			{
-				cursorItemIndex = -1;
+				cursorItemIndex = -2;
 			}
 
 			int oneItemSize = 0;

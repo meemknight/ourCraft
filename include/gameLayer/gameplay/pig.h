@@ -6,7 +6,7 @@
 
 
 struct Pig: public PhysicalEntity, public HasOrientationAndHeadTurnDirection,
-	public MovementSpeedForLegsAnimations
+	public MovementSpeedForLegsAnimations, public CanPushOthers
 {
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 

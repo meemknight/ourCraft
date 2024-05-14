@@ -139,9 +139,18 @@ uint grassMask[] =
 	1,
 };
 
-uint waterMask[] =
+int waterMask[] =
 {
-	1,1,0,0, 0,1,1,0, 1,1,1,1, 0,0,0,0, 0,1,1,0, 1,1,0,0
+	1,1,0,0, 0,1,1,0, 1,1,1,1, 0,0,0,0, 0,1,1,0, 1,1,0,0,  
+
+	//1,1,0,0, 0,1,1,0, 0,1,1,0, 1,1,0,0,
+	// 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
+
+	//1,1,-1,-1, -1,1,1,-1, -1,1,1,-1, 1,1,-1,-1,
+	// 0,0,-1,-1, -1,0,0,-1, -1,0,0,-1, 0,0,-1,-1,
+
+	 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
+	 0,0,1,1, 1,0,0,1, 1,0,0,1, 0,0,1,1,
 };
 
 float biasUp(float a)
@@ -162,7 +171,7 @@ vec3 calculateVertexPos(int vertexId)
 
 	if(in_faceOrientation >= 22) //water
 	{
-		uint mask = waterMask[(in_faceOrientation-22)*4+vertexId];
+		int mask = waterMask[(in_faceOrientation-22)*4+vertexId];
 
 		vertexShape.x += vertexData[(in_faceOrientation) * 3 * 4 + vertexId * 3 + 0];
 		vertexShape.y += vertexData[(in_faceOrientation) * 3 * 4 + vertexId * 3 + 1];
@@ -259,7 +268,7 @@ void main()
 	
 	int in_flags =  in_facePosition.y >> 24;
 	in_flags &= 0xFF;
-
+	bool isWater =  ((in_flags & 1) != 0);
 
 	v_skyLight = (in_skyAndNormalLights & 0xf0) >> 4;
 	v_normalLight = (in_skyAndNormalLights & 0xf);
@@ -329,8 +338,13 @@ void main()
 	//v_fragPosLightSpace.xyz -= u_lightPos;
 
 
-	//v_ambient = (vertexColor[in_faceOrientation] * (v_ambientInt/15.f)) * 0.8 + 0.2;
-	v_ambient = (v_ambientInt/15.f) * 0.8 + 0.2;
+	if(in_faceOrientation<16 && !isWater)
+	{
+		v_ambient = (vertexColor[in_faceOrientation] * (v_ambientInt/15.f)) * 0.8 + 0.2;
+	}else
+	{
+		v_ambient = (v_ambientInt/15.f) * 0.8 + 0.2;
+	}
 	//v_color = vertexColor[in_faceOrientation];
 
 

@@ -12,8 +12,6 @@
 
 struct LightSystem;
 
-//todo the light system is making the chunk loader to reload chunks too often
-//maybe store lights sepparately?
 
 struct ChunkSystem
 {

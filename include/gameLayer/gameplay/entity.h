@@ -269,7 +269,6 @@ struct LegsAnimator <T, std::enable_if_t< hasMovementSpeedForLegsAnimations<T>>>
 };
 
 
-//todo add a way to add some static collider sizes
 struct PhysicalEntity
 {
 	glm::dvec3 position = {};
@@ -299,6 +298,18 @@ struct PhysicalEntity
 
 	void jump(float impulse = BASIC_JUMP_IMPULSE);
 };
+
+struct CanPushOthers
+{
+	constexpr static bool canPushOthers = true;
+};
+
+
+template <typename T, typename = void>
+constexpr bool hasCanPushOthers = false;
+
+template <typename T>
+constexpr bool hasCanPushOthers<T, std::void_t<decltype(T::canPushOthers)>> = true;
 
 
 

@@ -154,5 +154,7 @@ struct Block
 		return ::isColidable(type);
 	}
 
+	float getFriction();
+
 };
 

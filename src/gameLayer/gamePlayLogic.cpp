@@ -487,95 +487,100 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma region place blocks
 
-	glm::ivec3 rayCastPos = {};
-	std::optional<glm::ivec3> blockToPlace = std::nullopt;
-	glm::dvec3 cameraRayPos = gameData.c.position;
-
-	if (gameData.chunkSystem.rayCast(cameraRayPos, gameData.c.viewDirection, rayCastPos, 20, blockToPlace))
-	{
-		auto b = gameData.chunkSystem.getBlockSafe(rayCastPos);
-		if (b && b->type != BlockTypes::water)
-		{
-			programData.gyzmosRenderer.drawCube(rayCastPos);
-		}
-
-	}
-
-
-	if (!gameData.escapePressed)
+	if (!gameData.insideInventoryMenu)
 	{
 
-		auto &item = player.inventory.items[gameData.currentItemSelected];
+		glm::ivec3 rayCastPos = {};
+		std::optional<glm::ivec3> blockToPlace = std::nullopt;
+		glm::dvec3 cameraRayPos = gameData.c.position;
 
-		if (item.isBlock())
+		if (gameData.chunkSystem.rayCast(cameraRayPos, gameData.c.viewDirection, rayCastPos, 20, blockToPlace))
 		{
-			if (platform::isKeyReleased(platform::Button::Z)) { item.type--; }
-			if (platform::isKeyReleased(platform::Button::X)) { item.type++; }
+			auto b = gameData.chunkSystem.getBlockSafe(rayCastPos);
+			if (b && b->type != BlockTypes::water)
+			{
+				programData.gyzmosRenderer.drawCube(rayCastPos);
+			}
 
-			item.type = glm::clamp(item.type, (unsigned short)1u, 
-				(unsigned short)(BlocksCount - 1u));
 		}
 
 
-
-		if (platform::isKeyHeld(platform::Button::LeftCtrl)
-			&& (platform::isLMousePressed() || platform::isRMousePressed())
-			)
+		if (!gameData.escapePressed)
 		{
-			if (player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE
-				&&
-				blockToPlace)
+
+			auto &item = player.inventory.items[gameData.currentItemSelected];
+
+			if (item.isBlock())
 			{
-				auto b = gameData.chunkSystem.getBlockSafe(rayCastPos);
-				if (b)
+				if (platform::isKeyReleased(platform::Button::Z)) { item.type--; }
+				if (platform::isKeyReleased(platform::Button::X)) { item.type++; }
+
+				item.type = glm::clamp(item.type, (unsigned short)1u,
+					(unsigned short)(BlocksCount - 1u));
+			}
+
+
+
+			if (platform::isKeyHeld(platform::Button::LeftCtrl)
+				&& (platform::isLMousePressed() || platform::isRMousePressed())
+				)
+			{
+				if (player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE
+					&&
+					blockToPlace)
 				{
-					Item newItem(b->type);
+					auto b = gameData.chunkSystem.getBlockSafe(rayCastPos);
+					if (b)
+					{
+						Item newItem(b->type);
 
-					item = newItem;
+						item = newItem;
 
-					forceOverWriteItem(player.inventory, gameData.currentItemSelected, item);
+						forceOverWriteItem(player.inventory, gameData.currentItemSelected, item);
 
+					}
 				}
-			}
 
-		}
-		else
-		if (platform::isKeyHeld(platform::Button::LeftAlt))
-		{
-			if (platform::isRMouseReleased())
-			{
-				if (blockToPlace)
+			}
+			else
+				if (platform::isKeyHeld(platform::Button::LeftAlt))
 				{
-					gameData.point = *blockToPlace;
+					if (platform::isRMouseReleased())
+					{
+						if (blockToPlace)
+						{
+							gameData.point = *blockToPlace;
+						}
+					}
+					else if (platform::isLMouseReleased())
+					{
+						if (blockToPlace)
+						{
+							gameData.pointSize = *blockToPlace - gameData.point;
+						}
+					}
 				}
-			}
-			else if (platform::isLMouseReleased())
-			{
-				if (blockToPlace)
+				else if (!platform::isKeyHeld(platform::Button::LeftCtrl))
 				{
-					gameData.pointSize = *blockToPlace - gameData.point;
+
+					if (platform::isRMouseReleased())
+					{
+						if (blockToPlace && item.isBlock())
+							gameData.chunkSystem.placeBlockByClient(*blockToPlace, item.type,
+							gameData.undoQueue, gameData.entityManager.localPlayer.entity.position, gameData.lightSystem);
+					}
+					else if (platform::isLMouseReleased())
+					{
+						gameData.chunkSystem.placeBlockByClient(rayCastPos, BlockTypes::air,
+							gameData.undoQueue, gameData.entityManager.localPlayer.entity.position, gameData.lightSystem);
+					}
 				}
-			}
-		}
-		else if (!platform::isKeyHeld(platform::Button::LeftCtrl))
-		{
 
-			if (platform::isRMouseReleased())
-			{
-				if (blockToPlace && item.isBlock())
-					gameData.chunkSystem.placeBlockByClient(*blockToPlace, item.type,
-					gameData.undoQueue, gameData.entityManager.localPlayer.entity.position, gameData.lightSystem);
-			}
-			else if (platform::isLMouseReleased())
-			{
-				gameData.chunkSystem.placeBlockByClient(rayCastPos, BlockTypes::air,
-					gameData.undoQueue, gameData.entityManager.localPlayer.entity.position, gameData.lightSystem);
-			}
-		}
 
+		};
 
 	};
-
+	
 #pragma endregion
 
 	
@@ -1182,6 +1187,27 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			}
 
 
+
+		}
+
+		//outside borders
+		if (cursorSelected == -1)
+		{
+
+			if (platform::isLMousePressed())
+			{
+				gameData.entityManager.dropItemByClient(
+					gameData.entityManager.localPlayer.entity.position + glm::dvec3(0, 1.5, 0),
+					PlayerInventory::CURSOR_INDEX, gameData.undoQueue, gameData.c.viewDirection * 5.f,
+					gameData.serverTimer, player.inventory, 0);
+			}
+			else if (platform::isRMousePressed())
+			{
+				gameData.entityManager.dropItemByClient(
+					gameData.entityManager.localPlayer.entity.position + glm::dvec3(0, 1.5, 0),
+					PlayerInventory::CURSOR_INDEX, gameData.undoQueue, gameData.c.viewDirection * 5.f,
+					gameData.serverTimer, player.inventory, 1);
+			}
 
 		}
 

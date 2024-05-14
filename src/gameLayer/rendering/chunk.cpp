@@ -118,7 +118,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		vect.push_back(position.z);
 	};
 
-	auto getNeighboursLogic = [&](int x, int y, int z, Block *sides[6])
+	auto getNeighboursLogic = [&](int x, int y, int z, Block *sides[10])
 	{
 		auto bfront = safeGet(x, y, z + 1);
 		auto bback = safeGet(x, y, z - 1);
@@ -127,9 +127,19 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		auto bleft = safeGet(x - 1, y, z);
 		auto bright = safeGet(x + 1, y, z);
 
+		auto bdownfront = safeGet(x, y-1, z + 1);
+		auto bdownback = safeGet(x, y-1, z - 1);
+		auto bdownleft = safeGet(x - 1, y-1, z);
+		auto bdownright = safeGet(x + 1, y-1, z);
+
 		if (bfront == nullptr && front != nullptr)
 		{
 			bfront = front->safeGet(x, y, 0);
+		}
+
+		if (bdownfront == nullptr && front != nullptr)
+		{
+			bdownfront = front->safeGet(x, y-1, 0);
 		}
 
 		if (bback == nullptr && back != nullptr)
@@ -137,14 +147,30 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 			bback = back->safeGet(x, y, CHUNK_SIZE - 1);
 		}
 
+		if (bdownback == nullptr && back != nullptr)
+		{
+			bdownback = back->safeGet(x, y-1, CHUNK_SIZE - 1);
+		}
+
+
 		if (bleft == nullptr && left != nullptr)
 		{
 			bleft = left->safeGet(CHUNK_SIZE - 1, y, z);
 		}
 
+		if (bleft == nullptr && left != nullptr)
+		{
+			bleft = left->safeGet(CHUNK_SIZE - 1, y-1, z);
+		}
+
 		if (bright == nullptr && right != nullptr)
 		{
 			bright = right->safeGet(0, y, z);
+		}
+
+		if (bdownright == nullptr && right != nullptr)
+		{
+			bdownright = right->safeGet(0, y-1, z);
 		}
 
 		sides[0] = bfront;
@@ -153,12 +179,19 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		sides[3] = bbottom;
 		sides[4] = bleft;
 		sides[5] = bright;
+
+		sides[6] = bdownfront;
+		sides[7] = bdownback;
+		sides[8] = bdownleft;
+		sides[9] = bdownright;
+
+
 	};
 
 	auto blockBakeLogicForSolidBlocks = [&](int x, int y, int z,
 		std::vector<int> *currentVector, Block &b, bool isAnimated)
 	{
-		Block *sides[6] = {};
+		Block *sides[10] = {};
 		getNeighboursLogic(x, y, z, sides);
 
 		glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y, z + this->data.z * CHUNK_SIZE};
@@ -219,7 +252,20 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 	auto blockBakeLogicForTransparentBlocks = [&](int x, int y, int z,
 		std::vector<int> *currentVector, Block &b, bool isAnimated)
 	{
-		Block *sides[6] = {};
+
+		const int FRONT = 0;
+		const int BACK = 1;
+		const int TOP = 2;
+		const int BOTTOM = 3;
+		const int LEFT = 4;
+		const int RIGHT = 5;
+
+		const int DOWN_FRONT = 6;
+		const int DOWN_BACK = 7;
+		const int DOWN_LEFT = 8;
+		const int DOWN_RIGHT = 9;
+
+		Block *sides[10] = {};
 		getNeighboursLogic(x, y, z, sides);
 
 		glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y,
@@ -248,11 +294,95 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 				if (isWater)
 				{
+					//front back top bottom left right
+					if (i == 0 || i == 1 || i == 4 || i == 5)
+					{
+						int currentIndex = i;
+
+						//bootom variant
+						bool bottomVariant = 0;
+
+						auto doABottomCheck = [&](int checkDown)
+						{
+							if (sides[BOTTOM])
+							{
+								auto blockBottom = *sides[BOTTOM];
+								if (blockBottom.type == BlockTypes::water)
+								{
+									if (sides[checkDown]
+										&& (sides[checkDown]->type == BlockTypes::water)
+										)
+									{
+										bottomVariant = true;
+									}
+								}
+							}
+						};
+
+						if (i == FRONT)
+						{
+							doABottomCheck(DOWN_FRONT);
+						}
+						else if (i == BACK)
+						{
+							doABottomCheck(DOWN_BACK);
+						}
+						else if (i == LEFT)
+						{
+							doABottomCheck(DOWN_LEFT);
+						}
+						else if (i == RIGHT)
+						{
+							doABottomCheck(DOWN_RIGHT);
+						}
+
+						bool topVariant = 1;
+						if (y < CHUNK_HEIGHT - 1)
+						{
+							auto blockTop = unsafeGet(x, y + 1, z);
+							if (blockTop.type != BlockTypes::water)
+							{
+								currentIndex += 22;
+								topVariant = false;
+							}
+						}
+
+						if (topVariant && !bottomVariant)
+						{
+							currentIndex = i; //normal block
+						}
+						else if(topVariant && bottomVariant)
+						{
+							if (i == 0) { currentIndex = 32; } //front
+							if (i == 1) { currentIndex = 33; } //back
+							if (i == 4) { currentIndex = 34; } //front
+							if (i == 5) { currentIndex = 35; } //front
+						}
+						else if (!topVariant && !bottomVariant)
+						{
+							//normal water
+							currentIndex = i + 22;
+						}
+						else if (!topVariant && bottomVariant)
+						{
+							//bottom water;
+							if (i == 0) { currentIndex = 28; } //front
+							if (i == 1) { currentIndex = 29; } //back
+							if (i == 4) { currentIndex = 30; } //front
+							if (i == 5) { currentIndex = 31; } //front
+						}
+
+						currentVector->push_back(mergeShorts(currentIndex, getGpuIdIndexForBlock(b.type, i)));
+					}
+					else
+					{
+						currentVector->push_back(mergeShorts(i + 22, getGpuIdIndexForBlock(b.type, i)));
+					}
+
 					//if (!sides[2] || sides[2]->type != BlockTypes::water)
 					//{
 					//	currentVector->push_back(mergeShorts(i + 22, getGpuIdIndexForBlock(b.type, i)));
 					//}
-					currentVector->push_back(mergeShorts(i + 22, getGpuIdIndexForBlock(b.type, i)));
 
 				}
 				else
@@ -305,7 +435,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 	auto blockBakeLogicForGrassMesh = [&](int x, int y, int z,
 		std::vector<int> *currentVector, Block &b)
 	{
-		Block *sides[6] = {};
+		Block *sides[10] = {};
 		getNeighboursLogic(x, y, z, sides);
 
 		bool ocluded = 1;

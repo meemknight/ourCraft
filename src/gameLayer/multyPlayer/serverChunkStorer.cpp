@@ -6,6 +6,42 @@
 #include <platformTools.h>
 
 
+template<class T>
+void genericCheckEntitiesForCollisions(T &container, std::vector<ColidableEntry> &ret, glm::dvec3 position,
+	glm::vec3 collider, std::uint64_t eidToIgnore)
+{
+	if constexpr (hasCanPushOthers<decltype(container[0].entity)>)
+	{
+		for (auto &e : container)
+		{
+
+			if (boxColide(position, collider, e.second.getPosition(), e.second.entity.getColliderSize())
+				&& eidToIgnore != e.first
+				)
+			{
+				ColidableEntry other;
+				other.eid = e.first;
+				other.position = e.second.getPosition();
+				other.collider = e.second.entity.getColliderSize();
+				ret.push_back(other);
+			}
+
+		}
+	}
+};
+
+template <int... Is>
+void callGenericCheckEntitiesForCollisions(std::integer_sequence<int, Is...>, 
+	EntityData &entityData, std::vector<ColidableEntry> &ret, glm::dvec3 position,
+	glm::vec3 collider, std::uint64_t eidToIgnore)
+{
+
+	(genericCheckEntitiesForCollisions(*entityData.template entityGetter<Is+1>(), ret, 
+		position, collider, eidToIgnore), ...);
+}
+
+
+
 std::vector<ColidableEntry> ServerChunkStorer::getCollisionsListThatCanPush(glm::dvec3 position, glm::vec3 colider
 	, std::uint64_t eidToIgnore)
 {
@@ -29,20 +65,23 @@ std::vector<ColidableEntry> ServerChunkStorer::getCollisionsListThatCanPush(glm:
 
 	auto checkEntities = [&](auto container)
 	{
-		for (auto &e : container)
+		if constexpr (hasCanPushOthers<decltype(container[0].entity)>)
 		{
-
-			if (boxColide(position, colider, e.second.getPosition(), e.second.entity.getColliderSize())
-				&& eidToIgnore != e.first
-				)
+			for (auto &e : container)
 			{
-				ColidableEntry other;
-				other.eid = e.first;
-				other.position = e.second.getPosition();
-				other.collider = e.second.entity.getColliderSize();
-				ret.push_back(other);
-			}
 
+				if (boxColide(position, colider, e.second.getPosition(), e.second.entity.getColliderSize())
+					&& eidToIgnore != e.first
+					)
+				{
+					ColidableEntry other;
+					other.eid = e.first;
+					other.position = e.second.getPosition();
+					other.collider = e.second.entity.getColliderSize();
+					ret.push_back(other);
+				}
+
+			}
 		}
 	};
 
@@ -66,8 +105,12 @@ std::vector<ColidableEntry> ServerChunkStorer::getCollisionsListThatCanPush(glm:
 
 		}
 
-		checkEntities(c->entityData.pigs);
-		checkEntities(c->entityData.zombies);
+		callGenericCheckEntitiesForCollisions(std::make_integer_sequence<int, EntitiesTypesCount-1>(),
+			c->entityData, ret, position, colider, eidToIgnore);
+
+		//checkEntities(c->entityData.droppedItems);
+		//checkEntities(c->entityData.pigs);
+		//checkEntities(c->entityData.zombies);
 
 	}
 
