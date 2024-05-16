@@ -230,6 +230,9 @@ void ModelsManager::loadAllModels()
 
 			model.vertexCount = indices.size();
 
+			//todo err report
+			if (!model.vertexCount) { std::cout << "Error wrong model format!\n"; }
+
 			glBufferData(GL_ARRAY_BUFFER, vertexes.size() * sizeof(Data), vertexes.data(), GL_STATIC_DRAW);
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
@@ -261,6 +264,7 @@ void ModelsManager::loadAllModels()
 
 	loadModel(RESOURCES_PATH "models/pig.glb", pig);
 	
+	loadModel(RESOURCES_PATH "models/rightHand.glb", rightHand);
 
 	//todo check if it frees all of them
 	importer.FreeScene();

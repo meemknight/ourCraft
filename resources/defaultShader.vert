@@ -177,11 +177,11 @@ vec3 calculateVertexPos(int vertexId)
 		vertexShape.y += vertexData[(in_faceOrientation) * 3 * 4 + vertexId * 3 + 1];
 		vertexShape.z += vertexData[(in_faceOrientation) * 3 * 4 + vertexId * 3 + 2];
 
-		float SPEED = 2.6f;		
+		float SPEED = 3.1f;		
 		float FREQUENCY = 0.5f;		
-		float AMPLITUDE = 0.030f;		
+		float AMPLITUDE = 0.034f;		
 
-		float SPEED2 = 1.72f;		
+		float SPEED2 = 1.92f;		
 		float FREQUENCY2 = 0.04f;		
 		float AMPLITUDE2 = 0.008f;		
 
@@ -191,7 +191,7 @@ vec3 calculateVertexPos(int vertexId)
 		float offset2 = (sin((1 + facePosition.x + vertexShape.x + (vertexShape.z + 
 			facePosition.z) * 2 - u_timeGrass * SPEED) * FREQUENCY)) * AMPLITUDE;	
 
-		vertexShape.y += mask * (offset + offset2);
+		vertexShape.y += mask * (offset + offset2 - 0.08);
 
 	}else
 	if(in_faceOrientation >= 10 && in_faceOrientation < 16) //animated trees

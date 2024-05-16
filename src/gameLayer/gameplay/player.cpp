@@ -17,6 +17,7 @@ void Player::flyFPS(glm::vec3 direction, glm::vec3 lookDirection)
 	move += glm::normalize(glm::cross(lookDirection, glm::vec3(0, 1, 0))) * leftRight;
 	move += lookDirection * forward;
 
+	//applyImpulse(this->forces, move);
 	this->position += move;
 }
 
@@ -35,6 +36,7 @@ void Player::moveFPS(glm::vec3 direction, glm::vec3 lookDirection)
 	move += glm::normalize(glm::cross(lookDirection, glm::vec3(0, 1, 0))) * leftRight;
 	move += lookDirection * forward;
 
+	//applyImpulse(this->forces, move);
 	this->position += move;
 }
 

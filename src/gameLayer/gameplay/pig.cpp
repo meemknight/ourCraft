@@ -59,8 +59,8 @@ bool PigServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGet
 	updateAnimalBehaviour(deltaTime, chunkGetter, serverChunkStorer, rng);
 
 
-	auto collisions = serverChunkStorer.getCollisionsListThatCanPush(getPosition(), entity.getColliderSize(), yourEID);
-	colideWithOthers(getPosition(), entity.getColliderSize(), entity.forces, collisions);
+	doCollisionWithOthers(getPosition(), entity.getMaxColliderSize(), entity.forces,
+		serverChunkStorer, yourEID);
 
 	entity.update(deltaTime, chunkGetter);
 

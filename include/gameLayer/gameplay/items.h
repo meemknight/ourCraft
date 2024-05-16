@@ -64,9 +64,12 @@ struct PlayerInventory
 	
 	constexpr static int INVENTORY_CAPACITY = 36;
 	constexpr static int CURSOR_INDEX = 36;
+	constexpr static int CRAFTING_INDEX = 37;
 	Item items[INVENTORY_CAPACITY] = {};
 	
 	Item heldInMouse = {};
+
+	Item crafting[4] = {};
 
 	Item *getItemFromIndex(int index);
 

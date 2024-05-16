@@ -1,13 +1,22 @@
 #include <profiler.h>
 #include <multiPlot.h>
+#include <platformTools.h>
+
+#if REMOVE_IMGUI == 0
+#include <imgui.h>
+#endif
 
 void Profiler::startFrame()
 {
+	if (REMOVE_IMGUI) { return; }
+
 	mainProfiler.start();
 }
 
 void Profiler::endFrame()
 {
+	if (REMOVE_IMGUI) { return; }
+
 	mainProfiler.end();
 
 	SavedData data;
@@ -47,6 +56,7 @@ void Profiler::endFrame()
 
 void Profiler::startSubProfile(char *c)
 {
+	if (REMOVE_IMGUI) { return; }
 
 	subProfiles[c].start();
 
@@ -54,6 +64,7 @@ void Profiler::startSubProfile(char *c)
 
 void Profiler::endSubProfile(char *c)
 {
+	if (REMOVE_IMGUI) { return; }
 
 	auto it = subProfiles.find(c);
 
@@ -70,6 +81,8 @@ void Profiler::endSubProfile(char *c)
 
 void Profiler::setSubProfileManually(char *c, PL::ProfileRezults rezults)
 {
+	if (REMOVE_IMGUI) { return; }
+
 	subProfiles[c].end();
 	subProfiles[c].rezult = rezults;
 }
@@ -91,6 +104,8 @@ float plotGetterReal(const void *data, int index, int tableIndex)
 void Profiler::displayPlot(const char *mainPlotName)
 {
 	if (history.empty()) { return; }
+
+#if REMOVE_IMGUI == 0
 
 	ImGui::PushID(mainPlotName);
 
@@ -152,5 +167,6 @@ void Profiler::displayPlot(const char *mainPlotName)
 
 
 	ImGui::PopID();
+#endif
 
 }

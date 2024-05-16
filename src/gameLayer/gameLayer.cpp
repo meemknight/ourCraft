@@ -1,7 +1,6 @@
 #include "gameLayer.h"
 #include "gl2d/gl2d.h"
 #include "platformInput.h"
-#include "imgui.h"
 #include <iostream>
 #include <sstream>
 #include "rendering/camera.h"
@@ -19,6 +18,13 @@
 #include "gamePlayLogic.h"
 #include "multyPlayer/splitUpdatesLogic.h"
 #include <rendering/renderSettings.h>
+
+#include <platformTools.h>
+
+#if REMOVE_IMGUI == 0
+#include "imgui.h"
+#endif
+
 
 ProgramData programData;
 
@@ -178,6 +184,9 @@ bool gameLogic(float deltaTime)
 	{
 		if (isServerRunning())
 		{
+
+		#if REMOVE_IMGUI == 0
+
 			auto s = getServerSettingsCopy();
 
 			ImGui::PushStyleColor(ImGuiCol_WindowBg, {26 / 255.f,26 / 255.f,26 / 255.f,0.5f});
@@ -186,9 +195,7 @@ bool gameLogic(float deltaTime)
 			ImGui::Text("Server Chunk Capacity: %d", getChunkCapacity());
 			ImGui::Text("Server Ticke per seccond: %d", getServerTicksPerSeccond());
 			ImGui::Text("Server Worker tick threads: %d", getThredPoolSize());
-
 			
-
 			for (auto &c : s.perClientSettings)
 			{
 				ImGui::PushID(c.first);
@@ -208,6 +215,9 @@ bool gameLogic(float deltaTime)
 			ImGui::PopStyleColor();
 
 			setServerSettings(s);
+
+		#endif
+
 		}
 
 		if (!gameplayFrame(deltaTime, w, h, programData))

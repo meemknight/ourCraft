@@ -27,7 +27,6 @@
 //	and also in the server game tick update.
 //
 
-
 namespace Markers
 {
 	enum
@@ -486,3 +485,8 @@ constexpr unsigned char fromFloattoUchar(float a)
 }
 
 void addFear(unsigned short &current, unsigned short base, float ammount);
+
+struct ServerChunkStorer;
+
+void doCollisionWithOthers(glm::dvec3 &positiom, glm::vec3 colider, 
+	MotionState &forces, ServerChunkStorer &serverChunkStorer, std::uint64_t &yourEID);

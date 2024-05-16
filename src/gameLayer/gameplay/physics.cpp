@@ -409,7 +409,7 @@ void updateForces(glm::dvec3 &pos, glm::vec3 &velocity, glm::vec3 &acceleration,
 
 	pos += velocity * deltaTime;
 
-	glm::vec3 dragForce = AIR_DRAG_COEFICIENT * -velocity * glm::abs(velocity) * 0.5f;
+	glm::vec3 dragForce = AIR_DRAG_COEFICIENT * -velocity * glm::abs(velocity) / 2.f;
 
 	float length = glm::length(dragForce);
 

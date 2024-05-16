@@ -189,7 +189,6 @@ std::string Item::formatMetaDataToString()
 
 Item *PlayerInventory::getItemFromIndex(int index)
 {
-
 	if (index < PlayerInventory::INVENTORY_CAPACITY)
 	{
 		return &items[index];
@@ -197,6 +196,10 @@ Item *PlayerInventory::getItemFromIndex(int index)
 	else if (index == PlayerInventory::INVENTORY_CAPACITY)
 	{
 		return &heldInMouse;
+	}
+	else if (index < PlayerInventory::CRAFTING_INDEX + 4)
+	{
+		return &crafting[index - PlayerInventory::CRAFTING_INDEX];
 	}
 
 	return nullptr;
@@ -214,6 +217,11 @@ void PlayerInventory::formatIntoData(std::vector<unsigned char> &data)
 
 	heldInMouse.formatIntoData(data);
 
+	for (int i = 0; i < 4; i++)
+	{
+		crafting[i].formatIntoData(data);
+	}
+
 }
 
 bool PlayerInventory::readFromData(void *data, size_t size)
@@ -224,7 +232,7 @@ bool PlayerInventory::readFromData(void *data, size_t size)
 
 	auto readOne = [&](Item &item)
 	{
-		int rez = item.readFromData((void *)((unsigned char*)data + currentAdvance), size - currentAdvance);
+		int rez = item.readFromData((void *)((unsigned char *)data + currentAdvance), size - currentAdvance);
 
 		if (rez > 0)
 		{
@@ -238,14 +246,18 @@ bool PlayerInventory::readFromData(void *data, size_t size)
 		return true;
 	};
 
-	
+
 	for (int i = 0; i < INVENTORY_CAPACITY; i++)
 	{
 		if (!readOne(items[i])) { return 0; }
-	
 	}
 
 	if (!readOne(heldInMouse)) { return 0; }
+
+	for (int i = 0; i < 4; i++)
+	{
+		if (!readOne(crafting[i])) { return 0; }
+	}
 
 	
 	return true;

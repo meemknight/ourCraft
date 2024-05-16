@@ -462,8 +462,8 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 	int currentBaked = 0;
 	int currentBakedTransparency = 0;
-	const int maxToBake = 2; //this frame //max to bake
-	const int maxToBakeTransparency = 4; //this frame //max to bake
+	const int maxToBake = 1; //this frame //max to bake
+	const int maxToBakeTransparency = 2; //this frame //max to bake
 
 	auto chunkVectorCopy = loadedChunks;
 	

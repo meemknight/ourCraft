@@ -13,7 +13,6 @@
 #include <fstream>
 #include <chrono>
 
-#define REMOVE_IMGUI 0
 
 #if REMOVE_IMGUI == 0
 	#include "imgui.h"
@@ -230,13 +229,22 @@ namespace platform
 	//todo test
 	void showMouse(bool show)
 	{
-		if(show)
+		static bool lastShow = 1;
+		if (lastShow != show)
 		{
-			glfwSetInputMode(wind, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-		}else
-		{
-			glfwSetInputMode(wind, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-		}
+			if (show)
+			{
+				glfwSetInputMode(wind, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			}
+			else
+			{
+				auto size = getWindowSize();
+				glfwSetCursorPos(wind, size.x / 2, size.y / 2);
+				glfwSetInputMode(wind, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+			}
+		};
+
+		lastShow = show;
 	}
 
 	bool isFocused()

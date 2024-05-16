@@ -216,7 +216,7 @@ struct Renderer
 	float metallic = 0;
 	float roughness = 0.5;
 
-	bool unifiedGeometry = 0;
+	bool unifiedGeometry = 0; //big gpu buffer
 	bool sortChunks = 1;
 	bool zprepass = 1;
 	bool frustumCulling = 1;
@@ -242,6 +242,11 @@ struct Renderer
 		bool underWater, int screenX, int screenY, float deltaTime);
 	
 	void renderEntities(float deltaTime, ModelsManager &modelsManager,
+		BlocksLoader &blocksLoader, ClientEntityManager &entityManager,
+		glm::mat4 &vp, glm::mat4 &viewMatrix, glm::vec3 posFloat, glm::ivec3 posInt);
+
+	//todo implement this to optimize rendering
+	void renderPlayersHand(float deltaTime, ModelsManager &modelsManager,
 		BlocksLoader &blocksLoader, ClientEntityManager &entityManager,
 		glm::mat4 &vp, glm::mat4 &viewMatrix, glm::vec3 posFloat, glm::ivec3 posInt);
 

@@ -402,10 +402,9 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 	*/
 
 
-	auto collisions = serverChunkStorer.getCollisionsListThatCanPush(getPosition(), entity.getColliderSize(),
-		yourEID);
 
-	colideWithOthers(getPosition(), entity.getColliderSize(), entity.forces, collisions);
+	doCollisionWithOthers(getPosition(), entity.getMaxColliderSize(), entity.forces,
+		serverChunkStorer, yourEID);
 
 
 	entity.update(deltaTime, chunkGetter);

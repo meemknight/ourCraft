@@ -136,8 +136,8 @@ bool DroppedItemServer::update(float deltaTime, decltype(chunkGetterSignature) *
 	ps.gravityModifier = 0.5f;
 	entity.updateForces(deltaTime, true, ps);
 
-	auto collisions = serverChunkStorer.getCollisionsListThatCanPush(getPosition(), getMaxColliderSize(), yourEID);
-	colideWithOthers(getPosition(), getMaxColliderSize(), entity.forces, collisions);
+	doCollisionWithOthers(getPosition(), getMaxColliderSize(), entity.forces,
+		serverChunkStorer, yourEID);
 
 	entity.resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime, getMaxColliderSize(), ps);
 

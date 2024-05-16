@@ -24,7 +24,6 @@ extern "C"
 }
 #endif
 
-#define REMOVE_IMGUI 0
 
 #if REMOVE_IMGUI == 0
 	#include "imgui.h"
@@ -246,17 +245,22 @@ namespace platform
 		{
 			if (!lastValue)
 			{
+			
 				glfwSetInputMode(wind, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 				glfwSetInputMode(wind, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
+
 			}
 			lastValue = true;
 		}else
 		{
 			if (lastValue)
 			{
+				auto size = getWindowSize();
+				glfwSetCursorPos(wind, size.x / 2, size.y / 2);
 				//glfwSetInputMode(wind, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 				glfwSetInputMode(wind, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 				glfwSetInputMode(wind, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+
 			}
 
 			lastValue = false;
@@ -432,7 +436,7 @@ int main()
 		stop = std::chrono::high_resolution_clock::now();
 
 		float augmentedDeltaTime = deltaTime;
-		if (augmentedDeltaTime > 1.f / 10) { augmentedDeltaTime = 1.f / 10; }
+		if (augmentedDeltaTime > 1.f / 5) { augmentedDeltaTime = 1.f / 5; }
 	
 	#pragma endregion
 

@@ -23,13 +23,13 @@ struct Model
 struct ModelsManager
 {
 
-
 	void loadAllModels();
 
 	Model human;
 
 	Model pig;
 
+	Model rightHand;
 
 	enum TexturesLoaded
 	{

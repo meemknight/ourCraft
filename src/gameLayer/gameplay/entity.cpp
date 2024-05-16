@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/vector_angle.hpp>
 #include <glm/gtx/rotate_vector.hpp>
+#include <multyPlayer/serverChunkStorer.h>
 
 //todo entities should freeze their state completely when chunks are missing
 
@@ -161,6 +162,13 @@ bool getRandomChance(std::minstd_rand &rng, float chance)
 {
 	float dice = getRandomNumberFloat(rng, 0.0, 1.0);
 	return dice < chance;
+}
+
+void doCollisionWithOthers(glm::dvec3 &positiom, glm::vec3 colider, MotionState &forces,
+	ServerChunkStorer &serverChunkStorer, std::uint64_t &yourEID)
+{
+	auto collisions = serverChunkStorer.getCollisionsListThatCanPush(positiom, colider, yourEID);
+	colideWithOthers(positiom, colider, forces, collisions);
 }
 
 void addFear(unsigned short &current, unsigned short base, float ammount)

@@ -12,10 +12,12 @@
 #include <enet/enet.h>
 #include "rendering/UiEngine.h"
 #include "glui/glui.h"
+#include <platformTools.h>
+#if REMOVE_IMGUI == 0
 #include <imgui.h>
+#endif
 #include <iostream>
 #include "multyPlayer/undoQueue.h"
-#include <platformTools.h>
 #include <lightSystem.h>
 #include <structure.h>
 #include <safeSave.h>
@@ -765,8 +767,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 #pragma region imgui
-
+	
 	bool terminate = false;
+
+#if REMOVE_IMGUI == 0
 
 	if (gameData.showImgui)
 	{
@@ -1117,7 +1121,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		gameData.gameplayFrameProfiler.endSubProfile("imgui");
 	}
-
+#endif
 #pragma endregion
 
 
@@ -1130,6 +1134,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma endregion
 
+	//std::cout << cursorSelected << "\n";
 
 #pragma region move items in inventory
 	if (gameData.insideInventoryMenu)
@@ -1218,11 +1223,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma endregion
 
 
-
-
 	gameData.gameplayFrameProfiler.endFrame();
 	gameData.gameplayFrameProfiler.startFrame();
 	gameData.gameplayFrameProfiler.startSubProfile("swap chain and others");
+
 
 	if (terminate)
 	{

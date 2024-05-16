@@ -1,6 +1,5 @@
 #pragma once
 #include <profilerLib.h>
-#include <imgui.h>
 #include <unordered_map>
 #include <platformTools.h>
 #include <deque>

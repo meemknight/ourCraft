@@ -31,7 +31,7 @@ void BigGpuBuffer::create(size_t chunks)
 
 	unsigned char winding[4] = {0,1,2,4};
 
-	arenaSize = chunks * 10'000 * 6 * sizeof(int);
+	arenaSize = chunks * 10'000 * 4 * sizeof(int);
 
 	//add an empty size stub
 	entriesList.push_front({});

@@ -1928,6 +1928,56 @@ void Renderer::renderEntities(
 	static std::vector<PerEntityData> entityData;
 	entityData.clear();
 
+	auto renderHand = [&]()
+	{
+		auto &model = modelsManager.rightHand;
+
+		glBindVertexArray(model.vao);
+
+		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,
+			&glm::mat4(1.f)
+			[0][0]);
+
+		glUniform1i(entityRenderer.basicEntityShader.u_bonesPerModel, model.transforms.size());
+
+		skinningMatrix.clear();
+		entityData.clear();
+
+		skinningMatrix.reserve(model.transforms.size());
+		entityData.reserve(model.transforms.size());
+
+		{
+			//auto rotMatrix = e.second.getBodyRotationMatrix();
+
+			auto rotMatrix = glm::mat4(1.f); //body rotation;
+			auto transform = model.transforms[1]; //loaded from glb file
+			auto poseMatrix = glm::mat4(1.f); //hand movement;
+
+			skinningMatrix.push_back(rotMatrix * transform *poseMatrix);
+
+			PerEntityData data = {};
+			data.textureId = modelsManager.gpuIds[ModelsManager::SteveTexture];
+
+			glm::dvec3 position = posInt;
+			position.z -= 2.f;
+
+			decomposePosition(position, data.entityPositionFloat, data.entityPositionInt);
+			entityData.push_back(data);
+		}
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, skinningMatrixSSBO);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, skinningMatrix.size() * sizeof(glm::mat4),
+			&skinningMatrix[0][0][0], GL_STREAM_DRAW);
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, perEntityDataSSBO);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, entityData.size() * sizeof(entityData[0]),
+			entityData.data(), GL_STREAM_DRAW);
+
+		glDrawElementsInstanced(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, nullptr,
+			1);
+
+	};
+
 	auto renderAllEntitiesOfOneType = [&](Model &model, auto &container, int textureIndex)
 	{
 		
@@ -1973,16 +2023,6 @@ void Renderer::renderEntities(
 		glBufferData(GL_SHADER_STORAGE_BUFFER, entityData.size() * sizeof(entityData[0]),
 			entityData.data(), GL_STREAM_DRAW);
 
-
-		//int instance = 0;
-		//for (auto &e : container)
-		//{
-		//	glUniform1i(entityRenderer.basicEntityShader.u_instance, instance);
-		//	renderModel(e.second.getRubberBandPosition(), model.vertexCount);
-		//
-		//	instance++;
-		//}
-
 		glDrawElementsInstanced(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, nullptr,
 			container.size());
 
@@ -1991,16 +2031,18 @@ void Renderer::renderEntities(
 	//todo remove
 	entityRenderer.itemEntitiesToRender.clear();
 
+	renderHand();
+
 	renderAllEntitiesOfOneType(modelsManager.human, entityManager.players, ModelsManager::SteveTexture);
 	renderAllEntitiesOfOneType(modelsManager.human, entityManager.zombies, ModelsManager::ZombieTexture);
 	renderAllEntitiesOfOneType(modelsManager.pig, entityManager.pigs, ModelsManager::PigTexture);
-
 
 
 	glBindVertexArray(0);
 
 
 }
+
 
 //https://www.youtube.com/watch?v=lUo7s-i9Gy4&ab_channel=OREONENGINE
 void computeFrustumDimensions(
