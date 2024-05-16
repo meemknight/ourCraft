@@ -74,3 +74,6 @@ void decomposePosition(glm::dvec3 in, glm::vec3 &floatPart, glm::ivec3 &intPart)
 void decomposePosition(glm::dvec3 in, glm::vec4 &floatPart, glm::ivec4 &intPart);
 
 glm::ivec3 from3DPointToBlock(glm::dvec3 in);
+
+
+glm::mat4 lookAtSafe(glm::vec3 const &eye, glm::vec3 const &center, glm::vec3 const &upVec);

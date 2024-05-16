@@ -241,9 +241,11 @@ struct Renderer
 		bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos,
 		bool underWater, int screenX, int screenY, float deltaTime);
 	
-	void renderEntities(float deltaTime, ModelsManager &modelsManager,
+	void renderEntities(float deltaTime, 
+		Camera &c,		
+		ModelsManager &modelsManager,
 		BlocksLoader &blocksLoader, ClientEntityManager &entityManager,
-		glm::mat4 &vp, glm::mat4 &viewMatrix, glm::vec3 posFloat, glm::ivec3 posInt);
+		glm::mat4 &vp, glm::mat4 &projection, glm::mat4 &viewMatrix, glm::vec3 posFloat, glm::ivec3 posInt);
 
 	//todo implement this to optimize rendering
 	void renderPlayersHand(float deltaTime, ModelsManager &modelsManager,

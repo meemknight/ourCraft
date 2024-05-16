@@ -1596,8 +1596,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 
 	#pragma region render entities
-		renderEntities(deltaTime, modelsManager, blocksLoader,
-			entityManager, vp, viewMatrix, posFloat, posInt);
+		renderEntities(deltaTime, c, modelsManager, blocksLoader,
+			entityManager, vp, viewMatrix, c.getProjectionMatrix(), posFloat, posInt);
 	#pragma endregion
 
 
@@ -1660,8 +1660,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		solidPass();
 
-		renderEntities(deltaTime, modelsManager, blocksLoader,
-			entityManager, vp, viewMatrix, posFloat, posInt);
+		renderEntities(deltaTime, c, modelsManager, blocksLoader,
+			entityManager, vp, viewMatrix, c.getProjectionMatrix(), posFloat, posInt);
 
 		fboCoppy.copyDepthFromOtherFBO(fboMain.fbo, screenX, screenY);
 
@@ -1774,9 +1774,10 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 void Renderer::renderEntities(
 	float deltaTime,
+	Camera &c,
 	ModelsManager &modelsManager,
 	BlocksLoader &blocksLoader, ClientEntityManager &entityManager,
-	glm::mat4 &vp,
+	glm::mat4 &vp, glm::mat4 &projection,
 	glm::mat4 &viewMatrix,
 	glm::vec3 posFloat,
 	glm::ivec3 posInt
@@ -1904,16 +1905,6 @@ void Renderer::renderEntities(
 #pragma endregion
 
 
-	auto renderModel = [&](glm::dvec3 pos, int vertexCount)
-	{
-		glm::vec3 entityFloat = {};
-		glm::ivec3 entityInt = {};
-		decomposePosition(pos, entityFloat, entityInt);
-
-
-		glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, nullptr);
-	};
-
 
 	struct PerEntityData
 	{
@@ -1934,10 +1925,6 @@ void Renderer::renderEntities(
 
 		glBindVertexArray(model.vao);
 
-		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,
-			&glm::mat4(1.f)
-			[0][0]);
-
 		glUniform1i(entityRenderer.basicEntityShader.u_bonesPerModel, model.transforms.size());
 
 		skinningMatrix.clear();
@@ -1947,19 +1934,26 @@ void Renderer::renderEntities(
 		entityData.reserve(model.transforms.size());
 
 		{
-			//auto rotMatrix = e.second.getBodyRotationMatrix();
 
-			auto rotMatrix = glm::mat4(1.f); //body rotation;
-			auto transform = model.transforms[1]; //loaded from glb file
+			auto transform = model.transforms[0]; //loaded from glb file
 			auto poseMatrix = glm::mat4(1.f); //hand movement;
 
-			skinningMatrix.push_back(rotMatrix * transform *poseMatrix);
+			poseMatrix = glm::translate(glm::vec3{0.1,-2.0,-0.6});
+			poseMatrix = poseMatrix * glm::rotate(glm::radians(120.f), glm::vec3{1,0,0});
+			
+			glm::vec3 lookDirection = c.viewDirection;
+			glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+			glm::vec3 right = glm::normalize(glm::cross(up, lookDirection));
+			up = glm::normalize(glm::cross(lookDirection, right));
+			auto rotMatrix = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(-lookDirection, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+			//rotMatrix[0][0] *= -1.0f;
+
+			skinningMatrix.push_back( rotMatrix * glm::scale(glm::vec3{-1,1,1}) * transform * poseMatrix);
 
 			PerEntityData data = {};
 			data.textureId = modelsManager.gpuIds[ModelsManager::SteveTexture];
-
-			glm::dvec3 position = posInt;
-			position.z -= 2.f;
+			
+			glm::dvec3 position = glm::dvec3(posInt) + glm::dvec3(posFloat);
 
 			decomposePosition(position, data.entityPositionFloat, data.entityPositionInt);
 			entityData.push_back(data);
@@ -1973,8 +1967,7 @@ void Renderer::renderEntities(
 		glBufferData(GL_SHADER_STORAGE_BUFFER, entityData.size() * sizeof(entityData[0]),
 			entityData.data(), GL_STREAM_DRAW);
 
-		glDrawElementsInstanced(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, nullptr,
-			1);
+		glDrawElements(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, nullptr);
 
 	};
 
@@ -1983,9 +1976,6 @@ void Renderer::renderEntities(
 		
 		glBindVertexArray(model.vao);
 
-		glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,
-			&glm::mat4(1.f)
-			[0][0]);
 
 		glUniform1i(entityRenderer.basicEntityShader.u_bonesPerModel, model.transforms.size());
 
@@ -2099,43 +2089,6 @@ void computeFrustumSplitCorners(glm::vec3 directionVector,
 	farBottomLeft = centerNear - upVectpr * farDimensions.y / 2.f - rVector * farDimensions.x / 2.f;
 	farBottomRight = centerNear - upVectpr * farDimensions.y / 2.f + rVector * farDimensions.x / 2.f;
 
-}
-
-glm::mat4 lookAtSafe(glm::vec3 const &eye, glm::vec3 const &center, glm::vec3 const &upVec)
-{
-	glm::vec3 up = glm::normalize(upVec);
-
-	glm::vec3 f;
-	glm::vec3 s;
-	glm::vec3 u;
-
-	f = (normalize(center - eye));
-	if (f == up || f == -up)
-	{
-		s = glm::vec3(up.z, up.x, up.y);
-		u = (cross(s, f));
-
-	}
-	else
-	{
-		s = (normalize(cross(f, up)));
-		u = (cross(s, f));
-	}
-
-	glm::mat4 Result(1);
-	Result[0][0] = s.x;
-	Result[1][0] = s.y;
-	Result[2][0] = s.z;
-	Result[0][1] = u.x;
-	Result[1][1] = u.y;
-	Result[2][1] = u.z;
-	Result[0][2] = -f.x;
-	Result[1][2] = -f.y;
-	Result[2][2] = -f.z;
-	Result[3][0] = -dot(s, eye);
-	Result[3][1] = -dot(u, eye);
-	Result[3][2] = dot(f, eye);
-	return Result;
 }
 
 glm::mat4 calculateLightProjectionMatrix(Camera &camera, glm::vec3 lightDir,

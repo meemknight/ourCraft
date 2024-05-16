@@ -117,7 +117,7 @@ void ModelsManager::loadAllModels()
 	//load textures
 	{
 		//the order matters!!!!
-		//loadTexture(RESOURCES_PATH "models/steve.png", steveTexture, steveTextureHandle);
+		//loadTexture(RESOURCES_PATH "models/steve.png");
 		loadTexture(RESOURCES_PATH "models/giggasteve.png");
 		loadTexture(RESOURCES_PATH "models/zombie.png");
 		loadTexture(RESOURCES_PATH "models/pig.png");
@@ -169,6 +169,7 @@ void ModelsManager::loadAllModels()
 
 			unsigned int vertexOffset = 0;
 
+			int boneIndex = 0;
 			for (unsigned int i = 0; i < scene->mRootNode->mNumChildren; ++i)
 			{
 
@@ -181,12 +182,11 @@ void ModelsManager::loadAllModels()
 					aiMatrix4x4 transform = node->mTransformation;
 					model.transforms.push_back(glm::transpose(aiToGlm(transform)));
 
-
 					for (unsigned int v = 0; v < mesh->mNumVertices; ++v)
 					{
 						Data vertex;
 
-						vertex.boneIndex = i;
+						vertex.boneIndex = boneIndex;
 
 						// Positions
 						vertex.position.x = mesh->mVertices[v].x;
@@ -224,7 +224,10 @@ void ModelsManager::loadAllModels()
 					vertexOffset += mesh->mNumVertices;
 				}
 
-
+				if (node->mNumMeshes)
+				{
+					boneIndex++;
+				}
 			}
 
 
