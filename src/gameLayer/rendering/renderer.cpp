@@ -1586,18 +1586,25 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	{
 
 	#pragma region depth pre pass 1
+		programData.GPUProfiler.startSubProfile("depth pre pass 1");
 		depthPrePass();
+		programData.GPUProfiler.endSubProfile("depth pre pass 1");
 	#pragma endregion
 
 
+
 	#pragma region solid pass 2
+		programData.GPUProfiler.startSubProfile("solid pass 2");
 		solidPass();
+		programData.GPUProfiler.endSubProfile("solid pass 2");
 	#pragma endregion
 
 
 	#pragma region render entities
+		programData.GPUProfiler.startSubProfile("entities");
 		renderEntities(deltaTime, c, modelsManager, blocksLoader,
-			entityManager, vp, viewMatrix, c.getProjectionMatrix(), posFloat, posInt);
+			entityManager, vp, c.getProjectionMatrix(), viewMatrix, posFloat, posInt);
+		programData.GPUProfiler.endSubProfile("entities");
 	#pragma endregion
 
 
@@ -1607,6 +1614,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 
 	#pragma region render only water geometry to depth 4
+		programData.GPUProfiler.startSubProfile("render only water to depth 4");
 		defaultShader.shader.bind();
 		glBindFramebuffer(GL_FRAMEBUFFER, fboCoppy.fbo);
 		glDepthFunc(GL_LESS);
@@ -1618,10 +1626,12 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glColorMask(0, 0, 0, 0);
 
 		renderTransparentGeometry();
+		programData.GPUProfiler.endSubProfile("render only water to depth 4");
 	#pragma endregion
 
 
 	#pragma region render with depth peel first part of the transparent of the geometry 5
+		programData.GPUProfiler.startSubProfile("render first water 5");
 		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
 		defaultShader.shader.bind();
 
@@ -1640,6 +1650,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glDisable(GL_CULL_FACE); //todo change
 		//todo disable ssr for this step?
 		renderTransparentGeometry();
+		programData.GPUProfiler.endSubProfile("render first water 5");
 	#pragma endregion
 
 
@@ -1649,24 +1660,36 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 
 	#pragma region render transparent geometry last phaze 7
+		programData.GPUProfiler.startSubProfile("final transparency 7");
 		renderTransparentGeometryPhaze(true);
+		programData.GPUProfiler.endSubProfile("final transparency 7");
 	#pragma endregion
 
 
 	}
 	else
 	{
+		programData.GPUProfiler.startSubProfile("depth pre pass 1");
 		depthPrePass();
+		programData.GPUProfiler.endSubProfile("depth pre pass 1");
 
+		
+		programData.GPUProfiler.startSubProfile("solid pass 2");
 		solidPass();
+		programData.GPUProfiler.endSubProfile("solid pass 2");
 
+	#pragma region render entities
+		programData.GPUProfiler.startSubProfile("entities");
 		renderEntities(deltaTime, c, modelsManager, blocksLoader,
 			entityManager, vp, viewMatrix, c.getProjectionMatrix(), posFloat, posInt);
+		programData.GPUProfiler.endSubProfile("entities");
+	#pragma endregion
 
 		fboCoppy.copyDepthFromOtherFBO(fboMain.fbo, screenX, screenY);
 
+		programData.GPUProfiler.startSubProfile("final transparency 7");
 		renderTransparentGeometryPhaze(false);
-
+		programData.GPUProfiler.endSubProfile("final transparency 7");
 
 	}
 
@@ -1675,6 +1698,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	//hbao
 	if (1)
 	{
+		programData.GPUProfiler.startSubProfile("HBAO");
+
 		glViewport(0, 0, fboHBAO.size.x, fboHBAO.size.y);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, fboHBAO.fbo);
@@ -1724,11 +1749,15 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 
+		programData.GPUProfiler.endSubProfile("HBAO");
+
 	};
 
 	//warp
 	if (underWater)
 	{
+		programData.GPUProfiler.startSubProfile("under water post process");
+
 		glBindVertexArray(vaoQuad);
 
 		glDisable(GL_BLEND);
@@ -1755,6 +1784,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 		copyToMainFboOnlyLastFrameStuff();
+
+		programData.GPUProfiler.endSubProfile("under water post process");
 	}
 	else
 	{

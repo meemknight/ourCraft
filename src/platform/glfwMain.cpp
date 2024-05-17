@@ -394,6 +394,13 @@ int main()
 	
 		ImGui_ImplGlfw_InitForOpenGL(wind, true);
 		ImGui_ImplOpenGL3_Init("#version 330");
+
+		//ImGuiIO &io = ImGui::GetIO();
+		//io.Fonts->AddFontFromFileTTF("path/to/your/font.ttf", 24.0f);
+
+		ImFont *font = io.Fonts->AddFontDefault(&ImFontConfig());
+		font->Scale = 1.5f; // Scale factor to make the default font larger
+		io.FontDefault = font;
 	#endif
 #pragma endregion
 

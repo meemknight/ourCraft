@@ -1,15 +1,13 @@
 #pragma once
-#include <glad/glad.h>
 #include <profilerLib.h>
 #include <unordered_map>
-#include <platformTools.h>
 #include <deque>
 #include <string>
 
 
 struct GPUProfiler
 {
-	std::vector<GLuint> queryObjects;
+	std::vector<unsigned int> queryObjects;
 	std::vector<std::string> queryNames;
 	std::vector<bool> queryResults;
 	std::vector<float> queryTimersMs;
@@ -25,29 +23,7 @@ struct GPUProfiler
 
 	void end();
 
-	void getResults()
-	{
-		for (int i = 0; i < currentQuery; ++i)
-		{
-			if (!queryResults[i])
-			{
-				GLint available = 0;
-				glGetQueryObjectiv(queryObjects[i], GL_QUERY_RESULT_AVAILABLE, &available);
-				if (available)
-				{
-					GLuint64 timeElapsed;
-					glGetQueryObjectui64v(queryObjects[i], GL_QUERY_RESULT, &timeElapsed);
-					queryTimersMs[i] = timeElapsed / 1.0e6;
-					//std::cout << queryNames[i] << ": " << timeElapsed / 1.0e6 << " ms" << std::endl;
-					queryResults[i] = true;
-				}
-				else
-				{
-					queryTimersMs[i] = false;
-				}
-			}
-		}
-	}
+	void getResults();
 };
 
 

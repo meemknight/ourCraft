@@ -28,6 +28,7 @@
 #include <gameplay/physics.h>
 #include <gameplay/entityManagerClient.h>
 #include <gameplay/items.h>
+#include <gameplay/crafting.h>
 
 struct GameData
 {
@@ -43,7 +44,6 @@ struct GameData
 	SunShadow sunShadow;
 
 	Profiler gameplayFrameProfiler;
-	Profiler GPUProfiler;
 
 	//debug stuff
 	glm::ivec3 point = {};
@@ -101,11 +101,12 @@ bool initGameplay(ProgramData &programData, const char *c)
 	gameData.sunShadow.init();
 
 
+	//todo clear history stuff here
+	//programData.GPUProfiler.;
 
 	//gameData.inventory.heldInMouse = Item(BlockTypes::glass);
 
 
-	gameData.GPUProfiler.initGPUProfiler(); //todo move this into program data, this is a memory leak!!
 
 	return true;
 }
@@ -642,8 +643,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		gameData.sunShadow.renderShadowIntoTexture(gameData.c);
 
-		gameData.GPUProfiler.startSubProfile("Main rendering test");
-
 		//programData.renderer.render(data, gameData.c, programData.texture);
 		programData.renderer.renderFromBakedData(gameData.sunShadow,gameData.chunkSystem, 
 			gameData.c, programData, programData.blocksLoader, gameData.entityManager,
@@ -652,8 +651,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		gameData.c.lastFrameViewProjMatrix =
 			gameData.c.getProjectionMatrix() * gameData.c.getViewMatrix();
-
-		gameData.GPUProfiler.endSubProfile("Main rendering test");
 
 		gameData.gameplayFrameProfiler.endSubProfile("rendering");
 	}
@@ -671,7 +668,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	
 #pragma region debug and gyzmos stuff
 	
-	gameData.GPUProfiler.startSubProfile("Debug rendering");
+	programData.GPUProfiler.startSubProfile("Debug rendering");
 
 
 	programData.pointDebugRenderer.renderCubePoint(gameData.c, gameData.point);
@@ -774,7 +771,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	programData.gyzmosRenderer.render(gameData.c, posInt, posFloat);
 
-	gameData.GPUProfiler.endSubProfile("Debug rendering");
+	programData.GPUProfiler.endSubProfile("Debug rendering");
 
 #pragma endregion
 
@@ -1126,7 +1123,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			gameData.gameplayFrameProfiler.displayPlot("Gameplay Frame");
 
-			gameData.GPUProfiler.displayPlot("GPU");
+			programData.GPUProfiler.displayPlot("GPU");
 
 		}
 		ImGui::End();
@@ -1140,12 +1137,28 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma endregion
 
 
+#pragma region crafting
+
+	Item itemToCraft;
+
+	if (gameData.insideInventoryMenu)
+	{
+		itemToCraft = craft4(player.inventory.crafting);
+	}
+
+
+
+#pragma endregion
+
+
+
 #pragma region ui
 
 	int cursorSelected = -2;
 
 	programData.ui.renderGameUI(deltaTime, w, h, gameData.currentItemSelected, 
-		player.inventory, programData.blocksLoader, gameData.insideInventoryMenu, cursorSelected);
+		player.inventory, programData.blocksLoader, gameData.insideInventoryMenu,
+		cursorSelected, itemToCraft);
 
 #pragma endregion
 
@@ -1239,9 +1252,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 	gameData.gameplayFrameProfiler.endFrame();
-	gameData.GPUProfiler.endFrame();
+	programData.GPUProfiler.endFrame();
 	gameData.gameplayFrameProfiler.startFrame();
-	gameData.GPUProfiler.startFrame();
+	programData.GPUProfiler.startFrame();
 	gameData.gameplayFrameProfiler.startSubProfile("swap chain and others");
 
 

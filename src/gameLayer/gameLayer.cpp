@@ -33,7 +33,9 @@ bool initGame()
 {
 
 	createErrorFile();
-	
+
+	programData.GPUProfiler.initGPUProfiler();
+
 
 	//gl2d::setVsync(false);
 	programData.ui.init();
@@ -74,7 +76,6 @@ bool initGame()
 		reportError("problem starting ENET");
 		return false;
 	}
-
 	
 	//programData.facesCount = blockData.size() / 4;
 

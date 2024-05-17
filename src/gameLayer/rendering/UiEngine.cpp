@@ -122,7 +122,7 @@ void UiENgine::init()
 
 void UiENgine::renderGameUI(float deltaTime, int w, int h
 	, int itemSelected, PlayerInventory &inventory, BlocksLoader &blocksLoader,
-	bool insideInventory, int &cursorItemIndex)
+	bool insideInventory, int &cursorItemIndex, Item &itemToCraft)
 {
 	cursorItemIndex = -1;
 	glm::vec4 cursorItemIndexBox = {};
@@ -330,7 +330,6 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						renderer2d.renderRectangle(resultCrafting, oneInventorySlot);
 
 
-
 						checkInsideOneCell(PlayerInventory::CRAFTING_INDEX, craftingStart);
 						checkInsideOneCell(PlayerInventory::CRAFTING_INDEX + 1, secondCrafting);
 						checkInsideOneCell(PlayerInventory::CRAFTING_INDEX + 2, thirdCrafting);
@@ -341,7 +340,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						renderOneItem(thirdCrafting, inventory.crafting[2], 4.f / 22.f);
 						renderOneItem(fourthCrafting, inventory.crafting[3], 4.f / 22.f);
 						
-						
+						renderOneItem(resultCrafting, itemToCraft, 4.f / 22.f);
 					
 					}
 					

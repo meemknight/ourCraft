@@ -72,6 +72,12 @@ void ImGui::PlotMultiEx(ImGuiPlotType plot_type, const char *label, int num_data
 
         // std::string toolTip;
         ImGui::BeginTooltip();
+
+        //enlarge
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10)); // Increase padding
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));  // Increase frame padding
+        ImGui::SetWindowFontScale(1.5f); // Scale the font size for the tooltip
+
         const int idx0 = (v_idx + values_offset) % values_count;
         if (plot_type == ImGuiPlotType_Lines)
         {
@@ -92,6 +98,10 @@ void ImGui::PlotMultiEx(ImGuiPlotType plot_type, const char *label, int num_data
                 TextColored(colors[dataIdx], "%d: %8.4g | %s", v_idx, v0, names[dataIdx]);
             }
         }
+
+        ImGui::SetWindowFontScale(1.0f); // Reset font scale to default
+        ImGui::PopStyleVar(2);
+
         ImGui::EndTooltip();
         v_hovered = v_idx;
     }

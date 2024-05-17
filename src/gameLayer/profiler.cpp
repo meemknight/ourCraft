@@ -1,7 +1,9 @@
+#include <glad/glad.h>
 #include <profiler.h>
 #include <multiPlot.h>
 #include <platformTools.h>
 #include <iostream>
+
 
 #if REMOVE_IMGUI == 0
 #include <imgui.h>
@@ -9,6 +11,8 @@
 
 void Profiler::initGPUProfiler()
 {
+	if (REMOVE_IMGUI) { return; }
+
 	for (int i = 0; i < GPU_PROFILE_FRAMES; i++)
 	{
 		gpuProfiler[i].init(10);
@@ -280,7 +284,7 @@ void Profiler::displayPlot(const char *mainPlotName)
 		{1.0f, 1.0f, 0.5f, 1.0f},
 		{0.8f, 0.3f, 0.9f, 1.0f},
 		{0.0f, 1.0f, 0.0f, 1.0f},
-		{0.2f, 0.1f, 1.0f, 1.0f},
+		{0.7f, 0.6f, 1.0f, 1.0f},
 		{0.6f, 0.0f, 0.3f, 1.0f},
 		{0.9f, 0.1f, 0.0f, 1.0f},
 		{0.0f, 0.5f, 0.5f, 1.0f},
@@ -365,5 +369,29 @@ void GPUProfiler::end()
 	{
 		glEndQuery(GL_TIME_ELAPSED);
 		currentQuery++;
+	}
+}
+
+inline void GPUProfiler::getResults()
+{
+	for (int i = 0; i < currentQuery; ++i)
+	{
+		if (!queryResults[i])
+		{
+			GLint available = 0;
+			glGetQueryObjectiv(queryObjects[i], GL_QUERY_RESULT_AVAILABLE, &available);
+			if (available)
+			{
+				GLuint64 timeElapsed;
+				glGetQueryObjectui64v(queryObjects[i], GL_QUERY_RESULT, &timeElapsed);
+				queryTimersMs[i] = timeElapsed / 1.0e6;
+				//std::cout << queryNames[i] << ": " << timeElapsed / 1.0e6 << " ms" << std::endl;
+				queryResults[i] = true;
+			}
+			else
+			{
+				queryTimersMs[i] = false;
+			}
+		}
 	}
 }

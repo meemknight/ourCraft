@@ -54,6 +54,8 @@ void main()
 	{
 		outColor = texture2D(u_color, texCoords);
 
+		outColor.rgb = mix(outColor.rgb, u_underwaterColor, 0.1);
+
 		//optional extra fog under water
 		//outColor.rgb = mix(outColor.rgb, u_underwaterColor, (1-computeFogUnderWater(dist)) * 0.9);
  

@@ -45,7 +45,6 @@ void main()
 	if(color.a < 0.5)discard;
 
 	out_screenSpacePositions.xyzw = vec4((u_view * vec4(v_vertexPosition,1)).xyz,1);
-	//out_screenSpacePositions.xyzw = vec4(0,1,0,1);
 	out_normals = fromFloatTouShort(v_normals);
 
 	//color.rgb = vec3(1.f/float(test));

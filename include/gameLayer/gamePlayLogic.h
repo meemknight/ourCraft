@@ -1,6 +1,7 @@
 #pragma once
 #include <gl2d/gl2d.h>
 #include <glui/glui.h>
+#include <profiler.h>
 #include "rendering/renderer.h"
 #include "blocksLoader.h"
 #include <structure.h>
@@ -18,6 +19,7 @@ struct ProgramData
 	BlocksLoader blocksLoader;
 	ModelsManager modelsManager;
 
+	Profiler GPUProfiler;
 
 	gl2d::Texture numbersTexture;
 	gl2d::Texture causticsTexture;
