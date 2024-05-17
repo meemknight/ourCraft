@@ -13,7 +13,7 @@
 #include "gameLayer.h"
 #include <fstream>
 #include <chrono>
-
+#include <profilerLib/include/profilerLib.h>
 
 #ifdef _WIN32
 #define GPU_ENGINE 1
@@ -512,6 +512,10 @@ int main()
 
 	#pragma region window stuff
 
+
+		PL::Profiler pl;
+		pl.start();
+
 		#pragma region imgui
 				#if REMOVE_IMGUI == 0
 				ImGui::Render();
@@ -533,7 +537,22 @@ int main()
 			#endif
 		#pragma endregion
 
+		pl.end();
+		//if (pl.rezult.timeSeconds * 1000 > (17))
+		//{
+		//	std::cout << "IMGUI PROBLEM! " << pl.rezult.timeSeconds * 1000 << "ms!!!!\n";
+		//}
+
+		pl.start();
 		glfwSwapBuffers(wind);
+		pl.end();
+
+		//if (pl.rezult.timeSeconds * 1000 > (17))
+		//{
+		//	std::cout << "SWAP BUFFERS PROBLEM! " << pl.rezult.timeSeconds * 1000 << "ms!!!!\n";
+		//}
+		
+
 		glfwPollEvents();
 
 	#pragma endregion

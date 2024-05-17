@@ -43,6 +43,7 @@ struct GameData
 	SunShadow sunShadow;
 
 	Profiler gameplayFrameProfiler;
+	Profiler GPUProfiler;
 
 	//debug stuff
 	glm::ivec3 point = {};
@@ -103,6 +104,8 @@ bool initGameplay(ProgramData &programData, const char *c)
 
 	//gameData.inventory.heldInMouse = Item(BlockTypes::glass);
 
+
+	gameData.GPUProfiler.initGPUProfiler(); //todo move this into program data, this is a memory leak!!
 
 	return true;
 }
@@ -639,6 +642,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		gameData.sunShadow.renderShadowIntoTexture(gameData.c);
 
+		gameData.GPUProfiler.startSubProfile("Main rendering test");
+
 		//programData.renderer.render(data, gameData.c, programData.texture);
 		programData.renderer.renderFromBakedData(gameData.sunShadow,gameData.chunkSystem, 
 			gameData.c, programData, programData.blocksLoader, gameData.entityManager,
@@ -647,6 +652,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		gameData.c.lastFrameViewProjMatrix =
 			gameData.c.getProjectionMatrix() * gameData.c.getViewMatrix();
+
+		gameData.GPUProfiler.endSubProfile("Main rendering test");
 
 		gameData.gameplayFrameProfiler.endSubProfile("rendering");
 	}
@@ -663,6 +670,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	
 	
 #pragma region debug and gyzmos stuff
+	
+	gameData.GPUProfiler.startSubProfile("Debug rendering");
+
+
 	programData.pointDebugRenderer.renderCubePoint(gameData.c, gameData.point);
 
 	if (gameData.renderBox)
@@ -762,6 +773,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	}
 
 	programData.gyzmosRenderer.render(gameData.c, posInt, posFloat);
+
+	gameData.GPUProfiler.endSubProfile("Debug rendering");
 
 #pragma endregion
 
@@ -1113,6 +1126,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			gameData.gameplayFrameProfiler.displayPlot("Gameplay Frame");
 
+			gameData.GPUProfiler.displayPlot("GPU");
+
 		}
 		ImGui::End();
 
@@ -1224,7 +1239,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 	gameData.gameplayFrameProfiler.endFrame();
+	gameData.GPUProfiler.endFrame();
 	gameData.gameplayFrameProfiler.startFrame();
+	gameData.GPUProfiler.startFrame();
 	gameData.gameplayFrameProfiler.startSubProfile("swap chain and others");
 
 
