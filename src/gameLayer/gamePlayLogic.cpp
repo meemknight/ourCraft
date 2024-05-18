@@ -483,7 +483,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	if (platform::isKeyPressedOn(platform::Button::Q))
 	{
 		gameData.entityManager.dropItemByClient(
-			gameData.entityManager.localPlayer.entity.position + glm::dvec3(0,1.5,0),
+			gameData.entityManager.localPlayer.entity.position,
 			gameData.currentItemSelected, gameData.undoQueue, gameData.c.viewDirection * 5.f,
 			gameData.serverTimer, player.inventory, !platform::isKeyHeld(platform::Button::LeftCtrl));
 	}
@@ -1147,7 +1147,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	}
 
 
-
 #pragma endregion
 
 
@@ -1171,6 +1170,35 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		if (platform::isLMousePressed())
 		{
 
+			if (cursorSelected == PlayerInventory::CRAFTING_RESULT_INDEX && itemToCraft.type)
+			{
+				Item *cursor = &player.inventory.heldInMouse;
+				
+				if (cursor->type == 0)
+				{
+					
+					//craft one
+					*cursor = itemToCraft;
+					player.inventory.craft();
+					cratedOneItem(player.inventory, itemToCraft, PlayerInventory::CURSOR_INDEX);
+
+				}
+				else if(cursor->type == itemToCraft.type)
+				{
+					//grab and craft one
+					if (cursor->counter < cursor->getStackSize())
+					{
+
+
+
+					}
+
+				}
+
+
+
+			}
+			else
 			if (cursorSelected >= 0)
 			{
 				Item *selected = player.inventory.getItemFromIndex(cursorSelected);
@@ -1230,14 +1258,14 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			if (platform::isLMousePressed())
 			{
 				gameData.entityManager.dropItemByClient(
-					gameData.entityManager.localPlayer.entity.position + glm::dvec3(0, 1.5, 0),
+					gameData.entityManager.localPlayer.entity.position,
 					PlayerInventory::CURSOR_INDEX, gameData.undoQueue, gameData.c.viewDirection * 5.f,
 					gameData.serverTimer, player.inventory, 0);
 			}
 			else if (platform::isRMousePressed())
 			{
 				gameData.entityManager.dropItemByClient(
-					gameData.entityManager.localPlayer.entity.position + glm::dvec3(0, 1.5, 0),
+					gameData.entityManager.localPlayer.entity.position,
 					PlayerInventory::CURSOR_INDEX, gameData.undoQueue, gameData.c.viewDirection * 5.f,
 					gameData.serverTimer, player.inventory, 1);
 			}

@@ -165,6 +165,9 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 		c.playerData.inventory.items[9] = Item(BlockTypes::bookShelf);
 		c.playerData.inventory.items[17] = Item(BlockTypes::diamond_ore);
 		c.playerData.inventory.items[18] = Item(BlockTypes::cactus_bud);
+		c.playerData.inventory.items[19] = Item(BlockTypes::wooden_plank, 64);
+		c.playerData.inventory.items[20] = Item(BlockTypes::jungle_planks, 64);
+		c.playerData.inventory.items[21] = Item(BlockTypes::woodLog, 64);
 		c.playerData.inventory.items[27] = Item(BlockTypes::birch_wood);
 		c.playerData.inventory.items[28] = itemCreator(ItemTypes::wooddenSword);
 		c.playerData.inventory.items[29] = itemCreator(ItemTypes::wooddenSword);
@@ -442,6 +445,26 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.from = packetData->from;
 			serverTask.t.to = packetData->to;
 			serverTask.t.blockCount = packetData->counter;
+			serverTasks.push_back(serverTask);
+
+			break;
+		}
+
+		case headerClientCraftedItem:
+		{
+
+			if (size != sizeof(Packet_ClientCraftedItem))
+			{
+				//todo hard reset on errors.
+				reportError("corrupted packet or something Packet_ClientCraftedItem");
+				break;
+			}
+			Packet_ClientCraftedItem *packetData = (Packet_ClientCraftedItem *)data;
+
+			serverTask.t.type = Task::clientCraftedItem;
+			serverTask.t.itemType = packetData->itemType;
+			serverTask.t.blockCount = packetData->counter;
+			serverTask.t.to = packetData->to;
 			serverTasks.push_back(serverTask);
 
 			break;

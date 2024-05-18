@@ -60,6 +60,7 @@ enum : std::uint32_t
 	headerClientRecieveAllInventory,
 	headerClientUpdateTimer,
 	headerClientMovedItem,
+	headerClientCraftedItem,
 	headerClientOverWriteItem,
 	headerClientSwapItems,
 	headerDisconnectOtherPlayer, 
@@ -104,6 +105,14 @@ struct Packet_ClientMovedItem
 	unsigned char to;
 	unsigned char counter;
 };
+
+struct Packet_ClientCraftedItem
+{
+	unsigned short itemType;
+	unsigned short counter;
+	unsigned char to;
+};
+
 
 struct Packet_ClientOverWriteItem
 {

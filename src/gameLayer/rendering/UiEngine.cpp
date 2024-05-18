@@ -335,6 +335,8 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						checkInsideOneCell(PlayerInventory::CRAFTING_INDEX + 2, thirdCrafting);
 						checkInsideOneCell(PlayerInventory::CRAFTING_INDEX + 3, fourthCrafting);
 
+						checkInsideOneCell(PlayerInventory::CRAFTING_RESULT_INDEX, resultCrafting);
+
 						renderOneItem(craftingStart, inventory.crafting[0], 4.f / 22.f);
 						renderOneItem(secondCrafting, inventory.crafting[1], 4.f / 22.f);
 						renderOneItem(thirdCrafting, inventory.crafting[2], 4.f / 22.f);

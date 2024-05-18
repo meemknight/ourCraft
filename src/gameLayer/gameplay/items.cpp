@@ -1,5 +1,6 @@
 #include <gameplay/items.h>
 #include <serializing.h>
+#include <platformTools.h>
 
 bool Item::isBlock()
 {
@@ -200,6 +201,9 @@ Item *PlayerInventory::getItemFromIndex(int index)
 	else if (index < PlayerInventory::CRAFTING_INDEX + 4)
 	{
 		return &crafting[index - PlayerInventory::CRAFTING_INDEX];
+	}if (index == PlayerInventory::CRAFTING_RESULT_INDEX)
+	{
+		return 0;
 	}
 
 	return nullptr;
@@ -314,6 +318,27 @@ int PlayerInventory::tryPickupItem(const Item &item)
 	}
 
 	return 0;
+}
+
+void PlayerInventory::craft(int count)
+{
+	for (int i = 0; i < 4; i++)
+	{
+		if (crafting[i].counter < count)
+		{
+			crafting[i] = {};
+			permaAssertComment(0, "Error in craft method in player inventory");
+		}
+		else
+		{
+			crafting[i].counter -= count;
+
+			if (crafting[i].counter <= 0)
+			{
+				crafting[i] = {};
+			}
+		}
+	}
 }
 
 

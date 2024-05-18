@@ -93,7 +93,9 @@ std::uint64_t ClientEntityManager::consumeId()
 	return rez;
 }
 
-bool ClientEntityManager::dropItemByClient(glm::dvec3 position, unsigned char inventorySlot, UndoQueue &undoQueue
+bool ClientEntityManager::dropItemByClient(
+	glm::dvec3 position,
+	unsigned char inventorySlot, UndoQueue &undoQueue
 	, glm::vec3 throwForce, std::uint64_t timer, PlayerInventory &inventory, int count)
 {
 
@@ -128,7 +130,7 @@ bool ClientEntityManager::dropItemByClient(glm::dvec3 position, unsigned char in
 	p.header = headerClientDroppedItem;
 
 	Packet_ClientDroppedItem packetData = {};
-	packetData.position = position;
+	packetData.position = position + glm::dvec3(0, 1.5, 0);
 	packetData.inventorySlot = inventorySlot;
 	packetData.count = count;
 	packetData.eventId = undoQueue.currentEventId;
@@ -140,15 +142,16 @@ bool ClientEntityManager::dropItemByClient(glm::dvec3 position, unsigned char in
 	sendPacket(getServer(), p, (char *)&packetData, sizeof(packetData), true,
 		channelChunksAndBlocks);
 
-	undoQueue.addDropItemFromInventoryEvent(position + glm::dvec3{0,1,0}, position, newEntityId);
+	undoQueue.addDropItemFromInventoryEvent(position + glm::dvec3(0, 1.5, 0),
+		position, newEntityId);
 
 	{
 		//todo add meta data here
 
 		DroppedItem newEntity = {};
 		newEntity.count = count;
-		newEntity.position = position;
-		newEntity.lastPosition = position;
+		newEntity.position = position + glm::dvec3(0, 1.5, 0);
+		newEntity.lastPosition = position + glm::dvec3(0, 1.5, 0);
 		newEntity.type = from->type;
 		newEntity.forces = ms;
 

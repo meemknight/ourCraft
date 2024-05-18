@@ -25,7 +25,7 @@
 #include "multyPlayer/serverChunkStorer.h"
 #include <multyPlayer/tick.h>
 #include <multyPlayer/splitUpdatesLogic.h>
-
+#include <gameplay/crafting.h>
 
 
 static std::atomic<bool> serverRunning = false;
@@ -506,10 +506,12 @@ void serverWorkerUpdate(
 						if (from->type != i.t.blockType)
 						{
 							serverAllows = false;
+							sendPlayerInventory(*client);
 						}
 						else if(from->counter < i.t.blockCount)
 						{
 							serverAllows = false;
+							sendPlayerInventory(*client);
 						}
 					}
 
@@ -648,6 +650,10 @@ void serverWorkerUpdate(
 							to->counter = i.t.blockCount;
 							to->type = i.t.itemType;
 						}
+						else
+						{
+							sendPlayerInventory(*client);
+						}
 
 					}
 					else
@@ -677,10 +683,68 @@ void serverWorkerUpdate(
 						*from = std::move(*to);
 						*to = std::move(copy);
 					}
-
+					else
+					{
+						sendPlayerInventory(*client);
+					}
 				}
 
 			}
+			else if (i.t.type == Task::clientCraftedItem)
+			{
+
+				auto client = getClientNotLocked(i.cid);
+
+
+				if (client)
+				{
+
+					Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
+
+					if (to)
+					{
+
+						Item itemToCraft = craft4(client->playerData.inventory.crafting);
+
+						if (itemToCraft.type == i.t.itemType)
+						{
+							
+							//todo also check size here
+
+							if (to->type == 0)
+							{
+
+								client->playerData.inventory.craft();
+
+								*to = itemToCraft;
+							}
+							else
+							{
+								//todo
+								sendPlayerInventory(*client);
+
+							}
+
+						}
+						else
+						{
+							sendPlayerInventory(*client);
+						}
+
+
+					}
+					else
+					{
+						sendPlayerInventory(*client);
+					}
+
+
+				}
+
+
+
+			}
+
 
 
 		sd.waitingTasks.erase(sd.waitingTasks.begin());

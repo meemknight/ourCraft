@@ -178,39 +178,39 @@ glm::ivec3 from3DPointToBlock(glm::dvec3 in)
 
 glm::mat4 lookAtSafe(glm::vec3 const &eye, glm::vec3 const &center, glm::vec3 const &upVec)
 {
-    glm::vec3 up = glm::normalize(upVec);
+	glm::vec3 up = glm::normalize(upVec);
 
-    glm::vec3 f;
-    glm::vec3 s;
-    glm::vec3 u;
+	glm::vec3 f;
+	glm::vec3 s;
+	glm::vec3 u;
 
-    f = (normalize(center - eye));
-    if (f == up || f == -up)
-    {
-        s = glm::vec3(up.z, up.x, up.y);
-        u = (cross(s, f));
+	f = (normalize(center - eye));
+	if (f == up || f == -up)
+	{
+		s = glm::vec3(up.z, up.x, up.y);
+		u = (cross(s, f));
 
-    }
-    else
-    {
-        s = (normalize(cross(f, up)));
-        u = (cross(s, f));
-    }
+	}
+	else
+	{
+		s = (normalize(cross(f, up)));
+		u = (cross(s, f));
+	}
 
-    glm::mat4 Result(1);
-    Result[0][0] = s.x;
-    Result[1][0] = s.y;
-    Result[2][0] = s.z;
-    Result[0][1] = u.x;
-    Result[1][1] = u.y;
-    Result[2][1] = u.z;
-    Result[0][2] = -f.x;
-    Result[1][2] = -f.y;
-    Result[2][2] = -f.z;
-    Result[3][0] = -dot(s, eye);
-    Result[3][1] = -dot(u, eye);
-    Result[3][2] = dot(f, eye);
-    return Result;
+	glm::mat4 Result(1);
+	Result[0][0] = s.x;
+	Result[1][0] = s.y;
+	Result[2][0] = s.z;
+	Result[0][1] = u.x;
+	Result[1][1] = u.y;
+	Result[2][1] = u.z;
+	Result[0][2] = -f.x;
+	Result[1][2] = -f.y;
+	Result[2][2] = -f.z;
+	Result[3][0] = -dot(s, eye);
+	Result[3][1] = -dot(u, eye);
+	Result[3][2] = dot(f, eye);
+	return Result;
 }
 
 

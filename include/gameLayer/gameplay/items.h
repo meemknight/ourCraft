@@ -65,6 +65,7 @@ struct PlayerInventory
 	constexpr static int INVENTORY_CAPACITY = 36;
 	constexpr static int CURSOR_INDEX = 36;
 	constexpr static int CRAFTING_INDEX = 37;
+	constexpr static int CRAFTING_RESULT_INDEX = 41;
 	Item items[INVENTORY_CAPACITY] = {};
 	
 	Item heldInMouse = {};
@@ -83,4 +84,6 @@ struct PlayerInventory
 	//returns how many items were picked!
 	int tryPickupItem(const Item &item);
 
+	//removes crafting ingredients from crafting slot
+	void craft(int count = 1);
 };

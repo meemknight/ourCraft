@@ -17,6 +17,7 @@ struct Task
 		droppedItemEntity,
 		clientMovedItem,
 		clientOverwriteItem,
+		clientCraftedItem,
 		clientSwapItems,
 		generateChunk
 	};
@@ -27,7 +28,7 @@ struct Task
 	BlockType blockType = 0;
 	EventId eventId = {};
 	glm::ivec2 playerPosForChunkGeneration = {};
-	unsigned char blockCount = 0;
+	unsigned short blockCount = 0;
 	std::uint64_t entityId;
 	MotionState motionState;
 	std::uint64_t timer;
@@ -67,6 +68,9 @@ bool createConnection(Packet_ReceiveCIDAndData &playerData, const char *c);
 bool placeItem(PlayerInventory &inventory, int from, int to, int counter = 0);
 
 //0 for all
+
+//todo this should return bool and do some checks
+void cratedOneItem(PlayerInventory &inventory, Item &itemToCraft, int to);
 bool grabItem(PlayerInventory &inventory, int from, int to, int counter = 0);
 bool forceOverWriteItem(PlayerInventory &inventory, int index, Item &item);
 void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision

@@ -76,8 +76,6 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 	constexpr float keepFollowDistance = 42;
 	glm::dvec3 playerLockedOnPosition = getPosition();
 
-	/*
-
 	if (!playerLockedOn)
 	{
 
@@ -399,7 +397,6 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 	getPosition().x += move.x;
 	getPosition().z += move.y;
 
-	*/
 
 
 
