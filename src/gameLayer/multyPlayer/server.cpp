@@ -713,16 +713,23 @@ void serverWorkerUpdate(
 
 							if (to->type == 0)
 							{
-
 								client->playerData.inventory.craft();
-
 								*to = itemToCraft;
+							}
+							else if(to->type == itemToCraft.type)
+							{
+
+								if (to->counter < to->getStackSize() &&
+									to->counter + itemToCraft.counter <= to->getStackSize())
+								{
+									client->playerData.inventory.craft();
+									to->counter += itemToCraft.counter;
+								}
+
 							}
 							else
 							{
-								//todo
 								sendPlayerInventory(*client);
-
 							}
 
 						}

@@ -1189,7 +1189,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					if (cursor->counter < cursor->getStackSize())
 					{
 
-
+						if (cursor->counter + itemToCraft.counter <= cursor->getStackSize())
+						{
+							cursor->counter += itemToCraft.counter;
+							player.inventory.craft();
+							cratedOneItem(player.inventory, itemToCraft, PlayerInventory::CURSOR_INDEX);
+						}
 
 					}
 
