@@ -213,7 +213,7 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 	}
 	else if (fromUShortToFloat(fearLevel) >= 0.60)
 	{
-		carefull = true; //todo implement
+		carefull = true;
 	}
 
 	//approachingPlayer = closestPlayer; //todo

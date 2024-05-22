@@ -30,6 +30,7 @@ float computeFog(float dist)
 	return rez;
 }
 
+const float AO_STRENGTH = 0.8;
 
 
 void main()
@@ -37,7 +38,20 @@ void main()
 
 	float dist = -texture2D(u_currentViewSpace, v_texCoords).z;
 
-	outColor = vec4(0,0,0,texture2D(u_hbao, v_texCoords).r * 0.8 * 
-		(computeFog(dist)) );
+	vec2 texelSize = 1.0 / vec2(textureSize(u_hbao, 0));
+	float aoValue = 0.0;
+	for (int y = -2; y < 2; ++y) 
+	{
+		for (int x = -2; x < 2; ++x) 
+		{
+			vec2 offset = vec2(float(x), float(y)) * texelSize;
+			aoValue += textureLod(u_hbao, v_texCoords + offset, 0).r;
+		}
+	}
+	aoValue = aoValue / (4.0 * 4.0);
+	//aoValue += textureLod(u_hbao, v_texCoords, 0).r;
+
+
+	outColor = vec4(0,0,0, aoValue * AO_STRENGTH * (computeFog(dist)) );
 	//outColor = vec4(0,0,0,0.5);
 }

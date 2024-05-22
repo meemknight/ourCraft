@@ -787,21 +787,36 @@ void BlocksLoader::loadAllTextures()
 					dataGrayScale[i] = luminosity;
 				}
 
+				constexpr int magnify = 4;
+				data.clear();
+				data.resize(dataGrayScale.size() * 4 * magnify * magnify);
+
 				float pixelSize = (1.f / size.x) * 6.f;
 				//the last constant represents the height of the normal map result
 
-				for (int y = 0; y < size.y; y++)
-					for (int x = 0; x < size.x; x++)
+				auto sample = [&](float u, float v)
+				{
+					int i = u * size.x;
+					int j = v * size.y;
+						
+					return dataGrayScale[i + j * size.x];
+				};
+
+				for (int y = 0; y < size.y * magnify; y++)
+					for (int x = 0; x < size.x * magnify; x++)
 					{
 						glm::vec3 color = {};
-						int i = x + y*size.x;
 
-						int iRight = std::min((x + 1), size.x - 1) + y * size.x;
-						int iDown = x + std::min(y + 1, size.y - 1) * size.x;
+						//int iRight = std::min((x + 1), size.x - 1) + y * size.x;
+						//int iDown = x + std::min(y + 1, size.y - 1) * size.x;
+						//
+						//float h = dataGrayScale[i];
+						//float hRight = dataGrayScale[iRight];
+						//float hDown = dataGrayScale[iDown];
 
-						float h = dataGrayScale[i];
-						float hRight = dataGrayScale[iRight];
-						float hDown = dataGrayScale[iDown];
+						float h = sample((float)x / (size.x * magnify), (float)y / (size.y * magnify));
+						float hRight = sample((float)std::min(x+1, size.x*magnify-1) / (float)(size.x * magnify), (float)y / (size.y * magnify));
+						float hDown = sample((float)x / (size.x * magnify), (float)std::min(y + 1, size.y * magnify - 1) / (float)(size.y * magnify));
 
 						glm::vec3 vertex(0, 0, h);
 						glm::vec3 vertexR(pixelSize, 0, hRight);
@@ -813,16 +828,23 @@ void BlocksLoader::loadAllTextures()
 						glm::vec3 N = glm::normalize(glm::cross(D, R));
 
 						//from [-1 1] to [0 255]
+
+						//N = {0,1,0};
+
 						N += glm::vec3(1.f);
 						N /= 2.f;
 						color = N;
-						
+
+						int i = x + y * (size.x * magnify);
+
 						data[i * 4 + 0] = color.r * 255;
 						data[i * 4 + 1] = color.g * 255;
 						data[i * 4 + 2] = color.b * 255;
+						data[i * 4 + 3] = 255;
+
 					}
 
-				t.createFromBuffer((char *)data.data(), size.x, size.y, true, true);
+				t.createFromBuffer((char *)data.data(), size.x * magnify, size.y * magnify, true, true);
 				texturesIds[i * 3 + 1] = t.id;
 
 				t.bind();

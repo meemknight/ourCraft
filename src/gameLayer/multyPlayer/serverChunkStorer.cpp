@@ -108,9 +108,6 @@ std::vector<ColidableEntry> ServerChunkStorer::getCollisionsListThatCanPush(glm:
 		callGenericCheckEntitiesForCollisions(std::make_integer_sequence<int, EntitiesTypesCount-1>(),
 			c->entityData, ret, position, colider, eidToIgnore);
 
-		//checkEntities(c->entityData.droppedItems);
-		//checkEntities(c->entityData.pigs);
-		//checkEntities(c->entityData.zombies);
 
 	}
 
@@ -257,8 +254,11 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 					if (y > 40)
 					{
 						//todo fill this
-						std::unordered_set<glm::ivec2, Ivec2Hash> newCreatedChunksSet;
+						std::unordered_set<glm::ivec2> newCreatedChunksSet;
 						newCreatedChunksSet.reserve(30);
+
+
+						newCreatedChunksSet.insert({});
 
 						StructureToGenerate s;
 						s.pos.x = rootChunk.x * CHUNK_SIZE + inChunkPos.x;
@@ -272,12 +272,12 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 						s.type = Structure_TreeHouse;
 
 
-						if (generateStructure(s,
-							structureManager, newCreatedChunksSet, sendNewBlocksToPlayers, controllBlocks))
-						{
-							std::cout << "Generated a jungle tree! : " << s.pos.x << " " << s.pos.z << "\n";
-							return true;
-						}
+						//if (generateStructure(s,
+						//	structureManager, newCreatedChunksSet, sendNewBlocksToPlayers, controllBlocks))
+						//{
+						//	std::cout << "Generated a jungle tree! : " << s.pos.x << " " << s.pos.z << "\n";
+						//	return true;
+						//}
 
 					}
 				}

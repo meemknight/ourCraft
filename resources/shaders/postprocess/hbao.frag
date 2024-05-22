@@ -199,7 +199,7 @@ const int kernelSize = 64;
 
 float radius = 0.5;
 float bias = 0.200;
-int samplesTestSize = 40; // should be less than kernelSize
+int samplesTestSize = 32; // should be less than kernelSize
 
 vec3 samples[64] = vec3[64](
 	vec3(0.40380573, 0.62488124, 0.66817989),
@@ -285,6 +285,11 @@ vec3 fromuShortToFloat(ivec3 a)
 }
 
 
+float sigmoid(float x, float disp, float scale)
+{
+	return 1.f / (1 + exp(- ((x + disp) * scale) ));
+}
+
 
 void main()
 {
@@ -344,6 +349,7 @@ void main()
 	occlusion = (occlusion / kernelSize);
 
 	occlusion = pow(occlusion,0.9);
+	//occlusion = sigmoid(occlusion, -0.5, 10);
 
 	fragColor.rgba = vec4(occlusion,0,0,1);
 

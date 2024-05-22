@@ -938,7 +938,6 @@ void removeCidFromServerSettings(std::uint64_t cid)
 
 
 
-
 //adds loaded chunks.
 void updateLoadedChunks(
 	WorldGenerator &wg,

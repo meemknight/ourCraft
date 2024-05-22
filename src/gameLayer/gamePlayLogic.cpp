@@ -67,7 +67,6 @@ struct GameData
 	int currentItemSelected = 0;
 
 
-
 	bool insideInventoryMenu = 0;
 
 
@@ -1167,6 +1166,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	if (gameData.insideInventoryMenu)
 	{
 		
+		static std::bitset<64> rightClickedThisClick = 0;
+
 		if (platform::isLMousePressed())
 		{
 
@@ -1230,6 +1231,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		else if (platform::isRMousePressed())
 		{
 
+			rightClickedThisClick.reset();
+
+
 			if (cursorSelected >= 0)
 			{
 				Item *selected = player.inventory.getItemFromIndex(cursorSelected);
@@ -1238,7 +1242,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				if (cursor->type != 0)
 				{
 					//place one
-					placeItem(player.inventory, PlayerInventory::CURSOR_INDEX, cursorSelected, 1);
+					if (placeItem(player.inventory, PlayerInventory::CURSOR_INDEX, cursorSelected, 1))
+					{
+						rightClickedThisClick[cursorSelected] = true;
+					}
 
 				}
 				else
@@ -1252,6 +1259,28 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			}
 
+
+
+		}
+		else if (platform::isRMouseHeld())
+		{
+
+			//right click held place items
+			if (cursorSelected >= 0 && !rightClickedThisClick[cursorSelected])
+			{
+				Item *selected = player.inventory.getItemFromIndex(cursorSelected);
+				Item *cursor = &player.inventory.heldInMouse;
+
+				if (cursor->type != 0)
+				{
+					//place one
+					if (placeItem(player.inventory, PlayerInventory::CURSOR_INDEX, cursorSelected, 1))
+					{
+						rightClickedThisClick[cursorSelected] = true;
+					}
+
+				}
+			}
 
 
 		}
