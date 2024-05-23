@@ -768,8 +768,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		
 		for (auto &p : gameData.entityManager.zombies)
 		{
-			//std::cout << p.second.getPosition().x << ' ' << 
-			//	p.second.getPosition().y << " " << p.second.getPosition().z << "\n";
 		
 			programData.pointDebugRenderer.
 				renderPoint(gameData.c, p.second.getRubberBandPosition());
@@ -777,6 +775,18 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			auto boxSize = p.second.entity.getColliderSize();
 			auto pos = p.second.getRubberBandPosition();
 		
+			drawPlayerBox(pos, boxSize);
+		}
+
+		for (auto &p : gameData.entityManager.cats)
+		{
+
+			programData.pointDebugRenderer.
+				renderPoint(gameData.c, p.second.getRubberBandPosition());
+
+			auto boxSize = p.second.entity.getColliderSize();
+			auto pos = p.second.getRubberBandPosition();
+
 			drawPlayerBox(pos, boxSize);
 		}
 

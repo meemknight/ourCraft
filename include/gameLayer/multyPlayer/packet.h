@@ -11,6 +11,7 @@
 #include <gameplay/player.h>
 #include <gameplay/zombie.h>
 #include <gameplay/pig.h>
+#include <gameplay/cat.h>
 
 using EventCounter = unsigned int;
 using RevisionNumber = unsigned int;
@@ -67,6 +68,7 @@ enum : std::uint32_t
 	headerDisconnectOtherPlayer, 
 	headerUpdateZombie,
 	headerUpdatePig,
+	headerUpdateCat,
 	headerRemoveEntity,
 	headerCompoundPacket,
 };
@@ -151,6 +153,13 @@ struct Packet_RemoveEntity
 struct Packet_UpdatePig
 {
 	Pig entity = {};
+	std::uint64_t eid = 0;
+	std::uint64_t timer = 0;
+};
+
+struct Packet_UpdateCat
+{
+	Cat entity = {};
 	std::uint64_t eid = 0;
 	std::uint64_t timer = 0;
 };

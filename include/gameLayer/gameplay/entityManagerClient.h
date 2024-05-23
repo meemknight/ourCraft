@@ -42,7 +42,10 @@ struct ClientEntityManager : public EntityDataClient
 
 	void addOrUpdateZombie(std::uint64_t eid, Zombie entity, float restantTimer);
 
+	//todo make this functions generic
 	void addOrUpdatePig(std::uint64_t eid, Pig entity, float restantTimer);
+
+	void addOrUpdateCat(std::uint64_t eid, Cat entity, float restantTimer);
 
 	void doAllUpdates(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2));
 };

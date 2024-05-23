@@ -9,7 +9,7 @@ bool Item::isBlock()
 
 bool Item::isItemThatCanBeUsed()
 {
-	if (type == pigSpawnEgg || type == zombieSpawnEgg)
+	if (type == pigSpawnEgg || type == zombieSpawnEgg || type == catSpawnEgg)
 	{
 		return true;
 	}
@@ -19,7 +19,7 @@ bool Item::isItemThatCanBeUsed()
 
 bool Item::isConsumedAfterUse()
 {
-	if (type == pigSpawnEgg || type == zombieSpawnEgg)
+	if (type == pigSpawnEgg || type == zombieSpawnEgg || type == catSpawnEgg)
 	{
 		return true;
 	}
@@ -366,6 +366,7 @@ const char *itemsNames[] =
 {
 	"stick.png",
 	"wood_sword.png",
+	"",
 	"",
 	"",
 

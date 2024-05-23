@@ -366,6 +366,9 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 		genericLoopOverEntities(entityData.pigs, orphanEntities.pigs,
 			Packet_UpdatePig{}, headerUpdatePig);
 
+		genericLoopOverEntities(entityData.cats, orphanEntities.cats,
+			Packet_UpdateCat{}, headerUpdateCat);
+
 	}
 
 	for (auto eid : othersDeleted)

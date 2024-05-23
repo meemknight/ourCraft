@@ -300,6 +300,25 @@ void ClientEntityManager::addOrUpdatePig(std::uint64_t eid, Pig entity, float re
 	}
 }
 
+void ClientEntityManager::addOrUpdateCat(std::uint64_t eid, Cat entity, float restantTimer)
+{
+	auto found = cats.find(eid);
+
+	if (found == cats.end())
+	{
+		cats[eid].entity = entity;
+		cats[eid].restantTime = restantTimer;
+	}
+	else
+	{
+		found->second.rubberBand
+			.addToRubberBand(found->second.entity.position - entity.position);
+
+		found->second.entity = entity;
+		found->second.restantTime = restantTimer;
+	}
+}
+
 
 
 template<class T>

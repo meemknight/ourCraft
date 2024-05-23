@@ -2057,6 +2057,7 @@ void Renderer::renderEntities(
 	renderAllEntitiesOfOneType(modelsManager.human, entityManager.players, ModelsManager::SteveTexture);
 	renderAllEntitiesOfOneType(modelsManager.human, entityManager.zombies, ModelsManager::ZombieTexture);
 	renderAllEntitiesOfOneType(modelsManager.pig, entityManager.pigs, ModelsManager::PigTexture);
+	renderAllEntitiesOfOneType(modelsManager.cat, entityManager.cats, ModelsManager::CatTexture);
 
 
 	glBindVertexArray(0);

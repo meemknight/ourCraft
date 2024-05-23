@@ -9,6 +9,7 @@ void DroppedItem::update(float deltaTime, decltype(chunkGetterSignature) *chunkG
 	//THIS IS SHARED CODE!!!!
 	PhysicalSettings ps;
 	ps.gravityModifier = 0.5f;
+	ps.sideFriction = 1.f;
 	updateForces(deltaTime, true, ps);
 	resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime, getMaxColliderSize(), ps);
 

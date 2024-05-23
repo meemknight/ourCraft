@@ -14,7 +14,6 @@ void animatePlayerHandsZombie(glm::mat4 *poseVector, float &currentAngle)
 {
 
 
-
 	auto a = glm::quatLookAt(glm::normalize(glm::vec3(-sin(currentAngle), cosf(currentAngle), 4)), glm::vec3(0, 1, 0));
 	auto b = glm::quatLookAt(glm::normalize(glm::vec3(-sin(currentAngle + 10), cosf(currentAngle + 10), 4)), glm::vec3(0, 1, 0));
 

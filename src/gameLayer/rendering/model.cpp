@@ -121,6 +121,7 @@ void ModelsManager::loadAllModels()
 		loadTexture(RESOURCES_PATH "models/giggasteve.png");
 		loadTexture(RESOURCES_PATH "models/zombie.png");
 		loadTexture(RESOURCES_PATH "models/pig.png");
+		loadTexture(RESOURCES_PATH "models/cat.png");
 		
 
 	}
@@ -267,6 +268,8 @@ void ModelsManager::loadAllModels()
 
 	loadModel(RESOURCES_PATH "models/pig.glb", pig);
 	
+	loadModel(RESOURCES_PATH "models/cat.glb", cat);
+
 	loadModel(RESOURCES_PATH "models/rightHand.glb", rightHand);
 
 	//todo check if it frees all of them

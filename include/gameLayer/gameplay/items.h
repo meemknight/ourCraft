@@ -13,6 +13,7 @@ enum ItemTypes
 	wooddenSword,
 	zombieSpawnEgg,
 	pigSpawnEgg,
+	catSpawnEgg,
 	lastItem,
 
 };

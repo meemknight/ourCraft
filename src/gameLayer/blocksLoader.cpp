@@ -974,7 +974,8 @@ void BlocksLoader::loadAllTextures()
 	if (spawnEggSize == spawnEggOverSize)
 	{
 		createSpawnEggTexture(zombieSpawnEgg, glm::vec3{2, 161, 160} / 255.f, glm::vec3{107, 137, 89}/255.f);
-		createSpawnEggTexture(pigSpawnEgg, glm::vec3(230, 151, 167) / 255.f, glm::vec3(148, 92, 95)/255.f);
+		createSpawnEggTexture(pigSpawnEgg, glm::vec3(230, 151, 167) / 255.f, glm::vec3(148, 92, 95) / 255.f);
+		createSpawnEggTexture(catSpawnEgg, glm::vec3(230, 230, 230) / 255.f, glm::vec3(10, 10, 10)/255.f);
 	}
 	else
 	{

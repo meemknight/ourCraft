@@ -46,10 +46,11 @@ void saveOneEntityTypeIntoOpenFile(std::ofstream &f, T &entityContainer)
 
 void saveAllEntitiesIntoOpenFile(std::ofstream &f, EntityData &entityData)
 {
-
+	//todo generalize
 	saveOneEntityTypeIntoOpenFile(f, entityData.droppedItems);
 	saveOneEntityTypeIntoOpenFile(f, entityData.zombies);
 	saveOneEntityTypeIntoOpenFile(f, entityData.pigs);
+	saveOneEntityTypeIntoOpenFile(f, entityData.cats);
 
 
 }

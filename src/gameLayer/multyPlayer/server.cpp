@@ -26,6 +26,7 @@
 #include <multyPlayer/tick.h>
 #include <multyPlayer/splitUpdatesLogic.h>
 #include <gameplay/crafting.h>
+#include <gameplay/cat.h>
 
 
 static std::atomic<bool> serverRunning = false;
@@ -274,7 +275,6 @@ bool spawnPig(
 
 	auto chunkPos = determineChunkThatIsEntityIn(pig.position);
 	auto c = chunkManager.getChunkOrGetNull(chunkPos.x, chunkPos.y);
-
 	if (c)
 	{
 		PigServer e = {};
@@ -287,7 +287,31 @@ bool spawnPig(
 	{
 		return 0;
 	}
+	return 1;
+}
 
+bool spawnCat(
+	ServerChunkStorer &chunkManager,
+	Cat cat, WorldSaver &worldSaver,
+	std::minstd_rand &rng)
+{
+	//todo also send packets
+	//todo generic spawn for any entity
+
+	auto chunkPos = determineChunkThatIsEntityIn(cat.position);
+	auto c = chunkManager.getChunkOrGetNull(chunkPos.x, chunkPos.y);
+	if (c)
+	{
+		CatServer e = {};
+		e.entity = cat;
+		e.configureSpawnSettings(rng);
+
+		c->entityData.cats.insert({getEntityIdAndIncrement(worldSaver), e});
+	}
+	else
+	{
+		return 0;
+	}
 	return 1;
 }
 
@@ -786,6 +810,14 @@ void serverWorkerUpdate(
 								z.position = position;
 								z.lastPosition = position;
 								spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement(worldSaver));
+							}
+							else if (from->type == ItemTypes::catSpawnEgg)
+							{
+								Cat c;
+								glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.5, -0.49, 0.5);
+								c.position = position;
+								c.lastPosition = position;
+								spawnCat(sd.chunkCache, c, worldSaver, rng);
 							}
 
 

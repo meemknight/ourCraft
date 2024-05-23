@@ -341,6 +341,21 @@ void recieveDataClient(ENetEvent &event,
 			break;
 		}
 
+		case headerUpdateCat:
+		{
+			Packet_UpdateCat *c = (Packet_UpdateCat *)data;
+			if (sizeof(Packet_UpdateCat) != size) { break; }
+			if (c->timer + 16 < yourTimer)
+			{
+				break; //drop too old packets
+			}
+			float restantTimer = computeRestantTimer(c->timer, yourTimer);
+
+			entityManager.addOrUpdateCat(c->eid, c->entity, restantTimer);
+
+			break;
+		}
+
 		case headerClientUpdateTimer:
 		{
 			Packet_ClientUpdateTimer *p = (Packet_ClientUpdateTimer *)data;

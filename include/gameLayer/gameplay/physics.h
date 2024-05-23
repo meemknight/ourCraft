@@ -18,7 +18,7 @@ struct PhysicalSettings
 {
 
 	float gravityModifier = 1;
-	float sideFriction = 1;
+	float sideFriction = 0;
 
 };
 

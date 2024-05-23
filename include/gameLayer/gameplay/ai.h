@@ -32,7 +32,6 @@ struct Personality
 
 struct PigDefaultSettings
 {
-
 	constexpr static float minSpeed = 4.0;
 	constexpr static float maxSpeed = 7.0;
 
@@ -44,9 +43,22 @@ struct PigDefaultSettings
 
 	constexpr static unsigned short minPlayfull = fromFloatToUShort(0.0f);
 	constexpr static unsigned short maxPlayfull = fromFloatToUShort(0.6f);
-
 };
 
+struct CatDefaultSettings
+{
+	constexpr static float minSpeed = 9.0;
+	constexpr static float maxSpeed = 13.0;
+
+	constexpr static unsigned short minFearfull = fromFloatToUShort(0.4f);
+	constexpr static unsigned short maxFearfull = fromFloatToUShort(0.7f);
+
+	constexpr static unsigned short minCurious = fromFloatToUShort(0.8f);
+	constexpr static unsigned short maxCurious = fromFloatToUShort(0.9f);
+
+	constexpr static unsigned short minPlayfull = fromFloatToUShort(0.1f);
+	constexpr static unsigned short maxPlayfull = fromFloatToUShort(0.7f);
+};
 
 
 template <class E, class SETTINGS>
@@ -425,7 +437,6 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 			}
 
 
-
 		}
 		else
 		{
@@ -440,11 +451,16 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 			move *= 0.6;
 		}
 
+		if (carefull && approachingPlayer)
+		{
+			move *= 0.5;
+		}
+
 		baseEntity->getPosition().x += move.x;
 		baseEntity->getPosition().z += move.y;
 
 		baseEntity->entity.bodyOrientation = move;
-		baseEntity->entity.movementSpeedForLegsAnimations = 2.f * currentMoveSpeed;
+		baseEntity->entity.movementSpeedForLegsAnimations = 1.5f * currentMoveSpeed;
 	}
 	else
 	{

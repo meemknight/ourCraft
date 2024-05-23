@@ -172,7 +172,7 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 		c.playerData.inventory.items[28] = itemCreator(ItemTypes::wooddenSword);
 		c.playerData.inventory.items[29] = itemCreator(ItemTypes::wooddenSword);
 		c.playerData.inventory.items[30] = itemCreator(ItemTypes::wooddenSword);
-		c.playerData.inventory.items[31] = itemCreator(ItemTypes::wooddenSword);
+		c.playerData.inventory.items[31] = itemCreator(ItemTypes::catSpawnEgg);
 		c.playerData.inventory.items[32] = itemCreator(ItemTypes::zombieSpawnEgg);
 		c.playerData.inventory.items[33] = itemCreator(ItemTypes::pigSpawnEgg);
 		c.playerData.inventory.items[34] = Item(BlockTypes::clay);

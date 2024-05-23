@@ -276,6 +276,7 @@ void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
 		};
 
 
+		//todo generalize
 		for (auto &c : chunkRegionsData)
 		{
 			//save this entities to disk or other chunks...
@@ -289,6 +290,8 @@ void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
 			resetEntitiesInTheirNewChunk(c.orphanEntities.pigs,
 				[](auto &entityData) { return &entityData.pigs; });
 
+			resetEntitiesInTheirNewChunk(c.orphanEntities.cats,
+				[](auto &entityData) { return &entityData.cats; });
 		}
 
 		chunkRegionsData.clear();

@@ -29,6 +29,8 @@ struct ModelsManager
 
 	Model pig;
 
+	Model cat;
+
 	Model rightHand;
 
 	enum TexturesLoaded
@@ -37,6 +39,7 @@ struct ModelsManager
 		SteveTexture,
 		ZombieTexture,
 		PigTexture,
+		CatTexture
 	};
 
 	std::vector<GLuint64> gpuIds;
