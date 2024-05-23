@@ -148,7 +148,7 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 	glm::dvec3 spawnPosition(0, 107, 0);
 
 	{
-		Client c{event.peer};
+		Client c{event.peer}; 
 		c.playerData.entity.position = spawnPosition;
 		c.playerData.entity.lastPosition = spawnPosition;
 
@@ -173,6 +173,8 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 		c.playerData.inventory.items[29] = itemCreator(ItemTypes::wooddenSword);
 		c.playerData.inventory.items[30] = itemCreator(ItemTypes::wooddenSword);
 		c.playerData.inventory.items[31] = itemCreator(ItemTypes::wooddenSword);
+		c.playerData.inventory.items[32] = itemCreator(ItemTypes::zombieSpawnEgg);
+		c.playerData.inventory.items[33] = itemCreator(ItemTypes::pigSpawnEgg);
 		c.playerData.inventory.items[34] = Item(BlockTypes::clay);
 		c.playerData.inventory.items[35] = Item(BlockTypes::glass);
 

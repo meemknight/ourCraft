@@ -11,6 +11,8 @@ enum ItemTypes
 
 	stick = ItemsStartPoint,
 	wooddenSword,
+	zombieSpawnEgg,
+	pigSpawnEgg,
 	lastItem,
 
 };

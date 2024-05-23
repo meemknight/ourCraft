@@ -345,7 +345,10 @@ void PlayerInventory::craft(int count)
 const char *itemsNames[] = 
 {
 	"stick.png",
-	"wood_sword.png"
+	"wood_sword.png",
+	"",
+	"",
+
 };
 
 const char *getItemTextureName(int itemId)

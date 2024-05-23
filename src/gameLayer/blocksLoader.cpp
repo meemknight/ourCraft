@@ -865,40 +865,122 @@ void BlocksLoader::loadAllTextures()
 	}
 
 
-
+	spawnEgg.loadFromFile(RESOURCES_PATH "assets/textures/items/spawn_egg.png", true, false);
+	spawnEggOverlay.loadFromFile(RESOURCES_PATH "assets/textures/items/spawn_egg_overlay.png", true, false);
 
 
 	//load items
 	for (int i = ItemsStartPoint; i < lastItem; i++)
 	{
-		path = RESOURCES_PATH;
-		path += "assets/textures/items/";
-		path += getItemTextureName(i);
 
-		gl2d::Texture t;
+		const char *itemName = getItemTextureName(i);
 
-		if (!loadFromFileWithAplhaFixing(t, path.c_str(), true, false, false)) 
+		if (itemName == std::string(""))
 		{
 			texturesIdsItems.push_back(texturesIds[0]);
 			gpuIdsItems.push_back(gpuIds[0]);
 		}
 		else
 		{
-			t.bind();
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			path = RESOURCES_PATH;
+			path += "assets/textures/items/";
+			path += itemName;
 
-			glGenerateMipmap(GL_TEXTURE_2D);
+			gl2d::Texture t;
 
-			texturesIdsItems.push_back(t.id);
+			if (!loadFromFileWithAplhaFixing(t, path.c_str(), true, false, false))
+			{
+				texturesIdsItems.push_back(texturesIds[0]);
+				gpuIdsItems.push_back(gpuIds[0]);
+			}
+			else
+			{
+				t.bind();
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-			auto handle = glGetTextureHandleARB(t.id);
-			glMakeTextureHandleResidentARB(handle);
+				glGenerateMipmap(GL_TEXTURE_2D);
 
-			gpuIdsItems.push_back(handle);
+				texturesIdsItems.push_back(t.id);
+
+				auto handle = glGetTextureHandleARB(t.id);
+				glMakeTextureHandleResidentARB(handle);
+
+				gpuIdsItems.push_back(handle);
+			}
 		}
-	}
 
+		
+	}
+	
+	glm::ivec2 spawnEggSize = {};
+	auto spawnEggData = spawnEgg.readTextureData(0, &spawnEggSize);
+
+	glm::ivec2 spawnEggOverSize = {};
+	auto spawnEggOverData = spawnEggOverlay.readTextureData(0, &spawnEggOverSize);
+
+
+	auto createSpawnEggTexture = [&](int index, glm::vec3 baseColod, glm::vec3 topColor)
+	{
+		index -= ItemsStartPoint;
+
+		auto newBuffer = spawnEggData;
+		
+		for (int i = 0; i < newBuffer.size(); i+=4)
+		{
+
+			unsigned char r = newBuffer[i + 0];
+			unsigned char g = newBuffer[i + 1];
+			unsigned char b = newBuffer[i + 2];
+
+			unsigned char r2 = spawnEggOverData[i + 0];
+			unsigned char g2 = spawnEggOverData[i + 1];
+			unsigned char b2 = spawnEggOverData[i + 2];
+			unsigned char a2 = spawnEggOverData[i + 3];
+
+			glm::vec3 color1(r, g, b); color1 /= 255.f;
+			glm::vec3 color2(r2, g2, b2); color2 /= 255.f;
+
+			glm::vec3 finalColor = {};
+			if (a2)
+			{
+				finalColor = color2 * topColor;
+			}
+			else
+			{
+				finalColor = color1 * baseColod;
+			}
+
+			finalColor = glm::min(finalColor, glm::vec3(1.f));
+
+			newBuffer[i + 0] = finalColor.r * 255;
+			newBuffer[i + 1] = finalColor.g * 255;
+			newBuffer[i + 2] = finalColor.b * 255;
+
+		}
+
+		gl2d::Texture newTexture;
+		newTexture.createFromBuffer((const char *)newBuffer.data(),
+			spawnEggSize.x, spawnEggSize.y, true, false);
+
+		texturesIdsItems[index] = newTexture.id;
+		auto handle = glGetTextureHandleARB(newTexture.id);
+		glMakeTextureHandleResidentARB(handle);
+		gpuIdsItems[index] = handle;
+
+
+	};
+
+	if (spawnEggSize == spawnEggOverSize)
+	{
+		createSpawnEggTexture(zombieSpawnEgg, glm::vec3{2, 161, 160} / 255.f, glm::vec3{107, 137, 89}/255.f);
+		createSpawnEggTexture(pigSpawnEgg, glm::vec3(230, 151, 167) / 255.f, glm::vec3(148, 92, 95)/255.f);
+	}
+	else
+	{
+		//todo error
+		std::cout << "err\n";
+	}
 
 }
 
