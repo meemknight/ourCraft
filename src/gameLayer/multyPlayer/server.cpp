@@ -336,6 +336,8 @@ void serverWorkerUpdate(
 	}
 	serverTask.clear();
 
+	static std::minstd_rand rng(std::random_device{}());
+
 	//todo rather than a sort use buckets, so the clients can't DDOS the server with
 	//place blocks tasks, making generating chunks impossible. 
 	// 
@@ -748,7 +750,68 @@ void serverWorkerUpdate(
 
 				}
 
+			}
+			else if (i.t.type == Task::clientUsedItem)
+			{
 
+				auto client = getClientNotLocked(i.cid);
+				
+				if (client)
+				{
+					//serverTask.t.pos = packetData->position;
+
+					Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
+
+					if (from)
+					{
+
+						if (from->counter <= 0) { from = {}; }
+
+						if (from->type == i.t.itemType)
+						{
+
+
+							if (from->type == ItemTypes::pigSpawnEgg)
+							{
+								Pig p;
+								glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.5,-0.49,0.5);
+								p.position = position;
+								p.lastPosition = position;
+								spawnPig(sd.chunkCache, p, worldSaver, rng);
+							}
+							else if (from->type == ItemTypes::zombieSpawnEgg)
+							{
+								Zombie z;
+								glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.5, -0.49, 0.5);
+								z.position = position;
+								z.lastPosition = position;
+								spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement(worldSaver));
+							}
+
+
+							if (from->isConsumedAfterUse() && client->playerData.otherPlayerSettings.gameMode ==
+								OtherPlayerSettings::SURVIVAL)
+							{
+								from->counter--;
+								if (from->counter <= 0)
+								{
+									*from = {};
+								}
+							}
+						}
+						else
+						{
+							sendPlayerInventory(*client);
+						}
+
+					}
+					else
+					{
+						sendPlayerInventory(*client);
+					}
+
+
+				}
 
 			}
 
@@ -770,7 +833,6 @@ void serverWorkerUpdate(
 
 #pragma region gameplay tick
 
-	static std::minstd_rand rng(std::random_device{}());
 
 
 	if (sd.tickTimer > 1.f / targetTicksPerSeccond)

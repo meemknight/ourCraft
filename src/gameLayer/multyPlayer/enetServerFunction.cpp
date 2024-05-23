@@ -493,7 +493,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 		{
 			if (size != sizeof(Packet_ClientSwapItems))
 			{
-				break;
+				break; //todo hard reset stuff everywhere
 			}
 
 			Packet_ClientSwapItems *packetData = (Packet_ClientSwapItems *)data;
@@ -503,6 +503,23 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTasks.push_back(serverTask);
 
 			break;
+
+		}
+
+		case headerClientUsedItem:
+		{
+
+			if (size != sizeof(Packet_ClientUsedItem))
+			{
+				break;
+			}
+
+			Packet_ClientUsedItem *packetData = (Packet_ClientUsedItem *)data;
+			serverTask.t.type = Task::clientUsedItem;
+			serverTask.t.from = packetData->from;
+			serverTask.t.itemType = packetData->itemType;
+			serverTask.t.pos = packetData->position;
+			serverTasks.push_back(serverTask);
 
 		}
 

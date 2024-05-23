@@ -30,6 +30,10 @@ struct Item
 
 	bool isBlock();
 
+	bool isItemThatCanBeUsed();
+
+	bool isConsumedAfterUse();
+
 	//this is used for pakcet sending and saving
 	void formatIntoData(std::vector<unsigned char> &data);
 

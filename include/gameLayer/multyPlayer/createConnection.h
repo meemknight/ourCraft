@@ -19,6 +19,7 @@ struct Task
 		clientOverwriteItem,
 		clientCraftedItem,
 		clientSwapItems,
+		clientUsedItem,
 		generateChunk
 	};
 
@@ -71,6 +72,7 @@ bool placeItem(PlayerInventory &inventory, int from, int to, int counter = 0);
 
 //todo this should return bool and do some checks
 void cratedOneItem(PlayerInventory &inventory, Item &itemToCraft, int to);
+bool swapItems(PlayerInventory &inventory, int from, int to);
 bool grabItem(PlayerInventory &inventory, int from, int to, int counter = 0);
 bool forceOverWriteItem(PlayerInventory &inventory, int index, Item &item);
 void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision

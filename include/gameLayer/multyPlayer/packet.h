@@ -63,6 +63,7 @@ enum : std::uint32_t
 	headerClientCraftedItem,
 	headerClientOverWriteItem,
 	headerClientSwapItems,
+	headerClientUsedItem,
 	headerDisconnectOtherPlayer, 
 	headerUpdateZombie,
 	headerUpdatePig,
@@ -89,6 +90,13 @@ struct Packet_DisconectOtherPlayer
 struct Packet_ClientUpdateTimer
 {
 	std::uint64_t timer = 0;
+};
+
+struct Packet_ClientUsedItem
+{
+	glm::ivec3 position = {};
+	unsigned short itemType = 0;
+	unsigned char from = 0;
 };
 
 struct Packet_RecieveDroppedItemUpdate

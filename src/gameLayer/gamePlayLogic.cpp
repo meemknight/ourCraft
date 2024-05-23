@@ -509,7 +509,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		}
 
-
 		if (!gameData.escapePressed)
 		{
 
@@ -568,13 +567,37 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				else if (!platform::isKeyHeld(platform::Button::LeftCtrl))
 				{
 
-					if (platform::isRMouseReleased())
+
+					if (platform::isRMousePressed())
 					{
-						if (blockToPlace && item.isBlock())
+
+						if (item.isItemThatCanBeUsed() && blockToPlace)
+						{
+
+							Packet_ClientUsedItem data;
+							data.from = gameData.currentItemSelected;
+							data.itemType = item.type;
+							data.position = *blockToPlace;
+
+							sendPacket(getServer(), headerClientUsedItem, player.entityId,
+								&data, sizeof(data), true, channelChunksAndBlocks);
+
+							if (item.isConsumedAfterUse() && player.otherPlayerSettings.gameMode ==
+								OtherPlayerSettings::SURVIVAL)
+							{
+								item.counter--;
+								if (item.counter <= 0)
+								{
+									item = {};
+								}
+							}
+
+						}
+						else if (blockToPlace && item.isBlock())
 							gameData.chunkSystem.placeBlockByClient(*blockToPlace, item.type,
 							gameData.undoQueue, gameData.entityManager.localPlayer.entity.position, gameData.lightSystem);
 					}
-					else if (platform::isLMouseReleased())
+					else if (platform::isLMousePressed())
 					{
 						gameData.chunkSystem.placeBlockByClient(rayCastPos, BlockTypes::air,
 							gameData.undoQueue, gameData.entityManager.localPlayer.entity.position, gameData.lightSystem);
@@ -607,6 +630,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	gameData.c.decomposePosition(posFloat, posInt);
 
 #pragma endregion
+
 
 #pragma region update lights
 
@@ -1221,7 +1245,11 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					else
 					{
 						//place
-						placeItem(player.inventory, PlayerInventory::CURSOR_INDEX, cursorSelected);
+						if (!placeItem(player.inventory, PlayerInventory::CURSOR_INDEX, cursorSelected))
+						{
+							//swap
+							swapItems(player.inventory, cursorSelected, PlayerInventory::CURSOR_INDEX);
+						}
 
 					}
 

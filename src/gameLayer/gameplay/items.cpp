@@ -7,6 +7,26 @@ bool Item::isBlock()
 	return type > 0 && type < BlocksCount;
 }
 
+bool Item::isItemThatCanBeUsed()
+{
+	if (type == pigSpawnEgg || type == zombieSpawnEgg)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool Item::isConsumedAfterUse()
+{
+	if (type == pigSpawnEgg || type == zombieSpawnEgg)
+	{
+		return true;
+	}
+
+	return false;
+}
+
 
 void Item::formatIntoData(std::vector<unsigned char> &data)
 {

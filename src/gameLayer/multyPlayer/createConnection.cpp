@@ -702,6 +702,30 @@ void cratedOneItem(PlayerInventory &inventory, Item &itemToCraft, int to)
 		&packet, sizeof(packet), true, channelChunksAndBlocks);
 }
 
+bool swapItems(PlayerInventory &inventory, int from, int to)
+{
+
+	auto fromPtr = inventory.getItemFromIndex(from);
+	auto toPtr = inventory.getItemFromIndex(to);
+
+	if (fromPtr && toPtr && fromPtr != toPtr)
+	{
+		auto item = *fromPtr;
+		*fromPtr = *toPtr;
+		*toPtr = std::move(item);
+
+		Packet_ClientSwapItems packet;
+		packet.from = from;
+		packet.to = to;
+		sendPacket(clientData.server, headerClientSwapItems, clientData.cid,
+			&packet, sizeof(packet), true, channelChunksAndBlocks);
+
+		return true;
+	}
+
+	return false;
+}
+
 bool grabItem(PlayerInventory &inventory, int from, int to, int counter)
 {
 
