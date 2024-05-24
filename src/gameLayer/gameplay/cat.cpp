@@ -23,7 +23,7 @@ glm::vec3 Cat::getColliderSize()
 
 glm::vec3 Cat::getMaxColliderSize()
 {
-	return glm::vec3(0.4, 0.4, 0.4);
+	return glm::vec3(0.5, 0.6, 0.5);
 }
 
 void CatClient::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)

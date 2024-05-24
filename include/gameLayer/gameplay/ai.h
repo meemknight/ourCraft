@@ -38,7 +38,7 @@ struct PigDefaultSettings
 	constexpr static unsigned short minFearfull = fromFloatToUShort(0.3f);
 	constexpr static unsigned short maxFearfull = fromFloatToUShort(0.6f);
 
-	constexpr static unsigned short minCurious = fromFloatToUShort(0.0f);
+	constexpr static unsigned short minCurious = fromFloatToUShort(0.1f);
 	constexpr static unsigned short maxCurious = fromFloatToUShort(0.6f);
 
 	constexpr static unsigned short minPlayfull = fromFloatToUShort(0.0f);
@@ -51,9 +51,9 @@ struct CatDefaultSettings
 	constexpr static float maxSpeed = 13.0;
 
 	constexpr static unsigned short minFearfull = fromFloatToUShort(0.4f);
-	constexpr static unsigned short maxFearfull = fromFloatToUShort(0.7f);
+	constexpr static unsigned short maxFearfull = fromFloatToUShort(0.8f);
 
-	constexpr static unsigned short minCurious = fromFloatToUShort(0.8f);
+	constexpr static unsigned short minCurious = fromFloatToUShort(0.5f);
 	constexpr static unsigned short maxCurious = fromFloatToUShort(0.9f);
 
 	constexpr static unsigned short minPlayfull = fromFloatToUShort(0.1f);
@@ -141,7 +141,6 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 		}
 	}
 #pragma endregion
-
 
 
 	waitTime -= deltaTime;
@@ -236,10 +235,12 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 		currentMoveSpeed = speedBase;
 		moving = true;
 
+		if (direction == glm::vec2{0, 0})
+		{ waitTime = 0; }
 
-		if (waitTime < 0)
+		if (waitTime <= 0)
 		{
-			waitTime = waitTime = getRandomNumberFloat(rng, 0.5, 2.0);
+			waitTime = getRandomNumberFloat(rng, 0.5, 2.0);
 
 
 			if (thereIsClosestPlayer)
@@ -323,8 +324,14 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 			}
 			else
 			{
-				moving = getRandomChance(rng, 0.5 + fromUShortToFloat(personalityBase.playfull)*0.4 );
-				waitTime = getRandomNumberFloat(rng, 1, 6);
+				moving = getRandomChance(rng, 0.4 + fromUShortToFloat(personalityBase.playfull)*0.3 );
+				waitTime = getRandomNumberFloat(rng, 1, 7);
+
+				if (!moving)
+				{
+					waitTime += getRandomNumberFloat(rng, 0, 10);
+					waitTime += getRandomNumberFloat(rng, 0, 5);
+				}
 
 				if (moving)
 				{
@@ -517,8 +524,6 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 		if (changeHeadTimer < 0)
 		{
 
-			int headRandomDecision = 0;
-
 			if (fleeing)
 			{
 
@@ -571,29 +576,17 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 				}
 				else
 				{
-					if (!playersClose.empty())
-					{
-						headRandomDecision = getRandomNumber(rng, 0, 100) % 5;
-					}
-					else
-					{
-						headRandomDecision = getRandomNumber(rng, 0, 100) % 4;
-					}
 
-					if (headRandomDecision == 0 || headRandomDecision == 1)
+					bool lookAtPlayerFlag = getRandomChance(rng,
+						0.5 * fromUShortToFloat(personalityBase.curious) + 0.2 + 0.2 * carefull);
+					if (playersClose.empty()) 
 					{
-						//look forward
-						changeHeadTimer = getRandomNumberFloat(rng, 1, 8);
-						baseEntity->entity.lookDirectionAnimation = getRandomUnitVector3Oriented(rng, {0,0.1,-1}, 3.14159 / 5.f);
+						lookAtPlayerFlag = 0;
 					}
-					else if (headRandomDecision == 2 || headRandomDecision == 3)
+					
+					if (lookAtPlayerFlag)
 					{
-						//look random
-						changeHeadTimer = getRandomNumberFloat(rng, 1, 4);
-						baseEntity->entity.lookDirectionAnimation = getRandomUnitVector3Oriented(rng, {0,0.1,-1});
-					}
-					else
-					{
+						//look at player
 						int playerIndex = 0;
 						if (playersClose.size() > 1)
 						{
@@ -604,14 +597,49 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 						{
 							playerFollow = playersClose[0].first;
 						}
-						changeHeadTimer = getRandomNumberFloat(rng, 1, 6);
+						changeHeadTimer = getRandomNumberFloat(rng, 1, 8);
+					}
+					else
+					{
+						if (getRandomChance(rng, 0.5 + (moving)*0.1 - 
+							fromUShortToFloat(personalityBase.curious) * 0.3
+							))
+						{
+							//look forward
+							changeHeadTimer = getRandomNumberFloat(rng, 1, 8);
+							baseEntity->entity.lookDirectionAnimation = getRandomUnitVector3Oriented(rng, {0,0.1,-1}, 3.14159 / 5.f);
+						}
+						else
+						{
+							//look random
+
+							if (moving)
+							{
+								changeHeadTimer = getRandomNumberFloat(rng, 1, 4);
+								baseEntity->entity.lookDirectionAnimation = getRandomUnitVector3Oriented(rng, {0,0.1,-1});
+							}
+							else
+							{
+								changeHeadTimer = getRandomNumberFloat(rng, 1, 6);
+								changeHeadTimer += getRandomNumberFloat(rng, 1, 6);
+
+								if (getRandomChance(rng, 0.5))
+								{
+									direction = getRandomUnitVector(rng);
+								}
+
+								baseEntity->entity.lookDirectionAnimation = getRandomUnitVector3Oriented(rng, {0,0.1,-1});
+							}
+						}
 
 					}
+
+					
 
 					//curious entities look around more often.
 					if (changeHeadTimer > 2.f)
 					{
-						changeHeadTimer -= personalityBase.curious;
+						changeHeadTimer -= fromUShortToFloat(personalityBase.curious);
 					}
 				}
 
