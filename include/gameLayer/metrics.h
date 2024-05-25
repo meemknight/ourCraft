@@ -6,6 +6,7 @@ constexpr int META_CHUNK_SIZE = 32;
 constexpr int CHUNK_HEIGHT = 256;
 
 int modBlockToChunk(int x);
+glm::ivec2 modBlockToChunk(glm::ivec2);
 int divideChunk(int x);
 glm::ivec2 fromBlockPosToChunkPos(glm::ivec3 blockPos);
 glm::ivec2 fromBlockPosToChunkPos(int x, int z);

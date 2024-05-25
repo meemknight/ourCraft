@@ -61,24 +61,7 @@ void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
 	WorldSaver &worldSaver)
 {
 
-	
-	for (auto &c : chunkCache.savedChunks)
-	{
-		c.second->entityData.players.clear();
-	}
 
-	for (auto &client : clients)
-	{
-
-		auto cPos = determineChunkThatIsEntityIn(client.second.playerData.entity.position);
-
-		auto chunk = chunkCache.getChunkOrGetNull(cPos.x, cPos.y);
-
-		permaAssertComment(chunk, "Error, A chunk that a player is in unloaded...");
-
-		chunk->entityData.players.insert({client.first, &client.second.playerData});
-
-	}
 
 	if (1)
 	{

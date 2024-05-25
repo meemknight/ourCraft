@@ -83,7 +83,23 @@ struct RubberBand
 
 	void computeRubberBand(float deltaTime);
 
-	void addToRubberBand(glm::dvec3 direction) { this->direction += direction; initialSize = glm::length(direction); }
+	void addToRubberBand(glm::dvec3 direction) 
+	{ 
+		if (glm::length(direction) > 0.01)
+		{
+			this->direction += direction;
+			initialSize = glm::length(direction);
+
+			//auto copy = this->direction + direction;
+			//
+			//if (glm::length(copy) >= glm::length(direction))
+			//{
+			//	this->direction = copy;
+			//	initialSize = glm::length(direction);
+			//}
+		}
+
+	}
 };
 
 void computeRubberBand(
@@ -136,6 +152,8 @@ struct RubberBandOrientation <T, std::enable_if_t<hasBodyOrientation<T>>>
 	void computeRubberBandOrientation(float deltaTime, glm::vec2 bodyOrientation,
 		glm::vec3 lookDirectionAnimation)
 	{
+
+		if (bodyOrientation == glm::vec2{0,0}) { bodyOrientation = {1,0}; }
 
 		float angleBody = std::atan2(bodyOrientation.y, bodyOrientation.x);
 		float angleCurrent = std::atan2(rubberBandOrientation.y, rubberBandOrientation.x);
@@ -310,6 +328,16 @@ constexpr bool hasCanPushOthers = false;
 template <typename T>
 constexpr bool hasCanPushOthers<T, std::void_t<decltype(T::canPushOthers)>> = true;
 
+struct CollidesWithPlacedBlocks
+{
+	constexpr static bool collidesWithPlacedBlocks = true;
+};
+
+template <typename T, typename = void>
+constexpr bool hasCollidesWithPlacedBlocks = false;
+
+template <typename T>
+constexpr bool hasCollidesWithPlacedBlocks<T, std::void_t<decltype(T::collidesWithPlacedBlocks)>> = true;
 
 
 //dropped item doesn't inherit from this class, so if you want

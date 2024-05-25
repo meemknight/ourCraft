@@ -22,7 +22,7 @@ in flat int v_skyLightUnchanged;
 in flat int v_normalLight;
 
 
-uniform ShadingSettings
+uniform ShadingSettings 
 {
 	vec3 u_waterColor;
 	int u_tonemapper;

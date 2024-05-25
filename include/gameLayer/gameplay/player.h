@@ -4,7 +4,8 @@
 #include <gameplay/items.h>
 
 //this is the shared data
-struct Player : public PhysicalEntity
+struct Player : public PhysicalEntity, public CollidesWithPlacedBlocks,
+	public CanPushOthers
 {
 
 	glm::vec3 lookDirectionAnimation = {0,0,-1};

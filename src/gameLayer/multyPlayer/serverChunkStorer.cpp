@@ -89,21 +89,25 @@ std::vector<ColidableEntry> ServerChunkStorer::getCollisionsListThatCanPush(glm:
 	for (auto &c : chunks)
 	{
 
-		for (auto &e : c->entityData.players)
+		if constexpr (hasCanPushOthers<decltype(c->entityData.players[0]->entity)>)
 		{
-
-			if (boxColide(position, colider, e.second->getPosition(), e.second->entity.getColliderSize())
-				&& eidToIgnore != e.first
-				)
+			for (auto &e : c->entityData.players)
 			{
-				ColidableEntry other;
-				other.eid = e.first;
-				other.position = e.second->getPosition();
-				other.collider = e.second->entity.getColliderSize();
-				ret.push_back(other);
-			}
 
-		}
+				if (boxColide(position, colider, e.second->getPosition(), e.second->entity.getColliderSize())
+					&& eidToIgnore != e.first
+					)
+				{
+					ColidableEntry other;
+					other.eid = e.first;
+					other.position = e.second->getPosition();
+					other.collider = e.second->entity.getColliderSize();
+					ret.push_back(other);
+				}
+
+			}
+		};
+
 
 		callGenericCheckEntitiesForCollisions(std::make_integer_sequence<int, EntitiesTypesCount-1>(),
 			c->entityData, ret, position, colider, eidToIgnore);
@@ -1258,6 +1262,95 @@ bool ServerChunkStorer::entityAlreadyExists(std::uint64_t eid)
 	//implement!
 
 	return false;
+}
+
+
+
+
+template<class T>
+std::uint64_t genericCheckEntitiesForCollisionWithBlock(T &container, glm::ivec3 position)
+{
+	if constexpr (hasCollidesWithPlacedBlocks<decltype(container[0].entity)>)
+	{
+
+		for (auto &e : container)
+		{
+			auto rez = boxColideBlock(e.second.getPosition(), e.second.entity.getColliderSize(), position);
+			
+			if (rez)
+			{
+				return rez;
+			}
+		}
+	}
+
+	return 0;
+};
+
+template <int... Is>
+std::uint64_t callGenericCheckEntitiesForCollisionWithBlock(std::integer_sequence<int, Is...>,
+	EntityData &entityData, glm::ivec3 position)
+{
+
+	if constexpr (hasCollidesWithPlacedBlocks<decltype(entityData.players[0]->entity)>)
+	{
+		for (auto &e : entityData.players)
+		{
+			if (e.second)
+			{
+				auto rez = boxColideBlock(e.second->getPosition(), e.second->entity.getColliderSize(), position);
+
+				if (rez)
+				{
+					return rez;
+				}
+			}
+		}
+	}
+
+	return (genericCheckEntitiesForCollisionWithBlock(*entityData.template entityGetter<Is + 1>(),
+		position) || ...);
+
+}
+
+
+std::uint64_t ServerChunkStorer::anyEntityIntersectsWithBlock(glm::ivec3 position)
+{
+	
+	SavedChunk *chunksToCheck[9] = {};
+
+	glm::ivec2 chunkPos{divideChunk(position.x), divideChunk(position.z)};
+	
+	glm::ivec2 blockPos = modBlockToChunk(chunkPos);
+
+
+	chunksToCheck[0] = getChunkOrGetNull(chunkPos.x, chunkPos.y);
+
+	//todo
+	chunksToCheck[1] = getChunkOrGetNull(chunkPos.x+1, chunkPos.y);
+	chunksToCheck[2] = getChunkOrGetNull(chunkPos.x-1, chunkPos.y);
+	chunksToCheck[3] = getChunkOrGetNull(chunkPos.x, chunkPos.y+1);
+	chunksToCheck[4] = getChunkOrGetNull(chunkPos.x, chunkPos.y-1);
+	chunksToCheck[5] = getChunkOrGetNull(chunkPos.x+1, chunkPos.y+1);
+	chunksToCheck[6] = getChunkOrGetNull(chunkPos.x-1, chunkPos.y-1);
+	chunksToCheck[7] = getChunkOrGetNull(chunkPos.x+1, chunkPos.y-1);
+	chunksToCheck[8] = getChunkOrGetNull(chunkPos.x-1, chunkPos.y+1);
+
+
+	for (int i = 0; i < 9; i++)
+	{
+
+		if (chunksToCheck[i])
+		{
+			auto rez = callGenericCheckEntitiesForCollisionWithBlock
+			(std::make_integer_sequence<int, EntitiesTypesCount - 1>(), chunksToCheck[i]->entityData,
+				position);
+
+			if (rez) { return rez; }
+		}
+	}
+
+	return std::uint64_t(0);
 }
 
 

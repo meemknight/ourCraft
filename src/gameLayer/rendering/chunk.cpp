@@ -727,3 +727,8 @@ int modBlockToChunk(int x)
 		return x % CHUNK_SIZE;
 	}
 }
+
+glm::ivec2 modBlockToChunk(glm::ivec2 x)
+{
+	return glm::ivec2(modBlockToChunk(x.x), modBlockToChunk(x.y));
+}

@@ -6,7 +6,7 @@
 
 
 struct Cat: public PhysicalEntity, public HasOrientationAndHeadTurnDirection,
-	public MovementSpeedForLegsAnimations, public CanPushOthers
+	public MovementSpeedForLegsAnimations, public CanPushOthers, public CollidesWithPlacedBlocks
 {
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 

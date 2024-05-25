@@ -320,7 +320,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 
 			if (!error)
 			{
-				serverTask.t.type = Task::generateChunk;
+				serverTask.t.taskType = Task::generateChunk;
 				serverTask.t.pos = {packetData.chunkPosition.x, 0, packetData.chunkPosition.y};
 
 				serverTasks.push_back(serverTask);
@@ -334,7 +334,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 		case headerPlaceBlock:
 		{
 			Packet_PlaceBlock packetData = *(Packet_PlaceBlock *)data;
-			serverTask.t.type = Task::placeBlock;
+			serverTask.t.taskType = Task::placeBlock;
 			serverTask.t.pos = {packetData.blockPos};
 			serverTask.t.blockType = {packetData.blockType};
 			serverTask.t.eventId = packetData.eventId;
@@ -416,7 +416,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 
 			Packet_ClientDroppedItem *packetData = (Packet_ClientDroppedItem *)data;
 
-			serverTask.t.type = Task::droppedItemEntity;
+			serverTask.t.taskType = Task::droppedItemEntity;
 			serverTask.t.doublePos = packetData->position;
 			serverTask.t.blockCount = packetData->count;
 			serverTask.t.from = packetData->inventorySlot;
@@ -442,7 +442,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			}
 			Packet_ClientMovedItem *packetData = (Packet_ClientMovedItem *)data;
 
-			serverTask.t.type = Task::clientMovedItem;
+			serverTask.t.taskType = Task::clientMovedItem;
 			serverTask.t.itemType = packetData->itemType;
 			serverTask.t.from = packetData->from;
 			serverTask.t.to = packetData->to;
@@ -463,7 +463,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			}
 			Packet_ClientCraftedItem *packetData = (Packet_ClientCraftedItem *)data;
 
-			serverTask.t.type = Task::clientCraftedItem;
+			serverTask.t.taskType = Task::clientCraftedItem;
 			serverTask.t.itemType = packetData->itemType;
 			serverTask.t.blockCount = packetData->counter;
 			serverTask.t.to = packetData->to;
@@ -480,7 +480,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			}
 
 			Packet_ClientOverWriteItem *packetData = (Packet_ClientOverWriteItem *)data;
-			serverTask.t.type = Task::clientOverwriteItem;
+			serverTask.t.taskType = Task::clientOverwriteItem;
 			serverTask.t.itemType = packetData->itemType;
 			serverTask.t.to = packetData->to;
 			serverTask.t.blockCount = packetData->counter;
@@ -497,7 +497,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			}
 
 			Packet_ClientSwapItems *packetData = (Packet_ClientSwapItems *)data;
-			serverTask.t.type = Task::clientSwapItems;
+			serverTask.t.taskType = Task::clientSwapItems;
 			serverTask.t.from = packetData->from;
 			serverTask.t.to = packetData->to;
 			serverTasks.push_back(serverTask);
@@ -515,7 +515,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			}
 
 			Packet_ClientUsedItem *packetData = (Packet_ClientUsedItem *)data;
-			serverTask.t.type = Task::clientUsedItem;
+			serverTask.t.taskType = Task::clientUsedItem;
 			serverTask.t.from = packetData->from;
 			serverTask.t.itemType = packetData->itemType;
 			serverTask.t.pos = packetData->position;

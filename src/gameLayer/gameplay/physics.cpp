@@ -208,6 +208,12 @@ bool boxColide(glm::dvec3 p1, glm::vec3 s1,
 
 }
 
+bool boxColideBlock(glm::dvec3 p1, glm::vec3 s1, glm::ivec3 b)
+{
+	const float BLOCK_SIZE = 1.f;
+	return boxColide(p1, s1, {b.x,b.y - BLOCK_SIZE / 2.f,b.z}, glm::vec3(BLOCK_SIZE));
+}
+
 
 //todo implement
 //glm::vec3 boxColideDistance(const glm::dvec3 &p1, const glm::vec3 &s1,
@@ -283,10 +289,10 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 						{
 							float friction = b->getFriction();
 
-							if (boxColide(pos, size, {x,y - BLOCK_SIZE/2.f,z}, glm::vec3(BLOCK_SIZE)))
+							if (boxColideBlock(pos, size, {x,y,z}))
 							{
 
-								if (!boxColide(lastPos, size, {x,y - BLOCK_SIZE / 2.f,z}, glm::vec3(BLOCK_SIZE)))
+								if (!boxColideBlock(lastPos, size, {x,y,z}))
 								{
 									if (delta.x != 0)
 									{

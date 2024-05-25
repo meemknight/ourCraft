@@ -162,6 +162,8 @@ struct ServerChunkStorer
 	int unloadChunksThatNeedUnloading(WorldSaver &worldSaver, int count = 1);
 
 	bool entityAlreadyExists(std::uint64_t eid);
+
+	std::uint64_t anyEntityIntersectsWithBlock(glm::ivec3 position);
 };
 
 

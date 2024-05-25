@@ -12,6 +12,7 @@ struct DroppedItem: public PhysicalEntity
 
 
 	static glm::vec3 getMaxColliderSize();
+	glm::vec3 getColliderSize();
 
 };
 
@@ -26,6 +27,7 @@ struct DroppedItemServer
 {
 
 	static glm::vec3 getMaxColliderSize();
+	glm::vec3 getColliderSize();
 
 	DroppedItem getDataToSend();
 

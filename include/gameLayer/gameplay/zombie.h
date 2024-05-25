@@ -4,6 +4,7 @@
 
 
 struct Zombie: public PhysicalEntity, public CanPushOthers
+	, public HasOrientationAndHeadTurnDirection, public CollidesWithPlacedBlocks
 {
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
@@ -11,6 +12,8 @@ struct Zombie: public PhysicalEntity, public CanPushOthers
 	glm::vec3 getColliderSize();
 
 	glm::vec3 getMaxColliderSize();
+
+
 
 };
 
@@ -27,8 +30,10 @@ struct ZombieServer: public ServerEntity<Zombie>
 {
 
 	glm::vec2 direction = {};
-	int moving = 0;
 	float waitTime = 1;
+	float keepJumpingTimer = 0;
+	float randomSightBonusTimer = 1;
+
 
 	std::uint64_t playerLockedOn = 0;
 

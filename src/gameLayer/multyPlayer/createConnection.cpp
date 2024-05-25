@@ -20,7 +20,7 @@ void submitTaskClient(Task &t)
 	Packet p;
 	p.cid = data.cid;
 
-	switch (t.type)
+	switch (t.taskType)
 	{
 	case Task::generateChunk:
 	{
@@ -50,6 +50,7 @@ void submitTaskClient(Task &t)
 	//todo remove
 	case Task::droppedItemEntity:
 	{
+		permaAssert(0);
 		//p.header = headerClientDroppedItem;
 		//Packet_ClientDroppedItem packetData = {};
 		//packetData.position = t.doublePos;

@@ -362,6 +362,29 @@ void serverWorkerUpdate(
 
 	static std::minstd_rand rng(std::random_device{}());
 
+	std::vector<SendBlocksBack> sendNewBlocksToPlayers;
+	updateLoadedChunks(wg, structuresManager, biomesManager, sendNewBlocksToPlayers,
+		worldSaver);
+
+	for (auto &c : sd.chunkCache.savedChunks)
+	{
+		c.second->entityData.players.clear();
+	}
+
+	for (auto &client : getAllClients())
+	{
+
+		auto cPos = determineChunkThatIsEntityIn(client.second.playerData.entity.position);
+
+		auto chunk = sd.chunkCache.getChunkOrGetNull(cPos.x, cPos.y);
+
+		permaAssertComment(chunk, "Error, A chunk that a player is in unloaded...");
+
+		chunk->entityData.players.insert({client.first, &client.second.playerData});
+
+	}
+
+
 	//todo rather than a sort use buckets, so the clients can't DDOS the server with
 	//place blocks tasks, making generating chunks impossible. 
 	// 
@@ -380,7 +403,6 @@ void serverWorkerUpdate(
 	//	}
 	//);
 
-	std::vector<SendBlocksBack> sendNewBlocksToPlayers;
 
 	int chunksGenerated = 0;
 	int chunksLoaded = 0;
@@ -390,7 +412,7 @@ void serverWorkerUpdate(
 	{
 		auto &i = sd.waitingTasks.front();
 
-		if (i.t.type == Task::generateChunk)
+		if (i.t.taskType == Task::generateChunk)
 		{
 			auto client = getClient(i.cid); //todo this could fail when players leave so return pointer and check
 			bool wasGenerated = 0;
@@ -441,7 +463,7 @@ void serverWorkerUpdate(
 			if (wasGenerated) { chunksGenerated++; }
 		}
 		else
-			if (i.t.type == Task::placeBlock)
+			if (i.t.taskType == Task::placeBlock)
 			{
 				bool wasGenerated = 0;
 				//std::cout << "server recieved place block\n";
@@ -458,7 +480,6 @@ void serverWorkerUpdate(
 
 				if (client)
 				{
-
 					bool legal = 1;
 					{
 						auto f = settings.perClientSettings.find(i.cid);
@@ -468,16 +489,33 @@ void serverWorkerUpdate(
 							{
 								legal = false;
 							}
-
 						}
 					}
-
 
 					auto b = chunk->chunk.safeGet(convertedX, i.t.pos.y, convertedZ);
 
 					if (!b)
 					{
 						legal = false;
+					}
+					else
+					{
+						//don't place blocks over others
+						if (i.t.blockType && b->type) 
+						{
+							legal = false; 
+						}
+						else if (isColidable(i.t.blockType))
+						{
+							//don't place blocks over entities
+
+							if (sd.chunkCache.anyEntityIntersectsWithBlock(i.t.pos))
+							{
+								legal = false;
+							}
+
+						}
+
 					}
 
 					legal = computeRevisionStuff(*client, legal, i.t.eventId);
@@ -506,7 +544,7 @@ void serverWorkerUpdate(
 
 
 			}
-			else if (i.t.type == Task::droppedItemEntity)
+			else if (i.t.taskType == Task::droppedItemEntity)
 			{
 
 				auto client = getClientNotLocked(i.cid);
@@ -586,7 +624,7 @@ void serverWorkerUpdate(
 
 
 			}
-			else if (i.t.type == Task::clientMovedItem)
+			else if (i.t.taskType == Task::clientMovedItem)
 			{
 				
 				auto client = getClientNotLocked(i.cid);
@@ -656,7 +694,7 @@ void serverWorkerUpdate(
 				};
 
 			}
-			else if (i.t.type == Task::clientOverwriteItem)
+			else if (i.t.taskType == Task::clientOverwriteItem)
 			{
 
 				//todo if creative.
@@ -691,7 +729,7 @@ void serverWorkerUpdate(
 				}
 
 			}
-			else if (i.t.type == Task::clientSwapItems)
+			else if (i.t.taskType == Task::clientSwapItems)
 			{
 
 				auto client = getClientNotLocked(i.cid);
@@ -716,7 +754,7 @@ void serverWorkerUpdate(
 				}
 
 			}
-			else if (i.t.type == Task::clientCraftedItem)
+			else if (i.t.taskType == Task::clientCraftedItem)
 			{
 
 				auto client = getClientNotLocked(i.cid);
@@ -775,7 +813,7 @@ void serverWorkerUpdate(
 				}
 
 			}
-			else if (i.t.type == Task::clientUsedItem)
+			else if (i.t.taskType == Task::clientUsedItem)
 			{
 
 				auto client = getClientNotLocked(i.cid);
@@ -913,9 +951,6 @@ void serverWorkerUpdate(
 		}
 
 
-		updateLoadedChunks(wg, structuresManager, biomesManager, sendNewBlocksToPlayers,
-			worldSaver);
-	
 		sd.chunkCache.unloadChunksThatNeedUnloading(worldSaver, 10);
 
 		//todo error and warning logs for server.

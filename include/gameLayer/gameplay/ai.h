@@ -324,12 +324,12 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 			}
 			else
 			{
-				moving = getRandomChance(rng, 0.4 + fromUShortToFloat(personalityBase.playfull)*0.3 );
+				moving = getRandomChance(rng, 0.2 + fromUShortToFloat(personalityBase.playfull)*0.3 );
 				waitTime = getRandomNumberFloat(rng, 1, 7);
 
 				if (!moving)
 				{
-					waitTime += getRandomNumberFloat(rng, 0, 10);
+					waitTime += getRandomNumberFloat(rng, 0, 5);
 					waitTime += getRandomNumberFloat(rng, 0, 5);
 				}
 

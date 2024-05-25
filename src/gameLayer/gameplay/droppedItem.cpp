@@ -20,9 +20,19 @@ glm::vec3 DroppedItem::getMaxColliderSize()
 	return {0.4,0.4,0.4};
 }
 
+glm::vec3 DroppedItem::getColliderSize()
+{
+	return getMaxColliderSize();
+}
+
 glm::vec3 DroppedItemServer::getMaxColliderSize()
 {
 	return {0.4,0.4,0.4};
+}
+
+glm::vec3 DroppedItemServer::getColliderSize()
+{
+	return getMaxColliderSize();
 }
 
 DroppedItem DroppedItemServer::getDataToSend()

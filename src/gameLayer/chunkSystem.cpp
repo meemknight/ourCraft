@@ -352,7 +352,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 			{
 				Task t;
 
-				t.type = Task::generateChunk;
+				t.taskType = Task::generateChunk;
 				t.pos = glm::ivec3(x + minPos.x, 0, z + minPos.y);
 				t.playerPosForChunkGeneration.x = playerBlockPosition.x;
 				t.playerPosForChunkGeneration.y = playerBlockPosition.z;
@@ -1049,7 +1049,7 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, BlockType type,
 		if (canBlockBePlaced(type, b->type))
 		{
 			Task task;
-			task.type = Task::placeBlock;
+			task.taskType = Task::placeBlock;
 			task.pos = pos;
 			task.blockType = type;
 			task.eventId = undoQueue.currentEventId;

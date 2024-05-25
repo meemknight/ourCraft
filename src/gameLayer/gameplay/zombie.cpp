@@ -7,6 +7,7 @@
 #include <gameplay/zombie.h>
 #include <multyPlayer/serverChunkStorer.h>
 #include <iostream>
+#include <glm/gtx/quaternion.hpp>
 
 static const auto frontHands = glm::rotate(glm::radians(90.f), glm::vec3{1.f,0.f,0.f});
 
@@ -54,6 +55,9 @@ void ZombieClient::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 void ZombieClient::setEntityMatrix(glm::mat4 *skinningMatrix)
 {
+	skinningMatrix[1] = skinningMatrix[1] * glm::toMat4(
+		glm::quatLookAt(glm::normalize(getRubberBandLookDirection()), glm::vec3(0, 1, 0)));
+
 	animatePlayerHandsZombie(skinningMatrix, currentHandsAngle);
 }
 
@@ -71,9 +75,20 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 )
 {
 
-	constexpr float followDistance = 32;
-	constexpr float keepFollowDistance = 42;
+	float followDistance = 22;
+	float keepFollowDistance = 33;
+	float randomSightBonus = 10;
 	glm::dvec3 playerLockedOnPosition = getPosition();
+
+	randomSightBonusTimer -= deltaTime;
+	if (randomSightBonusTimer <= 0)
+	{
+		randomSightBonusTimer = getRandomNumberFloat(rng, 3, 12);
+		randomSightBonusTimer += getRandomNumberFloat(rng, 3, 12);
+		randomSightBonusTimer += getRandomNumberFloat(rng, 3, 12);
+
+		followDistance += randomSightBonus;
+	}
 
 	if (!playerLockedOn)
 	{
@@ -118,17 +133,32 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 	bool closeToPlayer = playerLockedOn && (glm::length(playerLockedOnPosition - getPosition()) > 1.2f);
 
-	direction = {0,0};
 
 	bool pathFindingSucceeded = 0;
-	if (playerLockedOn && closeToPlayer)
+	if (keepJumpingTimer >= 0)
+	{
+		keepJumpingTimer -= deltaTime;
+		if (direction != glm::vec2(0, 0))
+		{
+			pathFindingSucceeded = true;
+		}
+		//else
+		//{
+		//	direction = {0,0};
+		//}
+	}
+	//else
+	//{
+	//	direction = {0,0};
+	//}
+
+	if (!pathFindingSucceeded && playerLockedOn && closeToPlayer)
 	{
 
 		auto path = pathFinding.find(playerLockedOn);
 
 		if (path != pathFinding.end())
 		{
-
 
 			auto pos = from3DPointToBlock(getPosition());
 
@@ -144,6 +174,7 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 				//interpolate
 				int maxCounterLoop = 100;
+				int interpolateSteps = 0;
 				if(1) 
 				while (maxCounterLoop-- > 0)
 				{
@@ -183,7 +214,8 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 								glm::dvec3 leftVector = -glm::cross(direction, glm::dvec3(0, 1, 0));
 
 								glm::dvec3 start2 = start;
-								//start += leftVector * 0.15;
+								start += leftVector * 0.20;
+								start2 -= leftVector * 0.20;
 
 								for (int i = 0; i< (checklength*10)-2; i++)
 								{
@@ -255,6 +287,7 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 								}
 								else
 								{
+									interpolateSteps++;
 									interPolateNodeNotGood = *newFoundNode;
 									interPolateNode = *newFoundNode;
 								}
@@ -275,13 +308,29 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 				}
 
+				//if (interpolateSteps <= 1 && 
+				//	glm::length(glm::dvec2(pos.x + 0.5,pos.z + 0.5) - glm::dvec2(getPosition().x, getPosition().z))
+				//	< 0.5
+				//	)
+				//{
+				//	glm::vec3 d = glm::dvec3(pos.x + 0.5, 0, pos.z + 0.5)
+				//		- getPosition();
+				//	d.y = 0;
+				//	std::cout << "yes";
+				//	direction.x = d.x;
+				//	direction.y = d.z;
+				//}
+				//else
+				{
+					glm::vec3 d = glm::dvec3(interPolateNode.second.returnPos)
+						- getPosition();
+					d.y = 0;
 
-		     	glm::vec3 d = glm::dvec3(interPolateNode.second.returnPos)
-					- getPosition();
-				d.y = 0;
+					direction.x = d.x;
+					direction.y = d.z;
+				}
 
-				direction.x = d.x;
-				direction.y = d.z;
+		     	
 
 				if (glm::length(direction) != 0)
 				{
@@ -321,12 +370,13 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 		if (waitTime < 0)
 		{
-			moving = getRandomNumber(rng, 0, 1);
+			int moving = getRandomChance(rng, 0.5);
 			waitTime += getRandomNumberFloat(rng, 1, 8);
 
 			if (moving)
 			{
 				direction = getRandomUnitVector(rng);
+				waitTime += getRandomNumberFloat(rng, 0, 2);
 			}
 		}
 	};
@@ -350,6 +400,7 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 				if (!b || !b->isColidable())
 				{
 					entity.forces.jump();
+					keepJumpingTimer = 0.4;
 				}
 			}
 
@@ -397,13 +448,12 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 	getPosition().z += move.y;
 
 
-
-
 	doCollisionWithOthers(getPosition(), entity.getMaxColliderSize(), entity.forces,
 		serverChunkStorer, yourEID);
 
-
 	entity.update(deltaTime, chunkGetter);
+
+	entity.bodyOrientation = direction;
 
 	return true;
 }

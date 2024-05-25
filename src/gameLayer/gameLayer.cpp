@@ -37,7 +37,7 @@ bool initGame()
 	programData.GPUProfiler.initGPUProfiler();
 
 
-	//gl2d::setVsync(false);
+	gl2d::setVsync(false);
 	programData.ui.init();
 
 	programData.numbersTexture.loadFromFile(RESOURCES_PATH "numbers.png", true, true);

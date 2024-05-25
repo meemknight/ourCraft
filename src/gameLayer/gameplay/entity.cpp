@@ -76,6 +76,8 @@ void computeRubberBand(RubberBand &rubberBand, float deltaTime)
 
 int getRandomNumber(std::minstd_rand &rng, int min, int max)
 {
+	if (min == 0 && max == 1) { return rng() % 2; }
+
 	std::uniform_int_distribution<int> dist(min, max);
 	return dist(rng);
 }

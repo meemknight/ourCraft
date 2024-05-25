@@ -52,7 +52,7 @@ void LightSystem::update(ChunkSystem &chunkSystem)
 	static std::unordered_set<glm::ivec2> chunksToUpdate;
 	chunksToUpdate.clear();
 	chunksToUpdate.reserve(300);
-
+	
 	auto setChunkAndNeighboursFlagDirtyFromBlockPos = [&](int x, int z)
 	{
 		const int o = 5;
