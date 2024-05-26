@@ -131,8 +131,13 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 		}
 	}
 
-	bool closeToPlayer = playerLockedOn && (glm::length(playerLockedOnPosition - getPosition()) > 1.2f);
+	//auto playeerPos2D = playerLockedOnPosition;
+	//playeerPos2D.y = 0;
+	//auto pos2D = getPosition();
+	//pos2D.y = 0;
 
+	bool closeToPlayer = playerLockedOn && (glm::length(playerLockedOnPosition - getPosition()) > 1.2f);
+	closeToPlayer = playerLockedOn;
 
 	bool pathFindingSucceeded = 0;
 	if (keepJumpingTimer >= 0)

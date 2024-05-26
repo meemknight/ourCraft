@@ -1246,13 +1246,16 @@ void main()
 			float menhetanDistance = dot((abs(fragmentPositionI-lights[i].rgb)),vec3(1));
 			//float menhetanDistance = dot((abs(L)),vec3(1));
 
+			if(v_normalLight == 0){continue;}
+
 			float LightDist = length(L);
 			if((15-menhetanDistance) + 0.1 > v_normalLight){continue;}
 			L = normalize(L);		
 
 			//light += computeLight(N,L,V) * atenuationFunction(LightDist)*1.f;
 			finalColor += computePointLightSource(L, metallic, roughness, vec3(pointLightColor,pointLightColor,pointLightColor)	* causticsColor, V, 
-				textureColor.rgb, N, F0) * atenuationFunction(LightDist);
+				textureColor.rgb, N, F0) 
+				* atenuationFunction(LightDist) * ((v_normalLight/15.f) + 1.f) / 2.f;
 				
 		}
 		//light = 0;
