@@ -95,11 +95,12 @@ bool initGameplay(ProgramData &programData, const char *c)
 	//playerData.timer;
 
 
-	gameData.chunkSystem.init(20);
+	gameData.chunkSystem.init(30);
 
 	gameData.sunShadow.init();
 
-
+	//-5359
+	//6348
 	//todo clear history stuff here
 	//programData.GPUProfiler.;
 
@@ -449,7 +450,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 		PhysicalSettings settings;
-		settings.sideFriction = 0;
+		settings.sideFriction = 2.f;
 
 		gameData.entityManager.localPlayer.entity.updateForces(deltaTime, !gameData.fly, settings);
 

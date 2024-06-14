@@ -20,7 +20,6 @@ struct ClientEntityManager : public EntityDataClient
 
 
 
-
 	LocalPlayer localPlayer;
 
 	void dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int playerSquareDistance);

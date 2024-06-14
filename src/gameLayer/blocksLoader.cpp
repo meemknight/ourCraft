@@ -751,6 +751,16 @@ void BlocksLoader::loadAllTextures()
 
 			in = rgbToHSV(in);
 			
+			//if (in.g > 0.2)
+			//{
+			//	in.g = 0;
+			//	in.b = std::sqrt(in.b);
+			//}
+			//else
+			//{
+			//	in.b = std::pow(in.b, 1.5);
+			//}
+
 			in.x += 0.3;
 			in.x = glm::fract(in.x);
 			

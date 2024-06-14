@@ -6,6 +6,7 @@
 void DroppedItem::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
 {
 
+
 	//THIS IS SHARED CODE!!!!
 	PhysicalSettings ps;
 	ps.gravityModifier = 0.5f;
@@ -141,15 +142,14 @@ bool DroppedItemServer::update(float deltaTime, decltype(chunkGetterSignature) *
 	//auto client = getClient(0);
 	//sendPlayerInventory(client);
 
+	doCollisionWithOthers(getPosition(), getMaxColliderSize(), entity.forces,
+		serverChunkStorer, yourEID);
 	
 	//THIS IS SHARED CODE!!!!
 	PhysicalSettings ps;
 	ps.gravityModifier = 0.5f;
+	ps.sideFriction = 1.f;
 	entity.updateForces(deltaTime, true, ps);
-
-	doCollisionWithOthers(getPosition(), getMaxColliderSize(), entity.forces,
-		serverChunkStorer, yourEID);
-
 	entity.resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime, getMaxColliderSize(), ps);
 
 

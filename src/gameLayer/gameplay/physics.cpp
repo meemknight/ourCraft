@@ -117,35 +117,22 @@ bool checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
 		newPos.x = performCollision({pos.x, lastPos.y, lastPos.z}, lastPos, colliderSize, {delta.x, 0, 0},
 			chunkGetter, rez, forces, deltaTime, drag, physicalSettings).x;
 	}
-	else
-	{
-		//check for collisions
-		//performCollision({pos.x, lastPos.y, lastPos.z}, lastPos, colliderSize, {0.001, 0, 0},
-		//	chunkGetter, rez, forces, deltaTime, drag);
-		//performCollision({pos.x, lastPos.y, lastPos.z}, lastPos, colliderSize, {-0.001, 0, 0},
-		//	chunkGetter, rez, forces, deltaTime, drag);
-	}
-
+	
 	if (delta.z)
 	{
 		newPos.z = performCollision({newPos.x, lastPos.y, pos.z}, lastPos, colliderSize, {0, 0, delta.z},
 			chunkGetter, rez, forces, deltaTime, drag, physicalSettings).z;
 	}
-	else
-	{
-		//check for collisions
-		//performCollision({newPos.x, newPos.y, pos.z}, lastPos, colliderSize, {0, 0, 0.001},
-		//	chunkGetter, rez, forces, deltaTime, drag).z;
-		//performCollision({newPos.x, newPos.y, pos.z}, lastPos, colliderSize, {0, 0, -0.001},
-		//	chunkGetter, rez, forces, deltaTime, drag).z;
-	}
-
+	
 	if (delta.y)
 	{
 		newPos.y = performCollision({newPos.x, pos.y, newPos.z}, lastPos, colliderSize, {0, delta.y, 0},
 			chunkGetter, rez, forces, deltaTime, drag, physicalSettings).y;
 	}
 	
+	//goofy ahh collision
+	//newPos = performCollision(newPos, lastPos, colliderSize, delta,
+	//	chunkGetter, rez, forces, deltaTime, drag, physicalSettings);
 
 	pos = newPos;
 
@@ -470,7 +457,8 @@ void colideWithOthers(glm::dvec3 &pos, glm::vec3 collider, MotionState &forces, 
 			delta /= l;
 		}
 
-		delta *= OTHERS_PUSHING_YOU_FORCE;
+		delta *= OTHERS_PUSHING_YOU_FORCE;// *15;
+		//delta.y *= 0.001;
 
 		applyImpulse(forces, delta);
 	}

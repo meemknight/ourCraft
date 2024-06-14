@@ -37,6 +37,7 @@ struct PigServer: public ServerEntity<Pig>,
 
 	void appendDataToDisk(std::ofstream &f, std::uint64_t eId);
 
+	//todo change to init
 	void configureSpawnSettings(std::minstd_rand &rng);
 
 };

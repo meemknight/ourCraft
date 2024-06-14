@@ -63,7 +63,7 @@ void updateLoadedChunks(
 	StructuresManager &structureManager,
 	BiomesManager &biomesManager,
 	std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
-	WorldSaver &worldSaver);
+	WorldSaver &worldSaver, bool generateNewChunks);
 
 
 struct ServerData
@@ -361,10 +361,16 @@ void serverWorkerUpdate(
 	serverTask.clear();
 
 	static std::minstd_rand rng(std::random_device{}());
+	static bool generateNewChunks = 0; //this is set to true only once per tick
 
+	std::cout << "Before\n";
 	std::vector<SendBlocksBack> sendNewBlocksToPlayers;
 	updateLoadedChunks(wg, structuresManager, biomesManager, sendNewBlocksToPlayers,
-		worldSaver);
+		worldSaver, true);
+	generateNewChunks = 0;
+
+	std::cout << "After\n";
+
 
 	for (auto &c : sd.chunkCache.savedChunks)
 	{
@@ -544,6 +550,9 @@ void serverWorkerUpdate(
 
 
 			}
+
+			//todo this and also item usages need to use the current inventory's revision state!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			//	for validation
 			else if (i.t.taskType == Task::droppedItemEntity)
 			{
 
@@ -570,12 +579,10 @@ void serverWorkerUpdate(
 						if (from->type != i.t.blockType)
 						{
 							serverAllows = false;
-							sendPlayerInventory(*client);
 						}
 						else if(from->counter < i.t.blockCount)
 						{
 							serverAllows = false;
-							sendPlayerInventory(*client);
 						}
 					}
 
@@ -614,6 +621,11 @@ void serverWorkerUpdate(
 						from->counter -= i.t.blockCount;
 						if (!from->counter) { *from = {}; }
 
+					}
+
+					if (!serverAllows)
+					{
+						sendPlayerInventory(*client);
 					}
 
 				}
@@ -836,7 +848,7 @@ void serverWorkerUpdate(
 							if (from->type == ItemTypes::pigSpawnEgg)
 							{
 								Pig p;
-								glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.5,-0.49,0.5);
+								glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.0,-0.49,0.0);
 								p.position = position;
 								p.lastPosition = position;
 								spawnPig(sd.chunkCache, p, worldSaver, rng);
@@ -844,7 +856,7 @@ void serverWorkerUpdate(
 							else if (from->type == ItemTypes::zombieSpawnEgg)
 							{
 								Zombie z;
-								glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.5, -0.49, 0.5);
+								glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.0, -0.49, 0.0);
 								z.position = position;
 								z.lastPosition = position;
 								spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement(worldSaver));
@@ -852,7 +864,7 @@ void serverWorkerUpdate(
 							else if (from->type == ItemTypes::catSpawnEgg)
 							{
 								Cat c;
-								glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.5, -0.49, 0.5);
+								glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.0, -0.49, 0.0);
 								c.position = position;
 								c.lastPosition = position;
 								spawnCat(sd.chunkCache, c, worldSaver, rng);
@@ -907,6 +919,24 @@ void serverWorkerUpdate(
 
 	if (sd.tickTimer > 1.f / targetTicksPerSeccond)
 	{
+		//for (auto &c : sd.chunkCache.savedChunks)
+		//{
+		//	c.second->entityData.players.clear();
+		//}
+		//
+		//for (auto &client : getAllClients())
+		//{
+		//
+		//	auto cPos = determineChunkThatIsEntityIn(client.second.playerData.entity.position);
+		//
+		//	auto chunk = sd.chunkCache.getChunkOrGetNull(cPos.x, cPos.y);
+		//
+		//	permaAssertComment(chunk, "Error, A chunk that a player is in unloaded...");
+		//
+		//	chunk->entityData.players.insert({client.first, &client.second.playerData});
+		//
+		//}
+		generateNewChunks = true;
 
 		sd.tickTimer -= (1.f / targetTicksPerSeccond);
 		sd.ticksPerSeccond++;
@@ -1073,8 +1103,10 @@ void updateLoadedChunks(
 	StructuresManager &structureManager,
 	BiomesManager &biomesManager,
 	std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
-	WorldSaver &worldSaver)
+	WorldSaver &worldSaver, bool generateNewChunks)
 {
+
+	constexpr const int MAX_GENERATE = 1;
 
 	for (auto &c : sd.chunkCache.savedChunks)
 	{
@@ -1083,13 +1115,17 @@ void updateLoadedChunks(
 
 	auto clientsCopy = getAllClients();
 
+
 	for (auto &c : clientsCopy)
 	{
-		
+
+		int geenratedThisFrame = 0;
+
 		glm::ivec2 pos(divideChunk(c.second.playerData.entity.position.x),
 			divideChunk(c.second.playerData.entity.position.z));
 		
 		int distance = (c.second.playerData.entity.chunkDistance/2) + 1;
+
 
 		for (int i = -distance; i <= distance; i++)
 			for (int j = -distance; j <= distance; j++)
@@ -1100,16 +1136,35 @@ void updateLoadedChunks(
 
 				if (dist <= distance)
 				{
+
 					auto finalPos = pos + glm::ivec2(i, j);
-					auto c = sd.chunkCache.getOrCreateChunk(finalPos.x, finalPos.y,
-						wg, structureManager, biomesManager, sendNewBlocksToPlayers, true,
-						nullptr, worldSaver, nullptr
+					SavedChunk *c = 0;
+
+					//always generate the chunk that the player is in
+					if ((generateNewChunks && (geenratedThisFrame < MAX_GENERATE)) || (i == 0 && j == 0))
+					{
+						bool generated = 0;
+
+						c = sd.chunkCache.getOrCreateChunk(finalPos.x, finalPos.y,
+							wg, structureManager, biomesManager, sendNewBlocksToPlayers, true,
+							nullptr, worldSaver, &generated
 						);
 
+						if (generated)
+						{
+							geenratedThisFrame++;
+						}
+					}
+					else
+					{
+						c = sd.chunkCache.getChunkOrGetNull(finalPos.x, finalPos.y);
+					}
+					
 					if (c)
 					{
 						c->otherData.shouldUnload = false;
 					}
+					
 				}
 			}
 	}
