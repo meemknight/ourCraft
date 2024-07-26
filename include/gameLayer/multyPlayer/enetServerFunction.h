@@ -27,10 +27,15 @@ struct Client
 };
 
 Client getClient(std::uint64_t cid);
+Client *getClientSafe(std::uint64_t cid);
 Client *getClientNotLocked(std::uint64_t cid);
 std::unordered_map<std::uint64_t, Client> getAllClients();
 
-void sendPlayerInventory(Client &client, int channel = channelChunksAndBlocks);
+void sendPlayerInventoryAndIncrementRevision(Client &client, 
+	int channel = channelChunksAndBlocks);
+
+void sendPlayerInventoryNotIncrementRevision(Client &client,
+	int channel = channelChunksAndBlocks);
 
 
 void broadCast(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel);

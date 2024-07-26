@@ -1157,6 +1157,23 @@ bool operator==(const BlockInChunkPos &a, const BlockInChunkPos &b)
 	return a.x == b.x && a.y == b.y && a.z == b.z;
 }
 
+std::array<glm::ivec2, 9> *getChunkNeighboursOffsets()
+{
+	static std::array<glm::ivec2, 9> checkOffsets = {
+		glm::ivec2(0,0),
+		glm::ivec2(1,0),
+		glm::ivec2(-1,0),
+		glm::ivec2(0,1),
+		glm::ivec2(0,-1),
+		glm::ivec2(1,-1),
+		glm::ivec2(-1,-1),
+		glm::ivec2(1,1),
+		glm::ivec2(-1,1),
+	};
+
+	return &checkOffsets;
+}
+
 
 
 void ServerChunkStorer::cleanup()
@@ -1167,7 +1184,6 @@ void ServerChunkStorer::cleanup()
 	}
 	*this = {};
 }
-
 
 
 bool ServerChunkStorer::saveNextChunk(WorldSaver &worldSaver, int count, int entitySaver)

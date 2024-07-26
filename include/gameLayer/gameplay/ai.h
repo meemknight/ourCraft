@@ -9,7 +9,6 @@
 #include <array>
 
 
-
 struct Personality
 {
 	unsigned short fearfull = fromFloatToUShort(0.5f);

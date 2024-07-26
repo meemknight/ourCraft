@@ -138,6 +138,9 @@ bool ClientEntityManager::dropItemByClient(
 	packetData.motionState = ms;
 	packetData.timer = timer;
 	packetData.type = from->type;
+	packetData.revisionNumberInventory = inventory.revisionNumber;
+
+	std::cout << "My revision : " << (int)inventory.revisionNumber << "\n";
 
 	sendPacket(getServer(), p, (char *)&packetData, sizeof(packetData), true,
 		channelChunksAndBlocks);

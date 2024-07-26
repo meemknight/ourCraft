@@ -644,6 +644,7 @@ bool placeItem(PlayerInventory &inventory, int from, int to, int counter)
 			packet.from = from;
 			packet.to = to;
 			packet.itemType = toItem->type;
+			packet.revisionNumber = inventory.revisionNumber;
 
 			sendPacket(clientData.server, headerClientMovedItem, clientData.cid,
 				&packet, sizeof(packet), true, channelChunksAndBlocks);
@@ -670,6 +671,7 @@ bool placeItem(PlayerInventory &inventory, int from, int to, int counter)
 					packet.from = from;
 					packet.to = to;
 					packet.itemType = toItem->type;
+					packet.revisionNumber = inventory.revisionNumber;
 
 					sendPacket(clientData.server, headerClientMovedItem, clientData.cid,
 						&packet, sizeof(packet), true, channelChunksAndBlocks);
@@ -688,6 +690,7 @@ bool placeItem(PlayerInventory &inventory, int from, int to, int counter)
 					packet.from = from;
 					packet.to = to;
 					packet.itemType = toItem->type;
+					packet.revisionNumber = inventory.revisionNumber;
 
 					sendPacket(clientData.server, headerClientMovedItem, clientData.cid,
 						&packet, sizeof(packet), true, channelChunksAndBlocks);
@@ -713,6 +716,7 @@ void cratedOneItem(PlayerInventory &inventory, Item &itemToCraft, int to)
 	packet.counter = itemToCraft.counter;
 	packet.to = to;
 	packet.itemType = itemToCraft.type;
+	packet.revisionNumber = inventory.revisionNumber;
 
 	sendPacket(clientData.server, headerClientCraftedItem, clientData.cid,
 		&packet, sizeof(packet), true, channelChunksAndBlocks);
@@ -772,6 +776,7 @@ bool grabItem(PlayerInventory &inventory, int from, int to, int counter)
 			packet.from = from;
 			packet.to = to;
 			packet.itemType = toItem->type;
+			packet.revisionNumber = inventory.revisionNumber;
 
 			sendPacket(clientData.server, headerClientMovedItem, clientData.cid,
 				&packet, sizeof(packet), true, channelChunksAndBlocks);
@@ -797,6 +802,7 @@ bool forceOverWriteItem(PlayerInventory &inventory, int index, Item &item)
 		packet.counter = item.counter;
 		packet.itemType = item.type;
 		packet.to = index;
+		packet.revisionNumber = inventory.revisionNumber;
 
 		sendPacket(clientData.server, headerClientOverWriteItem, clientData.cid,
 			&packet, sizeof(packet), true, channelChunksAndBlocks);

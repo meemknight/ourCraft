@@ -168,19 +168,4 @@ struct ServerChunkStorer
 
 
 
-inline std::array<glm::ivec2, 9> *getChunkNeighboursOffsets()
-{
-	static std::array<glm::ivec2, 9> checkOffsets = {
-		glm::ivec2(0,0),
-		glm::ivec2(1,0),
-		glm::ivec2(-1,0),
-		glm::ivec2(0,1),
-		glm::ivec2(0,-1),
-		glm::ivec2(1,-1),
-		glm::ivec2(-1,-1),
-		glm::ivec2(1,1),
-		glm::ivec2(-1,1),
-	};
-
-	return &checkOffsets;
-};
+std::array<glm::ivec2, 9> *getChunkNeighboursOffsets();

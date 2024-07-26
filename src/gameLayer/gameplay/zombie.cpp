@@ -93,7 +93,8 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 	if (!playerLockedOn)
 	{
 
-		//std temporary allocator
+		//todo temporary allocator
+
 		std::vector<std::uint64_t> close;
 
 		for (auto &p : playersPosition)

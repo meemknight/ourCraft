@@ -93,4 +93,6 @@ struct PlayerInventory
 
 	//removes crafting ingredients from crafting slot
 	void craft(int count = 1);
+
+	unsigned char revisionNumber = 0;
 };

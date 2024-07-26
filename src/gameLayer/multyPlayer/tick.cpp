@@ -45,6 +45,33 @@ void genericBroadcastEntityDeleteFromServerToPlayer(std::uint64_t eid, bool reli
 		nullptr, reliable, channelEntityPositions);
 }
 
+void entityDeleteFromServerToPlayer(std::uint64_t clientToSend,
+	std::uint64_t eid, bool reliable)
+{
+
+	auto client = getClientSafe(clientToSend);
+
+	if (client)
+	{
+		entityDeleteFromServerToPlayer(*client, eid, reliable);
+	}
+
+}
+
+void entityDeleteFromServerToPlayer(Client &client, 
+	std::uint64_t eid, bool reliable)
+{
+
+	Packet packet;
+	packet.header = headerRemoveEntity;
+
+	Packet_RemoveEntity data;
+	data.EID = eid;
+
+	sendPacket(client.peer, packet, (const char *)&data, sizeof(data),
+		reliable, channelEntityPositions);
+}
+
 
 template<class T>
 bool genericCallUpdateForEntity(T &e,

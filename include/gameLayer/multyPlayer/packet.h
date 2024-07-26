@@ -99,8 +99,10 @@ struct Packet_ClientUsedItem
 	glm::ivec3 position = {};
 	unsigned short itemType = 0;
 	unsigned char from = 0;
+	unsigned char revisionNumber = 0;
 };
 
+//todo add revision number to client drop item
 struct Packet_RecieveDroppedItemUpdate
 {
 	DroppedItem entity = {};
@@ -114,6 +116,7 @@ struct Packet_ClientMovedItem
 	unsigned char from;
 	unsigned char to;
 	unsigned char counter;
+	unsigned char revisionNumber;
 };
 
 struct Packet_ClientCraftedItem
@@ -121,6 +124,7 @@ struct Packet_ClientCraftedItem
 	unsigned short itemType;
 	unsigned short counter;
 	unsigned char to;
+	unsigned char revisionNumber;
 };
 
 
@@ -129,12 +133,14 @@ struct Packet_ClientOverWriteItem
 	unsigned short itemType;
 	unsigned char to;
 	unsigned char counter;
+	unsigned char revisionNumber;
 };
 
 struct Packet_ClientSwapItems
 {
 	unsigned char from;
 	unsigned char to;
+	unsigned char revisionNumber;
 };
 
 struct Packet_UpdateZombie
@@ -234,6 +240,7 @@ struct Packet_ClientDroppedItem
 	std::uint64_t timer = 0;
 	unsigned char inventorySlot = 0;
 	unsigned char count = 0;
+	unsigned char revisionNumberInventory = 0;
 	unsigned short type = 0;
 	MotionState motionState = {};
 };

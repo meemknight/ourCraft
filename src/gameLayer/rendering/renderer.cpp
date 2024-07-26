@@ -2949,3 +2949,5 @@ void Renderer::FBO::clearFBO()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
+
+

@@ -124,7 +124,7 @@ bool DroppedItemServer::update(float deltaTime, decltype(chunkGetterSignature) *
 				int pickupped = client->playerData.inventory.tryPickupItem(item);
 				if (pickupped)
 				{
-					sendPlayerInventory(*client);
+					sendPlayerInventoryAndIncrementRevision(*client);
 
 					item.counter -= pickupped;
 					if(item.counter <= 0)

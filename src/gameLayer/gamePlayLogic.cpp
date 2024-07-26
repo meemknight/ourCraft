@@ -450,7 +450,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 		PhysicalSettings settings;
-		settings.sideFriction = 2.f;
+		//settings.sideFriction = 2.f;
 
 		gameData.entityManager.localPlayer.entity.updateForces(deltaTime, !gameData.fly, settings);
 
@@ -579,6 +579,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 							data.from = gameData.currentItemSelected;
 							data.itemType = item.type;
 							data.position = *blockToPlace;
+							data.revisionNumber = player.inventory.revisionNumber;
 
 							sendPacket(getServer(), headerClientUsedItem, player.entityId,
 								&data, sizeof(data), true, channelChunksAndBlocks);
@@ -679,6 +680,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		gameData.gameplayFrameProfiler.endSubProfile("rendering");
 	}
 #pragma endregion
+
 
 #pragma region drop entities that are too far
 
@@ -1293,6 +1295,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					//grab
 					grabItem(player.inventory, cursorSelected, PlayerInventory::CURSOR_INDEX, selected->counter/2);
 
+					//don't place it again lol
+					rightClickedThisClick[cursorSelected] = true;
 				}
 
 

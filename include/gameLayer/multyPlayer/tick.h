@@ -5,6 +5,12 @@
 #include <random>
 
 
+void entityDeleteFromServerToPlayer(std::uint64_t clientToSend, std::uint64_t eid, 
+	bool reliable);
+
+void entityDeleteFromServerToPlayer(Client &client, std::uint64_t eid,
+	bool reliable);
+
 void doGameTick(float deltaTime,
 	std::uint64_t currentTimer,
 	ServerChunkStorer &chunkCache,

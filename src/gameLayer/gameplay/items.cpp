@@ -234,6 +234,8 @@ void PlayerInventory::formatIntoData(std::vector<unsigned char> &data)
 
 	data.reserve(INVENTORY_CAPACITY * sizeof(Item)); //rough estimate
 
+	data.push_back(revisionNumber);
+
 	for (int i = 0; i < INVENTORY_CAPACITY; i++)
 	{
 		items[i].formatIntoData(data);
@@ -269,7 +271,12 @@ bool PlayerInventory::readFromData(void *data, size_t size)
 
 		return true;
 	};
+	
+	if (size < 1) { return 0; }
 
+	//we first read the revision number
+	revisionNumber = ((unsigned char *)data)[0];
+	currentAdvance++;
 
 	for (int i = 0; i < INVENTORY_CAPACITY; i++)
 	{

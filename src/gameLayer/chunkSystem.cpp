@@ -85,6 +85,12 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 	cornerPos = minPos;
 
+
+
+	//TODO
+	//THIS SHOULD BE AFTER SET CHUNKS IN MATRIX!!!!
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 #pragma region recieve chunks by the server
 	auto recievedChunk = getRecievedChunks();
 

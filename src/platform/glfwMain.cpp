@@ -330,7 +330,6 @@ int main()
 #endif
 #endif
 
-
 //#ifdef _WIN32
 //	timeBeginPeriod(1);
 //	atexit([]() { timeEndPeriod(1); });

@@ -82,6 +82,18 @@ Client getClient(std::uint64_t cid)
 	return rez;
 }
 
+Client *getClientSafe(std::uint64_t cid)
+{
+	auto found = connections.find(cid);
+
+	if (found != connections.end())
+	{
+		return &found->second;
+	}
+
+	return nullptr;
+}
+
 Client *getClientNotLocked(std::uint64_t cid)
 {
 	auto it = connections.find(cid);
@@ -129,15 +141,21 @@ void broadcastNewConnectionMessage(ENetPeer *peerToIgnore, Client c, std::uint64
 		sizeof(data), peerToIgnore, true, channelHandleConnections);
 }
 
-void sendPlayerInventory(Client &client, int channel)
+void sendPlayerInventoryAndIncrementRevision(Client &client, int channel)
 {
+	client.playerData.inventory.revisionNumber++;
 
+	sendPlayerInventoryNotIncrementRevision(client, channel);
+}
+
+void sendPlayerInventoryNotIncrementRevision(Client &client, int channel)
+{
 	std::vector<unsigned char> data;
 	client.playerData.inventory.formatIntoData(data);
-	
+
+	//todo adaptive package here, compress
 	sendPacket(client.peer, headerClientRecieveAllInventory, data.data(), data.size(), true,
 		channel);
-
 }
 
 void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
@@ -217,7 +235,7 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 
 	//send inventory
 	{
-		sendPlayerInventory(connections[id], channelHandleConnections);
+		sendPlayerInventoryAndIncrementRevision(connections[id], channelHandleConnections);
 	}
 
 	//send others to this
@@ -331,6 +349,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			break;
 		}
 
+		//todo inventory revision here and consume blocks if not creative
 		case headerPlaceBlock:
 		{
 			Packet_PlaceBlock packetData = *(Packet_PlaceBlock *)data;
@@ -405,6 +424,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			break;
 		}
 
+		//todo inventory revision here
 		case headerClientDroppedItem:
 		{
 			if (size != sizeof(Packet_ClientDroppedItem))
@@ -425,6 +445,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.motionState = packetData->motionState;
 			serverTask.t.timer = packetData->timer;
 			serverTask.t.blockType = packetData->type;
+			serverTask.t.revisionNumberInventory = packetData->revisionNumberInventory;
 
 			serverTasks.push_back(serverTask);
 			break;
@@ -447,6 +468,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.from = packetData->from;
 			serverTask.t.to = packetData->to;
 			serverTask.t.blockCount = packetData->counter;
+			serverTask.t.revisionNumberInventory = packetData->revisionNumber;
 			serverTasks.push_back(serverTask);
 
 			break;
@@ -467,6 +489,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.itemType = packetData->itemType;
 			serverTask.t.blockCount = packetData->counter;
 			serverTask.t.to = packetData->to;
+			serverTask.t.revisionNumberInventory = packetData->revisionNumber;
 			serverTasks.push_back(serverTask);
 
 			break;
@@ -484,6 +507,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.itemType = packetData->itemType;
 			serverTask.t.to = packetData->to;
 			serverTask.t.blockCount = packetData->counter;
+			serverTask.t.revisionNumberInventory = packetData->revisionNumber;
 			serverTasks.push_back(serverTask);
 
 			break;
@@ -500,6 +524,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.taskType = Task::clientSwapItems;
 			serverTask.t.from = packetData->from;
 			serverTask.t.to = packetData->to;
+			serverTask.t.revisionNumberInventory = packetData->revisionNumber;
 			serverTasks.push_back(serverTask);
 
 			break;
@@ -519,6 +544,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.from = packetData->from;
 			serverTask.t.itemType = packetData->itemType;
 			serverTask.t.pos = packetData->position;
+			serverTask.t.revisionNumberInventory = packetData->revisionNumber;
 			serverTasks.push_back(serverTask);
 
 		}

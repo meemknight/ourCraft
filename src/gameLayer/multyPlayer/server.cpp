@@ -363,13 +363,13 @@ void serverWorkerUpdate(
 	static std::minstd_rand rng(std::random_device{}());
 	static bool generateNewChunks = 0; //this is set to true only once per tick
 
-	std::cout << "Before\n";
+	//std::cout << "Before\n";
 	std::vector<SendBlocksBack> sendNewBlocksToPlayers;
 	updateLoadedChunks(wg, structuresManager, biomesManager, sendNewBlocksToPlayers,
 		worldSaver, true);
 	generateNewChunks = 0;
 
-	std::cout << "After\n";
+	//std::cout << "After\n";
 
 
 	for (auto &c : sd.chunkCache.savedChunks)
@@ -454,7 +454,7 @@ void serverWorkerUpdate(
 					auto client = getClientNotLocked(i.cid);
 					if (client)
 					{
-						sendPacketAndCompress(client->peer, packet, (char *)rez,
+						sendPacketAndCompress(client->peer, packet, (char *)(&rez->chunk),
 							sizeof(Packet_RecieveChunk), true, channelChunksAndBlocks);
 					}
 				}
@@ -471,6 +471,8 @@ void serverWorkerUpdate(
 		else
 			if (i.t.taskType == Task::placeBlock)
 			{
+				//todo revision number here and creative
+
 				bool wasGenerated = 0;
 				//std::cout << "server recieved place block\n";
 				//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
@@ -563,76 +565,101 @@ void serverWorkerUpdate(
 				if (client)
 				{
 
-					auto serverAllows = settings.perClientSettings[i.cid].validateStuff;
-					
-					if (i.t.entityId >= RESERVED_CLIENTS_ID)
+					//if the revision number isn't good
+					//we tell the player to kill that item.
+					bool killItem = 0;
+
+					if (client->playerData.inventory.revisionNumber
+						== i.t.revisionNumberInventory
+						)
 					{
-						serverAllows = false; 
+
+						auto serverAllows = settings.perClientSettings[i.cid].validateStuff;
+
+						if (i.t.entityId >= RESERVED_CLIENTS_ID)
+						{
+							//todo well this can cause problems
+							//so we should better do a hard reset here
+							serverAllows = false;
+						}
+
+						auto from = client->playerData.inventory.getItemFromIndex(i.t.from);
+
+						if (!from) { serverAllows = false; }
+						else
+						{
+							if (from->type != i.t.blockType)
+							{
+								serverAllows = false;
+							}
+							else if (from->counter < i.t.blockCount)
+							{
+								serverAllows = false;
+							}
+						}
+
+						auto newId = getEntityIdAndIncrement(worldSaver);
+
+						if (computeRevisionStuff(*client, true && serverAllows, i.t.eventId,
+							&i.t.entityId, &newId))
+						{
+
+							DroppedItemServer newEntity = {};
+							newEntity.item.counter = i.t.blockCount;
+							newEntity.item.type = i.t.blockType;
+							newEntity.item.metaData = from->metaData;
+
+							newEntity.entity.position = i.t.doublePos;
+							newEntity.entity.lastPosition = i.t.doublePos;
+							newEntity.entity.forces = i.t.motionState;
+							//newEntity.restantTime = computeRestantTimer(currentTimer, i.t.timer);
+							newEntity.restantTime = computeRestantTimer(i.t.timer, currentTimer);
+
+							auto chunkPosition = determineChunkThatIsEntityIn(i.t.doublePos);
+
+							SavedChunk *chunk = sd.chunkCache.getOrCreateChunk(chunkPosition.x,
+								chunkPosition.y, wg, structuresManager, biomesManager,
+								sendNewBlocksToPlayers, true, nullptr, worldSaver
+							);
+
+							if (chunk)
+							{
+								chunk->entityData.droppedItems.insert({newId, newEntity});
+							}
+
+							//std::cout << "restant: " << newEntity.restantTime << "\n";
+
+							//substract item from inventory
+							from->counter -= i.t.blockCount;
+							if (!from->counter) { *from = {}; }
+
+						}
+
+						if (!serverAllows)
+						{
+							sendPlayerInventoryAndIncrementRevision(*client);
+							killItem = true;
+						}
+
 					}
-
-
-					auto from = client->playerData.inventory.getItemFromIndex(i.t.from);
-
-					if (!from) { serverAllows = false; }
 					else
 					{
-						if (from->type != i.t.blockType)
-						{
-							serverAllows = false;
-						}
-						else if(from->counter < i.t.blockCount)
-						{
-							serverAllows = false;
-						}
+						std::cout << "Server revision : "
+							<< (int)client->playerData.inventory.revisionNumber << "\n";
+
+						std::cout << "Recieved revision : "
+							<< (int)i.t.revisionNumberInventory << "\n";
+
+						killItem = true;
 					}
 
-					auto newId = getEntityIdAndIncrement(worldSaver);
-
-					if (computeRevisionStuff(*client, true && serverAllows, i.t.eventId,
-						&i.t.entityId, &newId))
+					if (killItem)
 					{
-
-						DroppedItemServer newEntity = {};
-						newEntity.item.counter = i.t.blockCount;
-						newEntity.item.type = i.t.blockType;
-						newEntity.item.metaData = from->metaData;
-
-						newEntity.entity.position = i.t.doublePos;
-						newEntity.entity.lastPosition = i.t.doublePos;
-						newEntity.entity.forces = i.t.motionState;
-						//newEntity.restantTime = computeRestantTimer(currentTimer, i.t.timer);
-						newEntity.restantTime = computeRestantTimer(i.t.timer, currentTimer);
-
-						auto chunkPosition = determineChunkThatIsEntityIn(i.t.doublePos);
-
-						SavedChunk *chunk = sd.chunkCache.getOrCreateChunk(chunkPosition.x,
-							chunkPosition.y, wg, structuresManager, biomesManager,
-							sendNewBlocksToPlayers, true, nullptr, worldSaver
-						);
-
-						if (chunk)
-						{
-							chunk->entityData.droppedItems.insert({newId, newEntity});
-						}
-
-						//std::cout << "restant: " << newEntity.restantTime << "\n";
-
-						//substract item from inventory
-						from->counter -= i.t.blockCount;
-						if (!from->counter) { *from = {}; }
-
-					}
-
-					if (!serverAllows)
-					{
-						sendPlayerInventory(*client);
+						entityDeleteFromServerToPlayer(*client, i.t.entityId, true);
 					}
 
 				}
-				else
-				{
-
-				}
+				
 
 
 			}
@@ -644,98 +671,115 @@ void serverWorkerUpdate(
 				if (client)
 				{
 
-					Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
-					Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
-
-					//todo they should always be sanitized so we should check during task creation if they are
-					if (from && to)
+					//if the revision number isn't good we don't do anything
+					if (client->playerData.inventory.revisionNumber
+						== i.t.revisionNumberInventory
+						)
 					{
 
-						//todo this can be abstracted
-						if (from->type != i.t.itemType
-							|| (i.t.blockCount > from->counter)
-							)
-						{
-							//this is a desync, resend inventory.
-							sendPlayerInventory(*client);
-						}
-						else
+						Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
+						Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
+
+						//todo they should always be sanitized so we should check during task creation if they are
+						if (from && to)
 						{
 
-							if (to->type == 0)
+							//todo this can be abstracted
+							if (from->type != i.t.itemType
+								|| (i.t.blockCount > from->counter)
+								)
 							{
-								*to = *from;
-								to->counter = i.t.blockCount;
-								from->counter -= i.t.blockCount;
-
-								if (!from->counter) { *from = {}; }
+								//this is a desync, resend inventory.
+								sendPlayerInventoryAndIncrementRevision(*client);
 							}
-							else if(to->type == from->type)
+							else
 							{
 
-								if (to->counter >= to->getStackSize())
+								if (to->type == 0)
 								{
-									sendPlayerInventory(*client);
-								}
-
-								int total = (int)to->counter + (int)i.t.blockCount;
-								if (total <= to->getStackSize())
-								{
-									to->counter += i.t.blockCount;
+									*to = *from;
+									to->counter = i.t.blockCount;
 									from->counter -= i.t.blockCount;
 
 									if (!from->counter) { *from = {}; }
 								}
+								else if (to->type == from->type)
+								{
+
+									if (to->counter >= to->getStackSize())
+									{
+										sendPlayerInventoryAndIncrementRevision(*client);
+									}
+
+									int total = (int)to->counter + (int)i.t.blockCount;
+									if (total <= to->getStackSize())
+									{
+										to->counter += i.t.blockCount;
+										from->counter -= i.t.blockCount;
+
+										if (!from->counter) { *from = {}; }
+									}
+									else
+									{
+										//this is a desync, resend inventory.
+										sendPlayerInventoryAndIncrementRevision(*client);
+									}
+
+								}
 								else
 								{
 									//this is a desync, resend inventory.
-									sendPlayerInventory(*client);
+									sendPlayerInventoryAndIncrementRevision(*client);
 								}
 
-							}
-							else
-							{
-								//this is a desync, resend inventory.
-								sendPlayerInventory(*client);
 							}
 
 						}
 
-					}
-
+					};
 				};
 
 			}
 			else if (i.t.taskType == Task::clientOverwriteItem)
 			{
 
-				//todo if creative.
 
 				auto client = getClientNotLocked(i.cid);
 
 				if (client)
 				{
-					if (client->playerData.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE)
+
+					//if the revision number isn't good we don't do anything
+					if (client->playerData.inventory.revisionNumber
+						== i.t.revisionNumberInventory
+						)
 					{
 
-						Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
 
-						if (to)
+						if (client->playerData.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE)
 						{
-							*to = {};
-							to->counter = i.t.blockCount;
-							to->type = i.t.itemType;
+
+							Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
+
+							if (to)
+							{
+								*to = {};
+								to->counter = i.t.blockCount;
+								to->type = i.t.itemType;
+							}
+							else
+							{
+
+								sendPlayerInventoryAndIncrementRevision(*client);
+							}
+
 						}
 						else
 						{
-							sendPlayerInventory(*client);
+							sendPlayerInventoryAndIncrementRevision(*client);
+							//todo send other player data
 						}
 
-					}
-					else
-					{
-						sendPlayerInventory(*client);
-						//todo send other player data
 					}
 
 				}
@@ -749,20 +793,27 @@ void serverWorkerUpdate(
 				if (client)
 				{
 
-					Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
-					Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
+					//if the revision number isn't good we don't do anything
+					if (client->playerData.inventory.revisionNumber
+						== i.t.revisionNumberInventory
+						)
+					{
+						Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
+						Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
 
-					if (from && to)
-					{
-						Item copy;
-						copy = std::move(*from);
-						*from = std::move(*to);
-						*to = std::move(copy);
+						if (from && to)
+						{
+							Item copy;
+							copy = std::move(*from);
+							*from = std::move(*to);
+							*to = std::move(copy);
+						}
+						else
+						{
+							sendPlayerInventoryAndIncrementRevision(*client);
+						}
 					}
-					else
-					{
-						sendPlayerInventory(*client);
-					}
+
 				}
 
 			}
@@ -771,57 +822,62 @@ void serverWorkerUpdate(
 
 				auto client = getClientNotLocked(i.cid);
 
-
 				if (client)
 				{
 
-					Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
-
-					if (to)
+					//if the revision number isn't good we don't do anything
+					if (client->playerData.inventory.revisionNumber
+						== i.t.revisionNumberInventory
+						)
 					{
 
-						Item itemToCraft = craft4(client->playerData.inventory.crafting);
+						Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
 
-						if (itemToCraft.type == i.t.itemType)
+						if (to)
 						{
-							
-							//todo also check size here
 
-							if (to->type == 0)
-							{
-								client->playerData.inventory.craft();
-								*to = itemToCraft;
-							}
-							else if(to->type == itemToCraft.type)
+							Item itemToCraft = craft4(client->playerData.inventory.crafting);
+
+							if (itemToCraft.type == i.t.itemType)
 							{
 
-								if (to->counter < to->getStackSize() &&
-									to->counter + itemToCraft.counter <= to->getStackSize())
+								//todo also check size here
+
+								if (to->type == 0)
 								{
 									client->playerData.inventory.craft();
-									to->counter += itemToCraft.counter;
+									*to = itemToCraft;
+								}
+								else if (to->type == itemToCraft.type)
+								{
+
+									if (to->counter < to->getStackSize() &&
+										to->counter + itemToCraft.counter <= to->getStackSize())
+									{
+										client->playerData.inventory.craft();
+										to->counter += itemToCraft.counter;
+									}
+
+								}
+								else
+								{
+									sendPlayerInventoryAndIncrementRevision(*client);
 								}
 
 							}
 							else
 							{
-								sendPlayerInventory(*client);
+								sendPlayerInventoryAndIncrementRevision(*client);
 							}
+
 
 						}
 						else
 						{
-							sendPlayerInventory(*client);
+							sendPlayerInventoryAndIncrementRevision(*client);
 						}
 
-
 					}
-					else
-					{
-						sendPlayerInventory(*client);
-					}
-
-
 				}
 
 			}
@@ -832,71 +888,78 @@ void serverWorkerUpdate(
 				
 				if (client)
 				{
-					//serverTask.t.pos = packetData->position;
 
-					Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
-
-					if (from)
+					//if the revision number isn't good we don't do anything
+					if (client->playerData.inventory.revisionNumber
+						== i.t.revisionNumberInventory
+						)
 					{
 
-						if (from->counter <= 0) { from = {}; }
+						//serverTask.t.pos = packetData->position;
 
-						if (from->type == i.t.itemType)
+						Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
+
+						if (from)
 						{
 
+							if (from->counter <= 0) { from = {}; }
 
-							if (from->type == ItemTypes::pigSpawnEgg)
+							if (from->type == i.t.itemType)
 							{
-								Pig p;
-								glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.0,-0.49,0.0);
-								p.position = position;
-								p.lastPosition = position;
-								spawnPig(sd.chunkCache, p, worldSaver, rng);
-							}
-							else if (from->type == ItemTypes::zombieSpawnEgg)
-							{
-								Zombie z;
-								glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.0, -0.49, 0.0);
-								z.position = position;
-								z.lastPosition = position;
-								spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement(worldSaver));
-							}
-							else if (from->type == ItemTypes::catSpawnEgg)
-							{
-								Cat c;
-								glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.0, -0.49, 0.0);
-								c.position = position;
-								c.lastPosition = position;
-								spawnCat(sd.chunkCache, c, worldSaver, rng);
-							}
 
 
-							if (from->isConsumedAfterUse() && client->playerData.otherPlayerSettings.gameMode ==
-								OtherPlayerSettings::SURVIVAL)
-							{
-								from->counter--;
-								if (from->counter <= 0)
+								if (from->type == ItemTypes::pigSpawnEgg)
 								{
-									*from = {};
+									Pig p;
+									glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.0, -0.49, 0.0);
+									p.position = position;
+									p.lastPosition = position;
+									spawnPig(sd.chunkCache, p, worldSaver, rng);
+								}
+								else if (from->type == ItemTypes::zombieSpawnEgg)
+								{
+									Zombie z;
+									glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.0, -0.49, 0.0);
+									z.position = position;
+									z.lastPosition = position;
+									spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement(worldSaver));
+								}
+								else if (from->type == ItemTypes::catSpawnEgg)
+								{
+									Cat c;
+									glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.0, -0.49, 0.0);
+									c.position = position;
+									c.lastPosition = position;
+									spawnCat(sd.chunkCache, c, worldSaver, rng);
+								}
+
+
+								if (from->isConsumedAfterUse() && client->playerData.otherPlayerSettings.gameMode ==
+									OtherPlayerSettings::SURVIVAL)
+								{
+									from->counter--;
+									if (from->counter <= 0)
+									{
+										*from = {};
+									}
 								}
 							}
+							else
+							{
+								sendPlayerInventoryAndIncrementRevision(*client);
+							}
+
 						}
 						else
 						{
-							sendPlayerInventory(*client);
+							sendPlayerInventoryAndIncrementRevision(*client);
 						}
 
-					}
-					else
-					{
-						sendPlayerInventory(*client);
-					}
-
+					};
 
 				}
 
 			}
-
 
 
 		sd.waitingTasks.erase(sd.waitingTasks.begin());
@@ -974,7 +1037,7 @@ void serverWorkerUpdate(
 				settings.perClientSettings.begin()->second.resendInventory = false;
 				auto c = getAllClients();
 
-				sendPlayerInventory(c.begin()->second);
+				sendPlayerInventoryAndIncrementRevision(c.begin()->second);
 			}
 
 

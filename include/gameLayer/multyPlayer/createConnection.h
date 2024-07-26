@@ -33,9 +33,10 @@ struct Task
 	std::uint64_t entityId;
 	MotionState motionState;
 	std::uint64_t timer;
+	unsigned short itemType = 0;
 	unsigned char from;
 	unsigned char to;
-	unsigned short itemType = 0;
+	unsigned char revisionNumberInventory = 0;
 
 };
 

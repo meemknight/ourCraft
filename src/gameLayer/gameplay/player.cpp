@@ -50,6 +50,8 @@ glm::vec3 Player::getMaxColliderSize()
 	return glm::vec3(0.8, 1.8, 0.8);
 }
 
+
+//todo move update here
 void PlayerClient::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
 {
 
