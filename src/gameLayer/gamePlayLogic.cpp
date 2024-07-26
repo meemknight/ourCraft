@@ -596,13 +596,19 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 						}
 						else if (blockToPlace && item.isBlock())
-							gameData.chunkSystem.placeBlockByClient(*blockToPlace, item.type,
-							gameData.undoQueue, gameData.entityManager.localPlayer.entity.position, gameData.lightSystem);
+							gameData.chunkSystem.placeBlockByClient(*blockToPlace, 
+							gameData.currentItemSelected,
+							gameData.undoQueue, 
+							gameData.entityManager.localPlayer.entity.position, 
+							gameData.lightSystem,
+							player.inventory);
 					}
 					else if (platform::isLMousePressed())
 					{
-						gameData.chunkSystem.placeBlockByClient(rayCastPos, BlockTypes::air,
-							gameData.undoQueue, gameData.entityManager.localPlayer.entity.position, gameData.lightSystem);
+						//todo break
+						
+						//gameData.chunkSystem.placeBlockByClient(rayCastPos, BlockTypes::air,
+						//	gameData.undoQueue, gameData.entityManager.localPlayer.entity.position, gameData.lightSystem);
 					}
 				}
 
@@ -969,9 +975,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 								{
 									glm::ivec3 pos = gameData.point + glm::ivec3(x, y, z);
 
-									gameData.chunkSystem.placeBlockByClient(pos, s->unsafeGet(x, y, z),
-										gameData.undoQueue, 
-										gameData.entityManager.localPlayer.entity.position, gameData.lightSystem);
+									std::cout << "Not implemented!\n";
+
+									//todo implement
+									//gameData.chunkSystem.placeBlockByClient(pos, s->unsafeGet(x, y, z),
+									//	gameData.undoQueue, 
+									//	gameData.entityManager.localPlayer.entity.position, gameData.lightSystem);
 								}
 
 						gameData.pointSize = s->size;

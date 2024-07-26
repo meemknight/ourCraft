@@ -75,7 +75,10 @@ struct ChunkSystem
 
 	//a client places a block and sends a task to the server for it to be placed
 	//returns true if succeeded
-	bool placeBlockByClient(glm::ivec3 pos, BlockType type, UndoQueue &undoQueue, glm::dvec3 playerPos, LightSystem &lightSystem);
+	bool placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot,
+		UndoQueue &undoQueue, glm::dvec3 playerPos, 
+		LightSystem &lightSystem, PlayerInventory &inventory
+	);
 
 	//just place the block, forcely by server
 	void placeBlockNoClient(glm::ivec3 pos, BlockType type, LightSystem &lightSystem);

@@ -37,6 +37,7 @@ struct Task
 	unsigned char from;
 	unsigned char to;
 	unsigned char revisionNumberInventory = 0;
+	unsigned char inventroySlot = 0;
 
 };
 

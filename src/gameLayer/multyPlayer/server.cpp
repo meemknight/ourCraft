@@ -488,65 +488,116 @@ void serverWorkerUpdate(
 
 				if (client)
 				{
-					bool legal = 1;
+
+					//if revision number for the inventory is good we can continue,
+					//	if else we need to undo that move
+					if (client->playerData.inventory.revisionNumber
+						== i.t.revisionNumberInventory
+						)
 					{
-						auto f = settings.perClientSettings.find(i.cid);
-						if (f != settings.perClientSettings.end())
+						bool legal = 1;
+						bool rensendInventory = 0;
+
 						{
-							if (!f->second.validateStuff)
+							auto f = settings.perClientSettings.find(i.cid);
+							if (f != settings.perClientSettings.end())
+							{
+								if (!f->second.validateStuff)
+								{
+									legal = false;
+								}
+							}
+						}
+
+						auto b = chunk->chunk.safeGet(convertedX, i.t.pos.y, convertedZ);
+
+						if (!b)
+						{
+							legal = false;
+						}
+						else
+						{
+
+							auto client = getClientNotLocked(i.cid);
+
+
+							if (client)
+							{
+								auto item = client->playerData.inventory.getItemFromIndex(i.t.inventroySlot);
+
+								//todo can be placed
+
+								if(item && item->isBlock() && 
+									i.t.blockType == item->type)
+								{
+									//good
+									//todo if survival, decrese the block after place.
+
+								}
+								else
+								{
+									legal = false;
+									rensendInventory = true;
+								}
+							}
+							else
 							{
 								legal = false;
 							}
+							
+
+							//don't place blocks over others
+							if (i.t.blockType && b->type)
+							{
+								legal = false;
+							}
+							else if (isColidable(i.t.blockType))
+							{
+								//don't place blocks over entities
+
+								if (sd.chunkCache.anyEntityIntersectsWithBlock(i.t.pos))
+								{
+									legal = false;
+								}
+
+							}
+
 						}
-					}
 
-					auto b = chunk->chunk.safeGet(convertedX, i.t.pos.y, convertedZ);
+						legal = computeRevisionStuff(*client, legal, i.t.eventId);
 
-					if (!b)
-					{
-						legal = false;
+						if (legal)
+						{
+							b->type = i.t.blockType;
+							chunk->otherData.dirty = true;
+
+							{
+								Packet packet;
+								packet.cid = i.cid;
+								packet.header = headerPlaceBlocks;
+
+								Packet_PlaceBlocks packetData;
+								packetData.blockPos = i.t.pos;
+								packetData.blockType = i.t.blockType;
+
+								broadCastNotLocked(packet, &packetData, sizeof(Packet_PlaceBlocks),
+									client->peer, true, channelChunksAndBlocks);
+							}
+
+						}
+
+						if (rensendInventory)
+						{
+							sendPlayerInventoryAndIncrementRevision(*client);
+						}
+
 					}
 					else
 					{
-						//don't place blocks over others
-						if (i.t.blockType && b->type) 
-						{
-							legal = false; 
-						}
-						else if (isColidable(i.t.blockType))
-						{
-							//don't place blocks over entities
-
-							if (sd.chunkCache.anyEntityIntersectsWithBlock(i.t.pos))
-							{
-								legal = false;
-							}
-
-						}
-
+						//undo that move
+						computeRevisionStuff(*client, false, i.t.eventId);
 					}
-
-					legal = computeRevisionStuff(*client, legal, i.t.eventId);
-
-					if (legal)
-					{
-						b->type = i.t.blockType;
-						chunk->otherData.dirty = true;
-
-						{
-							Packet packet;
-							packet.cid = i.cid;
-							packet.header = headerPlaceBlocks;
-
-							Packet_PlaceBlocks packetData;
-							packetData.blockPos = i.t.pos;
-							packetData.blockType = i.t.blockType;
-
-							broadCastNotLocked(packet, &packetData, sizeof(Packet_PlaceBlocks),
-								client->peer, true, channelChunksAndBlocks);
-						}
-
-					}
+					
 
 				}
 
@@ -560,8 +611,7 @@ void serverWorkerUpdate(
 
 				auto client = getClientNotLocked(i.cid);
 
-				//todo some logic
-				//todo add items here into the server's storage
+
 				if (client)
 				{
 

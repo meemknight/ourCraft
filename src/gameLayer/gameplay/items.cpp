@@ -2,6 +2,8 @@
 #include <serializing.h>
 #include <platformTools.h>
 
+//todo can be placed
+
 bool Item::isBlock()
 {
 	return type > 0 && type < BlocksCount;

@@ -1039,33 +1039,48 @@ void ChunkSystem::dropChunkAtIndexSafe(int index, BigGpuBuffer *gpuBuffer)
 }
 
 
-bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, BlockType type, 
-	UndoQueue &undoQueue, glm::dvec3 playerPos
-	, LightSystem &lightSystem)
+bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot,
+	UndoQueue &undoQueue, glm::dvec3 playerPos,
+	LightSystem &lightSystem, PlayerInventory &inventory)
 {
 	Chunk *chunk = 0;
 	auto b = getBlockSafeAndChunk(pos.x, pos.y, pos.z, chunk);
 	
+	auto item = inventory.getItemFromIndex(inventorySlot);
+
+	if (!item) { return 0; }
+
 	if (b != nullptr)
 	{
 
 		//todo check mob colisions
 
 
-		if (canBlockBePlaced(type, b->type))
+		if (canBlockBePlaced(item->type, b->type))
 		{
-			Task task;
-			task.taskType = Task::placeBlock;
-			task.pos = pos;
-			task.blockType = type;
-			task.eventId = undoQueue.currentEventId;
-			submitTaskClient(task);
 
-			undoQueue.addPlaceBlockEvent(pos, b->type, type, playerPos);
+			Packet p = {};
+			p.cid = getConnectionData().cid;
+			p.header = headerPlaceBlock;
 
-			changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->type, type, lightSystem);
+			Packet_ClientPlaceBlock packetData = {};
+			packetData.blockPos = pos;
+			packetData.blockType = item->type;
+			packetData.eventId = undoQueue.currentEventId;
+			packetData.inventoryRevision = inventory.revisionNumber;
+			packetData.inventorySlot = inventorySlot;
 
-			b->type = type;
+			sendPacket(getConnectionData().server, 
+				p, (char *)&packetData, sizeof(packetData), 1,
+				channelChunksAndBlocks);
+
+
+			undoQueue.addPlaceBlockEvent(pos, b->type, item->type, playerPos);
+
+			changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->type,
+				item->type, lightSystem);
+
+			b->type = item->type;
 			if (b->isOpaque()) { b->lightLevel = 0; }
 
 			setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);

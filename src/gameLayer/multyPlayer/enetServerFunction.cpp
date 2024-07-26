@@ -352,11 +352,13 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 		//todo inventory revision here and consume blocks if not creative
 		case headerPlaceBlock:
 		{
-			Packet_PlaceBlock packetData = *(Packet_PlaceBlock *)data;
+			Packet_ClientPlaceBlock packetData = *(Packet_ClientPlaceBlock *)data;
 			serverTask.t.taskType = Task::placeBlock;
 			serverTask.t.pos = {packetData.blockPos};
 			serverTask.t.blockType = {packetData.blockType};
 			serverTask.t.eventId = packetData.eventId;
+			serverTask.t.revisionNumberInventory = packetData.inventoryRevision;
+			serverTask.t.inventroySlot = packetData.inventorySlot;
 
 			serverTasks.push_back(serverTask);
 			break;

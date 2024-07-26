@@ -224,11 +224,13 @@ struct Packet_ClientRecieveOtherPlayerPosition
 };
 
 //used by the client to talk to the server
-struct Packet_PlaceBlock 
+struct Packet_ClientPlaceBlock 
 {
 	glm::ivec3 blockPos = {};
 	EventId eventId = {}; //event id is used by the player
 	BlockType blockType = {};
+	unsigned char inventoryRevision;
+	unsigned char inventorySlot = 0;
 
 };
 

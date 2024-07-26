@@ -35,14 +35,8 @@ void submitTaskClient(Task &t)
 	}
 	case Task::placeBlock:
 	{
-		p.header = headerPlaceBlock;
-		Packet_PlaceBlock packetData = {};
-		packetData.blockPos = t.pos;
-		packetData.blockType = t.blockType;
-		packetData.eventId = t.eventId;
-
-		sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1, 
-			channelChunksAndBlocks);
+		//todo remove
+		permaAssert(0);
 		break;
 	}
 	default:
@@ -185,8 +179,8 @@ void recieveDataClient(ENetEvent &event,
 		case headerPlaceBlock:
 		{
 			Packet_PlaceBlocks b;
-			b.blockPos = ((Packet_PlaceBlock *)data)->blockPos;
-			b.blockType = ((Packet_PlaceBlock *)data)->blockType;
+			b.blockPos = ((Packet_PlaceBlocks *)data)->blockPos;
+			b.blockType = ((Packet_PlaceBlocks *)data)->blockType;
 			clientData.recievedBlocks.push_back(b);
 			break;
 		}
