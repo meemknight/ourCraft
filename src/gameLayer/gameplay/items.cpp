@@ -52,7 +52,7 @@ void Item::formatIntoData(std::vector<unsigned char> &data)
 			}
 			else
 			{
-				assert(0); //todo something better here
+				permaAssert(0); //todo something better here
 			}
 		}
 

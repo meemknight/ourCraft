@@ -1097,6 +1097,53 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot
 }
 
 
+bool ChunkSystem::breakBlockByClient(glm::ivec3 pos, UndoQueue &undoQueue, 
+	glm::dvec3 playerPos, LightSystem &lightSystem)
+{
+	Chunk *chunk = 0;
+	auto b = getBlockSafeAndChunk(pos.x, pos.y, pos.z, chunk);
+
+	if (b != nullptr)
+	{
+
+		//todo check if the block can be breaked
+		//if ()
+		{
+
+			Packet p = {};
+			p.cid = getConnectionData().cid;
+			p.header = headerBreakBlock;
+
+			Packet_ClientBreakBlock packetData = {};
+			packetData.blockPos = pos;
+			packetData.eventId = undoQueue.currentEventId;
+
+			sendPacket(getConnectionData().server,
+				p, (char *)&packetData, sizeof(packetData), 1,
+				channelChunksAndBlocks);
+
+			undoQueue.addPlaceBlockEvent(pos, b->type, BlockTypes::air, playerPos);
+
+			changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->type,
+				BlockTypes::air, lightSystem);
+
+			b->type = BlockTypes::air;
+
+			setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
+
+			return true;
+		}
+		//else
+		//{
+		//	return false;
+		//}
+
+	}
+	
+	
+	return false;
+}
+
 void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, BlockType type, LightSystem &lightSystem)
 {
 

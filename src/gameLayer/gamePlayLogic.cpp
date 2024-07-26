@@ -605,10 +605,11 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					}
 					else if (platform::isLMousePressed())
 					{
-						//todo break
-						
-						//gameData.chunkSystem.placeBlockByClient(rayCastPos, BlockTypes::air,
-						//	gameData.undoQueue, gameData.entityManager.localPlayer.entity.position, gameData.lightSystem);
+						//break block
+						gameData.chunkSystem.breakBlockByClient(rayCastPos
+							, gameData.undoQueue,
+							gameData.entityManager.localPlayer.entity.position,
+							gameData.lightSystem);
 					}
 				}
 

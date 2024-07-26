@@ -364,6 +364,18 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			break;
 		}
 
+		case headerBreakBlock:
+		{
+			Packet_ClientBreakBlock packetData = *(Packet_ClientBreakBlock *)data;
+			serverTask.t.taskType = Task::breakBlock;
+			serverTask.t.pos = {packetData.blockPos};
+			serverTask.t.eventId = packetData.eventId;
+
+			serverTasks.push_back(serverTask);
+			break;
+
+		}
+
 		case headerSendPlayerData:
 		{
 			Packer_SendPlayerData packetData = *(Packer_SendPlayerData *)data;

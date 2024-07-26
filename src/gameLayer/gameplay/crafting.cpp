@@ -8,7 +8,12 @@ static CraftingRecepie recepies[] =
 	recepie(Item(ItemTypes::stick, 4), 
 		{Item(),Item(),Item(),
 		Item(BlockTypes::wooden_plank), Item(), Item(),
-		Item(BlockTypes::wooden_plank), Item(), Item()})
+		Item(BlockTypes::wooden_plank), Item(), Item()}),
+
+	recepie(Item(BlockTypes::wooden_plank, 4),
+		{Item(),Item(),Item(),
+		Item(), Item(), Item(),
+		Item(BlockTypes::woodLog), Item(), Item()}),
 };
 
 

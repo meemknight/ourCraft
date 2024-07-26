@@ -4,3 +4,5 @@
 
 
 bool canBlockBePlaced(BlockType newBlock, BlockType oldBlock);
+
+bool canBlockBeBreaked(BlockType oldBlock, bool isCreative);

@@ -27,6 +27,7 @@
 #include <multyPlayer/splitUpdatesLogic.h>
 #include <gameplay/crafting.h>
 #include <gameplay/cat.h>
+#include <gameplay/gameplayRules.h>
 
 
 static std::atomic<bool> serverRunning = false;
@@ -469,7 +470,9 @@ void serverWorkerUpdate(
 			if (wasGenerated) { chunksGenerated++; }
 		}
 		else
-			if (i.t.taskType == Task::placeBlock)
+			if (i.t.taskType == Task::placeBlock
+				|| i.t.taskType == Task::breakBlock
+				)
 			{
 				//todo revision number here and creative
 
@@ -491,10 +494,18 @@ void serverWorkerUpdate(
 
 					//if revision number for the inventory is good we can continue,
 					//	if else we need to undo that move
-					if (client->playerData.inventory.revisionNumber
-						== i.t.revisionNumberInventory
+					if (
+						i.t.taskType == Task::breakBlock ||
+						(
+						client->playerData.inventory.revisionNumber
+						== i.t.revisionNumberInventory)
 						)
 					{
+						if (i.t.taskType == Task::breakBlock)
+						{
+							i.t.blockType = 0;
+						}
+
 						bool legal = 1;
 						bool rensendInventory = 0;
 
@@ -518,20 +529,17 @@ void serverWorkerUpdate(
 						else
 						{
 
-							auto client = getClientNotLocked(i.cid);
 
-
-							if (client)
+							if (i.t.taskType == Task::placeBlock)
 							{
 								auto item = client->playerData.inventory.getItemFromIndex(i.t.inventroySlot);
 
-								//todo can be placed
 
 								if(item && item->isBlock() && 
 									i.t.blockType == item->type)
 								{
 									//good
-									//todo if survival, decrese the block after place.
+									//todo if survival, decrese the block after place, but at the end!!!!
 
 								}
 								else
@@ -540,18 +548,25 @@ void serverWorkerUpdate(
 									rensendInventory = true;
 								}
 							}
+
+							if (i.t.taskType == Task::placeBlock)
+							{
+								if (!canBlockBePlaced(i.t.blockType, b->type))
+								{
+									legal = false;
+								}
+							}
 							else
 							{
-								legal = false;
+								if (!canBlockBeBreaked(b->type, client->playerData.otherPlayerSettings.gameMode 
+									== OtherPlayerSettings::CREATIVE))
+								{
+									legal = false;
+								}
 							}
 							
 
-							//don't place blocks over others
-							if (i.t.blockType && b->type)
-							{
-								legal = false;
-							}
-							else if (isColidable(i.t.blockType))
+							if (i.t.taskType == Task::placeBlock && isColidable(i.t.blockType))
 							{
 								//don't place blocks over entities
 
@@ -568,6 +583,7 @@ void serverWorkerUpdate(
 
 						if (legal)
 						{
+						
 							b->type = i.t.blockType;
 							chunk->otherData.dirty = true;
 
@@ -584,6 +600,10 @@ void serverWorkerUpdate(
 									client->peer, true, channelChunksAndBlocks);
 							}
 
+							if (i.t.taskType == Task::placeBlock)
+							{
+								//todo decrease block here if not creative
+							}
 						}
 
 						if (rensendInventory)
@@ -604,6 +624,7 @@ void serverWorkerUpdate(
 
 			}
 
+		
 			//todo this and also item usages need to use the current inventory's revision state!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			//	for validation
 			else if (i.t.taskType == Task::droppedItemEntity)
