@@ -73,6 +73,12 @@ bool isColidable(BlockType type)
 		type != BlockTypes::water;
 }
 
+bool isWoodPlank(BlockType type)
+{
+	return type == BlockTypes::wooden_plank || 
+		type == BlockTypes::jungle_planks;
+}
+
 float Block::getFriction()
 {
 	if (type == BlockTypes::ice)

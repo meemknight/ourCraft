@@ -14,6 +14,23 @@ static CraftingRecepie recepies[] =
 		{Item(),Item(),Item(),
 		Item(), Item(), Item(),
 		Item(BlockTypes::woodLog), Item(), Item()}),
+
+	recepie(Item(BlockTypes::jungle_planks, 4),
+		{Item(),Item(),Item(),
+		Item(), Item(), Item(),
+		Item(BlockTypes::jungle_log), Item(), Item()}),
+
+	recepie(Item(BlockTypes::craftingTable, 1),
+		{Item(),Item(),Item(),
+		Item(BlockTypes::wooden_plank), Item(BlockTypes::wooden_plank), Item(),
+		Item(BlockTypes::wooden_plank), Item(BlockTypes::wooden_plank), Item()}, true),
+
+	recepie(Item(BlockTypes::sand_stone, 1),
+		{Item(),Item(),Item(),
+		Item(BlockTypes::sand), Item(BlockTypes::sand), Item(),
+		Item(BlockTypes::sand), Item(BlockTypes::sand), Item()}),
+
+
 };
 
 
@@ -70,11 +87,21 @@ Item craft9(Item items[9])
 		for (int i = 0; i < 9; i++)
 		{
 
-			if (newItems[i].type != recepies[r].items[i].type)
+			if (recepies[r].anyWoodType && 
+				isWoodPlank(newItems[i].type) && isWoodPlank(recepies[r].items[i].type))
 			{
-				good = false;
-				break;
+				//good
 			}
+			else
+			{
+				if (newItems[i].type != recepies[r].items[i].type)
+				{
+					good = false;
+					break;
+				}
+			}
+
+			
 
 		}
 		
@@ -88,16 +115,26 @@ Item craft9(Item items[9])
 	return Item();
 }
 
-CraftingRecepie recepie(Item result, std::array<Item, 9> items)
+CraftingRecepie recepie(Item result, std::array<Item, 9> items,
+	bool anyWoodType, bool applyItemCreator)
 {
 	CraftingRecepie ret;
 
-	ret.result = result;
+	if (applyItemCreator)
+	{
+		ret.result = itemCreator(result.type);
+	}
+	else
+	{
+		ret.result = result.type;
+	}
 	
 	for (int i = 0; i < 9; i++)
 	{
 		ret.items[i] = items[i];
 	}
+
+	ret.anyWoodType = anyWoodType;
 
 	return ret;
 }

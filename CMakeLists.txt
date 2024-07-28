@@ -91,6 +91,10 @@ if(MSVC) # If using the VS compiler...
 
 	set_target_properties("${CMAKE_PROJECT_NAME}" PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
 
+
+	add_compile_options(-fsanitize=address)
+	add_link_options(-fsanitize=address)
+
 endif()
 
 if(WIN32)

@@ -31,6 +31,8 @@ Client *getClientSafe(std::uint64_t cid);
 Client *getClientNotLocked(std::uint64_t cid);
 std::unordered_map<std::uint64_t, Client> getAllClients();
 
+std::unordered_map<std::uint64_t, Client> &getAllClientsReff();
+
 void sendPlayerInventoryAndIncrementRevision(Client &client, 
 	int channel = channelChunksAndBlocks);
 

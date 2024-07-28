@@ -27,9 +27,10 @@ struct CraftingRecepie
 
 	CraftingRecepie() {};
 
-
+	bool anyWoodType = 0;
 
 };
 
-CraftingRecepie recepie(Item result, std::array<Item, 9> items);
+CraftingRecepie recepie(Item result, std::array<Item, 9> items, bool anyWoodType = 0,
+	bool applyItemCreator = 1);
 

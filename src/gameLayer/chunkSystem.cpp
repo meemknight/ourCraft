@@ -45,6 +45,8 @@ void ChunkSystem::cleanup()
 void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQueue &undoQueue
 	, LightSystem &lightSystem)
 {
+
+
 	//multy player stuff
 
 	//timeout recenrly requested chunks
@@ -414,7 +416,6 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	lastPlayerBlockPosition = playerBlockPosition;
 
 
-
 #pragma region place block by server
 	auto recievedBLocks = getRecievedBlocks();
 	for (auto &message : recievedBLocks)
@@ -536,10 +537,16 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 #pragma endregion
 
+	
+
+	
 }
 
 Chunk *ChunkSystem::getChunkSafeFromBlockPos(int x, int z)
 {
+
+	
+
 	auto p = fromBlockPosToMatrixSpace(x, z);
 
 	auto c = getChunkSafeFromMatrixSpace(p.x, p.y);
@@ -580,6 +587,7 @@ void ChunkSystem::setChunkAndNeighboursFlagDirtyFromBlockPos(int x, int z)
 			c->setDirty(true);
 		}
 	}
+
 }
 
 Block* ChunkSystem::getBlockSafe(int x, int y, int z)

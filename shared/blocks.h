@@ -57,6 +57,7 @@ enum BlockTypes
 	glass,
 	testBlock,
 	torch,
+	craftingTable,
 	BlocksCount
 };
 
@@ -77,6 +78,9 @@ bool isTransparentGeometry(BlockType type);
 bool isGrassMesh(BlockType type);
 
 bool isColidable(BlockType type);
+
+bool isWoodPlank(BlockType type);
+
 
 struct Block
 {

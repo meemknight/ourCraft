@@ -808,6 +808,7 @@ void serverWorkerUpdate(
 						}
 
 					};
+
 				};
 
 			}
@@ -1106,7 +1107,7 @@ void serverWorkerUpdate(
 			if (settings.perClientSettings.begin()->second.resendInventory)
 			{
 				settings.perClientSettings.begin()->second.resendInventory = false;
-				auto c = getAllClients();
+				auto &c = getAllClientsReff();
 
 				sendPlayerInventoryAndIncrementRevision(c.begin()->second);
 			}

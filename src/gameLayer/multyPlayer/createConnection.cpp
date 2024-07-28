@@ -731,6 +731,7 @@ bool swapItems(PlayerInventory &inventory, int from, int to)
 		Packet_ClientSwapItems packet;
 		packet.from = from;
 		packet.to = to;
+		packet.revisionNumber = inventory.revisionNumber;
 		sendPacket(clientData.server, headerClientSwapItems, clientData.cid,
 			&packet, sizeof(packet), true, channelChunksAndBlocks);
 
