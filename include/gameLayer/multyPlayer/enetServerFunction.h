@@ -39,6 +39,8 @@ void sendPlayerInventoryAndIncrementRevision(Client &client,
 void sendPlayerInventoryNotIncrementRevision(Client &client,
 	int channel = channelChunksAndBlocks);
 
+void sendPlayerExitInteraction(Client &client, unsigned char revisionNumber);
+
 
 void broadCast(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel);
 void broadCastNotLocked(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel);

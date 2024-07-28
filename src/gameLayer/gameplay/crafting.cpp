@@ -8,7 +8,7 @@ static CraftingRecepie recepies[] =
 	recepie(Item(ItemTypes::stick, 4), 
 		{Item(),Item(),Item(),
 		Item(BlockTypes::wooden_plank), Item(), Item(),
-		Item(BlockTypes::wooden_plank), Item(), Item()}),
+		Item(BlockTypes::wooden_plank), Item(), Item()}, true),
 
 	recepie(Item(BlockTypes::wooden_plank, 4),
 		{Item(),Item(),Item(),
@@ -30,6 +30,10 @@ static CraftingRecepie recepies[] =
 		Item(BlockTypes::sand), Item(BlockTypes::sand), Item(),
 		Item(BlockTypes::sand), Item(BlockTypes::sand), Item()}),
 
+	recepie(Item(ItemTypes::wooddenSword, 1),
+		{Item(BlockTypes::wooden_plank),Item(),Item(),
+		Item(BlockTypes::wooden_plank), Item(), Item(),
+		Item(ItemTypes::stick), Item(), Item()}, true),
 
 };
 
@@ -123,10 +127,11 @@ CraftingRecepie recepie(Item result, std::array<Item, 9> items,
 	if (applyItemCreator)
 	{
 		ret.result = itemCreator(result.type);
+		ret.result.counter = result.counter;
 	}
 	else
 	{
-		ret.result = result.type;
+		ret.result = result;
 	}
 	
 	for (int i = 0; i < 9; i++)

@@ -163,6 +163,20 @@ void sendPlayerInventoryNotIncrementRevision(Client &client, int channel)
 		channel);
 }
 
+void sendPlayerExitInteraction(Client &client, unsigned char revisionNumber)
+{
+	//notify we don't allow interaction!
+	Packet packet;
+	packet.header = headerRecieveExitBlockInteraction;
+
+	Packet_RecieveExitBlockInteraction packetData;
+	packetData.revisionNumber = revisionNumber;
+
+	sendPacket(client.peer, packet,
+		(char *)&packetData, sizeof(Packet_RecieveExitBlockInteraction),
+		true, channelChunksAndBlocks);
+}
+
 void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 {
 
@@ -362,7 +376,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.pos = {packetData.blockPos};
 			serverTask.t.blockType = {packetData.blockType};
 			serverTask.t.eventId = packetData.eventId;
-			serverTask.t.revisionNumberInventory = packetData.inventoryRevision;
+			serverTask.t.revisionNumber = packetData.inventoryRevision;
 			serverTask.t.inventroySlot = packetData.inventorySlot;
 
 			serverTasks.push_back(serverTask);
@@ -464,7 +478,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.motionState = packetData->motionState;
 			serverTask.t.timer = packetData->timer;
 			serverTask.t.blockType = packetData->type;
-			serverTask.t.revisionNumberInventory = packetData->revisionNumberInventory;
+			serverTask.t.revisionNumber = packetData->revisionNumberInventory;
 
 			serverTasks.push_back(serverTask);
 			break;
@@ -487,7 +501,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.from = packetData->from;
 			serverTask.t.to = packetData->to;
 			serverTask.t.blockCount = packetData->counter;
-			serverTask.t.revisionNumberInventory = packetData->revisionNumber;
+			serverTask.t.revisionNumber = packetData->revisionNumber;
 			serverTasks.push_back(serverTask);
 
 			break;
@@ -508,7 +522,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.itemType = packetData->itemType;
 			serverTask.t.blockCount = packetData->counter;
 			serverTask.t.to = packetData->to;
-			serverTask.t.revisionNumberInventory = packetData->revisionNumber;
+			serverTask.t.revisionNumber = packetData->revisionNumber;
 			serverTasks.push_back(serverTask);
 
 			break;
@@ -526,7 +540,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.itemType = packetData->itemType;
 			serverTask.t.to = packetData->to;
 			serverTask.t.blockCount = packetData->counter;
-			serverTask.t.revisionNumberInventory = packetData->revisionNumber;
+			serverTask.t.revisionNumber = packetData->revisionNumber;
 			serverTasks.push_back(serverTask);
 
 			break;
@@ -543,7 +557,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.taskType = Task::clientSwapItems;
 			serverTask.t.from = packetData->from;
 			serverTask.t.to = packetData->to;
-			serverTask.t.revisionNumberInventory = packetData->revisionNumber;
+			serverTask.t.revisionNumber = packetData->revisionNumber;
 			serverTasks.push_back(serverTask);
 
 			break;
@@ -563,10 +577,45 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.from = packetData->from;
 			serverTask.t.itemType = packetData->itemType;
 			serverTask.t.pos = packetData->position;
-			serverTask.t.revisionNumberInventory = packetData->revisionNumber;
+			serverTask.t.revisionNumber = packetData->revisionNumber;
+			serverTasks.push_back(serverTask);
+
+			break;
+		}
+		
+		case headerClientInteractWithBlock:
+		{
+
+			if (size != sizeof(Packet_ClientInteractWithBlock))
+			{
+				break;
+			}
+
+			Packet_ClientInteractWithBlock *packetData = (Packet_ClientInteractWithBlock *)data;
+			serverTask.t.taskType = Task::clientInteractedWithBlock;
+			serverTask.t.blockType = packetData->blockType;
+			serverTask.t.pos = packetData->blockPos;
+			serverTask.t.revisionNumber = packetData->interactionCounter;
+			serverTasks.push_back(serverTask);
+
+			break;
+		}
+
+		case headerRecieveExitBlockInteraction:
+		{
+			if (size != sizeof(Packet_RecieveExitBlockInteraction))
+			{
+				break;
+			}
+
+			Packet_RecieveExitBlockInteraction *packetData = (Packet_RecieveExitBlockInteraction *)data;
+			serverTask.t.taskType = Task::clientExitedInteractionWithBlock;
+			serverTask.t.revisionNumber = packetData->revisionNumber;
+			
 			serverTasks.push_back(serverTask);
 
 		}
+		break;
 
 		default:
 

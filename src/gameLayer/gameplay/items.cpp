@@ -220,7 +220,7 @@ Item *PlayerInventory::getItemFromIndex(int index)
 	{
 		return &heldInMouse;
 	}
-	else if (index < PlayerInventory::CRAFTING_INDEX + 4)
+	else if (index < PlayerInventory::CRAFTING_INDEX + 9)
 	{
 		return &crafting[index - PlayerInventory::CRAFTING_INDEX];
 	}if (index == PlayerInventory::CRAFTING_RESULT_INDEX)
@@ -308,7 +308,6 @@ void PlayerInventory::sanitize()
 
 }
 
-
 int PlayerInventory::tryPickupItem(const Item &item)
 {
 	int currentCounter = 0;
@@ -349,9 +348,30 @@ int PlayerInventory::tryPickupItem(const Item &item)
 	return 0;
 }
 
-void PlayerInventory::craft(int count)
+void PlayerInventory::craft4(int count)
 {
 	for (int i = 0; i < 4; i++)
+	{
+		if (crafting[i].counter < count)
+		{
+			crafting[i] = {};
+			permaAssertComment(0, "Error in craft method in player inventory");
+		}
+		else
+		{
+			crafting[i].counter -= count;
+
+			if (crafting[i].counter <= 0)
+			{
+				crafting[i] = {};
+			}
+		}
+	}
+}
+
+void PlayerInventory::craft9(int count)
+{
+	for (int i = 0; i < 9; i++)
 	{
 		if (crafting[i].counter < count)
 		{
@@ -401,3 +421,4 @@ Item itemCreator(unsigned short type)
 
 	return ret;
 }
+

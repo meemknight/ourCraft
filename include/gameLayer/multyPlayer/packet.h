@@ -66,6 +66,8 @@ enum : std::uint32_t
 	headerClientOverWriteItem,
 	headerClientSwapItems,
 	headerClientUsedItem,
+	headerClientInteractWithBlock,
+	headerRecieveExitBlockInteraction,
 	headerDisconnectOtherPlayer, 
 	headerUpdateZombie,
 	headerUpdatePig,
@@ -111,6 +113,11 @@ struct Packet_RecieveDroppedItemUpdate
 	std::uint64_t timer = 0;
 };
 
+struct Packet_RecieveExitBlockInteraction
+{
+	unsigned char revisionNumber;
+};
+
 struct Packet_ClientMovedItem
 {
 	unsigned short itemType;
@@ -142,6 +149,14 @@ struct Packet_ClientSwapItems
 	unsigned char from;
 	unsigned char to;
 	unsigned char revisionNumber;
+};
+
+struct Packet_ClientInteractWithBlock
+{
+	glm::ivec3 blockPos;
+	unsigned short blockType;
+	unsigned char interactionCounter;
+
 };
 
 struct Packet_UpdateZombie

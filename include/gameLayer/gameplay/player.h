@@ -11,6 +11,7 @@ struct Player : public PhysicalEntity, public CollidesWithPlacedBlocks,
 	glm::vec3 lookDirectionAnimation = {0,0,-1};
 	glm::vec2 bodyOrientation = {0, -1};
 
+
 	void flyFPS(glm::vec3 direction, glm::vec3 lookDirection);
 
 	void moveFPS(glm::vec3 direction, glm::vec3 lookDirection);
@@ -44,6 +45,8 @@ struct LocalPlayer
 	OtherPlayerSettings otherPlayerSettings = {};
 	//dodo add some other data here like inventory
 
+	glm::ivec3 currentBlockInteractWith = {0,-1,0};
+	unsigned char isInteractingWithBlock = 0;
 };
 
 
@@ -61,5 +64,12 @@ struct PlayerServer: public ServerEntity<Player>
 	OtherPlayerSettings otherPlayerSettings = {};
 
 	PlayerInventory inventory;
+
+
+	//this also represents the interaction type
+	unsigned char interactingWithBlock = 0;
+	unsigned char revisionNumberInteraction = 0;
+	glm::ivec3 currentBlockInteractWithPosition = {0, -1, 0};
+
 
 };

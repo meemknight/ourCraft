@@ -63,12 +63,13 @@ struct GameData
 
 	glm::dvec3 lastSendPos = {-INFINITY,0,0};
 
-
 	int currentItemSelected = 0;
 
+	unsigned char currentBlockInteractionRevisionNumber = 0;
+	unsigned char blockInteractionType = 0;
+	glm::ivec3 blockInteractionPosition = {0, -1, 0};
 
 	bool insideInventoryMenu = 0;
-
 
 }gameData;
 
@@ -97,6 +98,7 @@ bool initGameplay(ProgramData &programData, const char *c)
 
 	gameData.chunkSystem.init(30);
 
+	//TODO, MOVE TO PROGRAM DATA!!!!!!!!!!!
 	gameData.sunShadow.init();
 
 	//-5359
@@ -111,6 +113,26 @@ bool initGameplay(ProgramData &programData, const char *c)
 	return true;
 }
 
+
+void exitInventoryMenu()
+{
+
+	if (gameData.blockInteractionType)
+	{
+
+		Packet_RecieveExitBlockInteraction packetData;
+		packetData.revisionNumber = gameData.currentBlockInteractionRevisionNumber;
+
+		sendPacket(getServer(), formatPacket(headerRecieveExitBlockInteraction),
+			(char *)&packetData, sizeof(Packet_RecieveExitBlockInteraction),
+			true, channelChunksAndBlocks);
+	}
+
+	gameData.blockInteractionType = 0;
+	gameData.blockInteractionPosition = {0, -1, 0};
+
+	gameData.insideInventoryMenu = false;
+}
 
 bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 {
@@ -145,11 +167,22 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			}
 		}
 
+		bool shouldExitBlockInteraction = 0;
+
 		clientMessageLoop(validateEvent, inValidateRevision,
 			gameData.entityManager.localPlayer.entity.position, gameData.chunkSystem.squareSize,
-			gameData.entityManager, gameData.undoQueue, gameData.serverTimer, disconnect);
+			gameData.entityManager, gameData.undoQueue, gameData.serverTimer, disconnect, 
+			gameData.currentBlockInteractionRevisionNumber, shouldExitBlockInteraction);
 
 		if (disconnect) { return 0; }
+
+		if (shouldExitBlockInteraction)
+		{
+			//exit block interaction
+			gameData.blockInteractionPosition = {0,-1,0};
+			gameData.blockInteractionType = 0;
+			gameData.insideInventoryMenu = 0;
+		}
 
 		if (validateEvent)
 		{
@@ -271,17 +304,31 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 	//inventory and menu stuff
-	if(!gameData.escapePressed)
-	if (platform::isKeyReleased(platform::Button::E))
+	if (!gameData.escapePressed)
 	{
-		gameData.insideInventoryMenu = !gameData.insideInventoryMenu;
+
+		if (platform::isKeyReleased(platform::Button::E))
+		{
+			if (gameData.insideInventoryMenu)
+			{
+				exitInventoryMenu();
+			}
+			else
+			{
+				gameData.insideInventoryMenu = true;
+				gameData.blockInteractionType = 0;
+			}
+
+		}
+
+
 	}
 
 	if (gameData.insideInventoryMenu)
 	{
 		if (platform::isKeyReleased(platform::Button::Escape))
 		{
-			gameData.insideInventoryMenu = false;
+			exitInventoryMenu();
 		}
 	}
 	else
@@ -571,37 +618,73 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 					if (platform::isRMousePressed())
 					{
+						bool didAction = 0;
 
-						if (item.isItemThatCanBeUsed() && blockToPlace)
+						auto b = gameData.chunkSystem.getBlockSafe(rayCastPos);
+						if(b)
 						{
+							
+							auto actionType = isInteractable(b->type);
 
-							Packet_ClientUsedItem data;
-							data.from = gameData.currentItemSelected;
-							data.itemType = item.type;
-							data.position = *blockToPlace;
-							data.revisionNumber = player.inventory.revisionNumber;
-
-							sendPacket(getServer(), headerClientUsedItem, player.entityId,
-								&data, sizeof(data), true, channelChunksAndBlocks);
-
-							if (item.isConsumedAfterUse() && player.otherPlayerSettings.gameMode ==
-								OtherPlayerSettings::SURVIVAL)
+							if (actionType)
 							{
-								item.counter--;
-								if (item.counter <= 0)
-								{
-									item = {};
-								}
+								didAction = true;
+
+								gameData.currentBlockInteractionRevisionNumber++;
+								gameData.blockInteractionType = actionType;
+								gameData.blockInteractionPosition = rayCastPos;
+
+								sendBlockInteractionMessage(player.entityId, rayCastPos,
+									b->type, gameData.currentBlockInteractionRevisionNumber);
+								
+								gameData.insideInventoryMenu = true;
+
+								//reset crafting table
+								// TODO!!! exit menu thingy here
+								//gameData.craftingTableInventory = {};
 							}
 
 						}
-						else if (blockToPlace && item.isBlock())
-							gameData.chunkSystem.placeBlockByClient(*blockToPlace, 
-							gameData.currentItemSelected,
-							gameData.undoQueue, 
-							gameData.entityManager.localPlayer.entity.position, 
-							gameData.lightSystem,
-							player.inventory);
+
+						if (!didAction)
+						{
+							if (item.isItemThatCanBeUsed() && blockToPlace)
+							{
+
+								Packet_ClientUsedItem data;
+								data.from = gameData.currentItemSelected;
+								data.itemType = item.type;
+								data.position = *blockToPlace;
+								data.revisionNumber = player.inventory.revisionNumber;
+
+								sendPacket(getServer(), headerClientUsedItem, player.entityId,
+									&data, sizeof(data), true, channelChunksAndBlocks);
+
+								if (item.isConsumedAfterUse() && player.otherPlayerSettings.gameMode ==
+									OtherPlayerSettings::SURVIVAL)
+								{
+									item.counter--;
+									if (item.counter <= 0)
+									{
+										item = {};
+									}
+								}
+
+							}
+							else if (blockToPlace && item.isBlock())
+							{
+
+								gameData.chunkSystem.placeBlockByClient(*blockToPlace,
+									gameData.currentItemSelected,
+									gameData.undoQueue,
+									gameData.entityManager.localPlayer.entity.position,
+									gameData.lightSystem,
+									player.inventory);
+
+							}
+						};
+
+							
 					}
 					else if (platform::isLMousePressed())
 					{
@@ -1189,7 +1272,15 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	if (gameData.insideInventoryMenu)
 	{
-		itemToCraft = craft4(player.inventory.crafting);
+		if (gameData.blockInteractionType == InteractionTypes::craftingTable)
+		{
+			itemToCraft = craft9(player.inventory.crafting);
+		}
+		else
+		{
+			itemToCraft = craft4(player.inventory.crafting);
+		}
+
 	}
 
 
@@ -1201,9 +1292,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	int cursorSelected = -2;
 
-	programData.ui.renderGameUI(deltaTime, w, h, gameData.currentItemSelected, 
+
+	programData.ui.renderGameUI(deltaTime, w, h, gameData.currentItemSelected,
 		player.inventory, programData.blocksLoader, gameData.insideInventoryMenu,
-		cursorSelected, itemToCraft);
+		cursorSelected, itemToCraft, 
+		(gameData.blockInteractionType == InteractionTypes::craftingTable)
+		);
+
 
 #pragma endregion
 
@@ -1227,7 +1322,14 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					
 					//craft one
 					*cursor = itemToCraft;
-					player.inventory.craft();
+					if (gameData.blockInteractionType == InteractionTypes::craftingTable)
+					{
+						player.inventory.craft9();
+					}
+					else
+					{
+						player.inventory.craft4();
+					}
 					cratedOneItem(player.inventory, itemToCraft, PlayerInventory::CURSOR_INDEX);
 
 				}
@@ -1240,7 +1342,14 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 						if (cursor->counter + itemToCraft.counter <= cursor->getStackSize())
 						{
 							cursor->counter += itemToCraft.counter;
-							player.inventory.craft();
+							if (gameData.blockInteractionType == InteractionTypes::craftingTable)
+							{
+								player.inventory.craft9();
+							}
+							else
+							{
+								player.inventory.craft4();
+							}
 							cratedOneItem(player.inventory, itemToCraft, PlayerInventory::CURSOR_INDEX);
 						}
 

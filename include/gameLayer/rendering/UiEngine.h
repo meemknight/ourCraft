@@ -6,6 +6,7 @@
 struct PlayerInventory;
 struct BlocksLoader;
 struct Item;
+struct CraftingTableInventory;
 
 
 struct UiENgine
@@ -38,9 +39,12 @@ struct UiENgine
 
 
 	//cursorItemIndex returns -1 if outside the menu to throw items, and -2 if it is nowhere 
+	//if inside crafting, supply craftingTableInventory
 	void renderGameUI(float deltaTime, 
 		int w, int h, int itemSelected, PlayerInventory &inventory,
 		BlocksLoader &blocksLoader, bool insideInventory, int &cursorItemIndex,
-		Item &itemToCraft);
+		Item &itemToCraft, 
+		bool insideCraftingTable
+		);
 
 };

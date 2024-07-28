@@ -117,7 +117,9 @@ void recieveDataClient(ENetEvent &event,
 	RevisionNumber &invalidateRevision,
 	glm::ivec3 playerPosition, int squareDistance,
 	ClientEntityManager &entityManager,
-	UndoQueue &undoQueue, std::uint64_t &yourTimer
+	UndoQueue &undoQueue, std::uint64_t &yourTimer,
+	unsigned char revisionNumberBlockInteraction,
+	bool &shouldExitBlockInteraction
 	)
 {
 	Packet p;
@@ -398,6 +400,19 @@ void recieveDataClient(ENetEvent &event,
 		}
 		break;
 
+		case headerRecieveExitBlockInteraction:
+		{
+			Packet_RecieveExitBlockInteraction *exitInteraction = (Packet_RecieveExitBlockInteraction *)data;
+			if (size == sizeof(Packet_RecieveExitBlockInteraction))
+			{
+				if (exitInteraction->revisionNumber == revisionNumberBlockInteraction)
+				{
+					shouldExitBlockInteraction = true;
+				}
+			}
+		}
+		break;
+
 		default:
 		break;
 
@@ -412,7 +427,8 @@ void recieveDataClient(ENetEvent &event,
 //this is not multy threaded
 void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision
 	,glm::ivec3 playerPosition, int squareDistance, ClientEntityManager &entityManager,
-	UndoQueue &undoQueue, std::uint64_t &serverTimer, bool &disconnect)
+	UndoQueue &undoQueue, std::uint64_t &serverTimer, bool &disconnect
+	, unsigned char revisionNumberBlockInteraction, bool &shouldExitBlockInteraction)
 {
 	ENetEvent event;
 
@@ -427,7 +443,8 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 				{
 					
 					recieveDataClient(event, validatedEvent, invalidateRevision,
-						playerPosition, squareDistance, entityManager, undoQueue, serverTimer);
+						playerPosition, squareDistance, entityManager, undoQueue, serverTimer,
+						revisionNumberBlockInteraction, shouldExitBlockInteraction);
 					
 					enet_packet_destroy(event.packet);
 
@@ -461,6 +478,21 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 	//{
 	//	std::cout << "Restant packets: " << counter << '\n';
 	//}
+
+}
+
+void sendBlockInteractionMessage( std::uint64_t playerID, 
+	glm::ivec3 pos, BlockType block, unsigned char revisionNumber)
+{
+
+	Packet_ClientInteractWithBlock data;
+	data.blockPos = pos;
+	data.blockType = block;
+	data.interactionCounter = revisionNumber;
+
+	sendPacket(getServer(), headerClientInteractWithBlock,
+		playerID,
+		&data, sizeof(data), true, channelChunksAndBlocks);
 
 }
 

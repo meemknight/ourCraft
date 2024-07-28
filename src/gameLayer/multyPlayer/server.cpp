@@ -498,7 +498,7 @@ void serverWorkerUpdate(
 						i.t.taskType == Task::breakBlock ||
 						(
 						client->playerData.inventory.revisionNumber
-						== i.t.revisionNumberInventory)
+						== i.t.revisionNumber)
 						)
 					{
 						if (i.t.taskType == Task::breakBlock)
@@ -641,7 +641,7 @@ void serverWorkerUpdate(
 					bool killItem = 0;
 
 					if (client->playerData.inventory.revisionNumber
-						== i.t.revisionNumberInventory
+						== i.t.revisionNumber
 						)
 					{
 
@@ -719,7 +719,7 @@ void serverWorkerUpdate(
 							<< (int)client->playerData.inventory.revisionNumber << "\n";
 
 						std::cout << "Recieved revision : "
-							<< (int)i.t.revisionNumberInventory << "\n";
+							<< (int)i.t.revisionNumber << "\n";
 
 						killItem = true;
 					}
@@ -744,7 +744,7 @@ void serverWorkerUpdate(
 
 					//if the revision number isn't good we don't do anything
 					if (client->playerData.inventory.revisionNumber
-						== i.t.revisionNumberInventory
+						== i.t.revisionNumber
 						)
 					{
 
@@ -823,7 +823,7 @@ void serverWorkerUpdate(
 
 					//if the revision number isn't good we don't do anything
 					if (client->playerData.inventory.revisionNumber
-						== i.t.revisionNumberInventory
+						== i.t.revisionNumber
 						)
 					{
 
@@ -867,7 +867,7 @@ void serverWorkerUpdate(
 
 					//if the revision number isn't good we don't do anything
 					if (client->playerData.inventory.revisionNumber
-						== i.t.revisionNumberInventory
+						== i.t.revisionNumber
 						)
 					{
 						Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
@@ -899,7 +899,7 @@ void serverWorkerUpdate(
 
 					//if the revision number isn't good we don't do anything
 					if (client->playerData.inventory.revisionNumber
-						== i.t.revisionNumberInventory
+						== i.t.revisionNumber
 						)
 					{
 
@@ -908,7 +908,17 @@ void serverWorkerUpdate(
 						if (to)
 						{
 
-							Item itemToCraft = craft4(client->playerData.inventory.crafting);
+							Item itemToCraft;
+
+							if (client->playerData.interactingWithBlock == InteractionTypes::craftingTable)
+							{
+								itemToCraft = craft9(client->playerData.inventory.crafting);
+							}
+							else
+							{
+								itemToCraft = craft4(client->playerData.inventory.crafting);
+							}
+							
 
 							if (itemToCraft.type == i.t.itemType)
 							{
@@ -917,7 +927,15 @@ void serverWorkerUpdate(
 
 								if (to->type == 0)
 								{
-									client->playerData.inventory.craft();
+									if (client->playerData.interactingWithBlock == InteractionTypes::craftingTable)
+									{
+										client->playerData.inventory.craft9();
+									}
+									else
+									{
+										client->playerData.inventory.craft4();
+									}
+
 									*to = itemToCraft;
 								}
 								else if (to->type == itemToCraft.type)
@@ -926,7 +944,16 @@ void serverWorkerUpdate(
 									if (to->counter < to->getStackSize() &&
 										to->counter + itemToCraft.counter <= to->getStackSize())
 									{
-										client->playerData.inventory.craft();
+
+										if (client->playerData.interactingWithBlock == InteractionTypes::craftingTable)
+										{
+											client->playerData.inventory.craft9();
+										}
+										else
+										{
+											client->playerData.inventory.craft4();
+										}
+
 										to->counter += itemToCraft.counter;
 									}
 
@@ -963,7 +990,7 @@ void serverWorkerUpdate(
 
 					//if the revision number isn't good we don't do anything
 					if (client->playerData.inventory.revisionNumber
-						== i.t.revisionNumberInventory
+						== i.t.revisionNumber
 						)
 					{
 
@@ -1032,7 +1059,109 @@ void serverWorkerUpdate(
 				}
 
 			}
+			else if (i.t.taskType == Task::clientInteractedWithBlock)
+			{
 
+				auto pos = i.t.pos;
+				auto blockType = i.t.blockType;
+				unsigned char revisionNumberInteraction = i.t.revisionNumber;
+
+
+				auto client = getClientNotLocked(i.cid);
+				
+				if (client)
+				{
+
+					bool allows = 0;
+
+					auto client = getClientNotLocked(i.cid);
+
+					if (client)
+					{
+
+						allows = true;
+						{
+							auto f = settings.perClientSettings.find(i.cid);
+							if (f != settings.perClientSettings.end())
+							{
+								if (!f->second.validateStuff)
+								{
+									allows = false;
+								}
+							}
+						}
+
+						if (allows)
+						{
+							bool wasGenerated = 0;
+							//std::cout << "server recieved place block\n";
+							//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
+							auto chunk = sd.chunkCache.getOrCreateChunk(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z), wg, structuresManager
+								, biomesManager, sendNewBlocksToPlayers, true, nullptr, worldSaver, &wasGenerated);
+							int convertedX = modBlockToChunk(i.t.pos.x);
+							int convertedZ = modBlockToChunk(i.t.pos.z);
+
+							allows = false;
+
+							if (chunk)
+							{
+								auto b = chunk->chunk.safeGet(convertedX, i.t.pos.y, convertedZ);
+
+								if (b && b->type == blockType
+									&& isInteractable(blockType)
+									)
+								{
+									//todo check distance.
+									allows = true;
+								}
+							}
+						}
+						
+						if (allows)
+						{
+
+							client->playerData.interactingWithBlock =
+								isInteractable(blockType);
+							client->playerData.revisionNumberInteraction = revisionNumberInteraction;
+							client->playerData.currentBlockInteractWithPosition = pos;
+
+
+						}
+						else
+						{
+							sendPlayerExitInteraction(*client, revisionNumberInteraction);
+						}
+					
+
+					}
+					
+
+
+					//client->playerData.isInteractingWithBlock 
+
+				}
+
+			}
+			else if (i.t.taskType == Task::clientExitedInteractionWithBlock)
+			{
+				unsigned char revisionNumberInteraction = i.t.revisionNumber;
+
+				auto client = getClientNotLocked(i.cid);
+
+				if (client)
+				{
+					if (client->playerData.revisionNumberInteraction == revisionNumberInteraction)
+					{
+						client->playerData.interactingWithBlock = 0;
+						client->playerData.currentBlockInteractWithPosition = {0,-1,0};
+						std::cout << "Server, exit interaction!\n";
+					}
+
+				}
+
+
+			}
+			
 
 		sd.waitingTasks.erase(sd.waitingTasks.begin());
 

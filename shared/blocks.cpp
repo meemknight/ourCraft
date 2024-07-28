@@ -79,6 +79,16 @@ bool isWoodPlank(BlockType type)
 		type == BlockTypes::jungle_planks;
 }
 
+unsigned char isInteractable(BlockType type)
+{
+	if (type == BlockTypes::craftingTable)
+	{
+		return InteractionTypes::craftingTable;
+	}
+
+	return InteractionTypes::none;
+}
+
 float Block::getFriction()
 {
 	if (type == BlockTypes::ice)

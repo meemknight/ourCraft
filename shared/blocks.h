@@ -81,6 +81,7 @@ bool isColidable(BlockType type);
 
 bool isWoodPlank(BlockType type);
 
+unsigned char isInteractable(BlockType type);
 
 struct Block
 {
@@ -162,3 +163,13 @@ struct Block
 
 };
 
+namespace InteractionTypes
+{
+
+	enum 
+	{
+		none = 0,
+		craftingTable = 1,
+	};
+
+};

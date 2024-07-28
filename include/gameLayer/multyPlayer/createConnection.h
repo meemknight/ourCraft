@@ -21,6 +21,8 @@ struct Task
 		clientCraftedItem,
 		clientSwapItems,
 		clientUsedItem,
+		clientInteractedWithBlock,
+		clientExitedInteractionWithBlock,
 		generateChunk
 	};
 
@@ -37,7 +39,7 @@ struct Task
 	unsigned short itemType = 0;
 	unsigned char from;
 	unsigned char to;
-	unsigned char revisionNumberInventory = 0;
+	unsigned char revisionNumber = 0;
 	unsigned char inventroySlot = 0;
 
 };
@@ -80,6 +82,12 @@ bool grabItem(PlayerInventory &inventory, int from, int to, int counter = 0);
 bool forceOverWriteItem(PlayerInventory &inventory, int index, Item &item);
 void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision
 	,glm::ivec3 playerPosition, int squareDistance, ClientEntityManager& entityManager,
-	UndoQueue &undoQueue, std::uint64_t &serverTimer, bool &disconnect);
+	UndoQueue &undoQueue, std::uint64_t &serverTimer, bool &disconnect,
+	unsigned char revisionNumberBlockInteraction, bool &shouldExitBlockInteraction
+	);
+
+void sendBlockInteractionMessage(
+	std::uint64_t playerID,
+	glm::ivec3 pos, BlockType block, unsigned char revisionNumber);
 
 void closeConnection();
