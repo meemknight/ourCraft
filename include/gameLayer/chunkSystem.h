@@ -47,7 +47,9 @@ struct ChunkSystem
 
 	void setChunkAndNeighboursFlagDirtyFromBlockPos(int x, int z);
 
-	void init(int viewDistance);
+	void init(int squareDistance);
+
+	void changeRenderDistance(int squareDistance);
 
 	void cleanup();
 

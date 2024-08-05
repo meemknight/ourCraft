@@ -220,7 +220,7 @@ struct Renderer
 	bool sortChunks = 1;
 	bool zprepass = 1;
 	bool frustumCulling = 1;
-	bool waterRefraction = 1;
+	int waterRefraction = 1;
 
 	FBO fboHBAO;
 	FBO fboMain;

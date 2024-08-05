@@ -28,11 +28,25 @@ Chunk* ChunkSystem::getChunkSafeFromMatrixSpace(int x, int z)
 	}
 }
 
-void ChunkSystem::init(int viewDistance)
+void ChunkSystem::init(int squareDistance)
 {
-	squareSize = viewDistance;
-	loadedChunks.resize(squareSize * squareSize, nullptr);
-	gpuBuffer.create(squareSize * squareSize);
+	squareSize = squareDistance;
+	loadedChunks.resize(squareDistance * squareDistance, nullptr);
+	gpuBuffer.create(squareDistance * squareDistance);
+}
+
+void ChunkSystem::changeRenderDistance(int squareDistance)
+{
+
+	if (squareSize == squareDistance) { return; }
+	if (squareDistance > 100) { return; }
+	if (squareDistance < 1) { return; }
+
+
+	cleanup();
+
+	init(squareDistance);
+
 }
 
 void ChunkSystem::cleanup()

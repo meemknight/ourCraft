@@ -18,6 +18,10 @@ void displayRenderSettingsMenu(ProgramData &programData)
 
 	programData.ui.menuRenderer.Text("Rendering Settings...", Colors_White);
 
+	programData.ui.menuRenderer.sliderInt("View Distance", &programData.otherSettings.viewDistance,
+		1, 64, Colors_White, programData.ui.buttonTexture, Colors_Gray,
+		programData.ui.buttonTexture, Colors_White);
+
 #pragma region water
 {
 	programData.ui.menuRenderer.BeginMenu("Water", Colors_Gray, programData.ui.buttonTexture);
@@ -35,21 +39,24 @@ void displayRenderSettingsMenu(ProgramData &programData)
 
 	programData.ui.menuRenderer.sliderFloat("Underwater Fog strength",
 		&programData.renderer.defaultShader.shadingSettings.underwaterDarkenStrength,
-		0, 1, Colors_White, programData.ui.buttonTexture, Colors_Gray);
+		0, 1, Colors_White, programData.ui.buttonTexture, Colors_Gray, 
+		programData.ui.buttonTexture, Colors_White
+		);
 
 	programData.ui.menuRenderer.sliderFloat("Underwater Fog Distance",
 		&programData.renderer.defaultShader.shadingSettings.underwaterDarkenDistance,
-		0, 40, Colors_White, programData.ui.buttonTexture, Colors_Gray);
+		0, 40, Colors_White, programData.ui.buttonTexture, Colors_Gray,
+		programData.ui.buttonTexture, Colors_White);
 
 	programData.ui.menuRenderer.sliderFloat("Underwater Fog Gradient",
 		&programData.renderer.defaultShader.shadingSettings.fogGradientUnderWater,
-		0, 32, Colors_White, programData.ui.buttonTexture, Colors_Gray);
+		0, 32, Colors_White, programData.ui.buttonTexture, Colors_Gray,
+		programData.ui.buttonTexture, Colors_White);
 
-	static int index = 0;
 	static glm::vec4 colors[] = {{0.6,0.9,0.6,1}, Colors_Red};
 
 	programData.ui.menuRenderer.toggleOptions("Water type: ", "cheap|fancy",
-		&index, true, Colors_White, colors, programData.ui.buttonTexture,
+		&programData.renderer.waterRefraction, true, Colors_White, colors, programData.ui.buttonTexture,
 		Colors_Gray,
 		"How the water should be rendered\n-Cheap: \
 good performance.\n-Fancy: significant performance cost but looks very nice.");
@@ -68,12 +75,17 @@ good performance.\n-Fancy: significant performance cost but looks very nice.");
 
 	
 	programData.ui.menuRenderer.newColum(2);
+
+	programData.ui.menuRenderer.Text("", {});
 	
+
+
 	//programData.menuRenderer.BeginMenu("Volumetric", Colors_Gray, programData.buttonTexture);
 	//programData.menuRenderer.Text("Volumetric Settings...", Colors_White);
 	programData.ui.menuRenderer.sliderFloat("Fog gradient (O to disable it)",
 		&programData.renderer.defaultShader.shadingSettings.fogCloseGradient,
-		0, 64, Colors_White, programData.ui.buttonTexture, Colors_Gray);
+		0, 64, Colors_White, programData.ui.buttonTexture, Colors_Gray,
+		programData.ui.buttonTexture, Colors_White);
 	//programData.menuRenderer.EndMenu();
 
 	static glm::vec4 colorsShadows[] = {{0.0,1,0.0,1}, {0.8,0.6,0.6,1}, {0.9,0.3,0.3,1}};

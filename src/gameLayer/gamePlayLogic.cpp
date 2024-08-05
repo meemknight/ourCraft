@@ -29,6 +29,7 @@
 #include <gameplay/entityManagerClient.h>
 #include <gameplay/items.h>
 #include <gameplay/crafting.h>
+#include <rendering/renderSettings.h>
 
 struct GameData
 {
@@ -96,7 +97,7 @@ bool initGameplay(ProgramData &programData, const char *c)
 	//playerData.timer;
 
 
-	gameData.chunkSystem.init(30);
+	gameData.chunkSystem.init(programData.otherSettings.viewDistance * 2);
 
 	//TODO, MOVE TO PROGRAM DATA!!!!!!!!!!!
 	gameData.sunShadow.init();
@@ -302,6 +303,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma region input
 
+	static float moveSpeed = 20.f;
 
 	//inventory and menu stuff
 	if (!gameData.escapePressed)
@@ -322,43 +324,20 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 
 
-	}
 
-	if (gameData.insideInventoryMenu)
-	{
-		if (platform::isKeyReleased(platform::Button::Escape))
+		if (platform::isKeyReleased(platform::Button::I))
 		{
-			exitInventoryMenu();
+			gameData.showImgui = !gameData.showImgui;
 		}
-	}
-	else
-	{
-		if (platform::isKeyReleased(platform::Button::Escape))
+
+		if (platform::isKeyPressedOn(platform::Button::R))
 		{
-			gameData.escapePressed = !gameData.escapePressed;
+			programData.renderer.reloadShaders();
 		}
-	}
-
-	platform::showMouse(gameData.escapePressed || gameData.insideInventoryMenu);
 
 
-	static float moveSpeed = 20.f;
-
-	
-
-	if (platform::isKeyReleased(platform::Button::I))
-	{
-		gameData.showImgui = !gameData.showImgui;
-	}
-
-	if (platform::isKeyPressedOn(platform::Button::R))
-	{
-		programData.renderer.reloadShaders();
-	}
-
-
-	//move
-	if(!gameData.insideInventoryMenu)
+		//move
+		if(!gameData.insideInventoryMenu)
 	{
 		float speed = moveSpeed * deltaTime;
 		glm::vec3 moveDir = {};
@@ -437,7 +416,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		bool rotate = !gameData.escapePressed;
 		if (platform::isRMouseHeld()) { rotate = true; }
-		gameData.c.rotateFPS(platform::getRelMousePosition(), 0.25f * deltaTime, rotate);
+		gameData.c.rotateFPS(platform::getRelMousePosition(), 0.22f * deltaTime, rotate);
 
 		if (!gameData.escapePressed)
 		{
@@ -448,8 +427,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	}
 
 
-	//keyPad
-	if (!gameData.insideInventoryMenu)
+		//keyPad
+		if (!gameData.insideInventoryMenu)
 	{
 
 		for (int i = 0; i < 9; i++)
@@ -471,6 +450,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 
 		gameData.currentItemSelected = std::clamp(gameData.currentItemSelected, 0, 8);
+
+	}
 
 	}
 
@@ -1238,8 +1219,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			ImGui::Checkbox("Frustum culling",
 				&programData.renderer.frustumCulling);
 
-			ImGui::Checkbox("Water Refraction",
-				&programData.renderer.waterRefraction);
+			//ImGui::Checkbox("Water Refraction",
+			//	&programData.renderer.waterRefraction);
 			
 		}
 		ImGui::End();
@@ -1305,7 +1286,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	//std::cout << cursorSelected << "\n";
 
 #pragma region move items in inventory
-	if (gameData.insideInventoryMenu)
+	if (gameData.insideInventoryMenu && !gameData.escapePressed)
 	{
 		
 		static std::bitset<64> rightClickedThisClick = 0;
@@ -1473,6 +1454,63 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	player.inventory.sanitize();
 
 #pragma endregion
+
+
+#pragma region esc manu
+
+	bool justPressedEsc = 0;
+	if (gameData.insideInventoryMenu)
+	{
+		if (platform::isKeyReleased(platform::Button::Escape))
+		{
+			exitInventoryMenu();
+		}
+	}
+	else
+	{
+		if (platform::isKeyReleased(platform::Button::Escape) && !gameData.escapePressed)
+		{
+			gameData.escapePressed = !gameData.escapePressed;
+			justPressedEsc = true;
+		}
+	}
+
+
+	if (gameData.escapePressed)
+	{
+
+		programData.ui.renderer2d.renderRectangle({0,0,programData.ui.renderer2d.windowW,
+			programData.ui.renderer2d.windowH}, {0,0,0,0.5});
+	
+		programData.ui.menuRenderer.Begin(2);
+		programData.ui.menuRenderer.SetAlignModeFixedSizeWidgets({0,150});
+
+		programData.ui.menuRenderer.Text("Game Menu", Colors_White);
+
+		if (programData.ui.menuRenderer.Button("Back to Game", Colors_Gray, programData.ui.buttonTexture))
+		{
+			gameData.escapePressed = false;
+		}
+
+		displayRenderSettingsMenuButton(programData);
+
+
+		programData.ui.menuRenderer.End();
+
+		if (programData.ui.menuRenderer.internal.allMenuStacks[2].size() == 0 && 
+			platform::isKeyReleased(platform::Button::Escape) && !justPressedEsc)
+		{
+			gameData.escapePressed = false;
+		}
+
+	}
+
+	platform::showMouse(gameData.escapePressed || gameData.insideInventoryMenu);
+
+
+#pragma endregion
+
+	gameData.chunkSystem.changeRenderDistance(programData.otherSettings.viewDistance * 2);
 
 
 	gameData.gameplayFrameProfiler.endFrame();

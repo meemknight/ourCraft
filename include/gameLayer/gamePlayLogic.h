@@ -26,6 +26,13 @@ struct ProgramData
 	gl2d::Texture dudv;
 	gl2d::Texture dudvNormal;
 	int currentFps = 0;
+
+	struct OtherSettings
+	{
+
+		int viewDistance = 15;
+
+	}otherSettings;
 };
 
 
