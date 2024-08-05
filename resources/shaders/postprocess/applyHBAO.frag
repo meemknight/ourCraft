@@ -30,7 +30,7 @@ float computeFog(float dist)
 	return rez;
 }
 
-const float AO_STRENGTH = 0.8;
+const float AO_STRENGTH = 1.55;
 
 
 void main()
@@ -48,6 +48,7 @@ void main()
 			aoValue += textureLod(u_hbao, v_texCoords + offset, 0).r;
 		}
 	}
+
 	aoValue = aoValue / (4.0 * 4.0);
 	//aoValue += textureLod(u_hbao, v_texCoords, 0).r;
 

@@ -14,7 +14,7 @@ struct GPUProfiler
 	std::vector<float> queryTimersMs;
 	int currentQuery = 0;
 
-	void init(int maxQueries = 10);
+	void init(int maxQueries = 12);
 
 	void startFrame();
 
@@ -51,8 +51,8 @@ struct Profiler
 
 	struct SavedData
 	{
-		float dataMs[10]; //todo magic number here
-		float dataMsReal[10];
+		float dataMs[12]; //todo magic number here
+		float dataMsReal[12];
 	};
 
 

@@ -42,6 +42,7 @@ struct Renderer
 		void copyDepthFromMainFBO(int w, int h);
 		void copyColorFromMainFBO(int w, int h);
 
+		void copyDepthToMainFbo(int w, int h);
 		void copyDepthFromOtherFBO(GLuint other, int w, int h);
 		void copyColorFromOtherFBO(GLuint other, int w, int h);
 		void copyDepthAndColorFromOtherFBO(GLuint other, int w, int h);
@@ -106,7 +107,7 @@ struct Renderer
 
 		struct ShadingSettings
 		{
-			glm::vec3 waterColor = (glm::vec3(9, 75, 126) / 255.f);
+			glm::vec3 waterColor = (glm::vec3(6, 27, 43) / 255.f);
 			int tonemapper = 0;
 			glm::vec3 underWaterColor = (glm::vec3(0, 17, 25) / 255.f);
 			float fogDistance = 10 * 16 / 2; //this is controlled by chunk size
@@ -148,6 +149,15 @@ struct Renderer
 		uniform u_currentViewSpace = 0;
 		uniform u_underwaterColor = 0;
 	}warpShader;
+
+	struct ApplyToneMapper
+	{
+		Shader shader;
+		uniform u_color = 0;
+		uniform u_tonemapper = 0;
+		uniform u_exposure = 0;
+
+	}applyToneMapper;
 
 	struct ZpassShader
 	{

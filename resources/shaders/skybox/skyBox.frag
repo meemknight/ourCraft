@@ -38,6 +38,35 @@ vec2 mapDirectionToUV()
 	return vec2(sampleX, sampleY);
 }
 
+vec3 toLinearSRGB(vec3 sRGB)
+{
+	bvec3 cutoff = lessThan(sRGB, vec3(0.04045));
+	vec3 higher = pow((sRGB + vec3(0.055))/vec3(1.055), vec3(2.4));
+	vec3 lower = sRGB/vec3(12.92);
+	return mix(higher, lower, cutoff);
+}
+
+float toLinearSRGB(float sRGB)
+{
+	bool cutoff = sRGB < float(0.04045);
+	float higher = pow((sRGB + float(0.055))/float(1.055), float(2.4));
+	float lower = sRGB/float(12.92);
+	return mix(higher, lower, cutoff);
+}
+
+
+float toLinear(float a)
+{
+
+	return toLinearSRGB(a);
+}
+
+vec3 toLinear(vec3 a)
+{
+	return toLinearSRGB(a);
+}
+
+
 void main() 
 {
 
@@ -52,8 +81,10 @@ void main()
 	// Sample the sun texture using the corrected texture coordinates
 	vec3 sunColor = texture(u_sunTexture, sunTexCoords).rgb;
 
-	// Gamma correction
-	skyColor.rgb = pow(skyColor.rgb, vec3(1.0 / 2.2));
+
+	skyColor.rgb *= 1.0f; //brighten the sky
+	sunColor.rgb *= 1.0f; //brighten the sky
+
 
 	// Apply screen blend mode
 	a_outColor.rgb = vec3(1.0) - (vec3(1.0) - skyColor.rgb) * (vec3(1.0) - sunColor);

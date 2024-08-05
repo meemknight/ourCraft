@@ -687,8 +687,8 @@ unsigned int cubeEntityIndices[] = {
 void Renderer::create(BlocksLoader &blocksLoader)
 {
 
-	fboCoppy.create(true, true);
-	fboMain.create(true, true, GL_RGB16F, GL_RGB16UI);
+	fboCoppy.create(GL_R11F_G11F_B10F, true);
+	fboMain.create(GL_R11F_G11F_B10F, true, GL_RGB16F, GL_RGB16UI);
 	glBindTexture(GL_TEXTURE_2D, fboMain.secondaryColor);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -696,13 +696,13 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	fboLastFrame.create(true, false);
 	fboLastFramePositions.create(GL_RGB16F, false);
 	fboHBAO.create(GL_RED, false);
-	fboSkyBox.create(true, false);
+	fboSkyBox.create(GL_R11F_G11F_B10F, false);
 
 	skyBoxRenderer.create();
 	skyBoxLoaderAndDrawer.createGpuData();
-	skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/skybox.png", defaultSkyBox);
+	//skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/skybox.png", defaultSkyBox);
 	//skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/nightsky.png", defaultSkyBox);
-	//skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/twilightsky.png", defaultSkyBox);
+	skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/twilightsky.png", defaultSkyBox);
 	sunTexture.loadFromFile(RESOURCES_PATH "sky/sun.png", false, false);
 
 	brdfTexture.loadFromFile(RESOURCES_PATH "otherTextures/brdf.png", false, false);
@@ -1046,6 +1046,16 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(warpShader, u_time);
 	GET_UNIFORM2(warpShader, u_underwaterColor);
 	GET_UNIFORM2(warpShader, u_currentViewSpace);
+
+
+	applyToneMapper.shader.clear();
+	applyToneMapper.shader.loadShaderProgramFromFile(
+		RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
+		RESOURCES_PATH "shaders/postProcess/toneMap.frag");
+	GET_UNIFORM2(applyToneMapper, u_color);
+	GET_UNIFORM2(applyToneMapper, u_tonemapper);
+	GET_UNIFORM2(applyToneMapper, u_exposure);
+
 
 
 #pragma endregion
@@ -1753,6 +1763,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	};
 
+	GLuint currentTexture = 0;
+
 	//warp
 	if (underWater)
 	{
@@ -1763,7 +1775,10 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glDisable(GL_BLEND);
 		glDisable(GL_DEPTH_TEST);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, fboCoppy.fbo);
+		currentTexture = fboCoppy.color;
+
 
 		warpShader.shader.bind();
 
@@ -1783,14 +1798,45 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-		copyToMainFboOnlyLastFrameStuff();
+		//copyToMainFboOnlyLastFrameStuff();
 
 		programData.GPUProfiler.endSubProfile("under water post process");
 	}
 	else
 	{
-		copyToMainFbo();
+		currentTexture = fboMain.color;
+		//copyToMainFbo();
 	}
+
+
+	//tone mapping
+	{
+		programData.GPUProfiler.startSubProfile("tone mapping");
+
+		glBindVertexArray(vaoQuad);
+
+		glDisable(GL_BLEND);
+		glDisable(GL_DEPTH_TEST);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+		applyToneMapper.shader.bind();
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, currentTexture);
+		glUniform1i(applyToneMapper.u_color, 0);
+		glUniform1i(applyToneMapper.u_tonemapper, defaultShader.shadingSettings.tonemapper);
+		glUniform1f(applyToneMapper.u_exposure, defaultShader.shadingSettings.exposure);
+
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+		copyToMainFboOnlyLastFrameStuff();
+
+		programData.GPUProfiler.endSubProfile("tone mapping");
+	}
+
+	fboMain.copyDepthToMainFbo(fboMain.size.x, fboMain.size.y);
 
 #pragma endregion
 
@@ -2855,6 +2901,20 @@ void Renderer::FBO::copyDepthFromMainFBO(int w, int h)
 void Renderer::FBO::copyColorFromMainFBO(int w, int h)
 {
 	copyColorFromOtherFBO(0, w, h);
+}
+
+void Renderer::FBO::copyDepthToMainFbo(int w, int h)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+
+	glBlitFramebuffer(
+		0, 0, w, h,  // Source rectangle (usually the whole screen)
+		0, 0, w, h,  // Destination rectangle (the size of your texture)
+		GL_DEPTH_BUFFER_BIT, GL_NEAREST// You can adjust the filter mode as needed
+	);
 }
 
 void Renderer::FBO::copyDepthFromOtherFBO(GLuint other, int w, int h)

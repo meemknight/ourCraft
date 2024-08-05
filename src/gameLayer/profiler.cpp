@@ -271,7 +271,7 @@ void Profiler::displayPlot(const char *mainPlotName)
 	ImGui::Checkbox("Pause", &pause);
 	ImGui::SameLine();
 
-	const char *names[10] = {mainPlotName}; //todo
+	const char *names[12] = {mainPlotName}; //todo
 
 	int counter = 0;
 	for (auto &p : subProfiles)
@@ -279,7 +279,7 @@ void Profiler::displayPlot(const char *mainPlotName)
 		names[subProfiles.size() - (counter++)] = p.first.c_str();
 	}
 
-	const ImColor colors[10] = {
+	const ImColor colors[12] = {
 		{1.0f, 1.0f, 1.0f, 1.0f},
 		{1.0f, 1.0f, 0.5f, 1.0f},
 		{0.8f, 0.3f, 0.9f, 1.0f},
@@ -290,6 +290,8 @@ void Profiler::displayPlot(const char *mainPlotName)
 		{0.0f, 0.5f, 0.5f, 1.0f},
 		{1.0f, 0.0f, 1.0f, 1.0f},
 		{1.0f, 0.0f, 0.0f, 1.0f},
+		{0.3f, 1.0f, 0.3f, 1.0f},
+		{0.3f, 0.3f, 1.0f, 1.0f},
 	}; //todo
 
 	ImGui::Text(mainPlotName);
