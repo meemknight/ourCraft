@@ -10,7 +10,10 @@ enum ItemTypes
 {
 
 	stick = ItemsStartPoint,
+	coal,
 	wooddenSword,
+	wooddenPickaxe,
+	wooddenAxe,
 	zombieSpawnEgg,
 	pigSpawnEgg,
 	catSpawnEgg,
@@ -50,6 +53,8 @@ struct Item
 
 	bool hasDurability();
 
+	bool isTool();
+
 	unsigned short getDurability();
 
 	void setDurability(unsigned short durability);
@@ -65,7 +70,7 @@ void addMetaData(std::vector<unsigned char> &vector, T data)
 }
 
 
-Item itemCreator(unsigned short type);
+Item itemCreator(unsigned short type, unsigned char counter = 1);
 
 struct PlayerInventory
 {

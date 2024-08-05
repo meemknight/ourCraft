@@ -18,7 +18,7 @@ struct Camera
 	glm::vec3 up = {0.f,1.f,0.f};
 
 	float aspectRatio = 1;
-	float fovRadians = glm::radians(60.f);
+	float fovRadians = glm::radians(70.f);
 
 	float closePlane = 0.01f;
 	float farPlane = 1200.f;

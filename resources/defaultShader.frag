@@ -1752,6 +1752,8 @@ vec3 computeJitt(vec3 wp, vec2 Resolution, vec3 viewNormal, float Roughness)
 vec3 SSR(out bool success, vec3 viewPos, vec3 N, 
 	out float mixFactor, float roughness, vec3 wp, vec3 viewDir, vec3 viewSpaceNormal, vec2 rezolution)
 {
+	//return vec3(0,0,0);
+
 	mixFactor = 0;
 	success = false;
 

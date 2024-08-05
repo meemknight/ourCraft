@@ -27,7 +27,7 @@ enum BlockTypes
 	iron_ore,
 	diamond_ore,
 	bookShelf,
-	birch_wood,
+	birch_log,
 	gravel,
 	grass,
 	rose,
@@ -58,6 +58,8 @@ enum BlockTypes
 	testBlock,
 	torch,
 	craftingTable,
+	whiteWool,
+	birch_planks,
 	BlocksCount
 };
 

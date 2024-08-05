@@ -11,6 +11,10 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 
+if (MSVC)
+	# Add the compiler flag to disable exceptions globally
+	add_compile_options(/EHsc-)
+endif()
 
 project(ourCraft)
 
@@ -92,8 +96,8 @@ if(MSVC) # If using the VS compiler...
 	set_target_properties("${CMAKE_PROJECT_NAME}" PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
 
 
-	add_compile_options(-fsanitize=address)
-	add_link_options(-fsanitize=address)
+	#add_compile_options(-fsanitize=address)
+	#add_link_options(-fsanitize=address)
 
 endif()
 

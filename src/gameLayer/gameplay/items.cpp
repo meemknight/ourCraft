@@ -42,7 +42,7 @@ void Item::formatIntoData(std::vector<unsigned char> &data)
 		writeData(data, counter);
 
 		
-		if (type == wooddenSword)
+		if (hasDurability())
 		{
 			if (metaData.size() == 2)
 			{
@@ -88,7 +88,7 @@ int Item::readFromData(void *data, size_t size)
 		readDataUnsafe((unsigned char*)data + 2, counter);
 
 
-		if (type == wooddenSword)
+		if (hasDurability())
 		{
 			if (size < 5)
 			{
@@ -137,7 +137,7 @@ void Item::sanitize()
 
 unsigned char Item::getStackSize()
 {
-	if (type == wooddenSword)
+	if (isTool())
 	{
 		return 1;
 	}
@@ -150,7 +150,7 @@ unsigned char Item::getStackSize()
 
 bool Item::canHaveMetaData()
 {
-	if (type == wooddenSword)
+	if (isTool())
 	{
 		return 1;
 	}
@@ -162,7 +162,22 @@ bool Item::canHaveMetaData()
 
 bool Item::hasDurability()
 {
-	if (type == wooddenSword)
+	if (isTool())
+	{
+		return 1;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool Item::isTool()
+{
+	if (type == wooddenSword
+		|| type == wooddenPickaxe
+		|| type == wooddenAxe
+		)
 	{
 		return 1;
 	}
@@ -199,7 +214,7 @@ void Item::setDurability(unsigned short durability)
 
 std::string Item::formatMetaDataToString()
 {
-	if (type == wooddenSword)
+	if (hasDurability())
 	{
 		unsigned short durability = getDurability();
 
@@ -394,8 +409,11 @@ void PlayerInventory::craft9(int count)
 const char *itemsNames[] = 
 {
 	"stick.png",
+	"coal.png",
 	"wood_sword.png",
-	"",
+	"wood_pickaxe.png",
+	"wood_axe.png",
+	"", //eggs
 	"",
 	"",
 
@@ -408,12 +426,15 @@ const char *getItemTextureName(int itemId)
 	return itemsNames[itemId-ItemsStartPoint];
 }
 
-Item itemCreator(unsigned short type)
+Item itemCreator(unsigned short type, unsigned char counter)
 {
+	if (!counter) { return {}; }
+
 	Item ret(type);
+	ret.counter = counter;
 
-
-	if (type == ItemTypes::wooddenSword)
+	//todo add max durability per item
+	if (Item(type).hasDurability())
 	{
 		//durability
 		addMetaData(ret.metaData, unsigned short(256));

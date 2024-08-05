@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <deque>
 #include <string>
+#include <vector>
 
 
 struct GPUProfiler

@@ -343,11 +343,10 @@ void callGenericUpdateLoop(std::integer_sequence<int, Is...>, float deltaTime,
 
 void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2))
 {
-
+	
 
 	callGenericUpdateLoop(std::make_integer_sequence<int, EntitiesTypesCount>(), 
 		deltaTime, chunkGetter, *this);
-
 
 
 }

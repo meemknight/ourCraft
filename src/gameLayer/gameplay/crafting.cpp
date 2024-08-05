@@ -15,6 +15,12 @@ static CraftingRecepie recepies[] =
 		Item(), Item(), Item(),
 		Item(BlockTypes::woodLog), Item(), Item()}),
 
+
+	recepie(Item(BlockTypes::birch_planks, 4),
+		{Item(),Item(),Item(),
+		Item(), Item(), Item(),
+		Item(BlockTypes::birch_log), Item(), Item()}),
+
 	recepie(Item(BlockTypes::jungle_planks, 4),
 		{Item(),Item(),Item(),
 		Item(), Item(), Item(),
@@ -34,6 +40,32 @@ static CraftingRecepie recepies[] =
 		{Item(BlockTypes::wooden_plank),Item(),Item(),
 		Item(BlockTypes::wooden_plank), Item(), Item(),
 		Item(ItemTypes::stick), Item(), Item()}, true),
+
+
+	recepie(Item(ItemTypes::wooddenPickaxe, 1),
+		{Item(BlockTypes::wooden_plank),Item(BlockTypes::wooden_plank),Item(BlockTypes::wooden_plank),
+		Item(), Item(ItemTypes::stick), Item(),
+		Item(), Item(ItemTypes::stick), Item()}, true),
+
+	recepie(Item(ItemTypes::wooddenAxe, 1),
+		{Item(BlockTypes::wooden_plank),Item(BlockTypes::wooden_plank),Item(),
+		Item(BlockTypes::wooden_plank), Item(ItemTypes::stick), Item(),
+		Item(), Item(ItemTypes::stick), Item()}, true),
+
+	recepie(Item(ItemTypes::wooddenAxe, 1),
+		{Item(BlockTypes::wooden_plank),Item(BlockTypes::wooden_plank), Item(),
+		Item(ItemTypes::stick), Item(BlockTypes::wooden_plank), Item(),
+		Item(ItemTypes::stick), Item(), Item()}, true),
+
+	recepie(Item(BlockTypes::stoneBrick, 4),
+		{Item(),Item(),Item(),
+		Item(BlockTypes::stone), Item(BlockTypes::stone), Item(),
+		Item(BlockTypes::stone), Item(BlockTypes::stone), Item()}),
+
+	recepie(Item(BlockTypes::torch, 4),
+		{Item(),Item(),Item(),
+		Item(ItemTypes::coal), Item(), Item(),
+		Item(ItemTypes::stick), Item(), Item()}),
 
 };
 

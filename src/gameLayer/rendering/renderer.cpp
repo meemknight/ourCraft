@@ -1658,7 +1658,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		fboCoppy.copyDepthAndColorFromOtherFBO(fboMain.fbo, screenX, screenY);
 	#pragma endregion
 
-
+		
 	#pragma region render transparent geometry last phaze 7
 		programData.GPUProfiler.startSubProfile("final transparency 7");
 		renderTransparentGeometryPhaze(true);
@@ -2052,7 +2052,7 @@ void Renderer::renderEntities(
 	//todo remove
 	entityRenderer.itemEntitiesToRender.clear();
 
-	renderHand();
+	//renderHand();
 
 	renderAllEntitiesOfOneType(modelsManager.human, entityManager.players, ModelsManager::SteveTexture);
 	renderAllEntitiesOfOneType(modelsManager.human, entityManager.zombies, ModelsManager::ZombieTexture);

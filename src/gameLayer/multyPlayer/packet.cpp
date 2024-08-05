@@ -111,7 +111,7 @@ void sendPacket(ENetPeer *to, uint32_t header, void *data, size_t size, bool rel
 {
 	Packet packet;
 	packet.header = header;
-
+	
 	sendPacket(to, packet, (const char*)data, size, reliable, channel);
 }
 

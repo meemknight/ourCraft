@@ -5,6 +5,7 @@
 #include <iostream>
 #include <rendering/bigGpuBuffer.h>
 #include <platformTools.h>
+#include <algorithm>
 
 #undef max
 #undef min

@@ -360,6 +360,13 @@ int main()
 
 	permaAssertComment(gladLoadGL(), "err initializing glad");
 
+	if (!GLAD_GL_NV_bindless_texture)
+	{
+		std::cout << "Error, Bindless texture extension not supported!\n";
+		system("pause");
+		exit(0);
+	}
+
 	//enableReportGlErrors();
 
 #pragma endregion

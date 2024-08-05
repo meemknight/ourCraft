@@ -342,7 +342,8 @@ void GPUProfiler::init(int maxQueries)
 void GPUProfiler::startFrame()
 {
 	for (auto &c : queryNames) { c = {}; }
-	for (auto &c : queryResults) { c = {}; }
+	for (int i = 0; i < queryResults.size(); i++) { queryResults[i] = 0; }
+	//for (auto &c : queryResults) { c = {}; }
 	for (auto &c: queryTimersMs) { c = {}; }
 	currentQuery = 0;
 }

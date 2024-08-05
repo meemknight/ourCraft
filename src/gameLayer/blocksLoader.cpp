@@ -67,6 +67,8 @@ const char *texturesNames[] = {
 	"crafting_table_front",	//58
 	"crafting_table_side",	//59
 	"crafting_table_top",	//60
+	"white_wool",		//61
+	"birch_planks",		//62
 };
 
 //front
@@ -230,6 +232,12 @@ uint16_t blocksLookupTable[] = {
 
 	//crafting table
 	58, 58, 60, 7, 59, 59, 
+
+	//white_wool
+	61,61,61,61,61,61,
+
+	//birch_planks
+	62,62,62,62,62,62
 };
 
 void fixAlphaForNormals(unsigned char *buffer, int w, int h)
