@@ -49,7 +49,7 @@ struct SkyBoxLoaderAndDrawer
 		Shader shader;
 		GLuint modelViewUniformLocation;
 		GLuint u_sunPos;
-
+		GLuint u_blend;
 	}normalSkyBox;
 
 	struct
@@ -87,6 +87,7 @@ struct SkyBoxLoaderAndDrawer
 		BottomOfTheCrossLeft,
 	};
 
+	void loadAllTextures();
 	
 	void loadTexture(const char *name, SkyBox &skyBox, int format = 0);
 	void loadHDRtexture(const char *name, SkyBox &skyBox, GLuint frameBuffer);
@@ -96,8 +97,14 @@ struct SkyBoxLoaderAndDrawer
 	void createConvolutedAndPrefilteredTextureData(SkyBox &skyBox,
 		float sampleQuality = 0.025, unsigned int specularSamples = 1024);
 
-	void drawBefore(const glm::mat4 &viewProjMat, SkyBox &skyBox, gl2d::Texture &sunTexture,
-		glm::vec3 sunPos);
+
+	SkyBox daySky;
+	SkyBox nightSky;
+	SkyBox twilightSky;
+
+
+	void drawBefore(const glm::mat4 &viewProjMat, gl2d::Texture &sunTexture,
+		glm::vec3 sunPos, float timeOfDay);
 
 
 	void clear();

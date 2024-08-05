@@ -4,10 +4,12 @@ layout(location = 0) out vec4 a_outColor;
 
 in vec3 v_viewDirection;
 
-layout(binding = 0) uniform samplerCube u_skybox;
-layout(binding = 1) uniform sampler2D u_sunTexture;
+layout(binding = 0) uniform samplerCube u_skybox1;
+layout(binding = 1) uniform samplerCube u_skybox2;
+layout(binding = 2) uniform sampler2D u_sunTexture;
 
 uniform vec3 u_sunPos;
+uniform float u_blend;
 
 float remapFunction(float x)
 {
@@ -71,7 +73,10 @@ void main()
 {
 
 	// Sample the skybox using the view direction
-	vec4 skyColor = texture(u_skybox, normalize(v_viewDirection));
+	vec3 skyColor1 = texture(u_skybox1, normalize(v_viewDirection)).rgb;
+	vec3 skyColor2 = texture(u_skybox2, normalize(v_viewDirection)).rgb;
+
+	vec3 skyColor = mix(skyColor1, skyColor2, u_blend);
 
 	// Calculate the direction from the fragment to the sun
 	vec3 sunDirection = normalize(u_sunPos - gl_FragCoord.xyz);

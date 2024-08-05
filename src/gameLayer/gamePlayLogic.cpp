@@ -715,6 +715,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	programData.renderer.entityRenderer.itemEntitiesToRender.push_back({gameData.entityTest});
 
+	static float dayTime = 0;
+
 #pragma region chunks and rendering
 	if(w != 0 && h != 0)
 	{
@@ -742,8 +744,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		//programData.renderer.render(data, gameData.c, programData.texture);
 		programData.renderer.renderFromBakedData(gameData.sunShadow,gameData.chunkSystem, 
 			gameData.c, programData, programData.blocksLoader, gameData.entityManager,
-			programData.modelsManager, gameData.showLightLevels, 
-			gameData.skyLightIntensity, gameData.point, underWater, w, h, deltaTime);
+			programData.modelsManager, gameData.showLightLevels,
+			gameData.point, underWater, w, h, deltaTime, dayTime);
 
 		gameData.c.lastFrameViewProjMatrix =
 			gameData.c.getProjectionMatrix() * gameData.c.getViewMatrix();
@@ -893,11 +895,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	{
 		gameData.gameplayFrameProfiler.startSubProfile("imgui");
 
-
 		//if (ImGui::Begin("camera controll", &gameData.escapePressed))
 		ImGui::PushStyleColor(ImGuiCol_WindowBg, {26/255.f,26/255.f,26/255.f,0.5f});
 		if (ImGui::Begin("client controll"))
 		{
+
+			ImGui::SliderFloat("Day time", &dayTime, 0, 1);
+
 			if (ImGui::CollapsingHeader("Camera stuff",
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
 			{

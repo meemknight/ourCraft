@@ -700,9 +700,9 @@ void Renderer::create(BlocksLoader &blocksLoader)
 
 	skyBoxRenderer.create();
 	skyBoxLoaderAndDrawer.createGpuData();
-	//skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/skybox.png", defaultSkyBox);
-	//skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/nightsky.png", defaultSkyBox);
-	skyBoxLoaderAndDrawer.loadTexture(RESOURCES_PATH "sky/twilightsky.png", defaultSkyBox);
+	skyBoxLoaderAndDrawer.loadAllTextures();
+
+
 	sunTexture.loadFromFile(RESOURCES_PATH "sky/sun.png", false, false);
 
 	brdfTexture.loadFromFile(RESOURCES_PATH "otherTextures/brdf.png", false, false);
@@ -1074,8 +1074,8 @@ struct DrawElementsIndirectCommand
 
 void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSystem, Camera &c,
 	ProgramData &programData, BlocksLoader &blocksLoader, ClientEntityManager &entityManager, ModelsManager &modelsManager
-	, bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos, bool underWater, int screenX, int screenY,
-	float deltaTime)
+	, bool showLightLevels, glm::dvec3 pointPos, bool underWater, int screenX, int screenY,
+	float deltaTime, float dayTime)
 {
 	glViewport(0, 0, screenX, screenY);
 
@@ -1103,6 +1103,52 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	float timeGrass = std::clock() / 1000.f;
 
+	//determine sky light intensity.
+	int skyLightIntensity = 15;
+	{
+		
+		int daySkyLight = 15;
+		int nightSkyLight = 7;
+		int twilightLight = 11;
+
+		if (dayTime > 1.f)
+		{ dayTime -= (int)dayTime; }
+		
+		float firstLight = 0;
+		float secondLight = 0;
+		float mix = 0;
+
+		float bias = 2;
+
+		if (dayTime <= 0.25)
+		{
+			firstLight = twilightLight;
+			secondLight = daySkyLight;
+			mix = std::powf(dayTime / 0.25f, 1.f / bias);
+		}
+		else if (dayTime <= 0.50)
+		{
+			firstLight = daySkyLight;
+			secondLight = twilightLight;
+			mix = std::powf((dayTime - 0.25f) / 0.25f, bias);
+		}
+		else if (dayTime <= 0.75)
+		{
+			firstLight = twilightLight;
+			secondLight = nightSkyLight;
+			mix = std::powf((dayTime - 0.50f) / 0.25f, 1.f / bias);
+		}
+		else if (dayTime <= 1.f)
+		{
+			firstLight = nightSkyLight;
+			secondLight = twilightLight;
+			mix = std::powf((dayTime - 0.75f) / 0.25f, bias);
+		}
+
+		skyLightIntensity = roundf(glm::mix(firstLight, secondLight, mix));
+
+		std::cout << skyLightIntensity << "\n";
+	}
 
 #pragma region frustum culling
 
@@ -1138,8 +1184,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fboOnlyFirstTarget);
 
 	programData.renderer.skyBoxLoaderAndDrawer.drawBefore(c.getProjectionMatrix() * c.getViewMatrix(),
-		programData.renderer.defaultSkyBox,programData.renderer.sunTexture,
-		programData.renderer.skyBoxRenderer.sunPos);
+		programData.renderer.sunTexture,
+		programData.renderer.skyBoxRenderer.sunPos, dayTime);
 
 	fboSkyBox.copyColorFromOtherFBO(fboMain.color,
 		fboMain.size.x, fboMain.size.y);

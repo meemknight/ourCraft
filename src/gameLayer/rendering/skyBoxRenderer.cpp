@@ -95,6 +95,7 @@ void SkyBoxLoaderAndDrawer::createGpuData()
 	normalSkyBox.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/skyBox/skyBox.vert", RESOURCES_PATH "shaders/skyBox/skyBox.frag");
 	normalSkyBox.modelViewUniformLocation = getUniform(normalSkyBox.shader.id, "u_viewProjection");
 	normalSkyBox.u_sunPos = getUniform(normalSkyBox.shader.id, "u_sunPos");
+	normalSkyBox.u_blend = getUniform(normalSkyBox.shader.id, "u_blend");
 
 	hdrtoCubeMap.shader.loadShaderProgramFromFile(RESOURCES_PATH  "shaders/skyBox/hdrToCubeMap.vert", RESOURCES_PATH  "shaders/skyBox/hdrToCubeMap.frag");
 	hdrtoCubeMap.u_equirectangularMap = getUniform(hdrtoCubeMap.shader.id, "u_equirectangularMap");
@@ -133,6 +134,14 @@ void SkyBoxLoaderAndDrawer::createGpuData()
 
 }
 
+
+void SkyBoxLoaderAndDrawer::loadAllTextures()
+{
+	loadTexture(RESOURCES_PATH "sky/skybox.png", daySky);
+	loadTexture(RESOURCES_PATH "sky/nightsky.png", nightSky);
+	loadTexture(RESOURCES_PATH "sky/twilightsky.png", twilightSky);
+
+}
 
 void SkyBoxLoaderAndDrawer::loadTexture(const char *name, SkyBox &skyBox, int format)
 {
@@ -552,19 +561,62 @@ void SkyBoxLoaderAndDrawer::createConvolutedAndPrefilteredTextureData(SkyBox &sk
 	
 }
 
-void SkyBoxLoaderAndDrawer::drawBefore(const glm::mat4 &viewProjMat, SkyBox &skyBox, gl2d::Texture &sunTexture,
-	glm::vec3 sunPos)
+void SkyBoxLoaderAndDrawer::drawBefore(const glm::mat4 &viewProjMat, gl2d::Texture &sunTexture,
+	glm::vec3 sunPos, float timeOfDay)
 {
+
+	//calculate time of day stuff
+	if (timeOfDay > 1.f)
+	{
+		timeOfDay -= (int)timeOfDay;
+	}
+
+	GLint firstTexture = 0;
+	GLint secondTexture = 0;
+	float mix = 0;
+
+	float bias = 2;
+
+	if (timeOfDay <= 0.25)
+	{
+		firstTexture = twilightSky.texture;
+		secondTexture = daySky.texture;
+		mix = std::powf(timeOfDay / 0.25f, 1.f/bias);
+	}
+	else if (timeOfDay <= 0.50)
+	{
+		firstTexture = daySky.texture;
+		secondTexture = twilightSky.texture;
+		mix = std::powf((timeOfDay -0.25f) / 0.25f, bias);
+	}
+	else if (timeOfDay <= 0.75)
+	{
+		firstTexture = twilightSky.texture;
+		secondTexture = nightSky.texture;
+		mix = std::powf((timeOfDay - 0.50f) / 0.25f, 1.f/bias);
+	}
+	else if (timeOfDay <= 1.f)
+	{
+		firstTexture = nightSky.texture;
+		secondTexture = twilightSky.texture;
+		mix = std::powf((timeOfDay - 0.75f) / 0.25f, bias);
+	}
+
+
 	glBindVertexArray(vertexArray);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, skyBox.texture);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, firstTexture);
 
 	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, secondTexture);
+
+	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, sunTexture.id);
 
 	normalSkyBox.shader.bind();
 	
+	glUniform1f(normalSkyBox.u_blend, mix);
 
 	glUniformMatrix4fv(normalSkyBox.modelViewUniformLocation, 1, GL_FALSE, &viewProjMat[0][0]);
 	glUniform3fv(normalSkyBox.u_sunPos, 1, glm::value_ptr(sunPos));

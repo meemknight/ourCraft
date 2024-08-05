@@ -248,8 +248,8 @@ struct Renderer
 	void renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSystem, Camera &c,
 		ProgramData &programData, BlocksLoader &blocksLoader,
 		ClientEntityManager &entityManager, ModelsManager &modelsManager,
-		bool showLightLevels, int skyLightIntensity, glm::dvec3 pointPos,
-		bool underWater, int screenX, int screenY, float deltaTime);
+		bool showLightLevels, glm::dvec3 pointPos,
+		bool underWater, int screenX, int screenY, float deltaTime, float dayTime);
 	
 	void renderEntities(float deltaTime, 
 		Camera &c,		
@@ -273,7 +273,6 @@ struct Renderer
 
 	SkyBoxRenderer skyBoxRenderer;
 	SkyBoxLoaderAndDrawer skyBoxLoaderAndDrawer;
-	SkyBox defaultSkyBox;
 	gl2d::Texture sunTexture;
 	gl2d::Texture brdfTexture;
 
