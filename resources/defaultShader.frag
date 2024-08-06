@@ -55,7 +55,7 @@ uniform sampler2D u_sunShadowTexture;
 
 uniform sampler2D u_brdf;
 
-
+uniform vec3 u_sunLightColor;
 
 
 uniform sampler2D u_depthTexture;
@@ -684,9 +684,9 @@ void main()
 	}
 
 	const bool blockIsInWater = ((v_flags & 2) != 0);
-	const float baseAmbient = 0.1;
-	const float multiplier = 0.9;
-	vec3 computedAmbient = vec3(toLinear(v_ambient * multiplier * (1.f-baseAmbient) + baseAmbient));
+	const float baseAmbient = 0.25;
+	const float multiplier = 0.6;
+	vec3 computedAmbient = vec3(toLinear(v_ambient *  multiplier * (1.f-baseAmbient) + baseAmbient));
 	if(blockIsInWater)
 	{
 		computedAmbient *= vec3(0.38,0.4,0.42);
@@ -723,9 +723,9 @@ void main()
 				
 		}
 
-		if(v_skyLightUnchanged > 5)
+		if(v_skyLightUnchanged > 3)
 		{
-			vec3 sunLightColor = vec3(3.5);
+			vec3 sunLightColor = u_sunLightColor;
 			sunLightColor *= 1-((15-v_skyLightUnchanged)/9.f);
 			sunLightColor *= ((v_ambientInt/15.f)*0.6 + 0.4f);
 
@@ -893,12 +893,12 @@ void main()
 		//light = 0;
 
 		//sun light
-		vec3 sunLightColor = vec3(1.5);
-		if(v_skyLightUnchanged > 5)
+		vec3 sunLightColor = u_sunLightColor;
+		if(v_skyLightUnchanged > 3)
 		{
 			
 			sunLightColor *= 1-((15-v_skyLightUnchanged)/9.f);
-			sunLightColor *= ((v_ambientInt/15.f)*0.6 + 0.4f);
+			//sunLightColor *= ((v_ambientInt/15.f)*0.6 + 0.4f);
 
 			if(isWater())
 			{

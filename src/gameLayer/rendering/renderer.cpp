@@ -897,6 +897,7 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(defaultShader, u_metallic);
 	GET_UNIFORM2(defaultShader, u_roughness);
 	GET_UNIFORM2(defaultShader, u_underWater);
+	GET_UNIFORM2(defaultShader, u_sunLightColor);
 	GET_UNIFORM2(defaultShader, u_waterColor);
 	GET_UNIFORM2(defaultShader, u_depthPeelwaterPass);
 	GET_UNIFORM2(defaultShader, u_depthTexture);
@@ -1103,52 +1104,69 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	float timeGrass = std::clock() / 1000.f;
 
-	//determine sky light intensity.
-	int skyLightIntensity = 15;
+	auto doDayLightCalculations = [dayTime](auto dayValue, auto nightValue, auto twilightValue)
 	{
-		
-		int daySkyLight = 15;
-		int nightSkyLight = 7;
-		int twilightLight = 11;
 
-		if (dayTime > 1.f)
-		{ dayTime -= (int)dayTime; }
-		
-		float firstLight = 0;
-		float secondLight = 0;
+		auto firstLight = dayValue;
+		auto secondLight = dayValue;
 		float mix = 0;
 
 		float bias = 2;
 
 		if (dayTime <= 0.25)
 		{
-			firstLight = twilightLight;
-			secondLight = daySkyLight;
+			firstLight = twilightValue;
+			secondLight = dayValue;
 			mix = std::powf(dayTime / 0.25f, 1.f / bias);
 		}
 		else if (dayTime <= 0.50)
 		{
-			firstLight = daySkyLight;
-			secondLight = twilightLight;
+			firstLight = dayValue;
+			secondLight = twilightValue;
 			mix = std::powf((dayTime - 0.25f) / 0.25f, bias);
 		}
 		else if (dayTime <= 0.75)
 		{
-			firstLight = twilightLight;
-			secondLight = nightSkyLight;
+			firstLight = twilightValue;
+			secondLight = nightValue;
 			mix = std::powf((dayTime - 0.50f) / 0.25f, 1.f / bias);
 		}
 		else if (dayTime <= 1.f)
 		{
-			firstLight = nightSkyLight;
-			secondLight = twilightLight;
+			firstLight = nightValue;
+			secondLight = twilightValue;
 			mix = std::powf((dayTime - 0.75f) / 0.25f, bias);
 		}
 
-		skyLightIntensity = roundf(glm::mix(firstLight, secondLight, mix));
+		return glm::mix(firstLight, secondLight, mix);
+		//return (firstLight * (1.f - mix)) + (secondLight * mix);
+	};
 
-		std::cout << skyLightIntensity << "\n";
+	if (dayTime > 1.f)
+		{ dayTime -= (int)dayTime; }
+
+	//determine sky light intensity.
+	int skyLightIntensity = 15;
+	{
+		float daySkyLight = 15;
+		float nightSkyLight = 3;
+		float twilightLight = 9;
+
+		skyLightIntensity = std::roundf(doDayLightCalculations(daySkyLight, nightSkyLight, twilightLight));
+		
+		//std::cout << skyLightIntensity << "\n";
 	}
+
+	glm::vec3 sunLightColor = {1,1,1};
+	{
+
+		glm::vec3 daySkyLight(3.0f);
+		glm::vec3 nightSkyLight = (glm::vec3(47, 135, 244) / 255.f) * 0.65f;
+		glm::vec3 twilightLight = (glm::vec3(255, 159, 107) / 255.f) * 2.2f;
+		
+		sunLightColor = doDayLightCalculations(daySkyLight, nightSkyLight, twilightLight);
+	}
+
 
 #pragma region frustum culling
 
@@ -1225,6 +1243,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform1f(defaultShader.u_metallic, metallic);
 		glUniform1f(defaultShader.u_roughness, roughness);
 		glUniform1i(defaultShader.u_underWater, underWater);
+		glUniform3fv(defaultShader.u_sunLightColor, 1, &sunLightColor[0]);
 		glUniform3fv(defaultShader.u_waterColor, 1, &defaultShader.shadingSettings.waterColor[0]);
 		glUniform1i(defaultShader.u_depthPeelwaterPass, 0);
 		glUniform1i(defaultShader.u_hasPeelInformation, 0);

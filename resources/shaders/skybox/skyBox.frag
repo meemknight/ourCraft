@@ -11,6 +11,10 @@ layout(binding = 2) uniform sampler2D u_sunTexture;
 uniform vec3 u_sunPos;
 uniform float u_blend;
 
+uniform float u_rotation1;
+uniform float u_rotation2;
+
+
 float remapFunction(float x)
 {
 	float a = 0.98;
@@ -68,13 +72,26 @@ vec3 toLinear(vec3 a)
 	return toLinearSRGB(a);
 }
 
+//https://www.neilmendoza.com/glsl-rotation-about-an-arbitrary-axis/
+mat4 rotationMatrix(vec3 axis, float angle)
+{
+	axis = normalize(axis);
+	float s = sin(angle);
+	float c = cos(angle);
+	float oc = 1.0 - c;
+	
+	return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+				oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
+				oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
+				0.0,                                0.0,                                0.0,                                1.0);
+}
 
 void main() 
 {
 
 	// Sample the skybox using the view direction
-	vec3 skyColor1 = texture(u_skybox1, normalize(v_viewDirection)).rgb;
-	vec3 skyColor2 = texture(u_skybox2, normalize(v_viewDirection)).rgb;
+	vec3 skyColor1 = texture(u_skybox1, normalize( ( rotationMatrix(vec3(0,1,0), u_rotation1) * vec4(v_viewDirection,1) ).rgb )   ).rgb;
+	vec3 skyColor2 = texture(u_skybox2, normalize( ( rotationMatrix(vec3(0,1,0), u_rotation2) * vec4(v_viewDirection,1) ).rgb )   ).rgb;
 
 	vec3 skyColor = mix(skyColor1, skyColor2, u_blend);
 

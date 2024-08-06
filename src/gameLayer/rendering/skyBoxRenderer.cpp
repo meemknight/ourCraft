@@ -96,6 +96,9 @@ void SkyBoxLoaderAndDrawer::createGpuData()
 	normalSkyBox.modelViewUniformLocation = getUniform(normalSkyBox.shader.id, "u_viewProjection");
 	normalSkyBox.u_sunPos = getUniform(normalSkyBox.shader.id, "u_sunPos");
 	normalSkyBox.u_blend = getUniform(normalSkyBox.shader.id, "u_blend");
+	normalSkyBox.u_rotation1 = getUniform(normalSkyBox.shader.id, "u_rotation1");
+	normalSkyBox.u_rotation2 = getUniform(normalSkyBox.shader.id, "u_rotation2");
+
 
 	hdrtoCubeMap.shader.loadShaderProgramFromFile(RESOURCES_PATH  "shaders/skyBox/hdrToCubeMap.vert", RESOURCES_PATH  "shaders/skyBox/hdrToCubeMap.frag");
 	hdrtoCubeMap.u_equirectangularMap = getUniform(hdrtoCubeMap.shader.id, "u_equirectangularMap");
@@ -571,6 +574,33 @@ void SkyBoxLoaderAndDrawer::drawBefore(const glm::mat4 &viewProjMat, gl2d::Textu
 		timeOfDay -= (int)timeOfDay;
 	}
 
+	float rotation1 = 0;
+	float rotation2 = 0;
+	{
+		float rot = clock() / 100'000.f; //todo
+		if (timeOfDay <= 0.25)
+		{
+			rotation1 = 0;
+			rotation2 = rot;
+		}
+		else if (timeOfDay <= 0.50)
+		{
+			rotation1 = rot;
+			rotation2 = 0;
+		}
+		else if (timeOfDay <= 0.75)
+		{
+			rotation1 = 0;
+			rotation2 = rot;
+		}
+		else if (timeOfDay <= 1.f)
+		{
+			rotation1 = rot;
+			rotation2 = 0;
+		}
+
+	}
+
 	GLint firstTexture = 0;
 	GLint secondTexture = 0;
 	float mix = 0;
@@ -617,6 +647,8 @@ void SkyBoxLoaderAndDrawer::drawBefore(const glm::mat4 &viewProjMat, gl2d::Textu
 	normalSkyBox.shader.bind();
 	
 	glUniform1f(normalSkyBox.u_blend, mix);
+	glUniform1f(normalSkyBox.u_rotation1, rotation1);
+	glUniform1f(normalSkyBox.u_rotation2, rotation2);
 
 	glUniformMatrix4fv(normalSkyBox.modelViewUniformLocation, 1, GL_FALSE, &viewProjMat[0][0]);
 	glUniform3fv(normalSkyBox.u_sunPos, 1, glm::value_ptr(sunPos));

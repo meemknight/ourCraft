@@ -6,6 +6,7 @@
 #include "rendering/camera.h"
 #include <gl2d/gl2d.h>
 
+//todo remove
 struct SkyBoxRenderer
 {
 
@@ -50,6 +51,8 @@ struct SkyBoxLoaderAndDrawer
 		GLuint modelViewUniformLocation;
 		GLuint u_sunPos;
 		GLuint u_blend;
+		GLuint u_rotation1;
+		GLuint u_rotation2;
 	}normalSkyBox;
 
 	struct

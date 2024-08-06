@@ -340,10 +340,10 @@ void main()
 
 	if(in_faceOrientation<16 && !isWater)
 	{
-		v_ambient = (vertexColor[in_faceOrientation] * (v_ambientInt/15.f)) * 0.8 + 0.2;
+		v_ambient = (vertexColor[in_faceOrientation] * (v_ambientInt/15.f));
 	}else
 	{
-		v_ambient = (v_ambientInt/15.f) * 0.8 + 0.2;
+		v_ambient = (v_ambientInt/15.f);
 	}
 	//v_color = vertexColor[in_faceOrientation];
 
