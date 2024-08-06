@@ -900,6 +900,7 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(defaultShader, u_roughness);
 	GET_UNIFORM2(defaultShader, u_underWater);
 	GET_UNIFORM2(defaultShader, u_sunLightColor);
+	GET_UNIFORM2(defaultShader, u_ambientColor);
 	GET_UNIFORM2(defaultShader, u_waterColor);
 	GET_UNIFORM2(defaultShader, u_depthPeelwaterPass);
 	GET_UNIFORM2(defaultShader, u_depthTexture);
@@ -1170,6 +1171,15 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		sunLightColor = doDayLightCalculations(daySkyLight, nightSkyLight, twilightLight);
 	}
 
+	glm::vec3 ambientColor = {1,1,1};
+	{
+		glm::vec3 daySkyLight(1.0f);
+		glm::vec3 nightSkyLight = (glm::vec3(47, 135, 244) / 255.f) * 0.9f;
+		glm::vec3 twilightLight = (glm::vec3(255, 159, 107) / 255.f) * 1.f;
+
+		ambientColor = doDayLightCalculations(daySkyLight, nightSkyLight, twilightLight);
+	}
+	
 
 #pragma region frustum culling
 
@@ -1247,6 +1257,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform1f(defaultShader.u_roughness, roughness);
 		glUniform1i(defaultShader.u_underWater, underWater);
 		glUniform3fv(defaultShader.u_sunLightColor, 1, &sunLightColor[0]);
+		glUniform3fv(defaultShader.u_ambientColor, 1, &ambientColor[0]);
 		glUniform3fv(defaultShader.u_waterColor, 1, &defaultShader.shadingSettings.waterColor[0]);
 		glUniform1i(defaultShader.u_depthPeelwaterPass, 0);
 		glUniform1i(defaultShader.u_hasPeelInformation, 0);

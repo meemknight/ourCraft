@@ -26,37 +26,37 @@ out flat ivec3 v_blockPos;
 float vertexColor[] = float[](
 		
 	//front
-	0.9,
+	0.95,
 	//back
-	0.8,
+	0.85,
 	//top
 	1.0,
 	//bottom
-	0.7,
-	//left
 	0.8,
+	//left
+	0.85,
 	//right
-	0.9,
+	0.95,
 
 	//grass
-	0.9,
-	0.9,
-	0.9,
-	0.9,
+	0.95,
+	0.95,
+	0.95,
+	0.95,
 
 	// leaves
 	//front
-	0.9,
+	0.95,
 	//back
-	0.8,
+	0.85,
 	//top
 	1.0,
 	//bottom
-	0.7,
-	//left
 	0.8,
+	//left
+	0.85,
 	//right
-	0.9
+	0.95
 
 
 );
@@ -341,6 +341,7 @@ void main()
 	if(in_faceOrientation<16 && !isWater)
 	{
 		v_ambient = (vertexColor[in_faceOrientation] * (v_ambientInt/15.f));
+		//v_ambient = (v_ambientInt/15.f);
 	}else
 	{
 		v_ambient = (v_ambientInt/15.f);

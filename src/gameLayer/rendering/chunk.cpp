@@ -149,7 +149,17 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 	const int UP_BACKLEFT = 16;
 	const int UP_BACKRIGHT = 17;
 
-	auto getNeighboursLogic = [&](int x, int y, int z, Block *sides[18])
+	const int DOWN_FRONTLEFT = 18;
+	const int DOWN_FRONTRIGHT = 19;
+	const int DOWN_BACKLEFT = 20;
+	const int DOWN_BACKRIGHT = 21;
+
+	const int FRONTLEFT = 22;
+	const int FRONTRIGHT = 23;
+	const int BACKLEFT = 24;
+	const int BACKRIGHT = 25;
+
+	auto getNeighboursLogic = [&](int x, int y, int z, Block *sides[26])
 	{
 		auto justGetBlock = [&](int x, int y, int z) -> Block *
 		{
@@ -257,89 +267,6 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		auto bupbackleft = justGetBlock(x - 1, y + 1, z - 1);
 		auto bupbackright = justGetBlock(x + 1, y + 1, z - 1);
 
-		//if (bfront == nullptr && front != nullptr)
-		//{
-		//	bfront = front->safeGet(x, y, 0);
-		//}
-		//
-		//if (bdownfront == nullptr && front != nullptr)
-		//{
-		//	bdownfront = front->safeGet(x, y-1, 0);
-		//}
-		//
-		//if (bback == nullptr && back != nullptr)
-		//{
-		//	bback = back->safeGet(x, y, CHUNK_SIZE - 1);
-		//}
-		//
-		//if (bdownback == nullptr && back != nullptr)
-		//{
-		//	bdownback = back->safeGet(x, y-1, CHUNK_SIZE - 1);
-		//}
-		//
-		//
-		//if (bleft == nullptr && left != nullptr)
-		//{
-		//	bleft = left->safeGet(CHUNK_SIZE - 1, y, z);
-		//}
-		//
-		//if (bdownleft == nullptr && left != nullptr)
-		//{
-		//	bdownleft = left->safeGet(CHUNK_SIZE - 1, y-1, z);
-		//}
-		//
-		//if (bright == nullptr && right != nullptr)
-		//{
-		//	bright = right->safeGet(0, y, z);
-		//}
-		//
-		//if (bdownright == nullptr && right != nullptr)
-		//{
-		//	bdownright = right->safeGet(0, y-1, z);
-		//}
-		//
-		////
-		//if (bupfront == nullptr && front != nullptr)
-		//{
-		//	bupfront = front->safeGet(x, y + 1, 0);
-		//}
-		//
-		//if (bupback == nullptr && back != nullptr)
-		//{
-		//	bupback = back->safeGet(x, y + 1, CHUNK_SIZE - 1);
-		//}
-		//
-		//if (bupright == nullptr && right != nullptr)
-		//{
-		//	bupright = right->safeGet(0, y + 1, z);
-		//}
-		//
-		//if (bupleft == nullptr && left != nullptr)
-		//{
-		//	bupleft = left->safeGet(CHUNK_SIZE - 1, y + 1, z);
-		//}
-		//
-		//// corners
-		//if (bupfrontLeft == nullptr && frontLeft != nullptr)
-		//{
-		//	bupfrontLeft = frontLeft->safeGet(CHUNK_SIZE - 1, y + 1, 0);
-		//}
-		//
-		//if (bupfrontright == nullptr && frontRight != nullptr)
-		//{
-		//	bupfrontright = frontRight->safeGet(0, y + 1, 0);
-		//}
-		//
-		//if (bupbackleft == nullptr && backLeft != nullptr)
-		//{
-		//	bupbackleft = backLeft->safeGet(CHUNK_SIZE - 1, y + 1, CHUNK_SIZE - 1);
-		//}
-		//
-		//if (bupbackright == nullptr && backRight != nullptr)
-		//{
-		//	bupbackright = backRight->safeGet(0, y + 1, CHUNK_SIZE - 1);
-		//}
-
 		sides[0] = bfront;
 		sides[1] = bback;
 		sides[2] = btop;
@@ -362,13 +289,221 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		sides[16] = bupbackleft;
 		sides[17] = bupbackright;
 
+		sides[18] = justGetBlock(x - 1, y - 1, z + 1);
+		sides[19] = justGetBlock(x + 1, y - 1, z + 1);
+		sides[20] = justGetBlock(x - 1, y - 1, z - 1);
+		sides[21] = justGetBlock(x + 1, y - 1, z - 1);
+
+		sides[22] = justGetBlock(x - 1, y, z + 1);
+		sides[23] = justGetBlock(x + 1, y, z + 1);
+		sides[24] = justGetBlock(x - 1, y, z - 1);
+		sides[25] = justGetBlock(x + 1, y, z - 1);
+
 	};
 
+	auto determineAOShape = [&](int i, Block *sides[26])
+	{
+		int aoShape = 0;
+
+		auto calculateSide = [](Block *sides[26], bool front,
+			bool back, bool left, bool right,
+			bool frontLeft, bool frontRight, bool backLeft, bool backRight)
+		{
+
+			int aoShape = 0;
+
+			if (frontLeft)
+			{
+				aoShape = 6;
+			}
+			else if (frontRight)
+			{
+				aoShape = 7;
+			}
+			else if (backLeft)
+			{
+				aoShape = 8;
+			}
+			else if (backRight)
+			{
+				aoShape = 5;
+			}
+
+
+			if (front || (frontRight && frontLeft))
+			{
+				aoShape = 1;
+			}
+			else if (back || (backRight && backLeft))
+			{
+				aoShape = 2;
+			}
+			else if (left || (backLeft && frontLeft))
+			{
+				aoShape = 3;
+			}
+			else if (right || (backRight && frontRight))
+			{
+				aoShape = 4;
+			}
+
+
+			//opposite corners
+			if ((frontLeft && backRight)
+				|| (frontRight && backLeft))
+			{
+				aoShape = 14;
+			}
+
+
+			//darker corners
+			if ((front && (left || backLeft)) ||
+				(backLeft && frontLeft && frontRight) || (left && frontRight))
+			{
+				aoShape = 10;
+			}
+			else if (front && (right || backRight) ||
+				(frontLeft && frontRight && backRight) || (right && frontLeft)
+				)
+			{
+				aoShape = 11;
+			}
+			else if (back && (left || frontLeft) ||
+				(frontLeft && backLeft && backRight) || (left && backRight)
+
+				)
+			{
+				aoShape = 12;
+			}
+			else if (back && (right || frontRight) ||
+				(backLeft && backRight && frontRight) || (right && backLeft)
+				)
+			{
+				aoShape = 9;
+			}
+
+			bool backLeftCorner = back || backLeft || left;
+			bool backRightCorner = back || backRight || right;
+			bool frontLeftCorner = front || frontLeft || left;
+			bool frontRightCorner = front || frontRight || right;
+
+			if (backLeftCorner && backRightCorner && frontLeftCorner && frontRightCorner)
+			{
+				aoShape = 13; //full shaodw
+			}
+			
+			return aoShape;
+		};
+
+		if (i == 0) // front
+		{
+			bool upFront = (sides[UP_FRONT] && sides[UP_FRONT]->isOpaque());
+			bool downFront = (sides[DOWN_FRONT] && sides[DOWN_FRONT]->isOpaque());
+			bool leftFront = (sides[FRONTLEFT] && sides[FRONTLEFT]->isOpaque());
+			bool rightFront = (sides[FRONTRIGHT] && sides[FRONTRIGHT]->isOpaque());
+
+			bool upFrontLeft = (sides[UP_FRONTLEFT] && sides[UP_FRONTLEFT]->isOpaque());
+			bool upFrontRight = (sides[UP_FRONTRIGHT] && sides[UP_FRONTRIGHT]->isOpaque());
+			bool downFrontLeft = (sides[DOWN_FRONTLEFT] && sides[DOWN_FRONTLEFT]->isOpaque());
+			bool downFrontRight = (sides[DOWN_FRONTRIGHT] && sides[DOWN_FRONTRIGHT]->isOpaque());
+
+			aoShape = calculateSide(sides, 
+				leftFront,  rightFront, upFront, downFront,
+				upFrontLeft, downFrontLeft, upFrontRight,
+				downFrontRight);
+		}else if (i == 1) // back
+		{
+			bool upBack = (sides[UP_BACK] && sides[UP_BACK]->isOpaque());
+			bool downBack = (sides[DOWN_BACK] && sides[DOWN_BACK]->isOpaque());
+			bool leftBack = (sides[BACKLEFT] && sides[BACKLEFT]->isOpaque());
+			bool rightBack = (sides[BACKRIGHT] && sides[BACKRIGHT]->isOpaque());
+
+			bool upBackLeft = (sides[UP_BACKLEFT] && sides[UP_BACKLEFT]->isOpaque());
+			bool upBackRight = (sides[UP_BACKRIGHT] && sides[UP_BACKRIGHT]->isOpaque());
+			bool downBackLeft = (sides[DOWN_BACKLEFT] && sides[DOWN_BACKLEFT]->isOpaque());
+			bool downBackRight = (sides[DOWN_BACKRIGHT] && sides[DOWN_BACKRIGHT]->isOpaque());
+
+			aoShape = calculateSide(sides,
+				leftBack, rightBack, upBack, downBack,
+				upBackLeft, downBackLeft, upBackRight,
+				downBackRight);
+		}
+		else
+		if (i == 2) //top
+		{
+			bool upFront = (sides[UP_FRONT] && sides[UP_FRONT]->isOpaque());
+			bool upBack = (sides[UP_BACK] && sides[UP_BACK]->isOpaque());
+			bool upLeft = (sides[UP_LEFT] && sides[UP_LEFT]->isOpaque());
+			bool upRight = (sides[UP_RIGHT] && sides[UP_RIGHT]->isOpaque());
+
+			bool upFrontLeft = (sides[UP_FRONTLEFT] && sides[UP_FRONTLEFT]->isOpaque());
+			bool upFrontRight = (sides[UP_FRONTRIGHT] && sides[UP_FRONTRIGHT]->isOpaque());
+			bool upBackLeft = (sides[UP_BACKLEFT] && sides[UP_BACKLEFT]->isOpaque());
+			bool upBackRight = (sides[UP_BACKRIGHT] && sides[UP_BACKRIGHT]->isOpaque());
+
+			aoShape = calculateSide(sides, upFront, upBack, upLeft, upRight, upFrontLeft, upFrontRight,
+				upBackLeft, upBackRight);
+		}else
+		if (i == 3) //bottom
+		{
+			bool downFront = (sides[DOWN_FRONT] && sides[DOWN_FRONT]->isOpaque());
+			bool downBack = (sides[DOWN_BACK] && sides[DOWN_BACK]->isOpaque());
+			bool downLeft = (sides[DOWN_LEFT] && sides[DOWN_LEFT]->isOpaque());
+			bool downRight = (sides[DOWN_RIGHT] && sides[DOWN_RIGHT]->isOpaque());
+
+			bool downFrontLeft = (sides[DOWN_FRONTLEFT] && sides[DOWN_FRONTLEFT]->isOpaque());
+			bool downFrontRight = (sides[DOWN_FRONTRIGHT] && sides[DOWN_FRONTRIGHT]->isOpaque());
+			bool downBackLeft = (sides[DOWN_BACKLEFT] && sides[DOWN_BACKLEFT]->isOpaque());
+			bool downBackRight = (sides[DOWN_BACKRIGHT] && sides[DOWN_BACKRIGHT]->isOpaque());
+
+			aoShape = calculateSide(sides, 
+				 downLeft, downRight, downFront, downBack,
+				 downFrontLeft, downBackLeft, downFrontRight, downBackRight
+			);
+		}else if (i == 4) //left
+		{
+			bool upLeft = (sides[UP_LEFT] && sides[UP_LEFT]->isOpaque());
+			bool downLeft = (sides[DOWN_LEFT] && sides[DOWN_LEFT]->isOpaque());
+			bool leftFront = (sides[FRONTLEFT] && sides[FRONTLEFT]->isOpaque());
+			bool leftBack = (sides[BACKLEFT] && sides[BACKLEFT]->isOpaque());
+
+			bool upFrontLeft = (sides[UP_FRONTLEFT] && sides[UP_FRONTLEFT]->isOpaque());
+			bool upBackLeft = (sides[UP_BACKLEFT] && sides[UP_BACKLEFT]->isOpaque());
+			bool downFrontLeft = (sides[DOWN_FRONTLEFT] && sides[DOWN_FRONTLEFT]->isOpaque());
+			bool downBackLeft = (sides[DOWN_BACKLEFT] && sides[DOWN_BACKLEFT]->isOpaque());
+
+			aoShape = calculateSide(sides,
+				  leftBack, leftFront, upLeft, downLeft,
+				 upBackLeft, downBackLeft, upFrontLeft, downFrontLeft
+				);
+
+		}
+		else if (i == 5) //right
+		{
+			bool upRight = (sides[UP_RIGHT] && sides[UP_RIGHT]->isOpaque());
+			bool downRight = (sides[DOWN_RIGHT] && sides[DOWN_RIGHT]->isOpaque());
+			bool rightFront = (sides[FRONTRIGHT] && sides[FRONTRIGHT]->isOpaque());
+			bool rightBack = (sides[BACKRIGHT] && sides[BACKRIGHT]->isOpaque());
+
+			bool upFrontRight = (sides[UP_FRONTRIGHT] && sides[UP_FRONTRIGHT]->isOpaque());
+			bool upBackRight = (sides[UP_BACKRIGHT] && sides[UP_BACKRIGHT]->isOpaque());
+			bool downFrontRight = (sides[DOWN_FRONTRIGHT] && sides[DOWN_FRONTRIGHT]->isOpaque());
+			bool downBackRight = (sides[DOWN_BACKRIGHT] && sides[DOWN_BACKRIGHT]->isOpaque());
+
+			aoShape = calculateSide(sides,
+				rightFront, rightBack, upRight, downRight,
+				upFrontRight, downFrontRight, upBackRight, downBackRight
+			);
+
+		}
+
+		return aoShape;
+	};
 
 	auto blockBakeLogicForSolidBlocks = [&](int x, int y, int z,
 		std::vector<int> *currentVector, Block &b, bool isAnimated)
 	{
-		Block *sides[18] = {};
+		Block *sides[26] = {};
 		getNeighboursLogic(x, y, z, sides);
 
 		glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y, z + this->data.z * CHUNK_SIZE};
@@ -385,104 +520,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 			{
 				currentVector->push_back(mergeShorts(i + isAnimated * 10, getGpuIdIndexForBlock(b.type, i)));
 
-				int aoShape = 0;
-
-				if (i == 2) //top
-				{
-					bool upFront = (sides[UP_FRONT] && sides[UP_FRONT]->isOpaque());
-					bool upBack = (sides[UP_BACK] && sides[UP_BACK]->isOpaque());
-					bool upLeft = (sides[UP_LEFT] && sides[UP_LEFT]->isOpaque());
-					bool upRight = (sides[UP_RIGHT] && sides[UP_RIGHT]->isOpaque());
-
-					bool upFrontLeft = (sides[UP_FRONTLEFT] && sides[UP_FRONTLEFT]->isOpaque());
-					bool upFrontRight = (sides[UP_FRONTRIGHT] && sides[UP_FRONTRIGHT]->isOpaque());
-					bool upBackLeft = (sides[UP_BACKLEFT] && sides[UP_BACKLEFT]->isOpaque());
-					bool upBackRight = (sides[UP_BACKRIGHT] && sides[UP_BACKRIGHT]->isOpaque());
-
-					aoShape = 0;
-
-
-					if (upFrontLeft)
-					{
-						aoShape = 6;
-					}
-					else if (upFrontRight)
-					{
-						aoShape = 7;
-					}
-					else if (upBackLeft)
-					{
-						aoShape = 8;
-					}
-					else if (upBackRight)
-					{
-						aoShape = 5;
-					}
-
-
-					if (upFront || (upFrontRight && upFrontLeft))
-					{
-						aoShape = 1;
-					}
-					else if (upBack || (upBackRight && upBackLeft))
-					{
-						aoShape = 2;
-					}
-					else if (upLeft || (upBackLeft && upFrontLeft))
-					{
-						aoShape = 3;
-					}
-					else if (upRight || (upBackRight && upFrontRight))
-					{
-						aoShape = 4;
-					}
-
-
-					//opposite corners
-					if ((upFrontLeft && upBackRight)
-						|| (upFrontRight && upBackLeft))
-					{
-						aoShape = 14; 
-					}
-
-
-					//darker corners
-					if ((upFront && (upLeft || upBackLeft)) || 
-						(upBackLeft && upFrontLeft && upFrontRight) || (upLeft && upFrontRight) )
-					{
-						aoShape = 10;
-					}
-					else if (upFront && (upRight || upBackRight) ||
-						(upFrontLeft && upFrontRight && upBackRight) || (upRight && upFrontLeft)
-						)
-					{
-						aoShape = 11;
-					}
-					else if (upBack && (upLeft || upFrontLeft) ||
-						(upFrontLeft && upBackLeft && upBackRight) || (upLeft && upBackRight)
-
-						)
-					{
-						aoShape = 12;
-					}
-					else if (upBack && (upRight || upFrontRight) ||
-						(upBackLeft && upBackRight && upFrontRight) || (upRight && upBackLeft)
-						)
-					{
-						aoShape = 9;
-					}
-
-					bool backLeftCorner = upBack || upBackLeft || upLeft;
-					bool backRightCorner = upBack || upBackRight || upRight;
-					bool frontLeftCorner = upFront || upFrontLeft || upLeft;
-					bool frontRightCorner = upFront || upFrontRight || upRight;
-					
-					if(backLeftCorner && backRightCorner && frontLeftCorner && frontRightCorner)
-					{
-						aoShape = 13; //full shaodw
-					}
-
-				}
+				int aoShape = determineAOShape(i, sides);
 
 				bool isInWater = (sides[i] != nullptr) && sides[i]->type == BlockTypes::water;
 
@@ -529,7 +567,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 	{
 
 
-		Block *sides[18] = {};
+		Block *sides[26] = {};
 		getNeighboursLogic(x, y, z, sides);
 
 		glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y,
@@ -654,7 +692,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 					currentVector->push_back(mergeShorts(i, getGpuIdIndexForBlock(b.type, i)));
 				}
 
-				int aoShape = 0;
+				int aoShape = determineAOShape(i, sides);
 			
 				bool isInWater = (sides[i] != nullptr) && sides[i]->type == BlockTypes::water;
 
@@ -700,7 +738,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 	auto blockBakeLogicForGrassMesh = [&](int x, int y, int z,
 		std::vector<int> *currentVector, Block &b)
 	{
-		Block *sides[18] = {};
+		Block *sides[26] = {};
 		getNeighboursLogic(x, y, z, sides);
 
 		bool ocluded = 1;

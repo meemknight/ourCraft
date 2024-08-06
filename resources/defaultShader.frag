@@ -56,6 +56,7 @@ uniform sampler2D u_sunShadowTexture;
 uniform sampler2D u_brdf;
 
 uniform vec3 u_sunLightColor;
+uniform vec3 u_ambientColor;
 
 
 uniform sampler2D u_depthTexture;
@@ -670,13 +671,24 @@ float luminosity(vec3 a)
 
 vec2 rotate45(vec2 a)
 {
-	return vec2((a.x+a.y), (a.y-a.x))/sqrt(2.f);
+	a -= vec2(0.5);
+	a = vec2((a.x+a.y), (a.y-a.x))/sqrt(2.f);
+	a += vec2(0.5);
+	return a;
 }
 
 vec2 rotate90TextureCoord(vec2 a)
 {
 	a -= vec2(0.5);
 	a = vec2(-a.y, a.x);
+	a += vec2(0.5);
+	return a;
+}
+
+vec2 rotate180TextureCoord(vec2 a)
+{
+	a -= vec2(0.5);
+	a = -vec2(a.x, a.y);
 	a += vec2(0.5);
 	return a;
 }
@@ -708,15 +720,19 @@ float getBlockAO()
 
 	if(pos == 0){return 1;}
 
-	vec2 rotated1 = rotate45(v_uv) + vec2(0.5, (sqrt(2)-1.f)/2.f);
-	vec2 rotated2 = rotate45(rotate90TextureCoord(v_uv)) + vec2(0.5, (sqrt(2)-1.f)/2.f);
-	vec2 rotated3 = rotate45(rotateMinus90TextureCoord(v_uv)) + vec2(0.5, (sqrt(2)-1.f)/2.f);
-	vec2 rotated4 = rotate45(flipTextureCoord(v_uv)) + vec2(0.5, (sqrt(2)-1.f)/2.f);
+	vec2 cornerDarken1 = - vec2(0.5, (sqrt(2)-1.f)/2.f) * 1.5;
+
+	vec2 uv = vec2(v_uv.x,v_uv.y);
+
+	vec2 rotated1 = rotate45(uv) + cornerDarken1;
+	vec2 rotated2 = rotate45(rotate90TextureCoord(uv)) + cornerDarken1;
+	vec2 rotated3 = rotate45(rotateMinus90TextureCoord(uv)) + cornerDarken1;
+	vec2 rotated4 = rotate45(flipTextureCoord(uv)) + cornerDarken1;
 
 	vec2 cornerDarken =  - vec2(0.5, (sqrt(2)-1.f)/2.f)*3;
 
 	vec2 rez[14] = { //front back left right
-		vec2(-v_uv.y, v_uv.x), vec2(-v_uv.y, 1-v_uv.x),  vec2(v_uv.x, 1-v_uv.y), vec2(v_uv.x, v_uv.y),
+		vec2(rotate90TextureCoord(uv)), rotateMinus90TextureCoord(uv), rotate180TextureCoord(uv), vec2(uv.x, uv.y),
 		vec2(rotated4.x, 1-rotated4.y), vec2(rotated1.x, 1-rotated1.y),  vec2(rotated3.x, 1-rotated3.y), vec2(rotated2.x, 1-rotated2.y),
 		vec2(rotated4.x, 1-rotated4.y) + cornerDarken, vec2(rotated1.x, 1-rotated1.y)+ cornerDarken,  vec2(rotated3.x, 1-rotated3.y)+ cornerDarken, vec2(rotated2.x, 1-rotated2.y)+ cornerDarken,
 		vec2(0.5, 0.0),
@@ -726,7 +742,7 @@ float getBlockAO()
 	vec2 newUV = rez[pos - 1]; 
 	
 	float ao = texture2D(u_ao, newUV).r;
-	return clamp(ao * 0.9f, 0.2f,1);
+	return clamp(pow(ao, 1.2) * 1.1f, 0.6f,1);
 }
 
 
@@ -755,7 +771,10 @@ void main()
 		computedAmbient *= vec3(0.38,0.4,0.42);
 	}
 
-	computedAmbient *= getBlockAO();
+	computedAmbient *= u_ambientColor;
+
+	float blockAO = getBlockAO();
+	computedAmbient *= blockAO;
 
 	if(u_shaders == 0)
 	{
@@ -979,7 +998,7 @@ void main()
 
 				finalColor += computePointLightSource(L, 
 					metallic, roughness, sunLightColor * causticsColor, V, 
-					textureColor.rgb, N, F0) * shadow;
+					textureColor.rgb, N, F0) * shadow * sqrt(blockAO);
 			}
 		}
 		

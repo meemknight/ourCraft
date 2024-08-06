@@ -30,7 +30,7 @@ float computeFog(float dist)
 	return rez;
 }
 
-const float AO_STRENGTH = 1.55;
+const float AO_STRENGTH = 1.35;
 
 
 void main()
@@ -53,6 +53,6 @@ void main()
 	//aoValue += textureLod(u_hbao, v_texCoords, 0).r;
 
 
-	//outColor = vec4(0,0,0, aoValue * AO_STRENGTH * (computeFog(dist)) );
-	outColor = vec4(0,0,0,0);
+	outColor = vec4(0,0,0, aoValue * AO_STRENGTH * (computeFog(dist)) );
+	//outColor = vec4(0,0,0,0);
 }

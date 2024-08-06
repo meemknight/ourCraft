@@ -84,6 +84,7 @@ struct Renderer
 		uniform u_roughness = -1;
 		uniform u_underWater = -1;
 		uniform u_sunLightColor = -1;
+		uniform u_ambientColor = -1;
 		uniform u_waterColor = -1;
 		uniform u_depthPeelwaterPass = -1;
 		uniform u_hasPeelInformation = -1;
