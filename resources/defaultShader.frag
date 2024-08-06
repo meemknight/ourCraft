@@ -87,7 +87,7 @@ uniform sampler2D u_lastFrameColor;
 uniform sampler2D u_lastFramePositionViewSpace;
 
 ///
-const float pointLightColor = 2.f;
+const float pointLightColor = 1.5f;
 const float atenuationFactor = 0.5f;
 const float causticsTextureScale = 3.f;
 const float causticsChromaticAberationStrength = 0.004;	
@@ -745,7 +745,7 @@ float getBlockAO()
 	return clamp(pow(ao, 1.2) * 1.1f, 0.6f,1);
 }
 
-
+in flat int v_isSkyLightMain;
 
 void main()
 {
@@ -771,7 +771,10 @@ void main()
 		computedAmbient *= vec3(0.38,0.4,0.42);
 	}
 
-	computedAmbient *= u_ambientColor;
+	if(v_isSkyLightMain == 1)
+	{
+		computedAmbient *= u_ambientColor;
+	}
 
 	float blockAO = getBlockAO();
 	computedAmbient *= blockAO;
@@ -811,7 +814,7 @@ void main()
 		{
 			vec3 sunLightColor = u_sunLightColor;
 			sunLightColor *= 1-((15-v_skyLightUnchanged)/9.f);
-			sunLightColor *= ((v_ambientInt/15.f)*0.6 + 0.4f);
+			//sunLightColor *= ((v_ambientInt/15.f)*0.6 + 0.4f);
 
 			vec3 L = u_sunDirection;
 
@@ -970,7 +973,8 @@ void main()
 			L = normalize(L);		
 
 			//light += computeLight(N,L,V) * atenuationFunction(LightDist)*1.f;
-			finalColor += computePointLightSource(L, metallic, roughness, vec3(pointLightColor,pointLightColor,pointLightColor)	* causticsColor, V, 
+			finalColor += computePointLightSource(L, metallic, roughness, vec3(pointLightColor,pointLightColor,pointLightColor)
+			* causticsColor, V, 
 				textureColor.rgb, N, F0) 
 				* atenuationFunction(LightDist) * ((v_normalLight/15.f) + 1.f) / 2.f;
 				
@@ -983,7 +987,6 @@ void main()
 		{
 			
 			sunLightColor *= 1-((15-v_skyLightUnchanged)/9.f);
-			//sunLightColor *= ((v_ambientInt/15.f)*0.6 + 0.4f);
 
 			if(isWater())
 			{

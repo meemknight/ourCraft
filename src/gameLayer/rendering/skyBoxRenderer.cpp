@@ -577,7 +577,7 @@ void SkyBoxLoaderAndDrawer::drawBefore(const glm::mat4 &viewProjMat, gl2d::Textu
 	float rotation1 = 0;
 	float rotation2 = 0;
 	{
-		float rot = clock() / 100'000.f; //todo
+		float rot = clock() / 80'000.f; //todo
 		if (timeOfDay <= 0.25)
 		{
 			rotation1 = 0;

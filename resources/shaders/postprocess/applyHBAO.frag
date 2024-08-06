@@ -25,12 +25,14 @@ const float fogGradient = 16;
 
 float computeFog(float dist)
 {
-	float rez = exp(-pow(dist*(1/(u_fogDistance-32)), fogGradient));
+
+	//float rez = exp(-pow(dist*(1/(u_fogDistance-32)), fogGradient));
+	float rez = exp(-pow(dist*(1/(min(12, u_fogDistance))), fogGradient));
 	if(rez > 0.9){return 1;};
 	return rez;
 }
 
-const float AO_STRENGTH = 1.35;
+const float AO_STRENGTH = 1.45;
 
 
 void main()

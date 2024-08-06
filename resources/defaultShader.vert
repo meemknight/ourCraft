@@ -258,6 +258,8 @@ out vec3 v_semiViewSpacePos;
 
 vec3 normals[6] = {vec3(0,0,1),vec3(0,0,-1),vec3(0,1,0),vec3(0,-1,0),vec3(-1,0,0),vec3(1,0,0)};
 
+out flat int v_isSkyLightMain;
+
 void main()
 {
 	facePosition = in_facePosition; 
@@ -277,6 +279,12 @@ void main()
 	v_skyLight = max(v_skyLight - (15 - u_skyLightIntensity), 0);
 
 	v_ambientInt = max(v_skyLight, v_normalLight);
+
+	v_isSkyLightMain = 0;
+	if(v_skyLight > v_normalLight)
+	{
+		v_isSkyLightMain = 1;
+	}
 
 	vec3 diffI = facePosition - u_positionInt;
 	vec3 diffF = diffI - u_positionFloat;

@@ -990,6 +990,8 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(entityRenderer.blockEntityshader, u_cameraPositionFloat);
 	GET_UNIFORM2(entityRenderer.blockEntityshader, u_texture);
 	GET_UNIFORM2(entityRenderer.blockEntityshader, u_view);
+	GET_UNIFORM2(entityRenderer.blockEntityshader, u_exposure);
+	GET_UNIFORM2(entityRenderer.blockEntityshader, u_lightValue);
 
 
 	entityRenderer.basicEntityShader.shader.clear();
@@ -1003,6 +1005,7 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(entityRenderer.basicEntityShader, u_modelMatrix);
 	GET_UNIFORM2(entityRenderer.basicEntityShader, u_view);
 	GET_UNIFORM2(entityRenderer.basicEntityShader, u_bonesPerModel);
+	GET_UNIFORM2(entityRenderer.basicEntityShader, u_exposure);
 	
 	//
 	entityRenderer.basicEntityShader.u_entityTextureSamplerers = getStorageBlockIndex(entityRenderer.basicEntityShader.shader.id, "u_entityTextureSamplerers");
@@ -1694,7 +1697,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	#pragma region render entities
 		programData.GPUProfiler.startSubProfile("entities");
 		renderEntities(deltaTime, c, modelsManager, blocksLoader,
-			entityManager, vp, c.getProjectionMatrix(), viewMatrix, posFloat, posInt);
+			entityManager, vp, c.getProjectionMatrix(), viewMatrix, posFloat, posInt,
+			programData.renderer.defaultShader.shadingSettings.exposure, chunkSystem, skyLightIntensity);
 		programData.GPUProfiler.endSubProfile("entities");
 	#pragma endregion
 
@@ -1772,7 +1776,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	#pragma region render entities
 		programData.GPUProfiler.startSubProfile("entities");
 		renderEntities(deltaTime, c, modelsManager, blocksLoader,
-			entityManager, vp, viewMatrix, c.getProjectionMatrix(), posFloat, posInt);
+			entityManager, vp, viewMatrix, c.getProjectionMatrix(), posFloat, posInt,
+			programData.renderer.defaultShader.shadingSettings.exposure, chunkSystem, skyLightIntensity);
 		programData.GPUProfiler.endSubProfile("entities");
 	#pragma endregion
 
@@ -1938,7 +1943,9 @@ void Renderer::renderEntities(
 	glm::mat4 &vp, glm::mat4 &projection,
 	glm::mat4 &viewMatrix,
 	glm::vec3 posFloat,
-	glm::ivec3 posInt
+	glm::ivec3 posInt,
+	float exposure, ChunkSystem &chunkSystem, int 
+	skyLightIntensity
 	)
 {
 
@@ -1964,6 +1971,7 @@ void Renderer::renderEntities(
 			glm::value_ptr(glm::scale(glm::vec3{0.4f})));
 		glUniform3fv(entityRenderer.blockEntityshader.u_cameraPositionFloat, 1, &posFloat[0]);
 		glUniform3iv(entityRenderer.blockEntityshader.u_cameraPositionInt, 1, &posInt[0]);
+		glUniform1f(entityRenderer.blockEntityshader.u_exposure, exposure);
 
 		//debug stuff
 		if (0)
@@ -2024,7 +2032,6 @@ void Renderer::renderEntities(
 					}
 				}
 
-			
 
 				glUniformHandleui64vARB(entityRenderer.blockEntityshader.u_texture, 6, textures);
 
@@ -2038,6 +2045,19 @@ void Renderer::renderEntities(
 
 				glUniform3fv(entityRenderer.blockEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
 				glUniform3iv(entityRenderer.blockEntityshader.u_entityPositionInt, 1, &entityInt[0]);
+
+				
+				auto b = chunkSystem.getBlockSafe(e.second.getRubberBandPosition() + glm::dvec3(0,0.2,0));
+				int rez = skyLightIntensity;
+
+				if (b)
+				{
+					rez = std::max((char)b->getLight(), (char)(b->getSkyLight() - ((char)15 - (char)skyLightIntensity)) );
+					rez = std::max(rez, 0);
+				}
+					
+				glUniform1i(entityRenderer.blockEntityshader.u_lightValue, rez);
+
 
 				glDrawArrays(GL_TRIANGLES, 0, 36);
 			}
@@ -2059,6 +2079,8 @@ void Renderer::renderEntities(
 		&glm::mat4(1.f)[0][0]);
 	glUniform3fv(entityRenderer.basicEntityShader.u_cameraPositionFloat, 1, &posFloat[0]);
 	glUniform3iv(entityRenderer.basicEntityShader.u_cameraPositionInt, 1, &posInt[0]);
+	glUniform1f(entityRenderer.basicEntityShader.u_exposure, exposure);
+	
 
 #pragma endregion
 

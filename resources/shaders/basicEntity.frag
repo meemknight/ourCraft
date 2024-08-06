@@ -11,6 +11,8 @@ in vec3 v_vertexPosition;
  
 uniform mat4 u_view;
 
+uniform float u_exposure;
+
 ivec3 fromFloatTouShort(vec3 a)
 {
 	//[-1 1] -> [0 2]
@@ -33,6 +35,7 @@ readonly restrict layout(std430) buffer u_entityTextureSamplerers
 };
 
 flat in uvec2 v_textureSampler;
+//flat in float v_ambient;
 
 
 void main()
@@ -43,6 +46,12 @@ void main()
 	//color.rgba = vec4(v_uv,0,1);
 
 	if(color.a < 0.5)discard;
+
+	color.rgb = pow(color.rgb, vec3(2.2));
+	color.rgb *= u_exposure;
+	color.rgb *= 0.7f;
+	//color.rgb *= v_ambient;
+	
 
 	out_screenSpacePositions.xyzw = vec4((u_view * vec4(v_vertexPosition,1)).xyz,1);
 	out_normals = fromFloatTouShort(v_normals);

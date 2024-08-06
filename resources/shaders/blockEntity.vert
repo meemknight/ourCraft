@@ -14,11 +14,14 @@ uniform mat4 u_viewProjection;
 uniform mat4 u_modelMatrix;
 uniform ivec3 u_cameraPositionInt;
 uniform vec3 u_cameraPositionFloat;
+uniform int u_lightValue;
 
 out vec2 v_uv;
 flat out int v_id;
 out vec3 v_vertexPosition;
 out vec3 v_normals;
+
+flat out float v_ambient;
 
 
 void main()
@@ -39,5 +42,11 @@ void main()
 	v_vertexPosition = posViewSemi.xyz;
 
 	v_normals = normalize((transpose(inverse(u_modelMatrix)) * vec4(normal, 0.0)).xyz);
+
+
+	const float baseAmbient = 0.25;
+	const float multiplier = 0.6;
+	v_ambient = pow((u_lightValue/15.f) *  multiplier * (1.f-baseAmbient) + baseAmbient, 2.2);
+
 
 }

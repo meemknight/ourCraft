@@ -15,6 +15,9 @@ in vec3 v_normals;
 uniform sampler2D u_texture[6];
 uniform mat4 u_view;
 
+uniform float u_exposure;
+flat in float v_ambient;
+
 
 ivec3 fromFloatTouShort(vec3 a)
 {
@@ -37,6 +40,13 @@ void main()
 
 	color = texture(u_texture[v_id/6], v_uv).rgba;
 	if(color.a <= 0){discard;}
+
+	color.rgb = pow(color.rgb, vec3(2.2));
+	color.rgb *= u_exposure;
+	//color.rgb *= 0.7f;
+	color.rgb *= v_ambient;
+	
+
 	position.xyz = (u_view * vec4(v_vertexPosition,1)).xyz;
 	out_normals = fromFloatTouShort(v_normals);
 

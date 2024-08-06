@@ -190,6 +190,8 @@ struct Renderer
 			uniform u_modelMatrix;
 			uniform u_texture;
 			uniform u_view;
+			uniform u_exposure;
+			uniform u_lightValue;
 
 			GLuint vaoCube = 0;
 			GLuint vertexBufferCube = 0;
@@ -216,6 +218,7 @@ struct Renderer
 			uniform u_cameraPositionFloat;
 			uniform u_view;
 			uniform u_bonesPerModel;
+			uniform u_exposure;
 
 			GLuint u_skinningMatrix = GL_INVALID_INDEX;
 			GLuint u_entityTextureSamplerers = GL_INVALID_INDEX;
@@ -258,7 +261,8 @@ struct Renderer
 		Camera &c,		
 		ModelsManager &modelsManager,
 		BlocksLoader &blocksLoader, ClientEntityManager &entityManager,
-		glm::mat4 &vp, glm::mat4 &projection, glm::mat4 &viewMatrix, glm::vec3 posFloat, glm::ivec3 posInt);
+		glm::mat4 &vp, glm::mat4 &projection, glm::mat4 &viewMatrix, glm::vec3 posFloat, glm::ivec3 posInt,
+		float exposure, ChunkSystem &chunkSystem, int skyLightIntensity);
 
 	//todo implement this to optimize rendering
 	void renderPlayersHand(float deltaTime, ModelsManager &modelsManager,
