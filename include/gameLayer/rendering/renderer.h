@@ -101,6 +101,7 @@ struct Renderer
 		uniform u_sunShadowTexture = -1;
 		uniform u_brdf = -1;
 		uniform u_skyTexture = -1;
+		uniform u_ao = -1;
 		uniform u_inverseViewProjMat = -1;
 		GLuint u_shadingSettings = 0;
 		GLuint shadingSettingsBuffer = 0;
@@ -276,6 +277,7 @@ struct Renderer
 	SkyBoxLoaderAndDrawer skyBoxLoaderAndDrawer;
 	gl2d::Texture sunTexture;
 	gl2d::Texture brdfTexture;
+	gl2d::Texture aoTexture;
 
 	GLuint vao = 0;
 	GLuint vertexBuffer = 0;

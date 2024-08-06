@@ -523,12 +523,19 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 			auto front = getChunkSafeFromMatrixSpace(x, z + 1);
 			auto back = getChunkSafeFromMatrixSpace(x, z - 1);
 	
-			if (chunk->shouldBakeOnlyBecauseOfTransparency(left, right, front, back))
+			auto frontLeft = getChunkSafeFromMatrixSpace(x-1, z + 1);
+			auto frontRight = getChunkSafeFromMatrixSpace(x+1, z + 1);
+			auto backLeft = getChunkSafeFromMatrixSpace(x-1, z - 1);
+			auto backRight = getChunkSafeFromMatrixSpace(x+1, z - 1);
+
+			//todo add corners for baking cache stuff
+			//if (chunk->shouldBakeOnlyBecauseOfTransparency(left, right, front, back))
+			if (chunk->isDirtyTransparency()) 
 			{
 				if (currentBakedTransparency < maxToBakeTransparency)
 				{
 					auto b = chunk->bake(left, right, 
-						front, back, playerBlockPosition, gpuBuffer);
+						front, back, frontLeft, frontRight, backLeft, backRight, playerBlockPosition, gpuBuffer);
 					if (b) { currentBakedTransparency++; }
 				}
 			}
@@ -536,7 +543,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 			{
 				if (currentBaked < maxToBake)
 				{
-					auto b = chunk->bake(left, right, front, back, 
+					auto b = chunk->bake(left, right, front, back, frontLeft, frontRight, backLeft, backRight,
 						playerBlockPosition, gpuBuffer);
 					if (b) { currentBaked++; }
 				}

@@ -108,6 +108,7 @@ struct Chunk
 	//returns true if it changed anything, it will also return true if the newly baked
 	//geometry is 0 because that means that it took very little time.
 	bool bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
+		Chunk *frontLeft, Chunk *frontRight, Chunk *backLeft, Chunk *backRight,
 		glm::ivec3 playerPosition, BigGpuBuffer &gpuBuffer);
 
 	bool shouldBakeOnlyBecauseOfTransparency(Chunk *left, Chunk *right, Chunk *front, Chunk *back);

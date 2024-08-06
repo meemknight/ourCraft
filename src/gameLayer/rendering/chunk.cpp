@@ -66,6 +66,7 @@ void arangeData(std::vector<int> &currentVector)
 
 //todo a counter to know if I have transparent geometry in this chunk
 bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, 
+	Chunk *frontLeft, Chunk *frontRight, Chunk *backLeft, Chunk *backRight,
 	glm::ivec3 playerPosition, BigGpuBuffer &gpuBuffer)
 {
 
@@ -90,7 +91,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		[](std::vector<int> &vect,
 		glm::ivec3 position,
 		bool isWater, bool isInWater,
-		unsigned char sunLight, unsigned char torchLight)
+		unsigned char sunLight, unsigned char torchLight, unsigned char aoShape)
 	{
 
 		//0x    FF      FF      FF    FF
@@ -109,6 +110,13 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 			flags |= 0b10;
 		}
 
+		//aoShape &= 0x0F;
+		aoShape <<= 4;
+		flags |= aoShape;
+
+		//shadow flag stuff.
+
+
 		unsigned short firstHalf = mergeChars(flags, light);
 		//unsigned short firstHalf = mergeChars(flags, 0xFF);
 
@@ -119,60 +127,218 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		vect.push_back(position.z);
 	};
 
-	auto getNeighboursLogic = [&](int x, int y, int z, Block *sides[10])
+	const int FRONT = 0;
+	const int BACK = 1;
+	const int TOP = 2;
+	const int BOTTOM = 3;
+	const int LEFT = 4;
+	const int RIGHT = 5;
+
+	const int DOWN_FRONT = 6;
+	const int DOWN_BACK = 7;
+	const int DOWN_LEFT = 8;
+	const int DOWN_RIGHT = 9;
+
+	const int UP_FRONT = 10;
+	const int UP_BACK = 11;
+	const int UP_LEFT = 12;
+	const int UP_RIGHT = 13;
+
+	const int UP_FRONTLEFT = 14;
+	const int UP_FRONTRIGHT = 15;
+	const int UP_BACKLEFT = 16;
+	const int UP_BACKRIGHT = 17;
+
+	auto getNeighboursLogic = [&](int x, int y, int z, Block *sides[18])
 	{
-		auto bfront = safeGet(x, y, z + 1);
-		auto bback = safeGet(x, y, z - 1);
-		auto btop = safeGet(x, y + 1, z);
-		auto bbottom = safeGet(x, y - 1, z);
-		auto bleft = safeGet(x - 1, y, z);
-		auto bright = safeGet(x + 1, y, z);
-
-		auto bdownfront = safeGet(x, y-1, z + 1);
-		auto bdownback = safeGet(x, y-1, z - 1);
-		auto bdownleft = safeGet(x - 1, y-1, z);
-		auto bdownright = safeGet(x + 1, y-1, z);
-
-		if (bfront == nullptr && front != nullptr)
+		auto justGetBlock = [&](int x, int y, int z) -> Block *
 		{
-			bfront = front->safeGet(x, y, 0);
-		}
+			if (y >= CHUNK_HEIGHT || y < 0) { return nullptr; }
 
-		if (bdownfront == nullptr && front != nullptr)
-		{
-			bdownfront = front->safeGet(x, y-1, 0);
-		}
+			if (x >= 0 && x < CHUNK_SIZE && z >= 0 && z < CHUNK_SIZE)
+			{
+				return &unsafeGet(x, y, z);
+			}
 
-		if (bback == nullptr && back != nullptr)
-		{
-			bback = back->safeGet(x, y, CHUNK_SIZE - 1);
-		}
+			if (x >= 0 && x < CHUNK_SIZE)
+			{
+				//z is the problem
+				if (z < 0)
+				{
+					if (back)
+					{
+						return &back->unsafeGet(x, y, CHUNK_SIZE - 1);
+					}
+				}
+				else
+				{
+					if (front)
+					{
+						return &front->unsafeGet(x, y, 0);
+					}
+				}
+			}
+			else if (z >= 0 && z < CHUNK_SIZE)
+			{
+				//x is the problem
+				if (x < 0)
+				{
+					if (left)
+					{
+						return &left->unsafeGet(CHUNK_SIZE - 1, y, z);
+					}
+				}
+				else
+				{
+					if (right)
+					{
+						return &right->unsafeGet(0, y, z);
+					}
+				}
+			}
+			else
+			{
+				//both are the problem
+				if (x < 0 && z < 0)
+				{
+					if (backLeft)
+					{
+						return &backLeft->unsafeGet(CHUNK_SIZE - 1, y, CHUNK_SIZE - 1);
+					}
+				}else
+				if (x >= CHUNK_SIZE && z < 0)
+				{
+					if (backRight)
+					{
+						return &backRight->unsafeGet(0, y, CHUNK_SIZE - 1);
+					}
+				}else if (x < 0 && z >= CHUNK_SIZE)
+				{
+					if (frontLeft)
+					{
+						return &frontLeft->unsafeGet(CHUNK_SIZE - 1, y, 0);
+					}
+				}else
+				if (x >= CHUNK_SIZE && z >= CHUNK_SIZE)
+				{
+					if (frontRight)
+					{
+						return &frontRight->unsafeGet(0, y, 0);
+					}
+				}
+				else
+				{
+					permaAssertComment(0, "error in chunk get neighbour logic!");
+				}
 
-		if (bdownback == nullptr && back != nullptr)
-		{
-			bdownback = back->safeGet(x, y-1, CHUNK_SIZE - 1);
-		}
+				return nullptr;
+			}
+		};
 
+		auto bfront = justGetBlock(x, y, z + 1);
+		auto bback = justGetBlock(x, y, z - 1);
+		auto btop = justGetBlock(x, y + 1, z);
+		auto bbottom = justGetBlock(x, y - 1, z);
+		auto bleft = justGetBlock(x - 1, y, z);
+		auto bright = justGetBlock(x + 1, y, z);
 
-		if (bleft == nullptr && left != nullptr)
-		{
-			bleft = left->safeGet(CHUNK_SIZE - 1, y, z);
-		}
+		auto bdownfront = justGetBlock(x, y-1, z + 1);
+		auto bdownback = justGetBlock(x, y-1, z - 1);
+		auto bdownleft = justGetBlock(x - 1, y-1, z);
+		auto bdownright = justGetBlock(x + 1, y-1, z);
 
-		if (bleft == nullptr && left != nullptr)
-		{
-			bleft = left->safeGet(CHUNK_SIZE - 1, y-1, z);
-		}
+		auto bupfront = justGetBlock(x, y + 1, z + 1);
+		auto bupback = justGetBlock(x, y + 1, z - 1);
+		auto bupleft = justGetBlock(x - 1, y + 1, z);
+		auto bupright = justGetBlock(x + 1, y + 1, z);
 
-		if (bright == nullptr && right != nullptr)
-		{
-			bright = right->safeGet(0, y, z);
-		}
+		auto bupfrontLeft = justGetBlock(x - 1, y + 1, z + 1);
+		auto bupfrontright = justGetBlock(x + 1, y + 1, z + 1);
+		auto bupbackleft = justGetBlock(x - 1, y + 1, z - 1);
+		auto bupbackright = justGetBlock(x + 1, y + 1, z - 1);
 
-		if (bdownright == nullptr && right != nullptr)
-		{
-			bdownright = right->safeGet(0, y-1, z);
-		}
+		//if (bfront == nullptr && front != nullptr)
+		//{
+		//	bfront = front->safeGet(x, y, 0);
+		//}
+		//
+		//if (bdownfront == nullptr && front != nullptr)
+		//{
+		//	bdownfront = front->safeGet(x, y-1, 0);
+		//}
+		//
+		//if (bback == nullptr && back != nullptr)
+		//{
+		//	bback = back->safeGet(x, y, CHUNK_SIZE - 1);
+		//}
+		//
+		//if (bdownback == nullptr && back != nullptr)
+		//{
+		//	bdownback = back->safeGet(x, y-1, CHUNK_SIZE - 1);
+		//}
+		//
+		//
+		//if (bleft == nullptr && left != nullptr)
+		//{
+		//	bleft = left->safeGet(CHUNK_SIZE - 1, y, z);
+		//}
+		//
+		//if (bdownleft == nullptr && left != nullptr)
+		//{
+		//	bdownleft = left->safeGet(CHUNK_SIZE - 1, y-1, z);
+		//}
+		//
+		//if (bright == nullptr && right != nullptr)
+		//{
+		//	bright = right->safeGet(0, y, z);
+		//}
+		//
+		//if (bdownright == nullptr && right != nullptr)
+		//{
+		//	bdownright = right->safeGet(0, y-1, z);
+		//}
+		//
+		////
+		//if (bupfront == nullptr && front != nullptr)
+		//{
+		//	bupfront = front->safeGet(x, y + 1, 0);
+		//}
+		//
+		//if (bupback == nullptr && back != nullptr)
+		//{
+		//	bupback = back->safeGet(x, y + 1, CHUNK_SIZE - 1);
+		//}
+		//
+		//if (bupright == nullptr && right != nullptr)
+		//{
+		//	bupright = right->safeGet(0, y + 1, z);
+		//}
+		//
+		//if (bupleft == nullptr && left != nullptr)
+		//{
+		//	bupleft = left->safeGet(CHUNK_SIZE - 1, y + 1, z);
+		//}
+		//
+		//// corners
+		//if (bupfrontLeft == nullptr && frontLeft != nullptr)
+		//{
+		//	bupfrontLeft = frontLeft->safeGet(CHUNK_SIZE - 1, y + 1, 0);
+		//}
+		//
+		//if (bupfrontright == nullptr && frontRight != nullptr)
+		//{
+		//	bupfrontright = frontRight->safeGet(0, y + 1, 0);
+		//}
+		//
+		//if (bupbackleft == nullptr && backLeft != nullptr)
+		//{
+		//	bupbackleft = backLeft->safeGet(CHUNK_SIZE - 1, y + 1, CHUNK_SIZE - 1);
+		//}
+		//
+		//if (bupbackright == nullptr && backRight != nullptr)
+		//{
+		//	bupbackright = backRight->safeGet(0, y + 1, CHUNK_SIZE - 1);
+		//}
 
 		sides[0] = bfront;
 		sides[1] = bback;
@@ -186,13 +352,23 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		sides[8] = bdownleft;
 		sides[9] = bdownright;
 
+		sides[10] = bupfront;
+		sides[11] = bupback;
+		sides[12] = bupleft;
+		sides[13] = bupright;
+
+		sides[14] = bupfrontLeft;
+		sides[15] = bupfrontright;
+		sides[16] = bupbackleft;
+		sides[17] = bupbackright;
 
 	};
+
 
 	auto blockBakeLogicForSolidBlocks = [&](int x, int y, int z,
 		std::vector<int> *currentVector, Block &b, bool isAnimated)
 	{
-		Block *sides[10] = {};
+		Block *sides[18] = {};
 		getNeighboursLogic(x, y, z, sides);
 
 		glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y, z + this->data.z * CHUNK_SIZE};
@@ -209,41 +385,139 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 			{
 				currentVector->push_back(mergeShorts(i + isAnimated * 10, getGpuIdIndexForBlock(b.type, i)));
 
+				int aoShape = 0;
+
+				if (i == 2) //top
+				{
+					bool upFront = (sides[UP_FRONT] && sides[UP_FRONT]->isOpaque());
+					bool upBack = (sides[UP_BACK] && sides[UP_BACK]->isOpaque());
+					bool upLeft = (sides[UP_LEFT] && sides[UP_LEFT]->isOpaque());
+					bool upRight = (sides[UP_RIGHT] && sides[UP_RIGHT]->isOpaque());
+
+					bool upFrontLeft = (sides[UP_FRONTLEFT] && sides[UP_FRONTLEFT]->isOpaque());
+					bool upFrontRight = (sides[UP_FRONTRIGHT] && sides[UP_FRONTRIGHT]->isOpaque());
+					bool upBackLeft = (sides[UP_BACKLEFT] && sides[UP_BACKLEFT]->isOpaque());
+					bool upBackRight = (sides[UP_BACKRIGHT] && sides[UP_BACKRIGHT]->isOpaque());
+
+					aoShape = 0;
+
+
+					if (upFrontLeft)
+					{
+						aoShape = 6;
+					}
+					else if (upFrontRight)
+					{
+						aoShape = 7;
+					}
+					else if (upBackLeft)
+					{
+						aoShape = 8;
+					}
+					else if (upBackRight)
+					{
+						aoShape = 5;
+					}
+
+
+					if (upFront || (upFrontRight && upFrontLeft))
+					{
+						aoShape = 1;
+					}
+					else if (upBack || (upBackRight && upBackLeft))
+					{
+						aoShape = 2;
+					}
+					else if (upLeft || (upBackLeft && upFrontLeft))
+					{
+						aoShape = 3;
+					}
+					else if (upRight || (upBackRight && upFrontRight))
+					{
+						aoShape = 4;
+					}
+
+
+					//opposite corners
+					if ((upFrontLeft && upBackRight)
+						|| (upFrontRight && upBackLeft))
+					{
+						aoShape = 14; 
+					}
+
+
+					//darker corners
+					if ((upFront && (upLeft || upBackLeft)) || 
+						(upBackLeft && upFrontLeft && upFrontRight) || (upLeft && upFrontRight) )
+					{
+						aoShape = 10;
+					}
+					else if (upFront && (upRight || upBackRight) ||
+						(upFrontLeft && upFrontRight && upBackRight) || (upRight && upFrontLeft)
+						)
+					{
+						aoShape = 11;
+					}
+					else if (upBack && (upLeft || upFrontLeft) ||
+						(upFrontLeft && upBackLeft && upBackRight) || (upLeft && upBackRight)
+
+						)
+					{
+						aoShape = 12;
+					}
+					else if (upBack && (upRight || upFrontRight) ||
+						(upBackLeft && upBackRight && upFrontRight) || (upRight && upBackLeft)
+						)
+					{
+						aoShape = 9;
+					}
+
+					bool backLeftCorner = upBack || upBackLeft || upLeft;
+					bool backRightCorner = upBack || upBackRight || upRight;
+					bool frontLeftCorner = upFront || upFrontLeft || upLeft;
+					bool frontRightCorner = upFront || upFrontRight || upRight;
+					
+					if(backLeftCorner && backRightCorner && frontLeftCorner && frontRightCorner)
+					{
+						aoShape = 13; //full shaodw
+					}
+
+				}
 
 				bool isInWater = (sides[i] != nullptr) && sides[i]->type == BlockTypes::water;
 
 				if (dontUpdateLightSystem)
 				{
 					pushFlagsLightAndPosition(*currentVector, position, 0, isInWater, 
-						15, 15);
+						15, 15, aoShape);
 
 				}
 				else if (isLightEmitor(b.type))
 				{
 					pushFlagsLightAndPosition(*currentVector, position, 0, isInWater,
-						b.getSkyLight(), 15);
+						b.getSkyLight(), 15, aoShape);
 					//todo transparent block should emit internal light
 				}else
 				if (i == 2 && y == CHUNK_HEIGHT - 1)
 				{
 					pushFlagsLightAndPosition(*currentVector, position, 0, isInWater,
-						15, b.getLight());
+						15, b.getLight(), aoShape);
 				}
 				else if (y == 0 && i == 3)
 				{
 					pushFlagsLightAndPosition(*currentVector, position, 0, isInWater,
-						15, b.getLight()); //bottom of the world
+						15, b.getLight(), aoShape); //bottom of the world
 					
 				}
 				else if (sides[i] != nullptr)
 				{
 					pushFlagsLightAndPosition(*currentVector, position, 0, isInWater,
-						sides[i]->getSkyLight(), sides[i]->getLight());
+						sides[i]->getSkyLight(), sides[i]->getLight(), aoShape);
 				}
 				else
 				{
 					pushFlagsLightAndPosition(*currentVector, position, 0, isInWater,
-						0,0);
+						0,0, aoShape);
 				}
 				
 			}
@@ -254,19 +528,8 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		std::vector<int> *currentVector, Block &b, bool isAnimated)
 	{
 
-		const int FRONT = 0;
-		const int BACK = 1;
-		const int TOP = 2;
-		const int BOTTOM = 3;
-		const int LEFT = 4;
-		const int RIGHT = 5;
 
-		const int DOWN_FRONT = 6;
-		const int DOWN_BACK = 7;
-		const int DOWN_LEFT = 8;
-		const int DOWN_RIGHT = 9;
-
-		Block *sides[10] = {};
+		Block *sides[18] = {};
 		getNeighboursLogic(x, y, z, sides);
 
 		glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y,
@@ -391,24 +654,25 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 					currentVector->push_back(mergeShorts(i, getGpuIdIndexForBlock(b.type, i)));
 				}
 
+				int aoShape = 0;
 			
 				bool isInWater = (sides[i] != nullptr) && sides[i]->type == BlockTypes::water;
 
 				if (dontUpdateLightSystem)
 				{
 					pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
-						15, 15);
+						15, 15, aoShape);
 				}
 				else
 					if (sides[i] == nullptr && i == 2)
 					{
 						pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
-							15, b.getLight());
+							15, b.getLight(), aoShape);
 					}
 					else if (sides[i] == nullptr && i == 3)
 					{
 						pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
-							5, b.getLight());
+							5, b.getLight(), aoShape);
 						//bottom of the world
 					}
 					else if (sides[i] != nullptr)
@@ -420,13 +684,13 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 						pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
 							std::max(b.getSkyLight(), sides[i]->getSkyLight()),
-							std::max(b.getLight(), sides[i]->getLight()));
+							std::max(b.getLight(), sides[i]->getLight()), aoShape);
 					}
 					else
 					{
 						pushFlagsLightAndPosition(*currentVector, position, 
 							isWater, isInWater,
-							0, 0);
+							0, 0, aoShape);
 					}
 
 			}
@@ -436,7 +700,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 	auto blockBakeLogicForGrassMesh = [&](int x, int y, int z,
 		std::vector<int> *currentVector, Block &b)
 	{
-		Block *sides[10] = {};
+		Block *sides[18] = {};
 		getNeighboursLogic(x, y, z, sides);
 
 		bool ocluded = 1;
@@ -459,16 +723,14 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 			//opaqueGeometry.push_back(mergeShorts(i, b.type));
 			currentVector->push_back(mergeShorts(i, getGpuIdIndexForBlock(b.type, 0)));
 
-		
-
 			if (dontUpdateLightSystem)
 			{
-				pushFlagsLightAndPosition(*currentVector, position, 0, 0, 15, 15);
+				pushFlagsLightAndPosition(*currentVector, position, 0, 0, 15, 15, 0);
 			}
 			else
 			{
 				pushFlagsLightAndPosition(*currentVector, position,
-					0, 0, b.getSkyLight(), b.getLight());
+					0, 0, b.getSkyLight(), b.getLight(), 0);
 			}
 
 		}
@@ -494,12 +756,12 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 			if (dontUpdateLightSystem)
 			{
-				pushFlagsLightAndPosition(*currentVector, position, 0, 0, 15, 15);
+				pushFlagsLightAndPosition(*currentVector, position, 0, 0, 15, 15, 0);
 			}
 			else
 			{
 				pushFlagsLightAndPosition(*currentVector, position,
-					0, 0, b.getSkyLight(), b.getLight());
+					0, 0, b.getSkyLight(), b.getLight(), 0);
 			}
 		}
 

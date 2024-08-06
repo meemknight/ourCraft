@@ -715,7 +715,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	programData.renderer.entityRenderer.itemEntitiesToRender.push_back({gameData.entityTest});
 
-	static float dayTime = 0;
+	static float dayTime = 0.25;
 
 #pragma region chunks and rendering
 	if(w != 0 && h != 0)

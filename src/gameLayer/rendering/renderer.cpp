@@ -703,6 +703,8 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	skyBoxLoaderAndDrawer.loadAllTextures();
 
 
+	aoTexture.loadFromFile(RESOURCES_PATH "otherTextures/ao.png", false, true);
+
 	sunTexture.loadFromFile(RESOURCES_PATH "sky/sun.png", false, false);
 
 	brdfTexture.loadFromFile(RESOURCES_PATH "otherTextures/brdf.png", false, false);
@@ -924,6 +926,7 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(defaultShader, u_inverseViewProjMat);
 	GET_UNIFORM2(defaultShader, u_lastViewProj);
 	GET_UNIFORM2(defaultShader, u_skyTexture);
+	GET_UNIFORM2(defaultShader, u_ao);
 	
 
 	defaultShader.u_shadingSettings
@@ -1160,7 +1163,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	glm::vec3 sunLightColor = {1,1,1};
 	{
 
-		glm::vec3 daySkyLight(3.0f);
+		glm::vec3 daySkyLight(2.0f);
 		glm::vec3 nightSkyLight = (glm::vec3(47, 135, 244) / 255.f) * 0.65f;
 		glm::vec3 twilightLight = (glm::vec3(255, 159, 107) / 255.f) * 2.2f;
 		
@@ -1264,7 +1267,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			&(c.lastFrameViewProjMatrix)[0][0]);
 
 	#pragma region textures
-
 		programData.numbersTexture.bind(0);
 
 		programData.dudv.bind(1);
@@ -1296,6 +1298,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glBindTexture(GL_TEXTURE_2D, fboSkyBox.color);
 		glUniform1i(defaultShader.u_skyTexture, 8);
 
+		glActiveTexture(GL_TEXTURE0 + 11);
+		glBindTexture(GL_TEXTURE_2D, aoTexture.id);
+		glUniform1i(defaultShader.u_ao, 11);
 	#pragma endregion
 
 		glUniform1f(defaultShader.u_timeGrass, timeGrass);
