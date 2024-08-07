@@ -99,23 +99,23 @@ void UiENgine::init()
 	renderer2d.create();
 
 	font.createFromFile(RESOURCES_PATH "assets/roboto_black.ttf");
-	uiTexture.loadFromFile(RESOURCES_PATH "assets/textures/ui/ui0.png", true, true);
-	buttonTexture.loadFromFile(RESOURCES_PATH "assets/textures/ui/button.png", true, true);
+	uiTexture.loadFromFile(RESOURCES_PATH "assets/ui/ui0.png", true, true);
+	buttonTexture.loadFromFile(RESOURCES_PATH "assets/ui/button.png", true, true);
 	
 
-	itemsBar.loadFromFile(RESOURCES_PATH "assets/textures/ui/ui1.png", true, true);
+	itemsBar.loadFromFile(RESOURCES_PATH "assets/ui/ui1.png", true, true);
 	itemsBarSize = itemsBar.GetSize();
 
-	itemsHighlighter.loadFromFile(RESOURCES_PATH "assets/textures/ui/ui2.png", true, true);
+	itemsHighlighter.loadFromFile(RESOURCES_PATH "assets/ui/ui2.png", true, true);
 	itemsHighlighterSize = itemsHighlighter.GetSize();
 
-	itemsBarInventory.loadFromFile(RESOURCES_PATH "assets/textures/ui/ui3.png", true, true);
+	itemsBarInventory.loadFromFile(RESOURCES_PATH "assets/ui/ui3.png", true, true);
 	itemsBarInventorySize = itemsBarInventory.GetSize();
 
-	oneInventorySlot.loadFromFile(RESOURCES_PATH "assets/textures/ui/ui4.png", true, true);
+	oneInventorySlot.loadFromFile(RESOURCES_PATH "assets/ui/ui4.png", true, true);
 	oneInventorySlotSize = oneInventorySlot.GetSize();
 
-	playerCell.loadFromFile(RESOURCES_PATH "assets/textures/ui/ui5.png", true, true);
+	playerCell.loadFromFile(RESOURCES_PATH "assets/ui/ui5.png", true, true);
 	playerCellSize = playerCell.GetSize();
 
 }

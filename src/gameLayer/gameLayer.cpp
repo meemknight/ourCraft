@@ -41,26 +41,26 @@ bool initGame()
 	gl2d::setVsync(false);
 	programData.ui.init();
 
-	programData.numbersTexture.loadFromFile(RESOURCES_PATH "numbers.png", true, true);
-	//programData.dudv.loadFromFile(RESOURCES_PATH "otherTextures/test.jpg", true, true);
-	programData.dudv.loadFromFile(RESOURCES_PATH "otherTextures/waterDUDV.png", false, true);
-	//programData.dudv.loadFromFile(RESOURCES_PATH "otherTextures/wdudv.jpg", false, true);
+	programData.numbersTexture.loadFromFile(RESOURCES_PATH "assets/otherTextures/numbers.png", true, true);
+	//programData.dudv.loadFromFile(RESOURCES_PATH "assets/otherTextures/test.jpg", true, true);
+	programData.dudv.loadFromFile(RESOURCES_PATH "assets/otherTextures/waterDUDV.png", false, true);
+	//programData.dudv.loadFromFile(RESOURCES_PATH "assets/otherTextures/wdudv.jpg", false, true);
 
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	
-	programData.causticsTexture.loadFromFile(RESOURCES_PATH "otherTextures/caustics.jpg", false, true);
-	//programData.causticsTexture.loadFromFile(RESOURCES_PATH "otherTextures/caustics3.png", false, true);
-	//programData.causticsTexture.loadFromFile(RESOURCES_PATH "otherTextures/test.jpg", false, true);
+	programData.causticsTexture.loadFromFile(RESOURCES_PATH "assets/otherTextures/caustics.jpg", false, true);
+	//programData.causticsTexture.loadFromFile(RESOURCES_PATH "assets/otherTextures/caustics3.png", false, true);
+	//programData.causticsTexture.loadFromFile(RESOURCES_PATH "assets/otherTextures/test.jpg", false, true);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-	//programData.dudvNormal.loadFromFile(RESOURCES_PATH "otherTextures/normal.png", false, true);
-	//programData.dudvNormal.loadFromFile(RESOURCES_PATH "otherTextures/normal2.png", false, true);
-	//programData.dudvNormal.loadFromFile(RESOURCES_PATH "otherTextures/normal.jpg", false, true);
-	//programData.dudvNormal.loadFromFile(RESOURCES_PATH "otherTextures/normal2.jpg", false, true);
-	programData.dudvNormal.loadFromFile(RESOURCES_PATH "otherTextures/normal3.png", false, true); //best
+	//programData.dudvNormal.loadFromFile(RESOURCES_PATH "assets/otherTextures/normal.png", false, true);
+	//programData.dudvNormal.loadFromFile(RESOURCES_PATH "assets/otherTextures/normal2.png", false, true);
+	//programData.dudvNormal.loadFromFile(RESOURCES_PATH "assets/otherTextures/normal.jpg", false, true);
+	//programData.dudvNormal.loadFromFile(RESOURCES_PATH "assets/otherTextures/normal2.jpg", false, true);
+	programData.dudvNormal.loadFromFile(RESOURCES_PATH "assets/otherTextures/normal3.png", false, true); //best
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 

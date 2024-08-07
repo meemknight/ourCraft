@@ -655,15 +655,15 @@ void BlocksLoader::loadAllTextures()
 		path += RESOURCES_PATH;
 		path2 += RESOURCES_PATH;
 		
-		path2 += "pbr/block/"; //default
+		path2 += "assets/block/"; //default
 		
 		//path += "pbr3/";		//texture pack
-		path += "pbr/block/"; //original
-		
-		path += texturesNames[i];
+		//path += "pbr/block/"; //original
+		//
+		//path += texturesNames[i];
 		path2 += texturesNames[i];
 
-		if (!texturesNames[i][0] || !addTexture(path + ".png"))
+		//if (!texturesNames[i][0] || !addTexture(path + ".png"))
 		{
 			if (!texturesNames[i][0] || !addTexture(path2 + ".png"))
 			{
@@ -889,8 +889,8 @@ void BlocksLoader::loadAllTextures()
 	}
 
 
-	spawnEgg.loadFromFile(RESOURCES_PATH "assets/textures/items/spawn_egg.png", true, false);
-	spawnEggOverlay.loadFromFile(RESOURCES_PATH "assets/textures/items/spawn_egg_overlay.png", true, false);
+	spawnEgg.loadFromFile(RESOURCES_PATH "assets/items/spawn_egg.png", true, false);
+	spawnEggOverlay.loadFromFile(RESOURCES_PATH "assets/items/spawn_egg_overlay.png", true, false);
 
 
 	//load items
@@ -907,7 +907,7 @@ void BlocksLoader::loadAllTextures()
 		else
 		{
 			path = RESOURCES_PATH;
-			path += "assets/textures/items/";
+			path += "assets/items/";
 			path += itemName;
 
 			gl2d::Texture t;

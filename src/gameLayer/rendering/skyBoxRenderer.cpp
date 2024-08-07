@@ -140,9 +140,9 @@ void SkyBoxLoaderAndDrawer::createGpuData()
 
 void SkyBoxLoaderAndDrawer::loadAllTextures()
 {
-	loadTexture(RESOURCES_PATH "sky/skybox.png", daySky);
-	loadTexture(RESOURCES_PATH "sky/nightsky.png", nightSky);
-	loadTexture(RESOURCES_PATH "sky/twilightsky.png", twilightSky);
+	loadTexture(RESOURCES_PATH "assets/sky/skybox.png", daySky);
+	loadTexture(RESOURCES_PATH "assets/sky/nightsky.png", nightSky);
+	loadTexture(RESOURCES_PATH "assets/sky/twilightsky.png", twilightSky);
 
 }
 

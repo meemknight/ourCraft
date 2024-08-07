@@ -703,12 +703,12 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	skyBoxLoaderAndDrawer.loadAllTextures();
 
 
-	aoTexture.loadFromFile(RESOURCES_PATH "otherTextures/ao.png", false, true);
+	aoTexture.loadFromFile(RESOURCES_PATH "assets/otherTextures/ao.png", false, true);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
 
-	sunTexture.loadFromFile(RESOURCES_PATH "sky/sun.png", false, false);
+	sunTexture.loadFromFile(RESOURCES_PATH "assets/sky/sun.png", false, false);
 
-	brdfTexture.loadFromFile(RESOURCES_PATH "otherTextures/brdf.png", false, false);
+	brdfTexture.loadFromFile(RESOURCES_PATH "assets/otherTextures/brdf.png", false, false);
 
 	{
 		glGenVertexArrays(1, &vaoQuad);
@@ -882,7 +882,8 @@ void Renderer::reloadShaders()
 
 	defaultShader.shader.clear();
 
-	defaultShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "defaultShader.vert", RESOURCES_PATH "defaultShader.frag");
+	defaultShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/rendering/defaultShader.vert",
+		RESOURCES_PATH "shaders/rendering/defaultShader.frag");
 	defaultShader.shader.bind();
 
 	GET_UNIFORM2(defaultShader, u_viewProjection);
@@ -954,7 +955,8 @@ void Renderer::reloadShaders()
 
 		zpassShader.shader.clear();
 
-		zpassShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "zpass.vert", RESOURCES_PATH "zpass.frag");
+		zpassShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/rendering/zpass.vert",
+			RESOURCES_PATH "shaders/rendering/zpass.frag");
 		zpassShader.shader.bind();
 
 		GET_UNIFORM2(zpassShader, u_viewProjection);
@@ -2587,13 +2589,13 @@ void GyzmosRenderer::create()
 {
 
 
-	gyzmosLineShader.loadShaderProgramFromFile(RESOURCES_PATH "gyzmosLinesShader.vert",
-		RESOURCES_PATH "gyzmosCubeShader.frag");
+	gyzmosLineShader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/rendering/gyzmosLinesShader.vert",
+		RESOURCES_PATH "shaders/rendering/gyzmosCubeShader.frag");
 	GET_UNIFORM(gyzmosLineShader, u_gyzmosLineShaderViewProjection);
 
 
-	gyzmosCubeShader.loadShaderProgramFromFile(RESOURCES_PATH "gyzmosCubeShader.vert",
-		RESOURCES_PATH "gyzmosCubeShader.frag");
+	gyzmosCubeShader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/rendering/gyzmosCubeShader.vert",
+		RESOURCES_PATH "shaders/rendering/gyzmosCubeShader.frag");
 
 	GET_UNIFORM(gyzmosCubeShader, u_viewProjection);
 	GET_UNIFORM(gyzmosCubeShader, u_positionInt);
@@ -2704,8 +2706,8 @@ void GyzmosRenderer::render(Camera &c, glm::ivec3 posInt, glm::vec3 posFloat)
 
 void PointDebugRenderer::create()
 {
-	pointDebugShader.loadShaderProgramFromFile(RESOURCES_PATH "pointDebugShader.vert",
-		RESOURCES_PATH "pointDebugShader.frag");
+	pointDebugShader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/rendering/pointDebugShader.vert",
+		RESOURCES_PATH "shaders/rendering/pointDebugShader.frag");
 
 	GET_UNIFORM(pointDebugShader, u_viewProjection);
 	GET_UNIFORM(pointDebugShader, u_positionInt);

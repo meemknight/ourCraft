@@ -20,8 +20,8 @@ void SunShadow::init()
 	shadowTexturePreview.create(true, false);
 	shadowTexturePreview.updateSize(2048, 2048);
 
-	renderShadowIntoTextureShader.loadShaderProgramFromFile(RESOURCES_PATH "renderDepth.vert",
-		RESOURCES_PATH "renderDepth.frag");
+	renderShadowIntoTextureShader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/rendering/renderDepth.vert",
+		RESOURCES_PATH "shaders/rendering/renderDepth.frag");
 
 	GET_UNIFORM(renderShadowIntoTextureShader, u_depthTexture);
 	GET_UNIFORM(renderShadowIntoTextureShader, u_far);

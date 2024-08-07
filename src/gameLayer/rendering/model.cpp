@@ -117,11 +117,11 @@ void ModelsManager::loadAllModels()
 	//load textures
 	{
 		//the order matters!!!!
-		//loadTexture(RESOURCES_PATH "models/steve.png");
-		loadTexture(RESOURCES_PATH "models/giggasteve.png");
-		loadTexture(RESOURCES_PATH "models/zombie.png");
-		loadTexture(RESOURCES_PATH "models/pig.png");
-		loadTexture(RESOURCES_PATH "models/cat.png");
+		//loadTexture(RESOURCES_PATH "assets/models/steve.png");
+		loadTexture(RESOURCES_PATH "assets/models/giggasteve.png");
+		loadTexture(RESOURCES_PATH "assets/models/zombie.png");
+		loadTexture(RESOURCES_PATH "assets/models/pig.png");
+		loadTexture(RESOURCES_PATH "assets/models/cat.png");
 		
 
 	}
@@ -263,14 +263,14 @@ void ModelsManager::loadAllModels()
 	};
 
 
-	loadModel(RESOURCES_PATH "models/human.glb", human);
+	loadModel(RESOURCES_PATH "assets/models/human.glb", human);
 	importer.FreeScene();
 
-	loadModel(RESOURCES_PATH "models/pig.glb", pig);
+	loadModel(RESOURCES_PATH "assets/models/pig.glb", pig);
 	
-	loadModel(RESOURCES_PATH "models/cat.glb", cat);
+	loadModel(RESOURCES_PATH "assets/models/cat.glb", cat);
 
-	loadModel(RESOURCES_PATH "models/rightHand.glb", rightHand);
+	loadModel(RESOURCES_PATH "assets/models/rightHand.glb", rightHand);
 
 	//todo check if it frees all of them
 	importer.FreeScene();
