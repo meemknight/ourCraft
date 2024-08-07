@@ -19,6 +19,7 @@
 #include "multyPlayer/splitUpdatesLogic.h"
 #include <rendering/renderSettings.h>
 #include <ourJson.h>
+#include <filesystem>
 
 #include <platformTools.h>
 
@@ -29,6 +30,118 @@
 
 ProgramData programData;
 
+
+void stubErrorFunc(const char *msg, void *userDefinedData)
+{}
+
+void clearOtherTextures()
+{
+	programData.numbersTexture.cleanup();
+	programData.dudv.cleanup();
+	programData.causticsTexture.cleanup();
+	programData.dudvNormal.cleanup();
+	programData.aoTexture.cleanup();
+	programData.brdfTexture.cleanup();
+}
+
+void clearAllTexturePacks()
+{
+	clearOtherTextures();
+}
+
+void loadOtherTextures(const char *basePath, bool noErrorReport)
+{
+	if (noErrorReport)
+	{
+		gl2d::setErrorFuncCallback(stubErrorFunc);
+	}
+
+	std::string p(basePath);
+
+	if (!programData.numbersTexture.id)
+	{
+		programData.numbersTexture.loadFromFile((p + "numbers.png").c_str(), true, true);
+		//programData.dudv.loadFromFile(RESOURCES_PATH "assets/otherTextures/test.jpg", true, true);
+	};
+
+	if (!programData.dudv.id)
+	{
+		programData.dudv.loadFromFile((p + "waterDUDV.png").c_str(), false, true);
+		//programData.dudv.loadFromFile(RESOURCES_PATH "assets/otherTextures/wdudv.jpg", false, true);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	};
+
+	if (!programData.causticsTexture.id)
+	{
+		programData.causticsTexture.loadFromFile((p + "caustics.jpg").c_str(), false, true);
+		//programData.causticsTexture.loadFromFile(RESOURCES_PATH "assets/otherTextures/caustics3.png", false, true);
+		//programData.causticsTexture.loadFromFile(RESOURCES_PATH "assets/otherTextures/test.jpg", false, true);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	};
+
+	if (!programData.dudvNormal.id)
+	{
+		//programData.dudvNormal.loadFromFile(RESOURCES_PATH "assets/otherTextures/normal.png", false, true);
+		//programData.dudvNormal.loadFromFile(RESOURCES_PATH "assets/otherTextures/normal2.png", false, true);
+		//programData.dudvNormal.loadFromFile(RESOURCES_PATH "assets/otherTextures/normal.jpg", false, true);
+		//programData.dudvNormal.loadFromFile(RESOURCES_PATH "assets/otherTextures/normal2.jpg", false, true);
+		programData.dudvNormal.loadFromFile((p+"normal3.png").c_str(), false, true); //best
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	};
+
+
+	if (!programData.aoTexture.id)
+	{
+		programData.aoTexture.loadFromFile((p+"ao.png").c_str(), false, true);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+	};
+
+	if (!programData.brdfTexture.id)
+	{
+		programData.brdfTexture.loadFromFile((p + "brdf.png").c_str(), false, false);
+	}
+
+	if (noErrorReport)
+	{
+		gl2d::setErrorFuncCallback(gl2d::defaultErrorFunc);
+	}
+}
+
+void loadAllDefaultTexturePacks()
+{
+	loadOtherTextures(RESOURCES_PATH "assets/otherTextures/", false); //load the defaults
+}
+
+bool loadTexturePack(const char *basePath)
+{
+
+	std::filesystem::path root(basePath);
+
+	if (std::filesystem::exists(root) &&
+		std::filesystem::is_directory(root))
+	{
+
+
+		std::filesystem::path otherTexturesPath = root;
+		otherTexturesPath /= "otherTextures/";
+
+		if (std::filesystem::exists(otherTexturesPath) &&
+			std::filesystem::is_directory(otherTexturesPath))
+		{
+
+			loadOtherTextures(otherTexturesPath.string().c_str(), true);
+		}
+	}
+	else
+	{
+		return 0;
+	}
+
+	return true;
+}
 
 bool initGame()
 {
@@ -41,35 +154,15 @@ bool initGame()
 	gl2d::setVsync(false);
 	programData.ui.init();
 
-	programData.numbersTexture.loadFromFile(RESOURCES_PATH "assets/otherTextures/numbers.png", true, true);
-	//programData.dudv.loadFromFile(RESOURCES_PATH "assets/otherTextures/test.jpg", true, true);
-	programData.dudv.loadFromFile(RESOURCES_PATH "assets/otherTextures/waterDUDV.png", false, true);
-	//programData.dudv.loadFromFile(RESOURCES_PATH "assets/otherTextures/wdudv.jpg", false, true);
-
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	
-	programData.causticsTexture.loadFromFile(RESOURCES_PATH "assets/otherTextures/caustics.jpg", false, true);
-	//programData.causticsTexture.loadFromFile(RESOURCES_PATH "assets/otherTextures/caustics3.png", false, true);
-	//programData.causticsTexture.loadFromFile(RESOURCES_PATH "assets/otherTextures/test.jpg", false, true);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	//programData.dudvNormal.loadFromFile(RESOURCES_PATH "assets/otherTextures/normal.png", false, true);
-	//programData.dudvNormal.loadFromFile(RESOURCES_PATH "assets/otherTextures/normal2.png", false, true);
-	//programData.dudvNormal.loadFromFile(RESOURCES_PATH "assets/otherTextures/normal.jpg", false, true);
-	//programData.dudvNormal.loadFromFile(RESOURCES_PATH "assets/otherTextures/normal2.jpg", false, true);
-	programData.dudvNormal.loadFromFile(RESOURCES_PATH "assets/otherTextures/normal3.png", false, true); //best
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
+	loadAllDefaultTexturePacks();
 
 	programData.blocksLoader.loadAllTextures();
 	programData.renderer.create(programData.blocksLoader);
 	programData.gyzmosRenderer.create();
 	programData.pointDebugRenderer.create();
 	programData.modelsManager.loadAllModels();
+
+	programData.defaultCover.loadFromFile(RESOURCES_PATH "defaultCover.png");
 
 
 	if (enet_initialize() != 0)
@@ -128,6 +221,22 @@ bool gameLogic(float deltaTime)
 
 #pragma endregion
 	
+	if (shouldReloadTexturePacks())
+	{
+		clearAllTexturePacks();
+
+		auto tp = getUsedTexturePacksAndResetFlag();
+
+		for (auto &t : tp)
+		{
+			std::string path = RESOURCES_PATH;
+			path += "/texturePacks/";
+			path += t.filename().string();
+			loadTexturePack(path.c_str());
+		}
+
+		loadAllDefaultTexturePacks();
+	}
 
 	if (platform::isKeyPressedOn(platform::Button::P))
 	{

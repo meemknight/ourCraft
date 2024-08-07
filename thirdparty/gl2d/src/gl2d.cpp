@@ -1131,7 +1131,8 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 
 
 	void Renderer2D::render9Patch(const Rect position, const int borderSize,
-		const Color4f color, const glm::vec2 origin, const float rotation, const Texture texture, const Texture_Coords textureCoords, const Texture_Coords inner_texture_coords)
+		const Color4f color, const glm::vec2 origin, const float rotation, const Texture texture,
+		const Texture_Coords textureCoords, const Texture_Coords inner_texture_coords)
 	{
 		glm::vec4 colorData[4] = { color, color, color, color };
 

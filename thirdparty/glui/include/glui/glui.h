@@ -177,6 +177,7 @@ namespace glui
 
 
 			std::string currentTextBox = {};
+			int currentId = 0;
 
 		}internal;
 
@@ -241,9 +242,18 @@ namespace glui
 
 		glm::ivec4 operator()();
 
+		glm::ivec4 shrinkPercentage(glm::vec2 p);
+
 		operator glm::vec4() { return (*this)(); }
 	};
 
 	bool isInButton(const glm::vec2 &p, const glm::vec4 &box);
+
+	float determineTextSize(gl2d::Renderer2D &renderer, const std::string &str, gl2d::Font &f, glm::vec4 transform, bool minimize);
+
+	void renderText(gl2d::Renderer2D &renderer, const std::string &str, gl2d::Font &f, glm::vec4 transform,
+		glm::vec4 color, bool noTexture, bool minimize = true, bool alignLeft = false);
+
+	void renderTexture(gl2d::Renderer2D &renderer, glm::vec4 transform, gl2d::Texture t, gl2d::Color4f c, glm::vec4 textureCoordonates);
 
 };

@@ -703,12 +703,8 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	skyBoxLoaderAndDrawer.loadAllTextures();
 
 
-	aoTexture.loadFromFile(RESOURCES_PATH "assets/otherTextures/ao.png", false, true);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-
 	sunTexture.loadFromFile(RESOURCES_PATH "assets/sky/sun.png", false, false);
 
-	brdfTexture.loadFromFile(RESOURCES_PATH "assets/otherTextures/brdf.png", false, false);
 
 	{
 		glGenVertexArrays(1, &vaoQuad);
@@ -1308,7 +1304,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform1i(defaultShader.u_lastFramePositionViewSpace, 6);
 
 		glActiveTexture(GL_TEXTURE0 + 7);
-		glBindTexture(GL_TEXTURE_2D, brdfTexture.id);
+		glBindTexture(GL_TEXTURE_2D, programData.brdfTexture.id);
 		glUniform1i(defaultShader.u_brdf, 7);
 
 		glActiveTexture(GL_TEXTURE0 + 8);
@@ -1316,7 +1312,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform1i(defaultShader.u_skyTexture, 8);
 
 		glActiveTexture(GL_TEXTURE0 + 11);
-		glBindTexture(GL_TEXTURE_2D, aoTexture.id);
+		glBindTexture(GL_TEXTURE_2D, programData.aoTexture.id);
 		glUniform1i(defaultShader.u_ao, 11);
 	#pragma endregion
 

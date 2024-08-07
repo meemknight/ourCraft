@@ -25,6 +25,9 @@ struct ProgramData
 	gl2d::Texture causticsTexture;
 	gl2d::Texture dudv;
 	gl2d::Texture dudvNormal;
+	gl2d::Texture aoTexture;
+	gl2d::Texture brdfTexture;
+	gl2d::Texture defaultCover;
 	int currentFps = 0;
 
 	struct OtherSettings

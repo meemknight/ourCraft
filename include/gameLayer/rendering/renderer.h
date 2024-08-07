@@ -281,8 +281,6 @@ struct Renderer
 	SkyBoxRenderer skyBoxRenderer;
 	SkyBoxLoaderAndDrawer skyBoxLoaderAndDrawer;
 	gl2d::Texture sunTexture;
-	gl2d::Texture brdfTexture;
-	gl2d::Texture aoTexture;
 
 	GLuint vao = 0;
 	GLuint vertexBuffer = 0;

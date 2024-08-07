@@ -291,7 +291,7 @@ namespace glui
 	//todo reuse the upper function
 	void renderText(gl2d::Renderer2D& renderer,const std::string &str,
 		gl2d::Font& f, glm::vec4 transform, glm::vec4 color, 
-		bool noTexture, bool minimize = true, bool alignLeft = false)
+		bool noTexture, bool minimize, bool alignLeft)
 	{
 		auto newStr = getString(str);
 		auto newS = determineTextSize(renderer, newStr, f, transform, minimize);
@@ -351,7 +351,8 @@ namespace glui
 		}
 	}
 
-	void renderTexture(gl2d::Renderer2D &renderer, glm::vec4 transform, gl2d::Texture t, gl2d::Color4f c, glm::vec4 textureCoordonates)
+	void renderTexture(gl2d::Renderer2D &renderer, glm::vec4 transform, gl2d::Texture t, gl2d::Color4f c,
+		glm::vec4 textureCoordonates)
 	{
 		auto newPos = computeTextureNewPosition(transform, t);
 
@@ -520,7 +521,6 @@ namespace glui
 
 
 	float timer=0;
-	int currentId = 0;
 	bool idWasSet = 0;
 
 
@@ -536,15 +536,15 @@ namespace glui
 		}
 		//find the menu stack for this Begin()
 		
-		auto iterMenuStack = internal.allMenuStacks.find(currentId);
+		auto iterMenuStack = internal.allMenuStacks.find(internal.currentId);
 		if (iterMenuStack == internal.allMenuStacks.end())
 		{
-			iterMenuStack = internal.allMenuStacks.insert({currentId, {}}).first;
+			iterMenuStack = internal.allMenuStacks.insert({internal.currentId, {}}).first;
 		}
 		auto &currentMenuStack = iterMenuStack->second;
 
 		idWasSet = 0;
-		currentId = 0;
+		internal.currentId = 0;
 
 		if (escapeReleased && !currentMenuStack.empty())
 		{
@@ -1878,11 +1878,11 @@ namespace glui
 		if (!idWasSet)
 		{
 			idWasSet = true;
-			currentId = id;
+			internal.currentId = id;
 		}
 		else
 		{
-			if (currentId == id)
+			if (internal.currentId == id)
 			{
 				errorFunc("Forgot to call renderFrame or more than one begin this frame");
 			}
@@ -2095,6 +2095,22 @@ namespace glui
 			&&
 			p.y >= box.y && p.y <= box.y + box.w
 			);
+	}
+
+	glm::ivec4 Box::shrinkPercentage(glm::vec2 p)
+	{
+		(*this)();
+
+		glm::vec4 b = dimensions;
+
+		b.x += (b.z * p.x)/2.f;
+		b.y += (b.w * p.y)/2.f;
+
+		b.z *= (1.f - p.x);
+		b.w *= (1.f - p.y);
+
+		dimensions = b;
+		return dimensions;
 	}
 
 
