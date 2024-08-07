@@ -305,6 +305,15 @@ void displayTexturePacksSettingsMenu(ProgramData &programData)
 				gl2d::Texture t;
 				t.loadFromFile(file.string().c_str());
 
+				if (!t.id)
+				{
+					file = pack;
+					file = (RESOURCES_PATH "texturePacks") / file;
+					file /= "pack.png";
+					t.loadFromFile(file.string().c_str());
+
+				}
+
 				logoTextures[pack.string()] = t;
 			}
 		}

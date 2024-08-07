@@ -907,15 +907,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 
 	}
 
-	if(!spawnEgg.id)
-	spawnEgg.loadFromFile(RESOURCES_PATH "assets/items/spawn_egg.png", true, false);
-	
-	
-	if (!spawnEggOverlay.id)
-	spawnEggOverlay.loadFromFile(RESOURCES_PATH "assets/items/spawn_egg_overlay.png", true, false);
 
-
-	if (!appendMode) { return; }
 
 	//load items
 	for (int i = ItemsStartPoint; i < lastItem; i++)
@@ -925,21 +917,27 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 
 		if (itemName == std::string(""))
 		{
-			texturesIdsItems.push_back(texturesIds[0]);
-			gpuIdsItems.push_back(gpuIds[0]);
+			if (appendMode)
+			{
+				texturesIdsItems.push_back(texturesIds[0]);
+				gpuIdsItems.push_back(gpuIds[0]);
+			};
 		}
 		else
 		{
-			path = RESOURCES_PATH;
-			path += "assets/items/";
+			path = filePath;
+			path += "items/";
 			path += itemName;
 
 			gl2d::Texture t;
 
 			if (!loadFromFileWithAplhaFixing(t, path.c_str(), true, false, false))
 			{
-				texturesIdsItems.push_back(texturesIds[0]);
-				gpuIdsItems.push_back(gpuIds[0]);
+				if (appendMode)
+				{
+					texturesIdsItems.push_back(texturesIds[0]);
+					gpuIdsItems.push_back(gpuIds[0]);
+				};
 			}
 			else
 			{
@@ -949,18 +947,33 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 
 				glGenerateMipmap(GL_TEXTURE_2D);
 
-				texturesIdsItems.push_back(t.id);
 
 				auto handle = glGetTextureHandleARB(t.id);
 				glMakeTextureHandleResidentARB(handle);
 
-				gpuIdsItems.push_back(handle);
+				if (appendMode)
+				{
+					texturesIdsItems.push_back(t.id);
+					gpuIdsItems.push_back(handle);
+				}
+				else
+				{
+					texturesIdsItems[i] = t.id;
+					gpuIdsItems[i] = handle;
+				}
 			}
 		}
 
 		
 	}
-	
+
+
+	if (!spawnEgg.id)
+		spawnEgg.loadFromFile((filePath + "items/spawn_egg.png").c_str(), true, false);
+
+	if (!spawnEggOverlay.id)
+		spawnEggOverlay.loadFromFile((filePath + "items/spawn_egg_overlay.png").c_str(), true, false);
+
 	glm::ivec2 spawnEggSize = {};
 	auto spawnEggData = spawnEgg.readTextureData(0, &spawnEggSize);
 
@@ -1019,12 +1032,17 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 
 	};
 
+		
 	if (spawnEggSize == spawnEggOverSize && spawnEggSize.x != 0 && spawnEggSize.y != 0)
 	{
-		createSpawnEggTexture(zombieSpawnEgg, glm::vec3{2, 161, 160} / 255.f, glm::vec3{107, 137, 89}/255.f);
-		createSpawnEggTexture(pigSpawnEgg, glm::vec3(230, 151, 167) / 255.f, glm::vec3(148, 92, 95) / 255.f);
-		createSpawnEggTexture(catSpawnEgg, glm::vec3(230, 230, 230) / 255.f, glm::vec3(10, 10, 10)/255.f);
+		if (texturesIdsItems[zombieSpawnEgg - ItemsStartPoint] == texturesIds[0])
+		{
+			createSpawnEggTexture(zombieSpawnEgg, glm::vec3{2, 161, 160} / 255.f, glm::vec3{107, 137, 89} / 255.f);
+			createSpawnEggTexture(pigSpawnEgg, glm::vec3(230, 151, 167) / 255.f, glm::vec3(148, 92, 95) / 255.f);
+			createSpawnEggTexture(catSpawnEgg, glm::vec3(230, 230, 230) / 255.f, glm::vec3(10, 10, 10) / 255.f);
 
+
+		};
 	}
 	else
 	{
@@ -1060,9 +1078,21 @@ void BlocksLoader::clearAllTextures()
 		}
 	}
 
+	for (auto &t : texturesIdsItems)
+	{
+		if (t != texturesIds[0])
+		{
+			glDeleteTextures(1, &t);
+		}
+	}
+
 	glDeleteTextures(3, &texturesIds[0]);
 	texturesIds.clear();
 	gpuIds.clear();
+
+	texturesIdsItems.clear();
+	gpuIdsItems.clear();
+
 
 }
 

@@ -410,9 +410,9 @@ const char *itemsNames[] =
 {
 	"stick.png",
 	"coal.png",
-	"wood_sword.png",
-	"wood_pickaxe.png",
-	"wood_axe.png",
+	"wooden_sword.png",
+	"wooden_pickaxe.png",
+	"wooden_axe.png",
 	"", //eggs
 	"",
 	"",
