@@ -15,6 +15,7 @@ struct Model
 	size_t vertexCount = 0;
 	std::vector<glm::mat4> transforms;
 
+	void cleanup();
 };
 
 
@@ -23,7 +24,8 @@ struct Model
 struct ModelsManager
 {
 
-	void loadAllModels();
+	void loadAllModels(std::string path, bool reportErrors);
+	void clearAllModels();
 
 	Model human;
 

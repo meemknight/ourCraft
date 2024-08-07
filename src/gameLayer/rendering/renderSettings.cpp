@@ -170,17 +170,58 @@ void displayTexturePacksSettingsMenuButton(ProgramData &programData)
 	programData.ui.menuRenderer.EndMenu();
 }
 
+
+void openFolder(const char *path)
+{
+	//TODO!
+#if defined(_WIN32) || defined(_WIN64)
+	std::string command = "explorer ";
+	command += path;
+	system(command.c_str());
+#elif defined(__APPLE__) || defined(__MACH__)
+	std::string command = "open ";
+	command += path;
+	system(command.c_str());
+#elif defined(__linux__)
+	std::string command = "xdg-open ";
+	command += path;
+	system(command.c_str());
+#else
+	
+#endif
+}
+
+inline void stubErrorFunc(const char *msg, void *userDefinedData)
+{
+	
+}
+
 void displayTexturePacksSettingsMenu(ProgramData &programData)
 {
+	std::error_code err;
+
 
 	programData.ui.menuRenderer.Text("Texture packs...", Colors_White);
+
+	//todo
+	//if (programData.ui.menuRenderer.Button("Open Folder", Colors_Gray))
+	//{
+	//	if (!std::filesystem::exists(RESOURCES_PATH "texturePacks"))
+	//	{
+	//		std::filesystem::create_directories(RESOURCES_PATH "texturePacks", err);
+	//	}
+	//	
+	//	openFolder(RESOURCES_PATH "texturePacks");
+	//}
+
 
 	glm::vec4 customWidgetTransform = {};
 	programData.ui.menuRenderer.CustomWidget(169, &customWidgetTransform);
 
+
+
 	//programData.ui.menuRenderer.cu
 	auto &renderer = programData.ui.renderer2d;
-
 
 	auto renderButton = [&](glm::ivec4 box) -> bool
 	{
@@ -235,7 +276,6 @@ void displayTexturePacksSettingsMenu(ProgramData &programData)
 		[programData.ui.menuRenderer.internal.currentId].back() == "Textures Packs"
 		)
 	{
-		std::error_code err;
 
 		std::vector<std::filesystem::path> allTexturePacks;
 
@@ -253,9 +293,9 @@ void displayTexturePacksSettingsMenu(ProgramData &programData)
 		}
 
 		//load logo textures
+		gl2d::setErrorFuncCallback(stubErrorFunc);
 		for (auto &pack : allTexturePacks)
 		{
-
 			auto file = pack;
 			file = (RESOURCES_PATH "texturePacks") / file;
 			file /= "logo.png";
@@ -268,7 +308,7 @@ void displayTexturePacksSettingsMenu(ProgramData &programData)
 				logoTextures[pack.string()] = t;
 			}
 		}
-
+		gl2d::setErrorFuncCallback(gl2d::defaultErrorFunc);
 		//TODO delete unused entries
 
 

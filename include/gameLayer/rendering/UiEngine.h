@@ -17,6 +17,10 @@ struct UiENgine
 
 	void init();
 
+	void loadTextures(std::string path);
+
+	void clearOnlyTextures();
+
 	gl2d::TextureAtlas uiAtlas{6, 1};
 
 

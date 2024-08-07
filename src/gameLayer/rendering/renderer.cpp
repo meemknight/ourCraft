@@ -699,11 +699,8 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	fboSkyBox.create(GL_R11F_G11F_B10F, false);
 
 	skyBoxRenderer.create();
-	skyBoxLoaderAndDrawer.createGpuData();
-	skyBoxLoaderAndDrawer.loadAllTextures();
 
 
-	sunTexture.loadFromFile(RESOURCES_PATH "assets/sky/sun.png", false, false);
 
 
 	{
@@ -1216,8 +1213,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fboOnlyFirstTarget);
 
-	programData.renderer.skyBoxLoaderAndDrawer.drawBefore(c.getProjectionMatrix() * c.getViewMatrix(),
-		programData.renderer.sunTexture,
+	programData.skyBoxLoaderAndDrawer.drawBefore(c.getProjectionMatrix() * c.getViewMatrix(),
 		programData.renderer.skyBoxRenderer.sunPos, dayTime);
 
 	fboSkyBox.copyColorFromOtherFBO(fboMain.color,

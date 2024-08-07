@@ -90,7 +90,9 @@ struct SkyBoxLoaderAndDrawer
 		BottomOfTheCrossLeft,
 	};
 
-	void loadAllTextures();
+	void loadAllTextures(std::string path);
+
+	void clearOnlyTextures();
 	
 	void loadTexture(const char *name, SkyBox &skyBox, int format = 0);
 	void loadHDRtexture(const char *name, SkyBox &skyBox, GLuint frameBuffer);
@@ -104,9 +106,10 @@ struct SkyBoxLoaderAndDrawer
 	SkyBox daySky;
 	SkyBox nightSky;
 	SkyBox twilightSky;
+	gl2d::Texture sunTexture;
 
 
-	void drawBefore(const glm::mat4 &viewProjMat, gl2d::Texture &sunTexture,
+	void drawBefore(const glm::mat4 &viewProjMat, 
 		glm::vec3 sunPos, float timeOfDay);
 
 

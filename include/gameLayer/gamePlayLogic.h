@@ -18,6 +18,7 @@ struct ProgramData
 	PointDebugRenderer pointDebugRenderer;
 	BlocksLoader blocksLoader;
 	ModelsManager modelsManager;
+	SkyBoxLoaderAndDrawer skyBoxLoaderAndDrawer;
 
 	Profiler GPUProfiler;
 
@@ -36,6 +37,8 @@ struct ProgramData
 		int viewDistance = 15;
 
 	}otherSettings;
+
+
 };
 
 

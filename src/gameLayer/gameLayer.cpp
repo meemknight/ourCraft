@@ -31,7 +31,7 @@
 ProgramData programData;
 
 
-void stubErrorFunc(const char *msg, void *userDefinedData)
+inline void stubErrorFunc(const char *msg, void *userDefinedData)
 {}
 
 void clearOtherTextures()
@@ -47,6 +47,9 @@ void clearOtherTextures()
 void clearAllTexturePacks()
 {
 	clearOtherTextures();
+	programData.skyBoxLoaderAndDrawer.clearOnlyTextures();
+	programData.ui.clearOnlyTextures();
+	programData.modelsManager.clearAllModels();
 }
 
 void loadOtherTextures(const char *basePath, bool noErrorReport)
@@ -113,6 +116,12 @@ void loadOtherTextures(const char *basePath, bool noErrorReport)
 void loadAllDefaultTexturePacks()
 {
 	loadOtherTextures(RESOURCES_PATH "assets/otherTextures/", false); //load the defaults
+
+	programData.skyBoxLoaderAndDrawer.loadAllTextures(RESOURCES_PATH "assets/sky/");
+
+	programData.ui.loadTextures(RESOURCES_PATH "assets/ui/");
+
+	programData.modelsManager.loadAllModels(RESOURCES_PATH "assets/models/", false);
 }
 
 bool loadTexturePack(const char *basePath)
@@ -134,6 +143,40 @@ bool loadTexturePack(const char *basePath)
 
 			loadOtherTextures(otherTexturesPath.string().c_str(), true);
 		}
+
+
+		std::filesystem::path skyPath = root;
+		skyPath /= "sky/";
+
+		if (std::filesystem::exists(skyPath) &&
+			std::filesystem::is_directory(skyPath))
+		{
+			gl2d::setErrorFuncCallback(stubErrorFunc);
+			programData.skyBoxLoaderAndDrawer.loadAllTextures(skyPath.string().c_str());
+			gl2d::setErrorFuncCallback(gl2d::defaultErrorFunc);
+		}
+
+		std::filesystem::path uiPath = root;
+		uiPath /= "ui/";
+
+		if (std::filesystem::exists(uiPath) &&
+			std::filesystem::is_directory(uiPath))
+		{
+			gl2d::setErrorFuncCallback(stubErrorFunc);
+			programData.ui.loadTextures(uiPath.string().c_str());
+			gl2d::setErrorFuncCallback(gl2d::defaultErrorFunc);
+		}
+
+		std::filesystem::path modelsPath = root;
+		modelsPath /= "models/";
+
+		if (std::filesystem::exists(modelsPath) &&
+			std::filesystem::is_directory(modelsPath))
+		{
+			gl2d::setErrorFuncCallback(stubErrorFunc);
+			programData.modelsManager.loadAllModels(modelsPath.string().c_str(), false);
+			gl2d::setErrorFuncCallback(gl2d::defaultErrorFunc);
+		}
 	}
 	else
 	{
@@ -152,15 +195,19 @@ bool initGame()
 
 
 	gl2d::setVsync(false);
+
+
+
 	programData.ui.init();
-
-	loadAllDefaultTexturePacks();
-
 	programData.blocksLoader.loadAllTextures();
 	programData.renderer.create(programData.blocksLoader);
 	programData.gyzmosRenderer.create();
 	programData.pointDebugRenderer.create();
-	programData.modelsManager.loadAllModels();
+	programData.skyBoxLoaderAndDrawer.createGpuData();
+
+
+	loadAllDefaultTexturePacks();
+
 
 	programData.defaultCover.loadFromFile(RESOURCES_PATH "defaultCover.png");
 

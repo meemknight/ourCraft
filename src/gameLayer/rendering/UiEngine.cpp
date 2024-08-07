@@ -98,26 +98,75 @@ void UiENgine::init()
 {
 	renderer2d.create();
 
-	font.createFromFile(RESOURCES_PATH "assets/roboto_black.ttf");
-	uiTexture.loadFromFile(RESOURCES_PATH "assets/ui/ui0.png", true, true);
-	buttonTexture.loadFromFile(RESOURCES_PATH "assets/ui/button.png", true, true);
 	
 
-	itemsBar.loadFromFile(RESOURCES_PATH "assets/ui/ui1.png", true, true);
-	itemsBarSize = itemsBar.GetSize();
+}
 
-	itemsHighlighter.loadFromFile(RESOURCES_PATH "assets/ui/ui2.png", true, true);
-	itemsHighlighterSize = itemsHighlighter.GetSize();
+void UiENgine::loadTextures(std::string path)
+{
+	if (!font.texture.id)
+	{
+		font.createFromFile((path + "font.ttf").c_str());
+	}
+	
+	if(!uiTexture.id)
+	uiTexture.loadFromFile((path + "ui0.png").c_str(), true, true);
+	
+	if(!buttonTexture.id)
+	buttonTexture.loadFromFile((path + "button.png").c_str(), true, true);
 
-	itemsBarInventory.loadFromFile(RESOURCES_PATH "assets/ui/ui3.png", true, true);
-	itemsBarInventorySize = itemsBarInventory.GetSize();
+	if (!itemsBar.id)
+	{
+		itemsBar.loadFromFile((path + "ui1.png").c_str(), true, true);
+		itemsBarSize = itemsBar.GetSize();
+	}
 
-	oneInventorySlot.loadFromFile(RESOURCES_PATH "assets/ui/ui4.png", true, true);
-	oneInventorySlotSize = oneInventorySlot.GetSize();
+	if (!itemsHighlighter.id)
+	{
+		itemsHighlighter.loadFromFile((path + "ui2.png").c_str(), true, true);
+		itemsHighlighterSize = itemsHighlighter.GetSize();
+	}
 
-	playerCell.loadFromFile(RESOURCES_PATH "assets/ui/ui5.png", true, true);
-	playerCellSize = playerCell.GetSize();
+	if (!itemsBarInventory.id)
+	{
+		itemsBarInventory.loadFromFile((path + "ui3.png").c_str(), true, true);
+		itemsBarInventorySize = itemsBarInventory.GetSize();
+	}
 
+	if (!oneInventorySlot.id)
+	{
+		oneInventorySlot.loadFromFile((path + "ui4.png").c_str(), true, true);
+		oneInventorySlotSize = oneInventorySlot.GetSize();
+	}
+
+	if (!playerCell.id)
+	{
+		playerCell.loadFromFile((path + "ui5.png").c_str(), true, true);
+		playerCellSize = playerCell.GetSize();
+	}
+
+}
+
+void UiENgine::clearOnlyTextures()
+{
+	font.cleanup();
+	uiTexture.cleanup();
+	buttonTexture.cleanup();
+
+	itemsBar.cleanup();
+	itemsBar = {};
+
+	itemsHighlighter.cleanup();
+	itemsHighlighter = {};
+
+	itemsBarInventory.cleanup();
+	itemsBarInventorySize = {};
+
+	oneInventorySlot.cleanup();
+	oneInventorySlotSize = {};
+
+	playerCell.cleanup();
+	playerCellSize = {};
 }
 
 void UiENgine::renderGameUI(float deltaTime, int w, int h

@@ -279,8 +279,6 @@ struct Renderer
 	size_t lightsBufferCount = 0;
 
 	SkyBoxRenderer skyBoxRenderer;
-	SkyBoxLoaderAndDrawer skyBoxLoaderAndDrawer;
-	gl2d::Texture sunTexture;
 
 	GLuint vao = 0;
 	GLuint vertexBuffer = 0;

@@ -39,10 +39,14 @@ const aiNode *findNodeContainingMesh(const aiNode *node, const aiMesh *mesh)
 	return nullptr;
 }
 
-void ModelsManager::loadAllModels()
+void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 {
 
+	bool appendMode = texturesIds.empty();
+
+
 	//load default texture
+	if(appendMode)
 	{
 		unsigned char data[16] = {};
 
@@ -78,8 +82,11 @@ void ModelsManager::loadAllModels()
 		gpuIds.push_back(handle);
 	}
 
-	auto loadTexture = [&](const char *path)
+	auto loadTexture = [&](const char *path, bool appendMode, int index)
 	{
+
+		if (!appendMode && texturesIds[index] != texturesIds[0]) { return; } //we already have the texture
+
 		gl2d::Texture texture = {};
 		GLuint64 handle = 0;
 
@@ -109,19 +116,30 @@ void ModelsManager::loadAllModels()
 			texture.id = texturesIds[0];
 		}
 
-		gpuIds.push_back(handle);
-		texturesIds.push_back(texture.id);
+		if (appendMode)
+		{
+			gpuIds.push_back(handle);
+			texturesIds.push_back(texture.id);
+		}
+		else
+		{
+			gpuIds[index] = handle;
+			texturesIds[index] = texture.id;
+		}
+
+
 	};
 
 
 	//load textures
 	{
+		int index = 1;
 		//the order matters!!!!
-		//loadTexture(RESOURCES_PATH "assets/models/steve.png");
-		loadTexture(RESOURCES_PATH "assets/models/giggasteve.png");
-		loadTexture(RESOURCES_PATH "assets/models/zombie.png");
-		loadTexture(RESOURCES_PATH "assets/models/pig.png");
-		loadTexture(RESOURCES_PATH "assets/models/cat.png");
+		//loadTexture((path+"steve.png").c_str());
+		loadTexture((path + "giggasteve.png").c_str(), appendMode, index++);
+		loadTexture((path + "zombie.png").c_str(), appendMode, index++);
+		loadTexture((path + "pig.png").c_str(), appendMode, index++);
+		loadTexture((path+ "cat.png").c_str(), appendMode, index++);
 		
 
 	}
@@ -234,8 +252,7 @@ void ModelsManager::loadAllModels()
 
 			model.vertexCount = indices.size();
 
-			//todo err report
-			if (!model.vertexCount) { std::cout << "Error wrong model format!\n"; }
+			if (!model.vertexCount && reportErrors) { std::cout << "Error wrong model format!\n"; }
 
 			glBufferData(GL_ARRAY_BUFFER, vertexes.size() * sizeof(Data), vertexes.data(), GL_STATIC_DRAW);
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
@@ -253,7 +270,7 @@ void ModelsManager::loadAllModels()
 			glBindVertexArray(0);
 
 		}
-		else
+		else if(reportErrors)
 		{
 			std::cout << "noSchene in" << path << "\n";
 			std::cout << importer.GetErrorString() << "\n";
@@ -263,20 +280,53 @@ void ModelsManager::loadAllModels()
 	};
 
 
-	loadModel(RESOURCES_PATH "assets/models/human.glb", human);
-	importer.FreeScene();
+	if(!human.vertexCount)
+		loadModel((path + "human.glb").c_str(), human);
 
-	loadModel(RESOURCES_PATH "assets/models/pig.glb", pig);
+	if (!pig.vertexCount)
+		loadModel((path + "pig.glb").c_str(), pig);
 	
-	loadModel(RESOURCES_PATH "assets/models/cat.glb", cat);
+	if (!cat.vertexCount)
+		loadModel((path + "cat.glb").c_str(), cat);
 
-	loadModel(RESOURCES_PATH "assets/models/rightHand.glb", rightHand);
+	if (!rightHand.vertexCount)
+		loadModel((path + "rightHand.glb").c_str(), rightHand);
 
 	//todo check if it frees all of them
 	importer.FreeScene();
 
 
 	setupSSBO();
+}
+
+void ModelsManager::clearAllModels()
+{
+	human.cleanup();
+
+	pig.cleanup();
+
+	cat.cleanup();
+
+	rightHand.cleanup();
+
+
+	if (texturesIds.size())
+	{
+		auto defaultTexture = texturesIds[0];
+
+		for (int i = 1; i < texturesIds.size(); i++)
+		{
+			if (texturesIds[i] != defaultTexture)
+			{
+				glDeleteTextures(1, &texturesIds[i]);
+			}
+		}
+		glDeleteTextures(1, &texturesIds[0]);
+	}
+
+	texturesIds.clear();
+	gpuIds.clear();
+
 }
 
 void ModelsManager::setupSSBO()
@@ -355,4 +405,11 @@ void animatePlayerLegs(glm::mat4 *poseVector,
 
 }
 
+void Model::cleanup()
+{
+	glDeleteBuffers(1, &indexBuffer);
+	glDeleteBuffers(1, &geometry);
+	glDeleteVertexArrays(1, &vao);
 
+	*this = {};
+}

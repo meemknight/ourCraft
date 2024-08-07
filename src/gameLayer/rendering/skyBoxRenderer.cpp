@@ -138,12 +138,35 @@ void SkyBoxLoaderAndDrawer::createGpuData()
 }
 
 
-void SkyBoxLoaderAndDrawer::loadAllTextures()
+void SkyBoxLoaderAndDrawer::loadAllTextures(std::string path)
 {
-	loadTexture(RESOURCES_PATH "assets/sky/skybox.png", daySky);
-	loadTexture(RESOURCES_PATH "assets/sky/nightsky.png", nightSky);
-	loadTexture(RESOURCES_PATH "assets/sky/twilightsky.png", twilightSky);
+	if (!daySky.texture)
+	{
+		loadTexture((path + "skybox.png").c_str(), daySky);
+	}
+	
+	if (!nightSky.texture)
+	{
+		loadTexture((path + "nightsky.png").c_str(), nightSky);
+	}
 
+	if (!twilightSky.texture)
+	{
+		loadTexture((path + "twilightsky.png").c_str(), twilightSky);
+	}
+
+	if (!sunTexture.id)
+	{
+		sunTexture.loadFromFile((path + "sun.png").c_str(), false, false);
+	}
+}
+
+void SkyBoxLoaderAndDrawer::clearOnlyTextures()
+{
+	daySky.clearTextures(); daySky = {};
+	nightSky.clearTextures(); nightSky = {};
+	twilightSky.clearTextures(); twilightSky = {};
+	sunTexture.cleanup(); sunTexture = {};
 }
 
 void SkyBoxLoaderAndDrawer::loadTexture(const char *name, SkyBox &skyBox, int format)
@@ -564,7 +587,7 @@ void SkyBoxLoaderAndDrawer::createConvolutedAndPrefilteredTextureData(SkyBox &sk
 	
 }
 
-void SkyBoxLoaderAndDrawer::drawBefore(const glm::mat4 &viewProjMat, gl2d::Texture &sunTexture,
+void SkyBoxLoaderAndDrawer::drawBefore(const glm::mat4 &viewProjMat,
 	glm::vec3 sunPos, float timeOfDay)
 {
 
