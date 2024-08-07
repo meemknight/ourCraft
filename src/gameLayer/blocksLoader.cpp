@@ -515,95 +515,102 @@ glm::vec3 hsv2rgb(glm::vec3 c)
 }
 
 //textureloader texture loader
-void BlocksLoader::loadAllTextures()
+void BlocksLoader::loadAllTextures(std::string filePath)
 {
+	bool appendMode = gpuIds.empty();
+
+
 	size_t count = sizeof(texturesNames) / sizeof(char *);
-	
-	gpuIds.reserve(count + 1);
-	texturesIds.reserve(count+ 1);
-
-
-
-	//default texture
+	 
+	if (appendMode)
 	{
-		unsigned char data[16] = {};
+		gpuIds.reserve(count + 1);
+		texturesIds.reserve(count + 1);
+	};
 
+
+	if (appendMode)
+	{
+		//default texture
 		{
-			int i = 0;
-			data[i++] = 0;
-			data[i++] = 0;
-			data[i++] = 0;
-			data[i++] = 255;
+			unsigned char data[16] = {};
 
-			data[i++] = 146;
-			data[i++] = 52;
-			data[i++] = 235;
-			data[i++] = 255;
+			{
+				int i = 0;
+				data[i++] = 0;
+				data[i++] = 0;
+				data[i++] = 0;
+				data[i++] = 255;
 
-			data[i++] = 146;
-			data[i++] = 52;
-			data[i++] = 235;
-			data[i++] = 255;
+				data[i++] = 146;
+				data[i++] = 52;
+				data[i++] = 235;
+				data[i++] = 255;
 
-			data[i++] = 0;
-			data[i++] = 0;
-			data[i++] = 0;
-			data[i++] = 255;
+				data[i++] = 146;
+				data[i++] = 52;
+				data[i++] = 235;
+				data[i++] = 255;
+
+				data[i++] = 0;
+				data[i++] = 0;
+				data[i++] = 0;
+				data[i++] = 255;
+			}
+
+			gl2d::Texture t;
+			t.createFromBuffer((char *)data, 2, 2, true, false);
+
+			texturesIds.push_back(t.id);
+			auto handle = glGetTextureHandleARB(t.id);
+			glMakeTextureHandleResidentARB(handle);
+			gpuIds.push_back(handle);
 		}
 
-		gl2d::Texture t;
-		t.createFromBuffer((char*)data, 2, 2, true, false);
-	
-		texturesIds.push_back(t.id);
-		auto handle = glGetTextureHandleARB(t.id);
-		glMakeTextureHandleResidentARB(handle);
-		gpuIds.push_back(handle);
-	}
-
-	//default normal
-	{
-		unsigned char data[4] = {};
-
+		//default normal
 		{
-			int i = 0;
-			data[i++] = 127;
-			data[i++] = 127;
-			data[i++] = 255;
-			data[i++] = 255;
+			unsigned char data[4] = {};
+
+			{
+				int i = 0;
+				data[i++] = 127;
+				data[i++] = 127;
+				data[i++] = 255;
+				data[i++] = 255;
+			}
+
+			gl2d::Texture t;
+			t.createFromBuffer((char *)data, 1, 1, true, false);
+
+			texturesIds.push_back(t.id);
+			auto handle = glGetTextureHandleARB(t.id);
+			glMakeTextureHandleResidentARB(handle);
+			gpuIds.push_back(handle);
 		}
 
-		gl2d::Texture t;
-		t.createFromBuffer((char *)data, 1, 1, true, false);
-
-		texturesIds.push_back(t.id);
-		auto handle = glGetTextureHandleARB(t.id);
-		glMakeTextureHandleResidentARB(handle);
-		gpuIds.push_back(handle);
-	}
-
-	//default material
-	{
-		unsigned char data[4] = {};
-
+		//default material
 		{
-			int i = 0;
-			data[i++] = 0;
-			data[i++] = 0;
-			data[i++] = 0;
-			data[i++] = 255;
-		}
+			unsigned char data[4] = {};
 
-		gl2d::Texture t;
-		t.createFromBuffer((char *)data, 1, 1, true, false);
-		texturesIds.push_back(t.id);
-		auto handle = glGetTextureHandleARB(t.id);
-		glMakeTextureHandleResidentARB(handle);
-		
-		gpuIds.push_back(handle);
-	}
-	
+			{
+				int i = 0;
+				data[i++] = 0;
+				data[i++] = 0;
+				data[i++] = 0;
+				data[i++] = 255;
+			}
+
+			gl2d::Texture t;
+			t.createFromBuffer((char *)data, 1, 1, true, false);
+			texturesIds.push_back(t.id);
+			auto handle = glGetTextureHandleARB(t.id);
+			glMakeTextureHandleResidentARB(handle);
+
+			gpuIds.push_back(handle);
+		}
+	};
+
 	std::string path;
-	std::string path2;
 
 	auto setGpuIds = [&](int blockIndex) 
 	{
@@ -620,7 +627,7 @@ void BlocksLoader::loadAllTextures()
 		gpuIds[blockIndex + 2] = handle;
 	};
 
-	auto addTexture = [&](std::string path, bool isNormalMap = 0) -> bool
+	auto addTexture = [&](int index, std::string path, bool isNormalMap = 0) -> bool
 	{
 
 		gl2d::Texture t;
@@ -636,12 +643,22 @@ void BlocksLoader::loadAllTextures()
 
 		glGenerateMipmap(GL_TEXTURE_2D);
 
-		texturesIds.push_back(t.id);
+
 
 		auto handle = glGetTextureHandleARB(t.id);
 		glMakeTextureHandleResidentARB(handle);
 
-		gpuIds.push_back(handle);
+
+		if (appendMode)
+		{
+			texturesIds.push_back(t.id);
+			gpuIds.push_back(handle);
+		}
+		else
+		{
+			texturesIds[index] = t.id;
+			gpuIds[index] = handle;
+		}
 
 		return 1;
 	};
@@ -649,55 +666,54 @@ void BlocksLoader::loadAllTextures()
 	for (int i = 0; i < count; i++)
 	{
 		
-		path.clear();
-		path2.clear();
-
-		path += RESOURCES_PATH;
-		path2 += RESOURCES_PATH;
-		
-		path2 += "assets/block/"; //default
-		
-		//path += "pbr3/";		//texture pack
-		//path += "pbr/block/"; //original
-		//
-		//path += texturesNames[i];
-		path2 += texturesNames[i];
-
-		//if (!texturesNames[i][0] || !addTexture(path + ".png"))
+		if (!appendMode && texturesIds[(i+1)*3] != texturesIds[0])
 		{
-			if (!texturesNames[i][0] || !addTexture(path2 + ".png"))
+			continue;
+		}
+
+		path = filePath + "blocks/";
+		path += texturesNames[i];
+
+		
+		if (!texturesNames[i][0] || !addTexture((i+1) * 3, path + ".png"))
+		{
+			if (appendMode)
 			{
 				texturesIds.push_back(texturesIds[0]);
 				gpuIds.push_back(gpuIds[0]);
-			}
+			};
 		}
 		
 		if (0) //no normals
 		{
-			texturesIds.push_back(texturesIds[1]);
-			gpuIds.push_back(gpuIds[1]);
+			if (appendMode)
+			{
+				texturesIds.push_back(texturesIds[1]);
+				gpuIds.push_back(gpuIds[1]);
+			}
 		}
 		else
 		{
-			if (!texturesNames[i][0] || !addTexture(path + "_n.png", true))
+			if (!texturesNames[i][0] || !addTexture((i+1) * 3 + 1, path + "_n.png", true))
 			{
-				if (!texturesNames[i][0] || !addTexture(path2 + "_n.png", true))
+				if (appendMode)
 				{
 					texturesIds.push_back(texturesIds[1]);
 					gpuIds.push_back(gpuIds[1]);
-				}
+				};
 			}
 		}
 
-
-		if (!texturesNames[i][0] || !addTexture(path + "_s.png"))
+		if (!texturesNames[i][0] || !addTexture((i+1) * 3 + 2, path + "_s.png"))
 		{
-			if (!texturesNames[i][0] || !addTexture(path2 + "_s.png"))
+			if (appendMode)
 			{
 				texturesIds.push_back(texturesIds[2]);
 				gpuIds.push_back(gpuIds[2]);
 			}
 		}
+
+
 	}
 	
 	auto copyFromOtherTexture = [&](int desinationIndex, int sourceIndex)
@@ -752,7 +768,10 @@ void BlocksLoader::loadAllTextures()
 
 	//generate other textures
 	{
+
 		//test texture
+
+		if(gpuIds[getGpuIdIndexForBlock(BlockTypes::diamond_ore, 0)] != gpuIds[0])
 		copyFromOtherTextureAndApplyModifications(56 * 3, 
 			getGpuIdIndexForBlock(BlockTypes::diamond_ore, 0),
 			[](glm::vec3 in) ->glm::vec3
@@ -790,9 +809,9 @@ void BlocksLoader::loadAllTextures()
 		for (int i = 1; i < texturesIds.size() / 3; i++)
 		{
 
-			if (texturesIds[i * 3 + 1] == texturesIds[1])
+			if (texturesIds[i * 3 + 1] == texturesIds[1] && texturesIds[i*3] != texturesIds[0])
 			{
-				//no normal map!
+				//no normal map!, but the block is loaded
 
 				gl2d::Texture t; t.id = texturesIds[i*3 + 0];
 				glm::ivec2 size = {};
@@ -888,10 +907,15 @@ void BlocksLoader::loadAllTextures()
 
 	}
 
-
+	if(!spawnEgg.id)
 	spawnEgg.loadFromFile(RESOURCES_PATH "assets/items/spawn_egg.png", true, false);
+	
+	
+	if (!spawnEggOverlay.id)
 	spawnEggOverlay.loadFromFile(RESOURCES_PATH "assets/items/spawn_egg_overlay.png", true, false);
 
+
+	if (!appendMode) { return; }
 
 	//load items
 	for (int i = ItemsStartPoint; i < lastItem; i++)
@@ -995,17 +1019,50 @@ void BlocksLoader::loadAllTextures()
 
 	};
 
-	if (spawnEggSize == spawnEggOverSize)
+	if (spawnEggSize == spawnEggOverSize && spawnEggSize.x != 0 && spawnEggSize.y != 0)
 	{
 		createSpawnEggTexture(zombieSpawnEgg, glm::vec3{2, 161, 160} / 255.f, glm::vec3{107, 137, 89}/255.f);
 		createSpawnEggTexture(pigSpawnEgg, glm::vec3(230, 151, 167) / 255.f, glm::vec3(148, 92, 95) / 255.f);
 		createSpawnEggTexture(catSpawnEgg, glm::vec3(230, 230, 230) / 255.f, glm::vec3(10, 10, 10)/255.f);
+
 	}
 	else
 	{
+		spawnEgg.cleanup();
+		spawnEggOverlay.cleanup();
 		//todo error
-		std::cout << "err\n";
+		//std::cout << "err\n";
 	}
+
+}
+
+void BlocksLoader::clearAllTextures()
+{
+	spawnEgg.cleanup();
+	
+	spawnEggOverlay.cleanup();
+
+	for (int i = 1; i < texturesIds.size()/3; i++)
+	{
+		if (texturesIds[i * 3] != texturesIds[0])
+		{
+			glDeleteTextures(1, &texturesIds[i * 3]);
+		}
+
+		if (texturesIds[i * 3 + 1] != texturesIds[1])
+		{
+			glDeleteTextures(1, &texturesIds[i * 3 +1]);
+		}
+
+		if (texturesIds[i * 3 + 2] != texturesIds[2])
+		{
+			glDeleteTextures(1, &texturesIds[i * 3 + 2]);
+		}
+	}
+
+	glDeleteTextures(3, &texturesIds[0]);
+	texturesIds.clear();
+	gpuIds.clear();
 
 }
 

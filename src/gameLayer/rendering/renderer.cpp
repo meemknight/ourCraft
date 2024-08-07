@@ -684,7 +684,47 @@ unsigned int cubeEntityIndices[] = {
 };
 
 
-void Renderer::create(BlocksLoader &blocksLoader)
+void Renderer::recreateBlocksTexturesBuffer(BlocksLoader &blocksLoader)
+{
+
+	//glDeleteBuffers(1, &textureSamplerersBuffer);
+	//if (!textureSamplerersBuffer)
+	//{
+	//	glGenBuffers(1, &textureSamplerersBuffer);
+	//
+	//	glBindBuffer(GL_SHADER_STORAGE_BUFFER, textureSamplerersBuffer);
+	//	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint64) * blocksLoader.gpuIds.size(), blocksLoader.gpuIds.data(), 0);
+	//	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, textureSamplerersBuffer);
+	//}
+	//else
+	//{
+	//	glBindBuffer(GL_SHADER_STORAGE_BUFFER, textureSamplerersBuffer);
+	//	void *ptr = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY);
+	//	if (ptr)
+	//	{
+	//		memcpy(ptr, blocksLoader.gpuIds.data(), sizeof(GLuint64) * blocksLoader.gpuIds.size());
+	//		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+	//	}
+	//	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, textureSamplerersBuffer);
+	//
+	//	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	//}
+
+
+	if (!textureSamplerersBuffer)
+	glGenBuffers(1, &textureSamplerersBuffer);
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, textureSamplerersBuffer);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint64) * blocksLoader.gpuIds.size(), blocksLoader.gpuIds.data(), GL_STATIC_DRAW);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, textureSamplerersBuffer);
+
+
+	defaultShader.u_textureSamplerers = getStorageBlockIndex(defaultShader.shader.id, "u_textureSamplerers");
+	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_textureSamplerers, 3);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+
+void Renderer::create()
 {
 
 	fboCoppy.create(GL_R11F_G11F_B10F, true);
@@ -748,10 +788,7 @@ void Renderer::create(BlocksLoader &blocksLoader)
 	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(vertexUV), vertexUV, 0);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, vertexUVBuffer);
 
-	glGenBuffers(1, &textureSamplerersBuffer);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, textureSamplerersBuffer);
-	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint64) * blocksLoader.gpuIds.size(), blocksLoader.gpuIds.data(), 0);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, textureSamplerersBuffer);
+
 	
 
 	

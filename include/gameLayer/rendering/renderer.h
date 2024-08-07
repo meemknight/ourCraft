@@ -247,7 +247,9 @@ struct Renderer
 
 	GLuint drawCommandsOpaqueBuffer;
 
-	void create(BlocksLoader &blocksLoader);
+	void recreateBlocksTexturesBuffer(BlocksLoader &blocksLoader);
+
+	void create();
 	void reloadShaders();
 	//void render(std::vector<int> &data, Camera &c, gl2d::Texture &texture);
 

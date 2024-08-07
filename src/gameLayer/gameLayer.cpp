@@ -50,14 +50,12 @@ void clearAllTexturePacks()
 	programData.skyBoxLoaderAndDrawer.clearOnlyTextures();
 	programData.ui.clearOnlyTextures();
 	programData.modelsManager.clearAllModels();
+	programData.blocksLoader.clearAllTextures();
 }
 
-void loadOtherTextures(const char *basePath, bool noErrorReport)
+void loadOtherTextures(const char *basePath)
 {
-	if (noErrorReport)
-	{
-		gl2d::setErrorFuncCallback(stubErrorFunc);
-	}
+
 
 	std::string p(basePath);
 
@@ -107,21 +105,28 @@ void loadOtherTextures(const char *basePath, bool noErrorReport)
 		programData.brdfTexture.loadFromFile((p + "brdf.png").c_str(), false, false);
 	}
 
-	if (noErrorReport)
-	{
-		gl2d::setErrorFuncCallback(gl2d::defaultErrorFunc);
-	}
 }
 
 void loadAllDefaultTexturePacks()
 {
-	loadOtherTextures(RESOURCES_PATH "assets/otherTextures/", false); //load the defaults
+	loadOtherTextures(RESOURCES_PATH "assets/otherTextures/"); //load the defaults
 
 	programData.skyBoxLoaderAndDrawer.loadAllTextures(RESOURCES_PATH "assets/sky/");
 
 	programData.ui.loadTextures(RESOURCES_PATH "assets/ui/");
 
 	programData.modelsManager.loadAllModels(RESOURCES_PATH "assets/models/", false);
+
+	programData.blocksLoader.loadAllTextures(RESOURCES_PATH "assets/");
+	programData.renderer.recreateBlocksTexturesBuffer(programData.blocksLoader);
+
+	//programData.blocksLoader.clearAllTextures();
+	//
+	//programData.blocksLoader.loadAllTextures(RESOURCES_PATH "assets/");
+	//programData.renderer.recreateBlocksTexturesBuffer(programData.blocksLoader);
+
+
+
 }
 
 bool loadTexturePack(const char *basePath)
@@ -132,6 +137,7 @@ bool loadTexturePack(const char *basePath)
 	if (std::filesystem::exists(root) &&
 		std::filesystem::is_directory(root))
 	{
+		gl2d::setErrorFuncCallback(stubErrorFunc);
 
 
 		std::filesystem::path otherTexturesPath = root;
@@ -141,7 +147,7 @@ bool loadTexturePack(const char *basePath)
 			std::filesystem::is_directory(otherTexturesPath))
 		{
 
-			loadOtherTextures(otherTexturesPath.string().c_str(), true);
+			loadOtherTextures(otherTexturesPath.string().c_str());
 		}
 
 
@@ -151,9 +157,7 @@ bool loadTexturePack(const char *basePath)
 		if (std::filesystem::exists(skyPath) &&
 			std::filesystem::is_directory(skyPath))
 		{
-			gl2d::setErrorFuncCallback(stubErrorFunc);
 			programData.skyBoxLoaderAndDrawer.loadAllTextures(skyPath.string().c_str());
-			gl2d::setErrorFuncCallback(gl2d::defaultErrorFunc);
 		}
 
 		std::filesystem::path uiPath = root;
@@ -162,9 +166,7 @@ bool loadTexturePack(const char *basePath)
 		if (std::filesystem::exists(uiPath) &&
 			std::filesystem::is_directory(uiPath))
 		{
-			gl2d::setErrorFuncCallback(stubErrorFunc);
 			programData.ui.loadTextures(uiPath.string().c_str());
-			gl2d::setErrorFuncCallback(gl2d::defaultErrorFunc);
 		}
 
 		std::filesystem::path modelsPath = root;
@@ -173,10 +175,23 @@ bool loadTexturePack(const char *basePath)
 		if (std::filesystem::exists(modelsPath) &&
 			std::filesystem::is_directory(modelsPath))
 		{
-			gl2d::setErrorFuncCallback(stubErrorFunc);
 			programData.modelsManager.loadAllModels(modelsPath.string().c_str(), false);
-			gl2d::setErrorFuncCallback(gl2d::defaultErrorFunc);
 		}
+
+
+		std::filesystem::path blocksPath = root / "blocks/";
+		std::filesystem::path items = root / "items/";
+
+
+		if (std::filesystem::is_directory(blocksPath) || std::filesystem::is_directory(items))
+		{
+			programData.blocksLoader.loadAllTextures(root.string() + "/");
+		}
+
+
+		gl2d::setErrorFuncCallback(gl2d::defaultErrorFunc);
+
+
 	}
 	else
 	{
@@ -199,11 +214,11 @@ bool initGame()
 
 
 	programData.ui.init();
-	programData.blocksLoader.loadAllTextures();
-	programData.renderer.create(programData.blocksLoader);
+
 	programData.gyzmosRenderer.create();
 	programData.pointDebugRenderer.create();
 	programData.skyBoxLoaderAndDrawer.createGpuData();
+	programData.renderer.create();
 
 
 	loadAllDefaultTexturePacks();
@@ -236,6 +251,7 @@ bool initGame()
 
 bool gameLogic(float deltaTime)
 {
+
 #pragma region init stuff
 	int w = 0; int h = 0;
 	w = platform::getWindowSizeX();

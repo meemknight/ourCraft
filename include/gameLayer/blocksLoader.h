@@ -8,8 +8,8 @@ struct BlocksLoader
 	std::vector<GLuint64> gpuIds;
 	std::vector<GLuint> texturesIds;
 
-	void loadAllTextures();
-
+	void loadAllTextures(std::string path);
+	void clearAllTextures();
 
 	gl2d::Texture spawnEgg;
 	gl2d::Texture spawnEggOverlay;
@@ -17,7 +17,6 @@ struct BlocksLoader
 	std::vector<GLuint64> gpuIdsItems;
 	std::vector<GLuint> texturesIdsItems;
 	
-
 
 };
 
