@@ -18,6 +18,7 @@
 #include "gamePlayLogic.h"
 #include "multyPlayer/splitUpdatesLogic.h"
 #include <rendering/renderSettings.h>
+#include <ourJson.h>
 
 #include <platformTools.h>
 
@@ -83,7 +84,12 @@ bool initGame()
 
 	//glEnable(GL_LINE_WIDTH);
 	glLineWidth(4);
-	
+
+
+	KeyValuePair settings;
+	settings.loadElementsFromFile(RESOURCES_PATH "test.txt");
+	settings.printAll();
+	settings.writeIntoFile(RESOURCES_PATH "test2.txt");
 
 	return true;
 }

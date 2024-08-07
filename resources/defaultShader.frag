@@ -774,6 +774,9 @@ void main()
 	if(v_isSkyLightMain == 1)
 	{
 		computedAmbient *= u_ambientColor;
+	}else
+	{
+		computedAmbient *= (vec3(255, 237, 214) / 255.f); //make the torch light slightly warmer
 	}
 
 	float blockAO = getBlockAO();

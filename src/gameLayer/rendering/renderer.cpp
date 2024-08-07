@@ -704,6 +704,7 @@ void Renderer::create(BlocksLoader &blocksLoader)
 
 
 	aoTexture.loadFromFile(RESOURCES_PATH "otherTextures/ao.png", false, true);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
 
 	sunTexture.loadFromFile(RESOURCES_PATH "sky/sun.png", false, false);
 
