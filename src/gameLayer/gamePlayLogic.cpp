@@ -1223,6 +1223,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			ImGui::Checkbox("Frustum culling",
 				&programData.renderer.frustumCulling);
 
+			ImGui::Checkbox("SSAO",
+				&programData.renderer.ssao);
 			//ImGui::Checkbox("Water Refraction",
 			//	&programData.renderer.waterRefraction);
 			

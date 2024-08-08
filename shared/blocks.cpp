@@ -49,7 +49,8 @@ bool isLightEmitor(BlockType type)
 
 bool isTransparentGeometry(BlockType type)
 {
-	return type == BlockTypes::ice || type == BlockTypes::water || type == BlockTypes::glass;
+	return type == BlockTypes::ice || type == BlockTypes::water || type == BlockTypes::glass || 
+		::isStainedGlass(type);
 }
 
 bool isGrassMesh(BlockType type)
@@ -77,6 +78,11 @@ bool isWoodPlank(BlockType type)
 {
 	return type == BlockTypes::wooden_plank || 
 		type == BlockTypes::jungle_planks;
+}
+
+bool isStainedGlass(BlockType type)
+{
+	return type >= black_stained_glass && type <= pink_stained_glass;
 }
 
 unsigned char isInteractable(BlockType type)

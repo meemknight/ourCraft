@@ -6,6 +6,7 @@
 #include <rendering/bigGpuBuffer.h>
 #include <platformTools.h>
 #include <algorithm>
+#include <array>
 
 #undef max
 #undef min
@@ -563,8 +564,27 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 	};
 
 	auto blockBakeLogicForTransparentBlocks = [&](int x, int y, int z,
-		std::vector<int> *currentVector, Block &b, bool isAnimated)
+		std::vector<int> *currentVector, Block &b, bool isAnimated
+		)
 	{
+		int chunkPosX = data.x * CHUNK_SIZE;
+		int chunkPosZ = data.z * CHUNK_SIZE;
+
+		glm::vec3 displace[6] = {{0,0,0.5f},{0,0,-0.5f},{0,0.5f,0},{0,-0.5f,0},{-0.5f,0,0},{0.5f,0,0},};
+
+		std::array<glm::vec2, 6> distances = {};
+		for (int i = 0; i < 6; i++)
+		{
+			auto diff = glm::vec3(playerPosition - glm::ivec3{x, y, z} - glm::ivec3{chunkPosX, 0, chunkPosZ}) - displace[i];
+			distances[i].x = glm::dot(diff, diff);
+			distances[i].y = i;
+		}
+
+		std::sort(distances.begin(), distances.end(), [](glm::vec2 &a,
+			glm::vec2 &b)
+		{
+			return a.x > b.x;
+		});
 
 
 		Block *sides[26] = {};
@@ -573,8 +593,9 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y,
 				z + this->data.z * CHUNK_SIZE};
 
-		for (int i = 0; i < 6; i++)
+		for (int index = 0; index < 6; index++)
 		{
+			int i = distances[index].y;
 
 			bool isWater = b.type == BlockTypes::water;
 
@@ -593,6 +614,10 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 				//no faces in between water
 				if (isWater && sides[i] && sides[i]->type == BlockTypes::water) { continue; }
+
+				//no faces in between same types
+				if (sides[i] && sides[i]->type == b.type) { continue; }
+
 
 				if (isWater)
 				{

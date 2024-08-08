@@ -1140,7 +1140,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	auto viewMatrix = c.getViewMatrix();
 	auto vp = c.getProjectionMatrix() * viewMatrix;
-	auto chunkVectorCopy = chunkSystem.loadedChunks;
 
 	float timeGrass = std::clock() / 1000.f;
 
@@ -1217,7 +1216,11 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	}
 	
 
-#pragma region frustum culling
+#pragma region frustum culling and sorting
+
+	//chunk vector copy has only valid non culled chunks!
+	std::vector<Chunk*> chunkVectorCopy;
+	chunkVectorCopy.reserve(chunkSystem.loadedChunks.size());
 
 	FrustumVolume cameraFrustum(c.getViewProjectionWithPositionMatrixDouble());
 
@@ -1225,8 +1228,13 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	{
 		if (c)
 		{
+			bool culled = 0;
 			c->setCulled(0);
 
+			if (c->isDontDrawYet())
+			{
+				culled = 1;
+			}else
 			if (frustumCulling)
 			{
 				AABBVolume chunkAABB;
@@ -1237,9 +1245,37 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 				if (!CheckFrustumVsAABB(cameraFrustum, chunkAABB))
 				{
 					c->setCulled(1);
+					culled = 1;
 				}
 			};
+
+			if (!culled)
+			{
+				chunkVectorCopy.push_back(c);
+			}
 		}
+	}
+
+	//sort chunks
+	{
+		std::sort(chunkVectorCopy.begin(), chunkVectorCopy.end(),
+			[x = divideChunk(blockPosition.x), z = divideChunk(blockPosition.z)](Chunk *b, Chunk *a)
+		{
+			if (a == nullptr) { return false; }
+			if (b == nullptr) { return true; }
+
+			int ax = a->data.x - x;
+			int az = a->data.z - z;
+
+			int bx = b->data.x - x;
+			int bz = b->data.z - z;
+
+			unsigned long reza = ax * ax + az * az;
+			unsigned long rezb = bx * bx + bz * bz;
+
+			return reza < rezb;
+		}
+		);
 	}
 
 #pragma endregion
@@ -1440,27 +1476,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		}
 	#pragma endregion
 
-		//sort chunks
-		{
-			std::sort(chunkVectorCopy.begin(), chunkVectorCopy.end(),
-				[x = divideChunk(blockPosition.x), z = divideChunk(blockPosition.z)](Chunk *b, Chunk *a)
-			{
-				if (a == nullptr) { return false; }
-				if (b == nullptr) { return true; }
-
-				int ax = a->data.x - x;
-				int az = a->data.z - z;
-
-				int bx = b->data.x - x;
-				int bz = b->data.z - z;
-
-				unsigned long reza = ax * ax + az * az;
-				unsigned long rezb = bx * bx + bz * bz;
-
-				return reza < rezb;
-			}
-			);
-		}
 	}
 #pragma endregion
 
@@ -1479,35 +1494,29 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			for (int i = s - 1; i >= 0; i--)
 			{
 				auto chunk = chunkVectorCopy[i];
-				if (chunk)
+				
+				int facesCount = chunk->elementCountSize;
+				if (facesCount)
 				{
-					if (!chunk->isDontDrawYet() &&
-						!chunk->isCulled())
-					{
-						int facesCount = chunk->elementCountSize;
-						if (facesCount)
-						{
 
-							auto entry = chunkSystem.gpuBuffer
-								.getEntry({chunk->data.x,chunk->data.z});
+					auto entry = chunkSystem.gpuBuffer
+						.getEntry({chunk->data.x,chunk->data.z});
 
-							permaAssertComment(
-								(int)entry.size / (4 * sizeof(int)) == facesCount,
-								"Gib Gpu Buffer desync");
+					permaAssertComment(
+						(int)entry.size / (4 * sizeof(int)) == facesCount,
+						"Gib Gpu Buffer desync");
 
-							// Prepare draw command for this chunk
-							DrawElementsIndirectCommand command;
-							command.count = 4; // Assuming you're drawing quads
-							command.instanceCount = facesCount;
-							command.firstIndex = 0;
-							command.baseVertex = 0;
-							command.baseInstance = entry.beg / (4 * sizeof(int)); 
+					// Prepare draw command for this chunk
+					DrawElementsIndirectCommand command;
+					command.count = 4; // Assuming you're drawing quads
+					command.instanceCount = facesCount;
+					command.firstIndex = 0;
+					command.baseVertex = 0;
+					command.baseInstance = entry.beg / (4 * sizeof(int)); 
 
-							// Add draw command to the array
-							drawCommands.push_back(command);
+					// Add draw command to the array
+					drawCommands.push_back(command);
 
-						}
-					}
 				}
 			}
 		}
@@ -1515,35 +1524,27 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		{
 			for (auto &chunk : chunkVectorCopy)
 			{
-				if (chunk)
+				int facesCount = chunk->elementCountSize;
+				if (facesCount)
 				{
-					if (!chunk->isDontDrawYet()
-						&& ! chunk->isCulled()
-						)
-					{
-						int facesCount = chunk->elementCountSize;
-						if (facesCount)
-						{
-							auto entry = chunkSystem.gpuBuffer
-								.getEntry({chunk->data.x,chunk->data.z});
+					auto entry = chunkSystem.gpuBuffer
+						.getEntry({chunk->data.x,chunk->data.z});
 
-							permaAssertComment(
-								(int)entry.size / (4 * sizeof(int)) == facesCount,
-								"Gib Gpu Buffer desync");
+					permaAssertComment(
+						(int)entry.size / (4 * sizeof(int)) == facesCount,
+						"Gib Gpu Buffer desync");
 
-							// Prepare draw command for this chunk
-							DrawElementsIndirectCommand command;
-							command.count = 4; // Assuming you're drawing quads
-							command.instanceCount = facesCount;
-							command.firstIndex = 0;
-							command.baseVertex = 0;
-							command.baseInstance = entry.beg / (4 * sizeof(int));
+					// Prepare draw command for this chunk
+					DrawElementsIndirectCommand command;
+					command.count = 4; // Assuming you're drawing quads
+					command.instanceCount = facesCount;
+					command.firstIndex = 0;
+					command.baseVertex = 0;
+					command.baseInstance = entry.beg / (4 * sizeof(int));
 
-							// Add draw command to the array
-							drawCommands.push_back(command);
+					// Add draw command to the array
+					drawCommands.push_back(command);
 
-						}
-					}
 				}
 			}
 		}
@@ -1568,24 +1569,18 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		else
 		{
 
-
+			//this is just for a spped cmparison test
 			if (sortChunks)
 			{
 				int s = chunkVectorCopy.size();
 				for (int i = s - 1; i >= 0; i--)
 				{
 					auto chunk = chunkVectorCopy[i];
-					if (chunk)
+					int facesCount = chunk->elementCountSize;
+					if (facesCount)
 					{
-						if (!chunk->isDontDrawYet() && !chunk->isCulled())
-						{
-							int facesCount = chunk->elementCountSize;
-							if (facesCount)
-							{
-								glBindVertexArray(chunk->vao);
-								glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
-							}
-						}
+						glBindVertexArray(chunk->vao);
+						glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
 					}
 				}
 			}
@@ -1593,17 +1588,11 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			{
 				for (auto &chunk : chunkVectorCopy)
 				{
-					if (chunk)
+					int facesCount = chunk->elementCountSize;
+					if (facesCount)
 					{
-						if (!chunk->isDontDrawYet() && !chunk->isCulled())
-						{
-							int facesCount = chunk->elementCountSize;
-							if (facesCount)
-							{
-								glBindVertexArray(chunk->vao);
-								glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
-							}
-						}
+						glBindVertexArray(chunk->vao);
+						glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
 					}
 				}
 			}
@@ -1616,17 +1605,11 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	{
 		for (auto &chunk : chunkVectorCopy)
 		{
-			if (chunk)
+			int facesCount = chunk->transparentElementCountSize;
+			if (facesCount)
 			{
-				if (!chunk->isDontDrawYet() && !chunk->isCulled())
-				{
-					int facesCount = chunk->transparentElementCountSize;
-					if (facesCount)
-					{
-						glBindVertexArray(chunk->transparentVao);
-						glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
-					}
-				}
+				glBindVertexArray(chunk->transparentVao);
+				glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
 			}
 		}
 	};
@@ -1703,9 +1686,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 
 		glDepthFunc(GL_LESS);
-		glDisable(GL_CULL_FACE); //todo change
+		//glDisable(GL_CULL_FACE); //todo change
 		renderTransparentGeometry();
-		glEnable(GL_CULL_FACE);
+		//glEnable(GL_CULL_FACE);
 	};
 
 	if (waterRefraction)
@@ -1774,7 +1757,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform1i(defaultShader.u_depthTexture, 9);
 
 		glDepthFunc(GL_LESS);
-		glDisable(GL_CULL_FACE); //todo change
+		//glDisable(GL_CULL_FACE); //todo change
 		//todo disable ssr for this step?
 		renderTransparentGeometry();
 		programData.GPUProfiler.endSubProfile("render first water 5");
@@ -1824,7 +1807,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 #pragma region post process
 
 	//hbao
-	if (1)
+	if (programData.renderer.ssao)
 	{
 		programData.GPUProfiler.startSubProfile("HBAO");
 

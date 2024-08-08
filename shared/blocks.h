@@ -60,6 +60,25 @@ enum BlockTypes
 	craftingTable,
 	whiteWool,
 	birch_planks,
+
+	black_stained_glass,
+	gray_stained_glass,
+	light_gray_stained_glass,
+	white_stained_glass,
+	brown_stained_glass,
+	red_stained_glass,
+	orange_stained_glass,
+	yellow_stained_glass,
+	lime_stained_glass,
+	green_stained_glass,
+	cyan_stained_glass,
+	light_blue_stained_glass,
+	blue_stained_glass,
+	purple_stained_glass,
+	magenta_stained_glass,
+	pink_stained_glass,
+
+
 	BlocksCount
 };
 
@@ -82,6 +101,8 @@ bool isGrassMesh(BlockType type);
 bool isColidable(BlockType type);
 
 bool isWoodPlank(BlockType type);
+
+bool isStainedGlass(BlockType type);
 
 unsigned char isInteractable(BlockType type);
 

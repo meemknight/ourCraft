@@ -742,7 +742,7 @@ float getBlockAO()
 	vec2 newUV = rez[pos - 1]; 
 	
 	float ao = texture2D(u_ao, newUV).r;
-	return clamp(pow(ao, 1.2) * 1.1f, 0.6f,1);
+	return clamp(pow(ao, 1.2) * 1.2f, 0.6f,1);
 }
 
 in flat int v_isSkyLightMain;

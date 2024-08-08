@@ -69,6 +69,24 @@ const char *texturesNames[] = {
 	"crafting_table_top",	//60
 	"white_wool",		//61
 	"birch_planks",		//62
+	"black_stained_glass",	//63
+	"gray_stained_glass",	//64
+	"light_gray_stained_glass",	//65
+	"white_stained_glass",	//66
+	"brown_stained_glass",	//67
+	"red_stained_glass",	//68
+	"orange_stained_glass",	//69
+	"yellow_stained_glass",	//70
+	"lime_stained_glass",	//71
+	"green_stained_glass",	//72
+	"cyan_stained_glass",	//73
+	"light_blue_stained_glass",	//74
+	"blue_stained_glass",	//75
+	"purple_stained_glass",	//76
+	"magenta_stained_glass",//77
+	"pink_stained_glass",	//78
+
+
 };
 
 //front
@@ -237,7 +255,28 @@ uint16_t blocksLookupTable[] = {
 	61,61,61,61,61,61,
 
 	//birch_planks
-	62,62,62,62,62,62
+	62,62,62,62,62,62,
+
+	//glasses
+	63, 63, 63, 63, 63, 63,
+	64, 64, 64, 64, 64, 64,
+	65, 65, 65, 65, 65, 65,
+	66, 66, 66, 66, 66, 66,
+	67, 67, 67, 67, 67, 67,
+	68, 68, 68, 68, 68, 68,
+	69, 69, 69, 69, 69, 69,
+	70, 70, 70, 70, 70, 70,
+	71, 71, 71, 71, 71, 71,
+	72, 72, 72, 72, 72, 72,
+	73, 73, 73, 73, 73, 73,
+	74, 74, 74, 74, 74, 74,
+	75, 75, 75, 75, 75, 75,
+	76, 76, 76, 76, 76, 76,
+	77, 77, 77, 77, 77, 77,
+	78, 78, 78, 78, 78, 78,
+
+
+
 };
 
 void fixAlphaForNormals(unsigned char *buffer, int w, int h)
