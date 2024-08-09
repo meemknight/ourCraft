@@ -114,7 +114,7 @@ struct Renderer
 			int tonemapper = 0;
 			glm::vec3 underWaterColor = (glm::vec3(0, 17, 25) / 255.f);
 			float fogDistance = 10 * 16 / 2; //this is controlled by chunk size
-			float exposure = 1.7;
+			float exposure = 1.6;
 			float underwaterDarkenStrength = 0.94;
 			float underwaterDarkenDistance = 29;
 			float fogGradientUnderWater = 1.9;

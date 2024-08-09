@@ -742,7 +742,7 @@ float getBlockAO()
 	vec2 newUV = rez[pos - 1]; 
 	
 	float ao = texture2D(u_ao, newUV).r;
-	return clamp(pow(ao, 1.2) * 1.2f, 0.6f,1);
+	return clamp(pow(ao, 1.2) * 1.1f, 0.62f,1);
 }
 
 in flat int v_isSkyLightMain;
@@ -781,6 +781,7 @@ void main()
 
 	float blockAO = getBlockAO();
 	computedAmbient *= blockAO;
+	computedAmbient *= 1.1;
 
 	if(u_shaders == 0)
 	{
@@ -815,7 +816,7 @@ void main()
 
 		if(v_skyLightUnchanged > 3)
 		{
-			vec3 sunLightColor = u_sunLightColor;
+			vec3 sunLightColor = u_sunLightColor * 0.9;
 			sunLightColor *= 1-((15-v_skyLightUnchanged)/9.f);
 			//sunLightColor *= ((v_ambientInt/15.f)*0.6 + 0.4f);
 
@@ -865,6 +866,10 @@ void main()
 	
 	}else
 	{
+
+		float shadow = shadowCalc2(dot(u_sunDirection, v_normal));
+		
+
 
 		//load material
 		float metallic = 0;
@@ -961,6 +966,7 @@ void main()
 		vec3 F0 = vec3(0.04); 
 		F0 = mix(F0, textureColor.rgb, vec3(metallic));
 
+
 		for(int i=0; i< u_lightsCount; i++)
 		{
 			vec3 L = compute(lights[i].rgb, vec3(0), fragmentPositionI, fragmentPositionF);
@@ -985,7 +991,7 @@ void main()
 		//light = 0;
 
 		//sun light
-		vec3 sunLightColor = u_sunLightColor;
+		vec3 sunLightColor = u_sunLightColor * 0.9;
 		if(v_skyLightUnchanged > 3)
 		{
 			
@@ -1000,7 +1006,6 @@ void main()
 
 			if(dot(u_sunDirection, vec3(0,1,0))> -0.2)
 			{
-				float shadow = shadowCalc2(dot(L, v_normal));
 
 				finalColor += computePointLightSource(L, 
 					metallic, roughness, sunLightColor * causticsColor, V, 

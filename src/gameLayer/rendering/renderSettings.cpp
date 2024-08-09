@@ -21,7 +21,7 @@ void displayRenderSettingsMenu(ProgramData &programData)
 	programData.ui.menuRenderer.Text("Rendering Settings...", Colors_White);
 
 	programData.ui.menuRenderer.sliderInt("View Distance", &programData.otherSettings.viewDistance,
-		1, 64, Colors_White, programData.ui.buttonTexture, Colors_Gray,
+		1, 40, Colors_White, programData.ui.buttonTexture, Colors_Gray,
 		programData.ui.buttonTexture, Colors_White);
 
 #pragma region water

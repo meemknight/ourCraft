@@ -1686,9 +1686,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 
 		glDepthFunc(GL_LESS);
-		//glDisable(GL_CULL_FACE); //todo change
+		glDisable(GL_CULL_FACE); //todo change
 		renderTransparentGeometry();
-		//glEnable(GL_CULL_FACE);
+		glEnable(GL_CULL_FACE);
 	};
 
 	if (waterRefraction)

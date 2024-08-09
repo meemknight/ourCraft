@@ -952,6 +952,9 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 	for (int i = ItemsStartPoint; i < lastItem; i++)
 	{
 
+		if (!appendMode && texturesIdsItems[i - ItemsStartPoint] != texturesIds[0])
+		{ continue; }
+
 		const char *itemName = getItemTextureName(i);
 
 		if (itemName == std::string(""))
@@ -997,8 +1000,8 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 				}
 				else
 				{
-					texturesIdsItems[i] = t.id;
-					gpuIdsItems[i] = handle;
+					texturesIdsItems[i - ItemsStartPoint] = t.id;
+					gpuIdsItems[i - ItemsStartPoint] = handle;
 				}
 			}
 		}
