@@ -30,6 +30,7 @@
 #include <gameplay/items.h>
 #include <gameplay/crafting.h>
 #include <rendering/renderSettings.h>
+#include <audioEngine.h>
 
 struct GameData
 {
@@ -75,7 +76,7 @@ struct GameData
 }gameData;
 
 
-bool initGameplay(ProgramData &programData, const char *c)
+bool initGameplay(ProgramData &programData, const char *c) //GAME STUFF!
 {
 
 	Packet_ReceiveCIDAndData playerData;
@@ -86,6 +87,9 @@ bool initGameplay(ProgramData &programData, const char *c)
 		return false;
 	}
 	
+
+
+
 	gameData = GameData();
 	gameData.c.position = glm::vec3(0, 65, 0);
 
@@ -110,7 +114,8 @@ bool initGameplay(ProgramData &programData, const char *c)
 	//gameData.inventory.heldInMouse = Item(BlockTypes::glass);
 
 
-
+	//we started the game!
+	AudioEngine::stopAllMusicAndSounds();
 	return true;
 }
 
@@ -1227,6 +1232,19 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				&programData.renderer.ssao);
 			//ImGui::Checkbox("Water Refraction",
 			//	&programData.renderer.waterRefraction);
+
+			if (ImGui::CollapsingHeader("Music ",
+				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+			{
+				
+				if (ImGui::Button("Play random night music"))
+				{
+
+					AudioEngine::playRandomNightMusic();
+
+				}
+			}
+			
 			
 		}
 		ImGui::End();

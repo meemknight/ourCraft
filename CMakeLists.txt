@@ -114,7 +114,8 @@ target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURC
 
 
 target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE glm glfw glad stb_image stb_truetype 
-	gl2d raudio imgui fastNoiseSIMD FastNoise2 enet glui magic_enum safeSave profilerLib 
+	gl2d raudio imgui fastNoiseSIMD FastNoise2 enet glui
+	magic_enum safeSave profilerLib 
 	libzstd_static assimp)
 
 

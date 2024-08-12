@@ -20,6 +20,7 @@
 #include <rendering/renderSettings.h>
 #include <ourJson.h>
 #include <filesystem>
+#include <audioEngine.h>
 
 #include <platformTools.h>
 
@@ -201,9 +202,10 @@ bool loadTexturePack(const char *basePath)
 	return true;
 }
 
-bool initGame()
+bool initGame() //main server and title screen stuff
 {
 
+	srand(time(0));
 	createErrorFile();
 
 	programData.GPUProfiler.initGPUProfiler();
@@ -211,6 +213,7 @@ bool initGame()
 
 	gl2d::setVsync(false);
 
+	AudioEngine::init();
 
 
 	programData.ui.init();
@@ -223,6 +226,8 @@ bool initGame()
 
 	loadAllDefaultTexturePacks();
 
+	AudioEngine::loadAllMusic();
+	AudioEngine::playTitleMusic();
 
 	programData.defaultCover.loadFromFile(RESOURCES_PATH "defaultCover.png");
 
@@ -241,10 +246,10 @@ bool initGame()
 	glLineWidth(4);
 
 
-	KeyValuePair settings;
-	settings.loadElementsFromFile(RESOURCES_PATH "test.txt");
-	settings.printAll();
-	settings.writeIntoFile(RESOURCES_PATH "test2.txt");
+	//KeyValuePair settings;
+	//settings.loadElementsFromFile(RESOURCES_PATH "test.txt");
+	//settings.printAll();
+	//settings.writeIntoFile(RESOURCES_PATH "test2.txt");
 
 	return true;
 }
@@ -284,6 +289,10 @@ bool gameLogic(float deltaTime)
 
 #pragma endregion
 	
+#pragma region music
+	AudioEngine::update();
+#pragma endregion
+
 	if (shouldReloadTexturePacks())
 	{
 		clearAllTexturePacks();
@@ -406,6 +415,7 @@ bool gameLogic(float deltaTime)
 			closeServer();		//this will do something only if the server is on
 			gameStarted = false;
 			platform::showMouse(true);
+			AudioEngine::playTitleMusic();
 		}
 
 	}

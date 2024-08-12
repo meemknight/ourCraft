@@ -4,7 +4,12 @@
 
 void Player::flyFPS(glm::vec3 direction, glm::vec3 lookDirection)
 {
-	lookDirection = glm::normalize(lookDirection);
+	lookDirection.y = 0;
+	float l = glm::length(lookDirection);
+
+	if (!l) { return; }
+
+	lookDirection /= l;
 
 	//forward
 	float forward = -direction.z;
