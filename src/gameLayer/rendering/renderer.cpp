@@ -779,7 +779,7 @@ void Renderer::create()
 	
 	glGenBuffers(1, &vertexDataBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexDataBuffer);
-	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(vertexData), vertexData, GL_DYNAMIC_STORAGE_BIT);
+	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(vertexData), vertexData, 0);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vertexDataBuffer);
 
 	
@@ -903,6 +903,29 @@ void Renderer::create()
 #pragma endregion
 
 
+#pragma region decals
+	{
+
+
+		unsigned char winding[4] = {0,1,2,3};
+
+		glGenBuffers(1, &decalShader.geometry);
+		glGenBuffers(1, &decalShader.index);
+		glGenVertexArrays(1, &decalShader.vao);
+		glBindVertexArray(decalShader.vao);
+		glBindBuffer(GL_ARRAY_BUFFER, decalShader.geometry);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, decalShader.index);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(winding), winding, GL_STATIC_DRAW);
+		setupVertexAttributes();
+		
+
+		glBindVertexArray(0);
+	}
+
+
+#pragma endregion
+
+
 
 
 }
@@ -1003,9 +1026,39 @@ void Renderer::reloadShaders()
 
 		zpassShader.u_textureSamplerers = getStorageBlockIndex(zpassShader.shader.id, "u_textureSamplerers");
 		glShaderStorageBlockBinding(zpassShader.shader.id, zpassShader.u_textureSamplerers, 3);
+	}
+#pragma endregion
+
+#pragma region decals
+	{
+
+		decalShader.shader.clear();
+
+		decalShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/rendering/zpass.vert",
+			RESOURCES_PATH "shaders/rendering/decal.frag");
+		decalShader.shader.bind();
+
+		GET_UNIFORM2(decalShader, u_viewProjection);
+		GET_UNIFORM2(decalShader, u_positionInt);
+		GET_UNIFORM2(decalShader, u_positionFloat);
+		GET_UNIFORM2(decalShader, u_renderOnlyWater);
+		GET_UNIFORM2(decalShader, u_timeGrass);
+		GET_UNIFORM2(decalShader, u_zBias);
+		
+
+		decalShader.u_vertexData = getStorageBlockIndex(decalShader.shader.id, "u_vertexData");
+		glShaderStorageBlockBinding(decalShader.shader.id, decalShader.u_vertexData, 1);
+
+		decalShader.u_vertexUV = getStorageBlockIndex(decalShader.shader.id, "u_vertexUV");
+		glShaderStorageBlockBinding(decalShader.shader.id, decalShader.u_vertexUV, 2);
+
+		decalShader.u_textureSamplerers = getStorageBlockIndex(decalShader.shader.id, "u_textureSamplerers");
+		glShaderStorageBlockBinding(decalShader.shader.id, decalShader.u_textureSamplerers, 3);
+
 
 	}
 #pragma endregion
+
 
 #pragma region basic entity renderer
 
@@ -1141,6 +1194,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	auto viewMatrix = c.getViewMatrix();
 	auto vp = c.getProjectionMatrix() * viewMatrix;
 
+	//todo change, also reuse in the the decal shader
 	float timeGrass = std::clock() / 1000.f;
 
 	auto doDayLightCalculations = [dayTime](auto dayValue, auto nightValue, auto twilightValue)
@@ -1948,6 +2002,95 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	glDisable(GL_BLEND);
 	glBindVertexArray(0);
 
+}
+
+void Renderer::renderDecal(glm::ivec3 position, Camera &c, Block b)
+{
+	//setup geometry
+	static std::vector<int> currentVector;
+	currentVector.clear();
+	
+	if (b.isGrassMesh())
+	{
+		for (int i = 6; i <= 9; i++)
+		{
+			currentVector.push_back(mergeShorts(i, getGpuIdIndexForBlock(b.type, 0)));
+
+			pushFlagsLightAndPosition(currentVector, position, 0, 0, 15, 15, 0);
+
+		}
+	}
+	else if (b.type == BlockTypes::torch)
+	{
+		for (int i = 0; i < 6; i++)
+		{
+			currentVector.push_back(mergeShorts(i + 16, getGpuIdIndexForBlock(b.type, i)));
+
+			pushFlagsLightAndPosition(currentVector, position, 0, 0, 15, 15, 0);
+		}
+	}
+	else
+	{
+		bool isAnimated = b.isAnimatedBlock();
+
+		for (int i = 0; i < 6; i++)
+		{
+			//todo face type or remove
+			currentVector.push_back(mergeShorts(i + isAnimated * 10, getGpuIdIndexForBlock(b.type, i)));
+
+			pushFlagsLightAndPosition(currentVector, position, 0, 0,
+				15, 15, 0);
+		}
+	}
+
+	
+	
+	int elementCountSize = currentVector.size() / 4; //todo magic number
+
+
+#pragma region add data
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, decalShader.geometry);
+
+		glBufferData(GL_ARRAY_BUFFER, currentVector.size() * sizeof(currentVector[0]),
+			currentVector.data(), GL_DYNAMIC_DRAW);
+	}
+#pragma endregion
+
+
+	//todo change, also reuse in the the decal shader
+	float timeGrass = std::clock() / 1000.f;
+
+	auto viewMatrix = c.getViewMatrix();
+	auto vp = c.getProjectionMatrix() * viewMatrix;
+
+	glm::vec3 posFloat = {};
+	glm::ivec3 posInt = {};
+	glm::ivec3 blockPosition = from3DPointToBlock(c.position);
+	c.decomposePosition(posFloat, posInt);
+
+	//setup stuff
+	decalShader.shader.bind();
+	glUniformMatrix4fv(decalShader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
+	glUniform3fv(decalShader.u_positionFloat, 1, &posFloat[0]);
+	glUniform3iv(decalShader.u_positionInt, 1, &posInt[0]);
+	glUniform1i(decalShader.u_renderOnlyWater, 0);
+	glUniform1f(decalShader.u_timeGrass, timeGrass);
+	glUniform1f(decalShader.u_zBias, -0.000001);
+
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDepthFunc(GL_LEQUAL);
+	
+	glDisable(GL_BLEND);
+	decalShader.shader.bind();
+	
+	glBindVertexArray(decalShader.vao);
+	glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, elementCountSize);
+
+
+	glBindVertexArray(0);
+	glDepthFunc(GL_LESS);
 }
 
 void Renderer::renderEntities(
@@ -3127,5 +3270,4 @@ void Renderer::FBO::clearFBO()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
-
 

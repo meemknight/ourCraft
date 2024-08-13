@@ -65,6 +65,45 @@ void arangeData(std::vector<int> &currentVector)
 
 }
 
+void pushFlagsLightAndPosition(std::vector<int> &vect,
+	glm::ivec3 position,
+	bool isWater, bool isInWater,
+	unsigned char sunLight, unsigned char torchLight, unsigned char aoShape)
+{
+
+	//0x    FF      FF      FF    FF
+	//   -flags----light----position--
+
+	unsigned char light = merge4bits(sunLight, torchLight);
+
+	unsigned char flags = 0;
+	if (isWater)
+	{
+		flags |= 0b1;
+	}
+
+	if (isInWater)
+	{
+		flags |= 0b10;
+	}
+
+	//aoShape &= 0x0F;
+	aoShape <<= 4;
+	flags |= aoShape;
+
+	//shadow flag stuff.
+
+
+	unsigned short firstHalf = mergeChars(flags, light);
+	//unsigned short firstHalf = mergeChars(flags, 0xFF);
+
+	int positionY = mergeShorts((short)position.y, firstHalf);
+
+	vect.push_back(position.x);
+	vect.push_back(positionY);
+	vect.push_back(position.z);
+};
+
 //todo a counter to know if I have transparent geometry in this chunk
 bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, 
 	Chunk *frontLeft, Chunk *frontRight, Chunk *backLeft, Chunk *backRight,
@@ -87,46 +126,6 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 	}
 
 #pragma region helpers
-
-	auto pushFlagsLightAndPosition = 
-		[](std::vector<int> &vect,
-		glm::ivec3 position,
-		bool isWater, bool isInWater,
-		unsigned char sunLight, unsigned char torchLight, unsigned char aoShape)
-	{
-
-		//0x    FF      FF      FF    FF
-		//   -flags----light----position--
-
-		unsigned char light = merge4bits(sunLight, torchLight);
-
-		unsigned char flags = 0;
-		if (isWater)
-		{
-			flags |= 0b1;
-		}
-
-		if (isInWater)
-		{
-			flags |= 0b10;
-		}
-
-		//aoShape &= 0x0F;
-		aoShape <<= 4;
-		flags |= aoShape;
-
-		//shadow flag stuff.
-
-
-		unsigned short firstHalf = mergeChars(flags, light);
-		//unsigned short firstHalf = mergeChars(flags, 0xFF);
-
-		int positionY = mergeShorts((short)position.y, firstHalf);
-
-		vect.push_back(position.x);
-		vect.push_back(positionY);
-		vect.push_back(position.z);
-	};
 
 	const int FRONT = 0;
 	const int BACK = 1;
@@ -1005,7 +1004,6 @@ void Chunk::createGpuData()
 	glGenBuffers(1, &lightsBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsBuffer);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
 
 }
 

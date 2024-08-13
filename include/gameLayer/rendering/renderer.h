@@ -4,6 +4,7 @@
 #include "rendering/camera.h"
 #include "rendering/skyBoxRenderer.h"
 #include <gl2d/gl2d.h>
+#include "blocks.h"
 
 struct BlocksLoader;
 struct ChunkSystem;
@@ -162,6 +163,7 @@ struct Renderer
 
 	}applyToneMapper;
 
+	//It is the same as the z pre pass shader
 	struct ZpassShader
 	{
 		Shader shader;
@@ -229,6 +231,29 @@ struct Renderer
 
 	}entityRenderer;
 
+	//for block cracks, it is the same as the z pre pass shader
+	struct DecalShader
+	{
+		Shader shader;
+		GLuint u_viewProjection;
+		GLuint u_positionInt;
+		GLuint u_positionFloat;
+		GLuint u_vertexUV;
+		GLuint u_vertexData = GL_INVALID_INDEX;
+		GLuint u_textureSamplerers;
+		GLuint u_renderOnlyWater;
+		GLuint u_zBias;
+		GLuint u_timeGrass;
+
+		GLuint vao = 0;
+		GLuint geometry = 0;
+		GLuint index = 0;
+
+
+
+	}decalShader;
+
+
 	float metallic = 0;
 	float roughness = 0.5;
 
@@ -260,6 +285,8 @@ struct Renderer
 		bool showLightLevels, glm::dvec3 pointPos,
 		bool underWater, int screenX, int screenY, float deltaTime, float dayTime);
 	
+	void renderDecal(glm::ivec3 position, Camera &c, Block b);
+
 	void renderEntities(float deltaTime, 
 		Camera &c,		
 		ModelsManager &modelsManager,
@@ -356,6 +383,7 @@ struct PointDebugRenderer
 	void renderCubePoint(Camera &c, glm::dvec3 point);
 
 };
+
 
 constexpr int mergeShorts(short a, short b)
 {

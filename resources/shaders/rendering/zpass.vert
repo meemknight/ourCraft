@@ -17,6 +17,8 @@ uniform int u_renderOnlyWater;
 
 uniform float u_timeGrass;
 
+uniform float u_zBias = 0;
+
 //geometry
 readonly restrict layout(std430) buffer u_vertexData
 {
@@ -221,7 +223,7 @@ void main()
 
 	vec4 posProjection = u_viewProjection * posView;	
 
-
+	posProjection.z += u_zBias;
 
 	gl_Position = posProjection;
 	

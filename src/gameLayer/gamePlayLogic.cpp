@@ -526,17 +526,17 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma region place blocks
 
+	glm::ivec3 rayCastPos = {};
+	std::optional<glm::ivec3> blockToPlace = std::nullopt;
+	glm::dvec3 cameraRayPos = gameData.c.position;
+	Block *raycastBlock = 0;
+
 	if (!gameData.insideInventoryMenu)
 	{
-
-		glm::ivec3 rayCastPos = {};
-		std::optional<glm::ivec3> blockToPlace = std::nullopt;
-		glm::dvec3 cameraRayPos = gameData.c.position;
-
-		if (gameData.chunkSystem.rayCast(cameraRayPos, gameData.c.viewDirection, rayCastPos, 20, blockToPlace))
+		raycastBlock = gameData.chunkSystem.rayCast(cameraRayPos, gameData.c.viewDirection, rayCastPos, 20, blockToPlace);
+		if (raycastBlock)
 		{
-			auto b = gameData.chunkSystem.getBlockSafe(rayCastPos);
-			if (b && b->type != BlockTypes::water)
+			if (raycastBlock->type != BlockTypes::water)
 			{
 				programData.gyzmosRenderer.drawCube(rayCastPos);
 			}
@@ -751,6 +751,16 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.c, programData, programData.blocksLoader, gameData.entityManager,
 			programData.modelsManager, gameData.showLightLevels,
 			gameData.point, underWater, w, h, deltaTime, dayTime);
+
+
+		if (raycastBlock)
+		{
+
+			programData.renderer.renderDecal(rayCastPos, gameData.c, *raycastBlock);
+
+
+		}
+
 
 		gameData.c.lastFrameViewProjMatrix =
 			gameData.c.getProjectionMatrix() * gameData.c.getViewMatrix();
