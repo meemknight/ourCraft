@@ -43,6 +43,7 @@ void clearOtherTextures()
 	programData.dudvNormal.cleanup();
 	programData.aoTexture.cleanup();
 	programData.brdfTexture.cleanup();
+	programData.crackTexture.cleanup();
 }
 
 void clearAllTexturePacks()
@@ -104,6 +105,11 @@ void loadOtherTextures(const char *basePath)
 	if (!programData.brdfTexture.id)
 	{
 		programData.brdfTexture.loadFromFile((p + "brdf.png").c_str(), false, false);
+	}
+
+	if (!programData.crackTexture.id)
+	{
+		programData.crackTexture.loadFromFile((p + "crack.png").c_str(), true, true);
 	}
 
 }

@@ -29,6 +29,7 @@ struct ProgramData
 	gl2d::Texture aoTexture;
 	gl2d::Texture brdfTexture;
 	gl2d::Texture defaultCover;
+	gl2d::Texture crackTexture;
 	int currentFps = 0;
 
 	struct OtherSettings

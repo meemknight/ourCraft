@@ -1044,6 +1044,7 @@ void Renderer::reloadShaders()
 		GET_UNIFORM2(decalShader, u_renderOnlyWater);
 		GET_UNIFORM2(decalShader, u_timeGrass);
 		GET_UNIFORM2(decalShader, u_zBias);
+		GET_UNIFORM2(decalShader, u_crackPosition);
 		
 
 		decalShader.u_vertexData = getStorageBlockIndex(decalShader.shader.id, "u_vertexData");
@@ -2004,8 +2005,19 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 }
 
-void Renderer::renderDecal(glm::ivec3 position, Camera &c, Block b)
+//draw decal
+void Renderer::renderDecal(glm::ivec3 position, Camera &c, Block b, ProgramData &programData,
+	float crack)
 {
+	int decalPosition = 0;
+	if (crack == 0) { return; }
+	else
+	{
+		decalPosition = crack * 10;
+		if (decalPosition > 10) { decalPosition = 10; }
+	}
+
+
 	//setup geometry
 	static std::vector<int> currentVector;
 	currentVector.clear();
@@ -2077,6 +2089,10 @@ void Renderer::renderDecal(glm::ivec3 position, Camera &c, Block b)
 	glUniform1i(decalShader.u_renderOnlyWater, 0);
 	glUniform1f(decalShader.u_timeGrass, timeGrass);
 	glUniform1f(decalShader.u_zBias, -0.000001);
+	glUniform1i(decalShader.u_crackPosition, decalPosition);
+	
+
+	programData.crackTexture.bind(0);
 
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

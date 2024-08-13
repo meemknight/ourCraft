@@ -244,7 +244,8 @@ struct Renderer
 		GLuint u_renderOnlyWater;
 		GLuint u_zBias;
 		GLuint u_timeGrass;
-
+		GLuint u_crackPosition;
+		
 		GLuint vao = 0;
 		GLuint geometry = 0;
 		GLuint index = 0;
@@ -285,7 +286,8 @@ struct Renderer
 		bool showLightLevels, glm::dvec3 pointPos,
 		bool underWater, int screenX, int screenY, float deltaTime, float dayTime);
 	
-	void renderDecal(glm::ivec3 position, Camera &c, Block b);
+	void renderDecal(glm::ivec3 position, Camera &c, Block b, ProgramData &programData, 
+		float crack);
 
 	void renderEntities(float deltaTime, 
 		Camera &c,		

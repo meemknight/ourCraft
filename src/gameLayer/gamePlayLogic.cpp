@@ -756,7 +756,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		if (raycastBlock)
 		{
 
-			programData.renderer.renderDecal(rayCastPos, gameData.c, *raycastBlock);
+			programData.renderer.renderDecal(rayCastPos, gameData.c, *raycastBlock,
+				programData, 0.8);
 
 
 		}
