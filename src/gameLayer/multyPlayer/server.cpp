@@ -316,6 +316,46 @@ bool spawnCat(
 	return 1;
 }
 
+bool spawnDroppedItemEntity(
+	ServerChunkStorer &chunkManager, WorldSaver &worldSaver,
+	unsigned char counter, unsigned short type,
+	std::vector<unsigned char> *metaData, glm::dvec3 pos, MotionState motionState = {},
+	std::uint64_t newId = 0,
+	float restantTimer = 0
+	)
+{
+
+	if (newId == 0) { newId = getEntityIdAndIncrement(worldSaver);  }
+
+	DroppedItemServer newEntity = {};
+	newEntity.item.counter = counter;
+	newEntity.item.type = type;
+	if (metaData)
+	{
+		newEntity.item.metaData = *metaData;
+	}
+
+	newEntity.entity.position = pos;
+	newEntity.entity.lastPosition = pos;
+	newEntity.entity.forces = motionState;
+	newEntity.restantTime = restantTimer;
+
+	auto chunkPosition = determineChunkThatIsEntityIn(pos);
+	auto chunk = chunkManager.getChunkOrGetNull(chunkPosition.x, chunkPosition.y);
+
+	if (chunk)
+	{
+		chunk->entityData.droppedItems.insert({newId, newEntity});
+	}
+	else
+	{
+		return 0;
+	}
+
+	return 1;
+
+}
+
 void changePlayerGameMode(std::uint64_t cid, unsigned char gameMode)
 {
 
@@ -603,7 +643,7 @@ void serverWorkerUpdate(
 
 						if (legal)
 						{
-						
+							auto lastBlock = b->type;
 							b->type = i.t.blockType;
 							chunk->otherData.dirty = true;
 
@@ -628,6 +668,27 @@ void serverWorkerUpdate(
 									item->counter--;
 									item->sanitize();
 								};
+							}
+
+							if (i.t.taskType == Task::breakBlock)
+							{
+
+								if (client->playerData.otherPlayerSettings.gameMode ==
+									OtherPlayerSettings::SURVIVAL)
+								{
+									//todo other checks here like tools
+
+									MotionState ms;
+									ms.velocity.y = 2;
+
+									spawnDroppedItemEntity(sd.chunkCache,
+										worldSaver, 1, lastBlock, nullptr,
+										glm::dvec3(i.t.pos), ms);
+
+
+								}
+
+
 							}
 						}
 
@@ -700,28 +761,10 @@ void serverWorkerUpdate(
 							&i.t.entityId, &newId))
 						{
 
-							DroppedItemServer newEntity = {};
-							newEntity.item.counter = i.t.blockCount;
-							newEntity.item.type = i.t.blockType;
-							newEntity.item.metaData = from->metaData;
-
-							newEntity.entity.position = i.t.doublePos;
-							newEntity.entity.lastPosition = i.t.doublePos;
-							newEntity.entity.forces = i.t.motionState;
-							//newEntity.restantTime = computeRestantTimer(currentTimer, i.t.timer);
-							newEntity.restantTime = computeRestantTimer(i.t.timer, currentTimer);
-
-							auto chunkPosition = determineChunkThatIsEntityIn(i.t.doublePos);
-
-							SavedChunk *chunk = sd.chunkCache.getOrCreateChunk(chunkPosition.x,
-								chunkPosition.y, wg, structuresManager, biomesManager,
-								sendNewBlocksToPlayers, true, nullptr, worldSaver
-							);
-
-							if (chunk)
-							{
-								chunk->entityData.droppedItems.insert({newId, newEntity});
-							}
+							//todo get or create chunk here, so we create a function that cant fail.
+							spawnDroppedItemEntity(sd.chunkCache,
+								worldSaver, i.t.blockCount, i.t.blockType, &from->metaData,
+								i.t.doublePos, i.t.motionState, newId, computeRestantTimer(i.t.timer, currentTimer));
 
 							//std::cout << "restant: " << newEntity.restantTime << "\n";
 

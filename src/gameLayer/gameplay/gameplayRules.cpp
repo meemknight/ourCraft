@@ -14,6 +14,7 @@ bool canBlockBePlaced(BlockType newBlock, BlockType oldBlock)
 
 bool canBlockBeBreaked(BlockType oldBlock, bool isCreative)
 {
+	if (!isBlock(oldBlock)) { return false; }
 
 	return true;
 }
