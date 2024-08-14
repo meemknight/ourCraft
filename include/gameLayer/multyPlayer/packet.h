@@ -67,6 +67,7 @@ enum : std::uint32_t
 	headerClientSwapItems,
 	headerClientUsedItem,
 	headerClientInteractWithBlock,
+	headerUpdateOwnOtherPlayerSettings,
 	headerRecieveExitBlockInteraction,
 	headerDisconnectOtherPlayer, 
 	headerUpdateZombie,
@@ -231,12 +232,16 @@ struct Packer_SendPlayerData
 
 };
 
-
 struct Packet_ClientRecieveOtherPlayerPosition
 {
 	Player entity = {};
 	std::uint64_t eid = 0;
 	std::uint64_t timer = 0;
+};
+
+struct Packet_UpdateOwnOtherPlayerSettings
+{
+	OtherPlayerSettings otherPlayerSettings = {};
 };
 
 //used by the client to talk to the server

@@ -257,6 +257,24 @@ bool initGame() //main server and title screen stuff
 	//settings.printAll();
 	//settings.writeIntoFile(RESOURCES_PATH "test2.txt");
 
+
+#pragma region checks
+	//todo option to remove in a production build!
+	{
+
+		for (int i = 1; i < BlocksCount; i++)
+		{
+
+			getBlockBaseMineDuration(i);
+
+		}
+
+
+
+	}
+#pragma endregion
+
+
 	return true;
 }
 
@@ -400,6 +418,17 @@ bool gameLogic(float deltaTime)
 				ImGui::Checkbox("Spawn zombie", &c.second.spawnZombie);
 				ImGui::Checkbox("Spawn pig", &c.second.spawnPig);
 				ImGui::Checkbox("Resend inventory", &c.second.resendInventory);
+
+				if (ImGui::Button("Set Survival"))
+				{
+					changePlayerGameMode(c.first, OtherPlayerSettings::SURVIVAL);
+				} ImGui::SameLine();
+				if (ImGui::Button("Set Crative"))
+				{
+					changePlayerGameMode(c.first, OtherPlayerSettings::CREATIVE);
+				}
+
+
 				ImGui::Separator();
 				ImGui::PopID();
 			}

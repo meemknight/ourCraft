@@ -22,7 +22,7 @@ enum BlockTypes
 	snow_dirt,
 	leaves,
 	gold_ore,
-	coar_ore,
+	coal_ore,
 	stoneBrick,
 	iron_ore,
 	diamond_ore,
@@ -102,9 +102,57 @@ bool isColidable(BlockType type);
 
 bool isWoodPlank(BlockType type);
 
+//used for breaking
+bool isAnyWoddenBlock(BlockType type);
+
+//used for breaking
+bool isAnyWool(BlockType type);
+
+//used for breaking
+bool isAnyDirtBlock(BlockType type);
+
+//used for breaking
+bool isAnyClayBlock(BlockType type);
+
+//used for breaking
+bool isAnySandyBlock(BlockType type);
+
+//used for breaking
+bool isAnySemiHardBlock(BlockType type);
+
+//used for breaking
+bool isAnyStone(BlockType type);
+
+//used for breaking
+bool isAnyPlant(BlockType type);
+
+//used for breaking
+bool isAnyGlass(BlockType type);
+
+//used for breaking
+bool isTriviallyBreakable(BlockType type);
+
+//used for breaking, bedrock type blocks, that can be breaked in creative!
+bool isAnyUnbreakable(BlockType type);
+
+//used for breaking
+bool isAnyLeaves(BlockType type);
+
 bool isStainedGlass(BlockType type);
 
 unsigned char isInteractable(BlockType type);
+
+bool isBlock(std::uint16_t type);
+
+
+bool canBeMinedByHand(std::uint16_t type);
+
+bool canBeMinedByPickaxe(std::uint16_t type);
+
+bool canBeMinedByShovel(std::uint16_t type);
+
+bool canBeMinedByAxe(std::uint16_t type);
+
 
 struct Block
 {
@@ -196,3 +244,6 @@ namespace InteractionTypes
 	};
 
 };
+
+float getBlockBaseMineDuration(BlockType type);
+

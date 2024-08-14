@@ -14,6 +14,7 @@ enum ItemTypes
 	wooddenSword,
 	wooddenPickaxe,
 	wooddenAxe,
+	wooddenShovel,
 	zombieSpawnEgg,
 	pigSpawnEgg,
 	catSpawnEgg,
@@ -55,6 +56,12 @@ struct Item
 
 	bool isTool();
 
+	bool isAxe();
+
+	bool isPickaxe();
+
+	bool isShovel();
+
 	unsigned short getDurability();
 
 	void setDurability(unsigned short durability);
@@ -71,6 +78,8 @@ void addMetaData(std::vector<unsigned char> &vector, T data)
 
 
 Item itemCreator(unsigned short type, unsigned char counter = 1);
+
+float computeMineDurationTime(BlockType type, Item &item);
 
 struct PlayerInventory
 {

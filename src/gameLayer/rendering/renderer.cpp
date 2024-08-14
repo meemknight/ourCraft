@@ -2010,7 +2010,8 @@ void Renderer::renderDecal(glm::ivec3 position, Camera &c, Block b, ProgramData 
 	float crack)
 {
 	int decalPosition = 0;
-	if (crack == 0) { return; }
+	if (crack <= 0) { return; }
+	if (crack > 1) { crack = 1; }
 	else
 	{
 		decalPosition = crack * 10;

@@ -316,6 +316,27 @@ bool spawnCat(
 	return 1;
 }
 
+void changePlayerGameMode(std::uint64_t cid, unsigned char gameMode)
+{
+
+	auto client = getClientNotLocked(cid);
+
+	if (client)
+	{
+		if (client->playerData.otherPlayerSettings.gameMode != gameMode)
+		{
+			client->playerData.otherPlayerSettings.gameMode = gameMode;
+
+			Packet_UpdateOwnOtherPlayerSettings packet;
+			packet.otherPlayerSettings = client->playerData.otherPlayerSettings;
+
+			sendPacket(client->peer, headerUpdateOwnOtherPlayerSettings,
+				&packet, sizeof(packet), true, channelChunksAndBlocks);
+
+		}
+
+	}
+}
 
 
 ServerSettings getServerSettingsCopy()
@@ -521,6 +542,7 @@ void serverWorkerUpdate(
 						}
 
 						auto b = chunk->chunk.safeGet(convertedX, i.t.pos.y, convertedZ);
+						Item *item = 0;
 
 						if (!b)
 						{
@@ -529,18 +551,16 @@ void serverWorkerUpdate(
 						else
 						{
 
-
 							if (i.t.taskType == Task::placeBlock)
 							{
-								auto item = client->playerData.inventory.getItemFromIndex(i.t.inventroySlot);
-
+								item = client->playerData.inventory.getItemFromIndex(i.t.inventroySlot);
 
 								if(item && item->isBlock() && 
-									i.t.blockType == item->type)
+									i.t.blockType == item->type
+									&& item->counter
+									)
 								{
 									//good
-									//todo if survival, decrese the block after place, but at the end!!!!
-
 								}
 								else
 								{
@@ -602,7 +622,12 @@ void serverWorkerUpdate(
 
 							if (i.t.taskType == Task::placeBlock)
 							{
-								//todo decrease block here if not creative
+								if (client->playerData.otherPlayerSettings.gameMode ==
+									OtherPlayerSettings::SURVIVAL)
+								{
+									item->counter--;
+									item->sanitize();
+								};
 							}
 						}
 

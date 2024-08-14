@@ -73,6 +73,15 @@ struct GameData
 
 	bool insideInventoryMenu = 0;
 
+	struct
+	{
+		bool breaking = 0;
+		glm::ivec3 pos = {};
+		float timer = 0;
+		float totalTime = 0;
+
+	}currentBlockBreaking;
+
 }gameData;
 
 
@@ -234,6 +243,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				if (e.type == Event::iPlacedBlock)
 				{
 					gameData.chunkSystem.placeBlockNoClient(e.blockPos, e.originalBlock, gameData.lightSystem);
+
+					if (e.blockPos == gameData.currentBlockBreaking.pos)
+					{
+						gameData.currentBlockBreaking = {};
+					}
+
 				}
 				else if (e.type == Event::iDroppedItemFromInventory)
 				{
@@ -536,11 +551,19 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		raycastBlock = gameData.chunkSystem.rayCast(cameraRayPos, gameData.c.viewDirection, rayCastPos, 20, blockToPlace);
 		if (raycastBlock)
 		{
+			//todo special function here
 			if (raycastBlock->type != BlockTypes::water)
 			{
 				programData.gyzmosRenderer.drawCube(rayCastPos);
 			}
-
+			else
+			{
+				gameData.currentBlockBreaking = {};
+			}
+		}
+		else
+		{
+			gameData.currentBlockBreaking = {};
 		}
 
 		if (!gameData.escapePressed)
@@ -659,33 +682,77 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 							}
 							else if (blockToPlace && item.isBlock())
 							{
-
+								//place block
 								gameData.chunkSystem.placeBlockByClient(*blockToPlace,
 									gameData.currentItemSelected,
 									gameData.undoQueue,
 									gameData.entityManager.localPlayer.entity.position,
 									gameData.lightSystem,
-									player.inventory);
+									player.inventory, 
+									player.otherPlayerSettings.gameMode == OtherPlayerSettings::SURVIVAL
+									);
 
 							}
 						};
 
 							
 					}
-					else if (platform::isLMousePressed())
+					else if (platform::isLMouseHeld() && raycastBlock)
 					{
-						//break block
-						gameData.chunkSystem.breakBlockByClient(rayCastPos
-							, gameData.undoQueue,
-							gameData.entityManager.localPlayer.entity.position,
-							gameData.lightSystem);
+
+						if (!gameData.currentBlockBreaking.breaking)
+						{
+							gameData.currentBlockBreaking.breaking = true;
+							gameData.currentBlockBreaking.pos = rayCastPos;
+
+							if (player.otherPlayerSettings.gameMode == OtherPlayerSettings::SURVIVAL)
+							{
+								gameData.currentBlockBreaking.timer = computeMineDurationTime(raycastBlock->type,
+									*player.inventory.getItemFromIndex(gameData.currentItemSelected));
+								gameData.currentBlockBreaking.totalTime = gameData.currentBlockBreaking.timer;
+							}
+							else
+							{
+								gameData.currentBlockBreaking.totalTime = 0.2;
+								gameData.currentBlockBreaking.timer = 0.2;
+							}
+						}
+
+						if (rayCastPos != gameData.currentBlockBreaking.pos)
+						{
+							gameData.currentBlockBreaking = {};
+						}
+						else
+						{
+							gameData.currentBlockBreaking.timer -= deltaTime;
+							
+							if (gameData.currentBlockBreaking.timer <= 0)
+							{
+								//break block
+								gameData.chunkSystem.breakBlockByClient(rayCastPos
+									, gameData.undoQueue,
+									gameData.entityManager.localPlayer.entity.position,
+									gameData.lightSystem);
+								gameData.currentBlockBreaking = {};
+
+							}
+
+						}
+					}
+					else
+					{
+						gameData.currentBlockBreaking = {};
 					}
 				}
 
 
 		};
 
-	};
+	}
+	else
+	{
+		gameData.currentBlockBreaking = {};
+	}
 	
 #pragma endregion
 
@@ -753,13 +820,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.point, underWater, w, h, deltaTime, dayTime);
 
 
-		if (raycastBlock)
+		if (gameData.currentBlockBreaking.breaking)
 		{
-
 			programData.renderer.renderDecal(rayCastPos, gameData.c, *raycastBlock,
-				programData, 0.8);
-
-
+				programData, 1-(gameData.currentBlockBreaking.timer / gameData.currentBlockBreaking.totalTime));
 		}
 
 

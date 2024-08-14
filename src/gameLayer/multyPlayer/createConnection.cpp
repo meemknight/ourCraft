@@ -413,6 +413,17 @@ void recieveDataClient(ENetEvent &event,
 		}
 		break;
 
+		case headerUpdateOwnOtherPlayerSettings:
+		{
+			Packet_UpdateOwnOtherPlayerSettings *packet = (Packet_UpdateOwnOtherPlayerSettings *)data;
+			if (size == sizeof(Packet_UpdateOwnOtherPlayerSettings))
+			{
+				entityManager.localPlayer.otherPlayerSettings = packet->otherPlayerSettings;
+			}
+
+		}
+		break;
+
 		default:
 		break;
 

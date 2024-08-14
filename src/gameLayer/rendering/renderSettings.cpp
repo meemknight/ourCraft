@@ -310,7 +310,7 @@ void displayTexturePacksSettingsMenu(ProgramData &programData)
 					file = pack;
 					file = (RESOURCES_PATH "texturePacks") / file;
 					file /= "pack.png";
-					t.loadFromFile(file.string().c_str());
+					t.loadFromFile(file.string().c_str(), true);
 
 				}
 

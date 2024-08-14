@@ -1,12 +1,13 @@
 #include <gameplay/items.h>
 #include <serializing.h>
 #include <platformTools.h>
+#include <iostream>
 
 //todo can be placed
 
 bool Item::isBlock()
 {
-	return type > 0 && type < BlocksCount;
+	return ::isBlock(type);
 }
 
 bool Item::isItemThatCanBeUsed()
@@ -177,6 +178,7 @@ bool Item::isTool()
 	if (type == wooddenSword
 		|| type == wooddenPickaxe
 		|| type == wooddenAxe
+		|| type == wooddenShovel
 		)
 	{
 		return 1;
@@ -185,6 +187,21 @@ bool Item::isTool()
 	{
 		return false;
 	}
+}
+
+bool Item::isAxe()
+{
+	return type == wooddenAxe;
+}
+
+bool Item::isPickaxe()
+{
+	return type == wooddenPickaxe;
+}
+
+bool Item::isShovel()
+{
+	return type == wooddenShovel;
 }
 
 unsigned short Item::getDurability()
@@ -413,6 +430,7 @@ const char *itemsNames[] =
 	"wooden_sword.png",
 	"wooden_pickaxe.png",
 	"wooden_axe.png",
+	"wooden_shovel.png",
 	"", //eggs
 	"",
 	"",
@@ -443,3 +461,60 @@ Item itemCreator(unsigned short type, unsigned char counter)
 	return ret;
 }
 
+float computeMineDurationTime(BlockType type, Item &item)
+{
+
+	float timer = getBlockBaseMineDuration(type);
+
+	const float PENALTY = 3;
+
+	bool canBeMinedHand = canBeMinedByHand(type);
+
+	
+	if (item.isPickaxe())
+	{
+		if (canBeMinedByPickaxe(type))
+		{
+			//todo add speed here;
+			timer /= 2;
+		}
+		else if (!canBeMinedHand)
+		{
+			timer *= PENALTY;
+		}
+	}
+	else if (item.isShovel())
+	{
+		if (canBeMinedByShovel(type))
+		{
+			//todo add speed here;
+			timer /= 2;
+		}
+		else if (!canBeMinedHand)
+		{
+			timer *= PENALTY;
+		}
+	}
+	else if (item.isAxe())
+	{
+		if (canBeMinedByAxe(type))
+		{
+			//todo add speed here;
+			timer /= 2;
+		}
+		else if (!canBeMinedHand)
+		{
+			timer *= PENALTY;
+		}
+	}
+	else //hand or no tool
+	{
+		if (!canBeMinedHand)
+		{
+			timer *= PENALTY;
+		}
+	}
+	
+	std::cout << timer << "\n";
+	return timer;
+}

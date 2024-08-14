@@ -57,6 +57,11 @@ static CraftingRecepie recepies[] =
 		Item(ItemTypes::stick), Item(BlockTypes::wooden_plank), Item(),
 		Item(ItemTypes::stick), Item(), Item()}, true),
 
+	recepie(Item(ItemTypes::wooddenShovel, 1),
+		{Item(BlockTypes::wooden_plank), Item(),Item(),
+		Item(ItemTypes::stick), Item(), Item(),
+		Item(ItemTypes::stick), Item(), Item()}, true),
+
 	recepie(Item(BlockTypes::stoneBrick, 4),
 		{Item(),Item(),Item(),
 		Item(BlockTypes::stone), Item(BlockTypes::stone), Item(),

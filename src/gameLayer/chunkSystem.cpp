@@ -1075,14 +1075,14 @@ void ChunkSystem::dropChunkAtIndexSafe(int index, BigGpuBuffer *gpuBuffer)
 
 bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot,
 	UndoQueue &undoQueue, glm::dvec3 playerPos,
-	LightSystem &lightSystem, PlayerInventory &inventory)
+	LightSystem &lightSystem, PlayerInventory &inventory, bool decreaseCounter)
 {
 	Chunk *chunk = 0;
 	auto b = getBlockSafeAndChunk(pos.x, pos.y, pos.z, chunk);
 	
 	auto item = inventory.getItemFromIndex(inventorySlot);
 
-	if (!item) { return 0; }
+	if (!item || !item->counter) { return 0; }
 
 	if (b != nullptr)
 	{
@@ -1108,7 +1108,6 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot
 				p, (char *)&packetData, sizeof(packetData), 1,
 				channelChunksAndBlocks);
 
-
 			undoQueue.addPlaceBlockEvent(pos, b->type, item->type, playerPos);
 
 			changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->type,
@@ -1118,6 +1117,14 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot
 			if (b->isOpaque()) { b->lightLevel = 0; }
 
 			setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
+
+
+			if (decreaseCounter)
+			{
+				item->counter--;
+				item->sanitize();
+			};
+
 
 			return true;
 		}

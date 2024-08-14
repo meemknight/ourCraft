@@ -5,6 +5,7 @@
 bool canBlockBePlaced(BlockType newBlock, BlockType oldBlock)
 {
 
+	if (!isBlock(newBlock)) { return false; }
 
 
 	return true;
