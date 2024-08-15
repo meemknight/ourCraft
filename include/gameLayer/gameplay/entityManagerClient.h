@@ -19,7 +19,6 @@ struct ClientEntityManager : public EntityDataClient
 {
 
 
-
 	LocalPlayer localPlayer;
 
 	void dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int playerSquareDistance);
@@ -33,7 +32,10 @@ struct ClientEntityManager : public EntityDataClient
 		unsigned char inventorySlot, UndoQueue &undoQueue, glm::vec3 throwForce, std::uint64_t timer,
 		PlayerInventory &inventory, int count);
 
+	//todo this can't remove the player, maybe we should refactor
 	void removeEntity(std::uint64_t entityId);
+
+	void removePlayer(std::uint64_t entityId);
 
 	void removeDroppedItem(std::uint64_t entityId);
 	
@@ -47,6 +49,8 @@ struct ClientEntityManager : public EntityDataClient
 	void addOrUpdateCat(std::uint64_t eid, Cat entity, float restantTimer);
 
 	void doAllUpdates(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2));
+
+	void cleanup();
 };
 
 

@@ -24,6 +24,9 @@ struct Client
 
 	PlayerServer playerData;
 	glm::ivec2 positionForChunkGeneration = {};
+
+	std::vector<unsigned char> skinData;
+	bool skinDataCompressed = false;
 };
 
 Client getClient(std::uint64_t cid);

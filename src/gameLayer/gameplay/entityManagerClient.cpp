@@ -175,6 +175,11 @@ bool genericRemoveEntity(T &container, std::uint64_t entityId)
 	auto found = container.find(entityId);
 	if (found != container.end())
 	{
+		if constexpr (hasCleanup<decltype(found->second)>)
+		{
+			found->second.cleanup();
+		}
+
 		container.erase(found);
 		return true;
 	}
@@ -220,6 +225,17 @@ void ClientEntityManager::removeEntity(std::uint64_t entityId)
 		*this, entityId);
 
 
+}
+
+void ClientEntityManager::removePlayer(std::uint64_t entityId)
+{
+	auto found = players.find(entityId);
+
+	if (found != players.end())
+	{
+		found->second.cleanup();
+		players.erase(found);
+	}
 }
 
 void ClientEntityManager::removeDroppedItem(std::uint64_t entityId)
@@ -349,6 +365,15 @@ void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)
 		deltaTime, chunkGetter, *this);
 
 
+}
+
+void ClientEntityManager::cleanup()
+{
+
+	for (auto &e : players)
+	{
+		e.second.cleanup();
+	}
 }
 
 

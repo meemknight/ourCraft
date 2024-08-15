@@ -1,6 +1,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
 #include "gameplay/player.h"
+#include <iostream>
 
 void Player::flyFPS(glm::vec3 direction, glm::vec3 lookDirection)
 {
@@ -55,6 +56,15 @@ glm::vec3 Player::getMaxColliderSize()
 	return glm::vec3(0.8, 1.8, 0.8);
 }
 
+
+void PlayerClient::cleanup()
+{
+	if (skin.id)
+	{
+		skin.cleanup();
+		skinBindlessTexture = 0;
+	}
+}
 
 //todo move update here
 void PlayerClient::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)

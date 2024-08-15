@@ -2,6 +2,7 @@
 #include <gameplay/entity.h>
 #include <multyPlayer/server.h>
 #include <gameplay/items.h>
+#include <gl2d/gl2d.h>
 
 //this is the shared data
 struct Player : public PhysicalEntity, public CollidesWithPlacedBlocks,
@@ -53,6 +54,12 @@ struct LocalPlayer
 
 struct PlayerClient: public ClientEntity<Player, PlayerClient>
 {
+
+	void cleanup();
+
+	gl2d::Texture skin = {};
+	GLuint64 skinBindlessTexture = 0;
+
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 	void setEntityMatrix(glm::mat4 *skinningMatrix);
 };

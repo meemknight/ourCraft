@@ -113,8 +113,21 @@ void loadCurrentSkin()
 			= loadPlayerSkin(RESOURCES_PATH "assets/models/steve.png");
 	}
 
+	//todo repeating code
+	gameData.currentSkinTexture.bind();
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 6.f);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 2.f);
+
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+
 	gameData.currentSkinBindlessTexture = glGetTextureHandleARB(gameData.currentSkinTexture.id);
 	glMakeTextureHandleResidentARB(gameData.currentSkinBindlessTexture);
+
+	sendPlayerSkinPacket(getServer(), getConnectionData().cid, gameData.currentSkinTexture);
 
 }
 
@@ -303,7 +316,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		//player sends updates to server
 		{
 
-			static float timer = 0.016;
+			static float timer = 0.020;
 
 			///todo a common method to check if data was modified
 			if (gameData.entityManager.localPlayer.entity.position != gameData.lastSendPos)
@@ -317,7 +330,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			if (timer <= 0)
 			{
-				timer = 0.016 * 3.f;
+				timer = 0.020 * 3.f;
 				//timer = 0.316;
 
 				Packer_SendPlayerData data;
@@ -1677,6 +1690,7 @@ void closeGameLogic()
 {
 	gameData.chunkSystem.cleanup();
 	gameData.currentSkinTexture.cleanup();
+	gameData.entityManager.cleanup();
 
 	gameData = GameData(); //free all resources
 }

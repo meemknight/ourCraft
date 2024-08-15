@@ -2358,7 +2358,23 @@ void Renderer::renderEntities(
 			e.second.setEntityMatrix(skinningMatrix.data() + (skinningMatrix.size() - model.transforms.size()));
 
 			PerEntityData data = {};
-			data.textureId = modelsManager.gpuIds[textureIndex];
+
+			if constexpr (hasSkinBindlessTexture<decltype(e.second)>)
+			{
+				if (e.second.skinBindlessTexture)
+				{
+					data.textureId = e.second.skinBindlessTexture;
+				}
+				else
+				{
+					data.textureId = modelsManager.gpuIds[textureIndex];
+				}
+
+			}
+			else
+			{
+				data.textureId = modelsManager.gpuIds[textureIndex];
+			}
 
 			decomposePosition(e.second.getRubberBandPosition(), data.entityPositionFloat, data.entityPositionInt);
 			entityData.push_back(data);

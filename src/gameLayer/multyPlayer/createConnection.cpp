@@ -380,12 +380,7 @@ void recieveDataClient(ENetEvent &event,
 
 			if (size == sizeof(Packet_DisconectOtherPlayer))
 			{
-				auto found = entityManager.players.find(eid->EID);
-
-				if (found != entityManager.players.end())
-				{
-					entityManager.players.erase(found);
-				}
+				entityManager.removePlayer(eid->EID);
 
 			}
 
@@ -420,6 +415,35 @@ void recieveDataClient(ENetEvent &event,
 			{
 				entityManager.localPlayer.otherPlayerSettings = packet->otherPlayerSettings;
 			}
+
+		}
+		break;
+
+		case headerSendPlayerSkin:
+		{
+			auto player = entityManager.players.find(p.cid);
+
+			if (player != entityManager.players.end())
+			{
+				player->second.skin.cleanup();
+
+				player->second.skin.createFromBuffer(data, PLAYER_SKIN_SIZE, PLAYER_SKIN_SIZE,
+					true, true);
+				
+				//todo repeating code
+				player->second.skin.bind();
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 6.f);
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 2.f);
+
+				glGenerateMipmap(GL_TEXTURE_2D);
+
+				player->second.skinBindlessTexture = glGetTextureHandleARB(player->second.skin.id);
+				glMakeTextureHandleResidentARB(player->second.skinBindlessTexture);
+			}
+
 
 		}
 		break;

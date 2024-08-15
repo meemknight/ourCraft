@@ -12,6 +12,7 @@
 #include <gameplay/zombie.h>
 #include <gameplay/pig.h>
 #include <gameplay/cat.h>
+#include <gl2d/gl2d.h>
 
 using EventCounter = unsigned int;
 using RevisionNumber = unsigned int;
@@ -75,6 +76,7 @@ enum : std::uint32_t
 	headerUpdateCat,
 	headerRemoveEntity,
 	headerCompoundPacket,
+	headerSendPlayerSkin,
 };
 
 enum 
@@ -297,3 +299,7 @@ void sendPacket(ENetPeer *to, uint32_t header, std::uint64_t cid, void *data, si
 char *parsePacket(ENetEvent &event, Packet &p, size_t &dataSize);
 
 float computeRestantTimer(std::uint64_t older, std::uint64_t newer);
+
+void sendPlayerSkinPacket(ENetPeer *to, std::uint64_t cid, gl2d::Texture &t);
+
+void sendPlayerSkinPacket(ENetPeer *to, std::uint64_t cid, std::vector<unsigned char> &data);

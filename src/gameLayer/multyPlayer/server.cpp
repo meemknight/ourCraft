@@ -1234,7 +1234,26 @@ void serverWorkerUpdate(
 
 
 			}
-			
+			else if (i.t.taskType == Task::clientUpdatedSkin)
+			{
+
+				Packet p;
+				p.header = headerSendPlayerSkin;
+				p.cid = i.cid;
+				
+				auto client = getClientNotLocked(i.cid);
+				
+				if(client)
+				{
+					if (client->skinDataCompressed)
+					{
+						p.setCompressed();
+					}
+
+					broadCastNotLocked(p, client->skinData.data(),
+						client->skinData.size(), client->peer, true, channelHandleConnections);
+				}
+			}
 
 		sd.waitingTasks.erase(sd.waitingTasks.begin());
 

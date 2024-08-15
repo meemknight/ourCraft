@@ -75,10 +75,19 @@ void sendPacketAndCompress(ENetPeer *to, Packet p, const char *data, size_t size
 	}
 	else
 	{
-		//std::cout << "compressed\n";
-		p.setCompressed();
-		sendPacket(to, p, compressedData, compressedSize, reliable, channel);
-		delete[] compressedData;
+		if (compressedSize >= size)
+		{
+			sendPacket(to, p, data, size, reliable, channel);
+		}
+		else
+		{
+			//std::cout << "compressed\n";
+			p.setCompressed();
+			sendPacket(to, p, compressedData, compressedSize, reliable, channel);
+			delete[] compressedData;
+		}
+
+	
 	}
 }
 
@@ -147,4 +156,25 @@ float computeRestantTimer(std::uint64_t older, std::uint64_t newer)
 {
 	float rez = (((std::int64_t)newer - (std::int64_t)older)) / 1000.f;
 	return rez;
+}
+
+void sendPlayerSkinPacket(ENetPeer *to, std::uint64_t cid, gl2d::Texture &t)
+{
+	if (!t.id) { return; }
+
+	glm::ivec2 size = {};
+	auto data = t.readTextureData(0, &size);
+
+	if (size.x != PLAYER_SKIN_SIZE && size.y != PLAYER_SKIN_SIZE) { return; }
+
+	sendPlayerSkinPacket(to, cid, data);
+}
+
+void sendPlayerSkinPacket(ENetPeer *to, std::uint64_t cid, std::vector<unsigned char> &data)
+{
+	Packet p;
+	p.cid = cid;
+	p.header = headerSendPlayerSkin;
+
+	sendPacketAndCompress(to, p, (const char *)data.data(), data.size(), true, channelHandleConnections);
 }

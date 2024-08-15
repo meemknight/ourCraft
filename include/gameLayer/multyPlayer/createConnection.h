@@ -23,6 +23,7 @@ struct Task
 		clientUsedItem,
 		clientInteractedWithBlock,
 		clientExitedInteractionWithBlock,
+		clientUpdatedSkin,
 		generateChunk
 	};
 

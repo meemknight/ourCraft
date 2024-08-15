@@ -144,7 +144,7 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		int index = 1;
 		//the order matters!!!!
 		//loadTexture((path+"steve.png").c_str());
-		loadTexture((path + "giggasteve.png").c_str(), appendMode, index++, true);
+		loadTexture((path + "steve.png").c_str(), appendMode, index++, true);
 		loadTexture((path + "zombie.png").c_str(), appendMode, index++, true);
 		loadTexture((path + "pig.png").c_str(), appendMode, index++);
 		loadTexture((path+ "cat.png").c_str(), appendMode, index++);
@@ -441,11 +441,11 @@ gl2d::Texture loadPlayerSkin(const char *path)
 
 		const unsigned char *decodedImage = stbi_load_from_memory(fileData, (int)fileSize, &width, &height, &channels, 4);
 
-		if (width == height)
+		if (width == height && width == PLAYER_SKIN_SIZE)
 		{
 			texture.createFromBuffer((const char *)decodedImage, width, height, true, true);
 		}
-		else if(width == height * 2)
+		else if(width == height * 2 && width == PLAYER_SKIN_SIZE)
 		{
 			std::vector<char> newData;
 			newData.resize(width * height * 4 * 2);

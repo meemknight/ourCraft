@@ -118,6 +118,12 @@ constexpr bool hasBodyOrientation = false;
 template <typename T>
 constexpr bool hasBodyOrientation<T, std::void_t<decltype(std::declval<T>().bodyOrientation)>> = true;
 
+template <typename T, typename = void>
+constexpr bool hasCleanup = false;
+
+template <typename T>
+constexpr bool hasCleanup<T, std::void_t<decltype(std::declval<T>().cleanup)>> = true;
+
 
 struct MovementSpeedForLegsAnimations
 {
@@ -136,6 +142,12 @@ constexpr bool hasGetDataToSend = false;
 
 template <typename T>
 constexpr bool hasGetDataToSend<T, std::void_t<decltype(std::declval<T>().getDataToSend())>> = true;
+
+template <typename T, typename = void>
+constexpr bool hasSkinBindlessTexture = false;
+
+template <typename T>
+constexpr bool hasSkinBindlessTexture<T, std::void_t<decltype(std::declval<T>().skinBindlessTexture)>> = true;
 
 
 template <typename T, typename Enable = void>

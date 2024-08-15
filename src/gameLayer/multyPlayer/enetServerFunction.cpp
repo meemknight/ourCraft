@@ -21,6 +21,7 @@
 #include <sstream>
 #include <multyPlayer/splitUpdatesLogic.h>
 #include <filesystem>
+#include <platformTools.h>
 
 //todo add to a struct
 ENetHost *server = 0;
@@ -178,6 +179,7 @@ void sendPlayerExitInteraction(Client &client, unsigned char revisionNumber)
 		true, channelChunksAndBlocks);
 }
 
+//create connection
 void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 {
 
@@ -277,6 +279,22 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 		if (c.first != id)
 		{
 			sentNewConnectionMessage(event.peer, c.second, c.first);
+
+			//send skin
+			{
+				Packet p;
+				p.header = headerSendPlayerSkin;
+				p.cid = c.first;
+					
+				if (c.second.skinDataCompressed)
+				{
+					p.setCompressed();
+				}
+
+				sendPacket(event.peer, p, (const char*)c.second.skinData.data(),
+					c.second.skinData.size(), true, channelHandleConnections);
+			}
+
 		}
 
 	}
@@ -318,9 +336,22 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 	Packet p;
 	size_t size = 0;
 	auto data = parsePacket(event, p, size);
+	bool wasCompressed = false;
 
+	if (p.isCompressed())
+	{
+		p.setNotCompressed();
+		if (p.header != headerSendPlayerSkin)
+		{
+			permaAssertComment(0, "Decompresion on the server Not implemented!");
+		}
 
-	if (connections.find(p.cid) == connections.end())
+		wasCompressed = true;
+	}
+
+	auto connection = connections.find(p.cid);
+
+	if (connection == connections.end())
 	{
 		reportError((std::string("packet recieved with a CID that doesn't exist: ") + std::to_string(p.cid) + "\n").c_str());
 		return;
@@ -329,7 +360,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 	//validate data
 	//no need for mutex here fortunatelly because this thread is the one that modifies the connections?
 	//connectionsMutex.lock();
-	if (connections[p.cid].peer != event.peer)
+	if (connection->second.peer != event.peer)
 	{
 		//connectionsMutex.unlock();
 		reportError("invalidData: connections[p.cid].peer != event.peer");
@@ -354,18 +385,9 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 
 			{
 
-				auto it = connections.find(p.cid);
-				if (it == connections.end())
-				{
-					reportError("invalid cid error");
-					error = true;
-				}
-				else
-				{
-					it->second.positionForChunkGeneration = packetData.playersPositionAtRequest;
-					//std::cout << packetData.playersPositionAtRequest.x << "\n";
-					squareDistance = it->second.playerData.entity.chunkDistance;
-				}
+				connection->second.positionForChunkGeneration = packetData.playersPositionAtRequest;
+				//std::cout << packetData.playersPositionAtRequest.x << "\n";
+				squareDistance = connection->second.playerData.entity.chunkDistance;
 
 			}
 
@@ -416,21 +438,15 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 
 			Client clientCopy = {};
 			std::uint64_t clientCopyCid = 0;
-			
-			auto it = connections.find(p.cid);
-			if (it == connections.end())
-			{
-				reportError("invalid cid error in headerSendPlayerData");
-			}
-			else
+		
 			{
 
-				if (it->second.playerData.entity.position != packetData.playerData.position)
+				if (connection->second.playerData.entity.position != packetData.playerData.position)
 				{
 
 
-					clientCopy = it->second;
-					clientCopyCid = it->first;
+					clientCopy = connection->second;
+					clientCopyCid = connection->first;
 
 					//todo something better here...
 					auto s = getServerSettingsCopy();
@@ -442,7 +458,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 					//nothing changed
 				}
 
-				it->second.playerData.entity = packetData.playerData;
+				connection->second.playerData.entity = packetData.playerData;
 
 			}
 
@@ -630,6 +646,20 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 
 		}
 		break;
+
+		case headerSendPlayerSkin:
+		{
+			if (size > 4 * PLAYER_SKIN_SIZE * PLAYER_SKIN_SIZE) { break; }
+
+			connection->second.skinData.resize(size);
+			memcpy(connection->second.skinData.data(), data, size);
+			connection->second.skinDataCompressed = wasCompressed;
+
+			serverTask.t.taskType = Task::clientUpdatedSkin;
+			serverTasks.push_back(serverTask);
+		}
+		break;
+
 
 		default:
 
