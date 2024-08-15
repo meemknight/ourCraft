@@ -384,6 +384,11 @@ ServerSettings getServerSettingsCopy()
 	return sd.settings;
 }
 
+unsigned int getRandomTickSpeed()
+{
+	return sd.settings.randomTickSpeed;
+}
+
 void setServerSettings(ServerSettings settings)
 {
 	for (auto &s : sd.settings.perClientSettings)
@@ -1274,7 +1279,6 @@ void serverWorkerUpdate(
 		sd.ticksPerSeccond++;
 
 		{
-
 			if (settings.perClientSettings.begin()->second.spawnZombie)
 			{
 				settings.perClientSettings.begin()->second.spawnZombie = false;
@@ -1308,8 +1312,6 @@ void serverWorkerUpdate(
 
 				sendPlayerInventoryAndIncrementRevision(c.begin()->second);
 			}
-
-
 		}
 
 

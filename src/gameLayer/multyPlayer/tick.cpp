@@ -6,6 +6,7 @@
 #include <iostream>
 #include <multyPlayer/enetServerFunction.h>
 #include <deque>
+#include <platformTools.h>
 
 
 template <class T, class E>
@@ -142,13 +143,15 @@ void callGenericResetEntitiesInTheirNewChunk(std::integer_sequence<int, Is...>, 
 		chunkCache), ...);
 }
 
-
-
+//todo make sure a player can only be in only one tick
+//chunkCache has only chunks that shouldn't be unloaded! And no null ptrs
 void doGameTick(float deltaTime, std::uint64_t currentTimer,
-	ServerChunkStorer &chunkCache, EntityData &orphanEntities, unsigned int seed)
+	ServerChunkStorer &chunkCache, EntityData &orphanEntities,
+	unsigned int seed)
 {
 	std::minstd_rand rng(seed);
 
+	std::unordered_map<glm::ivec3, BlockType> modifiedBlocks;
 
 	static thread_local ServerChunkStorer *chunkCacheGlobal = 0;
 
@@ -167,7 +170,80 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 		}
 	};
 
+	//todo also send to entity update, and use there
+	std::unordered_map <std::uint64_t, PlayerServer *> allPlayers;
+	std::unordered_map < std::uint64_t, Client> allClients;
 
+#pragma region calculate all players
+
+	for (auto &c : chunkCache.savedChunks)
+	{
+		auto &playersMap = c.second->entityData.players;
+		for (auto &p : playersMap)
+		{
+			allPlayers.insert(p);
+		}
+	}
+
+	{
+		const auto &reff = getAllClientsReff();
+		for (auto p : allPlayers)
+		{
+			auto found = reff.find(p.first);
+			permaAssert(found != reff.end());
+			allClients.insert(*found);
+		}
+	}
+
+#pragma endregion
+
+
+#pragma region to random tick update
+
+	unsigned int randomTickSpeed = getRandomTickSpeed();
+
+	for (auto &c : chunkCache.savedChunks)
+	{
+		for (int h = 0; h < CHUNK_HEIGHT / 16; h++)
+		{
+			for (int i = 0; i < randomTickSpeed; i++)
+			{
+				int x = rng() % 16;
+				int y = rng() % 16;
+				int z = rng() % 16;
+				y += h * 16;
+
+				//if the code crashes here, that means that we wrongly got a nullptr chunk!
+				auto &b = c.second->chunk.unsafeGet(x,y,z);
+
+				if (b.type == BlockTypes::dirt)
+				{
+
+
+				}
+				else if (b.type == BlockTypes::grassBlock)
+				{
+					auto top = c.second->chunk.safeGet(x, y + 1, z);
+					if (top && top->stopsGrassFromGrowingIfOnTop())
+					{
+						//update block
+						b.type = BlockTypes::dirt;
+						modifiedBlocks[{x + c.first.x * CHUNK_SIZE, y, z + c.first.y * CHUNK_SIZE}] = b.type;
+						c.second->otherData.dirty = true;
+					}
+
+				}
+			}
+		}
+	};
+
+
+
+
+#pragma endregion
+
+
+#pragma region calculate player positions
 	std::unordered_map<std::uint64_t, glm::dvec3> playersPosition;
 
 	for (auto &c : chunkCache.savedChunks)
@@ -177,6 +253,7 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 			playersPosition.insert({p.first, p.second->getPosition()});
 		}
 	}
+#pragma endregion
 
 
 #pragma region calculate path finding
@@ -329,7 +406,6 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 #pragma endregion
 
 
-
 #pragma region entity updates
 
 	std::unordered_set<std::uint64_t> othersDeleted;
@@ -411,6 +487,44 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 
 #pragma endregion
 
+
+#pragma region send packets
+
+
+	//send new blocks
+	if (!modifiedBlocks.empty())
+	{
+
+		//todo ring buffer
+		Packet_PlaceBlocks *newBlocks = new Packet_PlaceBlocks[modifiedBlocks.size()];
+
+		Packet packet;
+		packet.cid = 0;
+		packet.header = headerPlaceBlocks;
+
+		int i = 0;
+		for (auto &b : modifiedBlocks)
+		{
+			newBlocks[i].blockPos = b.first;
+			newBlocks[i].blockType = b.second;
+			i++;
+		}
+
+		for (auto it = allClients.begin(); it != allClients.end(); it++)
+		{
+			{
+				sendPacket(it->second.peer, packet, (const char *)newBlocks, 
+					sizeof(Packet_PlaceBlocks) *modifiedBlocks.size(), true, channelChunksAndBlocks);
+			}
+		}
+
+
+		delete[] newBlocks;
+	}
+
+
+
+#pragma endregion
 
 
 

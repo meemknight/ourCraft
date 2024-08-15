@@ -87,7 +87,7 @@ uniform sampler2D u_lastFrameColor;
 uniform sampler2D u_lastFramePositionViewSpace;
 
 ///
-const float pointLightColor = 1.5f;
+const float pointLightColor = 1.0f;
 const float atenuationFactor = 0.5f;
 const float causticsTextureScale = 3.f;
 const float causticsChromaticAberationStrength = 0.004;	
@@ -742,7 +742,8 @@ float getBlockAO()
 	vec2 newUV = rez[pos - 1]; 
 	
 	float ao = texture2D(u_ao, newUV).r;
-	return clamp(pow(ao, 1.2) * 1.1f, 0.62f,1);
+	//return clamp(pow(ao, 1.2) * 1.4f, 0.62f,1);
+	return clamp(pow(ao, 1.2) * 1.4f, 0.70f,1);
 }
 
 in flat int v_isSkyLightMain;
@@ -764,8 +765,9 @@ void main()
 
 	const bool blockIsInWater = ((v_flags & 2) != 0);
 	const float baseAmbient = 0.25;
-	const float multiplier = 0.6;
-	vec3 computedAmbient = vec3(toLinear(v_ambient *  multiplier * (1.f-baseAmbient) + baseAmbient));
+	const float multiplier = 0.75;
+	vec3 computedAmbient = vec3(min(toLinear(v_ambient *  multiplier * (1.f-baseAmbient) + baseAmbient), 1));
+	//vec3 computedAmbient = vec3((v_ambient *  multiplier * (1.f-baseAmbient) + baseAmbient));
 	if(blockIsInWater)
 	{
 		computedAmbient *= vec3(0.38,0.4,0.42);
@@ -781,7 +783,7 @@ void main()
 
 	float blockAO = getBlockAO();
 	computedAmbient *= blockAO;
-	computedAmbient *= 1.1;
+	computedAmbient *= 1;
 
 	if(u_shaders == 0)
 	{

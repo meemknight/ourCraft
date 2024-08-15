@@ -317,7 +317,6 @@ void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
 
 }
 
-
 void workerThread(int index)
 {
 	std::cout << "Weaked up thread " << index << "\n";

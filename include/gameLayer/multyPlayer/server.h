@@ -43,6 +43,8 @@ struct ServerSettings
 	std::unordered_map<std::uint64_t, PerClientServerSettings> perClientSettings;
 
 	bool busyWait = 1;
+	unsigned int randomTickSpeed = 3;
+
 
 };
 
@@ -66,5 +68,7 @@ void removeCidFromServerSettings(std::uint64_t cid);
 void changePlayerGameMode(std::uint64_t cid, unsigned char gameMode);
 
 ServerSettings getServerSettingsCopy();
+
+unsigned int getRandomTickSpeed();
 
 void setServerSettings(ServerSettings settings);

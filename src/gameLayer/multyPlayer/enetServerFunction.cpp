@@ -44,13 +44,14 @@ std::uint64_t getCurrentEntityId()
 	return entityId;
 }
 
-void broadCastNotLocked(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel)
+void broadCastNotLocked(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, 
+	bool reliable, int channel)
 {
 	for (auto it = connections.begin(); it != connections.end(); it++)
 	{
 		if (!peerToIgnore || (it->second.peer != peerToIgnore))
 		{
-			sendPacket(it->second.peer, p, (const char *)data, size, true, channel);
+			sendPacket(it->second.peer, p, (const char *)data, size, reliable, channel);
 		}
 	}
 }

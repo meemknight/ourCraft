@@ -230,6 +230,11 @@ struct Block
 		return ::isColidable(type);
 	}
 
+	bool stopsGrassFromGrowingIfOnTop()
+	{
+		return isColidable() && !isAnyLeaves(type);
+	}
+
 	float getFriction();
 
 };

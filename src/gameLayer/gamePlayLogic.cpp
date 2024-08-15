@@ -713,8 +713,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 							}
 							else
 							{
-								gameData.currentBlockBreaking.totalTime = 0.2;
-								gameData.currentBlockBreaking.timer = 0.2;
+								gameData.currentBlockBreaking.totalTime = 0.3;
+								gameData.currentBlockBreaking.timer = 0.3;
 							}
 						}
 
