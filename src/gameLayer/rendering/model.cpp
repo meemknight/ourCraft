@@ -13,6 +13,7 @@
 #include <glm/vec3.hpp>
 #include <glm/gtc/type_ptr.hpp> // for glm::make_mat4
 #include <glm/gtx/quaternion.hpp>
+#include <fstream>
 
 glm::mat4 aiToGlm(const aiMatrix4x4 &matrix)
 {
@@ -82,7 +83,7 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		gpuIds.push_back(handle);
 	}
 
-	auto loadTexture = [&](const char *path, bool appendMode, int index)
+	auto loadTexture = [&](const char *path, bool appendMode, int index, bool isPlayerSkin = 0)
 	{
 
 		if (!appendMode && texturesIds[index] != texturesIds[0]) { return; } //we already have the texture
@@ -90,7 +91,14 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		gl2d::Texture texture = {};
 		GLuint64 handle = 0;
 
-		texture.loadFromFile(path, true, false);
+		if (isPlayerSkin)
+		{
+			texture = loadPlayerSkin(path);
+		}
+		else
+		{
+			texture.loadFromFile(path, true, true);
+		}
 
 		if (texture.id)
 		{
@@ -100,7 +108,7 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 6.f);
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 6.f);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 2.f);
 
 			glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -136,8 +144,8 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		int index = 1;
 		//the order matters!!!!
 		//loadTexture((path+"steve.png").c_str());
-		loadTexture((path + "giggasteve.png").c_str(), appendMode, index++);
-		loadTexture((path + "zombie.png").c_str(), appendMode, index++);
+		loadTexture((path + "giggasteve.png").c_str(), appendMode, index++, true);
+		loadTexture((path + "zombie.png").c_str(), appendMode, index++, true);
 		loadTexture((path + "pig.png").c_str(), appendMode, index++);
 		loadTexture((path+ "cat.png").c_str(), appendMode, index++);
 		
@@ -403,6 +411,55 @@ void animatePlayerLegs(glm::mat4 *poseVector,
 	poseVector[4] = poseVector[4] * glm::rotate(currentAngle, glm::vec3{1.f,0.f,0.f});
 	poseVector[5] = poseVector[5] * glm::rotate(-currentAngle, glm::vec3{1.f,0.f,0.f});
 
+}
+
+gl2d::Texture loadPlayerSkin(const char *path)
+{
+	//todo implement
+	std::ifstream file(path, std::ios::binary);
+
+	if (!file.is_open())
+	{
+		return {};
+	}
+
+	int fileSize = 0;
+	file.seekg(0, std::ios::end);
+	fileSize = (int)file.tellg();
+	file.seekg(0, std::ios::beg);
+	unsigned char *fileData = new unsigned char[fileSize];
+	file.read((char *)fileData, fileSize);
+	file.close();
+
+	gl2d::Texture texture;
+	{
+		stbi_set_flip_vertically_on_load(true);
+
+		int width = 0;
+		int height = 0;
+		int channels = 0;
+
+		const unsigned char *decodedImage = stbi_load_from_memory(fileData, (int)fileSize, &width, &height, &channels, 4);
+
+		if (width == height)
+		{
+			texture.createFromBuffer((const char *)decodedImage, width, height, true, true);
+		}
+		else if(width == height * 2)
+		{
+			std::vector<char> newData;
+			newData.resize(width * height * 4 * 2);
+			memcpy(newData.data() + width * height * 4, decodedImage, width * height * 4);
+			texture.createFromBuffer(newData.data(), width, height * 2, true, true);
+		}
+
+		STBI_FREE(decodedImage);
+
+	}
+
+	delete[] fileData;
+
+	return texture;
 }
 
 void Model::cleanup()

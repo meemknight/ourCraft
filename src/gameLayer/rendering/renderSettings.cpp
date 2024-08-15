@@ -196,6 +196,50 @@ inline void stubErrorFunc(const char *msg, void *userDefinedData)
 	
 }
 
+
+bool renderButton(gl2d::Renderer2D &renderer,
+	gl2d::Texture buttonTexture,
+	glm::ivec4 box)
+{
+	bool hovered = 0;
+	bool held = 0;
+	bool released = 0;
+	auto cursorPos = platform::getRelMousePosition();
+
+	if (glui::aabb(box, cursorPos))
+	{
+		hovered = 1;
+
+		if (platform::isLMouseHeld())
+		{
+			held = 1;
+		}
+		else if (platform::isLMouseReleased())
+		{
+			released = 1;
+		}
+	}
+
+	auto color = Colors_Gray;
+
+	if (hovered)
+	{
+		color += glm::vec4(0.1, 0.1, 0.1, 0);
+	}
+
+	if (held)
+	{
+		box.y += 10;
+	}
+
+	renderer.render9Patch(box,
+		20, color, {}, 0, buttonTexture,
+		GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
+
+	return released;
+};
+
+
 void displayTexturePacksSettingsMenu(ProgramData &programData)
 {
 	std::error_code err;
@@ -223,46 +267,6 @@ void displayTexturePacksSettingsMenu(ProgramData &programData)
 	//programData.ui.menuRenderer.cu
 	auto &renderer = programData.ui.renderer2d;
 
-	auto renderButton = [&](glm::ivec4 box) -> bool
-	{
-		bool hovered = 0;
-		bool held = 0;
-		bool released = 0;
-		auto cursorPos = platform::getRelMousePosition();
-
-		if (glui::aabb(box, cursorPos))
-		{
-			hovered = 1;
-
-			if (platform::isLMouseHeld())
-			{
-				held = 1;
-			}
-			else if (platform::isLMouseReleased())
-			{
-				released = 1;
-			}
-		}
-
-		auto color = Colors_Gray;
-
-		if (hovered)
-		{
-			color += glm::vec4(0.1, 0.1, 0.1, 0);
-		}
-
-		if (held)
-		{
-			box.y += 10;
-		}
-
-		renderer.render9Patch(box,
-			20, color, {}, 0, programData.ui.buttonTexture,
-			GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
-
-		return released;
-	};
-
 
 	auto renderBox = [&](glm::vec4 c)
 	{
@@ -284,7 +288,7 @@ void displayTexturePacksSettingsMenu(ProgramData &programData)
 			std::filesystem::create_directories(RESOURCES_PATH "texturePacks", err);
 		}
 
-		for (auto const &d : std::filesystem::directory_iterator{RESOURCES_PATH "texturePacks"})
+		for (auto const &d : std::filesystem::directory_iterator{RESOURCES_PATH "texturePacks", err})
 		{
 			if (d.is_directory())
 			{
@@ -382,7 +386,7 @@ void displayTexturePacksSettingsMenu(ProgramData &programData)
 						glui::Frame f(box);
 
 						auto button = glui::Box().xRight().yTop().yDimensionPercentage(1.f).xDimensionPixels(buttonSize)();
-						if (renderButton(button))
+						if (renderButton(renderer, programData.ui.buttonTexture, button))
 						{
 							if (left)
 							{
@@ -439,7 +443,7 @@ void displayTexturePacksSettingsMenu(ProgramData &programData)
 			{
 				auto currentDownBox = glui::Box().xLeft().yBottom().xDimensionPercentage(1).yDimensionPixels(buttonSize)();
 
-				if (renderButton(currentDownBox))
+				if (renderButton(renderer, programData.ui.buttonTexture, currentDownBox))
 				{
 					(*advance)++;
 				}
@@ -449,7 +453,7 @@ void displayTexturePacksSettingsMenu(ProgramData &programData)
 			{
 				auto currentUpperBox = glui::Box().xLeft().yTop().xDimensionPercentage(1).yDimensionPixels(buttonSize)();
 
-				if (renderButton(currentUpperBox))
+				if (renderButton(renderer, programData.ui.buttonTexture, currentUpperBox))
 				{
 					(*advance)--;
 				}
@@ -485,4 +489,199 @@ void displayTexturePacksSettingsMenu(ProgramData &programData)
 		}
 
 	}
+}
+
+std::string currentSkinSelected = "";
+
+gl2d::Texture currentTextureLoaded;
+std::string currentTextureLoadedName = "";
+
+void loadTexture()
+{
+
+	if (currentTextureLoadedName != currentSkinSelected || !currentTextureLoaded.id)
+	{
+		currentTextureLoaded.cleanup();
+	}
+
+	if(!currentTextureLoaded.id)
+	{
+		currentTextureLoadedName = currentSkinSelected;
+
+		if (currentTextureLoadedName == "")
+		{
+			currentTextureLoaded
+				= loadPlayerSkin(RESOURCES_PATH "assets/models/steve.png");
+		}
+		else
+		{
+			currentTextureLoaded
+				= loadPlayerSkin((RESOURCES_PATH "skins/" + currentTextureLoadedName + ".png").c_str());
+		}
+	}
+
+}
+
+std::string getSkinName()
+{
+	return currentSkinSelected;
+}
+
+void displaySkinSelectorMenu(ProgramData &programData)
+{
+	std::error_code err;
+
+	programData.ui.menuRenderer.Text("Change Skin", Colors_White);
+
+	//todo
+	//if (programData.ui.menuRenderer.Button("Open Folder", Colors_Gray))
+	//{
+	//	if (!std::filesystem::exists(RESOURCES_PATH "texturePacks"))
+	//	{
+	//		std::filesystem::create_directories(RESOURCES_PATH "texturePacks", err);
+	//	}
+	//	
+	//	openFolder(RESOURCES_PATH "texturePacks");
+	//}
+
+	glm::vec4 customWidgetTransform = {};
+	programData.ui.menuRenderer.CustomWidget(169, &customWidgetTransform);
+
+	//programData.ui.menuRenderer.cu
+	auto &renderer = programData.ui.renderer2d;
+	
+	auto renderBox = [&](glm::vec4 c)
+	{
+		renderer.render9Patch(glui::Box().xCenter().yCenter().xDimensionPercentage(1).yDimensionPercentage(1.f)(),
+			20, c, {}, 0, programData.ui.buttonTexture, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
+	};
+
+	if (programData.ui.menuRenderer.internal.allMenuStacks
+		[programData.ui.menuRenderer.internal.currentId].size()
+		&& programData.ui.menuRenderer.internal.allMenuStacks
+		[programData.ui.menuRenderer.internal.currentId].back() == "Change Skin"
+		)
+	{
+
+		if (!std::filesystem::exists(RESOURCES_PATH "skins"))
+		{
+			std::filesystem::create_directories(RESOURCES_PATH "skins", err);
+		}
+
+		std::vector<std::string> skins;
+
+		for (auto const &d : std::filesystem::directory_iterator{RESOURCES_PATH "skins", err})
+		{
+			if (!d.is_directory())
+			{
+				if (d.path().filename().extension() == ".png")
+				{
+					skins.push_back(d.path().filename().stem().string());
+				}
+			}
+		}
+
+		int posInVect = -1;
+		if (currentSkinSelected == "")
+		{
+			posInVect = -1;
+		}
+		else
+		{
+			int index = 0;
+			for(auto &s : skins)
+			{
+				if (s == currentSkinSelected)
+				{
+					currentSkinSelected = s;
+					posInVect = index;
+					break;
+				}
+				index++;
+			}
+		}
+
+		
+
+
+		glui::Frame f({0,0,renderer.windowW, renderer.windowH});
+		{
+			float ySize = renderer.windowH - customWidgetTransform.y - customWidgetTransform.w / 2.f;
+
+			glui::Frame f(glui::Box().xCenter().yTop(customWidgetTransform.y).
+				yDimensionPixels(ySize).xDimensionPercentage(0.9)());
+
+			//renderer.renderRectangle(glui::Box().xCenter().yCenter().xDimensionPercentage(1).yDimensionPercentage(1.f),
+			//	{1,0,0,1.0});
+			renderBox({0.4,0.4,0.4,0.5});
+
+
+			auto textBox = glui::Box().xCenter().yBottom().xDimensionPercentage(1).yDimensionPercentage(0.2)();
+			if (currentSkinSelected == "")
+			{
+				glui::renderText(renderer, "Default", programData.ui.font, textBox, Colors_White, true);
+			}
+			else
+			{
+				glui::renderText(renderer, currentSkinSelected, programData.ui.font, textBox, Colors_White, true);
+			}
+
+			auto center = glui::Box().xCenter().yCenter().yDimensionPercentage(0.5).xDimensionPercentage(0.5)();
+			center.z = std::min(center.z, center.w);
+			center = glui::Box().xCenter().yCenter().yDimensionPixels(center.z).xDimensionPixels(center.z)();
+
+			loadTexture();
+			if (currentTextureLoaded.id)
+			{
+				renderer.renderRectangle(center, currentTextureLoaded);
+			}
+
+			auto left = glui::Box().xLeft().yCenter().yDimensionPercentage(0.2).xAspectRatio(1.0)();
+			auto right = glui::Box().xRight().yCenter().yDimensionPercentage(0.2).xAspectRatio(1.0)();
+
+			//move cursor
+			{
+				if (renderButton(renderer, programData.ui.buttonTexture, left))
+				{
+					posInVect--;
+				}
+
+				if (renderButton(renderer, programData.ui.buttonTexture, right))
+				{
+					posInVect++;
+				}
+
+				if (posInVect < -1)
+				{
+					posInVect = skins.size() - 1;
+				}
+
+				if (posInVect >= skins.size())
+				{
+					posInVect = -1;
+				}
+
+				if (posInVect == -1)
+				{
+					currentSkinSelected = "";
+				}
+				else
+				{
+					currentSkinSelected = skins[posInVect];
+				}
+			}
+
+		
+		}
+	}
+
+}
+
+void displaySkinSelectorMenuButton(ProgramData &programData)
+{
+	programData.ui.menuRenderer.BeginMenu("Change Skin", Colors_Gray, programData.ui.buttonTexture);
+
+	displaySkinSelectorMenu(programData);
+
+	programData.ui.menuRenderer.EndMenu();
 }

@@ -1167,10 +1167,14 @@ struct DrawElementsIndirectCommand
 	GLuint baseInstance; // The base instance for use in fetching instanced vertex attributes.
 };
 
+
 void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSystem, Camera &c,
-	ProgramData &programData, BlocksLoader &blocksLoader, ClientEntityManager &entityManager, ModelsManager &modelsManager
+	ProgramData &programData, BlocksLoader &blocksLoader, ClientEntityManager &entityManager, 
+	ModelsManager &modelsManager
 	, bool showLightLevels, glm::dvec3 pointPos, bool underWater, int screenX, int screenY,
-	float deltaTime, float dayTime)
+	float deltaTime, float dayTime, 
+	GLuint64 currentSkinBindlessTexture
+	)
 {
 	glViewport(0, 0, screenX, screenY);
 
@@ -1768,7 +1772,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		programData.GPUProfiler.startSubProfile("entities");
 		renderEntities(deltaTime, c, modelsManager, blocksLoader,
 			entityManager, vp, c.getProjectionMatrix(), viewMatrix, posFloat, posInt,
-			programData.renderer.defaultShader.shadingSettings.exposure, chunkSystem, skyLightIntensity);
+			programData.renderer.defaultShader.shadingSettings.exposure, chunkSystem, skyLightIntensity,
+			currentSkinBindlessTexture);
 		programData.GPUProfiler.endSubProfile("entities");
 	#pragma endregion
 
@@ -1847,7 +1852,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		programData.GPUProfiler.startSubProfile("entities");
 		renderEntities(deltaTime, c, modelsManager, blocksLoader,
 			entityManager, vp, viewMatrix, c.getProjectionMatrix(), posFloat, posInt,
-			programData.renderer.defaultShader.shadingSettings.exposure, chunkSystem, skyLightIntensity);
+			programData.renderer.defaultShader.shadingSettings.exposure, chunkSystem, skyLightIntensity, 
+			currentSkinBindlessTexture);
 		programData.GPUProfiler.endSubProfile("entities");
 	#pragma endregion
 
@@ -2120,7 +2126,7 @@ void Renderer::renderEntities(
 	glm::vec3 posFloat,
 	glm::ivec3 posInt,
 	float exposure, ChunkSystem &chunkSystem, int 
-	skyLightIntensity
+	skyLightIntensity, GLuint64 currentSkinBindlessTexture
 	)
 {
 
@@ -2306,7 +2312,7 @@ void Renderer::renderEntities(
 			skinningMatrix.push_back( rotMatrix * glm::scale(glm::vec3{-1,1,1}) * transform * poseMatrix);
 
 			PerEntityData data = {};
-			data.textureId = modelsManager.gpuIds[ModelsManager::SteveTexture];
+			data.textureId = currentSkinBindlessTexture;
 			
 			glm::dvec3 position = glm::dvec3(posInt) + glm::dvec3(posFloat);
 
@@ -2376,7 +2382,7 @@ void Renderer::renderEntities(
 	//todo remove
 	entityRenderer.itemEntitiesToRender.clear();
 
-	//renderHand();
+	renderHand();
 
 	renderAllEntitiesOfOneType(modelsManager.human, entityManager.players, ModelsManager::SteveTexture);
 	renderAllEntitiesOfOneType(modelsManager.human, entityManager.zombies, ModelsManager::ZombieTexture);

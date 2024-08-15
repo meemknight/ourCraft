@@ -17,3 +17,9 @@ std::vector<std::filesystem::path> getUsedTexturePacksAndResetFlag();
 void displayTexturePacksSettingsMenuButton(ProgramData &programData);
 
 void displayTexturePacksSettingsMenu(ProgramData &programData);
+
+void displaySkinSelectorMenu(ProgramData &programData);
+
+void displaySkinSelectorMenuButton(ProgramData &programData);
+
+std::string getSkinName();

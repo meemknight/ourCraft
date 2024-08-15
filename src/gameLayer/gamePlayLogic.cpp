@@ -82,8 +82,41 @@ struct GameData
 
 	}currentBlockBreaking;
 
+	std::string currentSkinName = "";
+	gl2d::Texture currentSkinTexture = {};
+	GLuint64 currentSkinBindlessTexture = 0;
+
 }gameData;
 
+void loadCurrentSkin()
+{
+
+	if (gameData.currentSkinTexture.id)
+	{
+		gameData.currentSkinTexture.cleanup();
+	}
+
+	gameData.currentSkinName = getSkinName();
+	if (gameData.currentSkinName == "")
+	{
+
+	}
+	else
+	{
+		gameData.currentSkinTexture 
+			= loadPlayerSkin((RESOURCES_PATH "skins/" + gameData.currentSkinName + ".png").c_str());
+	}
+
+	if (!gameData.currentSkinTexture.id)
+	{
+		gameData.currentSkinTexture
+			= loadPlayerSkin(RESOURCES_PATH "assets/models/steve.png");
+	}
+
+	gameData.currentSkinBindlessTexture = glGetTextureHandleARB(gameData.currentSkinTexture.id);
+	glMakeTextureHandleResidentARB(gameData.currentSkinBindlessTexture);
+
+}
 
 bool initGameplay(ProgramData &programData, const char *c) //GAME STUFF!
 {
@@ -114,6 +147,8 @@ bool initGameplay(ProgramData &programData, const char *c) //GAME STUFF!
 
 	//TODO, MOVE TO PROGRAM DATA!!!!!!!!!!!
 	gameData.sunShadow.init();
+
+	loadCurrentSkin();
 
 	//-5359
 	//6348
@@ -160,7 +195,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	glViewport(0, 0, w, h);
 
 	auto &player = gameData.entityManager.localPlayer;
-
 
 #pragma region server stuff
 	{
@@ -318,6 +352,16 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 		//std::cout << gameData.serverTimer << "\n";
 	}
+#pragma endregion
+
+#pragma region reload skin
+
+	if (gameData.currentSkinName != getSkinName())
+	{
+		loadCurrentSkin();
+		//todo signal to others
+	}
+
 #pragma endregion
 
 
@@ -817,7 +861,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		programData.renderer.renderFromBakedData(gameData.sunShadow,gameData.chunkSystem, 
 			gameData.c, programData, programData.blocksLoader, gameData.entityManager,
 			programData.modelsManager, gameData.showLightLevels,
-			gameData.point, underWater, w, h, deltaTime, dayTime);
+			gameData.point, underWater, w, h, deltaTime, dayTime, gameData.currentSkinBindlessTexture);
 
 
 		if (gameData.currentBlockBreaking.breaking)
@@ -1593,6 +1637,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		displayRenderSettingsMenuButton(programData);
 
+		displaySkinSelectorMenuButton(programData);
+
 
 		programData.ui.menuRenderer.End();
 
@@ -1630,5 +1676,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 void closeGameLogic()
 {
 	gameData.chunkSystem.cleanup();
+	gameData.currentSkinTexture.cleanup();
+
 	gameData = GameData(); //free all resources
 }

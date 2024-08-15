@@ -385,6 +385,8 @@ bool gameLogic(float deltaTime)
 
 		displayRenderSettingsMenuButton(programData);
 
+		displaySkinSelectorMenuButton(programData);
+
 		if (!lastError.empty())
 		{
 			programData.ui.menuRenderer.Text(lastError, glm::vec4(1, 0, 0, 1));

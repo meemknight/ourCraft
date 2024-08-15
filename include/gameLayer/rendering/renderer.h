@@ -13,6 +13,7 @@ struct SunShadow;
 struct ClientEntityManager;
 struct ModelsManager;
 
+
 using uniform = GLint;
 
 struct Renderer
@@ -284,7 +285,8 @@ struct Renderer
 		ProgramData &programData, BlocksLoader &blocksLoader,
 		ClientEntityManager &entityManager, ModelsManager &modelsManager,
 		bool showLightLevels, glm::dvec3 pointPos,
-		bool underWater, int screenX, int screenY, float deltaTime, float dayTime);
+		bool underWater, int screenX, int screenY, float deltaTime, float dayTime,
+		GLuint64 currentSkinBindlessTexture);
 	
 	void renderDecal(glm::ivec3 position, Camera &c, Block b, ProgramData &programData, 
 		float crack);
@@ -294,7 +296,8 @@ struct Renderer
 		ModelsManager &modelsManager,
 		BlocksLoader &blocksLoader, ClientEntityManager &entityManager,
 		glm::mat4 &vp, glm::mat4 &projection, glm::mat4 &viewMatrix, glm::vec3 posFloat, glm::ivec3 posInt,
-		float exposure, ChunkSystem &chunkSystem, int skyLightIntensity);
+		float exposure, ChunkSystem &chunkSystem, int skyLightIntensity,
+		GLuint64 currentSkinBindlessTexture);
 
 	//todo implement this to optimize rendering
 	void renderPlayersHand(float deltaTime, ModelsManager &modelsManager,
