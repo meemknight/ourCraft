@@ -247,7 +247,7 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 	//int maxZ = pos.z + 2;
 
 	minY = std::max(0, minY);
-	maxY = std::min(CHUNK_HEIGHT-1, maxY);
+	maxY = std::min(CHUNK_HEIGHT, maxY);
 
 
 		for (int x = minX; x < maxX; x++)

@@ -1,5 +1,7 @@
 #version 430 core
 #extension GL_ARB_bindless_texture: require
+#pragma debug
+
 
 layout (location = 0) out vec4 out_color;
 layout (location = 1) out vec4 out_screenSpacePositions;
@@ -968,18 +970,21 @@ void main()
 		vec3 F0 = vec3(0.04); 
 		F0 = mix(F0, textureColor.rgb, vec3(metallic));
 
-
+		//compute lights color
+		//if(false)
 		for(int i=0; i< u_lightsCount; i++)
 		{
+			if(v_normalLight == 0){continue;}
 			vec3 L = compute(lights[i].rgb, vec3(0), fragmentPositionI, fragmentPositionF);
+			float LightDist = length(L);
+			if(LightDist > 15){continue;}
+
 			//vec3 L =compute(u_pointPosI, u_pointPosF, fragmentPositionI, fragmentPositionF);
 			
 			float menhetanDistance = dot((abs(fragmentPositionI-lights[i].rgb)),vec3(1));
 			//float menhetanDistance = dot((abs(L)),vec3(1));
 
-			if(v_normalLight == 0){continue;}
 
-			float LightDist = length(L);
 			if((15-menhetanDistance) + 0.1 > v_normalLight){continue;}
 			L = normalize(L);		
 

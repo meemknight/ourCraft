@@ -219,6 +219,61 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 				if (b.type == BlockTypes::dirt)
 				{
 
+					auto top = c.second->chunk.safeGet(x, y + 1, z);
+					if (top && top->stopsGrassFromGrowingIfOnTop())
+					{
+						//don't try to update block
+					}
+					else
+					{
+						auto tryBlock = [&](int i, int j, int k)
+						{
+							auto b = chunkCache
+								.getBlockSafe({x + c.first.x * CHUNK_SIZE + i,
+								y + j, z + c.first.y * CHUNK_SIZE + k});
+
+							if (b && b->type == grassBlock)
+							{
+								return true;
+							}
+							return false;
+						};
+
+						if (tryBlock(1, 0, 0) ||
+							tryBlock(-1, 0, 0) ||
+							tryBlock(0, 0, 1) ||
+							tryBlock(0, 0, -1) ||
+							tryBlock(1, 0, 1) ||
+							tryBlock(-1, 0, 1) ||
+							tryBlock(1, 0, -1) ||
+							tryBlock(-1, 0, -1) ||
+
+							tryBlock(1, -1, 0) ||
+							tryBlock(-1, -1, 0) ||
+							tryBlock(0, -1, 1) ||
+							tryBlock(0, -1, -1) ||
+							tryBlock(1, -1, 1) ||
+							tryBlock(-1, -1, 1) ||
+							tryBlock(1, -1, -1) ||
+							tryBlock(-1, -1, -1) ||
+
+							tryBlock(1, 1, 0) ||
+							tryBlock(-1, 1, 0) ||
+							tryBlock(0, 1, 1) ||
+							tryBlock(0, 1, -1) ||
+							tryBlock(1, 1, 1) ||
+							tryBlock(-1,1, 1) ||
+							tryBlock(1, 1, -1) ||
+							tryBlock(-1, 1, -1)
+							)
+						{
+							//update block
+							b.type = BlockTypes::grassBlock;
+							modifiedBlocks[{x + c.first.x * CHUNK_SIZE, y, z + c.first.y * CHUNK_SIZE}] = b.type;
+							c.second->otherData.dirty = true;
+						}
+
+					}
 
 				}
 				else if (b.type == BlockTypes::grassBlock)
