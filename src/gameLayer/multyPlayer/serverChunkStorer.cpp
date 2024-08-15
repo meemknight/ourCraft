@@ -239,12 +239,12 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 					{
 						auto b = newC->chunk.unsafeGet(inChunkPos.x, y, inChunkPos.y);
 
-						if (b.type == BlockTypes::grassBlock)
+						if (b.getType() == BlockTypes::grassBlock)
 						{
 							y++;
 							break;
 						}
-						else if (b.type == BlockTypes::air || b.type == BlockTypes::grass)
+						else if (b.getType() == BlockTypes::air || b.getType() == BlockTypes::grass)
 						{
 
 						}
@@ -342,47 +342,47 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 						auto b = tryGetBlockIfChunkExistsNoChecks(pos);
 						assert(b);
 
-						if (isControlBlock(b->type))
+						if (isControlBlock(b->getType()))
 						{
-							b->type = BlockTypes::jungle_leaves;
+							b->setType(BlockTypes::jungle_leaves);
 
 							auto bUp = tryGetBlockIfChunkExistsNoChecks(pos + glm::ivec3(0, 1, 0));
 
-							bUp->type = BlockTypes::jungle_leaves;
+							bUp->setType(BlockTypes::jungle_leaves);
 
 							auto b2 = tryGetBlockIfChunkExistsNoChecks({pos.x,pos.y,pos.z - 1});
 							auto b3 = tryGetBlockIfChunkExistsNoChecks({pos.x,pos.y,pos.z + 1});
 							auto b4 = tryGetBlockIfChunkExistsNoChecks({pos.x - 1,pos.y,pos.z});
 							auto b5 = tryGetBlockIfChunkExistsNoChecks({pos.x + 1,pos.y,pos.z});
 
-							if (b2 && isControlBlock(b2->type))
+							if (b2 && isControlBlock(b2->getType()))
 							{
-								b2->type = BlockTypes::jungle_leaves;
+								b2->setType(BlockTypes::jungle_leaves);
 								auto bUp = tryGetBlockIfChunkExistsNoChecks(pos + glm::ivec3(0, 1, -1));
-								bUp->type = BlockTypes::jungle_leaves;
+								bUp->setType(BlockTypes::jungle_leaves);
 
 							}
 							else
-								if (b3 && isControlBlock(b3->type))
-								{
-									b3->type = BlockTypes::jungle_leaves;
-									auto bUp = tryGetBlockIfChunkExistsNoChecks(pos + glm::ivec3(0, 1, +1));
-									bUp->type = BlockTypes::jungle_leaves;
-								}
-								else
-									if (b4 && isControlBlock(b4->type))
-									{
-										b4->type = BlockTypes::jungle_leaves;
-										auto bUp = tryGetBlockIfChunkExistsNoChecks(pos + glm::ivec3(-1, 1, 0));
-										bUp->type = BlockTypes::jungle_leaves;
-									}
-									else
-										if (b5 && isControlBlock(b5->type))
-										{
-											b5->type = BlockTypes::jungle_leaves;
-											auto bUp = tryGetBlockIfChunkExistsNoChecks(pos + glm::ivec3(+1, 1, 0));
-											bUp->type = BlockTypes::jungle_leaves;
-										}
+							if (b3 && isControlBlock(b3->getType()))
+							{
+								b3->setType(BlockTypes::jungle_leaves);
+								auto bUp = tryGetBlockIfChunkExistsNoChecks(pos + glm::ivec3(0, 1, +1));
+								bUp->setType(BlockTypes::jungle_leaves);
+							}
+							else
+							if (b4 && isControlBlock(b4->getType()))
+							{
+								b4->setType(BlockTypes::jungle_leaves);
+								auto bUp = tryGetBlockIfChunkExistsNoChecks(pos + glm::ivec3(-1, 1, 0));
+								bUp->setType(BlockTypes::jungle_leaves);
+							}
+							else
+							if (b5 && isControlBlock(b5->getType()))
+							{
+								b5->setType(BlockTypes::jungle_leaves);
+								auto bUp = tryGetBlockIfChunkExistsNoChecks(pos + glm::ivec3(+1, 1, 0));
+								bUp->setType(BlockTypes::jungle_leaves);
+							}
 						}
 					};
 
@@ -428,7 +428,7 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 							auto b = tryGetBlockIfChunkExistsNoChecks(pos);
 							if (b)
 							{
-								b->type = BlockTypes::jungle_planks;
+								b->setType(BlockTypes::jungle_planks);
 							}
 							pos += delta;
 						}
@@ -436,7 +436,7 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 						auto b = tryGetBlockIfChunkExistsNoChecks(from);
 						if (b)
 						{
-							b->type = BlockTypes::jungle_planks;
+							b->setType(BlockTypes::jungle_planks);
 						}
 					};
 
@@ -449,7 +449,7 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 						auto tryNeighbour = [this](glm::ivec3 pos)
 						{
 							auto b = tryGetBlockIfChunkExistsNoChecks(pos);
-							if (b && isControlBlock(b->type))
+							if (b && isControlBlock(b->getType()))
 							{
 								return true;
 							}
@@ -616,12 +616,12 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 						{
 							auto b = newC->chunk.unsafeGet(inChunkPos.x, y, inChunkPos.y);
 
-							if (b.type == BlockTypes::sand || b.type == BlockTypes::sand_stone)
+							if (b.getType() == BlockTypes::sand || b.getType() == BlockTypes::sand_stone)
 							{
 								y -= 6 * randValues[randomIndex++];
 								break;
 							}
-							else if (b.type == BlockTypes::air || b.type == BlockTypes::grass)
+							else if (b.getType() == BlockTypes::air || b.getType() == BlockTypes::grass)
 							{
 
 							}
@@ -685,11 +685,11 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 						{
 							auto b = newC->chunk.unsafeGet(inChunkPos.x, y, inChunkPos.y);
 
-							if (b.type == BlockTypes::snow_block)
+							if (b.getType() == BlockTypes::snow_block)
 							{
 								break;
 							}
-							else if (b.type == BlockTypes::air || b.type == BlockTypes::grass)
+							else if (b.getType() == BlockTypes::air || b.getType() == BlockTypes::grass)
 							{
 
 							}
@@ -852,7 +852,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 
 						auto &b = c->chunk.unsafeGet(inChunkX, y, inChunkZ);
 
-						if (b.type == BlockTypes::air || replaceAnything)
+						if (b.getType() == BlockTypes::air || replaceAnything)
 						{
 							auto newB = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z,
 								rotation);
@@ -861,7 +861,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 
 							if (newB != BlockTypes::air)
 							{
-								b.type = newB;
+								b.setType(newB);
 
 								if (sendDataToPlayers)
 								{
@@ -1140,9 +1140,9 @@ void ServerChunkStorer::placeGhostBlocksForChunk(int posX, int posZ, ChunkData &
 
 			auto &block = c.unsafeGet(pos.x, pos.y, pos.z);
 
-			if (b.second.replaceAnything || block.type == BlockTypes::air)
+			if (b.second.replaceAnything || block.getType() == BlockTypes::air)
 			{
-				block.type = b.second.type;
+				block.setType(b.second.type);
 			}
 		}
 

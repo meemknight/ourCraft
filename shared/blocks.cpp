@@ -203,7 +203,7 @@ bool isBlock(std::uint16_t type)
 
 float Block::getFriction()
 {
-	if (type == BlockTypes::ice)
+	if (getType() == BlockTypes::ice)
 	{
 		return 1.f;
 	}

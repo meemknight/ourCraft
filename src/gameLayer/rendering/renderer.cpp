@@ -1173,7 +1173,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	ModelsManager &modelsManager
 	, bool showLightLevels, glm::dvec3 pointPos, bool underWater, int screenX, int screenY,
 	float deltaTime, float dayTime, 
-	GLuint64 currentSkinBindlessTexture
+	GLuint64 currentSkinBindlessTexture, bool &playerClicked, float playerRunning,
+	BoneTransform &playerHand
 	)
 {
 	glViewport(0, 0, screenX, screenY);
@@ -1773,7 +1774,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		renderEntities(deltaTime, c, modelsManager, blocksLoader,
 			entityManager, vp, c.getProjectionMatrix(), viewMatrix, posFloat, posInt,
 			programData.renderer.defaultShader.shadingSettings.exposure, chunkSystem, skyLightIntensity,
-			currentSkinBindlessTexture);
+			currentSkinBindlessTexture, playerClicked, playerRunning, playerHand);
 		programData.GPUProfiler.endSubProfile("entities");
 	#pragma endregion
 
@@ -1853,7 +1854,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		renderEntities(deltaTime, c, modelsManager, blocksLoader,
 			entityManager, vp, viewMatrix, c.getProjectionMatrix(), posFloat, posInt,
 			programData.renderer.defaultShader.shadingSettings.exposure, chunkSystem, skyLightIntensity, 
-			currentSkinBindlessTexture);
+			currentSkinBindlessTexture, playerClicked, playerRunning, playerHand);
 		programData.GPUProfiler.endSubProfile("entities");
 	#pragma endregion
 
@@ -2033,17 +2034,17 @@ void Renderer::renderDecal(glm::ivec3 position, Camera &c, Block b, ProgramData 
 	{
 		for (int i = 6; i <= 9; i++)
 		{
-			currentVector.push_back(mergeShorts(i, getGpuIdIndexForBlock(b.type, 0)));
+			currentVector.push_back(mergeShorts(i, getGpuIdIndexForBlock(b.getType(), 0)));
 
 			pushFlagsLightAndPosition(currentVector, position, 0, 0, 15, 15, 0);
 
 		}
 	}
-	else if (b.type == BlockTypes::torch)
+	else if (b.getType() == BlockTypes::torch)
 	{
 		for (int i = 0; i < 6; i++)
 		{
-			currentVector.push_back(mergeShorts(i + 16, getGpuIdIndexForBlock(b.type, i)));
+			currentVector.push_back(mergeShorts(i + 16, getGpuIdIndexForBlock(b.getType(), i)));
 
 			pushFlagsLightAndPosition(currentVector, position, 0, 0, 15, 15, 0);
 		}
@@ -2055,7 +2056,7 @@ void Renderer::renderDecal(glm::ivec3 position, Camera &c, Block b, ProgramData 
 		for (int i = 0; i < 6; i++)
 		{
 			//todo face type or remove
-			currentVector.push_back(mergeShorts(i + isAnimated * 10, getGpuIdIndexForBlock(b.type, i)));
+			currentVector.push_back(mergeShorts(i + isAnimated * 10, getGpuIdIndexForBlock(b.getType(), i)));
 
 			pushFlagsLightAndPosition(currentVector, position, 0, 0,
 				15, 15, 0);
@@ -2126,7 +2127,8 @@ void Renderer::renderEntities(
 	glm::vec3 posFloat,
 	glm::ivec3 posInt,
 	float exposure, ChunkSystem &chunkSystem, int 
-	skyLightIntensity, GLuint64 currentSkinBindlessTexture
+	skyLightIntensity, GLuint64 currentSkinBindlessTexture,
+	bool &playerClicked, float playerRunning, BoneTransform &playerHand
 	)
 {
 
@@ -2295,12 +2297,49 @@ void Renderer::renderEntities(
 		entityData.reserve(model.transforms.size());
 
 		{
+			BoneTransform handIdle;
+			handIdle.position = glm::vec3{0.2,-2.0,-0.5};
+			handIdle.rotation = glm::vec3{glm::radians(120.f),0.f,0.f};
+
+			BoneTransform handHit;
+			handHit.position = glm::vec3{0.1,-2.1,-0.9};
+			handHit.rotation = glm::vec3{glm::radians(90.f),glm::radians(25.f),glm::radians(5.f)};
+
+			float hitSpeed = 6 * deltaTime;
+			float returnSpeed = 4 * deltaTime;
+
+			static bool hitReturn = 0;
+
+			if (playerClicked)
+			{
+				if (hitReturn)
+				{
+					if (playerHand.goTowards(handIdle, hitSpeed))
+					{
+						hitReturn = false;
+						playerClicked = false;
+					}
+				}
+				else
+				{
+					if (playerHand.goTowards(handHit, hitSpeed))
+					{
+						hitReturn = true;
+						playerClicked = false;
+					}
+				}
+
+				
+			}
+			else
+			{
+				hitReturn = 0;
+				playerHand.goTowards(handIdle, returnSpeed);
+			}
+
 
 			auto transform = model.transforms[0]; //loaded from glb file
-			auto poseMatrix = glm::mat4(1.f); //hand movement;
-
-			poseMatrix = glm::translate(glm::vec3{0.1,-2.0,-0.6});
-			poseMatrix = poseMatrix * glm::rotate(glm::radians(120.f), glm::vec3{1,0,0});
+			auto poseMatrix = playerHand.getPoseMatrix();
 			
 			glm::vec3 lookDirection = c.viewDirection;
 			glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);

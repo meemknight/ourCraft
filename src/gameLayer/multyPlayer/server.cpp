@@ -616,14 +616,14 @@ void serverWorkerUpdate(
 
 							if (i.t.taskType == Task::placeBlock)
 							{
-								if (!canBlockBePlaced(i.t.blockType, b->type))
+								if (!canBlockBePlaced(i.t.blockType, b->getType()))
 								{
 									legal = false;
 								}
 							}
 							else
 							{
-								if (!canBlockBeBreaked(b->type, client->playerData.otherPlayerSettings.gameMode 
+								if (!canBlockBeBreaked(b->getType(), client->playerData.otherPlayerSettings.gameMode
 									== OtherPlayerSettings::CREATIVE))
 								{
 									legal = false;
@@ -648,8 +648,8 @@ void serverWorkerUpdate(
 
 						if (legal)
 						{
-							auto lastBlock = b->type;
-							b->type = i.t.blockType;
+							auto lastBlock = b->getType();
+							b->setType(i.t.blockType);
 							chunk->otherData.dirty = true;
 
 							{
@@ -1180,7 +1180,7 @@ void serverWorkerUpdate(
 							{
 								auto b = chunk->chunk.safeGet(convertedX, i.t.pos.y, convertedZ);
 
-								if (b && b->type == blockType
+								if (b && b->getType() == blockType
 									&& isInteractable(blockType)
 									)
 								{

@@ -4,7 +4,7 @@
 #include <string>
 
 
-constexpr static unsigned short ItemsStartPoint = 4'096;
+constexpr static unsigned short ItemsStartPoint = 1'024;
 
 enum ItemTypes
 {

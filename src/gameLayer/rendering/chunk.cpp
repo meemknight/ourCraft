@@ -518,11 +518,11 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 				)
 				)
 			{
-				currentVector->push_back(mergeShorts(i + isAnimated * 10, getGpuIdIndexForBlock(b.type, i)));
+				currentVector->push_back(mergeShorts(i + isAnimated * 10, getGpuIdIndexForBlock(b.getType(), i)));
 
 				int aoShape = determineAOShape(i, sides);
 
-				bool isInWater = (sides[i] != nullptr) && sides[i]->type == BlockTypes::water;
+				bool isInWater = (sides[i] != nullptr) && sides[i]->getType() == BlockTypes::water;
 
 				if (dontUpdateLightSystem)
 				{
@@ -530,7 +530,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 						15, 15, aoShape);
 
 				}
-				else if (isLightEmitor(b.type))
+				else if (isLightEmitor(b.getType()))
 				{
 					pushFlagsLightAndPosition(*currentVector, position, 0, isInWater,
 						b.getSkyLight(), 15, aoShape);
@@ -596,10 +596,10 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		{
 			int i = distances[index].y;
 
-			bool isWater = b.type == BlockTypes::water;
+			bool isWater = b.getType() == BlockTypes::water;
 
 			if ((sides[i] != nullptr
-				&& (!(sides[i])->isOpaque() && sides[i]->type != b.type)
+				&& (!(sides[i])->isOpaque() && sides[i]->getType() != b.getType())
 				)||
 				(
 					isWater && i == 2 //display water if there is a block on top
@@ -612,10 +612,10 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 			{
 
 				//no faces in between water
-				if (isWater && sides[i] && sides[i]->type == BlockTypes::water) { continue; }
+				if (isWater && sides[i] && sides[i]->getType() == BlockTypes::water) { continue; }
 
 				//no faces in between same types
-				if (sides[i] && sides[i]->type == b.type) { continue; }
+				if (sides[i] && sides[i]->getType() == b.getType()) { continue; }
 
 
 				if (isWater)
@@ -633,10 +633,10 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 							if (sides[BOTTOM])
 							{
 								auto blockBottom = *sides[BOTTOM];
-								if (blockBottom.type == BlockTypes::water)
+								if (blockBottom.getType() == BlockTypes::water)
 								{
 									if (sides[checkDown]
-										&& (sides[checkDown]->type == BlockTypes::water)
+										&& (sides[checkDown]->getType() == BlockTypes::water)
 										)
 									{
 										bottomVariant = true;
@@ -666,7 +666,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 						if (y < CHUNK_HEIGHT - 1)
 						{
 							auto blockTop = unsafeGet(x, y + 1, z);
-							if (blockTop.type != BlockTypes::water)
+							if (blockTop.getType() != BlockTypes::water)
 							{
 								currentIndex += 22;
 								topVariant = false;
@@ -698,11 +698,11 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 							if (i == 5) { currentIndex = 31; } //front
 						}
 
-						currentVector->push_back(mergeShorts(currentIndex, getGpuIdIndexForBlock(b.type, i)));
+						currentVector->push_back(mergeShorts(currentIndex, getGpuIdIndexForBlock(b.getType(), i)));
 					}
 					else
 					{
-						currentVector->push_back(mergeShorts(i + 22, getGpuIdIndexForBlock(b.type, i)));
+						currentVector->push_back(mergeShorts(i + 22, getGpuIdIndexForBlock(b.getType(), i)));
 					}
 
 					//if (!sides[2] || sides[2]->type != BlockTypes::water)
@@ -713,12 +713,12 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 				}
 				else
 				{
-					currentVector->push_back(mergeShorts(i, getGpuIdIndexForBlock(b.type, i)));
+					currentVector->push_back(mergeShorts(i, getGpuIdIndexForBlock(b.getType(), i)));
 				}
 
 				int aoShape = determineAOShape(i, sides);
 			
-				bool isInWater = (sides[i] != nullptr) && sides[i]->type == BlockTypes::water;
+				bool isInWater = (sides[i] != nullptr) && sides[i]->getType() == BlockTypes::water;
 
 				if (dontUpdateLightSystem)
 				{
@@ -782,8 +782,8 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 		for (int i = 6; i <= 9; i++)
 		{
-			//opaqueGeometry.push_back(mergeShorts(i, b.type));
-			currentVector->push_back(mergeShorts(i, getGpuIdIndexForBlock(b.type, 0)));
+			//opaqueGeometry.push_back(mergeShorts(i, b.getType()));
+			currentVector->push_back(mergeShorts(i, getGpuIdIndexForBlock(b.getType(), 0)));
 
 			if (dontUpdateLightSystem)
 			{
@@ -814,7 +814,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 				if (bbottom && bbottom->isOpaque()) { continue; }
 			}
 
-			currentVector->push_back(mergeShorts(i + 16, getGpuIdIndexForBlock(b.type, i)));
+			currentVector->push_back(mergeShorts(i + 16, getGpuIdIndexForBlock(b.getType(), i)));
 
 			if (dontUpdateLightSystem)
 			{
@@ -855,7 +855,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 						{
 							blockBakeLogicForGrassMesh(x, y, z, &opaqueGeometry, b);
 						}
-						else if (b.type == BlockTypes::torch)
+						else if (b.getType() == BlockTypes::torch)
 						{
 							blockBakeLogicForTorches(x, y, z, &opaqueGeometry, b);
 						}else

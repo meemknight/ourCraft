@@ -171,7 +171,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 								auto &b = i->unsafeGet(x, y, z);
 
-								if (isLightEmitor(b.type))
+								if (isLightEmitor(b.getType()))
 								{
 									lightSystem.addLight(*this,
 										{i->data.x * CHUNK_SIZE + x, y, i->data.z * CHUNK_SIZE + z},
@@ -1090,7 +1090,7 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot
 		//todo check mob colisions
 
 
-		if (canBlockBePlaced(item->type, b->type))
+		if (canBlockBePlaced(item->type, b->getType()))
 		{
 
 			Packet p = {};
@@ -1108,12 +1108,12 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot
 				p, (char *)&packetData, sizeof(packetData), 1,
 				channelChunksAndBlocks);
 
-			undoQueue.addPlaceBlockEvent(pos, b->type, item->type, playerPos);
+			undoQueue.addPlaceBlockEvent(pos, b->getType(), item->type, playerPos);
 
-			changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->type,
+			changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->getType(),
 				item->type, lightSystem);
 
-			b->type = item->type;
+			b->setType(item->type);
 			if (b->isOpaque()) { b->lightLevel = 0; }
 
 			setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
@@ -1163,12 +1163,12 @@ bool ChunkSystem::breakBlockByClient(glm::ivec3 pos, UndoQueue &undoQueue,
 				p, (char *)&packetData, sizeof(packetData), 1,
 				channelChunksAndBlocks);
 
-			undoQueue.addPlaceBlockEvent(pos, b->type, BlockTypes::air, playerPos);
+			undoQueue.addPlaceBlockEvent(pos, b->getType(), BlockTypes::air, playerPos);
 
-			changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->type,
+			changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->getType(),
 				BlockTypes::air, lightSystem);
 
-			b->type = BlockTypes::air;
+			b->setType(BlockTypes::air);
 
 			setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
 
@@ -1194,9 +1194,9 @@ void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, BlockType type, LightSystem
 
 	if (b != nullptr)
 	{
-		changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->type, type, lightSystem);
+		changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->getType(), type, lightSystem);
 
-		b->type = type;
+		b->setType(type);
 		if (b->isOpaque()) { b->lightLevel = 0; }
 
 		setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);

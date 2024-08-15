@@ -470,3 +470,55 @@ void Model::cleanup()
 
 	*this = {};
 }
+
+glm::mat4 BoneTransform::getPoseMatrix()
+{
+	auto poseMatrix = glm::mat4(1.f);
+	poseMatrix = glm::translate(position) 
+		* glm::toMat4(rotation);
+
+	return poseMatrix;
+}
+
+bool BoneTransform::goTowards(BoneTransform &other, float speed)
+{
+	// 1. Move position towards the target at a constant speed
+	glm::vec3 direction = other.position - position;
+	float distanceToMove = speed;
+	float distanceToTarget = glm::length(direction);
+
+	bool ret = false;
+
+	if (distanceToMove >= distanceToTarget)
+	{
+		position = other.position; // Clamp to target
+		ret = true;
+	}
+	else
+	{
+		position += glm::normalize(direction) * distanceToMove;
+	}
+
+	// 2. Rotate towards the target at a constant angular speed
+	float dot = glm::dot(rotation, other.rotation);
+
+	// Clamp dot to prevent errors due to floating point precision
+	dot = glm::clamp(dot, -1.0f, 1.0f);
+
+	// Calculate the angle between the quaternions
+	float angle = std::acos(dot) * 2.0f;
+
+	float angleToMove = speed;
+
+	if (angleToMove >= angle)
+	{
+		rotation = other.rotation; // Clamp to target
+	}
+	else
+	{
+		rotation = glm::slerp(rotation, other.rotation, angleToMove / angle);
+		ret = false;
+	}
+
+	return ret;
+}

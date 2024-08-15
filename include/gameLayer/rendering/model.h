@@ -18,7 +18,15 @@ struct Model
 	void cleanup();
 };
 
+struct BoneTransform
+{
+	glm::quat rotation = {0,0,0,1};
+	glm::vec3 position = {};
 
+	glm::mat4 getPoseMatrix();
+
+	bool goTowards(BoneTransform &other, float speed);
+};
 
 
 struct ModelsManager

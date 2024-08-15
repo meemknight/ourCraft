@@ -216,7 +216,7 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 				//if the code crashes here, that means that we wrongly got a nullptr chunk!
 				auto &b = c.second->chunk.unsafeGet(x,y,z);
 
-				if (b.type == BlockTypes::dirt)
+				if (b.getType() == BlockTypes::dirt)
 				{
 
 					auto top = c.second->chunk.safeGet(x, y + 1, z);
@@ -232,7 +232,7 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 								.getBlockSafe({x + c.first.x * CHUNK_SIZE + i,
 								y + j, z + c.first.y * CHUNK_SIZE + k});
 
-							if (b && b->type == grassBlock)
+							if (b && b->getType() == grassBlock)
 							{
 								return true;
 							}
@@ -268,22 +268,22 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 							)
 						{
 							//update block
-							b.type = BlockTypes::grassBlock;
-							modifiedBlocks[{x + c.first.x * CHUNK_SIZE, y, z + c.first.y * CHUNK_SIZE}] = b.type;
+							b.setType(BlockTypes::grassBlock);
+							modifiedBlocks[{x + c.first.x * CHUNK_SIZE, y, z + c.first.y * CHUNK_SIZE}] = b.getType();
 							c.second->otherData.dirty = true;
 						}
 
 					}
 
 				}
-				else if (b.type == BlockTypes::grassBlock)
+				else if (b.getType() == BlockTypes::grassBlock)
 				{
 					auto top = c.second->chunk.safeGet(x, y + 1, z);
 					if (top && top->stopsGrassFromGrowingIfOnTop())
 					{
 						//update block
-						b.type = BlockTypes::dirt;
-						modifiedBlocks[{x + c.first.x * CHUNK_SIZE, y, z + c.first.y * CHUNK_SIZE}] = b.type;
+						b.setType(BlockTypes::dirt);
+						modifiedBlocks[{x + c.first.x * CHUNK_SIZE, y, z + c.first.y * CHUNK_SIZE}] = b.getType();
 						c.second->otherData.dirty = true;
 					}
 

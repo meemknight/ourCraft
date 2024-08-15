@@ -86,6 +86,15 @@ struct GameData
 	gl2d::Texture currentSkinTexture = {};
 	GLuint64 currentSkinBindlessTexture = 0;
 
+	 
+	BoneTransform playerFOVHandTransform{
+		glm::vec3{glm::radians(120.f),0.f,0.f},
+		glm::vec3{0.2,-2.0,-0.5}
+	};
+
+	bool handHit = 0;
+		
+
 }gameData;
 
 void loadCurrentSkin()
@@ -603,13 +612,21 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	glm::dvec3 cameraRayPos = gameData.c.position;
 	Block *raycastBlock = 0;
 
+
 	if (!gameData.insideInventoryMenu)
 	{
+
+		if (platform::isLMouseHeld() || platform::isRMousePressed())
+		{
+			gameData.handHit = true;
+		}
+
+
 		raycastBlock = gameData.chunkSystem.rayCast(cameraRayPos, gameData.c.viewDirection, rayCastPos, 20, blockToPlace);
 		if (raycastBlock)
 		{
 			//todo special function here
-			if (raycastBlock->type != BlockTypes::water)
+			if (raycastBlock->getType() != BlockTypes::water)
 			{
 				programData.gyzmosRenderer.drawCube(rayCastPos);
 			}
@@ -650,7 +667,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					auto b = gameData.chunkSystem.getBlockSafe(rayCastPos);
 					if (b)
 					{
-						Item newItem(b->type);
+						Item newItem(b->getType());
 
 						item = newItem;
 
@@ -690,7 +707,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 						if(b)
 						{
 							
-							auto actionType = isInteractable(b->type);
+							auto actionType = isInteractable(b->getType());
 
 							if (actionType)
 							{
@@ -701,7 +718,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 								gameData.blockInteractionPosition = rayCastPos;
 
 								sendBlockInteractionMessage(player.entityId, rayCastPos,
-									b->type, gameData.currentBlockInteractionRevisionNumber);
+									b->getType(), gameData.currentBlockInteractionRevisionNumber);
 								
 								gameData.insideInventoryMenu = true;
 
@@ -764,7 +781,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 							if (player.otherPlayerSettings.gameMode == OtherPlayerSettings::SURVIVAL)
 							{
-								gameData.currentBlockBreaking.timer = computeMineDurationTime(raycastBlock->type,
+								gameData.currentBlockBreaking.timer = computeMineDurationTime(raycastBlock->getType(),
 									*player.inventory.getItemFromIndex(gameData.currentItemSelected));
 								gameData.currentBlockBreaking.totalTime = gameData.currentBlockBreaking.timer;
 							}
@@ -821,7 +838,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	auto inBlock = gameData.chunkSystem.getBlockSafe(blockPositionPlayer);
 	if (inBlock)
 	{
-		if (inBlock->type == BlockTypes::water)
+		if (inBlock->getType() == BlockTypes::water)
 		{
 			underWater = 1;
 		}
@@ -874,7 +891,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		programData.renderer.renderFromBakedData(gameData.sunShadow,gameData.chunkSystem, 
 			gameData.c, programData, programData.blocksLoader, gameData.entityManager,
 			programData.modelsManager, gameData.showLightLevels,
-			gameData.point, underWater, w, h, deltaTime, dayTime, gameData.currentSkinBindlessTexture);
+			gameData.point, underWater, w, h, deltaTime, dayTime, gameData.currentSkinBindlessTexture,
+			gameData.handHit, 0, gameData.playerFOVHandTransform
+			);
 
 
 		if (gameData.currentBlockBreaking.breaking)
@@ -1156,7 +1175,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 								if (rez)
 								{
-									s->unsafeGet(x, y, z) = rez->type;
+									s->unsafeGet(x, y, z) = rez->getType();
 								}
 								else
 								{

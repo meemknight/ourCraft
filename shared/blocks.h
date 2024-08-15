@@ -156,19 +156,30 @@ bool canBeMinedByAxe(std::uint16_t type);
 
 struct Block
 {
-	BlockType type;
+	BlockType typeAndFlags;
 	unsigned char lightLevel; //first 4 bytes represent the sun level and bottom 4 bytes the other lights level
 	unsigned char notUsed;
 
-	bool air() { return type == 0; }
+	BlockType getType()
+	{
+		return typeAndFlags & 0b11'1111'1111;
+	}
+
+	void setType(BlockType t)
+	{
+		typeAndFlags = t & 0b11'1111'1111;
+	}
+
+	bool air() { return getType() == 0; }
 	bool isOpaque()
 	{
-		return ::isOpaque(type);
+		return ::isOpaque(getType());
 	}
 
 	//rename is animated leaves
 	bool isAnimatedBlock()
 	{
+		auto type = getType();
 		return
 			type == BlockTypes::leaves || type == BlockTypes::jungle_leaves 
 			|| type == BlockTypes::palm_leaves || type == BlockTypes::birch_leaves
@@ -177,17 +188,17 @@ struct Block
 
 	bool isTransparentGeometry()
 	{
-		return ::isTransparentGeometry(type);
+		return ::isTransparentGeometry(getType());
 	}
 
 	bool isGrassMesh()
 	{
-		return ::isGrassMesh(type);
+		return ::isGrassMesh(getType());
 	}
 
 	bool isLightEmitor()
 	{
-		return ::isLightEmitor(type);
+		return ::isLightEmitor(getType());
 	}
 
 	unsigned char getSkyLight()
@@ -217,22 +228,22 @@ struct Block
 
 	bool isBlockMesh()
 	{
-		return ::isBlockMesh(type);
+		return ::isBlockMesh(getType());
 	}
 
 	bool isCrossMesh()
 	{
-		return ::isCrossMesh(type);
+		return ::isCrossMesh(getType());
 	}
 
 	bool isColidable()
 	{
-		return ::isColidable(type);
+		return ::isColidable(getType());
 	}
 
 	bool stopsGrassFromGrowingIfOnTop()
 	{
-		return isColidable() && !isAnyLeaves(type);
+		return isColidable() && !isAnyLeaves(getType());
 	}
 
 	float getFriction();
