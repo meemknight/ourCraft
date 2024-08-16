@@ -72,6 +72,7 @@ struct GameData
 	glm::ivec3 blockInteractionPosition = {0, -1, 0};
 
 	bool insideInventoryMenu = 0;
+	int currentInventoryTab = 0;
 
 	struct
 	{
@@ -1450,12 +1451,14 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma region ui
 
 	int cursorSelected = -2;
-
+	unsigned short selectedCreativeItem = 0;
 
 	programData.ui.renderGameUI(deltaTime, w, h, gameData.currentItemSelected,
 		player.inventory, programData.blocksLoader, gameData.insideInventoryMenu,
 		cursorSelected, itemToCraft, 
-		(gameData.blockInteractionType == InteractionTypes::craftingTable)
+		(gameData.blockInteractionType == InteractionTypes::craftingTable),
+		gameData.currentInventoryTab, player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE,
+		selectedCreativeItem
 		);
 
 
@@ -1466,166 +1469,188 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma region move items in inventory
 	if (gameData.insideInventoryMenu && !gameData.escapePressed)
 	{
-		
-		static std::bitset<64> rightClickedThisClick = 0;
 
-		if (platform::isLMousePressed())
+		//blocks or items
+		if (selectedCreativeItem)
 		{
 
-			if (cursorSelected == PlayerInventory::CRAFTING_RESULT_INDEX && itemToCraft.type)
+			if (!player.inventory.heldInMouse.type)
 			{
-				Item *cursor = &player.inventory.heldInMouse;
-				
-				if (cursor->type == 0)
+				if (platform::isLMousePressed())
 				{
-					
-					//craft one
-					*cursor = itemToCraft;
-					if (gameData.blockInteractionType == InteractionTypes::craftingTable)
-					{
-						player.inventory.craft9();
-					}
-					else
-					{
-						player.inventory.craft4();
-					}
-					cratedOneItem(player.inventory, itemToCraft, PlayerInventory::CURSOR_INDEX);
+					forceOverWriteItem(player.inventory, PlayerInventory::CURSOR_INDEX,
+						Item(selectedCreativeItem));
 
-				}
-				else if(cursor->type == itemToCraft.type)
-				{
-					//grab and craft one
-					if (cursor->counter < cursor->getStackSize())
-					{
-
-						if (cursor->counter + itemToCraft.counter <= cursor->getStackSize())
-						{
-							cursor->counter += itemToCraft.counter;
-							if (gameData.blockInteractionType == InteractionTypes::craftingTable)
-							{
-								player.inventory.craft9();
-							}
-							else
-							{
-								player.inventory.craft4();
-							}
-							cratedOneItem(player.inventory, itemToCraft, PlayerInventory::CURSOR_INDEX);
-						}
-
-					}
-
-				}
-
-
-
-			}
-			else
-			if (cursorSelected >= 0)
-			{
-				Item *selected = player.inventory.getItemFromIndex(cursorSelected);
-				Item *cursor = &player.inventory.heldInMouse;
-
-				if (selected && selected != cursor)
-				{
-
-					if (cursor->type == 0)
-					{
-						//grab
-						grabItem(player.inventory, cursorSelected, PlayerInventory::CURSOR_INDEX);
-					}
-					else
-					{
-						//place
-						if (!placeItem(player.inventory, PlayerInventory::CURSOR_INDEX, cursorSelected))
-						{
-							//swap
-							swapItems(player.inventory, cursorSelected, PlayerInventory::CURSOR_INDEX);
-						}
-
-					}
-
+					player.inventory.heldInMouse = Item(selectedCreativeItem);
 				}
 			}
-		}
-		else if (platform::isRMousePressed())
-		{
-
-			rightClickedThisClick.reset();
-
-
-			if (cursorSelected >= 0)
-			{
-				Item *selected = player.inventory.getItemFromIndex(cursorSelected);
-				Item *cursor = &player.inventory.heldInMouse;
-
-				if (cursor->type != 0)
-				{
-					//place one
-					if (placeItem(player.inventory, PlayerInventory::CURSOR_INDEX, cursorSelected, 1))
-					{
-						rightClickedThisClick[cursorSelected] = true;
-					}
-
-				}
-				else
-				{
-
-					//grab
-					grabItem(player.inventory, cursorSelected, PlayerInventory::CURSOR_INDEX, selected->counter/2);
-
-					//don't place it again lol
-					rightClickedThisClick[cursorSelected] = true;
-				}
-
-
-			}
-
-
 
 		}
-		else if (platform::isRMouseHeld())
+		else
 		{
-
-			//right click held place items
-			if (cursorSelected >= 0 && !rightClickedThisClick[cursorSelected])
-			{
-				Item *selected = player.inventory.getItemFromIndex(cursorSelected);
-				Item *cursor = &player.inventory.heldInMouse;
-
-				if (cursor->type != 0)
-				{
-					//place one
-					if (placeItem(player.inventory, PlayerInventory::CURSOR_INDEX, cursorSelected, 1))
-					{
-						rightClickedThisClick[cursorSelected] = true;
-					}
-
-				}
-			}
-
-
-		}
-
-		//outside borders
-		if (cursorSelected == -1)
-		{
+			static std::bitset<64> rightClickedThisClick = 0;
 
 			if (platform::isLMousePressed())
 			{
-				gameData.entityManager.dropItemByClient(
-					gameData.entityManager.localPlayer.entity.position,
-					PlayerInventory::CURSOR_INDEX, gameData.undoQueue, gameData.c.viewDirection * 5.f,
-					gameData.serverTimer, player.inventory, 0);
+
+				if (cursorSelected == PlayerInventory::CRAFTING_RESULT_INDEX && itemToCraft.type)
+				{
+					Item *cursor = &player.inventory.heldInMouse;
+
+					if (cursor->type == 0)
+					{
+
+						//craft one
+						*cursor = itemToCraft;
+						if (gameData.blockInteractionType == InteractionTypes::craftingTable)
+						{
+							player.inventory.craft9();
+						}
+						else
+						{
+							player.inventory.craft4();
+						}
+						cratedOneItem(player.inventory, itemToCraft, PlayerInventory::CURSOR_INDEX);
+
+					}
+					else if (cursor->type == itemToCraft.type)
+					{
+						//grab and craft one
+						if (cursor->counter < cursor->getStackSize())
+						{
+
+							if (cursor->counter + itemToCraft.counter <= cursor->getStackSize())
+							{
+								cursor->counter += itemToCraft.counter;
+								if (gameData.blockInteractionType == InteractionTypes::craftingTable)
+								{
+									player.inventory.craft9();
+								}
+								else
+								{
+									player.inventory.craft4();
+								}
+								cratedOneItem(player.inventory, itemToCraft, PlayerInventory::CURSOR_INDEX);
+							}
+
+						}
+
+					}
+
+
+
+				}
+				else
+					if (cursorSelected >= 0)
+					{
+						Item *selected = player.inventory.getItemFromIndex(cursorSelected);
+						Item *cursor = &player.inventory.heldInMouse;
+
+						if (selected && selected != cursor)
+						{
+
+							if (cursor->type == 0)
+							{
+								//grab
+								grabItem(player.inventory, cursorSelected, PlayerInventory::CURSOR_INDEX);
+							}
+							else
+							{
+								//place
+								if (!placeItem(player.inventory, PlayerInventory::CURSOR_INDEX, cursorSelected))
+								{
+									//swap
+									swapItems(player.inventory, cursorSelected, PlayerInventory::CURSOR_INDEX);
+								}
+
+							}
+
+						}
+					}
 			}
 			else if (platform::isRMousePressed())
 			{
-				gameData.entityManager.dropItemByClient(
-					gameData.entityManager.localPlayer.entity.position,
-					PlayerInventory::CURSOR_INDEX, gameData.undoQueue, gameData.c.viewDirection * 5.f,
-					gameData.serverTimer, player.inventory, 1);
+
+				rightClickedThisClick.reset();
+
+
+				if (cursorSelected >= 0)
+				{
+					Item *selected = player.inventory.getItemFromIndex(cursorSelected);
+					Item *cursor = &player.inventory.heldInMouse;
+
+					if (cursor->type != 0)
+					{
+						//place one
+						if (placeItem(player.inventory, PlayerInventory::CURSOR_INDEX, cursorSelected, 1))
+						{
+							rightClickedThisClick[cursorSelected] = true;
+						}
+
+					}
+					else
+					{
+
+						//grab
+						grabItem(player.inventory, cursorSelected, PlayerInventory::CURSOR_INDEX, selected->counter / 2);
+
+						//don't place it again lol
+						rightClickedThisClick[cursorSelected] = true;
+					}
+
+
+				}
+
+
+
+			}
+			else if (platform::isRMouseHeld())
+			{
+
+				//right click held place items
+				if (cursorSelected >= 0 && !rightClickedThisClick[cursorSelected])
+				{
+					Item *selected = player.inventory.getItemFromIndex(cursorSelected);
+					Item *cursor = &player.inventory.heldInMouse;
+
+					if (cursor->type != 0)
+					{
+						//place one
+						if (placeItem(player.inventory, PlayerInventory::CURSOR_INDEX, cursorSelected, 1))
+						{
+							rightClickedThisClick[cursorSelected] = true;
+						}
+
+					}
+				}
+
+
 			}
 
+			//outside borders
+			if (cursorSelected == -1)
+			{
+
+				if (platform::isLMousePressed())
+				{
+					gameData.entityManager.dropItemByClient(
+						gameData.entityManager.localPlayer.entity.position,
+						PlayerInventory::CURSOR_INDEX, gameData.undoQueue, gameData.c.viewDirection * 5.f,
+						gameData.serverTimer, player.inventory, 0);
+				}
+				else if (platform::isRMousePressed())
+				{
+					gameData.entityManager.dropItemByClient(
+						gameData.entityManager.localPlayer.entity.position,
+						PlayerInventory::CURSOR_INDEX, gameData.undoQueue, gameData.c.viewDirection * 5.f,
+						gameData.serverTimer, player.inventory, 1);
+				}
+
+			}
 		}
+
+		
+		
 
 	}
 

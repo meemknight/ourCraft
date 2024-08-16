@@ -48,7 +48,8 @@ struct UiENgine
 		int w, int h, int itemSelected, PlayerInventory &inventory,
 		BlocksLoader &blocksLoader, bool insideInventory, int &cursorItemIndex,
 		Item &itemToCraft, 
-		bool insideCraftingTable
+		bool insideCraftingTable, int &currentInventoryTab, bool isCreative,
+		unsigned short &selectedItem
 		);
 
 };

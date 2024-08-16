@@ -169,11 +169,19 @@ void UiENgine::clearOnlyTextures()
 	playerCellSize = {};
 }
 
+const int INVENTORY_TAB_DEFAULT = 0;
+const int INVENTORY_TAB_BLOCKS = 1;
+const int INVENTORY_TAB_ITEMS = 2;
+
 void UiENgine::renderGameUI(float deltaTime, int w, int h
 	, int itemSelected, PlayerInventory &inventory, BlocksLoader &blocksLoader,
 	bool insideInventory, int &cursorItemIndex, Item &itemToCraft,
-	bool insideCraftingTable)
+	bool insideCraftingTable, int &currentInventoryTab, bool isCreative,
+	unsigned short &selectedItem)
 {
+
+	if (!isCreative) { currentInventoryTab = INVENTORY_TAB_DEFAULT; }
+
 	cursorItemIndex = -1;
 	glm::vec4 cursorItemIndexBox = {};
 	auto mousePos = platform::getRelMousePosition();
@@ -239,19 +247,32 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 				aspectIncrease = 0.10;
 			}
 
-			auto inventoryBox = glui::Box().xCenter().yCenter().xDimensionPixels(minDimenstion * 0.9f).
-				yAspectRatio(1.f - aspectIncrease)();
+
+			auto inventoryBox = glui::Box().xCenter().yCenter().yDimensionPixels(minDimenstion * 0.85f).
+				xAspectRatio(1.f + aspectIncrease)();
+			//{
+			//	auto inventoryBox2 = glui::Box().xCenter().yCenter().xDimensionPixels(minDimenstion * 0.9f).
+			//		yAspectRatio(1.f - aspectIncrease)();
+			//
+			//	if (inventoryBox2.w < inventoryBox.w)
+			//	{
+			//		inventoryBox = inventoryBox2;
+			//	}
+			//}
+
 
 			//render inventory box
 			renderer2d.render9Patch(inventoryBox,
 				24, {1,1,1,1}, {}, 0.f, buttonTexture, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
-			//renderer2d.renderRectangle(
-			//	inventoryBox, buttonTexture);
+			//renderer2d.renderRectangle(inventoryBox, {1,0,0,1});
 
 			if (glui::aabb(inventoryBox, mousePos))
 			{
 				cursorItemIndex = -2;
 			}
+
+
+
 
 			int oneItemSize = 0;
 
@@ -279,6 +300,23 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 					}
 				};
 
+				auto checkInsideCreativeMenu = [&](int start, glm::vec4 box)
+				{
+					auto itemBox = box;
+					itemBox.z = itemBox.w;
+					for (int i = start; i < start + 9; i++)
+					{
+						itemBox.x = box.x + itemBox.z * (i - start);
+						if (glui::aabb(itemBox, mousePos))
+						{
+							selectedItem = i;
+							cursorItemIndexBox = itemBox;
+							renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, (2.f / 22.f)),
+								{0.7,0.7,0.7,0.5});
+						}
+					}
+				};
+
 				auto checkInsideOneCell = [&](int start, glm::vec4 box)
 				{
 					auto itemBox = box;
@@ -298,25 +336,53 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 				renderer2d.renderRectangle(hotBarBox, itemsBarInventory);
 
-				auto inventoryBars = glui::Box().xCenter().yBottomPerc(-0.17).xDimensionPercentage(0.9).
-					yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
-				renderer2d.renderRectangle(inventoryBars, itemsBarInventory);
+				oneItemSize = hotBarBox.w;
 
-				auto inventoryBars2 = inventoryBars;
-				inventoryBars2.y -= inventoryBars2.w;
-				renderer2d.renderRectangle(inventoryBars2, itemsBarInventory);
 
-				auto inventoryBars3 = inventoryBars2;
-				inventoryBars3.y -= inventoryBars3.w;
-				renderer2d.renderRectangle(inventoryBars3, itemsBarInventory);
-
-				checkInside(0, hotBarBox);
-				checkInside(9, inventoryBars);
-				checkInside(18, inventoryBars2);
-				checkInside(27, inventoryBars3);
-
-				//upper part
+				//render items
+				auto renderItems = [&](int start, glm::ivec4 box)
 				{
+					auto itemBox = box;
+					itemBox.z = itemBox.w;
+					for (int i = start; i < start + 9; i++)
+					{
+						if (inventory.items[i].type)
+						{
+							itemBox.x = box.x + itemBox.z * (i - start);
+							renderOneItem(itemBox, inventory.items[i], 4.f / 22.f);
+						}
+					}
+				};
+
+
+				glm::vec4 tabBox = inventoryBox;
+				tabBox.z = oneItemSize;
+				tabBox.w = oneItemSize / 2;
+				tabBox.x += oneItemSize / 4.f;
+				tabBox.y -= oneItemSize / 2.f;
+
+				if(currentInventoryTab == INVENTORY_TAB_DEFAULT)
+				{
+
+					//bottom part
+					auto inventoryBars = glui::Box().xCenter().yBottomPerc(-0.17).xDimensionPercentage(0.9).
+						yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
+					renderer2d.renderRectangle(inventoryBars, itemsBarInventory);
+
+					auto inventoryBars2 = inventoryBars;
+					inventoryBars2.y -= inventoryBars2.w;
+					renderer2d.renderRectangle(inventoryBars2, itemsBarInventory);
+
+					auto inventoryBars3 = inventoryBars2;
+					inventoryBars3.y -= inventoryBars3.w;
+					renderer2d.renderRectangle(inventoryBars3, itemsBarInventory);
+
+					checkInside(9, inventoryBars);
+					checkInside(18, inventoryBars2);
+					checkInside(27, inventoryBars3);
+
+
+					//upper part
 					glui::Frame insideUpperPart(glui::Box().xCenter().yTopPerc(0.05).
 						xDimensionPercentage(0.9).yDimensionPercentage(0.45)());
 					
@@ -463,32 +529,116 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						renderOneItem(resultCrafting, itemToCraft, 4.f / 22.f);
 					
 					}
-					
+				
+
+					renderItems(9, inventoryBars);
+					renderItems(18, inventoryBars2);
+					renderItems(27, inventoryBars3);
+
+
+				}
+				else if (currentInventoryTab == INVENTORY_TAB_BLOCKS)
+				{
+
+					//render items
+					auto renderCreativeBlocks = [&](int start, glm::ivec4 box)
+					{
+						auto itemBox = box;
+						itemBox.z = itemBox.w;
+						for (int i = start; i < start + 9; i++)
+						{
+							if (i < BlocksCount)
+							{
+								itemBox.x = box.x + itemBox.z * (i - start);
+								renderOneItem(itemBox, Item(i), 4.f / 22.f);
+							}
+						}
+					};
+
+					auto inventoryBars = glui::Box().xCenter().yBottomPerc(-0.17).xDimensionPercentage(0.9).
+						yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
+
+					for (int i = 0; i < 7; i++)
+					{
+						renderer2d.renderRectangle(inventoryBars, itemsBarInventory);
+
+						checkInsideCreativeMenu((6 - i) * 9 + 1, inventoryBars);
+						renderCreativeBlocks((6 - i) * 9 + 1, inventoryBars);
+
+						inventoryBars.y -= inventoryBars.w;
+					}
+
+				}
+				else if (currentInventoryTab == INVENTORY_TAB_ITEMS)
+				{
+
+					//render items
+					auto renderCreativeItems = [&](int start, glm::ivec4 box)
+					{
+						auto itemBox = box;
+						itemBox.z = itemBox.w;
+						for (int i = start; i < start + 9; i++)
+						{
+							if (i < lastItem)
+							{
+								itemBox.x = box.x + itemBox.z * (i - start);
+								renderOneItem(itemBox, Item(i), 4.f / 22.f);
+							}
+						}
+					};
+
+					auto inventoryBars = glui::Box().xCenter().yBottomPerc(-0.17).xDimensionPercentage(0.9).
+						yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
+						
+					for (int i = 0; i < 7; i++)
+					{
+
+						renderer2d.renderRectangle(inventoryBars, itemsBarInventory);
+
+						checkInsideCreativeMenu((6 - i) * 9 + ItemsStartPoint, inventoryBars);
+						renderCreativeItems((6-i) * 9 + ItemsStartPoint, inventoryBars);
+
+						inventoryBars.y -= inventoryBars.w;
+					}
+
 
 
 				}
 
-				//render items
-				auto renderItems = [&](int start, glm::ivec4 box)
-				{
-					auto itemBox = box;
-					itemBox.z = itemBox.w;
-					for (int i = start; i < start+9; i++)
-					{
-						if (inventory.items[i].type)
-						{
-							itemBox.x = box.x + itemBox.z * (i-start);
-							renderOneItem(itemBox, inventory.items[i], 4.f / 22.f);
-						}
-					}
-				};
-
-				oneItemSize = hotBarBox.w;
-				
+				checkInside(0, hotBarBox);
 				renderItems(0, hotBarBox);
-				renderItems(9, inventoryBars);
-				renderItems(18, inventoryBars2);
-				renderItems(27, inventoryBars3);
+
+
+				if (isCreative)
+				{
+
+					for (int i = 0; i < 3; i++)
+					{
+						glm::vec4 selected = {};
+						if (i == currentInventoryTab)
+						{
+							selected = glm::vec4(0, 0, 0, 12);
+						}
+
+						renderer2d.render9Patch(tabBox + selected,
+							24, {1,1,1,1}, {}, 0.f, buttonTexture,
+							{0,1,1,0.5}, {0.2,0.8,0.8,0.5});
+
+
+						if (glui::aabb(tabBox, platform::getRelMousePosition()) &&
+							platform::isLMousePressed()
+							)
+						{
+							currentInventoryTab = i;
+						}
+
+						tabBox.x += oneItemSize + oneItemSize * (0.1f);
+					}
+
+				}
+
+
+			
 
 				
 
