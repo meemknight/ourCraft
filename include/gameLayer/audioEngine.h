@@ -5,7 +5,6 @@
 namespace AudioEngine
 {
 
-	
 	void init();
 
 	void loadAllMusic();
@@ -19,5 +18,18 @@ namespace AudioEngine
 	void playTitleMusic();
 
 	void stopAllMusicAndSounds();
+
+	void playSound(int sound);
+
+	enum sounds
+	{
+		none = 0,
+		toolBreakingWood,
+		toolBreakingStone,
+		toolBreakingIron,
+
+		LAST_SOUND
+	};
+
 
 };

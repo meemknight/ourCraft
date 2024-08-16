@@ -109,7 +109,6 @@ namespace AudioEngine
 
 	}
 
-
 	void playTitleMusic()
 	{
 		stopAllMusicAndSounds();
@@ -118,7 +117,73 @@ namespace AudioEngine
 		startPlayingMusicAtIndex(index);
 
 	}
+	
 
+	//sounds
+	struct SoundCollection
+	{
+
+		SoundCollection() {};
+
+		SoundCollection(std::initializer_list<const char*> s)
+		{
+			sounds.reserve(s.size());
+			for (auto &i : s)
+			{
+				Sound sound = LoadSound(i);
+
+				if (sound.stream.buffer != NULL)
+				{
+					sounds.push_back(sound);
+				}
+			}
+		}
+
+		std::vector<Sound> sounds;
+
+		void playRandomSound(float volume = 1)
+		{
+			if (sounds.size() == 0) { return; }
+
+			auto &s = sounds[rand() % sounds.size()];
+
+			SetSoundVolume(s, volume);
+			PlaySound(s);
+		}
+	};
+
+
+
+	
+
+
+	SoundCollection allSounds[] = 
+	{
+		SoundCollection(),
+
+		SoundCollection{
+		RESOURCES_PATH "sounds/Tool_BreakWood.mp3"},
+
+		SoundCollection{
+		RESOURCES_PATH "sounds/Tool_BreakStone.mp3",
+		RESOURCES_PATH "sounds/Tool_BreakStone2.mp3"},
+
+		SoundCollection{
+		RESOURCES_PATH "Tool_BreakMetal2.mp3"
+		},
+
+
+	};
+
+	void playSound(int sound)
+	{
+		static_assert(sizeof(allSounds) / sizeof(allSounds[0]) == LAST_SOUND);
+
+
+		if (sound <= none || sound >= LAST_SOUND) { return; }
+
+		allSounds[sound].playRandomSound();
+	}
 
 };
 

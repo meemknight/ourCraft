@@ -1390,9 +1390,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				
 				if (ImGui::Button("Play random night music"))
 				{
-
 					AudioEngine::playRandomNightMusic();
+				}
 
+				if (ImGui::Button("Play soumd"))
+				{
+					AudioEngine::playSound(AudioEngine::toolBreakingStone);
 				}
 			}
 			
