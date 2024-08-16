@@ -74,6 +74,23 @@ void computeRubberBand(RubberBand &rubberBand, float deltaTime)
 
 }
 
+float normalizeAngle(float angle)
+{
+	while (angle < 0) angle += TWO_PI;
+	while (angle >= TWO_PI) angle -= TWO_PI;
+	return angle;
+}
+
+float shortestAngleDirection(float angleFrom, float angleTo)
+{
+	float diff = normalizeAngle(angleTo - angleFrom);
+	if (diff > PI)
+	{
+		diff -= TWO_PI; // Rotate counterclockwise
+	}
+	return diff;
+}
+
 int getRandomNumber(std::minstd_rand &rng, int min, int max)
 {
 	if (min == 0 && max == 1) { return rng() % 2; }

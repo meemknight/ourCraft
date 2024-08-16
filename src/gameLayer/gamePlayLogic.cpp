@@ -722,6 +722,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 									b->getType(), gameData.currentBlockInteractionRevisionNumber);
 								
 								gameData.insideInventoryMenu = true;
+								gameData.currentInventoryTab = 0;
 
 								//reset crafting table
 								// TODO!!! exit menu thingy here
@@ -1478,10 +1479,17 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			{
 				if (platform::isLMousePressed())
 				{
-					forceOverWriteItem(player.inventory, PlayerInventory::CURSOR_INDEX,
-						Item(selectedCreativeItem));
+					Item item(selectedCreativeItem);
+					
+					if (platform::isKeyHeld(platform::Button::LeftCtrl))
+					{
+						item.counter = item.getStackSize();
+					}
 
-					player.inventory.heldInMouse = Item(selectedCreativeItem);
+					forceOverWriteItem(player.inventory, PlayerInventory::CURSOR_INDEX,
+						item);
+
+					player.inventory.heldInMouse = item;
 				}
 			}
 

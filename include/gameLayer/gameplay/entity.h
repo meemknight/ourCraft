@@ -150,6 +150,14 @@ template <typename T>
 constexpr bool hasSkinBindlessTexture<T, std::void_t<decltype(std::declval<T>().skinBindlessTexture)>> = true;
 
 
+constexpr float PI = 3.141592653f;
+constexpr float TWO_PI = 2.0f * PI;
+
+float normalizeAngle(float angle);
+
+float shortestAngleDirection(float angleFrom, float angleTo);
+
+
 template <typename T, typename Enable = void>
 struct RubberBandOrientation
 {};
@@ -170,19 +178,20 @@ struct RubberBandOrientation <T, std::enable_if_t<hasBodyOrientation<T>>>
 		float angleBody = std::atan2(bodyOrientation.y, bodyOrientation.x);
 		float angleCurrent = std::atan2(rubberBandOrientation.y, rubberBandOrientation.x);
 
-
 		float rotationSpeed = 3.141592653 * deltaTime * 2.f;
+		
+		float diff = shortestAngleDirection(angleCurrent, angleBody);
 
-		if (angleCurrent > angleBody)
+		if (std::abs(diff) <= rotationSpeed)
 		{
-			angleCurrent -= rotationSpeed;
-			if (angleCurrent < angleBody) { angleCurrent = angleBody; }
+			angleCurrent = angleBody;
 		}
-		else if (angleCurrent < angleBody)
+		else
 		{
-			angleCurrent += rotationSpeed;
-			if (angleCurrent > angleBody) { angleCurrent = angleBody; }
+			angleCurrent += (diff > 0 ? rotationSpeed : -rotationSpeed);
+			angleCurrent = normalizeAngle(angleCurrent); // Normalize again after the update
 		}
+
 
 		// Calculate new orientation
 		rubberBandOrientation.x = std::cos(angleCurrent);

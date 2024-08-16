@@ -93,6 +93,20 @@ glm::vec4 shrinkRectanglePercentage(glm::vec4 in, float perc)
 	return in;
 }
 
+glm::vec4 shrinkRectanglePercentageMoveDown(glm::vec4 in, float perc)
+{
+	float shrinkX = in.z * perc;
+	float shrinkY = in.w * perc;
+
+	in.x += shrinkX / 2.f;
+	in.y += shrinkY;
+
+	in.z -= shrinkX;
+	in.w -= shrinkY;
+
+	return in;
+}
+
 
 void UiENgine::init()
 {
@@ -612,6 +626,12 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 				if (isCreative)
 				{
 
+					GLuint textures[3] = {
+						blocksLoader.texturesIdsItems[wooddenSword - ItemsStartPoint],
+						blocksLoader.texturesIds[getGpuIdIndexForBlock(grassBlock, 0)],
+						blocksLoader.texturesIdsItems[stick - ItemsStartPoint],
+					};
+
 					for (int i = 0; i < 3; i++)
 					{
 						glm::vec4 selected = {};
@@ -620,8 +640,20 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 							selected = glm::vec4(0, 0, 0, 12);
 						}
 
+						glm::vec4 color = {0.8,0.8,0.8,1};
+
+						if (i != currentInventoryTab && glui::aabb(tabBox, platform::getRelMousePosition()))
+						{
+							color = {1.2,1.2,1.2,1};
+						}
+						else if (i == currentInventoryTab)
+						{
+							color = {1,1,1,1};
+						}
+
+
 						renderer2d.render9Patch(tabBox + selected,
-							24, {1,1,1,1}, {}, 0.f, buttonTexture,
+							24, color, {}, 0.f, buttonTexture,
 							{0,1,1,0.5}, {0.2,0.8,0.8,0.5});
 
 
@@ -631,6 +663,26 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						{
 							currentInventoryTab = i;
 						}
+
+						{
+							auto newBox = tabBox;
+
+							gl2d::Texture t; t.id = textures[i];
+							if (i == currentInventoryTab)
+							{
+								newBox.w *= 2;
+								newBox = shrinkRectanglePercentage(newBox, 0.3);
+								renderer2d.renderRectangle(newBox, t, Colors_White,
+									{}, 0);
+							}
+							else
+							{
+								newBox = shrinkRectanglePercentageMoveDown(newBox, 0.3);
+								renderer2d.renderRectangle(newBox, t, Colors_White,
+									{}, 0, {0,1,1,0.5});
+							}
+						}
+
 
 						tabBox.x += oneItemSize + oneItemSize * (0.1f);
 					}
