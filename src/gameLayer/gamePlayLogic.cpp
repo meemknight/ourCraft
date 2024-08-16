@@ -774,7 +774,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 									player.otherPlayerSettings.gameMode == OtherPlayerSettings::SURVIVAL
 									);
 
-								AudioEngine::playSound(getSoundForBlock(item.type));
+								AudioEngine::playSound(getSoundForBlock(item.type), PLACED_BLOCK_SOUND_VOLUME);
 							}
 						};
 
@@ -806,7 +806,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 						{
 							soundTimer = 0.2;
 							auto sound = getSoundForBlock(raycastBlock->getType());
-							AudioEngine::playSound(sound);
+							AudioEngine::playSound(sound, MINING_BLOCK_SOUND_VOLUME);
 						}
 						soundTimer -= deltaTime;
 
@@ -827,6 +827,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 									gameData.lightSystem);
 								gameData.currentBlockBreaking = {};
 
+								auto sound = getSoundForBlock(raycastBlock->getType());
+								AudioEngine::playSound(sound, BREAKED_BLOCK_SOUND_VOLUME);
 							}
 
 						}
@@ -961,7 +963,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					if (timer <= 0)
 					{
 						timer = glm::mix(longestTimer, shortestTimer, isPlayerMovingSpeed);
-						AudioEngine::playSound(sound);
+						AudioEngine::playSound(sound, STEPPING_SOUND_VOLUME);
 					}
 					timer -= deltaTime;
 				}
@@ -1451,12 +1453,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 				if (ImGui::Button("Play sound"))
 				{
-					AudioEngine::playSound(AudioEngine::toolBreakingStone);
+					AudioEngine::playSound(AudioEngine::toolBreakingStone, 1);
 				}
 
 				if (ImGui::Button("Play sound2"))
 				{
-					AudioEngine::playSound(AudioEngine::grass);
+					AudioEngine::playSound(AudioEngine::grass, 1);
 				}
 			}
 			

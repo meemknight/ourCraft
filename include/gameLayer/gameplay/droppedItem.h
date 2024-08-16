@@ -42,7 +42,7 @@ struct DroppedItemServer
 	float restantTime = 0;
 
 	float stayTimer = 5 * 60;
-	float dontPickTimer = 2;
+	float dontPickTimer = 1;
 
 	bool update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
 		ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng, std::uint64_t yourEID,

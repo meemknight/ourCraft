@@ -221,13 +221,13 @@ namespace AudioEngine
 
 	};
 
-	void playSound(int sound)
+	void playSound(int sound, float level)
 	{
 		static_assert(sizeof(allSounds) / sizeof(allSounds[0]) == LAST_SOUND);
 
 		if (sound <= none || sound >= LAST_SOUND) { return; }
 
-		allSounds[sound].playRandomSound();
+		allSounds[sound].playRandomSound(level);
 	}
 
 
