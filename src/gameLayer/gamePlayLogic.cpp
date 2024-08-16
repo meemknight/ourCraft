@@ -391,6 +391,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma region input
 
 	static float moveSpeed = 20.f;
+	float isPlayerMovingSpeed = 0;
 
 	//inventory and menu stuff
 	if (!gameData.escapePressed)
@@ -509,6 +510,11 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		{
 			platform::setRelMousePosition(w / 2, h / 2);
 			gameData.c.lastMousePos = {w / 2, h / 2};
+		}
+
+		if (glm::length(glm::vec2{moveDir.x, moveDir.z}))
+		{
+			isPlayerMovingSpeed = 1;
 		}
 
 	}
@@ -768,6 +774,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 									player.otherPlayerSettings.gameMode == OtherPlayerSettings::SURVIVAL
 									);
 
+								AudioEngine::playSound(getSoundForBlock(item.type));
 							}
 						};
 
@@ -793,6 +800,15 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 								gameData.currentBlockBreaking.timer = 0.3;
 							}
 						}
+
+						static float soundTimer = 0;
+						if (soundTimer <= 0)
+						{
+							soundTimer = 0.2;
+							auto sound = getSoundForBlock(raycastBlock->getType());
+							AudioEngine::playSound(sound);
+						}
+						soundTimer -= deltaTime;
 
 						if (rayCastPos != gameData.currentBlockBreaking.pos)
 						{
@@ -921,7 +937,45 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma endregion
 
-	
+
+#pragma region steppings sounds
+
+	{
+		static float timer = 0;
+
+		const float shortestTimer = 0.3;
+		const float longestTimer = 0.7;
+
+		//player.entity.forces.colidesBottom() && 
+		if (isPlayerMovingSpeed)
+		{
+			auto blockPos = from3DPointToBlock(player.entity.position - glm::dvec3(0, 0.1, 0));
+			auto block = gameData.chunkSystem.getBlockSafe(blockPos.x, blockPos.y, blockPos.z);
+
+			if (block)
+			{
+				auto sound = getSoundForBlock(block->getType());
+
+				if (sound)
+				{
+					if (timer <= 0)
+					{
+						timer = glm::mix(longestTimer, shortestTimer, isPlayerMovingSpeed);
+						AudioEngine::playSound(sound);
+					}
+					timer -= deltaTime;
+				}
+
+			}
+		}
+		else
+		{
+			timer = 0;
+		}
+	}
+
+#pragma endregion
+
 	
 #pragma region debug and gyzmos stuff
 	
@@ -1395,9 +1449,14 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					AudioEngine::playRandomNightMusic();
 				}
 
-				if (ImGui::Button("Play soumd"))
+				if (ImGui::Button("Play sound"))
 				{
 					AudioEngine::playSound(AudioEngine::toolBreakingStone);
+				}
+
+				if (ImGui::Button("Play sound2"))
+				{
+					AudioEngine::playSound(AudioEngine::grass);
 				}
 			}
 			

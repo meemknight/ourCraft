@@ -1,7 +1,6 @@
 #pragma once
 
 
-
 namespace AudioEngine
 {
 
@@ -24,6 +23,16 @@ namespace AudioEngine
 	enum sounds
 	{
 		none = 0,
+		
+		grass,
+		dirt,
+		stone,
+		sand,
+		wood,
+		glass,
+		leaves,
+		snow,
+
 		toolBreakingWood,
 		toolBreakingStone,
 		toolBreakingIron,
@@ -31,5 +40,6 @@ namespace AudioEngine
 		LAST_SOUND
 	};
 
-
 };
+
+int getSoundForBlock(unsigned int blockType);

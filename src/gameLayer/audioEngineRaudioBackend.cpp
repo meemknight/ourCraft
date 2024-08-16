@@ -1,7 +1,8 @@
 #include <audioEngine.h>
 #include <raudio.h>
 #include <vector>
-
+#include <filesystem>
+#include <blocks.h>
 
 namespace AudioEngine
 {
@@ -125,30 +126,72 @@ namespace AudioEngine
 
 		SoundCollection() {};
 
-		SoundCollection(std::initializer_list<const char*> s)
-		{
-			sounds.reserve(s.size());
-			for (auto &i : s)
-			{
-				Sound sound = LoadSound(i);
+		//SoundCollection(std::initializer_list<const char*> s)
+		//{
+		//	sounds.reserve(s.size());
+		//	for (auto &i : s)
+		//	{
+		//		Sound sound = LoadSound(i);
+		//
+		//		if (sound.stream.buffer != NULL)
+		//		{
+		//			sounds.push_back(sound);
+		//		}
+		//	}
+		//}
 
-				if (sound.stream.buffer != NULL)
+		SoundCollection(const char* folderPath)
+		{
+			std::filesystem::path root(folderPath);
+			
+			if (std::filesystem::exists(root) &&
+				std::filesystem::is_directory(root))
+			{
+				
+				for (auto &f : std::filesystem::directory_iterator(root))
 				{
-					sounds.push_back(sound);
+					auto extension = f.path().extension().string();
+
+					if (!f.is_directory() &&
+						(
+						extension == ".ogg" ||
+						extension == ".OGG" ||
+						extension == ".mp3" ||
+						extension == ".MP3" ||
+						extension == ".flac" ||
+						extension == ".FLAC" ||
+						extension == ".wav" ||
+						extension == ".WAV"
+						))
+					{
+						Sound sound = LoadSound(f.path().string().c_str());
+
+						if (sound.stream.buffer != NULL)
+						{
+							sounds.push_back(sound);
+						}
+					}
 				}
+
+
 			}
-		}
+		};
 
 		std::vector<Sound> sounds;
+		int lastSound = 999999;
 
 		void playRandomSound(float volume = 1)
 		{
 			if (sounds.size() == 0) { return; }
 
-			auto &s = sounds[rand() % sounds.size()];
+			int s = rand() % sounds.size();
+			if (s == lastSound) { s = rand() % sounds.size(); }
+			lastSound = s;
 
-			SetSoundVolume(s, volume);
-			PlaySound(s);
+			auto &picked = sounds[s];
+
+			SetSoundVolume(picked, volume);
+			PlaySound(picked);
 		}
 	};
 
@@ -161,17 +204,20 @@ namespace AudioEngine
 	{
 		SoundCollection(),
 
-		SoundCollection{
-		RESOURCES_PATH "sounds/Tool_BreakWood.mp3"},
 
-		SoundCollection{
-		RESOURCES_PATH "sounds/Tool_BreakStone.mp3",
-		RESOURCES_PATH "sounds/Tool_BreakStone2.mp3"},
+		SoundCollection(RESOURCES_PATH "/sounds/grass"),
+		SoundCollection(RESOURCES_PATH "/sounds/dirt"),
+		SoundCollection(RESOURCES_PATH "/sounds/stone"),
+		SoundCollection(RESOURCES_PATH "/sounds/sand"),
+		SoundCollection(RESOURCES_PATH "/sounds/wood"),
+		SoundCollection(RESOURCES_PATH "/sounds/glass"),
+		SoundCollection(RESOURCES_PATH "/sounds/leaves"),
+		SoundCollection(RESOURCES_PATH "/sounds/snow"),
+		
 
-		SoundCollection{
-		RESOURCES_PATH "Tool_BreakMetal2.mp3"
-		},
-
+		SoundCollection(RESOURCES_PATH "sounds/toolBreakWood"),
+		SoundCollection(RESOURCES_PATH "sounds/toolBreakStone"),
+		SoundCollection(RESOURCES_PATH "sounds/toolBreakMetal"),
 
 	};
 
@@ -179,12 +225,89 @@ namespace AudioEngine
 	{
 		static_assert(sizeof(allSounds) / sizeof(allSounds[0]) == LAST_SOUND);
 
-
 		if (sound <= none || sound >= LAST_SOUND) { return; }
 
 		allSounds[sound].playRandomSound();
 	}
 
+
+
 };
 
+int getSoundForBlock(unsigned int type)
+{
+	if (!isBlock(type)) { return 0; }
+	if (type == water) { return 0; }
 
+	if (isAnyWoddenBlock(type))
+	{
+		return AudioEngine::wood;
+	}
+
+	if (isAnyDirtBlock(type))
+	{
+		return AudioEngine::dirt;
+	}
+
+	if (isAnyClayBlock(type))
+	{
+		return 0; //todo
+	}
+
+	if (isAnySandyBlock(type))
+	{
+		return AudioEngine::sand;
+	}
+
+	if (type == snow_block)
+	{
+		return 0; //todo
+	}
+
+	if (isAnySemiHardBlock(type))
+	{
+		return 0; //todo
+	}
+
+	if (isAnyStone(type) || type == testBlock)
+	{
+		return AudioEngine::stone;
+	}
+
+	if (isAnyPlant(type))
+	{
+		return 0; //todo
+	}
+
+	if (isAnyGlass(type) || type == glowstone)
+	{
+		return AudioEngine::glass;
+	}
+
+	if(type == ice)
+	{
+		return AudioEngine::glass; //todo?
+	}
+
+	if (isAnyLeaves(type))
+	{
+		return AudioEngine::leaves;
+	}
+
+	if (isAnyWool(type))
+	{
+		return 0;
+	}
+
+	if (isAnyUnbreakable(type))
+	{
+		return AudioEngine::stone; //todo
+	}
+
+	if (isTriviallyBreakable(torch))
+	{
+		return 0; //todo
+	}
+
+	return 0;
+}
