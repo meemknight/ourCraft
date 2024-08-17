@@ -13,6 +13,7 @@
 #include <gameplay/pig.h>
 #include <gameplay/cat.h>
 #include <gl2d/gl2d.h>
+#include <gameplay/life.h>
 
 using EventCounter = unsigned int;
 using RevisionNumber = unsigned int;
@@ -77,6 +78,9 @@ enum : std::uint32_t
 	headerRemoveEntity,
 	headerCompoundPacket,
 	headerSendPlayerSkin,
+	headerRecieveDamage,
+	headerRecieveLife,
+	headerUpdateLife,
 };
 
 enum 
@@ -174,6 +178,14 @@ struct Packet_RemoveEntity
 	std::uint64_t EID = 0;
 };
 
+//used with:
+//headerRecieveDamage,
+//headerRecieveLife,
+//headerUpdateLife,
+struct Packet_UpdateLife
+{
+	Life life;
+};
 
 struct Packet_UpdatePig
 {

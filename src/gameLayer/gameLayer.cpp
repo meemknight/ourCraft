@@ -44,6 +44,8 @@ void clearOtherTextures()
 	programData.aoTexture.cleanup();
 	programData.brdfTexture.cleanup();
 	programData.crackTexture.cleanup();
+	programData.heartsTexture.cleanup();
+	programData.heartsAtlas = {};
 }
 
 void clearAllTexturePacks()
@@ -110,6 +112,15 @@ void loadOtherTextures(const char *basePath)
 	if (!programData.crackTexture.id)
 	{
 		programData.crackTexture.loadFromFile((p + "crack.png").c_str(), true, true);
+	}
+
+	if (!programData.heartsTexture.id)
+	{
+		//todo better api here
+		programData.heartsTexture.loadFromFileWithPixelPadding((p + "hearts.png").c_str(), 
+			9, true, false);
+		auto s = programData.heartsTexture.GetSize();
+		programData.heartsAtlas = gl2d::TextureAtlasPadding(5, 1, s.x, s.y);
 	}
 
 }
@@ -430,6 +441,15 @@ bool gameLogic(float deltaTime)
 					changePlayerGameMode(c.first, OtherPlayerSettings::CREATIVE);
 				}
 
+				if (ImGui::Button("Damage"))
+				{
+					c.second.damage = true;
+				}
+
+				if (ImGui::Button("Heal"))
+				{
+					c.second.heal = true;
+				}
 
 				ImGui::Separator();
 				ImGui::PopID();

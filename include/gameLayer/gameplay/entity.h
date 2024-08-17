@@ -361,6 +361,7 @@ template <typename T>
 constexpr bool hasCollidesWithPlacedBlocks<T, std::void_t<decltype(T::collidesWithPlacedBlocks)>> = true;
 
 
+
 //dropped item doesn't inherit from this class, so if you want
 //to add something here make another type of server entity.
 template <class T>

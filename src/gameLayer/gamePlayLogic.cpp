@@ -1116,6 +1116,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			ImGui::SliderFloat("Day time", &dayTime, 0, 1);
 
+			int l = player.life.life;
+			ImGui::SliderInt("Player Life", &l, 0, 20);
+			player.life.life = l;
+
 			if (ImGui::CollapsingHeader("Camera stuff",
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
 			{
@@ -1461,6 +1465,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					AudioEngine::playSound(AudioEngine::grass, 1);
 				}
 			}
+
+
 			
 			
 		}
@@ -1478,9 +1484,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		}
 		ImGui::End();
-
-
 		ImGui::PopStyleColor();
+
+
 
 		gameData.gameplayFrameProfiler.endSubProfile("imgui");
 	}
@@ -1520,7 +1526,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		cursorSelected, itemToCraft, 
 		(gameData.blockInteractionType == InteractionTypes::craftingTable),
 		gameData.currentInventoryTab, player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE,
-		selectedCreativeItem
+		selectedCreativeItem, player.life, programData, player
 		);
 
 

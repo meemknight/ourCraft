@@ -448,6 +448,56 @@ void recieveDataClient(ENetEvent &event,
 		}
 		break;
 
+		case headerUpdateLife:
+		{
+			if (sizeof(Packet_UpdateLife) != size) { break; }
+			Packet_UpdateLife *p = (Packet_UpdateLife *)data;
+
+			entityManager.localPlayer.life = p->life;
+
+			entityManager.localPlayer.lastLife = {};
+			entityManager.localPlayer.justHealedTimer = 0;
+			entityManager.localPlayer.justRecievedDamageTimer = 0;
+
+			entityManager.localPlayer.life.sanitize();
+		}
+		break;
+
+		case headerRecieveDamage:
+		{
+			if (sizeof(Packet_UpdateLife) != size) { break; }
+			Packet_UpdateLife *p = (Packet_UpdateLife *)data;
+
+			if (entityManager.localPlayer.justRecievedDamageTimer <= 0)
+			{
+				entityManager.localPlayer.lastLife = entityManager.localPlayer.life;
+			}
+
+			entityManager.localPlayer.life = p->life;
+
+			entityManager.localPlayer.justHealedTimer = 0;
+			entityManager.localPlayer.justRecievedDamageTimer = 0.7;
+
+			entityManager.localPlayer.life.sanitize();
+		}
+		break;
+
+		case headerRecieveLife:
+		{
+			if (sizeof(Packet_UpdateLife) != size) { break; }
+			Packet_UpdateLife *p = (Packet_UpdateLife *)data;
+
+			entityManager.localPlayer.lastLife = entityManager.localPlayer.life;
+
+			entityManager.localPlayer.life = p->life;
+
+			entityManager.localPlayer.justHealedTimer = 0.7;
+			entityManager.localPlayer.justRecievedDamageTimer = 0;
+
+			entityManager.localPlayer.life.sanitize();
+		}
+		break;
+
 		default:
 		break;
 

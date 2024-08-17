@@ -7,6 +7,7 @@
 namespace AudioEngine
 {
 
+
 	std::vector<Music> allMusic;
 	int currentMusicPlaying = 0;
 	bool inited = 0;
@@ -51,16 +52,37 @@ namespace AudioEngine
 			}
 		};
 
-		nightMusicIndex.start = allMusic.size();
-		loadAMusic(RESOURCES_PATH "/music/Farlands.ogg");
-		loadAMusic(RESOURCES_PATH "/music/Consuelo.ogg");
-		loadAMusic(RESOURCES_PATH "/music/Fog_SlowedDown.ogg");
-		loadAMusic(RESOURCES_PATH "/music/Andreas-Moon.ogg");
-		nightMusicIndex.end = allMusic.size();
+		auto loadMusicFolder = [&](MusicIndex& index, const char *root)
+		{
+			index.start = allMusic.size();
 
-		titleScreenMusic.start = allMusic.size();
-		loadAMusic(RESOURCES_PATH "/music/Cherry_InGame.ogg");
-		titleScreenMusic.end = allMusic.size();
+			for (auto &f : std::filesystem::directory_iterator(root))
+			{
+				auto extension = f.path().extension().string();
+
+				if (!f.is_directory() &&
+					(
+					extension == ".ogg" ||
+					extension == ".OGG" ||
+					extension == ".mp3" ||
+					extension == ".MP3" ||
+					extension == ".flac" ||
+					extension == ".FLAC" ||
+					extension == ".wav" ||
+					extension == ".WAV"
+					))
+				{
+					loadAMusic(f.path().string().c_str());
+				}
+			}
+
+
+			index.end = allMusic.size();
+		};
+
+		
+		loadMusicFolder(nightMusicIndex, RESOURCES_PATH "/music/night");
+		loadMusicFolder(titleScreenMusic, RESOURCES_PATH "/music/titleScreen");
 
 
 	}
@@ -123,22 +145,7 @@ namespace AudioEngine
 	//sounds
 	struct SoundCollection
 	{
-
 		SoundCollection() {};
-
-		//SoundCollection(std::initializer_list<const char*> s)
-		//{
-		//	sounds.reserve(s.size());
-		//	for (auto &i : s)
-		//	{
-		//		Sound sound = LoadSound(i);
-		//
-		//		if (sound.stream.buffer != NULL)
-		//		{
-		//			sounds.push_back(sound);
-		//		}
-		//	}
-		//}
 
 		SoundCollection(const char* folderPath)
 		{

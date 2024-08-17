@@ -379,6 +379,48 @@ void changePlayerGameMode(std::uint64_t cid, unsigned char gameMode)
 }
 
 
+void sendDamagePlayerPacket(Client &client)
+{
+	Packet_UpdateLife p;
+	p.life = client.playerData.life;
+	sendPacket(client.peer, headerRecieveDamage, &p, sizeof(p), true, channelChunksAndBlocks);
+}
+
+void sendIncreaseLifePlayerPacket(Client &client)
+{
+	Packet_UpdateLife p;
+	p.life = client.playerData.life;
+	sendPacket(client.peer, headerRecieveLife, &p, sizeof(p), true, channelChunksAndBlocks);
+}
+
+//sets the life of the player with no animations
+void sendUpdateLifeLifePlayerPacket(Client &client)
+{
+	Packet_UpdateLife p;
+	p.life = client.playerData.life;
+	sendPacket(client.peer, headerUpdateLife, &p, sizeof(p), true, channelChunksAndBlocks);
+}
+
+void applyDamageOrLifeToPlayer(short difference, Client &client)
+{
+	if (difference == 0) { return; }
+
+	int life = client.playerData.life.life;
+	life += difference;
+	if (life < 0) { life = 0; }
+	if (life > client.playerData.life.maxLife) { life = client.playerData.life.maxLife; }
+	client.playerData.life.life = life;
+
+	if (difference < 0)
+	{
+		sendDamagePlayerPacket(client);
+	}
+	else
+	{
+		sendIncreaseLifePlayerPacket(client);
+	}
+}
+
 ServerSettings getServerSettingsCopy()
 {
 	return sd.settings;
@@ -1330,6 +1372,22 @@ void serverWorkerUpdate(
 				auto &c = getAllClientsReff();
 
 				sendPlayerInventoryAndIncrementRevision(c.begin()->second);
+			}
+
+			if (settings.perClientSettings.begin()->second.damage)
+			{
+				settings.perClientSettings.begin()->second.damage = false;
+				auto &c = getAllClientsReff();
+
+				applyDamageOrLifeToPlayer(-3, c.begin()->second);
+			}
+
+			if (settings.perClientSettings.begin()->second.heal)
+			{
+				settings.perClientSettings.begin()->second.heal = false;
+				auto &c = getAllClientsReff();
+
+				applyDamageOrLifeToPlayer(3, c.begin()->second);
 			}
 		}
 

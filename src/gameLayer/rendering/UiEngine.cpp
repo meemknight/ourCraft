@@ -2,6 +2,9 @@
 #include <platform/platformInput.h>
 #include <gameplay/items.h>
 #include <blocksLoader.h>
+#include <gameplay/life.h>
+#include <gamePlayLogic.h>
+#include <gameplay/player.h>
 
 float determineTextSize(gl2d::Renderer2D &renderer, const std::string &str,
 	gl2d::Font &f, glm::vec4 transform, bool minimize = true)
@@ -191,7 +194,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 	, int itemSelected, PlayerInventory &inventory, BlocksLoader &blocksLoader,
 	bool insideInventory, int &cursorItemIndex, Item &itemToCraft,
 	bool insideCraftingTable, int &currentInventoryTab, bool isCreative,
-	unsigned short &selectedItem)
+	unsigned short &selectedItem, Life &playerHealth, ProgramData &programData, LocalPlayer &player)
 {
 
 	if (!isCreative) { currentInventoryTab = INVENTORY_TAB_DEFAULT; }
@@ -778,9 +781,130 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			selectedBox.z = selectedBox.w;
 			selectedBox.x += itemBoxAdvance * itemSelected;
 			renderer2d.renderRectangle(selectedBox, itemsHighlighter, Colors_White, {}, 0);
+
+			//if (!isCreative)
+			{
+				auto heartBox = itemsBarBox;
+				heartBox.z = itemsBarBox.w / 2.5;
+				heartBox.w = itemsBarBox.w / 2.5;
+				heartBox.y -= heartBox.w;
+
+				int background = 0;
+
+				static Oscilator lifeFlash(0.1, 2);
+				bool tookDamage = 0;
+
+				if (player.justRecievedDamageTimer > 0)
+				{
+					player.justRecievedDamageTimer -= deltaTime;
+					tookDamage = true;
+					background = 1;
+				}
+				else if (player.justHealedTimer > 0)
+				{
+					player.justHealedTimer -= deltaTime;
+					background = 2;
+				}
+
+				if (background == 1)
+				{
+					background = lifeFlash.currentFaze;
+					lifeFlash.update(deltaTime);
+				}
+				else if (background == 2)
+				{
+					background = lifeFlash.currentFaze == 1 ? 2 : 0;
+					lifeFlash.update(deltaTime);
+				}else
+				{
+					lifeFlash.reset();
+				}
+
+
+				{
+					auto heartBoxCopy = heartBox;
+					for (int i = 0; i < playerHealth.maxLife; i += 2)
+					{
+						renderer2d.renderRectangle(heartBoxCopy, programData.heartsTexture, Colors_White, {}, 0,
+							programData.heartsAtlas.get(background, 0));
+						heartBoxCopy.x += heartBoxCopy.z;
+					}
+				}
+
+				if (tookDamage)
+				{
+					auto heartBoxCopy = heartBox;
+					for (int i = 0; i < playerHealth.maxLife; i += 2)
+					{
+						if (i < player.lastLife.life)
+						{
+							if (i + 1 >= player.lastLife.life)
+							{
+								renderer2d.renderRectangle(heartBoxCopy, programData.heartsTexture, {1,1,1,0.3}, {}, 0,
+									programData.heartsAtlas.get(4, 0));
+							}
+							else
+							{
+								renderer2d.renderRectangle(heartBoxCopy, programData.heartsTexture, {1,1,1,0.3}, {}, 0,
+									programData.heartsAtlas.get(3, 0));
+							}
+						}
+						heartBoxCopy.x += heartBoxCopy.z;
+					}
+				}
+				else
+				{
+					player.lastLife = player.life;
+				}
+
+				for (int i = 0; i < playerHealth.maxLife; i += 2)
+				{
+					
+
+					if (i < playerHealth.life)
+					{
+						if (i + 1 >= playerHealth.life)
+						{
+							renderer2d.renderRectangle(heartBox, programData.heartsTexture, Colors_White, {}, 0,
+								programData.heartsAtlas.get(4, 0));
+						}
+						else
+						{
+							renderer2d.renderRectangle(heartBox, programData.heartsTexture, Colors_White, {}, 0,
+								programData.heartsAtlas.get(3, 0));
+						}
+					}
+
+					heartBox.x += heartBox.z;
+				}
+
+
+			}
+
 		}
 
 	}
 
 
+}
+
+void Oscilator::update(float deltaTime)
+{
+	currentTimer -= deltaTime;
+	if (currentTimer < 0)
+	{
+		currentTimer = maxFazeTime;
+		currentFaze++;
+
+		if (currentFaze >= maxFazes)
+		{
+			currentFaze = 0;
+		}
+	}
+}
+
+void Oscilator::reset()
+{
+	currentTimer = 0;
+	currentFaze = 0;
 }

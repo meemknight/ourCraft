@@ -30,6 +30,8 @@ struct PerClientServerSettings
 	bool spawnZombie = false;
 	bool spawnPig = false;
 	bool resendInventory = false;
+	bool damage = false;
+	bool heal = false;
 
 	glm::dvec3 outPlayerPos;
 };

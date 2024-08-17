@@ -30,6 +30,8 @@ struct ProgramData
 	gl2d::Texture brdfTexture;
 	gl2d::Texture defaultCover;
 	gl2d::Texture crackTexture;
+	gl2d::Texture heartsTexture;
+	gl2d::TextureAtlasPadding heartsAtlas;
 	int currentFps = 0;
 
 	struct OtherSettings

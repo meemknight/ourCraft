@@ -7,7 +7,9 @@ struct PlayerInventory;
 struct BlocksLoader;
 struct Item;
 struct CraftingTableInventory;
-
+struct Life;
+struct ProgramData;
+struct LocalPlayer;
 
 struct UiENgine
 {
@@ -41,7 +43,7 @@ struct UiENgine
 	glm::vec2 playerCellSize;
 
 
-
+	//todo simplify
 	//cursorItemIndex returns -1 if outside the menu to throw items, and -2 if it is nowhere 
 	//if inside crafting, supply craftingTableInventory
 	void renderGameUI(float deltaTime, 
@@ -49,7 +51,27 @@ struct UiENgine
 		BlocksLoader &blocksLoader, bool insideInventory, int &cursorItemIndex,
 		Item &itemToCraft, 
 		bool insideCraftingTable, int &currentInventoryTab, bool isCreative,
-		unsigned short &selectedItem
+		unsigned short &selectedItem, Life &playerHealth, ProgramData &programData,
+		LocalPlayer &player
 		);
 
+};
+
+
+struct Oscilator
+{
+
+	Oscilator() {};
+	Oscilator(float t, int fazes = 2): maxFazeTime(t), maxFazes(fazes) {};
+
+
+	float maxFazeTime  = 0;
+	int maxFazes = 0;
+
+	float currentTimer = 0;
+	int currentFaze = 0;
+
+	void update(float deltaTime);
+
+	void reset();
 };
