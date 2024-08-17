@@ -528,8 +528,17 @@ namespace glui
 		gl2d::Font& font, glm::ivec2 mousePos, bool mouseClick,
 		bool mouseHeld, bool mouseReleased, 
 		bool escapeReleased, const std::string& typedInput, 
-		float deltaTime)
+		float deltaTime,
+		bool *anyButtonPressed, bool *backPressed, bool *anyCustomWidgetPressed
+		, bool *anyToggleToggeled, bool *anyToggleDetoggeled
+	)
 	{
+		if (anyButtonPressed) { *anyButtonPressed = 0; }
+		if (backPressed) { *backPressed = 0; }
+		if (anyCustomWidgetPressed) { *anyCustomWidgetPressed = 0; }
+		if (anyToggleToggeled) { *anyToggleToggeled = 0; }
+		if (anyToggleDetoggeled) { *anyToggleDetoggeled = 0; }
+
 		if (!idWasSet)
 		{
 			return;
@@ -549,6 +558,11 @@ namespace glui
 		if (escapeReleased && !currentMenuStack.empty())
 		{
 			currentMenuStack.pop_back();
+
+			if (backPressed)
+			{
+				*backPressed = true;
+			}
 		}
 
 		timer += deltaTime*2;
@@ -807,6 +821,7 @@ namespace glui
 					if (input.mouseReleased && aabb(aabbTransform, input.mousePos))
 					{
 						widget.returnFromUpdate = true;
+						if (anyButtonPressed) { *anyButtonPressed = true; }
 					}
 					else
 					{
@@ -870,6 +885,21 @@ namespace glui
 						if (input.mouseReleased && aabb(aabbBox, input.mousePos))
 						{
 							*(bool*)(widget.pointer) = !(*(bool*)(widget.pointer));
+
+							if (*(bool *)(widget.pointer))
+							{
+								if (anyToggleToggeled)
+								{
+									*anyToggleToggeled = true;
+								}
+							}
+							else
+							{
+								if (anyToggleDetoggeled)
+								{
+									*anyToggleDetoggeled = true;
+								}
+							}
 						}
 
 						widget.returnFromUpdate = *(bool*)(widget.pointer);
@@ -937,6 +967,21 @@ namespace glui
 						if (input.mouseReleased && aabb(toggleTransform, input.mousePos))
 						{
 							*(bool *)(widget.pointer) = !(*(bool *)(widget.pointer));
+
+							if (*(bool *)(widget.pointer))
+							{
+								if (anyToggleToggeled)
+								{
+									*anyToggleToggeled = true;
+								}
+							}
+							else
+							{
+								if (anyToggleDetoggeled)
+								{
+									*anyToggleDetoggeled = true;
+								}
+							}
 						}
 
 						widget.returnFromUpdate = *(bool *)(widget.pointer);
@@ -1114,6 +1159,7 @@ namespace glui
 						if (input.mouseReleased && aabb(aabbPos, input.mousePos))
 						{
 							widget.returnFromUpdate = true;
+							if (anyButtonPressed) { *anyButtonPressed = true; }
 						}
 						else
 						{
@@ -1282,7 +1328,16 @@ namespace glui
 
 						j.second.hovered = aabb(j.second.returnTransform, mousePos);
 						
-						j.second.clicked = aabb(j.second.returnTransform, mousePos) && mouseHeld;
+						j.second.clicked = aabb(j.second.returnTransform, mousePos) && mouseClick;
+
+						if (j.second.clicked)
+						{
+							if (anyCustomWidgetPressed)
+							{
+								*anyCustomWidgetPressed = true;
+							}
+						}
+
 
 						break;
 					}
@@ -1347,6 +1402,7 @@ namespace glui
 						if (input.mouseReleased && aabb(aabbTransform, input.mousePos))
 						{
 							widget.returnFromUpdate = true;
+							if (anyButtonPressed) { *anyButtonPressed = true; }
 							(*index)++;
 						}
 						else

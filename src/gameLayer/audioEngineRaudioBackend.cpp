@@ -204,7 +204,7 @@ namespace AudioEngine
 
 
 
-	
+
 
 
 	SoundCollection allSounds[] = 
@@ -225,6 +225,9 @@ namespace AudioEngine
 		SoundCollection(RESOURCES_PATH "sounds/toolBreakWood"),
 		SoundCollection(RESOURCES_PATH "sounds/toolBreakStone"),
 		SoundCollection(RESOURCES_PATH "sounds/toolBreakMetal"),
+
+		SoundCollection(RESOURCES_PATH "/sounds/buttonPress"),
+		SoundCollection(RESOURCES_PATH "/sounds/buttonBack"),
 
 	};
 

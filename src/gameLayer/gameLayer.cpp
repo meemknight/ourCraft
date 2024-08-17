@@ -482,9 +482,25 @@ bool gameLogic(float deltaTime)
 #pragma region set finishing stuff
 	gl2d::enableNecessaryGLFeatures();
 
+	bool anyButtonPressed = 0;
+	bool backPressed = 0;
+	bool anyCustomWidgetPressed = 0;
+	bool anyToggleToggeled = 0;
+	bool anyToggleDetoggeled = 0;
+
 	programData.ui.menuRenderer.renderFrame(programData.ui.renderer2d, programData.ui.font, platform::getRelMousePosition(),
 		platform::isLMousePressed(), platform::isLMouseHeld(), platform::isLMouseReleased(),
-		platform::isKeyReleased(platform::Button::Escape), platform::getTypedInput(), deltaTime);
+		platform::isKeyReleased(platform::Button::Escape), platform::getTypedInput(), deltaTime, &anyButtonPressed, &backPressed,
+		&anyCustomWidgetPressed, &anyToggleToggeled, &anyToggleDetoggeled);
+
+	if (anyButtonPressed || anyToggleToggeled || anyToggleDetoggeled)
+	{
+		AudioEngine::playSound(AudioEngine::uiButtonPress, 0.9);
+	}
+	else if(backPressed)
+	{
+		AudioEngine::playSound(AudioEngine::uiButtonBack, 0.9);
+	}
 
 	programData.ui.renderer2d.flush();
 

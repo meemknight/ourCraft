@@ -37,6 +37,10 @@ namespace AudioEngine
 		toolBreakingStone,
 		toolBreakingIron,
 
+		uiButtonPress,
+		uiButtonBack,
+
+
 		LAST_SOUND
 	};
 

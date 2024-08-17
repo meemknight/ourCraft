@@ -40,6 +40,7 @@ namespace glui
 			bool escapeReleased,
 			const std::string &typedInput,
 			float deltaTime
+			, bool *anyButtonPressed, bool *backPressed, bool *anyCustomWidgetPressed, bool *anyToggleToggeled, bool *anyToggleDetoggeled
 		);
 
 		bool Button(std::string name,
