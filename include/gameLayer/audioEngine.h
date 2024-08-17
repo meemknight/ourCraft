@@ -44,6 +44,8 @@ namespace AudioEngine
 
 int getSoundForBlock(unsigned int blockType);
 
+int getSoundForBlockStepping(unsigned int blockType);
+
 constexpr static float MINING_BLOCK_SOUND_VOLUME = 0.8;
 constexpr static float PLACED_BLOCK_SOUND_VOLUME = 0.9;
 constexpr static float BREAKED_BLOCK_SOUND_VOLUME = 1.0;
