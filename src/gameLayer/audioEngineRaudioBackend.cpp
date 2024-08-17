@@ -251,6 +251,11 @@ int getSoundForBlock(unsigned int type)
 		return AudioEngine::wood;
 	}
 
+	if (type == grassBlock)
+	{
+		return AudioEngine::grass;
+	}
+
 	if (isAnyDirtBlock(type))
 	{
 		return AudioEngine::dirt;
