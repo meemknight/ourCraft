@@ -217,9 +217,10 @@ namespace AudioEngine
 		SoundCollection(RESOURCES_PATH "/sounds/stone"),
 		SoundCollection(RESOURCES_PATH "/sounds/sand"),
 		SoundCollection(RESOURCES_PATH "/sounds/wood"),
-		SoundCollection(RESOURCES_PATH "/sounds/glass"),
+		SoundCollection(RESOURCES_PATH "/sounds/glassBreak"),
 		SoundCollection(RESOURCES_PATH "/sounds/leaves"),
 		SoundCollection(RESOURCES_PATH "/sounds/snow"),
+		SoundCollection(RESOURCES_PATH "/sounds/metal"),
 		
 
 		SoundCollection(RESOURCES_PATH "sounds/toolBreakWood"),
@@ -249,15 +250,27 @@ int getSoundForBlock(unsigned int type)
 	if (!isBlock(type)) { return 0; }
 	if (type == water) { return 0; }
 
-	if (isAnyWoddenBlock(type))
+
+
+	if (type == gold_block)
 	{
-		return AudioEngine::wood;
+		return AudioEngine::metal;
 	}
 
 	if (type == grassBlock)
 	{
 		return AudioEngine::grass;
 	}
+
+
+
+	///
+
+	if (isAnyWoddenBlock(type))
+	{
+		return AudioEngine::wood;
+	}
+
 
 	if (isAnyDirtBlock(type))
 	{
@@ -276,7 +289,7 @@ int getSoundForBlock(unsigned int type)
 
 	if (type == snow_block)
 	{
-		return 0; //todo
+		return AudioEngine::snow;
 	}
 
 	if (isAnySemiHardBlock(type))
@@ -291,17 +304,17 @@ int getSoundForBlock(unsigned int type)
 
 	if (isAnyPlant(type))
 	{
-		return 0; //todo
+		return AudioEngine::leaves; //todo
 	}
 
 	if (isAnyGlass(type) || type == glowstone)
 	{
-		return AudioEngine::glass;
+		return AudioEngine::glassBreak;
 	}
 
-	if(type == ice)
+	if (type == ice)
 	{
-		return AudioEngine::glass; //todo?
+		return AudioEngine::glassBreak; //todo?
 	}
 
 	if (isAnyLeaves(type))
@@ -319,10 +332,11 @@ int getSoundForBlock(unsigned int type)
 		return AudioEngine::stone; //todo
 	}
 
-	if (isTriviallyBreakable(torch))
+	if (isTriviallyBreakable(type))
 	{
 		return 0; //todo
 	}
 
-	return 0;
+
+	return AudioEngine::stone;
 }

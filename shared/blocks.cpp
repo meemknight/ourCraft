@@ -144,7 +144,6 @@ bool isAnyStone(BlockType type)
 		type == diamond_ore ||
 		type == iron_ore ||
 		type == gold_block;
-
 }
 
 bool isAnyPlant(BlockType type)

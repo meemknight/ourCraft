@@ -29,9 +29,10 @@ namespace AudioEngine
 		stone,
 		sand,
 		wood,
-		glass,
+		glassBreak,
 		leaves,
 		snow,
+		metal,
 
 		toolBreakingWood,
 		toolBreakingStone,
