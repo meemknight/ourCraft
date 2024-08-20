@@ -19,7 +19,7 @@ in flat uvec2 v_normalSampler;
 in flat uvec2 v_materialSampler;
 in flat int v_ambientInt;
 
-in flat int v_skyLight; //ambient sun value
+in flat int v_skyLight; //ambient sun value, todo remove?
 in flat int v_skyLightUnchanged;
 in flat int v_normalLight;
 
@@ -766,7 +766,7 @@ void main()
 	}
 
 	const bool blockIsInWater = ((v_flags & 2) != 0);
-	const float baseAmbient = 0.25;
+	const float baseAmbient = 0.35;
 	const float multiplier = 0.75;
 	vec3 computedAmbient = vec3(min(toLinear(v_ambient *  multiplier * (1.f-baseAmbient) + baseAmbient), 1));
 	//vec3 computedAmbient = vec3((v_ambient *  multiplier * (1.f-baseAmbient) + baseAmbient));
@@ -785,7 +785,7 @@ void main()
 
 	float blockAO = getBlockAO();
 	computedAmbient *= blockAO;
-	computedAmbient *= 1;
+	computedAmbient *= 1.2;
 
 	if(u_shaders == 0)
 	{
@@ -1002,7 +1002,16 @@ void main()
 		if(v_skyLightUnchanged > 3)
 		{
 			
-			sunLightColor *= 1-((15-v_skyLightUnchanged)/9.f);
+			//light go down when there is no sun light reaching there.
+			sunLightColor *= clamp(1-((15-v_skyLightUnchanged)/9.f), 0, 1);
+
+
+			//light should go down a little when there is maximum ambient light
+			//15 -> 0
+			//10 -> 1
+			float decrese = clamp(   ( float(v_ambientInt-10) / 5.f), 0.f, 1.f);
+			sunLightColor *= mix(1.0, 0.7, decrese); 
+
 
 			if(isWater())
 			{

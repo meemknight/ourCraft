@@ -19,6 +19,7 @@ struct ProgramData
 	BlocksLoader blocksLoader;
 	ModelsManager modelsManager;
 	SkyBoxLoaderAndDrawer skyBoxLoaderAndDrawer;
+	SunRenderer sunRenderer;
 
 	Profiler GPUProfiler;
 

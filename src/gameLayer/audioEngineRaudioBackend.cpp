@@ -229,6 +229,11 @@ namespace AudioEngine
 
 		SoundCollection(RESOURCES_PATH "/sounds/buttonPress"),
 		SoundCollection(RESOURCES_PATH "/sounds/buttonBack"),
+		SoundCollection(RESOURCES_PATH "/sounds/buttonOn"),
+		SoundCollection(RESOURCES_PATH "/sounds/buttonOff"),
+		SoundCollection(RESOURCES_PATH "/sounds/buttonSlider"),
+
+
 
 	};
 

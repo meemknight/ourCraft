@@ -308,15 +308,15 @@ struct Renderer
 		glm::mat4 &vp, glm::mat4 &viewMatrix, glm::vec3 posFloat, glm::ivec3 posInt);
 
 	void renderShadow(SunShadow &sunShadow,
-		ChunkSystem &chunkSystem, Camera &c, ProgramData &programData);
+		ChunkSystem &chunkSystem, Camera &c, ProgramData &programData, glm::vec3 sunPos);
 
 
 	float waterTimer = 0;
 
 	GLuint lightBuffer = 0;
 	size_t lightsBufferCount = 0;
-
-	SkyBoxRenderer skyBoxRenderer;
+	
+	glm::vec3 sunPos = glm::normalize(glm::vec3(-1, 0.84, -1));//todo change
 
 	GLuint vao = 0;
 	GLuint vertexBuffer = 0;

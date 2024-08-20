@@ -421,6 +421,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		if (platform::isKeyPressedOn(platform::Button::R))
 		{
 			programData.renderer.reloadShaders();
+			programData.skyBoxLoaderAndDrawer.clearOnlyGPUdata();
+			programData.skyBoxLoaderAndDrawer.createGpuData();
+
+			programData.sunRenderer.clear();
+			programData.sunRenderer.create();
+
 		}
 
 
@@ -881,7 +887,17 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	programData.renderer.entityRenderer.itemEntitiesToRender.push_back({gameData.entityTest});
 
+
+
+	//
+#pragma region weather and time
+
 	static float dayTime = 0.25;
+	programData.renderer.sunPos = calculateSunPosition(dayTime);
+	//dayTime += deltaTime * 0.1f;
+
+#pragma endregion
+
 
 #pragma region chunks and rendering
 	if(w != 0 && h != 0)
@@ -896,16 +912,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 		gameData.gameplayFrameProfiler.startSubProfile("rendering");
-
-		gameData.sunShadow.update();
-
-		if (programData.renderer.defaultShader.shadingSettings.shadows)
-		{
-			programData.renderer.renderShadow(gameData.sunShadow,
-				gameData.chunkSystem, gameData.c, programData);
-		}
-
-		gameData.sunShadow.renderShadowIntoTexture(gameData.c);
 
 		//programData.renderer.render(data, gameData.c, programData.texture);
 		programData.renderer.renderFromBakedData(gameData.sunShadow,gameData.chunkSystem, 
@@ -940,6 +946,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma endregion
 
 
+//steppings sound
 #pragma region steppings sounds
 
 	{
@@ -1167,7 +1174,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				ImGui::Combo("Tonemapper", &programData.renderer.defaultShader.
 					shadingSettings.tonemapper, "ACES\0AgX\0ZCAM\0");
 
-				ImGui::SliderFloat3("Sky pos", &programData.renderer.skyBoxRenderer.sunPos[0], -1, 1);
+				ImGui::SliderFloat3("Sky pos", &programData.renderer.sunPos[0], -1, 1);
 
 				ImGui::ColorPicker3("water color", 
 					&programData.renderer.defaultShader.shadingSettings.waterColor[0]);
@@ -1188,13 +1195,14 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					0, 10);
 
 
-				if (glm::length(programData.renderer.skyBoxRenderer.sunPos[0]) != 0)
+				if (glm::length(programData.renderer.sunPos[0]) != 0)
 				{
-					programData.renderer.skyBoxRenderer.sunPos = glm::normalize(programData.renderer.skyBoxRenderer.sunPos);
+					programData.renderer.sunPos = 
+						glm::normalize(programData.renderer.sunPos);
 				}
 				else
 				{
-					programData.renderer.skyBoxRenderer.sunPos = glm::vec3(0, -1, 0);
+					programData.renderer.sunPos = glm::vec3(0, -1, 0);
 				}
 			}
 

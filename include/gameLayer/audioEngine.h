@@ -40,6 +40,9 @@ namespace AudioEngine
 
 		uiButtonPress,
 		uiButtonBack,
+		uiOn,
+		uiOff,
+		uiSlider,
 
 
 		LAST_SOUND

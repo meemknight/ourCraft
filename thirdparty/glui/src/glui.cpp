@@ -1403,6 +1403,7 @@ namespace glui
 						{
 							widget.returnFromUpdate = true;
 							if (anyButtonPressed) { *anyButtonPressed = true; }
+							if (anyToggleToggeled) { *anyToggleToggeled = true; }
 							(*index)++;
 						}
 						else

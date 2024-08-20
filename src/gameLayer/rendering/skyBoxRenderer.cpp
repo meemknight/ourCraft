@@ -1,36 +1,12 @@
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include "rendering/skyBoxRenderer.h"
 #include <stb_image/stb_image.h>
 #include <platformTools.h>
 #include <iostream>
 #include <fstream>
 
-void SkyBoxRenderer::create()
-{
-
-	shader.loadShaderProgramFromFile(RESOURCES_PATH "skyBox.vert", RESOURCES_PATH "skyBox.frag");
-	u_invView = shader.getUniform("u_invView");
-	u_invProj = shader.getUniform("u_invProj");
-	u_sunPos = shader.getUniform("u_sunPos");
-	u_underWater = shader.getUniform("u_underWater");
-	u_waterColor = shader.getUniform("u_waterColor");
-
-}
-
-void SkyBoxRenderer::render(Camera camera, bool underWater)
-{
-
-	shader.bind();
-	glUniformMatrix4fv(u_invView, 1, GL_FALSE, &glm::inverse(camera.getViewMatrix())[0][0]);
-	glUniformMatrix4fv(u_invProj, 1, GL_FALSE, &glm::inverse(camera.getProjectionMatrix())[0][0]);
-	glUniform3fv(u_sunPos, 1, &sunPos[0]);
-	glUniform3fv(u_waterColor, 1, &waterColor[0]);
-	glUniform1i(u_underWater, underWater);
-
-	glDepthMask(0);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	glDepthMask(1);
-
-}
 
 float skyboxVertices[] = {
 	// positions          
@@ -159,6 +135,11 @@ void SkyBoxLoaderAndDrawer::loadAllTextures(std::string path)
 	{
 		sunTexture.loadFromFile((path + "sun.png").c_str(), false, false);
 	}
+
+	if (!moonTexture.id)
+	{
+		moonTexture.loadFromFile((path + "moon.png").c_str(), false, false);
+	}
 }
 
 void SkyBoxLoaderAndDrawer::clearOnlyTextures()
@@ -167,6 +148,7 @@ void SkyBoxLoaderAndDrawer::clearOnlyTextures()
 	nightSky.clearTextures(); nightSky = {};
 	twilightSky.clearTextures(); twilightSky = {};
 	sunTexture.cleanup(); sunTexture = {};
+	moonTexture.cleanup(); moonTexture = {};
 }
 
 void SkyBoxLoaderAndDrawer::loadTexture(const char *name, SkyBox &skyBox, int format)
@@ -621,7 +603,6 @@ void SkyBoxLoaderAndDrawer::drawBefore(const glm::mat4 &viewProjMat,
 			rotation1 = rot;
 			rotation2 = 0;
 		}
-
 	}
 
 	GLint firstTexture = 0;
@@ -664,9 +645,6 @@ void SkyBoxLoaderAndDrawer::drawBefore(const glm::mat4 &viewProjMat,
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, secondTexture);
 
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, sunTexture.id);
-
 	normalSkyBox.shader.bind();
 	
 	glUniform1f(normalSkyBox.u_blend, mix);
@@ -684,7 +662,7 @@ void SkyBoxLoaderAndDrawer::drawBefore(const glm::mat4 &viewProjMat,
 	glBindVertexArray(0);
 }
 
-void SkyBoxLoaderAndDrawer::clear()
+void SkyBoxLoaderAndDrawer::clearOnlyGPUdata()
 {
 	normalSkyBox.shader.clear();
 	hdrtoCubeMap.shader.clear();
@@ -715,4 +693,104 @@ void SkyBox::clearTextures()
 	texture = 0;
 	convolutedTexture = 0;
 	preFilteredMap = 0;
+}
+
+
+float sunBufferData[] = 
+{
+	//pos    uv
+	1,1,    1,1,
+	-1, 1,  0, 1,
+	-1, -1, 0, 0,
+	1, -1,  1, 0
+};
+
+
+void SunRenderer::create()
+{
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	glGenBuffers(1, &vertexBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+
+	glBufferStorage(GL_ARRAY_BUFFER, sizeof(sunBufferData), sunBufferData, 0);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, 0);
+
+
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, (void*)(sizeof(float) * 2));
+
+
+	shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/skyBox/sun.vert", 
+		RESOURCES_PATH "shaders/skyBox/sun.frag");
+	
+	u_modelViewProjectionMatrix = getUniform(shader.id, "u_modelViewProjectionMatrix");
+
+	glBindVertexArray(0);
+}
+
+
+//orientates something facing at (0,0,-1) to be at direction
+glm::mat4 createTBNMatrix(const glm::vec3 &direction, const glm::vec3 &up = glm::vec3(0.0f, 1.0f, 0.0f))
+{
+	// Normalize the direction vector
+	glm::vec3 forward = -glm::normalize(direction);
+
+	// Calculate the right vector
+	glm::vec3 right = glm::normalize(glm::cross(up, forward));
+
+	// Recalculate the up vector as it's perpendicular to both forward and right vectors
+	glm::vec3 newUp = glm::cross(forward, right);
+
+	// Create a 3x3 rotation matrix using the right, up, and forward vectors
+	glm::mat3 rotationMatrix = glm::mat3(right, newUp, forward);
+
+	// Convert to a 4x4 matrix
+	return glm::mat4(rotationMatrix);
+}
+
+void SunRenderer::render(Camera camera, 
+	glm::vec3 sunPos, gl2d::Texture sunTexture)
+{
+	glBindVertexArray(vao);
+	shader.bind();
+
+	sunTexture.bind(0);
+
+	glDepthFunc(GL_ALWAYS);
+
+	auto finalMatrix = camera.getProjectionMatrix() * camera.getViewMatrix() * createTBNMatrix(sunPos);
+	glUniformMatrix4fv(u_modelViewProjectionMatrix, 1, GL_FALSE, &finalMatrix[0][0]);
+
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+}
+
+void SunRenderer::clear()
+{
+
+	glDeleteBuffers(1, &vertexBuffer);
+	glDeleteVertexArrays(1, &vao);
+
+	shader.clear();
+	*this = {};
+}
+
+glm::vec3 calculateSunPosition(float dayTime)
+{
+	if (dayTime > 1.f) {dayTime -= (int)dayTime;}
+
+	//0   -> sunrise
+	//0.25 -> noon
+	//0.75 -> noon
+	//1    -> sunrise
+
+	float angle = dayTime * 2 * 3.1415926;
+
+	glm::vec4 finalAngle = {1,0,0,1};
+	finalAngle = glm::rotate(angle, glm::vec3{0,0,1}) * finalAngle;
+
+	return finalAngle;
 }

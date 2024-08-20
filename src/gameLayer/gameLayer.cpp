@@ -239,7 +239,7 @@ bool initGame() //main server and title screen stuff
 	programData.pointDebugRenderer.create();
 	programData.skyBoxLoaderAndDrawer.createGpuData();
 	programData.renderer.create();
-
+	programData.sunRenderer.create();
 
 	loadAllDefaultTexturePacks();
 
@@ -493,7 +493,17 @@ bool gameLogic(float deltaTime)
 		platform::isKeyReleased(platform::Button::Escape), platform::getTypedInput(), deltaTime, &anyButtonPressed, &backPressed,
 		&anyCustomWidgetPressed, &anyToggleToggeled, &anyToggleDetoggeled);
 
-	if (anyButtonPressed || anyToggleToggeled || anyToggleDetoggeled)
+
+	if (anyToggleToggeled)
+	{
+		AudioEngine::playSound(AudioEngine::uiOn, 0.9);
+	}
+	else if(anyToggleDetoggeled)
+	{
+		AudioEngine::playSound(AudioEngine::uiOff, 0.9);
+	}
+	else
+	if (anyButtonPressed)
 	{
 		AudioEngine::playSound(AudioEngine::uiButtonPress, 0.9);
 	}
@@ -501,6 +511,8 @@ bool gameLogic(float deltaTime)
 	{
 		AudioEngine::playSound(AudioEngine::uiButtonBack, 0.9);
 	}
+
+
 
 	programData.ui.renderer2d.flush();
 

@@ -6,28 +6,6 @@
 #include "rendering/camera.h"
 #include <gl2d/gl2d.h>
 
-//todo remove
-struct SkyBoxRenderer
-{
-
-	void create();
-
-	Shader shader = {};
-
-	GLuint u_invView = 0;
-	GLuint u_invProj = 0;
-	GLuint u_sunPos = 0;
-	GLuint u_underWater = 0;
-	GLuint u_waterColor = 0;
-
-	glm::vec3 waterColor = (glm::vec3(9, 73, 126) / 255.f);
-
-	glm::vec3 sunPos = glm::normalize(glm::vec3(-1, 0.84, -1));
-
-	void render(Camera camera, bool underWater);
-
-};
-
 struct SkyBox
 {
 	GLuint texture = 0;				//environment cubemap
@@ -107,14 +85,38 @@ struct SkyBoxLoaderAndDrawer
 	SkyBox nightSky;
 	SkyBox twilightSky;
 	gl2d::Texture sunTexture;
+	gl2d::Texture moonTexture;
 
 
 	void drawBefore(const glm::mat4 &viewProjMat, 
 		glm::vec3 sunPos, float timeOfDay);
 
 
-	void clear();
+	void clearOnlyGPUdata();
 };
+
+
+struct SunRenderer
+{
+
+	GLuint vertexBuffer = 0;
+	GLuint vao = 0;
+
+	
+	void create();
+
+	Shader shader = {};
+	GLuint u_modelViewProjectionMatrix = 0;
+
+	void render(Camera camera, glm::vec3 sunPos,
+		gl2d::Texture sunTexture);
+
+	void clear();
+
+};
+
+
+glm::vec3 calculateSunPosition(float dayTime);
 
 
 /*

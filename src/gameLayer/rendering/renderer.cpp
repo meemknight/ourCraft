@@ -738,9 +738,6 @@ void Renderer::create()
 	fboHBAO.create(GL_RED, false);
 	fboSkyBox.create(GL_R11F_G11F_B10F, false);
 
-	skyBoxRenderer.create();
-
-
 
 
 	{
@@ -1179,6 +1176,34 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 {
 	glViewport(0, 0, screenX, screenY);
 
+
+	
+	if (dayTime > 1.f)
+		{ dayTime -= (int)dayTime; }
+	glm::vec3 mainLightPosition = sunPos;
+	if (dayTime > 0.50)
+	{
+		mainLightPosition = -sunPos;
+	}
+
+	//shadow
+	{
+		sunShadow.update();
+
+		if (programData.renderer.defaultShader.shadingSettings.shadows)
+		{
+			programData.renderer.renderShadow(sunShadow,
+				chunkSystem, c, programData, mainLightPosition);
+		}
+
+		sunShadow.renderShadowIntoTexture(c);
+	}
+
+
+	glViewport(0, 0, screenX, screenY);
+
+
+
 	fboCoppy.updateSize(screenX, screenY);
 	fboCoppy.clearFBO();
 
@@ -1241,8 +1266,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		//return (firstLight * (1.f - mix)) + (secondLight * mix);
 	};
 
-	if (dayTime > 1.f)
-		{ dayTime -= (int)dayTime; }
 
 	//determine sky light intensity.
 	int skyLightIntensity = 15;
@@ -1261,7 +1284,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		glm::vec3 daySkyLight(2.0f);
 		glm::vec3 nightSkyLight = (glm::vec3(47, 135, 244) / 255.f) * 0.65f;
-		glm::vec3 twilightLight = (glm::vec3(255, 159, 107) / 255.f) * 2.2f;
+		glm::vec3 twilightLight = (glm::vec3(255, 159, 107) / 255.f) * 0.2f;
 		
 		sunLightColor = doDayLightCalculations(daySkyLight, nightSkyLight, twilightLight);
 	}
@@ -1270,10 +1293,11 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	{
 		glm::vec3 daySkyLight(1.0f);
 		glm::vec3 nightSkyLight = (glm::vec3(47, 135, 244) / 255.f) * 0.9f;
-		glm::vec3 twilightLight = (glm::vec3(255, 159, 107) / 255.f) * 1.f;
+		glm::vec3 twilightLight = (glm::vec3(255, 159, 107) / 255.f) * 0.6f;
 
 		ambientColor = doDayLightCalculations(daySkyLight, nightSkyLight, twilightLight);
 	}
+
 	
 
 #pragma region frustum culling and sorting
@@ -1347,10 +1371,22 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fboOnlyFirstTarget);
 
 	programData.skyBoxLoaderAndDrawer.drawBefore(c.getProjectionMatrix() * c.getViewMatrix(),
-		programData.renderer.skyBoxRenderer.sunPos, dayTime);
+		mainLightPosition, dayTime);
 
 	fboSkyBox.copyColorFromOtherFBO(fboMain.color,
 		fboMain.size.x, fboMain.size.y);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fboOnlyFirstTarget);
+	programData.sunRenderer.render(c, sunPos, programData.skyBoxLoaderAndDrawer.sunTexture);
+
+	programData.sunRenderer.render(c, -sunPos, programData.skyBoxLoaderAndDrawer.moonTexture);
+
+
+	glDisable(GL_BLEND);
+	glDepthFunc(GL_LESS);
 
 #pragma endregion
 
@@ -1383,7 +1419,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform1f(defaultShader.u_time, std::clock() / 400.f);
 		glUniform1i(defaultShader.u_showLightLevels, showLightLevels);
 		glUniform1i(defaultShader.u_skyLightIntensity, skyLightIntensity);
-		glUniform3fv(defaultShader.u_sunDirection, 1, &skyBoxRenderer.sunPos[0]);
+		glUniform3fv(defaultShader.u_sunDirection, 1, &mainLightPosition[0]);
 		glUniform1f(defaultShader.u_metallic, metallic);
 		glUniform1f(defaultShader.u_roughness, roughness);
 		glUniform1i(defaultShader.u_underWater, underWater);
@@ -2437,7 +2473,8 @@ void Renderer::renderEntities(
 	//todo remove
 	entityRenderer.itemEntitiesToRender.clear();
 
-	renderHand();
+	//render hand
+	//renderHand();
 
 	renderAllEntitiesOfOneType(modelsManager.human, entityManager.players, ModelsManager::SteveTexture);
 	renderAllEntitiesOfOneType(modelsManager.human, entityManager.zombies, ModelsManager::ZombieTexture);
@@ -2688,7 +2725,7 @@ glm::mat4 calculateLightProjectionMatrix(Camera &camera, glm::vec3 lightDir,
 
 
 void Renderer::renderShadow(SunShadow &sunShadow,
-	ChunkSystem &chunkSystem, Camera &c, ProgramData &programData)
+	ChunkSystem &chunkSystem, Camera &c, ProgramData &programData, glm::vec3 sunPos)
 {
 	glEnable(GL_DEPTH_TEST);
 	glColorMask(0, 0, 0, 0);
@@ -2704,7 +2741,7 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 		//newPos.y = 120;
 		newPos.y += 50;
 
-		glm::vec3 moveDir = skyBoxRenderer.sunPos;
+		glm::vec3 moveDir = sunPos;
 
 		float l = glm::length(moveDir);
 		if (l > 0.0001)
@@ -2735,7 +2772,7 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 	//auto mvp = lightProjection * glm::lookAt({},
 	//	-skyBoxRenderer.sunPos, glm::vec3(0, 1, 0));
 
-	auto mvp = lightProjection * glm::lookAt({},
+	auto mvp = lightProjection * lookAtSafe({},
 		vectorToPlayer, glm::vec3(0, 1, 0));
 
 	

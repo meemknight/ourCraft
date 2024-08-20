@@ -101,17 +101,18 @@ void main()
 	vec2 sunTexCoords = mapDirectionToUV();
 
 	// Sample the sun texture using the corrected texture coordinates
-	vec3 sunColor = texture(u_sunTexture, sunTexCoords).rgb;
+	//vec3 sunColor = texture(u_sunTexture, sunTexCoords).rgb;
 
-
-	skyColor.rgb *= 1.0f; //brighten the sky
-	sunColor.rgb *= 1.0f; //brighten the sky
+	//skyColor.rgb *= 1.0f; //brighten the sky
+	//sunColor.rgb *= 1.0f; //brighten the sky
 
 
 	// Apply screen blend mode
-	a_outColor.rgb = vec3(1.0) - (vec3(1.0) - skyColor.rgb) * (vec3(1.0) - sunColor);
+	//a_outColor.rgb = vec3(1.0) - (vec3(1.0) - skyColor.rgb) * (vec3(1.0) - sunColor);
+
+	a_outColor.rgb = skyColor.rgb;
+
 	
-	//a_outColor.rgb += mix(skyColor.rgb, sunColor.rgb, sunColor.a);
 
 	// Ensure that the alpha channel is 1.0
 	a_outColor.a = 1.0;
