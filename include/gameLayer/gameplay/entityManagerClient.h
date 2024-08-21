@@ -35,6 +35,8 @@ struct ClientEntityManager : public EntityDataClient
 	//todo this can't remove the player, maybe we should refactor
 	void removeEntity(std::uint64_t entityId);
 
+	void killEntity(std::uint64_t entityId);
+
 	void removePlayer(std::uint64_t entityId);
 
 	void removeDroppedItem(std::uint64_t entityId);

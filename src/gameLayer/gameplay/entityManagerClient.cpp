@@ -6,6 +6,8 @@
 #include <multyPlayer/createConnection.h>
 #include <utility>
 #include <gameplay/items.h>
+#include <platformTools.h>
+#include <repeat.h>
 
 
 bool checkIfPlayerShouldGetEntity(glm::ivec2 playerPos2D,
@@ -35,6 +37,12 @@ void genericDropEntitiesThatAreTooFar(T &container, glm::ivec2 playerPos2D, int 
 		if (!checkIfPlayerShouldGetEntity(playerPos2D, it->second.getPosition(),
 			playerSquareDistance, 0))
 		{
+
+			if constexpr (hasCleanup<decltype(it->second)>)
+			{
+				it->second.cleanup();
+			}
+
 			it = container.erase(it);
 		}
 		else
@@ -175,6 +183,7 @@ bool genericRemoveEntity(T &container, std::uint64_t entityId)
 	auto found = container.find(entityId);
 	if (found != container.end())
 	{
+		//todo we should check everytime we delete an entity.
 		if constexpr (hasCleanup<decltype(found->second)>)
 		{
 			found->second.cleanup();
@@ -189,43 +198,86 @@ bool genericRemoveEntity(T &container, std::uint64_t entityId)
 	}
 };
 
-//this can't remove the player
-template <int... Is>
-void callGenericRemoveEntity(std::integer_sequence<int, Is...>, ClientEntityManager &c,
+#define CASE_REMOVE(x) case x: { genericRemoveEntity(*c.template entityGetter<x>(), entityId); } break;
+
+void callGenericRemoveEntity(ClientEntityManager &c,
 	std::uint64_t entityId)
 {
-	bool stopCalling = false;
-	((stopCalling = genericRemoveEntity(*c.template entityGetter<Is+1>(), entityId)) || ...);
+
+	auto entityType = getEntityTypeFromEID(entityId);
+
+	switch (entityType)
+	{
+		REPEAT(CASE_REMOVE, 5);
+	case 5: { static_assert(5 == EntitiesTypesCount); }
+
+
+	default:;
+	}
 }
+#undef CASE_REMOVE
+
 
 void ClientEntityManager::removeEntity(std::uint64_t entityId)
 {
+	unsigned char entityType = getEntityTypeFromEID(entityId);
 
-	//auto tryRemove = [&](auto &container)
-	//{
-	//	auto found = container.find(entityId);
-	//	if (found != container.end())
-	//	{
-	//		container.erase(found);
-	//		return true;
-	//	}
-	//	else
-	//	{
-	//		return false;
-	//	}
-	//};
-	//
-	//if (!tryRemove(droppedItems))
-	//if (!tryRemove(zombies))
-	//if (!tryRemove(pigs))
-	//{}
-
+	permaAssertComment(entityType != 0, "remove entity can't remove players!");
+	
 	//this can't remove the player
-	callGenericRemoveEntity(std::make_integer_sequence<int, EntitiesTypesCount-1>(), 
-		*this, entityId);
-
-
+	callGenericRemoveEntity(*this, entityId);
 }
+
+
+#pragma region kill entity
+
+template<class T>
+bool genericKillEntity(T &container, std::uint64_t entityId)
+{
+	auto found = container.find(entityId);
+	if (found != container.end())
+	{
+		if constexpr (hasLife<decltype(found->second)>)
+		{
+			found->second.life.life = 0;
+		}
+
+		found->second.wasKilled = true;
+		found->second.wasKilledTimer = 1.5;
+
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+};
+
+#define CASE_KILL(x) case x: { genericKillEntity(*c.template entityGetter<x>(), entityId); } break;
+
+void callGenericKillEntity(ClientEntityManager &c,
+	std::uint64_t entityId)
+{
+
+	auto entityType = getEntityTypeFromEID(entityId);
+
+	switch (entityType)
+	{
+		REPEAT(CASE_KILL, 5);
+	case 5: { static_assert(5 == EntitiesTypesCount); }
+
+	default:;
+	}
+}
+#undef CASE_KILL
+
+void ClientEntityManager::killEntity(std::uint64_t entityId)
+{
+	callGenericKillEntity(*this, entityId);
+}
+
+#pragma endregion
+
 
 void ClientEntityManager::removePlayer(std::uint64_t entityId)
 {
@@ -340,12 +392,52 @@ void ClientEntityManager::addOrUpdateCat(std::uint64_t eid, Cat entity, float re
 
 
 
-template<class T>
+template<int TYPE, class T>
 void genericUpdateLoop(T &container, float deltaTime, ChunkData *(chunkGetter)(glm::ivec2))
 {
-	for (auto &e : container)
+
+	for (auto it = container.begin(); it != container.end();)
 	{
-		e.second.clientEntityUpdate(deltaTime, chunkGetter);
+
+		if constexpr (TYPE != EntityType::player)
+		{
+			if constexpr (hasCanBeKilled<decltype(it->second.entity)>)
+			{
+				if (it->second.wasKilled)
+				{
+					it->second.wasKilledTimer -= deltaTime;
+					if (it->second.wasKilledTimer <= 0)
+					{
+
+						if constexpr (hasCleanup<decltype(it->second)>)
+						{
+							it->second.cleanup();
+						}
+
+						// Remove the element and advance the iterator
+						it = container.erase(it);
+						continue; // Skip the increment since erase already moved the iterator
+					}
+				}
+			}
+		}
+		else
+		{
+			if (it->second.wasKilled)
+			{
+				it->second.wasKilledTimer -= deltaTime;
+				if (it->second.wasKilledTimer <= 0)
+				{
+					it->second.wasKilledTimer = 0;
+					++it;
+					continue;
+				}
+			}
+		}
+
+		// If the element wasn't erased, update it
+		it->second.clientEntityUpdate(deltaTime, chunkGetter);
+		++it; // Manually increment the iterator
 	}
 };
 
@@ -353,13 +445,14 @@ template <int... Is>
 void callGenericUpdateLoop(std::integer_sequence<int, Is...>, float deltaTime,
 	ChunkData *(chunkGetter)(glm::ivec2), ClientEntityManager &c)
 {
-	(genericUpdateLoop(*c.template entityGetter<Is>(), deltaTime, chunkGetter),  ...);
+	(genericUpdateLoop<Is>(*c.template entityGetter<Is>(), deltaTime, chunkGetter),  ...);
 }
 
 
 void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2))
 {
 	
+	//entityGetter<3>()->at(0).wasKilled = 0;
 
 	callGenericUpdateLoop(std::make_integer_sequence<int, EntitiesTypesCount>(), 
 		deltaTime, chunkGetter, *this);

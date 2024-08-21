@@ -16,6 +16,7 @@ uniform int u_bonesPerModel;
 out vec2 v_uv;
 out vec3 v_vertexPosition;
 out vec3 v_normals;
+out vec3 v_color;
 flat out int test;
 
 readonly restrict layout(std430) buffer u_skinningMatrix
@@ -34,6 +35,10 @@ struct PerEntityData
 	float entityPositionFloatY;
 	float entityPositionFloatZ;
 
+	float colorR;
+	float colorG;
+	float colorB;
+
 	uvec2 textureSampler;
 };
 
@@ -48,6 +53,7 @@ void main()
 {
 	ivec3 entityPosInt = ivec3(entityData[gl_InstanceID].entityPositionIntX, entityData[gl_InstanceID].entityPositionIntY, entityData[gl_InstanceID].entityPositionIntZ);
 	vec3 entityPosFloat = vec3(entityData[gl_InstanceID].entityPositionFloatX, entityData[gl_InstanceID].entityPositionFloatY, entityData[gl_InstanceID].entityPositionFloatZ);
+	v_color = vec3(entityData[gl_InstanceID].colorR, entityData[gl_InstanceID].colorG, entityData[gl_InstanceID].colorB);
 
 	v_textureSampler = entityData[gl_InstanceID].textureSampler;
 

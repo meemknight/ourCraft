@@ -179,6 +179,12 @@ struct Packet_RemoveEntity
 	std::uint64_t EID = 0;
 };
 
+struct Packet_KillEntity
+{
+	std::uint64_t EID = 0;
+};
+
+
 //used with:
 //headerRecieveDamage,
 //headerRecieveLife,

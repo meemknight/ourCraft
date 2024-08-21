@@ -284,9 +284,8 @@ struct LegsAnimator <T, std::enable_if_t< hasMovementSpeedForLegsAnimations<T>>>
 						legAngle = 0;
 					}
 				}
-
 			}
-		}
+		}else
 		{
 			deltaTime *= speed;
 
@@ -313,6 +312,23 @@ struct LegsAnimator <T, std::enable_if_t< hasMovementSpeedForLegsAnimations<T>>>
 
 	}
 
+	void bringBack(float speed)
+	{
+		legsAnimatorDirection = 0;
+
+		if (glm::abs(legAngle) - speed < 0)
+		{
+			legAngle = 0;
+		}
+		else if (legAngle > 0)
+		{
+			legAngle -= speed;
+		}
+		else
+		{
+			legAngle += speed;
+		}
+	}
 
 };
 
@@ -417,7 +433,6 @@ template <class T, class BASE_CLIENT>
 struct ClientEntity
 {
 
-
 	T entity = {};
 	RubberBand rubberBand = {};
 	float restantTime = 0;
@@ -465,16 +480,6 @@ struct ClientEntity
 		}
 	}
 
-	constexpr bool canBeKilled()
-	{
-		return hasCanBeKilled<T>;
-	}
-
-	constexpr bool canBeAttacked()
-	{
-		return hasCanBeAttacked<T>;
-	}
-
 
 	//todo maybe an update internal here for all this components
 	float getLegsAngle()
@@ -515,11 +520,26 @@ struct ClientEntity
 
 		if constexpr (hasBodyOrientation<T>)
 		{
-			rubberBandOrientation.computeRubberBandOrientation(deltaTime,
-				entity.bodyOrientation,
-				entity.lookDirectionAnimation);
+			if(!wasKilled)
+				rubberBandOrientation.computeRubberBandOrientation(deltaTime,
+					entity.bodyOrientation,
+					entity.lookDirectionAnimation);
 		}
 
+
+		if constexpr (hasCanBeKilled<T> && hasMovementSpeedForLegsAnimations<T>)
+		{
+			if (wasKilled)
+			{
+				legAnimator.bringBack(deltaTime);
+			}
+			else
+			{
+
+				legAnimator.updateLegAngle(deltaTime, entity.
+					movementSpeedForLegsAnimations);
+			}
+		}else
 		if constexpr (hasMovementSpeedForLegsAnimations<T>)
 		{
 			legAnimator.updateLegAngle(deltaTime, entity.

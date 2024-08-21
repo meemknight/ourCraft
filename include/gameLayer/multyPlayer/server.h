@@ -77,3 +77,5 @@ unsigned int getRandomTickSpeed();
 void setServerSettings(ServerSettings settings);
 
 void genericBroadcastEntityDeleteFromServerToPlayer(std::uint64_t eid, bool reliable);
+
+void genericBroadcastEntityKillFromServerToPlayer(std::uint64_t eid, bool reliable);

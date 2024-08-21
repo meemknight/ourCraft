@@ -7,7 +7,8 @@
 
 
 //!!!!!!!!!!! DONT FORGET TO ALSO UPDATE THIS ONE
-constexpr static unsigned int EntitiesTypesCount = 5;
+#define EntitiesTypesCountMACRO 5
+constexpr static unsigned int EntitiesTypesCount = EntitiesTypesCountMACRO;
 namespace EntityType
 {
 	enum

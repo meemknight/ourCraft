@@ -373,6 +373,17 @@ void recieveDataClient(ENetEvent &event,
 			break;
 		}
 
+		case headerKillEntity:
+		{
+			if (sizeof(Packet_KillEntity) != size) { break; } //todo logs or something
+
+			Packet_KillEntity *p = (Packet_KillEntity *)data;
+
+			entityManager.killEntity(p->EID);
+
+			break;
+		}
+
 		//disconnect other player
 		case headerDisconnectOtherPlayer:
 		{

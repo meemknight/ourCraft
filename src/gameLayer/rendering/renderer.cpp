@@ -2311,6 +2311,7 @@ void Renderer::renderEntities(
 	{
 		glm::ivec3 entityPositionInt = {}; 
 		glm::vec3 entityPositionFloat = {};
+		glm::vec3 color = {1,1,1};
 		GLuint64 textureId;
 	};
 
@@ -2367,7 +2368,7 @@ void Renderer::renderEntities(
 					}
 				}
 
-				
+
 			}
 			else
 			{
@@ -2378,7 +2379,7 @@ void Renderer::renderEntities(
 
 			auto transform = model.transforms[0]; //loaded from glb file
 			auto poseMatrix = playerHand.getPoseMatrix();
-			
+
 			glm::vec3 lookDirection = c.viewDirection;
 			glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 			glm::vec3 right = glm::normalize(glm::cross(up, lookDirection));
@@ -2386,11 +2387,11 @@ void Renderer::renderEntities(
 			auto rotMatrix = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(-lookDirection, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 			//rotMatrix[0][0] *= -1.0f;
 
-			skinningMatrix.push_back( rotMatrix * glm::scale(glm::vec3{-1,1,1}) * transform * poseMatrix);
+			skinningMatrix.push_back(rotMatrix * glm::scale(glm::vec3{-1,1,1}) * transform * poseMatrix);
 
 			PerEntityData data = {};
 			data.textureId = currentSkinBindlessTexture;
-			
+
 			glm::dvec3 position = glm::dvec3(posInt) + glm::dvec3(posFloat);
 
 			decomposePosition(position, data.entityPositionFloat, data.entityPositionInt);
@@ -2411,30 +2412,41 @@ void Renderer::renderEntities(
 
 	auto renderAllEntitiesOfOneType = [&](Model &model, auto &container, int textureIndex)
 	{
-		
-		glBindVertexArray(model.vao);
 
+		glBindVertexArray(model.vao);
 
 		glUniform1i(entityRenderer.basicEntityShader.u_bonesPerModel, model.transforms.size());
 
 		skinningMatrix.clear();
 		entityData.clear();
 
-		skinningMatrix.reserve(model.transforms.size() *container.size());
-		entityData.reserve(model.transforms.size() *container.size());
-		
+		skinningMatrix.reserve(model.transforms.size() * container.size());
+		entityData.reserve(model.transforms.size() * container.size());
+
 		for (auto &e : container)
 		{
+			PerEntityData data = {};
+
 			auto rotMatrix = e.second.getBodyRotationMatrix();
+
+			if constexpr (hasCanBeKilled<decltype(e.second.entity)>)
+			{
+				if (e.second.wasKilled)
+				{
+					data.color = {0.6,0.2,0.2};
+					rotMatrix = rotMatrix * glm::rotate(PI / 2.f, glm::vec3{0,0,1});
+				}
+			}
 
 			for (int i = 0; i < model.transforms.size(); i++)
 			{
 				skinningMatrix.push_back(rotMatrix * model.transforms[i]);
 			}
 
+			//todo set kill animation or something
+
 			e.second.setEntityMatrix(skinningMatrix.data() + (skinningMatrix.size() - model.transforms.size()));
 
-			PerEntityData data = {};
 
 			if constexpr (hasSkinBindlessTexture<decltype(e.second)>)
 			{
@@ -2452,6 +2464,8 @@ void Renderer::renderEntities(
 			{
 				data.textureId = modelsManager.gpuIds[textureIndex];
 			}
+
+		
 
 			decomposePosition(e.second.getRubberBandPosition(), data.entityPositionFloat, data.entityPositionInt);
 			entityData.push_back(data);

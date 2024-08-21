@@ -425,10 +425,10 @@ void applyDamageOrLifeToPlayer(short difference, Client &client)
 
 void killEntity(WorldSaver &worldSaver, std::uint64_t entity)
 {
-
-	sd.chunkCache.removeEntity(worldSaver, entity);
-
-	genericBroadcastEntityDeleteFromServerToPlayer(entity, true);
+	if (sd.chunkCache.removeEntity(worldSaver, entity))
+	{
+		genericBroadcastEntityKillFromServerToPlayer(entity, true);
+	}
 
 }
 
@@ -461,6 +461,18 @@ void genericBroadcastEntityDeleteFromServerToPlayer(std::uint64_t eid, bool reli
 	packet.header = headerRemoveEntity;
 
 	Packet_RemoveEntity data;
+	data.EID = eid;
+
+	broadCast(packet, &data, sizeof(data),
+		nullptr, reliable, channelEntityPositions);
+}
+
+void genericBroadcastEntityKillFromServerToPlayer(std::uint64_t eid, bool reliable)
+{
+	Packet packet;
+	packet.header = headerKillEntity;
+
+	Packet_KillEntity data;
 	data.EID = eid;
 
 	broadCast(packet, &data, sizeof(data),

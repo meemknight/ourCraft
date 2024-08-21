@@ -8,6 +8,8 @@ layout (location = 2) out ivec3 out_normals;
 in vec2 v_uv;
 in vec3 v_normals;
 in vec3 v_vertexPosition;
+in vec3 v_color;
+
  
 uniform mat4 u_view;
 
@@ -47,7 +49,7 @@ void main()
 
 	if(color.a < 0.5)discard;
 
-	color.rgb = pow(color.rgb, vec3(2.2));
+	color.rgb = pow(color.rgb, vec3(2.2)) * v_color;
 	color.rgb *= u_exposure;
 	color.rgb *= 0.7f;
 	//color.rgb *= v_ambient;

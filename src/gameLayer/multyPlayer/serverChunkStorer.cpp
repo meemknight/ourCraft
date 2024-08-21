@@ -4,6 +4,7 @@
 #include <gameplay/physics.h>
 
 #include <platformTools.h>
+#include <repeat.h>
 
 
 template<class T>
@@ -1384,6 +1385,8 @@ bool genericRemoveEntity(T &container, std::uint64_t eid)
 	return 0;
 };
 
+#define CASE_REMOVE(x) case x: { return genericRemoveEntity(*entityData.template entityGetter<x>(), eid); } break;
+
 
 bool callGenericRemoveEntity(EntityData &entityData, std::uint64_t eid)
 {
@@ -1391,17 +1394,25 @@ bool callGenericRemoveEntity(EntityData &entityData, std::uint64_t eid)
 
 	switch (entityType)
 	{
-		case 0: { return genericRemoveEntity(*entityData.template entityGetter<0>(), eid); } break;
-		case 1: { return genericRemoveEntity(*entityData.template entityGetter<1>(), eid); } break;
-		case 2: { return genericRemoveEntity(*entityData.template entityGetter<2>(), eid); } break;
-		case 3: { return genericRemoveEntity(*entityData.template entityGetter<3>(), eid); } break;
-		case 4: { return genericRemoveEntity(*entityData.template entityGetter<4>(), eid); } break;
+		REPEAT(CASE_REMOVE, 5);
+
+		//CASE_REMOVE(0);
+
+		//case 0: { return genericRemoveEntity(*entityData.template entityGetter<0>(), eid); } break;
+		//case 1: { return genericRemoveEntity(*entityData.template entityGetter<1>(), eid); } break;
+		//case 2: { return genericRemoveEntity(*entityData.template entityGetter<2>(), eid); } break;
+		//case 3: { return genericRemoveEntity(*entityData.template entityGetter<3>(), eid); } break;
+		//case 4: { return genericRemoveEntity(*entityData.template entityGetter<4>(), eid); } break;
+		case 5: { static_assert(5 == EntitiesTypesCount); }
+
 
 	default:;
 	}
 
 	return 0;
 }
+
+#undef CASE_REMOVE
 
 bool ServerChunkStorer::removeEntity(WorldSaver &worldSaver, std::uint64_t eid)
 {
