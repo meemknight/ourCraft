@@ -519,9 +519,65 @@ namespace glui
 
 	}
 
-
 	float timer=0;
 	bool idWasSet = 0;
+	
+
+	bool drawButton(gl2d::Renderer2D &renderer, glm::vec4 transform, glm::vec4 color,
+		const std::string &s,
+		gl2d::Font &font, gl2d::Texture &texture, glm::ivec2 mousePos, bool mouseHeld, bool mouseReleased)
+	{
+		auto transformDrawn = transform;
+		auto aabbTransform = transform;
+		bool hovered = 0;
+		bool clicked = 0;
+		auto textColor = Colors_White;
+
+		if (color.a <= 0.01f)
+		{
+			auto p = determineTextPos(renderer, s, font, transformDrawn, true);
+			aabbTransform = p;
+		}
+
+		if (aabb(aabbTransform, mousePos))
+		{
+			hovered = true;
+			if (mouseHeld)
+			{
+				clicked = true;
+				transformDrawn.y += transformDrawn.w * pressDownSize;
+			}
+		}
+
+		if (hovered && color.a <= 0.01f)
+		{
+			textColor = stepColorDown(textColor, 0.8);
+		}
+
+		bool rez = 0;
+
+		if (mouseReleased && aabb(aabbTransform, mousePos))
+		{
+			rez = true;
+		}
+		else
+		{
+			rez = false;
+		}
+
+		renderFancyBox(renderer, transformDrawn, color, texture, hovered, clicked);
+
+		if ((color.a <= 0.01f || texture.id == 0))
+		{
+			renderText(renderer, s, font, transformDrawn, textColor, true, !hovered);
+		}
+		else
+		{
+			renderText(renderer, s, font, transformDrawn, textColor, false, !hovered);
+		}
+
+		return rez;
+	};
 
 
 	void RendererUi::renderFrame(gl2d::Renderer2D& renderer, 
@@ -789,57 +845,18 @@ namespace glui
 				auto &j = *internal.widgets.find(i.first);
 				auto& widget = j.second;
 
-				auto drawButton = [&]()
+				auto drawButtonImpl = [&]()
 				{
-					auto transformDrawn = colums[currentColum].first;
-					auto aabbTransform = colums[currentColum].first;
-					bool hovered = 0;
-					bool clicked = 0;
-					auto textColor = Colors_White;
+					auto rez = drawButton(renderer, colums[currentColum].first,
+						widget.colors, j.first, font, widget.texture, input.mousePos,
+						input.mouseHeld, input.mouseReleased);
 
-					if (widget.colors.a <= 0.01f)
+					if (rez)
 					{
-						auto p = determineTextPos(renderer, j.first, font, transformDrawn, true);
-						aabbTransform = p;
-					}
-
-					if (aabb(aabbTransform, input.mousePos))
-					{
-						hovered = true;
-						if (input.mouseHeld)
-						{
-							clicked = true;
-							transformDrawn.y += transformDrawn.w * pressDownSize;
-						}
-					}
-
-					if (hovered && widget.colors.a <= 0.01f)
-					{
-						textColor = stepColorDown(textColor, 0.8);
-					}
-
-					if (input.mouseReleased && aabb(aabbTransform, input.mousePos))
-					{
-						widget.returnFromUpdate = true;
 						if (anyButtonPressed) { *anyButtonPressed = true; }
 					}
-					else
-					{
-						widget.returnFromUpdate = false;
-					}
 
-					renderFancyBox(renderer, transformDrawn, widget.colors, widget.texture, hovered, clicked);
-
-					if ((widget.colors.a <= 0.01f || j.second.texture.id == 0))
-					{
-						renderText(renderer, j.first, font, transformDrawn, textColor, true, !hovered);
-					}
-					else
-					{
-						renderText(renderer, j.first, font, transformDrawn, textColor, false, !hovered);
-					}
-
-					return widget.returnFromUpdate;
+					return rez;
 				};
 
 				
@@ -848,7 +865,7 @@ namespace glui
 					case widgetType::button:
 					{
 						
-						drawButton();
+						drawButtonImpl();
 
 						break;
 					}
@@ -1115,7 +1132,7 @@ namespace glui
 					case widgetType::beginMenu:
 					{
 
-						if (drawButton()) 
+						if (drawButtonImpl())
 						{
 							currentMenuStack.push_back(i.first);
 						};

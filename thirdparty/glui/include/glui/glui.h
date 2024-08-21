@@ -257,4 +257,8 @@ namespace glui
 
 	void renderTexture(gl2d::Renderer2D &renderer, glm::vec4 transform, gl2d::Texture t, gl2d::Color4f c, glm::vec4 textureCoordonates);
 
+	bool drawButton(gl2d::Renderer2D &renderer, glm::vec4 transform, glm::vec4 color,
+		const std::string &s,
+		gl2d::Font &font, gl2d::Texture &texture, glm::ivec2 mousePos, bool mouseHeld, bool mouseReleased);
+
 };

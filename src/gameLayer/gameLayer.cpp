@@ -359,7 +359,7 @@ bool gameLogic(float deltaTime)
 		programData.ui.menuRenderer.Begin(1);
 		programData.ui.menuRenderer.SetAlignModeFixedSizeWidgets({0,150});
 
-		if (programData.ui.menuRenderer.Button("Host game", Colors_Gray, programData.ui.buttonTexture))
+		if (0 && programData.ui.menuRenderer.Button("Host game", Colors_Gray, programData.ui.buttonTexture))
 		{
 			if (!startServer())
 			{
@@ -375,8 +375,11 @@ bool gameLogic(float deltaTime)
 					gameStarted = false;
 				}
 			}
-
 		}
+
+		displayWorldSelectorMenuButton(programData);
+
+
 		if (programData.ui.menuRenderer.Button("Join game", Colors_Gray,
 			programData.ui.buttonTexture))
 		{

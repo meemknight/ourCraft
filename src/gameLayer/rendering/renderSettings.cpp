@@ -4,6 +4,7 @@
 #include <iostream>
 #include <platform/platformInput.h>
 
+
 void displayRenderSettingsMenuButton(ProgramData &programData)
 {
 	programData.ui.menuRenderer.BeginMenu("Rendering", Colors_Gray, programData.ui.buttonTexture);
@@ -11,7 +12,6 @@ void displayRenderSettingsMenuButton(ProgramData &programData)
 	displayRenderSettingsMenu(programData);
 
 	programData.ui.menuRenderer.EndMenu();
-
 }
 
 void displayRenderSettingsMenu(ProgramData &programData)
@@ -545,7 +545,7 @@ void displaySkinSelectorMenu(ProgramData &programData)
 	//}
 
 	glm::vec4 customWidgetTransform = {};
-	programData.ui.menuRenderer.CustomWidget(169, &customWidgetTransform);
+	programData.ui.menuRenderer.CustomWidget(170, &customWidgetTransform);
 
 	//programData.ui.menuRenderer.cu
 	auto &renderer = programData.ui.renderer2d;
@@ -602,7 +602,6 @@ void displaySkinSelectorMenu(ProgramData &programData)
 		}
 
 		
-
 
 		glui::Frame f({0,0,renderer.windowW, renderer.windowH});
 		{
@@ -684,4 +683,112 @@ void displaySkinSelectorMenuButton(ProgramData &programData)
 	displaySkinSelectorMenu(programData);
 
 	programData.ui.menuRenderer.EndMenu();
+}
+
+
+void displayWorldSelectorMenuButton(ProgramData &programData)
+{
+	programData.ui.menuRenderer.BeginMenu("Play", Colors_Gray, programData.ui.buttonTexture);
+
+	displayWorldSelectorMenu(programData);
+
+	programData.ui.menuRenderer.EndMenu();
+}
+
+
+void displayWorldSelectorMenu(ProgramData &programData)
+{
+	programData.ui.menuRenderer.Text("Select world", Colors_White);
+
+	//programData.ui.menuRenderer.Button("Create new world", Colors_Gray, programData.ui.buttonTexture);
+	programData.ui.menuRenderer.Text("", Colors_White);
+
+	glm::vec4 customWidgetTransform = {};
+	programData.ui.menuRenderer.CustomWidget(171, &customWidgetTransform);
+
+	auto &renderer = programData.ui.renderer2d;
+	glui::Frame f({0,0,renderer.windowW, renderer.windowH});
+
+
+	auto drawButton = [&](glm::vec4 transform, glm::vec4 color,
+		const std::string &s)
+	{
+		return glui::drawButton(renderer, transform, color, s, programData.ui.font, programData.ui.buttonTexture,
+			platform::getRelMousePosition(), platform::isLMouseHeld(), platform::isLMouseReleased());
+	};
+
+	if (programData.ui.menuRenderer.internal.allMenuStacks
+		[programData.ui.menuRenderer.internal.currentId].size()
+		&& programData.ui.menuRenderer.internal.allMenuStacks
+		[programData.ui.menuRenderer.internal.currentId].back() == "Play"
+		)
+	{
+
+		//center
+		{
+			float ySize = renderer.windowH - customWidgetTransform.y * 2;
+			
+			
+			if (ySize > 50)
+			{
+			
+				glui::Frame f(glui::Box().xCenter().yTop(customWidgetTransform.y).
+					yDimensionPixels(ySize).xDimensionPercentage(1)());
+
+				renderer.renderRectangle(glui::Box().xCenter().yCenter().xDimensionPercentage(1).yDimensionPercentage(1.f),
+					{1,0,0,1.0});
+
+
+
+			}
+
+		}
+
+		//bottom
+		{
+			float ySize = customWidgetTransform.y;
+			glui::Frame f(glui::Box().xCenter().yBottom().
+				yDimensionPixels(ySize).xDimensionPercentage(1)());
+
+			//renderer.renderRectangle(glui::Box().xCenter().yCenter().xDimensionPercentage(1).yDimensionPercentage(1.f),
+			//	{0,1,0,1.0});
+
+
+			//top
+			{
+				glui::Frame f(glui::Box().xCenter().yTop().
+					yDimensionPercentage(0.5).xDimensionPercentage(1)());
+
+				{
+					auto leftButton = glui::Box().xLeft().yCenter().xDimensionPercentage(0.5).yDimensionPercentage(1)();
+					drawButton(shrinkPercentage(leftButton, {0.1,0.05}), Colors_Gray, "Play Selected World");
+
+					auto rightButton = glui::Box().xRight().yCenter().xDimensionPercentage(0.5).yDimensionPercentage(1)();
+					drawButton(shrinkPercentage(rightButton, {0.1,0.05}), Colors_Gray, "Settings");
+				}
+
+			}
+
+			//bottom
+			{
+				glui::Frame f(glui::Box().xCenter().yBottom().
+					yDimensionPercentage(0.5).xDimensionPercentage(1)());
+
+				{
+					auto leftButton = glui::Box().xLeft().yCenter().xDimensionPercentage(0.5).yDimensionPercentage(1)();
+					drawButton(shrinkPercentage(leftButton, {0.1,0.05}), Colors_Gray, "Create world");
+
+					auto rightButton = glui::Box().xRight().yCenter().xDimensionPercentage(0.5).yDimensionPercentage(1)();
+					drawButton(shrinkPercentage(rightButton, {0.1,0.05}), Colors_Gray, "Delete world");
+				}
+
+
+			}
+
+		}
+
+
+	}
+
+
 }
