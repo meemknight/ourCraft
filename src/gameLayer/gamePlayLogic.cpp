@@ -711,6 +711,11 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				else if (!platform::isKeyHeld(platform::Button::LeftCtrl))
 				{
 
+					static float soundTimer = 0;
+					if (platform::isLMousePressed())
+					{
+						soundTimer = 0;
+					}
 
 					if (platform::isRMousePressed())
 					{
@@ -807,7 +812,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 							}
 						}
 
-						static float soundTimer = 0;
 						if (soundTimer <= 0)
 						{
 							soundTimer = 0.2;
@@ -819,6 +823,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 						if (rayCastPos != gameData.currentBlockBreaking.pos)
 						{
 							gameData.currentBlockBreaking = {};
+							soundTimer = 0;
 						}
 						else
 						{
@@ -841,6 +846,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					}
 					else
 					{
+						soundTimer = 0;
 						gameData.currentBlockBreaking = {};
 					}
 				}
@@ -894,7 +900,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	static float dayTime = 0.25;
 	programData.renderer.sunPos = calculateSunPosition(dayTime);
-	//dayTime += deltaTime * 0.1f;
+	//dayTime += deltaTime * 0.02f;
 
 #pragma endregion
 
@@ -974,7 +980,14 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					}
 					timer -= deltaTime;
 				}
-
+				else
+				{
+					timer = 0;
+				}
+			}
+			else
+			{
+				timer = 0;
 			}
 		}
 		else
@@ -1441,6 +1454,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			ImGui::Checkbox("Z pre pass",
 				&programData.renderer.zprepass);
 
+			ImGui::Checkbox("Render Transparent",
+				&programData.renderer.renderTransparent);
+
 			bool shaders = programData.renderer.defaultShader.shadingSettings.shaders;
 			ImGui::Checkbox("Shaders",
 				&shaders);
@@ -1806,6 +1822,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	gameData.gameplayFrameProfiler.startFrame();
 	programData.GPUProfiler.startFrame();
 	gameData.gameplayFrameProfiler.startSubProfile("swap chain and others");
+
 
 
 	if (terminate)

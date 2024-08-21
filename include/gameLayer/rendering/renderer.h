@@ -262,6 +262,7 @@ struct Renderer
 	bool unifiedGeometry = 0; //big gpu buffer
 	bool sortChunks = 1;
 	bool zprepass = 1;
+	bool renderTransparent = 1;
 	bool frustumCulling = 1;
 	bool ssao = 1;
 	int waterRefraction = 1;

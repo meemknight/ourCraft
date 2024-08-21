@@ -585,23 +585,23 @@ void SkyBoxLoaderAndDrawer::drawBefore(const glm::mat4 &viewProjMat,
 		float rot = clock() / 80'000.f; //todo
 		if (timeOfDay <= 0.25)
 		{
-			rotation1 = 0;
+			rotation1 = 3.141592f/2.f;
 			rotation2 = rot;
 		}
 		else if (timeOfDay <= 0.50)
 		{
 			rotation1 = rot;
-			rotation2 = 0;
+			rotation2 = -3.141592f / 2.f;
 		}
 		else if (timeOfDay <= 0.75)
 		{
-			rotation1 = 0;
+			rotation1 = -3.141592f / 2.f;
 			rotation2 = rot;
 		}
 		else if (timeOfDay <= 1.f)
 		{
 			rotation1 = rot;
-			rotation2 = 0;
+			rotation2 = 3.141592f / 2.f;
 		}
 	}
 

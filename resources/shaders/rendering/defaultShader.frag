@@ -766,9 +766,14 @@ void main()
 	}
 
 	const bool blockIsInWater = ((v_flags & 2) != 0);
-	const float baseAmbient = 0.35;
-	const float multiplier = 0.75;
-	vec3 computedAmbient = vec3(min(toLinear(v_ambient *  multiplier * (1.f-baseAmbient) + baseAmbient), 1));
+	const float baseAmbient = 0.38;
+	const float multiplier = 0.65;
+	vec3 computedAmbient = multiplier *  vec3(min(toLinear(v_ambient * (1.f-baseAmbient) + baseAmbient), 1));
+
+	//const float multiplier = 0.75;
+	//vec3 computedAmbient = vec3(min(toLinear(multiplier * v_ambient * (1.f-baseAmbient) + baseAmbient), 1));
+
+	
 	//vec3 computedAmbient = vec3((v_ambient *  multiplier * (1.f-baseAmbient) + baseAmbient));
 	if(blockIsInWater)
 	{
@@ -1034,7 +1039,7 @@ void main()
 			
 		out_color = vec4(finalColor,textureColor.a);
 		out_color.a = 1-out_color.a;
-		out_color.a *= dotNV;
+		out_color.a *= pow(dotNV, 1); //we add an artificial coeficient, too add settings
 		out_color.a = 1-out_color.a;
 		//preview shadow
 		//if(shadowCalc(dot(u_sunDirection, v_normal)) < 0.5)
@@ -1237,7 +1242,6 @@ void main()
 				vec3 peelTexture = vec3(1,0.5,0.5);
 				float finalDepth = 0;			
 				if(distortDepth < currentDepth + 0.1)
-				//if(dot(direction, v_normal) > 0 || distortDepth < currentDepth + 0.1)
 				{
 					//geometry in front of water
 					//keep original texture
@@ -1349,7 +1353,7 @@ const float INFINITY = 1.f/0.f;
 const float SSR_minRayStep = 1.0;
 const int	SSR_maxSteps = 50;
 const int	SSR_numBinarySearchSteps = 20;
-const float SSR_maxRayStep = 100.2;
+const float SSR_maxRayStep = 150.2;
 const float SSR_maxRayDelta = 10.0;
 
 //old

@@ -26,23 +26,36 @@
 //todo add to a struct
 ENetHost *server = 0;
 std::unordered_map<std::uint64_t, Client> connections;
-static std::uint64_t entityId = RESERVED_CLIENTS_ID + 1;
+//static std::uint64_t entityId = RESERVED_CLIENTS_ID + 1;
 static std::thread enetServerThread;
 
+EntityIdHolder entityIds;
 
-std::uint64_t getEntityIdAndIncrement(WorldSaver &worldSaver)
+
+std::uint64_t getEntityIdAndIncrement(WorldSaver &worldSaver, int entityType)
 {
-	std::uint64_t id = entityId;
-	entityId++;
+	permaAssert(entityType < EntitiesTypesCount);
+	permaAssert(entityType >= 0);
 
-	worldSaver.saveEntityId(entityId);
+	std::uint64_t id = entityIds.entityIds[entityType];
+	entityIds.entityIds[entityType]++;
 
-	return entityId;
+	permaAssertComment(id < (0x00FFFFFF'FFFFFFFF), "Server ran out of ids somehow...");
+
+	id |= ((std::uint64_t)((unsigned char)entityType)) << 56;
+
+	//TODO!
+	//worldSaver.saveEntityId(entityId);
+
+	return id;
 }
 
-std::uint64_t getCurrentEntityId()
+std::uint64_t getCurrentEntityId(int entityType)
 {
-	return entityId;
+	permaAssert(entityType < EntitiesTypesCount);
+	permaAssert(entityType >= 0);
+
+	return entityIds.entityIds[entityType];
 }
 
 void broadCastNotLocked(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, 
@@ -183,7 +196,7 @@ void sendPlayerExitInteraction(Client &client, unsigned char revisionNumber)
 void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 {
 
-	std::uint64_t id = getEntityIdAndIncrement(worldSaver);
+	std::uint64_t id = getEntityIdAndIncrement(worldSaver, EntityType::player);
 
 	glm::dvec3 spawnPosition(0, 107, 0);
 
@@ -680,8 +693,17 @@ void enetServerFunction()
 {
 	std::cout << "Successfully started server!\n";
 
-
-	entityId = RESERVED_CLIENTS_ID + 1;
+	//todo load from file or something
+	entityIds.create();
+	//if (!worldSaver.loadEntityId(entityId))
+	//{
+	//	//todo try to fix corupted data here.
+	//	entityId = RESERVED_CLIENTS_ID + 1;
+	//}else
+	//if (entityId < RESERVED_CLIENTS_ID + 1)
+	//{
+	//	entityId = RESERVED_CLIENTS_ID + 1;
+	//}
 
 
 	StructuresManager structuresManager;
@@ -744,15 +766,6 @@ void enetServerFunction()
 	std::vector<ServerTask> serverTasks;
 	serverTasks.reserve(100);
 
-	if (!worldSaver.loadEntityId(entityId))
-	{
-		//todo try to fix corupted data here.
-		entityId = RESERVED_CLIENTS_ID + 1;
-	}else
-	if (entityId < RESERVED_CLIENTS_ID + 1)
-	{
-		entityId = RESERVED_CLIENTS_ID + 1;
-	}
 
 	while (enetServerRunning)
 	{

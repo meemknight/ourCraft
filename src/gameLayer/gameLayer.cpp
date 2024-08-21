@@ -451,6 +451,11 @@ bool gameLogic(float deltaTime)
 					c.second.heal = true;
 				}
 
+				if (ImGui::Button("Kill a pig"))
+				{
+					c.second.killApig = true;
+				}
+
 				ImGui::Separator();
 				ImGui::PopID();
 			}

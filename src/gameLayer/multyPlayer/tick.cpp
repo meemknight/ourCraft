@@ -34,17 +34,6 @@ void genericBroadcastEntityUpdateFromServerToPlayer(E &e, bool reliable,
 		nullptr, reliable, channelEntityPositions);
 }
 
-void genericBroadcastEntityDeleteFromServerToPlayer(std::uint64_t eid, bool reliable)
-{
-	Packet packet;
-	packet.header = headerRemoveEntity;
-
-	Packet_RemoveEntity data;
-	data.EID = eid;
-
-	broadCast(packet, &data, sizeof(data),
-		nullptr, reliable, channelEntityPositions);
-}
 
 void entityDeleteFromServerToPlayer(std::uint64_t clientToSend,
 	std::uint64_t eid, bool reliable)
@@ -487,7 +476,7 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 
 				if (!rez)
 				{
-
+					//todo only for local players!!!!!!
 					genericBroadcastEntityDeleteFromServerToPlayer(it->first, true);
 
 					//remove entity
@@ -496,6 +485,7 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 				else
 				{
 					//todo this should take into acount if that player should recieve it
+					//todo only for local players!!!!!!
 					genericBroadcastEntityUpdateFromServerToPlayer
 						< decltype(packetType)>(e, false, currentTimer, packetId);
 

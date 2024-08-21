@@ -4,6 +4,7 @@
 #include "packet.h"
 #include "createConnection.h"
 #include "gamePlayLogic.h"
+#include <gameplay/allentities.h>
 
 bool startEnetListener(ENetHost *_server);
 void closeEnetListener();
@@ -29,6 +30,21 @@ struct Client
 	bool skinDataCompressed = false;
 };
 
+struct EntityIdHolder
+{
+	std::uint64_t entityIds[EntitiesTypesCount] = {};
+
+	//todo an init method and stuff
+	void create()
+	{
+		//we skip the player entity
+		for (int i = 0; i < EntitiesTypesCount; i++)
+		{
+			entityIds[i] = RESERVED_CLIENTS_ID + 1;
+		}
+	}
+};
+
 Client getClient(std::uint64_t cid);
 Client *getClientSafe(std::uint64_t cid);
 Client *getClientNotLocked(std::uint64_t cid);
@@ -52,7 +68,7 @@ bool checkIfPlayerShouldGetChunk(glm::ivec2 playerPos2D,
 	glm::ivec2 chunkPos, int playerSquareDistance);
 
 
-std::uint64_t getEntityIdAndIncrement(WorldSaver &worldSaver);
+std::uint64_t getEntityIdAndIncrement(WorldSaver &worldSaver, int entityType);
 
-std::uint64_t getCurrentEntityId();
+std::uint64_t getCurrentEntityId(int entityType);
 

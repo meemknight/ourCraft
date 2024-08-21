@@ -1699,6 +1699,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	auto renderTransparentGeometry = [&]()
 	{
+		if (!renderTransparent) { return; }
+
 		for (auto &chunk : chunkVectorCopy)
 		{
 			int facesCount = chunk->transparentElementCountSize;

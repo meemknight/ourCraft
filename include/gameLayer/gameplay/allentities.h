@@ -6,8 +6,24 @@
 #include <gameplay/cat.h>
 
 
+//!!!!!!!!!!! DONT FORGET TO ALSO UPDATE THIS ONE
 constexpr static unsigned int EntitiesTypesCount = 5;
+namespace EntityType
+{
+	enum
+	{
+		player = 0,
+		droppedItems,
+		zombies,
+		pigs,
+		cats,
+	};
+};
 
+inline unsigned char getEntityTypeFromEID(std::uint64_t eid)
+{
+	return (eid >> 56);
+}
 
 template<typename B>
 struct EntityGetter

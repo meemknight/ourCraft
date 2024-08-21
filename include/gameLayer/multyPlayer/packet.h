@@ -81,6 +81,7 @@ enum : std::uint32_t
 	headerRecieveDamage,
 	headerRecieveLife,
 	headerUpdateLife,
+	headerKillEntity,
 };
 
 enum 

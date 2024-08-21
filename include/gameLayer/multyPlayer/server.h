@@ -7,7 +7,7 @@
 #include <multyPlayer/chunkSaver.h>
 #include <worldGenerator.h>
 
-constexpr std::uint64_t RESERVED_CLIENTS_ID = 100000;
+constexpr std::uint64_t RESERVED_CLIENTS_ID = 100'000;
 
 struct Client;
 struct EventId;
@@ -32,6 +32,7 @@ struct PerClientServerSettings
 	bool resendInventory = false;
 	bool damage = false;
 	bool heal = false;
+	bool killApig = false;
 
 	glm::dvec3 outPlayerPos;
 };
@@ -74,3 +75,5 @@ ServerSettings getServerSettingsCopy();
 unsigned int getRandomTickSpeed();
 
 void setServerSettings(ServerSettings settings);
+
+void genericBroadcastEntityDeleteFromServerToPlayer(std::uint64_t eid, bool reliable);

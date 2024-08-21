@@ -1370,3 +1370,56 @@ std::uint64_t ServerChunkStorer::anyEntityIntersectsWithBlock(glm::ivec3 positio
 }
 
 
+template<class T>
+bool genericRemoveEntity(T &container, std::uint64_t eid)
+{
+	auto found = container.find(eid);
+
+	if (found != container.end())
+	{
+		container.erase(found);
+		return 1;
+	}
+
+	return 0;
+};
+
+
+bool callGenericRemoveEntity(EntityData &entityData, std::uint64_t eid)
+{
+	auto entityType = getEntityTypeFromEID(eid);
+
+	switch (entityType)
+	{
+		case 0: { return genericRemoveEntity(*entityData.template entityGetter<0>(), eid); } break;
+		case 1: { return genericRemoveEntity(*entityData.template entityGetter<1>(), eid); } break;
+		case 2: { return genericRemoveEntity(*entityData.template entityGetter<2>(), eid); } break;
+		case 3: { return genericRemoveEntity(*entityData.template entityGetter<3>(), eid); } break;
+		case 4: { return genericRemoveEntity(*entityData.template entityGetter<4>(), eid); } break;
+
+	default:;
+	}
+
+	return 0;
+}
+
+bool ServerChunkStorer::removeEntity(WorldSaver &worldSaver, std::uint64_t eid)
+{
+	auto entityType = getEntityTypeFromEID(eid);
+
+	permaAssertComment(eid != EntityType::player, "You can't use the removeEntity method for players");
+
+	for (auto &c :savedChunks)
+	{
+		if (c.second)
+		{
+
+			bool rez = callGenericRemoveEntity(c.second->entityData, eid);
+			if (rez) { return 1; }
+		}
+	}
+
+	return 0;
+}
+
+

@@ -27,6 +27,7 @@
 //	and also in the server game tick update.
 //
 
+//todo reuse entity types here?
 namespace Markers
 {
 	enum
@@ -148,6 +149,15 @@ constexpr bool hasSkinBindlessTexture = false;
 
 template <typename T>
 constexpr bool hasSkinBindlessTexture<T, std::void_t<decltype(std::declval<T>().skinBindlessTexture)>> = true;
+
+
+template <typename T, typename = void>
+constexpr bool hasLife = false;
+
+template <typename T>
+constexpr bool hasLife<T, std::void_t<decltype(std::declval<T>().life)>> = true;
+
+
 
 
 constexpr float PI = 3.141592653f;
@@ -361,6 +371,33 @@ template <typename T>
 constexpr bool hasCollidesWithPlacedBlocks<T, std::void_t<decltype(T::collidesWithPlacedBlocks)>> = true;
 
 
+struct CanBeKilled
+{
+	constexpr static bool canBeKilled = true;
+};
+
+template <typename T, typename = void>
+constexpr bool hasCanBeKilled = false;
+
+template <typename T>
+constexpr bool hasCanBeKilled <T, std::void_t<decltype(T::canBeKilled)>> = true;
+
+
+struct CanBeAttacked
+{
+	constexpr static bool canBeAttacked = true;
+};
+
+template <typename T, typename = void>
+constexpr bool hasCanBeAttacked = false;
+
+template <typename T>
+constexpr bool hasCanBeAttacked <T, std::void_t<decltype(T::canBeAttacked)>> = true;
+
+
+template<bool B, typename T>
+using ConditionalMember = typename std::conditional<B, T, unsigned char>::type;
+
 
 //dropped item doesn't inherit from this class, so if you want
 //to add something here make another type of server entity.
@@ -379,6 +416,8 @@ struct ServerEntity
 template <class T, class BASE_CLIENT>
 struct ClientEntity
 {
+
+
 	T entity = {};
 	RubberBand rubberBand = {};
 	float restantTime = 0;
@@ -386,6 +425,11 @@ struct ClientEntity
 	RubberBandOrientation<T> rubberBandOrientation = {};
 
 	LegsAnimator<T> legAnimator = {};
+
+
+	ConditionalMember<hasCanBeKilled<T>, bool> wasKilled = 0;
+	ConditionalMember<hasCanBeKilled<T>, float> wasKilledTimer = 0;
+
 
 	glm::dvec3 getRubberBandPosition()
 	{
@@ -421,8 +465,18 @@ struct ClientEntity
 		}
 	}
 
-	//todo maybe an update internal here for all this components
+	constexpr bool canBeKilled()
+	{
+		return hasCanBeKilled<T>;
+	}
 
+	constexpr bool canBeAttacked()
+	{
+		return hasCanBeAttacked<T>;
+	}
+
+
+	//todo maybe an update internal here for all this components
 	float getLegsAngle()
 	{
 		if constexpr (hasMovementSpeedForLegsAnimations<T>)

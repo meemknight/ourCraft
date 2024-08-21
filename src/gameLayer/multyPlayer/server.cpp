@@ -96,7 +96,8 @@ int getServerTicksPerSeccond()
 
 void clearSD(WorldSaver &worldSaver)
 {
-	worldSaver.saveEntityId(getCurrentEntityId());
+	//todo saveEntityId stuff
+	//worldSaver.saveEntityId(getCurrentEntityId());
 	sd.chunkCache.saveAllChunks(worldSaver);
 	sd.chunkCache.cleanup();
 	closeThreadPool();
@@ -282,7 +283,7 @@ bool spawnPig(
 		e.entity = pig;
 		e.configureSpawnSettings(rng);
 
-		c->entityData.pigs.insert({getEntityIdAndIncrement(worldSaver), e});
+		c->entityData.pigs.insert({getEntityIdAndIncrement(worldSaver, EntityType::pigs), e});
 	}
 	else
 	{
@@ -307,7 +308,7 @@ bool spawnCat(
 		e.entity = cat;
 		e.configureSpawnSettings(rng);
 
-		c->entityData.cats.insert({getEntityIdAndIncrement(worldSaver), e});
+		c->entityData.cats.insert({getEntityIdAndIncrement(worldSaver, EntityType::cats), e});
 	}
 	else
 	{
@@ -325,7 +326,7 @@ bool spawnDroppedItemEntity(
 	)
 {
 
-	if (newId == 0) { newId = getEntityIdAndIncrement(worldSaver);  }
+	if (newId == 0) { newId = getEntityIdAndIncrement(worldSaver, EntityType::droppedItems);  }
 
 	DroppedItemServer newEntity = {};
 	newEntity.item.counter = counter;
@@ -421,6 +422,17 @@ void applyDamageOrLifeToPlayer(short difference, Client &client)
 	}
 }
 
+
+void killEntity(WorldSaver &worldSaver, std::uint64_t entity)
+{
+
+	sd.chunkCache.removeEntity(worldSaver, entity);
+
+	genericBroadcastEntityDeleteFromServerToPlayer(entity, true);
+
+}
+
+
 ServerSettings getServerSettingsCopy()
 {
 	return sd.settings;
@@ -441,6 +453,18 @@ void setServerSettings(ServerSettings settings)
 			s.second = it->second;
 		}
 	}
+}
+
+void genericBroadcastEntityDeleteFromServerToPlayer(std::uint64_t eid, bool reliable)
+{
+	Packet packet;
+	packet.header = headerRemoveEntity;
+
+	Packet_RemoveEntity data;
+	data.EID = eid;
+
+	broadCast(packet, &data, sizeof(data),
+		nullptr, reliable, channelEntityPositions);
 }
 
 void serverWorkerUpdate(
@@ -802,7 +826,7 @@ void serverWorkerUpdate(
 							}
 						}
 
-						auto newId = getEntityIdAndIncrement(worldSaver);
+						auto newId = getEntityIdAndIncrement(worldSaver, EntityType::droppedItems);
 
 						if (computeRevisionStuff(*client, true && serverAllows, i.t.eventId,
 							&i.t.entityId, &newId))
@@ -1136,7 +1160,8 @@ void serverWorkerUpdate(
 									glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.0, -0.49, 0.0);
 									z.position = position;
 									z.lastPosition = position;
-									spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement(worldSaver));
+									spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement(worldSaver, 
+										EntityType::zombies));
 								}
 								else if (from->type == ItemTypes::catSpawnEgg)
 								{
@@ -1351,7 +1376,8 @@ void serverWorkerUpdate(
 				glm::dvec3 position = c.begin()->second.playerData.entity.position;
 				z.position = position;
 				z.lastPosition = position;
-				spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement(worldSaver));
+				spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement(worldSaver, 
+					EntityType::zombies));
 			}
 
 			if (settings.perClientSettings.begin()->second.spawnPig)
@@ -1388,6 +1414,24 @@ void serverWorkerUpdate(
 				auto &c = getAllClientsReff();
 
 				applyDamageOrLifeToPlayer(3, c.begin()->second);
+			}
+
+			if (settings.perClientSettings.begin()->second.killApig)
+			{
+				settings.perClientSettings.begin()->second.killApig = false;
+
+				//TODO chunks shouldn't be nullptrs so why check them?
+				// so maybe just perma assert comment at the beginning
+
+				for (auto &c : sd.chunkCache.savedChunks)
+				{
+					if (c.second && c.second->entityData.pigs.size())
+					{
+						killEntity(worldSaver, c.second->entityData.pigs.begin()->first);
+						break;
+					}
+				}
+
 			}
 		}
 
