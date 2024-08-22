@@ -218,6 +218,7 @@ namespace AudioEngine
 		SoundCollection(RESOURCES_PATH "/sounds/sand"),
 		SoundCollection(RESOURCES_PATH "/sounds/wood"),
 		SoundCollection(RESOURCES_PATH "/sounds/glassBreak"),
+		SoundCollection(RESOURCES_PATH "/sounds/glass"),
 		SoundCollection(RESOURCES_PATH "/sounds/leaves"),
 		SoundCollection(RESOURCES_PATH "/sounds/snow"),
 		SoundCollection(RESOURCES_PATH "/sounds/metal"),
@@ -250,7 +251,24 @@ namespace AudioEngine
 
 };
 
-int getSoundForBlock(unsigned int type)
+int getSoundForBlockStepping(unsigned int blockType)
+{
+
+	if (isAnyGlass(blockType) || blockType == glowstone)
+	{
+		return AudioEngine::glassStep;
+	}
+
+	if (blockType == ice)
+	{
+		return AudioEngine::glassStep; //todo?
+	}
+
+	return getSoundForBlockBreaking(blockType);
+
+}
+
+int getSoundForBlockBreaking(unsigned int type)
 {
 	if (!isBlock(type)) { return 0; }
 	if (type == water) { return 0; }

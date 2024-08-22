@@ -30,6 +30,7 @@ namespace AudioEngine
 		sand,
 		wood,
 		glassBreak,
+		glassStep,
 		leaves,
 		snow,
 		metal,
@@ -50,7 +51,7 @@ namespace AudioEngine
 
 };
 
-int getSoundForBlock(unsigned int blockType);
+int getSoundForBlockBreaking(unsigned int blockType);
 
 int getSoundForBlockStepping(unsigned int blockType);
 

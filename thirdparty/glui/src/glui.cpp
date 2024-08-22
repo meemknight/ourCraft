@@ -856,6 +856,8 @@ namespace glui
 						if (anyButtonPressed) { *anyButtonPressed = true; }
 					}
 
+					widget.returnFromUpdate = rez;
+
 					return rez;
 				};
 

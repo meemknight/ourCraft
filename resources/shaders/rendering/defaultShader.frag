@@ -95,7 +95,7 @@ const float causticsTextureScale = 3.f;
 const float causticsChromaticAberationStrength = 0.004;	
 const float waterSpeed = 15.f;
 const float causticsLightStrength = 1.4;	
-const float causticsLightPower = 1.0;	
+const float causticsLightPower = 0.8;	
 const bool physicallyAccurateReflections = false;
 ///
 
@@ -714,7 +714,7 @@ vec2 flipTextureCoord(vec2 a)
 
 float getBlockAO()
 {
-	
+	//return 1;
 	//determine shape:
 	//none front back left right, corner1, 2, 3, 4, full
 
@@ -746,6 +746,7 @@ float getBlockAO()
 	float ao = texture2D(u_ao, newUV).r;
 	//return clamp(pow(ao, 1.2) * 1.4f, 0.62f,1);
 	return clamp(pow(ao, 1.2) * 1.4f, 0.70f,1);
+	//return clamp(pow(ao, 1.5) * 1.8f, 0.1f,1);
 }
 
 in flat int v_isSkyLightMain;
