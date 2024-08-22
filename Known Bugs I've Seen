@@ -1,0 +1,5 @@
+The idea of this Document is to keep track of all the bugs and glitches we find so they can be eventually patched.
+If you find Bugs, make sure to add them here!
+
+B001 = Stepping Sounds keep playing when attempting to move through a wall
+B002 = Glass Blocks Play the "Break Sound" at Every Action.
