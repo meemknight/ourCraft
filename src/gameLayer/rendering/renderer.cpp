@@ -1526,7 +1526,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 				for (auto c : chunkSystem.loadedChunks)
 				{
-					if (c)
+					if (c && !c->isDontDrawYet())
 					{
 						lightsBufferCount += c->lightsElementCountSize;
 					}
@@ -1543,7 +1543,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 				for (auto c : chunkSystem.loadedChunks)
 				{
 
-					if (c)
+					if (c && !c->isDontDrawYet())
 					{
 						glBindBuffer(GL_COPY_READ_BUFFER, c->lightsBuffer);
 
@@ -2340,12 +2340,28 @@ void Renderer::renderEntities(
 			handIdle.position = glm::vec3{0.2,-2.0,-0.5};
 			handIdle.rotation = glm::vec3{glm::radians(120.f),0.f,0.f};
 
+			if (playerRunning)
+			{
+				static Oscilator handOscilator(0.3);
+				BoneTransform handIdle2;
+				handIdle2.position = glm::vec3{0.1,-2.1,-0.4};
+				handIdle2.rotation = glm::vec3{glm::radians(123.f),glm::radians(0.f) ,
+				glm::radians(2.f)};
+
+				handOscilator.update(deltaTime);
+
+				if (handOscilator.currentFaze)
+				{
+					handIdle = handIdle2;
+				}
+			}
+
 			BoneTransform handHit;
 			handHit.position = glm::vec3{0.1,-2.1,-0.9};
 			handHit.rotation = glm::vec3{glm::radians(90.f),glm::radians(25.f),glm::radians(5.f)};
 
 			float hitSpeed = 6 * deltaTime;
-			float returnSpeed = 4 * deltaTime;
+			float returnSpeed = 1 * deltaTime;
 
 			static bool hitReturn = 0;
 

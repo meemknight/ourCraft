@@ -72,6 +72,12 @@ void loadOtherTextures(const char *basePath)
 	if (!programData.dudv.id)
 	{
 		programData.dudv.loadFromFile((p + "waterDUDV.png").c_str(), false, true);
+
+		if (!programData.dudv.id)
+		{
+			programData.dudv.loadFromFile((p + "waterDUDV.jpg").c_str(), false, true);
+		}
+
 		//programData.dudv.loadFromFile(RESOURCES_PATH "assets/otherTextures/wdudv.jpg", false, true);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -79,7 +85,13 @@ void loadOtherTextures(const char *basePath)
 
 	if (!programData.causticsTexture.id)
 	{
-		programData.causticsTexture.loadFromFile((p + "caustics.jpg").c_str(), false, true);
+		programData.causticsTexture.loadFromFile((p + "caustics.png").c_str(), false, true);
+
+		if (!programData.causticsTexture.id)
+		{
+			programData.causticsTexture.loadFromFile((p + "caustics.jpg").c_str(), false, true);
+		}
+
 		//programData.causticsTexture.loadFromFile(RESOURCES_PATH "assets/otherTextures/caustics3.png", false, true);
 		//programData.causticsTexture.loadFromFile(RESOURCES_PATH "assets/otherTextures/test.jpg", false, true);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -92,7 +104,14 @@ void loadOtherTextures(const char *basePath)
 		//programData.dudvNormal.loadFromFile(RESOURCES_PATH "assets/otherTextures/normal2.png", false, true);
 		//programData.dudvNormal.loadFromFile(RESOURCES_PATH "assets/otherTextures/normal.jpg", false, true);
 		//programData.dudvNormal.loadFromFile(RESOURCES_PATH "assets/otherTextures/normal2.jpg", false, true);
-		programData.dudvNormal.loadFromFile((p+"normal3.png").c_str(), false, true); //best
+		programData.dudvNormal.loadFromFile((p+"normal.png").c_str(), false, true); //best
+
+		if (!programData.dudvNormal.id)
+		{
+			programData.dudvNormal.loadFromFile((p + "normal.jpg").c_str(), false, true); //best
+		}
+
+
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	};

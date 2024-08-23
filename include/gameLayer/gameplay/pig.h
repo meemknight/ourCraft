@@ -15,6 +15,8 @@ struct Pig: public PhysicalEntity, public HasOrientationAndHeadTurnDirection,
 
 	static glm::vec3 getMaxColliderSize();
 
+	//todo frustum culling size
+
 	Life life{10};
 };
 
