@@ -4,6 +4,7 @@
 #include <iostream>
 #include <errorReporting.h>
 #include <gameplay/items.h>
+#include <platformTools.h>
 
 const char *texturesNames[] = {
 	
@@ -1138,7 +1139,164 @@ void BlocksLoader::clearAllTextures()
 
 }
 
+void BlocksLoader::loadAllItemsGeometry()
+{
+	if (itemsGeometry.size())
+	{
+		for (int i = 1; i < itemsGeometry.size(); i++)
+		{
+			if (itemsGeometry[0].vao != itemsGeometry[i].vao)
+			{
+				itemsGeometry[i].clear();
+			}
+		}
+		itemsGeometry[0].clear();
+		itemsGeometry.clear();
+	}
+
+	std::vector<float> finalData;
+	
+
+	auto loadItem = [&](gl2d::Texture &t)
+	{
+		permaAssertComment(t.id, "recieved no texture id in loadItem in blocks loader");
+
+		glm::ivec2 size = {};
+		auto textureData = t.readTextureData(0, &size);
+
+		finalData.clear();
+		finalData.reserve(100);
+
+		ItemGeometry result = {};
+
+		glGenVertexArrays(1, &result.vao);
+		glBindVertexArray(result.vao);
+		glGenBuffers(1, &result.buffer);
+		glBindBuffer(GL_ARRAY_BUFFER, result.buffer);
+
+		float thick = 1.f / 8;
+
+		float dataStart[] = {
+			1, 1, thick/2.f,	0, 0, 1,	1, 1,
+			-1, 1, thick/2.f,	0, 0, 1,	0, 1,
+			-1, -1, thick/2.f,	0, 0, 1,	0, 0,
+
+			-1, -1, thick/2.f,	0, 0, 1,	0, 0,
+			1, -1, thick/2.f,	0, 0, 1,	1, 0,
+			1, 1, thick/2.f,	0, 0, 1,	1, 1,
+
+			-1, 1, -thick/2.f,	0, 0, -1,	0, 1,
+			1, 1, -thick/2.f,	0, 0, -1,	1, 1,
+			-1, -1, -thick/2.f,	0, 0, -1,	0, 0,
+
+			1, -1, -thick/2.f,	0, 0, -1,	1, 0,
+			-1, -1, -thick/2.f,	0, 0, -1,	0, 0,
+			1, 1, -thick/2.f,	0, 0, -1,	1, 1,
+		};
+		
+		for (int i = 0; i < sizeof(dataStart) / sizeof(float); i++)
+		{
+			finalData.push_back(dataStart[i]);
+		}
+
+		auto unsafeGet = [&](int i, int j)
+		{
+			glm::vec4 rez = {};
+			rez.r = textureData[i + j * size.x + 0];
+			rez.g = textureData[i + j * size.x + 1];
+			rez.b = textureData[i + j * size.x + 2];
+			rez.a = textureData[i + j * size.x + 3];
+			return rez;
+		};
+
+		//top face
+		for (int y = 0; y < size.y-1; y++)
+		{
+
+			bool anyColor = 0;
+
+			if (y == 0) { anyColor = true; }else
+			{
+				for (int x = 0; x < size.x; x++)
+				{
+					auto color = unsafeGet(x, y);
+					if (color.a == 0) { anyColor = true; break; }
+				}
+			}
+			
+			if (anyColor)
+			{
+				float height = 1.f + (-2.f) * ((float)y/size.y);
+
+				float textureBotton = 1 + (-1.f) * ((float)y / size.y);
+				float textureTop = 1 - (1.f/size.y) + (-1.f) * ((float)y / size.y);
+
+				float dataTop[] = { 
+					1, height, thick / 2.f,	0, 1, 0,	1, textureBotton,
+					1, height, -thick / 2.f,0, 1, 0,	1, textureTop,
+					-1, height, -thick / 2.f,0, 1, 0,	0, textureTop,
+					
+					-1, height, -thick / 2.f,0, 1, 0,	0, textureTop,
+					-1, height, thick / 2.f,0, 1, 0,	0, textureBotton,
+					1, height, thick / 2.f,	0, 1, 0,	1, textureBotton,
+				};
+
+				for (int i = 0; i < sizeof(dataTop) / sizeof(float); i++)
+				{
+					finalData.push_back(dataTop[i]);
+				}
+			}
+
+		}
+
+
+
+		glBufferStorage(GL_ARRAY_BUFFER, finalData.size() * sizeof(float),
+			finalData.data(), 0);
+
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
+
+		result.count = finalData.size() / 8;
+
+		itemsGeometry.push_back(result);
+	};
+
+
+	gl2d::Texture defaultTexture;
+	defaultTexture.id = texturesIds[0];
+	loadItem(defaultTexture);
+
+	for (int i = ItemTypes::stick; i < ItemTypes::lastItem; i++)
+	{
+
+		if (texturesIdsItems[i - ItemTypes::stick] == texturesIds[0])
+		{
+			itemsGeometry.push_back(itemsGeometry[0]);
+		}
+		else
+		{
+			gl2d::Texture t;
+			t.id = texturesIdsItems[i - ItemTypes::stick];
+			loadItem(t);
+		}
+	}
+	glBindVertexArray(0);
+
+}
+
 uint16_t getGpuIdIndexForBlock(short type, int face)
 {
 	return blocksLookupTable[type * 6 + face] * 3;
+}
+
+void BlocksLoader::ItemGeometry::clear()
+{
+	glDeleteBuffers(1, &buffer);
+	glDeleteVertexArrays(1, &vao);
+	*this = {};
 }

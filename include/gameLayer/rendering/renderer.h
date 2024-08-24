@@ -193,14 +193,29 @@ struct Renderer
 			uniform u_modelMatrix;
 			uniform u_texture;
 			uniform u_view;
-			uniform u_exposure;
 			uniform u_lightValue;
 
 			GLuint vaoCube = 0;
 			GLuint vertexBufferCube = 0;
 			GLuint indexBufferCube = 0;
-
 		}blockEntityshader;
+
+		struct
+		{
+			Shader shader;
+
+			uniform u_entityPositionInt;
+			uniform u_entityPositionFloat;
+			uniform u_viewProjection;
+			uniform u_cameraPositionInt;
+			uniform u_cameraPositionFloat;
+			uniform u_modelMatrix;
+			uniform u_texture;
+			uniform u_view;
+			uniform u_lightValue;
+
+		}itemEntityShader;
+
 
 		struct ItemEntityRenderData
 		{

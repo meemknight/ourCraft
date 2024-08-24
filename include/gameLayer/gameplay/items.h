@@ -9,7 +9,7 @@ constexpr static unsigned short ItemsStartPoint = 1'024;
 enum ItemTypes
 {
 
-	stick = ItemsStartPoint,
+	stick = ItemsStartPoint, //keep the stick the first item!
 	coal,
 	wooddenSword,
 	wooddenPickaxe,
@@ -26,7 +26,7 @@ const char *getItemTextureName(int itemId);
 
 struct Item
 {
-	Item() {};
+	Item() {}; //todo maybe remove, it is dangerous, use item creator, or just don't add metadata by default
 	Item(unsigned short type, unsigned char counter = 1):type(type), counter(counter) {};
 
 

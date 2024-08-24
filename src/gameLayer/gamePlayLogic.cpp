@@ -1571,13 +1571,14 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			{
 				if (platform::isLMousePressed())
 				{
-					Item item(selectedCreativeItem);
+					Item item = itemCreator(selectedCreativeItem);
 					
 					if (platform::isKeyHeld(platform::Button::LeftCtrl))
 					{
 						item.counter = item.getStackSize();
 					}
 
+					//todo force overwrite item with metadata here!
 					forceOverWriteItem(player.inventory, PlayerInventory::CURSOR_INDEX,
 						item);
 

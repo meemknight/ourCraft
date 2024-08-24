@@ -155,6 +155,8 @@ void loadAllDefaultTexturePacks()
 	programData.modelsManager.loadAllModels(RESOURCES_PATH "assets/models/", false);
 
 	programData.blocksLoader.loadAllTextures(RESOURCES_PATH "assets/");
+	programData.blocksLoader.loadAllItemsGeometry();
+
 	programData.renderer.recreateBlocksTexturesBuffer(programData.blocksLoader);
 
 	//programData.blocksLoader.clearAllTextures();

@@ -1074,8 +1074,27 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(entityRenderer.blockEntityshader, u_cameraPositionFloat);
 	GET_UNIFORM2(entityRenderer.blockEntityshader, u_texture);
 	GET_UNIFORM2(entityRenderer.blockEntityshader, u_view);
-	GET_UNIFORM2(entityRenderer.blockEntityshader, u_exposure);
 	GET_UNIFORM2(entityRenderer.blockEntityshader, u_lightValue);
+
+
+	//item entity shader
+	//
+	entityRenderer.itemEntityShader.shader.clear();
+
+	entityRenderer.itemEntityShader.shader.loadShaderProgramFromFile
+		(RESOURCES_PATH "shaders/blockEntity.vert", RESOURCES_PATH "shaders/itemEntity.frag");
+	entityRenderer.itemEntityShader.shader.bind();
+
+	GET_UNIFORM2(entityRenderer.itemEntityShader, u_entityPositionInt);
+	GET_UNIFORM2(entityRenderer.itemEntityShader, u_entityPositionFloat);
+	GET_UNIFORM2(entityRenderer.itemEntityShader, u_viewProjection);
+	GET_UNIFORM2(entityRenderer.itemEntityShader, u_modelMatrix);
+	GET_UNIFORM2(entityRenderer.itemEntityShader, u_cameraPositionInt);
+	GET_UNIFORM2(entityRenderer.itemEntityShader, u_cameraPositionFloat);
+	GET_UNIFORM2(entityRenderer.itemEntityShader, u_texture);
+	GET_UNIFORM2(entityRenderer.itemEntityShader, u_view);
+	GET_UNIFORM2(entityRenderer.itemEntityShader, u_lightValue);
+	//
 
 
 	entityRenderer.basicEntityShader.shader.clear();
@@ -2192,7 +2211,6 @@ void Renderer::renderEntities(
 			glm::value_ptr(glm::scale(glm::vec3{0.4f})));
 		glUniform3fv(entityRenderer.blockEntityshader.u_cameraPositionFloat, 1, &posFloat[0]);
 		glUniform3iv(entityRenderer.blockEntityshader.u_cameraPositionInt, 1, &posInt[0]);
-		glUniform1f(entityRenderer.blockEntityshader.u_exposure, exposure);
 
 		//debug stuff
 		if (0)
@@ -2233,6 +2251,8 @@ void Renderer::renderEntities(
 			//todo instance rendering
 			for (auto &e : entityManager.droppedItems)
 			{
+				if (!isBlock(e.second.entity.type)) { continue; }
+
 				//todo something better here lol
 				std::uint64_t textures[6] = {};
 
@@ -2288,6 +2308,77 @@ void Renderer::renderEntities(
 
 	}
 #pragma endregion
+
+#pragma region item entities
+
+	entityRenderer.itemEntityShader.shader.bind();
+
+	glUniformMatrix4fv(entityRenderer.itemEntityShader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
+	glUniformMatrix4fv(entityRenderer.itemEntityShader.u_view, 1, GL_FALSE, &viewMatrix[0][0]);
+	glUniformMatrix4fv(entityRenderer.itemEntityShader.u_modelMatrix, 1, GL_FALSE,
+		glm::value_ptr(glm::scale(glm::vec3{0.4f})));
+	glUniform3fv(entityRenderer.itemEntityShader.u_cameraPositionFloat, 1, &posFloat[0]);
+	glUniform3iv(entityRenderer.itemEntityShader.u_cameraPositionInt, 1, &posInt[0]);
+
+	{
+
+		//todo instance rendering
+		for (auto &e : entityManager.droppedItems)
+		{
+			//continue;
+			if (isBlock(e.second.entity.type)) { continue; }
+
+			std::uint64_t texture;
+			
+			BlocksLoader::ItemGeometry geometry = {};
+
+			if (e.second.entity.type >= ItemsStartPoint)
+			{
+				texture = blocksLoader.gpuIdsItems
+					[e.second.entity.type - ItemsStartPoint];
+
+				geometry = blocksLoader.itemsGeometry[e.second.entity.type - ItemsStartPoint];
+			}
+			else
+			{
+				texture = blocksLoader.gpuIds
+					[getGpuIdIndexForBlock(e.second.entity.type, 0)];
+			}
+
+			glUniformHandleui64ARB(entityRenderer.itemEntityShader.u_texture, texture);
+
+			glm::vec3 entityFloat = {};
+			glm::ivec3 entityInt = {};
+
+			//decomposePosition(e.second.item.position, entityFloat, entityInt);
+			decomposePosition(e.second.getRubberBandPosition(), entityFloat, entityInt);
+
+			entityFloat += glm::vec3(0, 0.4, 0);
+
+			glUniform3fv(entityRenderer.itemEntityShader.u_entityPositionFloat, 1, &entityFloat[0]);
+			glUniform3iv(entityRenderer.itemEntityShader.u_entityPositionInt, 1, &entityInt[0]);
+
+
+			auto b = chunkSystem.getBlockSafe(e.second.getRubberBandPosition() + glm::dvec3(0, 0.2, 0));
+			int rez = skyLightIntensity;
+
+			if (b)
+			{
+				rez = std::max((char)b->getLight(), (char)(b->getSkyLight() - ((char)15 - (char)skyLightIntensity)));
+				rez = std::max(rez, 0);
+			}
+
+			glUniform1i(entityRenderer.itemEntityShader.u_lightValue, rez);
+
+			glBindVertexArray(geometry.vao);
+			glDrawArrays(GL_TRIANGLES, 0, geometry.count);
+		}
+
+	}
+
+
+#pragma endregion
+
 
 
 #pragma region other entities setup shader
