@@ -511,10 +511,15 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		for (int i = 0; i < 6; i++)
 		{
 
-			if ((sides[i] != nullptr && !(sides[i])->isOpaque())
+			if (
+				
+				!(isAnyLeaves(b.getType()) && sides[i] != nullptr && isAnyLeaves((sides[i])->getType()))
+
+				&&
+				(sides[i] != nullptr && !(sides[i])->isOpaque())
 				|| (
 				//(i == 3 && y == 0) ||		//display the bottom face
-				(i == 2 && y == CHUNK_HEIGHT - 1)
+				(i == 2 && y == CHUNK_HEIGHT - 1) //display the top face
 				)
 				)
 			{

@@ -34,6 +34,9 @@ namespace AudioEngine
 		leaves,
 		snow,
 		metal,
+		wool,
+		clay,
+		sandStone,
 
 		toolBreakingWood,
 		toolBreakingStone,

@@ -222,6 +222,9 @@ namespace AudioEngine
 		SoundCollection(RESOURCES_PATH "/sounds/leaves"),
 		SoundCollection(RESOURCES_PATH "/sounds/snow"),
 		SoundCollection(RESOURCES_PATH "/sounds/metal"),
+		SoundCollection(RESOURCES_PATH "/sounds/wool"),
+		SoundCollection(RESOURCES_PATH "/sounds/clay"),
+		SoundCollection(RESOURCES_PATH "/sounds/sandStone"),
 		
 
 		SoundCollection(RESOURCES_PATH "sounds/toolBreakWood"),
@@ -274,7 +277,6 @@ int getSoundForBlockBreaking(unsigned int type)
 	if (type == water) { return 0; }
 
 
-
 	if (type == gold_block)
 	{
 		return AudioEngine::metal;
@@ -284,7 +286,6 @@ int getSoundForBlockBreaking(unsigned int type)
 	{
 		return AudioEngine::grass;
 	}
-
 
 
 	///
@@ -302,7 +303,7 @@ int getSoundForBlockBreaking(unsigned int type)
 
 	if (isAnyClayBlock(type))
 	{
-		return 0; //todo
+		return AudioEngine::clay;
 	}
 
 	if (isAnySandyBlock(type))
@@ -317,7 +318,7 @@ int getSoundForBlockBreaking(unsigned int type)
 
 	if (isAnySemiHardBlock(type))
 	{
-		return 0; //todo
+		return AudioEngine::sandStone;
 	}
 
 	if (isAnyStone(type) || type == testBlock)
@@ -347,7 +348,7 @@ int getSoundForBlockBreaking(unsigned int type)
 
 	if (isAnyWool(type))
 	{
-		return 0;
+		return AudioEngine::wool;
 	}
 
 	if (isAnyUnbreakable(type))
@@ -359,7 +360,6 @@ int getSoundForBlockBreaking(unsigned int type)
 	{
 		return 0; //todo
 	}
-
 
 	return AudioEngine::stone;
 }

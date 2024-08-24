@@ -844,6 +844,8 @@ void main()
 		out_color = vec4(finalColor,textureColor.a);
 		out_color.a = 1-out_color.a;
 		out_color.a *= clamp(0,1,dot(N,V));
+
+
 		out_color.a = 1-out_color.a;
 
 		out_color.rgb = textureColor.rgb * finalColor;

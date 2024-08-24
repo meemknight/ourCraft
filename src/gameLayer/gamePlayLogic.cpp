@@ -1546,13 +1546,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	int cursorSelected = -2;
 	unsigned short selectedCreativeItem = 0;
 
-	//programData.ui.renderGameUI(deltaTime, w, h, gameData.currentItemSelected,
-	//	player.inventory, programData.blocksLoader, gameData.insideInventoryMenu,
-	//	cursorSelected, itemToCraft, 
-	//	(gameData.blockInteractionType == InteractionTypes::craftingTable),
-	//	gameData.currentInventoryTab, player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE,
-	//	selectedCreativeItem, player.life, programData, player
-	//	);
+	programData.ui.renderGameUI(deltaTime, w, h, gameData.currentItemSelected,
+		player.inventory, programData.blocksLoader, gameData.insideInventoryMenu,
+		cursorSelected, itemToCraft, 
+		(gameData.blockInteractionType == InteractionTypes::craftingTable),
+		gameData.currentInventoryTab, player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE,
+		selectedCreativeItem, player.life, programData, player
+		);
 
 
 #pragma endregion
