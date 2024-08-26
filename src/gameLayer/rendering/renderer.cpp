@@ -17,6 +17,7 @@
 #include <rendering/frustumCulling.h>
 #include <rendering/model.h>
 #include <glm/gtx/quaternion.hpp>
+#include <lightSystem.h>
 
 #define GET_UNIFORM(s, n) n = s.getUniform(#n);
 #define GET_UNIFORM2(s, n) s. n = s.shader.getUniform(#n);
@@ -2337,7 +2338,7 @@ void Renderer::renderEntities(
 				texture = blocksLoader.gpuIdsItems
 					[e.second.entity.type - ItemsStartPoint];
 
-				geometry = blocksLoader.itemsGeometry[e.second.entity.type - ItemsStartPoint];
+				geometry = blocksLoader.itemsGeometry[e.second.entity.type - ItemsStartPoint + 1];
 			}
 			else
 			{
@@ -2366,6 +2367,11 @@ void Renderer::renderEntities(
 			{
 				rez = std::max((char)b->getLight(), (char)(b->getSkyLight() - ((char)15 - (char)skyLightIntensity)));
 				rez = std::max(rez, 0);
+			}
+
+			if (dontUpdateLightSystem)
+			{
+				rez = 15;
 			}
 
 			glUniform1i(entityRenderer.itemEntityShader.u_lightValue, rez);

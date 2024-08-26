@@ -2,7 +2,9 @@
 #include <glm/vec3.hpp>
 #include <deque>
 
-bool constexpr dontUpdateLightSystem = 0;
+//donotupdatelightsystem
+//donotupdatelightsystem
+bool constexpr dontUpdateLightSystem = 1;
 
 struct ChunkSystem;
 struct Chunk;

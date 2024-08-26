@@ -1175,6 +1175,7 @@ void BlocksLoader::loadAllItemsGeometry()
 		glBindBuffer(GL_ARRAY_BUFFER, result.buffer);
 
 		float thick = 1.f / 8;
+		//float thick = 2;
 
 		float dataStart[] = {
 			1, 1, thick/2.f,	0, 0, 1,	1, 1,
@@ -1201,50 +1202,288 @@ void BlocksLoader::loadAllItemsGeometry()
 
 		auto unsafeGet = [&](int i, int j)
 		{
+			j = (size.y) - j - 1;
 			glm::vec4 rez = {};
-			rez.r = textureData[i + j * size.x + 0];
-			rez.g = textureData[i + j * size.x + 1];
-			rez.b = textureData[i + j * size.x + 2];
-			rez.a = textureData[i + j * size.x + 3];
+			rez.r = textureData[(i + j * size.x) * 4 + 0];
+			rez.g = textureData[(i + j * size.x) * 4 + 1];
+			rez.b = textureData[(i + j * size.x) * 4 + 2];
+			rez.a = textureData[(i + j * size.x) * 4 + 3];
+			return rez;
+		};
+
+		auto unsafeGet2 = [&](int i, int j)
+		{
+			i = (size.x) - i - 1;
+			j = (size.y) - j - 1;
+			glm::vec4 rez = {};
+			rez.r = textureData[(i + j * size.x) * 4 + 0];
+			rez.g = textureData[(i + j * size.x) * 4 + 1];
+			rez.b = textureData[(i + j * size.x) * 4 + 2];
+			rez.a = textureData[(i + j * size.x) * 4 + 3];
 			return rez;
 		};
 
 		//top face
-		for (int y = 0; y < size.y-1; y++)
+		for (int y = 0; y < size.y; y++)
 		{
-
-			bool anyColor = 0;
-
-			if (y == 0) { anyColor = true; }else
+			for (int x = 0; x < size.x; x++)
 			{
-				for (int x = 0; x < size.x; x++)
+				auto color = unsafeGet(x, y);
+				if (color.a > 1)
 				{
-					auto color = unsafeGet(x, y);
-					if (color.a == 0) { anyColor = true; break; }
+					if (y != 0)
+					{
+						auto color = unsafeGet(x, y - 1);
+						if (color.a > 1) { break; }
+					}
+
+					int start = x;
+					int end = x;
+
+					for (x = x+1; x < size.x; x++)
+					{
+						auto color = unsafeGet(x, y);
+						if (color.a <= 1) { break; }
+
+						if (y != 0)
+						{
+							auto color = unsafeGet(x, y-1);
+							if (color.a > 1) { break; }
+						}
+
+						end = x;
+					}
+					end++;
+
+					float height = 1.f + (-2.f) * ((float)y / size.y);
+
+					float textureBotton = (1 + (-1.f) * (((float)y + 1) / size.y));
+					float textureTop = (1 + (-1.f) * ((float)y / size.y));
+
+					float xStart = -1 + 2 * (start / (float)size.x);
+					float xEnd = -1 + 2 * (end / (float)size.x);
+
+					float textureLeft = 0 + 1 * (start / (float)size.x);
+					float textureRight = 0 + 1 * (end / (float)size.x);
+
+					float dataTop[] = {
+						xEnd, height, thick / 2.f,	0, 1, 0,	textureRight, textureBotton,
+						xEnd, height, -thick / 2.f,0, 1, 0,		textureRight, textureTop,
+						xStart, height, -thick / 2.f,0, 1, 0,	textureLeft, textureTop,
+
+						xStart, height, -thick / 2.f,0, 1, 0,	textureLeft, textureTop,
+						xStart, height, thick / 2.f,0, 1, 0,	textureLeft, textureBotton,
+						xEnd, height, thick / 2.f,	0, 1, 0,	textureRight, textureBotton,
+					};
+
+					for (int i = 0; i < sizeof(dataTop) / sizeof(float); i++)
+					{
+						finalData.push_back(dataTop[i]);
+					}
+
 				}
+
 			}
-			
-			if (anyColor)
+
+		}
+
+
+		//bottom face
+		for (int y = 0; y < size.y; y++)
+		{
+			for (int x = 0; x < size.x; x++)
 			{
-				float height = 1.f + (-2.f) * ((float)y/size.y);
 
-				float textureBotton = 1 + (-1.f) * ((float)y / size.y);
-				float textureTop = 1 - (1.f/size.y) + (-1.f) * ((float)y / size.y);
-
-				float dataTop[] = { 
-					1, height, thick / 2.f,	0, 1, 0,	1, textureBotton,
-					1, height, -thick / 2.f,0, 1, 0,	1, textureTop,
-					-1, height, -thick / 2.f,0, 1, 0,	0, textureTop,
-					
-					-1, height, -thick / 2.f,0, 1, 0,	0, textureTop,
-					-1, height, thick / 2.f,0, 1, 0,	0, textureBotton,
-					1, height, thick / 2.f,	0, 1, 0,	1, textureBotton,
-				};
-
-				for (int i = 0; i < sizeof(dataTop) / sizeof(float); i++)
+				auto color = unsafeGet(x, y);
+				if (color.a > 1)
 				{
-					finalData.push_back(dataTop[i]);
+					if (y != size.y - 1)
+					{
+						auto color = unsafeGet(x, y + 1);
+						if (color.a > 1) { continue; }
+					}
+
+					
+					int start = x;
+					int end = x;
+
+					for (x = x + 1; x < size.x; x++)
+					{
+						auto color = unsafeGet(x, y);
+						if (color.a <= 1) { break; }
+
+						if (y != size.y-1)
+						{
+							auto color = unsafeGet(x, y + 1);
+							if (color.a > 1) { break; }
+						}
+
+						end = x;
+					}
+					end++;
+
+					float height = 1.f + (-2.f) * ((float)(y+1.f) / size.y);
+
+					float textureBotton = (1 + (-1.f) * (((float)y + 1) / size.y));
+					float textureTop = (1 + (-1.f) * ((float)y / size.y));
+
+					float xStart = -1 + 2 * (start / (float)size.x);
+					float xEnd = -1 + 2 * (end / (float)size.x);
+
+					float textureLeft = 0 + 1 * (start / (float)size.x);
+					float textureRight = 0 + 1 * (end / (float)size.x);
+
+					float dataTop[] = {
+						xEnd, height, thick / 2.f,	0, 1, 0,	textureRight, textureBotton,
+						xStart, height, -thick / 2.f,0, 1, 0,	textureLeft, textureTop,
+						xEnd, height, -thick / 2.f,0, 1, 0,		textureRight, textureTop,
+
+						xStart, height, -thick / 2.f,0, 1, 0,	textureLeft, textureTop,
+						xEnd, height, thick / 2.f,	0, 1, 0,	textureRight, textureBotton,
+						xStart, height, thick / 2.f,0, 1, 0,	textureLeft, textureBotton,
+
+					};
+
+					for (int i = 0; i < sizeof(dataTop) / sizeof(float); i++)
+					{
+						finalData.push_back(dataTop[i]);
+					}
+
 				}
+
+			}
+
+		}
+		
+		//left face
+		for (int x = 0; x < size.x; x++)
+		{
+			for (int y = 0; y < size.y; y++)
+			{
+
+				auto color = unsafeGet(x, y);
+				if (color.a > 1)
+				{
+					if (x != 0)
+					{
+						auto color = unsafeGet(x-1, y);
+						if (color.a > 1) { continue; }
+					}
+
+					int start = y;
+					int end = y;
+
+					for (y = y + 1; y < size.y; y++)
+					{
+						auto color = unsafeGet(x, y);
+						if (color.a <= 1) { break; }
+
+						if (x != 0)
+						{
+							auto color = unsafeGet(x-1, y);
+							if (color.a > 1) { break; }
+						}
+
+						end = y;
+					}
+					end++;
+
+					float slide = -1.f + (2.f) * ((float)x / size.x);
+
+					float textureLeft = 1-(1 + (-1.f) * (((float)x) / size.x));
+					float textureRight = 1-(1 + (-1.f) * (((float)x + 1) / size.x));
+
+					float yStart = (-1 + 2 * (start / (float)size.y))*-1;
+					float yEnd = (-1 + 2 * (end / (float)size.y))*-1;
+
+					float textureTop = 1 - 1 * (start / (float)size.y);
+					float textureBottom = 1 - 1 * (end / (float)size.y);
+
+					float dataTop[] = {
+						slide, yEnd, thick / 2.f,	0, 1, 0,	textureRight,textureBottom,
+						slide, yStart, -thick / 2.f,0, 1, 0,	textureLeft, textureTop,
+						slide, yEnd, -thick / 2.f,0, 1, 0,		textureLeft, textureBottom,
+
+						slide, yStart, -thick / 2.f,0, 1, 0,	textureLeft, textureTop,
+						slide, yEnd, thick / 2.f,	0, 1, 0,	textureRight, textureBottom,
+						slide, yStart, thick / 2.f,0, 1, 0,	    textureRight, textureTop,
+
+					};
+
+					for (int i = 0; i < sizeof(dataTop) / sizeof(float); i++)
+					{
+						finalData.push_back(dataTop[i]);
+					}
+
+				}
+
+			}
+
+		}
+
+
+		//right face
+		for (int x = 0; x < size.x; x++)
+		{
+			for (int y = 0; y < size.y; y++)
+			{
+
+				auto color = unsafeGet(x, y);
+				if (color.a > 1)
+				{
+					if (x+1 < size.x)
+					{
+						auto color = unsafeGet(x + 1, y);
+						if (color.a > 1) { continue; }
+					}
+
+					int start = y;
+					int end = y;
+
+					for (y = y + 1; y < size.y; y++)
+					{
+						auto color = unsafeGet(x, y);
+						if (color.a <= 1) { break; }
+
+						if (x+1 < size.x)
+						{
+							auto color = unsafeGet(x + 1, y);
+							if (color.a > 1) { break; }
+						}
+
+						end = y;
+					}
+					end++;
+
+					float slide = -1.f + (2.f) * ((float)(x+1.f) / size.x);
+
+					float textureLeft = 1 - (1 + (-1.f) * (((float)x) / size.x));
+					float textureRight = 1 - (1 + (-1.f) * (((float)x + 1) / size.x));
+
+					float yStart = (-1 + 2 * (start / (float)size.y)) * -1;
+					float yEnd = (-1 + 2 * (end / (float)size.y)) * -1;
+
+					float textureTop = 1 - 1 * (start / (float)size.y);
+					float textureBottom = 1 - 1 * (end / (float)size.y);
+
+					float dataTop[] = {
+						slide, yEnd, thick / 2.f,	0, 1, 0,	textureRight,textureBottom,
+						slide, yEnd, -thick / 2.f,0, 1, 0,		textureLeft, textureBottom,
+						slide, yStart, -thick / 2.f,0, 1, 0,	textureLeft, textureTop,
+
+						slide, yStart, -thick / 2.f,0, 1, 0,	textureLeft, textureTop,
+						slide, yStart, thick / 2.f,0, 1, 0,	    textureRight, textureTop,
+						slide, yEnd, thick / 2.f,	0, 1, 0,	textureRight, textureBottom,
+
+					};
+
+					for (int i = 0; i < sizeof(dataTop) / sizeof(float); i++)
+					{
+						finalData.push_back(dataTop[i]);
+					}
+
+				}
+
 			}
 
 		}
