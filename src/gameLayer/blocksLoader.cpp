@@ -1234,7 +1234,7 @@ void BlocksLoader::loadAllItemsGeometry()
 					if (y != 0)
 					{
 						auto color = unsafeGet(x, y - 1);
-						if (color.a > 1) { break; }
+						if (color.a > 1) { continue; }
 					}
 
 					int start = x;
