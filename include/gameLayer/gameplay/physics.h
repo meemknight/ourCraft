@@ -92,7 +92,13 @@ void colideWithOthers(glm::dvec3 &pos, glm::vec3 collider, MotionState &forces, 
 bool boxColide(glm::dvec3 p1, glm::vec3 s1,
 	glm::dvec3 p2, glm::vec3 s2);
 
+bool pointInsideBox(glm::dvec3 p,
+	glm::dvec3 box, glm::vec3 size, float delta);
+
 bool boxColideBlock(glm::dvec3 p1, glm::vec3 s1, glm::ivec3 b);
 
 glm::vec3 boxColideDistance(const glm::dvec3 &p1, const glm::vec3 &s1,
 	const glm::dvec3 &p2, const glm::vec3 &s2);
+
+bool lineIntersectBox(glm::dvec3 start, glm::dvec3 dir,
+	glm::dvec3 box, glm::dvec3 size);

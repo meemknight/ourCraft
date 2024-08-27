@@ -2578,8 +2578,6 @@ void Renderer::renderEntities(
 				data.textureId = modelsManager.gpuIds[textureIndex];
 			}
 
-		
-
 			decomposePosition(e.second.getRubberBandPosition(), data.entityPositionFloat, data.entityPositionInt);
 			entityData.push_back(data);
 		}

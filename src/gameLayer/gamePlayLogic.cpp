@@ -53,7 +53,7 @@ struct GameData
 	glm::dvec3 entityTest = {-4, 113, 3};
 	bool renderBox = 0;
 	bool renderPlayerPos = 0;
-	bool renderColliders = 0;
+	bool renderColliders = 1;
 	bool fly = 1;
 	
 	bool colidable = 1;
@@ -1118,6 +1118,26 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	programData.GPUProfiler.endSubProfile("Debug rendering");
 
 #pragma endregion
+
+
+	//test intersect
+	if (gameData.entityManager.zombies.size())
+	{
+
+		auto &z = gameData.entityManager.zombies.begin()->second;
+		glm::dvec3 cameraRayPos = gameData.c.position;
+
+		std::cout << lineIntersectBox(cameraRayPos, gameData.c.viewDirection,
+			z.getRubberBandPosition(), z.entity.getMaxColliderSize()) << "\n";
+		
+
+		//std::cout << z.getRubberBandPosition().x << " " << z.getRubberBandPosition().y <<
+		//	" " << z.getRubberBandPosition().z << "\n";
+		//
+		//std::cout << z.entity.position.x << " " << z.entity.position.y <<
+		//	" " << z.entity.position.z << "\n";
+
+	}
 
 
 #pragma region imgui

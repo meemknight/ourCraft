@@ -75,6 +75,8 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 )
 {
 
+	if (0)
+	{
 	float followDistance = 22;
 	float keepFollowDistance = 33;
 	float randomSightBonus = 10;
@@ -451,6 +453,7 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 	auto move = 2.f * deltaTime * direction;
 	getPosition().x += move.x;
 	getPosition().z += move.y;
+	};
 
 
 	doCollisionWithOthers(getPosition(), entity.getMaxColliderSize(), entity.forces,
