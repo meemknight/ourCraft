@@ -624,7 +624,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	std::optional<glm::ivec3> blockToPlace = std::nullopt;
 	glm::dvec3 cameraRayPos = gameData.c.position;
 	Block *raycastBlock = 0;
-
+	glm::uint64 targetedEntity = 0;
+	float raycastDist = 0;
 
 	if (!gameData.insideInventoryMenu)
 	{
@@ -634,8 +635,29 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.handHit = true;
 		}
 
+		constexpr static float TARGET_DIST = 20;
 
-		raycastBlock = gameData.chunkSystem.rayCast(cameraRayPos, gameData.c.viewDirection, rayCastPos, 20, blockToPlace);
+		raycastBlock = gameData.chunkSystem.rayCast(cameraRayPos, gameData.c.viewDirection,
+			rayCastPos, TARGET_DIST, blockToPlace, raycastDist);
+		float dist = TARGET_DIST;
+
+		if (raycastBlock)
+		{
+			dist = raycastDist - 0.1;
+		}
+
+
+		targetedEntity = gameData.entityManager.intersectAllAttackableEntities(cameraRayPos,
+			gameData.c.viewDirection, dist);
+
+		//std::cout << targetedEntity << "\n";
+
+		if (targetedEntity)
+		{
+			raycastBlock = nullptr;
+			blockToPlace = {};
+		}
+
 		if (raycastBlock)
 		{
 			//todo special function here
@@ -653,6 +675,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.currentBlockBreaking = {};
 		}
 
+		//place blocks and hit entities
 		if (!gameData.escapePressed)
 		{
 
@@ -666,7 +689,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				item.type = glm::clamp(item.type, (unsigned short)1u,
 					(unsigned short)(BlocksCount - 1u));
 			}
-
 
 
 			if (platform::isKeyHeld(platform::Button::LeftCtrl)
@@ -852,6 +874,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					}
 				}
 
+			if (targetedEntity && platform::isLMousePressed())
+			{
+				
+				attackEntity(targetedEntity, gameData.currentItemSelected, 
+					gameData.c.viewDirection);
+
+			}
 
 		};
 
@@ -1118,26 +1147,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	programData.GPUProfiler.endSubProfile("Debug rendering");
 
 #pragma endregion
-
-
-	//test intersect
-	if (gameData.entityManager.zombies.size())
-	{
-
-		auto &z = gameData.entityManager.zombies.begin()->second;
-		glm::dvec3 cameraRayPos = gameData.c.position;
-
-		std::cout << lineIntersectBox(cameraRayPos, gameData.c.viewDirection,
-			z.getRubberBandPosition(), z.entity.getMaxColliderSize()) << "\n";
-		
-
-		//std::cout << z.getRubberBandPosition().x << " " << z.getRubberBandPosition().y <<
-		//	" " << z.getRubberBandPosition().z << "\n";
-		//
-		//std::cout << z.entity.position.x << " " << z.entity.position.y <<
-		//	" " << z.entity.position.z << "\n";
-
-	}
 
 
 #pragma region imgui

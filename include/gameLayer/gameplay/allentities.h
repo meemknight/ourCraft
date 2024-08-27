@@ -83,5 +83,6 @@ struct EntityDataClient : public EntityGetter<EntityDataClient>
 	std::unordered_map<std::uint64_t, PigClient> pigs;
 	std::unordered_map<std::uint64_t, CatClient> cats;
 
-
 };
+
+bool canEntityBeHit(unsigned char entityType);

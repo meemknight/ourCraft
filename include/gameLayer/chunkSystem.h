@@ -73,7 +73,7 @@ struct ChunkSystem
 		Block *&left, Block *&right);
 
 	Block *rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos, float maxDist
-		, std::optional<glm::ivec3> &prevBlockForPlace);
+		, std::optional<glm::ivec3> &prevBlockForPlace, float &outDist);
 
 	//a client places a block and sends a task to the server for it to be placed
 	//returns true if succeeded

@@ -82,6 +82,7 @@ enum : std::uint32_t
 	headerRecieveLife,
 	headerUpdateLife,
 	headerKillEntity,
+	headerAttackEntity,
 };
 
 enum 
@@ -301,6 +302,12 @@ struct Packet_PlaceBlocks
 	BlockType blockType = {};
 };
 
+struct Packet_AttackEntity
+{
+	std::uint64_t entityID = 0;
+	glm::vec3 direction = {};
+	unsigned char inventorySlot = 0;
+};
 
 
 void *unCompressData(const char *data, size_t compressedSize, size_t &originalSize);

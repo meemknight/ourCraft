@@ -462,11 +462,69 @@ void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)
 
 void ClientEntityManager::cleanup()
 {
-
+	//todo use the has cleanup thingy or just remove it
 	for (auto &e : players)
 	{
 		e.second.cleanup();
 	}
+}
+
+
+template<class T>
+std::uint64_t genericIntersectAllAttackableEntities(T &container, glm::dvec3 start,
+	glm::dvec3 dir, float maxDistance)
+{
+	if constexpr (!hasCanBeAttacked<decltype(container.begin()->second.entity)>)
+	{
+		return 0;
+	}
+
+	for (auto &e : container)
+	{
+		auto collider = e.second.entity.getColliderSize();
+
+		bool rez = lineIntersectBoxMaxDistance(start, dir, e.second.getRubberBandPosition(), collider,
+			maxDistance);
+
+		if (rez) { return e.first; }
+	}
+
+	return 0;
+}
+
+
+template <int... Is>
+std::uint64_t callGenericIntersectAllAttackableEntities(std::integer_sequence<int, Is...>, ClientEntityManager &c,
+	glm::dvec3 start, glm::dvec3 dir, float maxDistance
+)
+{
+	std::uint64_t result = 0;
+
+	// Lambda function to evaluate and capture the result
+	auto evaluate = [&](auto &entity) -> bool
+	{
+		result = genericIntersectAllAttackableEntities(entity, start, dir, maxDistance);
+		return result != 0;
+	};
+
+	// Fold expression with short-circuiting
+	(evaluate(*c.template entityGetter<Is>()) || ...);
+
+	return result;
+
+	//return genericIntersectAllAttackableEntities(c.zombies,
+	//	start, dir, maxDistance);
+}
+
+
+
+std::uint64_t ClientEntityManager::intersectAllAttackableEntities(glm::dvec3 start, 
+	glm::dvec3 dir, float maxDistance)
+{
+	return callGenericIntersectAllAttackableEntities(
+		std::make_integer_sequence<int, EntitiesTypesCount>(), *this,
+		start, dir, maxDistance);
+
 }
 
 

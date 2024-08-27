@@ -897,7 +897,7 @@ void ChunkSystem::getBlockSafeWithNeigbhoursStopIfCenterFails(int x, int y, int 
 }
 
 Block *ChunkSystem::rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos,
-	float maxDist, std::optional<glm::ivec3> &prevBlockForPlace)
+	float maxDist, std::optional<glm::ivec3> &prevBlockForPlace, float &outDist)
 {
 	float deltaMagitude = 0.01f;
 	glm::vec3 delta = glm::normalize(dir) * deltaMagitude;
@@ -908,6 +908,8 @@ Block *ChunkSystem::rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos,
 
 	for (float walkedDist = 0.f; walkedDist < maxDist; walkedDist += deltaMagitude)
 	{
+		outDist = walkedDist;
+
 		glm::ivec3 intPos = from3DPointToBlock(pos);
 		outPos = intPos;
 		auto b = getBlockSafe(intPos.x, intPos.y, intPos.z);
@@ -928,6 +930,7 @@ Block *ChunkSystem::rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos,
 		pos += delta;
 	}
 
+	outDist = 0;
 	prevBlockForPlace = std::nullopt;
 	return nullptr;
 }

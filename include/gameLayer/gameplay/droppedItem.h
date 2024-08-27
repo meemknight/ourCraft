@@ -39,6 +39,8 @@ struct DroppedItemServer
 		return entity.position;
 	}
 
+	void applyHitForce(glm::vec3 force) {};
+
 	float restantTime = 0;
 
 	float stayTimer = 5 * 60;

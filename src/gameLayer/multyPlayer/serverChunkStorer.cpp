@@ -1325,8 +1325,21 @@ std::uint64_t callGenericCheckEntitiesForCollisionWithBlock(std::integer_sequenc
 		}
 	}
 
-	return (genericCheckEntitiesForCollisionWithBlock(*entityData.template entityGetter<Is + 1>(),
-		position) || ...);
+	std::uint64_t result = 0;
+
+	// Lambda function to evaluate and capture the result
+	auto evaluate = [&](auto &entity) -> bool
+	{
+		result = genericCheckEntitiesForCollisionWithBlock(entity, position);
+		return result != 0;
+	};
+
+	// Fold expression with short-circuiting
+	(evaluate(*entityData.template entityGetter<Is + 1>()) || ...);
+	return result;
+
+	//return (genericCheckEntitiesForCollisionWithBlock(*entityData.template entityGetter<Is + 1>(),
+	//	position) || ...);
 
 }
 
@@ -1338,8 +1351,6 @@ std::uint64_t ServerChunkStorer::anyEntityIntersectsWithBlock(glm::ivec3 positio
 
 	glm::ivec2 chunkPos{divideChunk(position.x), divideChunk(position.z)};
 	
-	glm::ivec2 blockPos = modBlockToChunk(chunkPos);
-
 
 	chunksToCheck[0] = getChunkOrGetNull(chunkPos.x, chunkPos.y);
 
@@ -1386,8 +1397,6 @@ bool genericRemoveEntity(T &container, std::uint64_t eid)
 };
 
 #define CASE_REMOVE(x) case x: { return genericRemoveEntity(*entityData.template entityGetter<x>(), eid); } break;
-
-
 bool callGenericRemoveEntity(EntityData &entityData, std::uint64_t eid)
 {
 	auto entityType = getEntityTypeFromEID(eid);
@@ -1405,13 +1414,11 @@ bool callGenericRemoveEntity(EntityData &entityData, std::uint64_t eid)
 		//case 4: { return genericRemoveEntity(*entityData.template entityGetter<4>(), eid); } break;
 		case 5: { static_assert(5 == EntitiesTypesCount); }
 
-
 	default:;
 	}
 
 	return 0;
 }
-
 #undef CASE_REMOVE
 
 bool ServerChunkStorer::removeEntity(WorldSaver &worldSaver, std::uint64_t eid)
@@ -1431,6 +1438,102 @@ bool ServerChunkStorer::removeEntity(WorldSaver &worldSaver, std::uint64_t eid)
 	}
 
 	return 0;
+}
+
+
+template<class T>
+void doHittingThings(T &e, glm::vec3 dir)
+{
+
+	e.applyHitForce(dir * 3.f);
+
+}
+
+template<class T>
+bool genericHitEntityByPlayer(T &container, std::uint64_t eid, glm::vec3 dir)
+{
+	auto found = container.find(eid);
+
+	if (found != container.end())
+	{
+		if constexpr (std::is_pointer_v<decltype(found->second)>)
+		{
+			doHittingThings(*found->second, dir);
+		}
+		else
+		{
+			doHittingThings(found->second, dir);
+		}
+
+		return 1;
+	}
+
+	return 0;
+};
+
+
+#define CASE_HIT(x) case x: { return genericHitEntityByPlayer(*entityData.template entityGetter<x>(), eid, dir); } break;
+bool callGenericHitEntityByPlayer(EntityData &entityData, std::uint64_t eid, glm::vec3 dir)
+{
+	auto entityType = getEntityTypeFromEID(eid);
+
+	switch (entityType)
+	{
+		REPEAT(CASE_HIT, 5);
+	case 5: { static_assert(5 == EntitiesTypesCount); }
+
+	default:;
+	}
+
+	return 0;
+}
+#undef CASE_HIT
+
+
+void ServerChunkStorer::hitEntityByPlayer(std::uint64_t eid,
+	glm::dvec3 playerPosition, Item &weapon, bool &wasKilled, glm::vec3 dir)
+{
+
+
+	auto entityType = getEntityTypeFromEID(eid);
+	//todo if entity type doesn't have can be hit, return
+
+
+	float length = glm::length(dir);
+	if (length)
+	{
+		dir /= length;
+	}
+	else
+	{
+		dir = {0,0,1};
+	}
+
+	SavedChunk *chunksToCheck[9] = {};
+
+	glm::ivec2 chunkPos{divideChunk(playerPosition.x), divideChunk(playerPosition.z)};
+
+	chunksToCheck[0] = getChunkOrGetNull(chunkPos.x, chunkPos.y);
+	chunksToCheck[1] = getChunkOrGetNull(chunkPos.x + 1, chunkPos.y);
+	chunksToCheck[2] = getChunkOrGetNull(chunkPos.x - 1, chunkPos.y);
+	chunksToCheck[3] = getChunkOrGetNull(chunkPos.x, chunkPos.y + 1);
+	chunksToCheck[4] = getChunkOrGetNull(chunkPos.x, chunkPos.y - 1);
+	chunksToCheck[5] = getChunkOrGetNull(chunkPos.x + 1, chunkPos.y + 1);
+	chunksToCheck[6] = getChunkOrGetNull(chunkPos.x - 1, chunkPos.y - 1);
+	chunksToCheck[7] = getChunkOrGetNull(chunkPos.x + 1, chunkPos.y - 1);
+	chunksToCheck[8] = getChunkOrGetNull(chunkPos.x - 1, chunkPos.y + 1);
+
+	bool rez = 0;
+
+	for (int i = 0; i < 9; i++)
+	{
+		if (chunksToCheck[i])
+		{
+			rez = callGenericHitEntityByPlayer(chunksToCheck[i]->entityData, eid, dir);
+			if (rez) { return; }
+		}
+	}
+
 }
 
 

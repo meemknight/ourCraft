@@ -102,3 +102,6 @@ glm::vec3 boxColideDistance(const glm::dvec3 &p1, const glm::vec3 &s1,
 
 bool lineIntersectBox(glm::dvec3 start, glm::dvec3 dir,
 	glm::dvec3 box, glm::dvec3 size);
+
+bool lineIntersectBoxMaxDistance(glm::dvec3 start, glm::dvec3 dir,
+	glm::dvec3 box, glm::dvec3 size, float maxDistance);

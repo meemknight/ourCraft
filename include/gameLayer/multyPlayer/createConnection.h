@@ -23,12 +23,15 @@ struct Task
 		clientUsedItem,
 		clientInteractedWithBlock,
 		clientExitedInteractionWithBlock,
+		clientAttackedEntity,
 		clientUpdatedSkin,
 		generateChunk
 	};
-
-	glm::ivec3 pos = {};
+	
+	
 	glm::dvec3 doublePos = {};
+	glm::ivec3 pos = {};
+	glm::vec3 vector = {};
 	int taskType = 0;
 	BlockType blockType = 0;
 	EventId eventId = {};
@@ -86,6 +89,8 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 	UndoQueue &undoQueue, std::uint64_t &serverTimer, bool &disconnect,
 	unsigned char revisionNumberBlockInteraction, bool &shouldExitBlockInteraction
 	);
+
+void attackEntity(std::uint64_t eid, unsigned char inventorySlot, glm::vec3 direction);
 
 void sendBlockInteractionMessage(
 	std::uint64_t playerID,

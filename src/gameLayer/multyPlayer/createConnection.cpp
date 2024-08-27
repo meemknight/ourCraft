@@ -577,7 +577,19 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 
 }
 
-void sendBlockInteractionMessage( std::uint64_t playerID, 
+void attackEntity(std::uint64_t eid, unsigned char inventorySlot, glm::vec3 direction)
+{
+	Packet_AttackEntity packet;
+	packet.entityID = eid;
+	packet.inventorySlot = inventorySlot;
+	packet.direction = direction;
+
+	sendPacket(getServer(), headerAttackEntity,
+		clientData.cid,
+		&packet, sizeof(packet), true, channelChunksAndBlocks);
+}
+
+void sendBlockInteractionMessage(std::uint64_t playerID, 
 	glm::ivec3 pos, BlockType block, unsigned char revisionNumber)
 {
 

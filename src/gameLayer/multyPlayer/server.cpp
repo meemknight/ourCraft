@@ -1333,6 +1333,27 @@ void serverWorkerUpdate(
 						client->skinData.size(), client->peer, true, channelHandleConnections);
 				}
 			}
+			else if (i.t.taskType == Task::clientAttackedEntity)
+			{
+				unsigned char itemInventoryIndex = i.t.inventroySlot;
+				std::uint64_t entityId = i.t.entityId;
+				glm::vec3 dir = i.t.vector;
+
+				auto client = getClientNotLocked(i.cid);
+
+				if (client)
+				{
+					auto item = client->playerData.inventory.getItemFromIndex(itemInventoryIndex);
+					if (item)
+					{
+						bool wasKilled = 0;
+						sd.chunkCache.hitEntityByPlayer(entityId, client->playerData.getPosition(),
+							*item, wasKilled, dir);
+					}
+				}
+
+
+			}
 
 		sd.waitingTasks.erase(sd.waitingTasks.begin());
 

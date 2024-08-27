@@ -288,15 +288,23 @@ bool lineIntersectBox(glm::dvec3 start, glm::dvec3 dir, glm::dvec3 p2, glm::dvec
 
 bool lineIntersectBox(glm::dvec3 start, glm::dvec3 dir, glm::dvec3 box, glm::dvec3 size)
 {
+
+	if (pointInsideBox(start, box, size, 0.2))
+	{
+		return 1;
+	}
+
+
 	dir = glm::normalize(dir);
 	glm::dvec3 planeBottom = {box};
 	glm::dvec3 planeFront = {box + glm::dvec3(0,0,size.z / 2)};
 	glm::dvec3 planeBack = {box + glm::dvec3(0,0,-size.z / 2)};
 	glm::dvec3 planeTop = {box + glm::dvec3(0,size.y,0)};
+	glm::dvec3 planeLeft = {box + glm::dvec3(-size.x / 2,0,0)};
+	glm::dvec3 planeRight = {box + glm::dvec3(size.x / 2,0,0)};
 
 	//std::cout << planeBottom.x << " " << planeBottom.y << " " << planeBottom.z << " ---- \n";
 	//std::cout << start.x << " " << start.y << " " << start.z << " ---- \n";
-
 
 	auto doTest = [&](glm::dvec3 plane, glm::dvec3 normal)
 	{
@@ -317,16 +325,75 @@ bool lineIntersectBox(glm::dvec3 start, glm::dvec3 dir, glm::dvec3 box, glm::dve
 		return 0;
 	};
 
-	//if (doTest(planeBottom, {0,1,0})) { return 1; };
-	//if (doTest(planeTop, {0,1,0})) { return 1; };
-	//if (doTest(planeFront, {0,0,1})) { return 1; };
-	//if (doTest(planeBack, {0,0,-1})) { return 1; };
-	//if (doTest(planeBottom, {0,1,0})) { return 1; };
-	//if (doTest(planeBottom, {0,1,0})) { return 1; };
+	if (doTest(planeBottom, {0,1,0})) { return 1; };
+	if (doTest(planeTop, {0,1,0})) { return 1; };
+	if (doTest(planeFront, {0,0,1})) { return 1; };
+	if (doTest(planeBack, {0,0,-1})) { return 1; };
+	if (doTest(planeLeft, {-1,0,0})) { return 1; };
+	if (doTest(planeRight, {1,0,0})) { return 1; };
 
 
 	return 0;
 
+}
+
+bool lineIntersectBoxMaxDistance(glm::dvec3 start, glm::dvec3 dir, 
+	glm::dvec3 box, glm::dvec3 size, float maxDistance)
+
+{
+	float maxColliderDimension = std::max(std::max(size.x, size.y), size.z);
+
+	//early reject.
+	if (glm::distance(start, box) > maxDistance + maxColliderDimension)
+	{
+		return 0;
+	}
+
+
+	if (pointInsideBox(start, box, size, 0.2))
+	{
+		return 1;
+	}
+
+
+	dir = glm::normalize(dir);
+	glm::dvec3 planeBottom = {box};
+	glm::dvec3 planeFront = {box + glm::dvec3(0,0,size.z / 2)};
+	glm::dvec3 planeBack = {box + glm::dvec3(0,0,-size.z / 2)};
+	glm::dvec3 planeTop = {box + glm::dvec3(0,size.y,0)};
+	glm::dvec3 planeLeft = {box + glm::dvec3(-size.x / 2,0,0)};
+	glm::dvec3 planeRight = {box + glm::dvec3(size.x / 2,0,0)};
+
+	//std::cout << planeBottom.x << " " << planeBottom.y << " " << planeBottom.z << " ---- \n";
+	//std::cout << start.x << " " << start.y << " " << start.z << " ---- \n";
+
+	auto doTest = [&](glm::dvec3 plane, glm::dvec3 normal)
+	{
+		double distance = 0;
+		if (glm::intersectRayPlane(start, dir, plane, normal, distance))
+		{
+			if (distance >= 0 && distance <= maxDistance)
+			{
+				glm::dvec3 intersectPoint = start + dir * distance;
+
+				//std::cout << distance << " ";
+				if (pointInsideBox(intersectPoint, box, size, 0.2))
+				{
+					return 1;
+				}
+			};
+		}
+		return 0;
+	};
+
+	if (doTest(planeBottom, {0,1,0})) { return 1; };
+	if (doTest(planeTop, {0,1,0})) { return 1; };
+	if (doTest(planeFront, {0,0,1})) { return 1; };
+	if (doTest(planeBack, {0,0,-1})) { return 1; };
+	if (doTest(planeLeft, {-1,0,0})) { return 1; };
+	if (doTest(planeRight, {1,0,0})) { return 1; };
+
+	return 0;
 }
 
 

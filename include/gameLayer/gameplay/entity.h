@@ -368,12 +368,20 @@ struct CanPushOthers
 	constexpr static bool canPushOthers = true;
 };
 
-
 template <typename T, typename = void>
 constexpr bool hasCanPushOthers = false;
 
 template <typename T>
 constexpr bool hasCanPushOthers<T, std::void_t<decltype(T::canPushOthers)>> = true;
+
+
+template <typename T, typename = void>
+constexpr bool hasForces = false;
+
+template <typename T>
+constexpr bool hasForces<T, std::void_t<decltype(T::forces)>> = true;
+
+
 
 struct CollidesWithPlacedBlocks
 {
@@ -425,6 +433,14 @@ struct ServerEntity
 	glm::dvec3 &getPosition()
 	{
 		return entity.position;
+	}
+
+	void applyHitForce(glm::vec3 force)
+	{
+		if constexpr(hasForces<T>)
+		{
+			entity.forces.velocity += force;
+		}
 	}
 
 };

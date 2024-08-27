@@ -143,7 +143,6 @@ struct ServerChunkStorer
 		std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
 		std::vector<glm::ivec3> *controlBlocks);
 
-
 	Block *getBlockSafe(glm::ivec3 pos);
 
 	Block *tryGetBlockIfChunkExistsNoChecks(glm::ivec3 pos);
@@ -168,7 +167,8 @@ struct ServerChunkStorer
 	//you can't call this for players!
 	bool removeEntity(WorldSaver &worldSaver, std::uint64_t eid);
 
-
+	void hitEntityByPlayer(std::uint64_t eid, glm::dvec3 playerPosition,
+		Item &weapon, bool &wasKilled, glm::vec3 dir);
 };
 
 

@@ -1,10 +1,12 @@
 #pragma once
 #include <gameplay/entity.h>
+#include <gameplay/life.h>
 #include <random>
 
 
 struct Zombie: public PhysicalEntity, public CanPushOthers
-	, public HasOrientationAndHeadTurnDirection, public CollidesWithPlacedBlocks
+	, public HasOrientationAndHeadTurnDirection, public CollidesWithPlacedBlocks,
+	public CanBeKilled, public CanBeAttacked
 {
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
@@ -13,7 +15,7 @@ struct Zombie: public PhysicalEntity, public CanPushOthers
 
 	glm::vec3 getMaxColliderSize();
 
-
+	Life life{20};
 
 };
 

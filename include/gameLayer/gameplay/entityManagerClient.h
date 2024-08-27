@@ -53,6 +53,9 @@ struct ClientEntityManager : public EntityDataClient
 	void doAllUpdates(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2));
 
 	void cleanup();
+
+	std::uint64_t intersectAllAttackableEntities(glm::dvec3 start, glm::dvec3 dir, float maxDistance);
+
 };
 
 

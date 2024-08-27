@@ -13,7 +13,6 @@ void Pig::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
 	updateForces(deltaTime, true, ps);
 
 	resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime, getColliderSize());
-
 }
 
 glm::vec3 Pig::getColliderSize()

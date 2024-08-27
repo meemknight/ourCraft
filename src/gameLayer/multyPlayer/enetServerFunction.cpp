@@ -673,6 +673,22 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 		}
 		break;
 
+		case headerAttackEntity:
+		{
+			if (size != sizeof(Packet_AttackEntity))
+			{
+				break;
+			}
+
+			Packet_AttackEntity *packetData = (Packet_AttackEntity *)data;
+			serverTask.t.taskType = Task::clientAttackedEntity;
+			serverTask.t.entityId = packetData->entityID;
+			serverTask.t.inventroySlot = packetData->inventorySlot;
+			serverTask.t.vector = packetData->direction;
+
+			serverTasks.push_back(serverTask);
+		}
+	
 
 		default:
 
