@@ -287,6 +287,11 @@ int getSoundForBlockBreaking(unsigned int type)
 		return AudioEngine::grass;
 	}
 
+	if (type == snow_block || type == snow_dirt)
+	{
+		return AudioEngine::snow;
+	}
+
 
 	///
 
@@ -309,11 +314,6 @@ int getSoundForBlockBreaking(unsigned int type)
 	if (isAnySandyBlock(type))
 	{
 		return AudioEngine::sand;
-	}
-
-	if (type == snow_block)
-	{
-		return AudioEngine::snow;
 	}
 
 	if (isAnySemiHardBlock(type))
