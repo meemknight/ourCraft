@@ -32,19 +32,19 @@
 
 static std::atomic<bool> serverRunning = false;
 
-bool serverStartupStuff();
+bool serverStartupStuff(const std::string &path);
 
 bool isServerRunning()
 {
 	return serverRunning;
 }
 
-bool startServer()
+bool startServer(const std::string &path)
 {
 	bool expected = 0;
 	if (serverRunning.compare_exchange_strong(expected, 1))
 	{
-		if (!serverStartupStuff())
+		if (!serverStartupStuff(path))
 		{
 			serverRunning = false;
 			return 0;
@@ -205,7 +205,7 @@ bool computeRevisionStuff(Client &client, bool allowed,
 	return allowed;
 }
 
-bool serverStartupStuff()
+bool serverStartupStuff(const std::string &path)
 {
 	//reset data
 	sd = ServerData{};
@@ -227,7 +227,7 @@ bool serverStartupStuff()
 		return 0;
 	}
 
-	if (!startEnetListener(sd.server))
+	if (!startEnetListener(sd.server, path))
 	{
 		enet_host_destroy(sd.server);
 		sd.server = 0;

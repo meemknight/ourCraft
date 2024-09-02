@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <iostream>
 #include <platform/platformInput.h>
-
+#include "multyPlayer/createConnection.h"
 
 void displayRenderSettingsMenuButton(ProgramData &programData)
 {
@@ -199,7 +199,7 @@ inline void stubErrorFunc(const char *msg, void *userDefinedData)
 
 bool renderButton(gl2d::Renderer2D &renderer,
 	gl2d::Texture buttonTexture,
-	glm::ivec4 box)
+	glm::ivec4 box, const std::string &text = "", gl2d::Font *f = 0)
 {
 	bool hovered = 0;
 	bool held = 0;
@@ -220,21 +220,30 @@ bool renderButton(gl2d::Renderer2D &renderer,
 		}
 	}
 
-	auto color = Colors_Gray;
-
-	if (hovered)
-	{
-		color += glm::vec4(0.1, 0.1, 0.1, 0);
-	}
-
 	if (held)
 	{
 		box.y += 10;
 	}
 
-	renderer.render9Patch(box,
-		20, color, {}, 0, buttonTexture,
-		GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
+	if (buttonTexture.id)
+	{
+
+		auto color = Colors_Gray;
+
+		if (hovered)
+		{
+			color += glm::vec4(0.1, 0.1, 0.1, 0);
+		}
+
+		renderer.render9Patch(box,
+			20, color, {}, 0, buttonTexture,
+			GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
+	}
+
+	if (text.size() && f)
+	{
+		glui::renderText(renderer, text, *f, box, Colors_White, 0, true, true);
+	}
 
 	return released;
 };
@@ -698,6 +707,10 @@ void displayWorldSelectorMenuButton(ProgramData &programData)
 
 void displayWorldSelectorMenu(ProgramData &programData)
 {
+	auto &renderer = programData.ui.renderer2d;
+
+
+
 	programData.ui.menuRenderer.Text("Select world", Colors_White);
 
 	//programData.ui.menuRenderer.Button("Create new world", Colors_Gray, programData.ui.buttonTexture);
@@ -706,7 +719,6 @@ void displayWorldSelectorMenu(ProgramData &programData)
 	glm::vec4 customWidgetTransform = {};
 	programData.ui.menuRenderer.CustomWidget(171, &customWidgetTransform);
 
-	auto &renderer = programData.ui.renderer2d;
 	glui::Frame f({0,0,renderer.windowW, renderer.windowH});
 
 
@@ -724,21 +736,103 @@ void displayWorldSelectorMenu(ProgramData &programData)
 		)
 	{
 
+		//background
+		{
+			float rezolution = 256;
+			glm::vec2 size{renderer.windowW, renderer.windowH};
+			size /= 256.f;
+
+			renderer.renderRectangle({0,0, renderer.windowW, renderer.windowH},
+				programData.blocksLoader.backgroundTexture, {0.6,0.6,0.6,1}, {}, 0,
+				{0,size.y, size.x, 0}
+				);
+		}
+
+		//folder logic
+
+		if (!std::filesystem::exists(RESOURCES_PATH "worlds"))
+		{
+			std::filesystem::create_directories(RESOURCES_PATH "worlds");
+		}
+			
+		std::vector<std::filesystem::path> allWorlds;
+		for (auto const &d : std::filesystem::directory_iterator{RESOURCES_PATH "worlds"})
+		{
+			if (d.is_directory())
+			{
+				allWorlds.push_back(d.path().filename());
+			}
+		}
+
+		static std::string selected = "";
+
 		//center
 		{
 			float ySize = renderer.windowH - customWidgetTransform.y * 2;
 			
-			
 			if (ySize > 50)
 			{
-			
+				static int advance = 0;
+
 				glui::Frame f(glui::Box().xCenter().yTop(customWidgetTransform.y).
 					yDimensionPixels(ySize).xDimensionPercentage(1)());
+				auto fullBox = glui::Box().xLeft().yTop().xDimensionPercentage(1.f).yDimensionPercentage(1.f)();
 
-				renderer.renderRectangle(glui::Box().xCenter().yCenter().xDimensionPercentage(1).yDimensionPercentage(1.f),
-					{1,0,0,1.0});
+				float buttonH = customWidgetTransform.w;
+				int maxElements = fullBox.w / buttonH;
 
+				advance = std::max(advance, 0);
+				int overflow = allWorlds.size() - maxElements;
+				if (overflow < 0) { overflow = 0; }
+				advance = std::min(advance, overflow);
 
+				//background
+				{
+					float rezolution = 256;
+					glm::vec2 size{fullBox.z, fullBox.w};
+					size /= 256.f;
+
+					float padding = advance * 0.4;
+
+					renderer.renderRectangle(fullBox,
+						programData.blocksLoader.backgroundTexture, {0.4,0.4,0.4,1}, {}, 0,
+						{padding,size.y, size.x + padding, 0}
+					);
+				}
+
+				//renderer.renderRectangle(glui::Box().xCenter().yCenter().xDimensionPercentage(1).yDimensionPercentage(1.f),
+				//	{1,0,0,1.0});
+
+				glm::vec4 worldBox = fullBox;
+				worldBox.w = buttonH;
+				worldBox.z -= buttonH;
+
+				for (int i = 0; i < maxElements; i++)
+				{
+					if (allWorlds.size() <= i + advance) { break; }
+
+					auto s = allWorlds[i + advance].string();
+
+					if (s == selected)
+					{
+						renderer.render9Patch(worldBox,
+							20, {0.3,0.3,0.3,0.7}, {}, 0, programData.ui.buttonTexture,
+							GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
+					}
+
+					if (renderButton(renderer, {}, worldBox, s, &programData.ui.font))
+					{
+						selected = s;
+					}
+
+					worldBox.y += buttonH;
+				}
+
+				auto topButton = glui::Box().yTop().xRight().yDimensionPixels(buttonH).xDimensionPixels(buttonH)();
+				auto bottomButton = glui::Box().yBottom().xRight().yDimensionPixels(buttonH).xDimensionPixels(buttonH)();
+
+				if (renderButton(renderer, programData.ui.buttonTexture, topButton)) { advance--; }
+				if (renderButton(renderer, programData.ui.buttonTexture, bottomButton)) { advance++; }
 
 			}
 
@@ -761,7 +855,12 @@ void displayWorldSelectorMenu(ProgramData &programData)
 
 				{
 					auto leftButton = glui::Box().xLeft().yCenter().xDimensionPercentage(0.5).yDimensionPercentage(1)();
-					drawButton(shrinkPercentage(leftButton, {0.1,0.05}), Colors_Gray, "Play Selected World");
+					if (drawButton(shrinkPercentage(leftButton, {0.1,0.05}), Colors_Gray, "Play Selected World"))
+					{
+
+						hostServer(selected);
+
+					}
 
 					auto rightButton = glui::Box().xRight().yCenter().xDimensionPercentage(0.5).yDimensionPercentage(1)();
 					drawButton(shrinkPercentage(rightButton, {0.1,0.05}), Colors_Gray, "Settings");

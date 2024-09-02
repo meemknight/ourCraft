@@ -310,6 +310,32 @@ bool initGame() //main server and title screen stuff
 	return true;
 }
 
+static bool gameStarted = 0;
+static std::string lastError = "";
+bool hostServer(const std::string &path)
+{
+	if (!startServer(path))
+	{
+		lastError = "Problem starting server";
+	}
+	else
+	{
+		gameStarted = true;
+		if (!initGameplay(programData, nullptr))
+		{
+			closeServer();
+			lastError = "Coultn't join, closing server";
+			gameStarted = false;
+		}
+		else
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bool gameLogic(float deltaTime)
 {
 
@@ -371,8 +397,7 @@ bool gameLogic(float deltaTime)
 		platform::setFullScreen(!platform::isFullScreen());
 	}
 
-	static bool gameStarted = 0;
-	static std::string lastError = "";
+
 	static char ipString[50] = {};
 
 	if (!gameStarted)
@@ -380,25 +405,12 @@ bool gameLogic(float deltaTime)
 		programData.ui.menuRenderer.Begin(1);
 		programData.ui.menuRenderer.SetAlignModeFixedSizeWidgets({0,150});
 
-		if (programData.ui.menuRenderer.Button("Host game", Colors_Gray, programData.ui.buttonTexture))
-		{
-			if (!startServer())
-			{
-				lastError = "Problem starting server";
-			}
-			else
-			{
-				gameStarted = true;
-				if (!initGameplay(programData, nullptr))
-				{
-					closeServer();
-					lastError = "Coultn't join, closing server";
-					gameStarted = false;
-				}
-			}
-		}
+		//if (programData.ui.menuRenderer.Button("Host game", Colors_Gray, programData.ui.buttonTexture))
+		//{
+		
+		//}
 
-		//displayWorldSelectorMenuButton(programData);
+		displayWorldSelectorMenuButton(programData);
 
 
 		if (programData.ui.menuRenderer.Button("Join game", Colors_Gray,

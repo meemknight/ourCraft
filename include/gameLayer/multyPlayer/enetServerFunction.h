@@ -6,7 +6,7 @@
 #include "gamePlayLogic.h"
 #include <gameplay/allentities.h>
 
-bool startEnetListener(ENetHost *_server);
+bool startEnetListener(ENetHost *_server, const std::string &path);
 void closeEnetListener();
 
 struct ServerTask

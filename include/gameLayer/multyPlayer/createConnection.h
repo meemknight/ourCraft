@@ -97,3 +97,5 @@ void sendBlockInteractionMessage(
 	glm::ivec3 pos, BlockType block, unsigned char revisionNumber);
 
 void closeConnection();
+
+bool hostServer(const std::string &path);

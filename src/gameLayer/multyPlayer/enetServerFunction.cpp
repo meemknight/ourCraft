@@ -705,7 +705,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 
 static std::atomic<bool> enetServerRunning = false;
 
-void enetServerFunction()
+void enetServerFunction(std::string path)
 {
 	std::cout << "Successfully started server!\n";
 
@@ -726,7 +726,9 @@ void enetServerFunction()
 	BiomesManager biomesManager;
 	WorldSaver worldSaver;
 
-	worldSaver.savePath = RESOURCES_PATH "saves/";
+	worldSaver.savePath = RESOURCES_PATH "worlds/"; //"saves/";
+	worldSaver.savePath += path + "/world";
+
 
 	{
 		std::error_code err = {};
@@ -948,7 +950,7 @@ void enetServerFunction()
 
 }
 
-bool startEnetListener(ENetHost *_server)
+bool startEnetListener(ENetHost *_server, const std::string &path)
 {
 	server = _server;
 	connections = {};
@@ -956,7 +958,7 @@ bool startEnetListener(ENetHost *_server)
 	bool expected = 0;
 	if (enetServerRunning.compare_exchange_strong(expected, 1))
 	{
-		enetServerThread = std::move(std::thread(enetServerFunction));
+		enetServerThread = std::move(std::thread(enetServerFunction, path));
 		return 1;
 	}
 	else

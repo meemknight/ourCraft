@@ -151,8 +151,6 @@ bool initGameplay(ProgramData &programData, const char *c) //GAME STUFF!
 		reportError("Problem joining server");
 		return false;
 	}
-	
-
 
 
 	gameData = GameData();

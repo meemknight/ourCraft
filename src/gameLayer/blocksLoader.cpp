@@ -557,8 +557,23 @@ glm::vec3 hsv2rgb(glm::vec3 c)
 //textureloader texture loader
 void BlocksLoader::loadAllTextures(std::string filePath)
 {
-	bool appendMode = gpuIds.empty();
+	
+	if (!backgroundTexture.id)
+	{
+		std::string path;
+		path = filePath + "blocks/";
+		path += texturesNames[0];
+		path += ".png";
 
+		backgroundTexture.loadFromFile(path.c_str(), true, true);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	}
+	
+	
+	bool appendMode = gpuIds.empty();
 
 	size_t count = sizeof(texturesNames) / sizeof(char *);
 	 
@@ -1136,7 +1151,7 @@ void BlocksLoader::clearAllTextures()
 	texturesIdsItems.clear();
 	gpuIdsItems.clear();
 
-
+	backgroundTexture.cleanup();
 }
 
 void BlocksLoader::loadAllItemsGeometry()

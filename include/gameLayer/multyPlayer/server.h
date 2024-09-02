@@ -14,7 +14,7 @@ struct EventId;
 
 
 bool isServerRunning();
-bool startServer();
+bool startServer(const std::string &path);
 int getServerTicksPerSeccond();
 void clearSD(WorldSaver &worldSaver);
 int getChunkCapacity();

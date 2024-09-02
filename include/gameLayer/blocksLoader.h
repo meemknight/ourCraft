@@ -29,6 +29,8 @@ struct BlocksLoader
 
 	std::vector<ItemGeometry> itemsGeometry;
 
+	gl2d::Texture backgroundTexture;
+
 };
 
 uint16_t getGpuIdIndexForBlock(short type, int face);
