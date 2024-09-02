@@ -141,16 +141,12 @@ Item craft9(Item items[9])
 					break;
 				}
 			}
-
-			
-
 		}
 		
 		if (good)
 		{
 			return recepies[r].result;
 		}
-
 	}
 
 	return Item();

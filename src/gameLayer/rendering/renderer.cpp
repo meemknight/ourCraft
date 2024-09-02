@@ -2600,8 +2600,8 @@ void Renderer::renderEntities(
 	//todo remove
 	entityRenderer.itemEntitiesToRender.clear();
 
-	//render hand
-	//renderHand();
+	//render hand draw hand renderHand drawHand
+	renderHand();
 
 	renderAllEntitiesOfOneType(modelsManager.human, entityManager.players, ModelsManager::SteveTexture);
 	renderAllEntitiesOfOneType(modelsManager.human, entityManager.zombies, ModelsManager::ZombieTexture);

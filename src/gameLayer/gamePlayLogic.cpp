@@ -797,18 +797,34 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 							}
 							else if (blockToPlace && item.isBlock())
 							{
-								//place block
-								gameData.chunkSystem.placeBlockByClient(*blockToPlace,
-									gameData.currentItemSelected,
-									gameData.undoQueue,
-									gameData.entityManager.localPlayer.entity.position,
-									gameData.lightSystem,
-									player.inventory, 
-									player.otherPlayerSettings.gameMode == OtherPlayerSettings::SURVIVAL
+								bool intersect = false;
+
+								//todo intersect other entities
+								if (boxColideBlock(
+									player.entity.position,
+									player.entity.getColliderSize(),
+									*blockToPlace
+									))
+								{
+									intersect = true;
+								}
+
+								if (!intersect)
+								{
+									//place block
+									gameData.chunkSystem.placeBlockByClient(*blockToPlace,
+										gameData.currentItemSelected,
+										gameData.undoQueue,
+										gameData.entityManager.localPlayer.entity.position,
+										gameData.lightSystem,
+										player.inventory,
+										player.otherPlayerSettings.gameMode == OtherPlayerSettings::SURVIVAL
 									);
 
-								AudioEngine::playSound(getSoundForBlockStepping(item.type), 
-									PLACED_BLOCK_SOUND_VOLUME);
+									AudioEngine::playSound(getSoundForBlockStepping(item.type),
+										PLACED_BLOCK_SOUND_VOLUME);
+								}
+								
 							}
 						};
 
@@ -832,6 +848,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 							{
 								gameData.currentBlockBreaking.totalTime = 0.3;
 								gameData.currentBlockBreaking.timer = 0.3;
+
+								if (platform::isLMousePressed())
+								{
+									gameData.currentBlockBreaking.totalTime = 0;
+									gameData.currentBlockBreaking.timer = 0;
+								}
 							}
 						}
 

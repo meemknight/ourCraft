@@ -70,6 +70,7 @@ add_subdirectory(thirdparty/safeSave)
 add_subdirectory(thirdparty/profilerLib)
 add_subdirectory(thirdparty/zstd-1.5.5/build/cmake)
 add_subdirectory(noiseTool)
+add_subdirectory(PBRTool)
 
 
 

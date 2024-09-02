@@ -3,7 +3,7 @@
 #include <deque>
 
 //donotupdatelightsystem
-//donotupdatelightsystem
+//donotoptimizelightsystem
 bool constexpr dontUpdateLightSystem = 1;
 
 struct ChunkSystem;
