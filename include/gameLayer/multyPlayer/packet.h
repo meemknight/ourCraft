@@ -83,6 +83,8 @@ enum : std::uint32_t
 	headerUpdateLife,
 	headerKillEntity,
 	headerAttackEntity,
+	headerClientWantsToRespawn,
+	headerRespawnPlayer,
 };
 
 enum 
@@ -104,6 +106,11 @@ struct Packet_DisconectOtherPlayer
 struct Packet_ClientUpdateTimer
 {
 	std::uint64_t timer = 0;
+};
+
+struct Packet_RespawnPlayer
+{
+	glm::dvec3 pos = {};
 };
 
 struct Packet_ClientUsedItem

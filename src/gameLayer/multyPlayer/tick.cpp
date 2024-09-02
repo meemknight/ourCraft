@@ -170,7 +170,10 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 		auto &playersMap = c.second->entityData.players;
 		for (auto &p : playersMap)
 		{
-			allPlayers.insert(p);
+			if (p.second && !p.second->killed)
+			{
+				allPlayers.insert(p);
+			}
 		}
 	}
 

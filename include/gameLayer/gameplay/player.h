@@ -7,7 +7,7 @@
 
 //this is the shared data
 struct Player : public PhysicalEntity, public CollidesWithPlacedBlocks,
-	public CanPushOthers
+	public CanPushOthers, public CanBeKilled, public CanBeAttacked
 {
 
 	glm::vec3 lookDirectionAnimation = {0,0,-1};
@@ -70,6 +70,7 @@ struct PlayerClient: public ClientEntity<Player, PlayerClient>
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 	void setEntityMatrix(glm::mat4 *skinningMatrix);
+
 };
 
 //todo update function
@@ -87,4 +88,6 @@ struct PlayerServer: public ServerEntity<Player>
 	glm::ivec3 currentBlockInteractWithPosition = {0, -1, 0};
 
 	Life life{20};
+
+	bool killed = 0;
 };

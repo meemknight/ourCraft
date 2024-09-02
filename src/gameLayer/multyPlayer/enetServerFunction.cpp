@@ -687,8 +687,20 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.vector = packetData->direction;
 
 			serverTasks.push_back(serverTask);
+			break;
 		}
-	
+		
+		case headerClientWantsToRespawn:
+		{
+			if (size != 0)
+			{
+				break;
+			}
+
+			serverTask.t.taskType = Task::clientWantsToRespawn;
+			serverTasks.push_back(serverTask);
+			break;
+		}
 
 		default:
 

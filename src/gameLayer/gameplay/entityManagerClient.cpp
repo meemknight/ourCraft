@@ -61,7 +61,9 @@ void callGenericDropEntitiesThatAreTooFar(std::integer_sequence<int, Is...>, Cli
 
 void ClientEntityManager::dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int playerSquareDistance)
 {
-
+	//todo we shouldn't drop players!!!!!!1
+	 
+	
 	//auto doChecking = [&](auto &container)
 	//{
 	//	for (auto it = container.begin(); it != container.end(); )

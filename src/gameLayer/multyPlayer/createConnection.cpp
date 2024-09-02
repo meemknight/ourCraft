@@ -119,7 +119,7 @@ void recieveDataClient(ENetEvent &event,
 	ClientEntityManager &entityManager,
 	UndoQueue &undoQueue, std::uint64_t &yourTimer,
 	unsigned char revisionNumberBlockInteraction,
-	bool &shouldExitBlockInteraction
+	bool &shouldExitBlockInteraction, bool &killedPlayer, bool &respawn
 	)
 {
 	Packet p;
@@ -376,10 +376,16 @@ void recieveDataClient(ENetEvent &event,
 		case headerKillEntity:
 		{
 			if (sizeof(Packet_KillEntity) != size) { break; } //todo logs or something
-
 			Packet_KillEntity *p = (Packet_KillEntity *)data;
 
-			entityManager.killEntity(p->EID);
+			if (p->EID == entityManager.localPlayer.entityId)
+			{
+				killedPlayer = true;
+			}
+			else
+			{
+				entityManager.killEntity(p->EID);
+			}
 
 			break;
 		}
@@ -509,6 +515,34 @@ void recieveDataClient(ENetEvent &event,
 		}
 		break;
 
+		case headerRespawnPlayer:
+		{
+			if (sizeof(Packet_RespawnPlayer) != size) { break; }
+			Packet_RespawnPlayer *packetData = (Packet_RespawnPlayer *)data;
+
+			//respawn yourself
+			if (p.cid == entityManager.localPlayer.entityId)
+			{
+				entityManager.localPlayer.entity.position = packetData->pos;
+				entityManager.localPlayer.entity.lastPosition = packetData->pos;
+				entityManager.localPlayer.entity.forces = {};
+				respawn = true;
+			}else
+			{
+				auto found = entityManager.players.find(p.cid);
+
+				if (found != entityManager.players.end())
+				{
+					found->second.wasKilled = 0;
+					found->second.entity.position = packetData->pos;
+					found->second.entity.lastPosition = packetData->pos;
+					found->second.entity.forces = {};
+				}
+			}
+
+			break;
+		}
+
 		default:
 		break;
 
@@ -524,7 +558,9 @@ void recieveDataClient(ENetEvent &event,
 void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision
 	,glm::ivec3 playerPosition, int squareDistance, ClientEntityManager &entityManager,
 	UndoQueue &undoQueue, std::uint64_t &serverTimer, bool &disconnect
-	, unsigned char revisionNumberBlockInteraction, bool &shouldExitBlockInteraction)
+	, unsigned char revisionNumberBlockInteraction, bool &shouldExitBlockInteraction,
+	bool &killedPlayer, bool &respawn
+	)
 {
 	ENetEvent event;
 
@@ -540,7 +576,8 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 					
 					recieveDataClient(event, validatedEvent, invalidateRevision,
 						playerPosition, squareDistance, entityManager, undoQueue, serverTimer,
-						revisionNumberBlockInteraction, shouldExitBlockInteraction);
+						revisionNumberBlockInteraction, shouldExitBlockInteraction, killedPlayer,
+						respawn);
 					
 					enet_packet_destroy(event.packet);
 

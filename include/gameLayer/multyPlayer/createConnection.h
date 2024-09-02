@@ -25,6 +25,7 @@ struct Task
 		clientExitedInteractionWithBlock,
 		clientAttackedEntity,
 		clientUpdatedSkin,
+		clientWantsToRespawn,
 		generateChunk
 	};
 	
@@ -87,7 +88,8 @@ bool forceOverWriteItem(PlayerInventory &inventory, int index, Item &item);
 void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision
 	,glm::ivec3 playerPosition, int squareDistance, ClientEntityManager& entityManager,
 	UndoQueue &undoQueue, std::uint64_t &serverTimer, bool &disconnect,
-	unsigned char revisionNumberBlockInteraction, bool &shouldExitBlockInteraction
+	unsigned char revisionNumberBlockInteraction, bool &shouldExitBlockInteraction,
+	bool &killedPlayer, bool &respawn
 	);
 
 void attackEntity(std::uint64_t eid, unsigned char inventorySlot, glm::vec3 direction);

@@ -94,7 +94,8 @@ struct GameData
 	};
 
 	bool handHit = 0;
-		
+	bool killed = 0;
+
 
 }gameData;
 
@@ -217,6 +218,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	auto &player = gameData.entityManager.localPlayer;
 
+
 #pragma region server stuff
 	{
 		gameData.gameplayFrameProfiler.startSubProfile("server messages");
@@ -238,13 +240,20 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 
 		bool shouldExitBlockInteraction = 0;
+		bool respawned = 0;
 
 		clientMessageLoop(validateEvent, inValidateRevision,
 			gameData.entityManager.localPlayer.entity.position, gameData.chunkSystem.squareSize,
 			gameData.entityManager, gameData.undoQueue, gameData.serverTimer, disconnect, 
-			gameData.currentBlockInteractionRevisionNumber, shouldExitBlockInteraction);
+			gameData.currentBlockInteractionRevisionNumber, shouldExitBlockInteraction,
+			gameData.killed, respawned);
 
 		if (disconnect) { return 0; }
+
+		if (respawned)
+		{
+			gameData.killed = false;
+		}
 
 		if (shouldExitBlockInteraction)
 		{
@@ -391,8 +400,20 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	static float moveSpeed = 20.f;
 	float isPlayerMovingSpeed = 0;
 
+	if (gameData.killed)
+	{
+		gameData.insideInventoryMenu = false;
+		gameData.blockInteractionType = 0;
+	}
+
+
+	if (platform::isKeyReleased(platform::Button::I))
+	{
+		gameData.showImgui = !gameData.showImgui;
+	}
+
 	//inventory and menu stuff
-	if (!gameData.escapePressed)
+	if (!gameData.escapePressed && !gameData.killed)
 	{
 
 		if (platform::isKeyReleased(platform::Button::E))
@@ -407,13 +428,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				gameData.blockInteractionType = 0;
 			}
 
-		}
-
-
-
-		if (platform::isKeyReleased(platform::Button::I))
-		{
-			gameData.showImgui = !gameData.showImgui;
 		}
 
 		if (platform::isKeyPressedOn(platform::Button::R))
@@ -550,6 +564,19 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	}
 
+
+	#pragma region drop items
+
+		if (!gameData.insideInventoryMenu && !gameData.escapePressed)
+			if (platform::isKeyPressedOn(platform::Button::Q))
+			{
+				gameData.entityManager.dropItemByClient(
+					gameData.entityManager.localPlayer.entity.position,
+					gameData.currentItemSelected, gameData.undoQueue, gameData.c.viewDirection * 5.f,
+					gameData.serverTimer, player.inventory, !platform::isKeyHeld(platform::Button::LeftCtrl));
+			}
+
+	#pragma endregion
 	}
 
 
@@ -557,7 +584,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma endregion
 
 
-#pragma region block collisions
+#pragma region block collisions and entity updates!
 	{
 			
 		auto chunkGetter = [](glm::ivec2 pos) -> ChunkData*
@@ -577,19 +604,28 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		PhysicalSettings settings;
 		//settings.sideFriction = 2.f;
 
-		gameData.entityManager.localPlayer.entity.updateForces(deltaTime, !gameData.fly, settings);
-
-
-		if (gameData.colidable)
+		
+		if (gameData.killed)
 		{
-			gameData.entityManager.localPlayer
-				.entity.resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime,
-				gameData.entityManager.localPlayer.entity.getColliderSize(), settings);
+			gameData.entityManager.localPlayer.entity.forces = {};
+			gameData.entityManager.localPlayer.entity.updatePositions();
 		}
 		else
 		{
-			gameData.entityManager.localPlayer.entity.updatePositions();
+			gameData.entityManager.localPlayer.entity.updateForces(deltaTime, !gameData.fly, settings);
+
+			if (gameData.colidable)
+			{
+				gameData.entityManager.localPlayer
+					.entity.resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime,
+					gameData.entityManager.localPlayer.entity.getColliderSize(), settings);
+			}
+			else
+			{
+				gameData.entityManager.localPlayer.entity.updatePositions();
+			}
 		}
+		
 
 		gameData.c.position = gameData.entityManager.localPlayer.entity.position
 			+ glm::dvec3(0,1.5,0);
@@ -602,18 +638,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma endregion
 
 
-#pragma region drop items
-	
-	if (!gameData.insideInventoryMenu && !gameData.escapePressed)
-	if (platform::isKeyPressedOn(platform::Button::Q))
-	{
-		gameData.entityManager.dropItemByClient(
-			gameData.entityManager.localPlayer.entity.position,
-			gameData.currentItemSelected, gameData.undoQueue, gameData.c.viewDirection * 5.f,
-			gameData.serverTimer, player.inventory, !platform::isKeyHeld(platform::Button::LeftCtrl));
-	}
-
-#pragma endregion
 
 
 #pragma region place blocks
@@ -625,7 +649,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	glm::uint64 targetedEntity = 0;
 	float raycastDist = 0;
 
-	if (!gameData.insideInventoryMenu)
+	if (!gameData.insideInventoryMenu && !gameData.killed)
 	{
 
 		if (platform::isLMouseHeld() || platform::isRMousePressed())
@@ -944,7 +968,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	programData.renderer.entityRenderer.itemEntitiesToRender.push_back({gameData.entityTest});
 
 
-
 	//
 #pragma region weather and time
 
@@ -994,7 +1017,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 #pragma region drop entities that are too far
-
+	//todo we shouldn't drop players!!!!!!1
 	gameData.entityManager.dropEntitiesThatAreTooFar({blockPositionPlayer.x,blockPositionPlayer.z},
 		gameData.chunkSystem.squareSize);
 
@@ -1828,6 +1851,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 	}
 
+	if (gameData.killed)
+	{
+		programData.ui.renderer2d.renderRectangle({0,0, w,h}, {0.9,0,0,0.5});
+	}
 
 	if (gameData.escapePressed)
 	{
@@ -1863,8 +1890,29 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 
 	}
+	else if(gameData.killed)
+	{
+		programData.ui.menuRenderer.Begin(3);
+		programData.ui.menuRenderer.SetAlignModeFixedSizeWidgets({0,150});
 
-	platform::showMouse(gameData.escapePressed || gameData.insideInventoryMenu);
+		programData.ui.menuRenderer.Text("You died :(", Colors_White);
+
+		if (programData.ui.menuRenderer.Button("Respawn", Colors_Gray, programData.ui.buttonTexture))
+		{
+			sendPacket(getServer(), headerClientWantsToRespawn, player.entityId,
+				0, 0, true, channelChunksAndBlocks);
+		}
+
+		if (programData.ui.menuRenderer.Button("Exit", Colors_Gray, programData.ui.buttonTexture))
+		{
+			terminate = true;
+		}
+
+		programData.ui.menuRenderer.End();
+	}
+
+	platform::showMouse(gameData.escapePressed || gameData.insideInventoryMenu ||
+		gameData.killed);
 
 
 #pragma endregion

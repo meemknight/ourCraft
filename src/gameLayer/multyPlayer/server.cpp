@@ -423,15 +423,14 @@ void applyDamageOrLifeToPlayer(short difference, Client &client)
 }
 
 
+//you can't call this for players!
 void killEntity(WorldSaver &worldSaver, std::uint64_t entity)
 {
 	if (sd.chunkCache.removeEntity(worldSaver, entity))
 	{
 		genericBroadcastEntityKillFromServerToPlayer(entity, true);
 	}
-
 }
-
 
 ServerSettings getServerSettingsCopy()
 {
@@ -522,6 +521,7 @@ void serverWorkerUpdate(
 		c.second->entityData.players.clear();
 	}
 
+	//set players in their chunks, set players in chunks
 	for (auto &client : getAllClients())
 	{
 
@@ -531,7 +531,10 @@ void serverWorkerUpdate(
 
 		permaAssertComment(chunk, "Error, A chunk that a player is in unloaded...");
 
-		chunk->entityData.players.insert({client.first, &client.second.playerData});
+		if (!client.second.playerData.killed)
+		{
+			chunk->entityData.players.insert({client.first, &client.second.playerData});
+		}
 
 	}
 
@@ -553,6 +556,28 @@ void serverWorkerUpdate(
 	//		return a.t.type < b.t.type; 
 	//	}
 	//);
+
+#pragma region check players killed
+
+
+	auto &clients = getAllClientsReff();
+	for (auto &c : clients)
+	{
+		//kill player
+		if (c.second.playerData.life.life <= 0 && !c.second.playerData.killed)
+		{
+			//todo a method to reset multiple things
+			c.second.playerData.killed = true;
+			c.second.playerData.interactingWithBlock = 0;
+			c.second.playerData.currentBlockInteractWithPosition = {0,-1,0};
+
+			genericBroadcastEntityKillFromServerToPlayer(c.first, true);
+		}
+
+	}
+
+
+#pragma endregion
 
 
 	int chunksGenerated = 0;
@@ -652,6 +677,11 @@ void serverWorkerUpdate(
 
 						bool legal = 1;
 						bool rensendInventory = 0;
+
+						if (client->playerData.killed)
+						{
+							legal = 0;
+						}
 
 						{
 							auto f = settings.perClientSettings.find(i.cid);
@@ -816,6 +846,11 @@ void serverWorkerUpdate(
 
 						auto serverAllows = settings.perClientSettings[i.cid].validateStuff;
 
+						if (client->playerData.killed)
+						{
+							serverAllows = 0;
+						}
+
 						if (i.t.entityId >= RESERVED_CLIENTS_ID)
 						{
 							//todo well this can cause problems
@@ -902,9 +937,14 @@ void serverWorkerUpdate(
 						Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
 						Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
 
-						//todo they should always be sanitized so we should check during task creation if they are
+						if (client->playerData.killed)
+						{
+							sendPlayerInventoryAndIncrementRevision(*client); //dissalow
+						}else
 						if (from && to)
 						{
+							//todo they should always be sanitized so we should check during task creation if they are
+
 
 							//todo this can be abstracted
 							if (from->type != i.t.itemType
@@ -957,6 +997,10 @@ void serverWorkerUpdate(
 							}
 
 						}
+						else
+						{
+							sendPlayerInventoryAndIncrementRevision(*client);
+						}
 
 					};
 
@@ -972,13 +1016,18 @@ void serverWorkerUpdate(
 				if (client)
 				{
 
+
 					//if the revision number isn't good we don't do anything
 					if (client->playerData.inventory.revisionNumber
 						== i.t.revisionNumber
 						)
 					{
 
-
+						if (client->playerData.killed)
+						{
+							sendPlayerInventoryAndIncrementRevision(*client); //dissalow
+						}
+						else
 						if (client->playerData.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE)
 						{
 
@@ -1021,20 +1070,31 @@ void serverWorkerUpdate(
 						== i.t.revisionNumber
 						)
 					{
-						Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
-						Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
 
-						if (from && to)
+
+						if (client->playerData.killed)
 						{
-							Item copy;
-							copy = std::move(*from);
-							*from = std::move(*to);
-							*to = std::move(copy);
+							sendPlayerInventoryAndIncrementRevision(*client); //dissalow
 						}
 						else
 						{
-							sendPlayerInventoryAndIncrementRevision(*client);
+							Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
+							Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
+
+							if (from && to)
+							{
+								Item copy;
+								copy = std::move(*from);
+								*from = std::move(*to);
+								*to = std::move(copy);
+							}
+							else
+							{
+								sendPlayerInventoryAndIncrementRevision(*client);
+							}
 						}
+
+						
 					}
 
 				}
@@ -1053,49 +1113,36 @@ void serverWorkerUpdate(
 						== i.t.revisionNumber
 						)
 					{
-
-						Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
-
-						if (to)
+						if (client->playerData.killed)
 						{
+							sendPlayerInventoryAndIncrementRevision(*client); //dissalow
+						}
+						else
+						{ 
+							Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
 
-							Item itemToCraft;
-
-							if (client->playerData.interactingWithBlock == InteractionTypes::craftingTable)
-							{
-								itemToCraft = craft9(client->playerData.inventory.crafting);
-							}
-							else
-							{
-								itemToCraft = craft4(client->playerData.inventory.crafting);
-							}
-							
-
-							if (itemToCraft.type == i.t.itemType)
+							if (to)
 							{
 
-								//todo also check size here
+								Item itemToCraft;
 
-								if (to->type == 0)
+								if (client->playerData.interactingWithBlock == InteractionTypes::craftingTable)
 								{
-									if (client->playerData.interactingWithBlock == InteractionTypes::craftingTable)
-									{
-										client->playerData.inventory.craft9();
-									}
-									else
-									{
-										client->playerData.inventory.craft4();
-									}
-
-									*to = itemToCraft;
+									itemToCraft = craft9(client->playerData.inventory.crafting);
 								}
-								else if (to->type == itemToCraft.type)
+								else
+								{
+									itemToCraft = craft4(client->playerData.inventory.crafting);
+								}
+
+
+								if (itemToCraft.type == i.t.itemType)
 								{
 
-									if (to->counter < to->getStackSize() &&
-										to->counter + itemToCraft.counter <= to->getStackSize())
-									{
+									//todo also check size here
 
+									if (to->type == 0)
+									{
 										if (client->playerData.interactingWithBlock == InteractionTypes::craftingTable)
 										{
 											client->playerData.inventory.craft9();
@@ -1105,7 +1152,31 @@ void serverWorkerUpdate(
 											client->playerData.inventory.craft4();
 										}
 
-										to->counter += itemToCraft.counter;
+										*to = itemToCraft;
+									}
+									else if (to->type == itemToCraft.type)
+									{
+
+										if (to->counter < to->getStackSize() &&
+											to->counter + itemToCraft.counter <= to->getStackSize())
+										{
+
+											if (client->playerData.interactingWithBlock == InteractionTypes::craftingTable)
+											{
+												client->playerData.inventory.craft9();
+											}
+											else
+											{
+												client->playerData.inventory.craft4();
+											}
+
+											to->counter += itemToCraft.counter;
+										}
+
+									}
+									else
+									{
+										sendPlayerInventoryAndIncrementRevision(*client);
 									}
 
 								}
@@ -1114,18 +1185,15 @@ void serverWorkerUpdate(
 									sendPlayerInventoryAndIncrementRevision(*client);
 								}
 
+
 							}
 							else
 							{
 								sendPlayerInventoryAndIncrementRevision(*client);
 							}
-
-
 						}
-						else
-						{
-							sendPlayerInventoryAndIncrementRevision(*client);
-						}
+
+						
 
 					}
 				}
@@ -1149,7 +1217,7 @@ void serverWorkerUpdate(
 
 						Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
 
-						if (from)
+						if (from && !client->playerData.killed)
 						{
 
 							if (from->counter <= 0) { from = {}; }
@@ -1243,6 +1311,11 @@ void serverWorkerUpdate(
 							}
 						}
 
+						if (client->playerData.killed)
+						{
+							allows = false;
+						}
+
 						if (allows)
 						{
 							bool wasGenerated = 0;
@@ -1288,9 +1361,6 @@ void serverWorkerUpdate(
 					}
 					
 
-
-					//client->playerData.isInteractingWithBlock 
-
 				}
 
 			}
@@ -1306,7 +1376,7 @@ void serverWorkerUpdate(
 					{
 						client->playerData.interactingWithBlock = 0;
 						client->playerData.currentBlockInteractWithPosition = {0,-1,0};
-						std::cout << "Server, exit interaction!\n";
+						//std::cout << "Server, exit interaction!\n";
 					}
 
 				}
@@ -1343,15 +1413,47 @@ void serverWorkerUpdate(
 
 				if (client)
 				{
-					auto item = client->playerData.inventory.getItemFromIndex(itemInventoryIndex);
-					if (item)
+					if (!client->playerData.killed)
 					{
-						bool wasKilled = 0;
-						sd.chunkCache.hitEntityByPlayer(entityId, client->playerData.getPosition(),
-							*item, wasKilled, dir);
+						auto item = client->playerData.inventory.getItemFromIndex(itemInventoryIndex);
+						if (item)
+						{
+							bool wasKilled = 0;
+							sd.chunkCache.hitEntityByPlayer(entityId, client->playerData.getPosition(),
+								*item, wasKilled, dir);
+						}
 					}
+
 				}
 
+			}
+			else if (i.t.taskType == Task::clientWantsToRespawn)
+			{
+				auto client = getClientNotLocked(i.cid);
+
+				if (client)
+				{
+			
+					if (client->playerData.killed)
+					{
+
+						client->playerData.life = Life(20); //todo a default player max life
+						client->playerData.killed = false;
+						sendPlayerInventoryAndIncrementRevision(*client);
+						sendUpdateLifeLifePlayerPacket(*client);
+
+						Packet packet;
+						packet.cid = i.cid;
+						packet.header = headerRespawnPlayer;
+
+						Packet_RespawnPlayer packetData;
+						packetData.pos = glm::dvec3(0, 107, 0); //todo propper spawn position
+
+						broadCastNotLocked(packet, &packetData, sizeof(packetData), 
+							false, true, channelChunksAndBlocks);	
+					}
+
+				}
 
 			}
 
@@ -1363,6 +1465,11 @@ void serverWorkerUpdate(
 			break;
 		}
 	}
+
+
+
+
+
 
 
 
@@ -1475,14 +1582,14 @@ void serverWorkerUpdate(
 
 
 		//todo get all clients should probably dissapear.
-		auto c = getAllClients();
+		auto &clients = getAllClientsReff();
 
-		for (auto &c : getAllClients())
+		for (auto &c : clients)
 		{
 			c.second.playerData.inventory.sanitize();
 		}
 
-		splitUpdatesLogic(sd.tickDeltaTime, currentTimer, sd.chunkCache, rng(), c, worldSaver);
+		splitUpdatesLogic(sd.tickDeltaTime, currentTimer, sd.chunkCache, rng(), clients, worldSaver);
 
 		sd.tickDeltaTime = 0;
 	}
@@ -1607,6 +1714,8 @@ void updateLoadedChunks(
 	for (auto &c : clientsCopy)
 	{
 
+		//if (c.second.playerData.killed) { continue; }
+
 		int geenratedThisFrame = 0;
 
 		glm::ivec2 pos(divideChunk(c.second.playerData.entity.position.x),
@@ -1661,3 +1770,4 @@ void updateLoadedChunks(
 
 }
 
+ 

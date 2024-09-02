@@ -2548,6 +2548,11 @@ void Renderer::renderEntities(
 				{
 					data.color = {0.6,0.2,0.2};
 					rotMatrix = rotMatrix * glm::rotate(PI / 2.f, glm::vec3{0,0,1});
+
+					if (e.second.wasKilledTimer <= 0)
+					{
+						continue;
+					}
 				}
 			}
 
