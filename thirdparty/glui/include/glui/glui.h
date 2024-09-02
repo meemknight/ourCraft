@@ -104,7 +104,12 @@ namespace glui
 		void PopId();
 
 		void BeginMenu(std::string name, const gl2d::Color4f colors, const gl2d::Texture texture);
+		void BeginManualMenu(std::string name);
 		void EndMenu();
+
+		void StartManualMenu(std::string name);
+		void ExitCurrentMenu();
+
 
 		void Begin(int id);
 		void End();

@@ -755,6 +755,21 @@ void enetServerFunction(std::string path)
 	wg.init();
 	ENetEvent event = {};
 
+
+	std::ifstream seedFile(std::string(RESOURCES_PATH "worlds/") + path + "/seed.txt");
+	if (!seedFile.is_open())
+	{
+		exit(0);
+	}
+
+	int seed = 0;
+	seedFile >> seed;
+	if (!seedFile)
+	{
+		exit(0);
+	}
+	seedFile.close();
+
 	std::ifstream f(RESOURCES_PATH "gameData/worldGenerator/default.mgenerator");
 	if (f.is_open())
 	{
@@ -763,6 +778,7 @@ void enetServerFunction(std::string path)
 		WorldGeneratorSettings s;
 		if (s.loadSettings(buffer.str().c_str()))
 		{
+			s.seed = seed;
 			wg.applySettings(s);
 		}
 		else
@@ -771,7 +787,10 @@ void enetServerFunction(std::string path)
 		}
 		f.close();
 	}
-
+	else
+	{
+		exit(0); //todo error out
+	}
 
 
 	auto start = std::chrono::high_resolution_clock::now();

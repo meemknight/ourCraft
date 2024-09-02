@@ -857,13 +857,22 @@ void displayWorldSelectorMenu(ProgramData &programData)
 					auto leftButton = glui::Box().xLeft().yCenter().xDimensionPercentage(0.5).yDimensionPercentage(1)();
 					if (drawButton(shrinkPercentage(leftButton, {0.1,0.05}), Colors_Gray, "Play Selected World"))
 					{
-
-						hostServer(selected);
+						if (selected.size())
+						{
+							hostServer(selected);
+						}
 
 					}
 
 					auto rightButton = glui::Box().xRight().yCenter().xDimensionPercentage(0.5).yDimensionPercentage(1)();
-					drawButton(shrinkPercentage(rightButton, {0.1,0.05}), Colors_Gray, "Settings");
+					if (drawButton(shrinkPercentage(rightButton, {0.1,0.05}), Colors_Gray, "Settings"))
+					{
+						
+
+
+					}
+
+
 				}
 
 			}
@@ -875,7 +884,10 @@ void displayWorldSelectorMenu(ProgramData &programData)
 
 				{
 					auto leftButton = glui::Box().xLeft().yCenter().xDimensionPercentage(0.5).yDimensionPercentage(1)();
-					drawButton(shrinkPercentage(leftButton, {0.1,0.05}), Colors_Gray, "Create world");
+					if (drawButton(shrinkPercentage(leftButton, {0.1,0.05}), Colors_Gray, "Create a new world!"))
+					{
+						programData.ui.menuRenderer.StartManualMenu("Create world");
+					}
 
 					auto rightButton = glui::Box().xRight().yCenter().xDimensionPercentage(0.5).yDimensionPercentage(1)();
 					drawButton(shrinkPercentage(rightButton, {0.1,0.05}), Colors_Gray, "Delete world");
@@ -886,8 +898,126 @@ void displayWorldSelectorMenu(ProgramData &programData)
 
 		}
 
-
 	}
+
+	static char seed[12] = {};
+	static char name[20] = {};
+
+	programData.ui.menuRenderer.BeginManualMenu("Create world");
+	
+	if (programData.ui.menuRenderer.internal.allMenuStacks
+		[programData.ui.menuRenderer.internal.currentId].size()
+		&& programData.ui.menuRenderer.internal.allMenuStacks
+		[programData.ui.menuRenderer.internal.currentId].back() == "Create world"
+		)
+	{
+	
+		programData.ui.menuRenderer.Text("Create a new world!", Colors_White);
+	
+		//background
+		{
+			float rezolution = 256;
+			glm::vec2 size{renderer.windowW, renderer.windowH};
+			size /= 256.f;
+	
+			renderer.renderRectangle({0,0, renderer.windowW, renderer.windowH},
+				programData.blocksLoader.backgroundTexture, {0.6,0.6,0.6,1}, {}, 0,
+				{0,size.y, size.x, 0}
+			);
+		}
+
+
+		programData.ui.menuRenderer.InputText("Name: ", name, sizeof(name),
+			Colors_Gray, programData.ui.buttonTexture);
+
+		programData.ui.menuRenderer.InputText("Seed: ", seed, sizeof(seed),
+			Colors_Gray, programData.ui.buttonTexture);
+		
+		std::string finalName = RESOURCES_PATH "worlds/";
+		finalName += name;
+
+		if (name[0] == '\0')
+		{
+			programData.ui.menuRenderer.Button("Please enter a name!", {0.6,0.4,0.4,1},
+				programData.ui.buttonTexture);
+		}
+		else if (std::filesystem::exists(finalName))
+		{
+			programData.ui.menuRenderer.Button("Name already exists!", {0.6,0.4,0.4,1},
+				programData.ui.buttonTexture);
+		}
+		else
+		{
+			bool create = 0;
+			bool createAndPlay = 0;
+
+
+			if (programData.ui.menuRenderer.Button("Create!", Colors_Gray,
+				programData.ui.buttonTexture))
+			{
+				create = true;
+			}
+
+			if (programData.ui.menuRenderer.Button("Create and play", Colors_Gray,
+				programData.ui.buttonTexture))
+			{
+				createAndPlay = true;
+			}
+
+			if (create || createAndPlay)
+			{
+				std::error_code err;
+				std::filesystem::create_directory(finalName, err);
+
+				if (!err)
+				{
+					{
+						std::ofstream f(finalName + "/seed.txt");
+
+						long long computedSeed = 0;
+						long long pow = 1;
+						for (int i = sizeof(seed) - 1; i >= 0; i--)
+						{
+							if (seed[i] != 0)
+							{
+								computedSeed += (seed[i] - '0') * pow;
+								pow *= 10;
+							}
+						}
+
+						if (computedSeed == 0)
+						{
+							computedSeed = time(0);
+						}
+
+						int finalSeed = computedSeed;
+						if (finalSeed < 0) { finalSeed = -finalSeed; }
+						if (finalSeed == 0) { finalSeed = 1; }
+
+						f << (int)finalSeed;
+						f.close();
+					};
+
+					if (createAndPlay)
+					{
+						hostServer(name);
+					}
+				}
+
+				programData.ui.menuRenderer.ExitCurrentMenu();
+			}
+
+		}
+		
+	
+	}
+	else
+	{
+		memset(seed, 0, sizeof(seed));
+		memset(name, 0, sizeof(name));
+	}
+	
+	programData.ui.menuRenderer.EndMenu();
 
 
 }

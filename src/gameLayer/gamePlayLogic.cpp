@@ -1849,6 +1849,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		displaySkinSelectorMenuButton(programData);
 
+		if (programData.ui.menuRenderer.Button("Exit", Colors_Gray, programData.ui.buttonTexture))
+		{
+			terminate = true;
+		}
 
 		programData.ui.menuRenderer.End();
 

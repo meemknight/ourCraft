@@ -43,6 +43,9 @@ namespace glui
 		text,
 		textInput,
 		beginMenu,
+		beginManualMenu,
+		startManualMenu,
+		exitCurrentMenu,
 		endMenu,
 		texture,
 		buttonWithTexture,
@@ -639,6 +642,43 @@ namespace glui
 		std::vector<std::pair<std::string, Internal::Widget>> widgetsCopy;
 		widgetsCopy.reserve(internal.widgetsVector.size());
 
+		std::vector<std::string> traversedStack;
+		traversedStack.reserve(currentMenuStack.size());
+			
+		for (auto &i : internal.widgetsVector)
+		{
+			bool add = 0;
+			if (traversedStack.size() == currentMenuStack.size())
+			{
+				add = true;
+				for (int i = 0; i < traversedStack.size(); i++)
+				{
+					if (traversedStack[i] != currentMenuStack[i])
+					{
+						add = false;
+						break;
+					}
+				}
+			}
+			
+			if (add && i.second.type != widgetType::beginManualMenu)
+			{
+				widgetsCopy.emplace_back(i);
+			}
+
+			if (i.second.type == widgetType::beginMenu 
+				|| i.second.type == widgetType::beginManualMenu)
+			{
+				traversedStack.push_back(i.first);
+			}
+			else if(i.second.type == widgetType::endMenu)
+			{
+				traversedStack.pop_back();
+			}
+
+		}
+		
+		/*
 		auto currentMenuStackCopy = currentMenuStack;
 		{
 			std::vector<std::string> menuStack;
@@ -715,6 +755,7 @@ namespace glui
 			
 			}
 		};
+		*/
 
 		auto computePos = [&](int elementsHeight, float &advanceSizeY)
 		{
@@ -1139,6 +1180,23 @@ namespace glui
 							currentMenuStack.push_back(i.first);
 						};
 
+						break;
+					}
+
+					case widgetType::startManualMenu:
+					{
+
+						currentMenuStack.push_back(i.first);
+
+						break;
+					}
+
+					case widgetType::exitCurrentMenu:
+					{
+						if (currentMenuStack.size())
+						{
+							currentMenuStack.pop_back();
+						}
 						break;
 					}
 
@@ -1933,6 +1991,30 @@ namespace glui
 
 		PushIdInternal(*this, hash(name));
 	}
+
+	void RendererUi::BeginManualMenu(std::string name)
+	{
+		Internal::Widget widget = {};
+		widget.type = widgetType::beginManualMenu;
+		internal.widgetsVector.push_back({name, widget});
+
+		PushIdInternal(*this, hash(name));
+	}
+
+	void RendererUi::StartManualMenu(std::string name)
+	{
+		Internal::Widget widget = {};
+		widget.type = widgetType::startManualMenu;
+		internal.widgetsVector.push_back({name, widget});
+	}
+
+	void RendererUi::ExitCurrentMenu()
+	{
+		Internal::Widget widget = {};
+		widget.type = widgetType::exitCurrentMenu;
+		internal.widgetsVector.push_back({"", widget});
+	}
+
 
 	void RendererUi::EndMenu()
 	{
