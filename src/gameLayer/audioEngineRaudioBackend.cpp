@@ -239,6 +239,9 @@ namespace AudioEngine
 
 		SoundCollection(RESOURCES_PATH "/sounds/hit"),
 
+		SoundCollection(RESOURCES_PATH "/sounds/lowImpact"),
+		SoundCollection(RESOURCES_PATH "/sounds/mediumImpact"),
+		SoundCollection(RESOURCES_PATH "/sounds/highImpact"),
 
 	};
 

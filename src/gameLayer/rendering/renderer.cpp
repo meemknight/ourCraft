@@ -2539,6 +2539,11 @@ void Renderer::renderEntities(
 					rez = std::max(rez, 0);
 				}
 
+				if (dontUpdateLightSystem)
+				{
+					rez = 15;
+				}
+
 				glUniform1i(entityRenderer.blockEntityshader.u_lightValue, rez);
 
 

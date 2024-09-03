@@ -15,6 +15,10 @@ static CraftingRecepie recepies[] =
 		Item(), Item(), Item(),
 		Item(BlockTypes::woodLog), Item(), Item()}),
 
+	recepie(Item(BlockTypes::wooden_plank, 4),
+		{Item(),Item(),Item(),
+		Item(), Item(), Item(),
+		Item(BlockTypes::spruce_log), Item(), Item()}),
 
 	recepie(Item(BlockTypes::birch_planks, 4),
 		{Item(),Item(),Item(),

@@ -79,7 +79,7 @@ struct GameData
 		glm::ivec3 pos = {};
 		float timer = 0;
 		float totalTime = 0;
-
+		int tool = 0;
 	}currentBlockBreaking;
 
 	std::string currentSkinName = "";
@@ -429,7 +429,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma region input
 
-	static float moveSpeed = 20.f;
+	static float moveSpeed = 7.f;
 	float isPlayerMovingSpeed = 0;
 
 
@@ -635,6 +635,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					gameData.entityManager.localPlayer.entity.position,
 					gameData.currentItemSelected, gameData.undoQueue, gameData.c.viewDirection * 5.f,
 					gameData.serverTimer, player.inventory, !platform::isKeyHeld(platform::Button::LeftCtrl));
+
+				gameData.currentBlockBreaking = {};
 			}
 
 	#pragma endregion
@@ -691,14 +693,61 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 				auto newForces = gameData.entityManager.localPlayer.entity.forces.velocity;
 
-				if (player.otherPlayerSettings.gameMode ==
-					OtherPlayerSettings::SURVIVAL)
+				//todo no spawn damage!!!!
 				{
 					//fall damage
 					float rez = glm::length(forcesBackup) - glm::length(newForces);
-					if (rez > 11.2) //basic gravity
+
+					if (rez > 0.2)
 					{
-						int fallDamage = (rez - 10.2);
+						std::cout << "rez: " << rez << "\n";
+					}
+
+					//auto b = 
+					auto blockPos = from3DPointToBlock(player.entity.position - glm::dvec3(0, 0.1, 0));
+					auto block = gameData.chunkSystem.getBlockSafe(blockPos.x, blockPos.y, blockPos.z);
+					int sound = 0;
+					if (block)
+					{
+						sound = getSoundForBlockStepping(block->getType());
+					}
+
+					if (rez > 17)
+					{
+						//high impact
+						AudioEngine::playSound(AudioEngine::fallHigh, FALL_SOUND_VOLUME);
+
+						if (sound)
+						{
+							AudioEngine::playSound(sound, 1);
+						}
+					}
+					if (rez > 14)
+					{
+						//medium impact
+						AudioEngine::playSound(AudioEngine::fallMedium, FALL_SOUND_VOLUME);
+
+						if (sound)
+						{
+							AudioEngine::playSound(sound, 1);
+						}
+					}else
+					if (rez > 10)
+					{
+						//low impact
+						AudioEngine::playSound(AudioEngine::fallLow, FALL_SOUND_VOLUME);
+
+						if (sound)
+						{
+							AudioEngine::playSound(sound, 1);
+						}
+					}
+
+
+					if (player.otherPlayerSettings.gameMode ==
+						OtherPlayerSettings::SURVIVAL && rez > 13.2)
+					{
+						int fallDamage = (rez - 12.2);
 						//std::cout << "fallDamage: " << fallDamage << "\n";
 
 						dealDamageToLocalPlayer(fallDamage);
@@ -940,11 +989,17 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					}
 					else if (platform::isLMouseHeld() && raycastBlock)
 					{
+						if (gameData.currentBlockBreaking.breaking &&
+							gameData.currentBlockBreaking.tool != gameData.currentItemSelected)
+						{
+							gameData.currentBlockBreaking.breaking = false;
+						}
 
 						if (!gameData.currentBlockBreaking.breaking)
 						{
 							gameData.currentBlockBreaking.breaking = true;
 							gameData.currentBlockBreaking.pos = rayCastPos;
+							gameData.currentBlockBreaking.tool = gameData.currentItemSelected;
 
 							if (player.otherPlayerSettings.gameMode == OtherPlayerSettings::SURVIVAL)
 							{
