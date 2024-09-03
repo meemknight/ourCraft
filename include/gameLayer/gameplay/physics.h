@@ -24,10 +24,10 @@ struct PhysicalSettings
 
 constexpr static float MAX_AIR_DRAG = 12.f;
 constexpr static float AIR_DRAG_COEFICIENT = 0.1f;
-constexpr static float GRAVITY = -9.8 * 2.2;
+constexpr static float GRAVITY = -9.8 * 2.9;
 constexpr static float MAX_ACCELERATION = 1000;
 constexpr static float MAX_VELOCITY = 1000;
-constexpr static float BASIC_JUMP_IMPULSE = 8;
+constexpr static float BASIC_JUMP_IMPULSE = 9.4;
 constexpr static float OTHERS_PUSHING_YOU_FORCE = 0.7f;
 constexpr static float OTHERS_PUSHING_YOU_BUAS_Y_DOWN = 0.1f;
 

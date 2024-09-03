@@ -13,7 +13,6 @@ struct Player : public PhysicalEntity, public CollidesWithPlacedBlocks,
 	glm::vec3 lookDirectionAnimation = {0,0,-1};
 	glm::vec2 bodyOrientation = {0, -1};
 
-
 	void flyFPS(glm::vec3 direction, glm::vec3 lookDirection);
 
 	void moveFPS(glm::vec3 direction, glm::vec3 lookDirection);
@@ -23,6 +22,8 @@ struct Player : public PhysicalEntity, public CollidesWithPlacedBlocks,
 	glm::vec3 getColliderSize();
 
 	static glm::vec3 getMaxColliderSize();
+
+	bool fly = 0;
 };
 
 //here we store things like gamemode

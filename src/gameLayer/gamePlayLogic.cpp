@@ -53,8 +53,7 @@ struct GameData
 	glm::dvec3 entityTest = {-4, 113, 3};
 	bool renderBox = 0;
 	bool renderPlayerPos = 0;
-	bool renderColliders = 1;
-	bool fly = 1;
+	bool renderColliders = 0;
 	
 	bool colidable = 1;
 
@@ -433,6 +432,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	static float moveSpeed = 20.f;
 	float isPlayerMovingSpeed = 0;
 
+
+	if (player.otherPlayerSettings.gameMode == OtherPlayerSettings::SURVIVAL)
+	{
+		player.entity.fly = 0;
+	}
+
 	if (gameData.killed)
 	{
 		gameData.insideInventoryMenu = false;
@@ -510,7 +515,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			moveDir.x += speed;
 		}
 
-		if (gameData.fly)
+		if (player.entity.fly)
 		{
 			if (platform::isKeyHeld(platform::Button::LeftShift)
 				|| platform::getControllerButtons().buttons[platform::ControllerButtons::RBumper].held
@@ -533,10 +538,33 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			{
 				gameData.entityManager.localPlayer.entity.jump();
 			}
+
+
 		}
 
+		static float jumpTimer = 0;
+		if (platform::isKeyPressedOn(platform::Button::Space)
+			|| platform::getControllerButtons().buttons[platform::ControllerButtons::LBumper].pressed)
+		{
+			if (player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE)
+			{
+				if (jumpTimer > 0)
+				{
+					gameData.entityManager.localPlayer.entity.fly =
+						!gameData.entityManager.localPlayer.entity.fly;
 
-		if (gameData.fly)
+					gameData.entityManager.localPlayer.entity.forces = {};
+				}
+				else
+				{
+					jumpTimer = 0.2;
+				}
+			}
+		}
+		jumpTimer -= deltaTime;
+		jumpTimer = std::max(jumpTimer, 0.f);
+
+		if (player.entity.fly)
 		{
 			gameData.entityManager.localPlayer.entity.flyFPS(moveDir, gameData.c.viewDirection);
 		}
@@ -645,7 +673,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 		else
 		{
-			gameData.entityManager.localPlayer.entity.updateForces(deltaTime, !gameData.fly, settings);
+			gameData.entityManager.localPlayer.entity.updateForces(deltaTime, !player.entity.fly
+				, settings);
 
 			if (gameData.colidable)
 			{
@@ -655,17 +684,26 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					.entity.resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime,
 					gameData.entityManager.localPlayer.entity.getColliderSize(), settings);
 
+				if (gameData.entityManager.localPlayer.entity.forces.colidesBottom())
+				{
+					gameData.entityManager.localPlayer.entity.fly = false;
+				}
+
 				auto newForces = gameData.entityManager.localPlayer.entity.forces.velocity;
 
-				//fall damage
-				float rez = glm::length(forcesBackup) - glm::length(newForces);
-				if (rez > 11.2) //basic gravity
+				if (player.otherPlayerSettings.gameMode ==
+					OtherPlayerSettings::SURVIVAL)
 				{
-					int fallDamage = (rez - 10.2);
-					//std::cout << "fallDamage: " << fallDamage << "\n";
+					//fall damage
+					float rez = glm::length(forcesBackup) - glm::length(newForces);
+					if (rez > 11.2) //basic gravity
+					{
+						int fallDamage = (rez - 10.2);
+						//std::cout << "fallDamage: " << fallDamage << "\n";
 
-					dealDamageToLocalPlayer(fallDamage);
-				}
+						dealDamageToLocalPlayer(fallDamage);
+					}
+				};
 
 			}
 			else
@@ -1266,7 +1304,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
 			{
 				ImGui::Checkbox("Colidable", &gameData.colidable);
-				ImGui::Checkbox("Fly", &gameData.fly);
 
 				ImGui::DragScalarN("Player Body pos", ImGuiDataType_Double,
 					&gameData.entityManager.localPlayer.entity.position[0], 3, 0.01);
