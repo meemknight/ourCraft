@@ -1191,7 +1191,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	, bool showLightLevels, glm::dvec3 pointPos, bool underWater, int screenX, int screenY,
 	float deltaTime, float dayTime, 
 	GLuint64 currentSkinBindlessTexture, bool &playerClicked, float playerRunning,
-	BoneTransform &playerHand
+	BoneTransform &playerHand, int currentHeldItemIndex
 	)
 {
 	glViewport(0, 0, screenX, screenY);
@@ -1832,7 +1832,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		renderEntities(deltaTime, c, modelsManager, blocksLoader,
 			entityManager, vp, c.getProjectionMatrix(), viewMatrix, posFloat, posInt,
 			programData.renderer.defaultShader.shadingSettings.exposure, chunkSystem, skyLightIntensity,
-			currentSkinBindlessTexture, playerClicked, playerRunning, playerHand);
+			currentSkinBindlessTexture, playerClicked, playerRunning, playerHand, currentHeldItemIndex);
 		programData.GPUProfiler.endSubProfile("entities");
 	#pragma endregion
 
@@ -1912,7 +1912,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		renderEntities(deltaTime, c, modelsManager, blocksLoader,
 			entityManager, vp, viewMatrix, c.getProjectionMatrix(), posFloat, posInt,
 			programData.renderer.defaultShader.shadingSettings.exposure, chunkSystem, skyLightIntensity, 
-			currentSkinBindlessTexture, playerClicked, playerRunning, playerHand);
+			currentSkinBindlessTexture, playerClicked, playerRunning, playerHand, currentHeldItemIndex);
 		programData.GPUProfiler.endSubProfile("entities");
 	#pragma endregion
 
@@ -2186,7 +2186,7 @@ void Renderer::renderEntities(
 	glm::ivec3 posInt,
 	float exposure, ChunkSystem &chunkSystem, int 
 	skyLightIntensity, GLuint64 currentSkinBindlessTexture,
-	bool &playerClicked, float playerRunning, BoneTransform &playerHand
+	bool &playerClicked, float playerRunning, BoneTransform &playerHand, int currentHeldItemIndex
 	)
 {
 
@@ -2196,6 +2196,247 @@ void Renderer::renderEntities(
 	glDepthFunc(GL_LESS);
 
 #pragma endregion
+
+
+#pragma region other entities setup shader
+	
+	entityRenderer.basicEntityShader.shader.bind();
+
+	glUniformMatrix4fv(entityRenderer.basicEntityShader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
+	glUniformMatrix4fv(entityRenderer.basicEntityShader.u_view, 1, GL_FALSE, &viewMatrix[0][0]);
+	glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,
+		&glm::mat4(1.f)[0][0]);
+	glUniform3fv(entityRenderer.basicEntityShader.u_cameraPositionFloat, 1, &posFloat[0]);
+	glUniform3iv(entityRenderer.basicEntityShader.u_cameraPositionInt, 1, &posInt[0]);
+	glUniform1f(entityRenderer.basicEntityShader.u_exposure, exposure);
+	
+
+#pragma endregion
+
+
+	struct PerEntityData
+	{
+		glm::ivec3 entityPositionInt = {};
+		glm::vec3 entityPositionFloat = {};
+		glm::vec3 color = {1,1,1};
+		GLuint64 textureId;
+	};
+
+	static std::vector<glm::mat4> skinningMatrix;
+	skinningMatrix.clear();
+
+	static std::vector<PerEntityData> entityData;
+	entityData.clear();
+
+	glm::mat4 handItemMatrix = glm::mat4{1.f};
+
+	auto renderHand = [&]()
+	{
+		auto &model = modelsManager.rightHand;
+
+		glBindVertexArray(model.vao);
+
+		glUniform1i(entityRenderer.basicEntityShader.u_bonesPerModel, model.transforms.size());
+
+		skinningMatrix.clear();
+		entityData.clear();
+
+		skinningMatrix.reserve(model.transforms.size());
+		entityData.reserve(model.transforms.size());
+
+		{
+			BoneTransform handIdle;
+			handIdle.position = glm::vec3{0.2,-2.0,-0.5};
+			handIdle.rotation = glm::vec3{glm::radians(120.f),0.f,0.f};
+
+			if (playerRunning)
+			{
+				static Oscilator handOscilator(0.3);
+				BoneTransform handIdle2;
+				handIdle2.position = glm::vec3{0.1,-2.1,-0.4};
+				handIdle2.rotation = glm::vec3{glm::radians(123.f),glm::radians(0.f) ,
+				glm::radians(2.f)};
+
+				handOscilator.update(deltaTime);
+
+				if (handOscilator.currentFaze)
+				{
+					handIdle = handIdle2;
+				}
+			}
+
+			BoneTransform handHit;
+			handHit.position = glm::vec3{0.1,-2.1,-0.9};
+			handHit.rotation = glm::vec3{glm::radians(90.f),glm::radians(25.f),glm::radians(5.f)};
+
+			float hitSpeed = 6 * deltaTime;
+			float returnSpeed = 1 * deltaTime;
+
+			static bool hitReturn = 0;
+
+			if (playerClicked)
+			{
+				if (hitReturn)
+				{
+					if (playerHand.goTowards(handIdle, hitSpeed))
+					{
+						hitReturn = false;
+						playerClicked = false;
+					}
+				}
+				else
+				{
+					if (playerHand.goTowards(handHit, hitSpeed))
+					{
+						hitReturn = true;
+						playerClicked = false;
+					}
+				}
+
+
+			}
+			else
+			{
+				hitReturn = 0;
+				playerHand.goTowards(handIdle, returnSpeed);
+			}
+
+
+			auto transform = model.transforms[0]; //loaded from glb file
+			auto poseMatrix = playerHand.getPoseMatrix();
+
+			glm::vec3 lookDirection = c.viewDirection;
+			glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+			glm::vec3 right = glm::normalize(glm::cross(up, lookDirection));
+			up = glm::normalize(glm::cross(lookDirection, right));
+			auto rotMatrix = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(-lookDirection, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+			//rotMatrix[0][0] *= -1.0f;
+
+			skinningMatrix.push_back(rotMatrix * glm::scale(glm::vec3{-1,1,1}) * transform * poseMatrix);
+
+			//hand item matrix calculate
+			handItemMatrix = skinningMatrix.back() * glm::translate(glm::vec3{0.1,-0.55,-0.4})
+				* glm::rotate(glm::radians(180.f), glm::vec3(0, 0, 1))
+				* glm::rotate(glm::radians(-45.f), glm::vec3(1, 0, 0))
+				* glm::rotate(glm::radians(90.f), glm::vec3(0, 1, 0))
+				* glm::scale(glm::vec3(0.45f));
+			//handItemMatrix = glm::translate(glm::vec3{0,0,2});
+
+			PerEntityData data = {};
+			data.textureId = currentSkinBindlessTexture;
+
+			glm::dvec3 position = glm::dvec3(posInt) + glm::dvec3(posFloat);
+
+			decomposePosition(position, data.entityPositionFloat, data.entityPositionInt);
+			entityData.push_back(data);
+		}
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, skinningMatrixSSBO);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, skinningMatrix.size() * sizeof(glm::mat4),
+			&skinningMatrix[0][0][0], GL_STREAM_DRAW);
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, perEntityDataSSBO);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, entityData.size() * sizeof(entityData[0]),
+			entityData.data(), GL_STREAM_DRAW);
+
+		glDrawElements(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, nullptr);
+
+	};
+
+	//render hand draw hand renderHand drawHand
+	renderHand();
+
+
+
+	auto renderAllEntitiesOfOneType = [&](Model &model, auto &container, int textureIndex)
+	{
+
+		glBindVertexArray(model.vao);
+
+		glUniform1i(entityRenderer.basicEntityShader.u_bonesPerModel, model.transforms.size());
+
+		skinningMatrix.clear();
+		entityData.clear();
+
+		skinningMatrix.reserve(model.transforms.size() * container.size());
+		entityData.reserve(model.transforms.size() * container.size());
+
+		for (auto &e : container)
+		{
+			PerEntityData data = {};
+
+			auto rotMatrix = e.second.getBodyRotationMatrix();
+
+			if constexpr (hasCanBeKilled<decltype(e.second.entity)>)
+			{
+				if (e.second.wasKilled)
+				{
+					data.color = {0.6,0.2,0.2};
+					rotMatrix = rotMatrix * glm::rotate(PI / 2.f, glm::vec3{0,0,1});
+
+					if (e.second.wasKilledTimer <= 0)
+					{
+						continue;
+					}
+				}
+			}
+
+			for (int i = 0; i < model.transforms.size(); i++)
+			{
+				skinningMatrix.push_back(rotMatrix * model.transforms[i]);
+			}
+
+			//todo set kill animation or something
+
+			e.second.setEntityMatrix(skinningMatrix.data() + (skinningMatrix.size() - model.transforms.size()));
+
+
+			if constexpr (hasSkinBindlessTexture<decltype(e.second)>)
+			{
+				if (e.second.skinBindlessTexture)
+				{
+					data.textureId = e.second.skinBindlessTexture;
+				}
+				else
+				{
+					data.textureId = modelsManager.gpuIds[textureIndex];
+				}
+
+			}
+			else
+			{
+				data.textureId = modelsManager.gpuIds[textureIndex];
+			}
+
+			decomposePosition(e.second.getRubberBandPosition(), data.entityPositionFloat, data.entityPositionInt);
+			entityData.push_back(data);
+		}
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, skinningMatrixSSBO);
+		//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, skinningMatrixSSBO);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, skinningMatrix.size() * sizeof(glm::mat4),
+			&skinningMatrix[0][0][0], GL_STREAM_DRAW);
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, perEntityDataSSBO);
+		//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, perEntityDataSSBO);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, entityData.size() * sizeof(entityData[0]),
+			entityData.data(), GL_STREAM_DRAW);
+
+		glDrawElementsInstanced(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, nullptr,
+			container.size());
+
+	};
+
+	//todo remove
+	entityRenderer.itemEntitiesToRender.clear();
+
+	renderAllEntitiesOfOneType(modelsManager.human, entityManager.players, ModelsManager::SteveTexture);
+	renderAllEntitiesOfOneType(modelsManager.human, entityManager.zombies, ModelsManager::ZombieTexture);
+	renderAllEntitiesOfOneType(modelsManager.pig, entityManager.pigs, ModelsManager::PigTexture);
+	renderAllEntitiesOfOneType(modelsManager.cat, entityManager.cats, ModelsManager::CatTexture);
+
+
+	glBindVertexArray(0);
 
 
 #pragma region cubeEntities
@@ -2288,16 +2529,16 @@ void Renderer::renderEntities(
 				glUniform3fv(entityRenderer.blockEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
 				glUniform3iv(entityRenderer.blockEntityshader.u_entityPositionInt, 1, &entityInt[0]);
 
-				
-				auto b = chunkSystem.getBlockSafe(e.second.getRubberBandPosition() + glm::dvec3(0,0.2,0));
+
+				auto b = chunkSystem.getBlockSafe(e.second.getRubberBandPosition() + glm::dvec3(0, 0.2, 0));
 				int rez = skyLightIntensity;
 
 				if (b)
 				{
-					rez = std::max((char)b->getLight(), (char)(b->getSkyLight() - ((char)15 - (char)skyLightIntensity)) );
+					rez = std::max((char)b->getLight(), (char)(b->getSkyLight() - ((char)15 - (char)skyLightIntensity)));
 					rez = std::max(rez, 0);
 				}
-					
+
 				glUniform1i(entityRenderer.blockEntityshader.u_lightValue, rez);
 
 
@@ -2309,6 +2550,7 @@ void Renderer::renderEntities(
 
 	}
 #pragma endregion
+
 
 #pragma region item entities
 
@@ -2323,42 +2565,69 @@ void Renderer::renderEntities(
 
 	{
 
+		auto renderOneItem = [&](auto type, glm::dvec3 pos, int light, glm::mat4 *mat = 0)
+		{
+			std::uint64_t texture;
+
+			BlocksLoader::ItemGeometry geometry = {};
+
+			if (type >= ItemsStartPoint)
+			{
+				texture = blocksLoader.gpuIdsItems
+					[type - ItemsStartPoint];
+
+				geometry = blocksLoader.itemsGeometry[type - ItemsStartPoint + 1];
+			}
+			else
+			{
+				texture = blocksLoader.gpuIds
+					[getGpuIdIndexForBlock(type, 0)];
+			}
+
+			glUniformHandleui64ARB(entityRenderer.itemEntityShader.u_texture, texture);
+			glUniform1i(entityRenderer.itemEntityShader.u_lightValue, light);
+
+			if (mat)
+			{
+				glm::vec3 entityFloat = {};
+				glm::ivec3 entityInt = {};
+
+				decomposePosition(c.position, entityFloat, entityInt);
+
+				glUniform3fv(entityRenderer.itemEntityShader.u_entityPositionFloat, 1, &entityFloat[0]);
+				glUniform3iv(entityRenderer.itemEntityShader.u_entityPositionInt, 1, &entityInt[0]);
+
+				glUniformMatrix4fv(entityRenderer.itemEntityShader.u_modelMatrix, 1, GL_FALSE,
+					glm::value_ptr(*mat));
+			}
+			else
+			{
+				glm::vec3 entityFloat = {};
+				glm::ivec3 entityInt = {};
+
+				decomposePosition(pos, entityFloat, entityInt);
+
+				entityFloat += glm::vec3(0, 0.4, 0);
+
+				glUniform3fv(entityRenderer.itemEntityShader.u_entityPositionFloat, 1, &entityFloat[0]);
+				glUniform3iv(entityRenderer.itemEntityShader.u_entityPositionInt, 1, &entityInt[0]);
+
+				glUniformMatrix4fv(entityRenderer.itemEntityShader.u_modelMatrix, 1, GL_FALSE,
+					glm::value_ptr(glm::scale(glm::vec3{0.4f})));
+			}
+
+
+			glBindVertexArray(geometry.vao);
+			glDrawArrays(GL_TRIANGLES, 0, geometry.count);
+		
+		};
+
 		//todo instance rendering
 		for (auto &e : entityManager.droppedItems)
 		{
 			//continue;
 			if (isBlock(e.second.entity.type)) { continue; }
-
-			std::uint64_t texture;
-			
-			BlocksLoader::ItemGeometry geometry = {};
-
-			if (e.second.entity.type >= ItemsStartPoint)
-			{
-				texture = blocksLoader.gpuIdsItems
-					[e.second.entity.type - ItemsStartPoint];
-
-				geometry = blocksLoader.itemsGeometry[e.second.entity.type - ItemsStartPoint + 1];
-			}
-			else
-			{
-				texture = blocksLoader.gpuIds
-					[getGpuIdIndexForBlock(e.second.entity.type, 0)];
-			}
-
-			glUniformHandleui64ARB(entityRenderer.itemEntityShader.u_texture, texture);
-
-			glm::vec3 entityFloat = {};
-			glm::ivec3 entityInt = {};
-
-			//decomposePosition(e.second.item.position, entityFloat, entityInt);
-			decomposePosition(e.second.getRubberBandPosition(), entityFloat, entityInt);
-
-			entityFloat += glm::vec3(0, 0.4, 0);
-
-			glUniform3fv(entityRenderer.itemEntityShader.u_entityPositionFloat, 1, &entityFloat[0]);
-			glUniform3iv(entityRenderer.itemEntityShader.u_entityPositionInt, 1, &entityInt[0]);
-
+			if (!e.second.entity.type) { continue; }
 
 			auto b = chunkSystem.getBlockSafe(e.second.getRubberBandPosition() + glm::dvec3(0, 0.2, 0));
 			int rez = skyLightIntensity;
@@ -2374,247 +2643,35 @@ void Renderer::renderEntities(
 				rez = 15;
 			}
 
-			glUniform1i(entityRenderer.itemEntityShader.u_lightValue, rez);
+			renderOneItem(e.second.entity.type, e.second.getRubberBandPosition(), rez);
 
-			glBindVertexArray(geometry.vao);
-			glDrawArrays(GL_TRIANGLES, 0, geometry.count);
 		}
+
+
+		//hand item
+		auto handItem = entityManager.localPlayer.inventory.getItemFromIndex(currentHeldItemIndex);
+		if(handItem)	
+		{
+
+			if (handItem->isBlock())
+			{
+
+
+			}
+			else if(handItem->type)
+			{
+				renderOneItem(handItem->type, {}, 15, &handItemMatrix);
+			}
+
+
+		}
+
 
 	}
 
 
 #pragma endregion
 
-
-
-#pragma region other entities setup shader
-	
-	entityRenderer.basicEntityShader.shader.bind();
-
-	glUniformMatrix4fv(entityRenderer.basicEntityShader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
-	glUniformMatrix4fv(entityRenderer.basicEntityShader.u_view, 1, GL_FALSE, &viewMatrix[0][0]);
-	glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,
-		&glm::mat4(1.f)[0][0]);
-	glUniform3fv(entityRenderer.basicEntityShader.u_cameraPositionFloat, 1, &posFloat[0]);
-	glUniform3iv(entityRenderer.basicEntityShader.u_cameraPositionInt, 1, &posInt[0]);
-	glUniform1f(entityRenderer.basicEntityShader.u_exposure, exposure);
-	
-
-#pragma endregion
-
-
-
-	struct PerEntityData
-	{
-		glm::ivec3 entityPositionInt = {}; 
-		glm::vec3 entityPositionFloat = {};
-		glm::vec3 color = {1,1,1};
-		GLuint64 textureId;
-	};
-
-	static std::vector<glm::mat4> skinningMatrix;
-	skinningMatrix.clear();
-
-	static std::vector<PerEntityData> entityData;
-	entityData.clear();
-
-	auto renderHand = [&]()
-	{
-		auto &model = modelsManager.rightHand;
-
-		glBindVertexArray(model.vao);
-
-		glUniform1i(entityRenderer.basicEntityShader.u_bonesPerModel, model.transforms.size());
-
-		skinningMatrix.clear();
-		entityData.clear();
-
-		skinningMatrix.reserve(model.transforms.size());
-		entityData.reserve(model.transforms.size());
-
-		{
-			BoneTransform handIdle;
-			handIdle.position = glm::vec3{0.2,-2.0,-0.5};
-			handIdle.rotation = glm::vec3{glm::radians(120.f),0.f,0.f};
-
-			if (playerRunning)
-			{
-				static Oscilator handOscilator(0.3);
-				BoneTransform handIdle2;
-				handIdle2.position = glm::vec3{0.1,-2.1,-0.4};
-				handIdle2.rotation = glm::vec3{glm::radians(123.f),glm::radians(0.f) ,
-				glm::radians(2.f)};
-
-				handOscilator.update(deltaTime);
-
-				if (handOscilator.currentFaze)
-				{
-					handIdle = handIdle2;
-				}
-			}
-
-			BoneTransform handHit;
-			handHit.position = glm::vec3{0.1,-2.1,-0.9};
-			handHit.rotation = glm::vec3{glm::radians(90.f),glm::radians(25.f),glm::radians(5.f)};
-
-			float hitSpeed = 6 * deltaTime;
-			float returnSpeed = 1 * deltaTime;
-
-			static bool hitReturn = 0;
-
-			if (playerClicked)
-			{
-				if (hitReturn)
-				{
-					if (playerHand.goTowards(handIdle, hitSpeed))
-					{
-						hitReturn = false;
-						playerClicked = false;
-					}
-				}
-				else
-				{
-					if (playerHand.goTowards(handHit, hitSpeed))
-					{
-						hitReturn = true;
-						playerClicked = false;
-					}
-				}
-
-
-			}
-			else
-			{
-				hitReturn = 0;
-				playerHand.goTowards(handIdle, returnSpeed);
-			}
-
-
-			auto transform = model.transforms[0]; //loaded from glb file
-			auto poseMatrix = playerHand.getPoseMatrix();
-
-			glm::vec3 lookDirection = c.viewDirection;
-			glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-			glm::vec3 right = glm::normalize(glm::cross(up, lookDirection));
-			up = glm::normalize(glm::cross(lookDirection, right));
-			auto rotMatrix = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(-lookDirection, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-			//rotMatrix[0][0] *= -1.0f;
-
-			skinningMatrix.push_back(rotMatrix * glm::scale(glm::vec3{-1,1,1}) * transform * poseMatrix);
-
-			PerEntityData data = {};
-			data.textureId = currentSkinBindlessTexture;
-
-			glm::dvec3 position = glm::dvec3(posInt) + glm::dvec3(posFloat);
-
-			decomposePosition(position, data.entityPositionFloat, data.entityPositionInt);
-			entityData.push_back(data);
-		}
-
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, skinningMatrixSSBO);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, skinningMatrix.size() * sizeof(glm::mat4),
-			&skinningMatrix[0][0][0], GL_STREAM_DRAW);
-
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, perEntityDataSSBO);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, entityData.size() * sizeof(entityData[0]),
-			entityData.data(), GL_STREAM_DRAW);
-
-		glDrawElements(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, nullptr);
-
-	};
-
-	auto renderAllEntitiesOfOneType = [&](Model &model, auto &container, int textureIndex)
-	{
-
-		glBindVertexArray(model.vao);
-
-		glUniform1i(entityRenderer.basicEntityShader.u_bonesPerModel, model.transforms.size());
-
-		skinningMatrix.clear();
-		entityData.clear();
-
-		skinningMatrix.reserve(model.transforms.size() * container.size());
-		entityData.reserve(model.transforms.size() * container.size());
-
-		for (auto &e : container)
-		{
-			PerEntityData data = {};
-
-			auto rotMatrix = e.second.getBodyRotationMatrix();
-
-			if constexpr (hasCanBeKilled<decltype(e.second.entity)>)
-			{
-				if (e.second.wasKilled)
-				{
-					data.color = {0.6,0.2,0.2};
-					rotMatrix = rotMatrix * glm::rotate(PI / 2.f, glm::vec3{0,0,1});
-
-					if (e.second.wasKilledTimer <= 0)
-					{
-						continue;
-					}
-				}
-			}
-
-			for (int i = 0; i < model.transforms.size(); i++)
-			{
-				skinningMatrix.push_back(rotMatrix * model.transforms[i]);
-			}
-
-			//todo set kill animation or something
-
-			e.second.setEntityMatrix(skinningMatrix.data() + (skinningMatrix.size() - model.transforms.size()));
-
-
-			if constexpr (hasSkinBindlessTexture<decltype(e.second)>)
-			{
-				if (e.second.skinBindlessTexture)
-				{
-					data.textureId = e.second.skinBindlessTexture;
-				}
-				else
-				{
-					data.textureId = modelsManager.gpuIds[textureIndex];
-				}
-
-			}
-			else
-			{
-				data.textureId = modelsManager.gpuIds[textureIndex];
-			}
-
-			decomposePosition(e.second.getRubberBandPosition(), data.entityPositionFloat, data.entityPositionInt);
-			entityData.push_back(data);
-		}
-
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, skinningMatrixSSBO);
-		//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, skinningMatrixSSBO);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, skinningMatrix.size() * sizeof(glm::mat4),
-			&skinningMatrix[0][0][0], GL_STREAM_DRAW);
-
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, perEntityDataSSBO);
-		//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, perEntityDataSSBO);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, entityData.size() * sizeof(entityData[0]),
-			entityData.data(), GL_STREAM_DRAW);
-
-		glDrawElementsInstanced(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, nullptr,
-			container.size());
-
-	};
-
-	//todo remove
-	entityRenderer.itemEntitiesToRender.clear();
-
-	//render hand draw hand renderHand drawHand
-	renderHand();
-
-	renderAllEntitiesOfOneType(modelsManager.human, entityManager.players, ModelsManager::SteveTexture);
-	renderAllEntitiesOfOneType(modelsManager.human, entityManager.zombies, ModelsManager::ZombieTexture);
-	renderAllEntitiesOfOneType(modelsManager.pig, entityManager.pigs, ModelsManager::PigTexture);
-	renderAllEntitiesOfOneType(modelsManager.cat, entityManager.cats, ModelsManager::CatTexture);
-
-
-	glBindVertexArray(0);
 
 
 }

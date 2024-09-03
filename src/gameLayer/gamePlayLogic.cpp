@@ -997,7 +997,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.c, programData, programData.blocksLoader, gameData.entityManager,
 			programData.modelsManager, gameData.showLightLevels,
 			gameData.point, underWater, w, h, deltaTime, dayTime, gameData.currentSkinBindlessTexture,
-			gameData.handHit, isPlayerMovingSpeed, gameData.playerFOVHandTransform
+			gameData.handHit, isPlayerMovingSpeed, gameData.playerFOVHandTransform,
+			gameData.currentItemSelected
 			);
 
 

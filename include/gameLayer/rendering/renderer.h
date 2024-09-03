@@ -303,7 +303,7 @@ struct Renderer
 		bool showLightLevels, glm::dvec3 pointPos,
 		bool underWater, int screenX, int screenY, float deltaTime, float dayTime,
 		GLuint64 currentSkinBindlessTexture, bool &playerClicked, float playerRunning,
-		BoneTransform &playerHand);
+		BoneTransform &playerHand, int currentHeldItemIndex);
 	
 	void renderDecal(glm::ivec3 position, Camera &c, Block b, ProgramData &programData, 
 		float crack);
@@ -315,7 +315,8 @@ struct Renderer
 		glm::mat4 &vp, glm::mat4 &projection, glm::mat4 &viewMatrix, glm::vec3 posFloat, glm::ivec3 posInt,
 		float exposure, ChunkSystem &chunkSystem, int skyLightIntensity,
 		GLuint64 currentSkinBindlessTexture,
-		bool &playerClicked, float playerRunning, BoneTransform &playerHand
+		bool &playerClicked, float playerRunning, BoneTransform &playerHand,
+		int currentHeldItemIndex
 		);
 
 	//todo implement this to optimize rendering
