@@ -702,6 +702,33 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			break;
 		}
 
+		case headerClientDamageLocally:
+		{
+			if (size != sizeof(Packet_ClientDamageLocally))
+			{
+				break;
+			}
+
+			Packet_ClientDamageLocally *packetData = (Packet_ClientDamageLocally *)data;
+
+			serverTask.t.taskType = Task::clientRecievedDamageLocally;
+			serverTask.t.damage = packetData->damage;
+			serverTasks.push_back(serverTask);
+			break;
+		}
+
+		case headerClientDamageLocallyAndDied:
+		{
+			if (size != 0)
+			{
+				break;
+			}
+
+			serverTask.t.taskType = Task::clientRecievedDamageLocallyAndDied;
+			serverTasks.push_back(serverTask);
+			break;
+		}
+
 		default:
 
 		break;

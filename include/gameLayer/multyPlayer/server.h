@@ -6,6 +6,7 @@
 #include <biome.h>
 #include <multyPlayer/chunkSaver.h>
 #include <worldGenerator.h>
+#include <enet/enet.h>
 
 constexpr std::uint64_t RESERVED_CLIENTS_ID = 100'000;
 
@@ -78,4 +79,4 @@ void setServerSettings(ServerSettings settings);
 
 void genericBroadcastEntityDeleteFromServerToPlayer(std::uint64_t eid, bool reliable);
 
-void genericBroadcastEntityKillFromServerToPlayer(std::uint64_t eid, bool reliable);
+void genericBroadcastEntityKillFromServerToPlayer(std::uint64_t eid, bool reliable, ENetPeer* peerToIgnore = 0);

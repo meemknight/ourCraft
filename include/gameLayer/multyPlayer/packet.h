@@ -85,6 +85,9 @@ enum : std::uint32_t
 	headerAttackEntity,
 	headerClientWantsToRespawn,
 	headerRespawnPlayer,
+	headerClientDamageLocally,
+	headerClientDamageLocallyAndDied,
+
 };
 
 enum 
@@ -106,6 +109,12 @@ struct Packet_DisconectOtherPlayer
 struct Packet_ClientUpdateTimer
 {
 	std::uint64_t timer = 0;
+};
+
+//also used for Packet_ClientDamageLocallyAndDied
+struct Packet_ClientDamageLocally
+{
+	short damage = 0;
 };
 
 struct Packet_RespawnPlayer

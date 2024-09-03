@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <zstd-1.5.5/lib/zstd.h> 
 #include <iostream>
+#include <platformTools.h>
 
 void *compressData(const char *data, size_t size, size_t &compressedSize)
 {
@@ -94,6 +95,9 @@ void sendPacketAndCompress(ENetPeer *to, Packet p, const char *data, size_t size
 void sendPacket(ENetPeer *to, Packet p,
 	const char *data, size_t size, bool reliable, int channel)
 {
+
+	permaAssertComment((data && size) || (!data && !size), "Assert failed in sendPacket");
+
 	size_t flag = 0;
 
 	//memcpy(data, &p, sizeof(Packet));

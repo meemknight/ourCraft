@@ -20,6 +20,9 @@ namespace AudioEngine
 
 	void playSound(int sound, float level);
 
+	void playHitSound();
+
+
 	enum sounds
 	{
 		none = 0,
@@ -48,6 +51,8 @@ namespace AudioEngine
 		uiOff,
 		uiSlider,
 
+		hit,
+
 
 		LAST_SOUND
 	};
@@ -62,3 +67,4 @@ constexpr static float MINING_BLOCK_SOUND_VOLUME = 0.8;
 constexpr static float PLACED_BLOCK_SOUND_VOLUME = 0.9;
 constexpr static float BREAKED_BLOCK_SOUND_VOLUME = 1.0;
 constexpr static float STEPPING_SOUND_VOLUME = 0.7;
+constexpr static float HIT_SOUND_VOLUME = 0.8;

@@ -237,6 +237,7 @@ namespace AudioEngine
 		SoundCollection(RESOURCES_PATH "/sounds/buttonOff"),
 		SoundCollection(RESOURCES_PATH "/sounds/buttonSlider"),
 
+		SoundCollection(RESOURCES_PATH "/sounds/hit"),
 
 
 	};
@@ -250,6 +251,10 @@ namespace AudioEngine
 		allSounds[sound].playRandomSound(level);
 	}
 
+	void playHitSound()
+	{
+		playSound(hit, HIT_SOUND_VOLUME);
+	}
 
 
 };

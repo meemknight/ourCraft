@@ -466,7 +466,7 @@ void genericBroadcastEntityDeleteFromServerToPlayer(std::uint64_t eid, bool reli
 		nullptr, reliable, channelEntityPositions);
 }
 
-void genericBroadcastEntityKillFromServerToPlayer(std::uint64_t eid, bool reliable)
+void genericBroadcastEntityKillFromServerToPlayer(std::uint64_t eid, bool reliable, ENetPeer *peerToIgnore)
 {
 	Packet packet;
 	packet.header = headerKillEntity;
@@ -475,7 +475,7 @@ void genericBroadcastEntityKillFromServerToPlayer(std::uint64_t eid, bool reliab
 	data.EID = eid;
 
 	broadCast(packet, &data, sizeof(data),
-		nullptr, reliable, channelEntityPositions);
+		peerToIgnore, reliable, channelEntityPositions);
 }
 
 void serverWorkerUpdate(
@@ -1456,6 +1456,38 @@ void serverWorkerUpdate(
 				}
 
 			}
+			else if (i.t.taskType == Task::clientRecievedDamageLocally)
+			{
+				auto client = getClientNotLocked(i.cid);
+
+				if (client && !client->playerData.killed)
+				{
+					client->playerData.life.life -= i.t.damage;
+					if (client->playerData.life.life < 0)
+					{
+						client->playerData.life.life = 0;
+					}
+				}
+
+			}
+			else if (i.t.taskType == Task::clientRecievedDamageLocallyAndDied)
+			{
+				auto client = getClientNotLocked(i.cid);
+
+				if (client && !client->playerData.killed)
+				{
+					//todo duplicate code above!!!!!
+					client->playerData.killed = true;
+					client->playerData.life.life = 0;
+					client->playerData.interactingWithBlock = 0;
+					client->playerData.currentBlockInteractWithPosition = {0,-1,0};
+
+					genericBroadcastEntityKillFromServerToPlayer(i.cid, true, 
+						client->peer);
+				}
+				
+			}
+
 
 		sd.waitingTasks.erase(sd.waitingTasks.begin());
 

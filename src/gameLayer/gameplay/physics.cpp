@@ -583,7 +583,7 @@ void updateForces(glm::dvec3 &pos, MotionState &forces, float deltaTime, bool ap
 	updateForces(pos, forces.velocity, forces.acceleration, deltaTime, applyGravity, physicalSettings);
 }
 
-
+//todo right implementation here...
 void updateForces(glm::dvec3 &pos, glm::vec3 &velocity, glm::vec3 &acceleration,
 	float deltaTime, bool applyGravity, PhysicalSettings physicalSettings)
 {

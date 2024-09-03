@@ -8,7 +8,7 @@
 #include <errorReporting.h>
 #include <platformTools.h>
 #include <gameplay/items.h>
-
+#include <audioEngine.h>
 
 static ConnectionData clientData;
 
@@ -496,6 +496,8 @@ void recieveDataClient(ENetEvent &event,
 			entityManager.localPlayer.justRecievedDamageTimer = 0.7;
 
 			entityManager.localPlayer.life.sanitize();
+
+			AudioEngine::playHitSound();
 		}
 		break;
 

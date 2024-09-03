@@ -185,6 +185,39 @@ bool initGameplay(ProgramData &programData, const char *c) //GAME STUFF!
 	return true;
 }
 
+void dealDamageToLocalPlayer(int damage)
+{
+	if (damage < 0) { return; }
+	if (damage == 0) { AudioEngine::playHitSound(); return; }
+	damage = std::min(damage, MAXSHORT - 10);
+
+
+	auto &p = gameData.entityManager.localPlayer;
+
+	Packet_ClientDamageLocally packetData;
+	packetData.damage = damage;
+
+	p.life.life -= damage;
+	if (p.life.life <= 0) 
+	{
+		p.life.life = 0; //kill
+		gameData.killed = true;
+
+		sendPacket(getServer(), formatPacket(headerClientDamageLocallyAndDied),
+			0, 0,
+			true, channelChunksAndBlocks);
+	}
+	else
+	{
+		sendPacket(getServer(), formatPacket(headerClientDamageLocally),
+			(char *)&packetData, sizeof(Packet_ClientDamageLocally),
+			true, channelChunksAndBlocks);
+
+		AudioEngine::playHitSound();
+
+	}
+
+}
 
 void exitInventoryMenu()
 {
@@ -616,9 +649,24 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			if (gameData.colidable)
 			{
+				auto forcesBackup = gameData.entityManager.localPlayer.entity.forces.velocity;
+
 				gameData.entityManager.localPlayer
 					.entity.resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime,
 					gameData.entityManager.localPlayer.entity.getColliderSize(), settings);
+
+				auto newForces = gameData.entityManager.localPlayer.entity.forces.velocity;
+
+				//fall damage
+				float rez = glm::length(forcesBackup) - glm::length(newForces);
+				if (rez > 11.2) //basic gravity
+				{
+					int fallDamage = (rez - 10.2);
+					//std::cout << "fallDamage: " << fallDamage << "\n";
+
+					dealDamageToLocalPlayer(fallDamage);
+				}
+
 			}
 			else
 			{

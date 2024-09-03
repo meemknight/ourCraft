@@ -26,6 +26,8 @@ struct Task
 		clientAttackedEntity,
 		clientUpdatedSkin,
 		clientWantsToRespawn,
+		clientRecievedDamageLocally,
+		clientRecievedDamageLocallyAndDied,
 		generateChunk
 	};
 	
@@ -46,6 +48,7 @@ struct Task
 	unsigned char to;
 	unsigned char revisionNumber = 0;
 	unsigned char inventroySlot = 0;
+	short damage = 0;
 
 };
 
