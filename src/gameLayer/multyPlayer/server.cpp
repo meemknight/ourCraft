@@ -94,6 +94,11 @@ int getServerTicksPerSeccond()
 	return outTicksPerSeccond;
 }
 
+ServerChunkStorer &getServerChunkStorer()
+{
+	return sd.chunkCache;
+}
+
 void clearSD(WorldSaver &worldSaver)
 {
 	//todo saveEntityId stuff
@@ -1447,7 +1452,7 @@ void serverWorkerUpdate(
 						packet.header = headerRespawnPlayer;
 
 						Packet_RespawnPlayer packetData;
-						packetData.pos = glm::dvec3(0, 107, 0); //todo propper spawn position
+						packetData.pos = worldSaver.spawnPosition; //todo propper spawn position
 
 						broadCastNotLocked(packet, &packetData, sizeof(packetData), 
 							false, true, channelChunksAndBlocks);	
@@ -1531,11 +1536,101 @@ void serverWorkerUpdate(
 		//	chunk->entityData.players.insert({client.first, &client.second.playerData});
 		//
 		//}
-		generateNewChunks = true;
+
+		//todo if first time ever or not do it if the chunk isn't loaded!
+	#pragma region replace spawn position
+		{
+			glm::ivec3 spawnPos = worldSaver.spawnPosition;
+			auto spawnChunk = sd.chunkCache.getOrCreateChunk(divideChunk(spawnPos.x),
+				divideChunk(spawnPos.z), wg, structuresManager, biomesManager,
+				sendNewBlocksToPlayers, true, nullptr, worldSaver);
+
+			if (spawnChunk)
+			{
+				glm::ivec3 blockPos = spawnPos;
+				blockPos.x = modBlockToChunk(blockPos.x);
+				blockPos.z = modBlockToChunk(blockPos.z);
+
+				if (blockPos.y >= CHUNK_HEIGHT)
+				{
+					worldSaver.spawnPosition.y = CHUNK_HEIGHT;
+				}
+				else
+				{
+					if (blockPos.y < 1)
+					{
+						blockPos.y = 1;
+					}
+
+					//try down first
+					{
+						while (true)
+						{
+							auto b = spawnChunk->chunk.safeGet(blockPos.x, blockPos.y, blockPos.z);
+
+							if (!b)
+							{
+								break;
+							}
+
+							if (!b->isColidable())
+							{
+								auto bunder = spawnChunk->chunk.safeGet(blockPos.x, blockPos.y - 1, blockPos.z);
+								if (bunder && !bunder->isColidable())
+								{
+									blockPos.y--;
+								}
+								else
+								{
+									break;
+								}
+							}
+							else
+							{
+								break;
+							}
+						}
+					}
+					
+					while (true)
+					{
+						auto b = spawnChunk->chunk.safeGet(blockPos.x, blockPos.y, blockPos.z);
+
+						if (!b)
+						{
+							worldSaver.spawnPosition.y = blockPos.y;
+							break;
+						}
+
+						if (!b->isColidable())
+						{
+							auto bunder = spawnChunk->chunk.safeGet(blockPos.x, blockPos.y - 1, blockPos.z);
+							if (bunder && bunder->isColidable())
+							{
+								auto bUp = spawnChunk->chunk.safeGet(blockPos.x, blockPos.y + 1, blockPos.z);
+								if (!bUp || !bUp->isColidable())
+								{
+									//good
+									worldSaver.spawnPosition.y = blockPos.y;
+									break;
+								}
+							}
+						}
+						blockPos.y++;
+					}
+
+				}
+			}
+
+		}
+	#pragma endregion
+
+
 
 		sd.tickTimer -= (1.f / targetTicksPerSeccond);
 		sd.ticksPerSeccond++;
 
+		if(settings.perClientSettings.size())
 		{
 			if (settings.perClientSettings.begin()->second.spawnZombie)
 			{

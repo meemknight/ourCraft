@@ -198,12 +198,10 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 
 	std::uint64_t id = getEntityIdAndIncrement(worldSaver, EntityType::player);
 
-	glm::dvec3 spawnPosition(0, 107, 0);
-
 	{
 		Client c{event.peer}; 
-		c.playerData.entity.position = spawnPosition;
-		c.playerData.entity.lastPosition = spawnPosition;
+		c.playerData.entity.position = worldSaver.spawnPosition;
+		c.playerData.entity.lastPosition = worldSaver.spawnPosition;
 
 		c.playerData.otherPlayerSettings.gameMode = OtherPlayerSettings::CREATIVE;
 
@@ -842,6 +840,10 @@ void enetServerFunction(std::string path)
 	std::vector<ServerTask> serverTasks;
 	serverTasks.reserve(100);
 
+
+	//run the server for one tick
+	serverWorkerUpdate(wg, structuresManager, biomesManager,
+		worldSaver, serverTasks, (1.f/targetTicksPerSeccond) + 0.01);
 
 	while (enetServerRunning)
 	{

@@ -12,10 +12,11 @@ constexpr std::uint64_t RESERVED_CLIENTS_ID = 100'000;
 
 struct Client;
 struct EventId;
-
+struct ServerChunkStorer;
 
 bool isServerRunning();
 bool startServer(const std::string &path);
+ServerChunkStorer &getServerChunkStorer();
 int getServerTicksPerSeccond();
 void clearSD(WorldSaver &worldSaver);
 int getChunkCapacity();
