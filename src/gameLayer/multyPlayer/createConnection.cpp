@@ -497,7 +497,7 @@ void recieveDataClient(ENetEvent &event,
 
 			entityManager.localPlayer.life.sanitize();
 
-			AudioEngine::playHitSound();
+			AudioEngine::playHurtSound();
 		}
 		break;
 

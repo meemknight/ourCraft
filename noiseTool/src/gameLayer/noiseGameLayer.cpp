@@ -39,16 +39,16 @@ void renderSettingsForOneNoise(const char *name, NoiseSetting &n)
 
 void recreate();
 
-bool showFinal = 1;
-bool showSlice = 1;
+bool showFinal = 0;
+bool showSlice = 0;
 bool showContinentalness = 0;
 bool showPeaksAndValies = 0;
 bool showWierdness = 0;
-bool showVegetation = 1;
+bool showVegetation = 0;
 bool show3DStone = 0;
 bool showSpagetti = 0;
 
-bool showHumidityAndTemperature = 1;
+bool showHumidityAndTemperature = 0;
 
 
 bool initGame()
@@ -74,6 +74,9 @@ gl2d::Texture spagettiT;
 
 gl2d::Texture humidityT;
 gl2d::Texture temperatureT;
+
+gl2d::Texture fractalT;
+
 
 void createFromFloats(gl2d::Texture &t, float *data, glm::ivec2 s)
 {
@@ -123,8 +126,46 @@ constexpr int waterLevel = 65;
 constexpr int maxMountainLevel = 220;
 constexpr int heightDiff = maxMountainLevel - startLevel;
 
+FastNoiseSIMD *fractalNoise = 0;
+NoiseSetting fractalSettings = {};
+
 void recreate()
 {
+
+	float *fractalTestNoise = new float[size.x * size.y];
+	{
+		auto apply = [&](FastNoiseSIMD *noise, int seed, NoiseSetting &s)
+		{
+			noise->SetSeed(seed);
+			noise->SetAxisScales(s.scale, 1, s.scale);
+			noise->SetFrequency(s.frequency);
+			noise->SetFractalOctaves(s.octaves);
+			noise->SetPerturbFractalOctaves(s.perturbFractalOctaves);
+
+
+			noise->SetNoiseType(FastNoiseSIMD::NoiseType::Cellular);
+			noise->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::CellValue);
+
+		};
+
+		if (!fractalNoise)
+		{
+			fractalNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+			fractalSettings.sanitize();
+		}
+			
+		apply(fractalNoise, 1234, fractalSettings);
+
+		fractalTestNoise
+			= fractalNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
+
+
+		createFromGrayScale(fractalT, fractalTestNoise, size);
+
+
+	}
+
+
 
 
 	float *finalNoise = new float[size.x * size.y];
@@ -627,6 +668,19 @@ bool gameLogic(float deltaTime)
 		noiseEditor(settings.humidityNoise, "Humidity");
 	}
 
+	{
+		noiseEditor(fractalSettings, "Fractal");
+
+		ImGui::PushID("Fractal");
+
+		//ImGui::Combo("Noise Type", &n.type,
+		//	"Value\0ValueFractal\0Perlin\0PerlinFractal\0Simplex\0SimplexFractal\0WhiteNoise\0Cellular\0Cubic\0CubicFractal");
+
+		ImGui::PopID();
+
+	}
+
+
 	ImGui::End();
 
 	//ImGui::ShowDemoWindow();
@@ -712,6 +766,8 @@ bool gameLogic(float deltaTime)
 		drawNoise("Temperature", temperatureT);
 		drawNoise("Humidity", humidityT);
 	}
+
+	drawNoise("Fractal", fractalT);
 
 	ImGui::End();
 

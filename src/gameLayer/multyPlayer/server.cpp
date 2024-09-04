@@ -1539,6 +1539,8 @@ void serverWorkerUpdate(
 
 		//todo if first time ever or not do it if the chunk isn't loaded!
 	#pragma region replace spawn position
+		//worldSaver.spawnPosition.y = 170;
+		//if(0)
 		{
 			glm::ivec3 spawnPos = worldSaver.spawnPosition;
 			auto spawnChunk = sd.chunkCache.getOrCreateChunk(divideChunk(spawnPos.x),

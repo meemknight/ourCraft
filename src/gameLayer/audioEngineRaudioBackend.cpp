@@ -243,6 +243,9 @@ namespace AudioEngine
 		SoundCollection(RESOURCES_PATH "/sounds/mediumImpact"),
 		SoundCollection(RESOURCES_PATH "/sounds/highImpact"),
 
+		SoundCollection(RESOURCES_PATH "/sounds/hurt"),
+
+
 	};
 
 	void playSound(int sound, float level)
@@ -257,6 +260,11 @@ namespace AudioEngine
 	void playHitSound()
 	{
 		playSound(hit, HIT_SOUND_VOLUME);
+	}
+
+	void playHurtSound()
+	{
+		playSound(hurt, HIT_SOUND_VOLUME);
 	}
 
 

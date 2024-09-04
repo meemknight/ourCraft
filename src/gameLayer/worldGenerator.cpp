@@ -7,7 +7,7 @@
 
 constexpr int startLevel = 45;
 constexpr int waterLevel = 65;
-constexpr int maxMountainLevel = 220;
+constexpr int maxMountainLevel = 240;
 constexpr int heightDiff = maxMountainLevel - startLevel;
 
 void calculateBlockPass1(int height, Block *startPos, Biome &biome)

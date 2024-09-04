@@ -22,6 +22,8 @@ namespace AudioEngine
 
 	void playHitSound();
 
+	void playHurtSound();
+
 
 	enum sounds
 	{
@@ -55,6 +57,7 @@ namespace AudioEngine
 		fallLow,
 		fallMedium,
 		fallHigh,
+		hurt,
 
 
 		LAST_SOUND

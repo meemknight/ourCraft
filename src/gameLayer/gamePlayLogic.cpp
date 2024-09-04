@@ -187,7 +187,7 @@ bool initGameplay(ProgramData &programData, const char *c) //GAME STUFF!
 void dealDamageToLocalPlayer(int damage)
 {
 	if (damage < 0) { return; }
-	if (damage == 0) { AudioEngine::playHitSound(); return; }
+	if (damage == 0) { AudioEngine::playHurtSound(); return; }
 	damage = std::min(damage, MAXSHORT - 10);
 
 
@@ -212,7 +212,7 @@ void dealDamageToLocalPlayer(int damage)
 			(char *)&packetData, sizeof(Packet_ClientDamageLocally),
 			true, channelChunksAndBlocks);
 
-		AudioEngine::playHitSound();
+		AudioEngine::playHurtSound();
 
 	}
 
