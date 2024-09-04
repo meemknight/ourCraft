@@ -204,3 +204,9 @@ densityBiasPower: 0.681000;
 densitySquishFactor: 5.162000;
 densitySquishPower: 0.869000;
 densityHeightoffset: -6;
+regionsHeightSpline: 	{
+	0.000000,1.000000;
+	0.129085,1.000000;
+	0.852941,0.000000;
+	1.000000,0.000000;
+	}

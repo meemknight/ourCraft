@@ -126,44 +126,73 @@ constexpr int waterLevel = 65;
 constexpr int maxMountainLevel = 220;
 constexpr int heightDiff = maxMountainLevel - startLevel;
 
-FastNoiseSIMD *fractalNoise = 0;
-NoiseSetting fractalSettings = {};
 
 void recreate()
 {
 
-	float *fractalTestNoise = new float[size.x * size.y];
+	float *fractalTestNoise = 0;
+	float *smallerFractalNoise = 0;
+
 	{
-		auto apply = [&](FastNoiseSIMD *noise, int seed, NoiseSetting &s)
+		if (1)
 		{
-			noise->SetSeed(seed);
-			noise->SetAxisScales(s.scale, 1, s.scale);
-			noise->SetFrequency(s.frequency);
-			noise->SetFractalOctaves(s.octaves);
-			noise->SetPerturbFractalOctaves(s.perturbFractalOctaves);
+			fractalTestNoise = new float[size.x * size.y] {};
+
+			smallerFractalNoise
+				= wg.regionsHeightNoise->GetNoiseSet(displacement.x, 0, displacement.y,
+				size.y / 16, (1), size.x / 16, 1);
+
+			for (int i = 0; i < (size.x / 16) * (size.y / 16); i++)
+			{
+				smallerFractalNoise[i] = wg.regionsHeightSplines.applySpline((smallerFractalNoise[i] + 1) / 2.f);
+
+				//smallerFractalNoise[i] *= 6;
+				//smallerFractalNoise[i] = floor(smallerFractalNoise[i]);
+				//smallerFractalNoise[i] /= 6;
+			}
+
+			for (int j = 0; j < size.y; j++)
+				for (int i = 0; i < size.x; i++)
+				{
+					int sampleI = i / 16;
+					int sampleJ = j / 16;
+
+					if (sampleI < (size.x / 16) && sampleJ < (size.y / 16))
+					{
+						fractalTestNoise[i + j * size.x] =
+							smallerFractalNoise[sampleI + sampleJ * (size.x / 16)];
+					}
+				}
 
 
-			noise->SetNoiseType(FastNoiseSIMD::NoiseType::Cellular);
-			noise->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::CellValue);
+			createFromGrayScale(fractalT, fractalTestNoise, size);
 
-		};
+			FastNoiseSIMD::FreeNoiseSet(smallerFractalNoise);
+			delete[] fractalTestNoise;
 
-		if (!fractalNoise)
-		{
-			fractalNoise = FastNoiseSIMD::NewFastNoiseSIMD();
-			fractalSettings.sanitize();
 		}
-			
-		apply(fractalNoise, 1234, fractalSettings);
+		else
+		{
+			fractalTestNoise
+				= wg.regionsHeightNoise->GetNoiseSet(displacement.x, 0, displacement.y,
+				size.y, (1), size.x, 1);
 
-		fractalTestNoise
-			= fractalNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
+			for (int i = 0; i < size.x * size.y; i++)
+			{
+				fractalTestNoise[i] = wg.regionsHeightSplines.applySpline((fractalTestNoise[i] + 1) / 2.f);
 
+				fractalTestNoise[i] *= 6;
+				fractalTestNoise[i] = floor(fractalTestNoise[i]);
+				fractalTestNoise[i] /= 6;
+			}
 
-		createFromGrayScale(fractalT, fractalTestNoise, size);
+			createFromGrayScale(fractalT, fractalTestNoise, size);
 
+			FastNoiseSIMD::FreeNoiseSet(fractalTestNoise);
+		}
 
 	}
+
 
 
 
@@ -669,9 +698,11 @@ bool gameLogic(float deltaTime)
 	}
 
 	{
-		noiseEditor(fractalSettings, "Fractal");
+		//noiseEditor(fractalSettings, "Fractal");
 
 		ImGui::PushID("Fractal");
+
+		splineEditor(settings.regionsHeightSpline, "Fractal height");
 
 		//ImGui::Combo("Noise Type", &n.type,
 		//	"Value\0ValueFractal\0Perlin\0PerlinFractal\0Simplex\0SimplexFractal\0WhiteNoise\0Cellular\0Cubic\0CubicFractal");

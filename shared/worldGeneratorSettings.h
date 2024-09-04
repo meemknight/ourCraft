@@ -33,6 +33,7 @@ struct WorldGeneratorSettings
 	NoiseSetting spagettiNoise;
 
 	Spline peaksAndValiesContributionSpline;
+	Spline regionsHeightSpline;
 
 	NoiseSetting vegetationNoise;
 
@@ -55,6 +56,14 @@ struct WorldGeneratorSettings
 
 struct WorldGenerator
 {
+
+
+	FastNoiseSIMD *regionsHeightNoise;
+	Spline regionsHeightSplines;
+
+
+
+	//
 
 	FastNoiseSIMD *continentalnessNoise;
 	Spline continentalSplines;
@@ -102,9 +111,13 @@ struct WorldGenerator
 
 	FastNoiseSIMD *whiteNoise2;
 
-
 	void init();
 	void clear();
 
 	void applySettings(WorldGeneratorSettings &s);
+
+	int getRegionHeightForChunk(int chunkX, int chunkZ);
+
+	int getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ, float values[16*16]);
+
 };

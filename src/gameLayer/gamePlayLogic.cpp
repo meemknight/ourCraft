@@ -429,7 +429,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma region input
 
-	static float moveSpeed = 7.f;
+	static float moveSpeed = 40.f;
 	float isPlayerMovingSpeed = 0;
 
 
@@ -698,10 +698,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					//fall damage
 					float rez = glm::length(forcesBackup) - glm::length(newForces);
 
-					if (rez > 0.2)
-					{
-						std::cout << "rez: " << rez << "\n";
-					}
+					//if (rez > 0.2)
+					//{
+					//	std::cout << "rez: " << rez << "\n";
+					//}
 
 					//auto b = 
 					auto blockPos = from3DPointToBlock(player.entity.position - glm::dvec3(0, 0.1, 0));

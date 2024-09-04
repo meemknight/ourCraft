@@ -18,6 +18,10 @@ void WorldGenerator::init()
 	temperatureNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	humidityNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
+
+	regionsHeightNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+
+
 	WorldGeneratorSettings s;
 	applySettings(s);
 }
@@ -44,7 +48,7 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	whiteNoise2->SetSeed(s.seed + 1);
 	whiteNoise2->SetNoiseType(FastNoiseSIMD::NoiseType::WhiteNoise);
 
-	auto apply = [&](FastNoiseSIMD *noise, int seed, NoiseSetting &s) 
+	auto apply = [&](FastNoiseSIMD *noise, int seed, NoiseSetting &s)
 	{
 		noise->SetSeed(seed);
 		noise->SetNoiseType((FastNoiseSIMD::NoiseType)s.type);
@@ -96,7 +100,161 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	humidityPower = s.humidityNoise.power;
 	humiditySplines = s.humidityNoise.spline;
 
+
+	regionsHeightSplines = s.regionsHeightSpline;
+
+
+	regionsHeightNoise->SetSeed(s.seed);
+	regionsHeightNoise->SetAxisScales(1, 1, 1);
+	//regionsHeightNoise->SetFrequency(0.002);
+	//regionsHeightNoise->SetFrequency(0.024); //original intended scale
+	regionsHeightNoise->SetFrequency(0.040);
+	//regionsHeightNoise->SetFrequency(0.2);
+	//regionsHeightNoise->SetFrequency(0.4);
+
+	regionsHeightNoise->SetNoiseType(FastNoiseSIMD::NoiseType::Cellular);
+	regionsHeightNoise->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::NoiseLookup);
+	regionsHeightNoise->SetCellularDistanceFunction(FastNoiseSIMD::CellularDistanceFunction::Natural);
+	regionsHeightNoise->SetCellularJitter(0.31);
+	regionsHeightNoise->SetCellularNoiseLookupType(FastNoiseSIMD::NoiseType::Perlin);
+	//regionsHeightNoise->SetCellularNoiseLookupFrequency(0.22); //original
+	regionsHeightNoise->SetCellularNoiseLookupFrequency(0.25);
+
+
+
+
+
 }
+
+int WorldGenerator::getRegionHeightForChunk(int chunkX, int chunkZ)
+{
+	float *rezult
+		= regionsHeightNoise->GetNoiseSet(chunkX, 0, chunkZ,
+		1, (1), 1, 1);
+	float copy = *rezult;
+	FastNoiseSIMD::FreeNoiseSet(rezult);
+
+	copy = regionsHeightSplines.applySpline((copy + 1) / 2.f);
+
+	copy *= 6;
+	copy = floor(copy);
+	copy += 0.1;
+
+	int finalRez = copy;
+	return finalRez;
+}
+
+
+int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ, float values[16 * 16])
+{
+	float *rezult
+		= regionsHeightNoise->GetNoiseSet(chunkX-1, 0, chunkZ-1,
+		3, (1), 3, 1);
+
+
+	for (int i = 0; i < 3*3; i++)
+	{
+		rezult[i] = regionsHeightSplines.applySpline((rezult[i] + 1) / 2.f);
+
+		rezult[i] *= 6;
+		rezult[i] = floor(rezult[i]);
+		//rezult[i] += 0.1;
+	}
+
+	auto getRezultValues = [&](int x, int y)
+	{
+		return rezult[x + y * 3];
+	};
+
+	for (int j = 0; j < 16; j++)
+		for (int i = 0; i < 16; i++)
+		{
+			
+			float rez = 0;
+			int counter = 0;
+			
+			for (int y = -8; y < 8; y++)
+				for (int x = -8; x < 8; x++)
+				{
+					if (x * x + y * y > 8 * 8) { continue; } //round up corners
+
+					int rezX = i + x;
+					int rezY = j + y;
+
+					if(rezX < 0){rezX = 0;}else if(rezX >= 16){rezX = 2;}else{rezX = 1;}
+					if(rezY < 0){rezY = 0;}else if(rezY >= 16){rezY = 2;}else{rezY = 1;}
+
+					rez += getRezultValues(rezX, rezY);
+					counter++;
+				}
+			rez /= (float)counter;
+
+			values[i + j * 16] = rez;
+		}
+
+	int value = getRezultValues(1, 1);
+
+	FastNoiseSIMD::FreeNoiseSet(rezult);
+
+	return value;
+}
+
+/*
+int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ, float values[16 * 16])
+{
+	float *rezult
+		= regionsHeightNoise->GetNoiseSet(chunkX-2, 0, chunkZ-2,
+		5, (1), 5, 1);
+
+
+	for (int i = 0; i < 5*5; i++)
+	{
+		rezult[i] = regionsHeightSplines.applySpline((rezult[i] + 1) / 2.f);
+
+		rezult[i] *= 6;
+		rezult[i] = floor(rezult[i]);
+		//rezult[i] += 0.1;
+	}
+
+	auto getRezultValues = [&](int x, int y)
+	{
+		return rezult[x + y * 5];
+	};
+
+	for (int j = 0; j < 16; j++)
+		for (int i = 0; i < 16; i++)
+		{
+
+			float rez = 0;
+			int counter = 0;
+
+			for (int y = -24; y < 24; y++)
+				for (int x = -24; x < 24; x++)
+				{
+					if (x * x + y * y > 24 * 24) { continue; } //round up corners
+
+					int rezX = i + x;
+					int rezY = j + y;
+
+					if(rezX < -32){rezX = 0;}else if(rezX < 16){rezX = 1;}else if(rezX<0){rezX = 2;}else if(rezX<16){rezX = 3;}else{rezX = 4;}
+					if(rezY < -32){rezY = 0;}else if(rezY < 16){rezY = 1;}else if(rezY<0){rezY = 2;}else if(rezY<16){rezY = 3;}else{rezY = 4;}
+
+					rez += getRezultValues(rezX, rezY);
+					counter++;
+				}
+			rez /= (float)counter;
+
+			values[i + j * 16] = rez;
+		}
+
+	int value = getRezultValues(2, 2);
+
+	FastNoiseSIMD::FreeNoiseSet(rezult);
+
+	return value;
+}
+*/
+
 
 
 std::string WorldGeneratorSettings::saveSettings()
@@ -143,6 +301,9 @@ std::string WorldGeneratorSettings::saveSettings()
 	rez += "densitySquishFactor: "; rez += std::to_string(densitySquishFactor); rez += ";\n";
 	rez += "densitySquishPower: "; rez += std::to_string(densitySquishPower); rez += ";\n";
 	rez += "densityHeightoffset: "; rez += std::to_string(densityHeightoffset); rez += ";\n";
+
+	rez += "regionsHeightSpline: "; rez += regionsHeightSpline.saveSettings(1);
+
 
 	return rez;
 }
@@ -684,6 +845,16 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					if (isEof()) { return 0; }
 
 					if (!consumeSpline(peaksAndValiesContributionSpline))
+					{
+						return 0;
+					}
+				}
+				else if (s == "regionsHeightSpline")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeSpline(regionsHeightSpline))
 					{
 						return 0;
 					}
