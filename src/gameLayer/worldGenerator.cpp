@@ -82,13 +82,15 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		//return rez;
 		return glm::mix(rez, rez2, interp);
 	};
-
-	int startValues[] = {22, 45, 66, 80, 90, 150};
-	int maxlevels[] = {40, 64, 70, 90, 150, 250};
+	                   //water    plains   hills
+	int startValues[] = {22, 45,  66,      75,     80, 140};
+	int maxlevels[] =   {40, 64,  75,      120,     170, 250};
 	int biomes[] = {BiomesManager::plains, BiomesManager::plains, 
 		BiomesManager::plains, BiomesManager::forest, BiomesManager::snow, BiomesManager::snow};
 
-
+	int valuesToAddToStart[] = {5, 5, 10,  20,  20,  20};
+	int valuesToAddToMax[] = {5, 5, 10,  20,  10,  0};
+	float peaksPower[] = {1,1, 0.5, 1, 1, 1};
 
 	c.clear();
 	
@@ -105,8 +107,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	float *wierdness
 		= wg.wierdnessNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 
-	//float *densityNoise
-	//	= wg.stone3Dnoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
+	float *densityNoise
+		= wg.stone3Dnoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
 
 	float *spagettiNoise
 		= wg.spagettiNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
@@ -195,7 +197,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 		peaksAndValies[i] = wg.peaksValiesSplines.applySpline(peaksAndValies[i]);
 
-		continentalness[i] = lerp(continentalness[i], peaksAndValies[i], wg.peaksValiesContributionSplines.applySpline(val));
+		//continentalness[i] = lerp(continentalness[i], peaksAndValies[i], wg.peaksValiesContributionSplines.applySpline(val));
 
 		//if (currentBiomeHeight % 2)
 		//{
@@ -213,13 +215,15 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 	}
 
-	//for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
-	//{
-	//	densityNoise[i] += 1;
-	//	densityNoise[i] /= 2;
-	//	densityNoise[i] = powf(densityNoise[i], wg.stone3Dpower);
-	//	densityNoise[i] = wg.stone3DnoiseSplines.applySpline(densityNoise[i]);
-	//}
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
+	{
+		densityNoise[i] += 1;
+		densityNoise[i] /= 2;
+		densityNoise[i] = powf(densityNoise[i], wg.stone3Dpower);
+		densityNoise[i] = wg.stone3DnoiseSplines.applySpline(densityNoise[i]);
+	}
+
+#pragma region gets
 
 	auto getNoiseVal = [continentalness](int x, int y, int z)
 	{
@@ -234,6 +238,11 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	auto getHumidity = [humidityNoise](int x, int z)
 	{
 		return humidityNoise[x * CHUNK_SIZE + z];
+	};
+
+	auto getPeaksAndValies = [peaksAndValies](int x, int z)
+	{
+		return peaksAndValies[x * CHUNK_SIZE + z];
 	};
 	
 	auto getWhiteNoiseVal = [whiteNoise](int x, int z)
@@ -266,10 +275,10 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return vegetationNoise2[x * CHUNK_SIZE + z];
 	};
 
-	//auto getDensityNoiseVal = [densityNoise](int x, int y, int z) //todo more cache friendly operation here please
-	//{
-	//	return densityNoise[x * CHUNK_SIZE * (CHUNK_HEIGHT) + y * CHUNK_SIZE + z];
-	//};
+	auto getDensityNoiseVal = [densityNoise](int x, int y, int z) //todo more cache friendly operation here please
+	{
+		return densityNoise[x * CHUNK_SIZE * (CHUNK_HEIGHT) + y * CHUNK_SIZE + z];
+	};
 
 	auto getSpagettiNoiseVal = [spagettiNoise](int x, int y, int z) //todo more cache friendly operation here please
 	{
@@ -281,18 +290,32 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return wierdness[x * CHUNK_SIZE + z];
 	};
 
+#pragma endregion
+
+
 	for (int x = 0; x < CHUNK_SIZE; x++)
 		for (int z = 0; z < CHUNK_SIZE; z++)
 		{
 
+			float localWierdness = getWierdness(x, z);
+
 			int startLevel = interpolator(startValues, interpolateValues[z + x * CHUNK_SIZE]);
 			int maxMountainLevel = interpolator(maxlevels, interpolateValues[z + x * CHUNK_SIZE]);
+			
+			int valueToAddToStart = valuesToAddToStart[currentBiomeHeight];
+			int valueToAddToEnd = valuesToAddToMax[currentBiomeHeight];
+				
+			float peaks = getPeaksAndValies(x, z);
+			peaks = std::powf(peaks, peaksPower[currentBiomeHeight]);
+
+			startLevel += (peaks * valueToAddToStart) - 3;
+			maxMountainLevel += (peaks * valueToAddToEnd) - 3;
+
 			int heightDiff = maxMountainLevel - startLevel;
 
-			float squishFactor = wg.densitySquishFactor + getWierdness(x, z) * 30 - 15;
-			squishFactor = std::max(squishFactor, 0.f);
+			//float squishFactor = wg.densitySquishFactor + getWierdness(x, z) * 30 - 15;
+			//squishFactor = std::max(squishFactor, 0.f);
 
-			//auto biomeIndex = biomesManager.determineBiomeIndex(getTemperature(x, z), getHumidity(x, z));
 			int biomeIndex = biomes[currentBiomeHeight];
 			auto &biome = biomesManager.biomes[biomeIndex];
 
@@ -307,22 +330,41 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			for (int y = 0; y < 256; y++)
 			{
 
-				//auto density = getDensityNoiseVal(x, y, z);
 
-				int heightOffset = height + wg.densityHeightoffset;
-				int difference = y - heightOffset;
-				float differenceMultiplier =
-					glm::clamp(powf(std::abs(difference) / squishFactor, wg.densitySquishPower),
-					1.f, 10.f);
+				
 
-				//if (difference > 0)
-				//{
-				//	density = powf(density, differenceMultiplier);
-				//}
-				//else if (difference < 0)
-				//{
-				//	density = powf(density, 1.f / (differenceMultiplier));
-				//}
+				float density = 1;
+				{
+					//int heightOffset = height + wg.densityHeightoffset;
+					//int difference = y - heightOffset;
+					//float differenceMultiplier =
+					//	glm::clamp(powf(std::abs(difference) / squishFactor, wg.densitySquishPower),
+					//	1.f, 10.f);
+					//density = getDensityNoiseVal(x, y, z);
+					//if (difference > 0)
+					//{
+					//	density = powf(density, differenceMultiplier);
+					//}
+					//else if (difference < 0)
+					//{
+					//	density = powf(density, 1.f / (differenceMultiplier));
+					//}
+
+					density = getDensityNoiseVal(x, y, z);
+
+					float heightNormalized = (y - startLevel) / (float)heightDiff;
+					heightNormalized = glm::clamp(heightNormalized, 0.f, 1.f);
+					float heightNormalizedRemapped = linearRemap(heightNormalized, 0, 1, 0.1, 5);
+
+					heightNormalized = glm::mix(0.1f, heightNormalizedRemapped, localWierdness);
+					//heightNormalized = 0.1f;
+
+
+					density = std::powf(density, heightNormalized);
+					density = glm::clamp(density, 0.f, 1.f);
+						
+					//density = linearRemap(density, 0, 1)
+				}
 
 				if (y < stoneNoiseStartLevel)
 				{
@@ -330,8 +372,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				}
 				else
 				{
-					//if (density > 0.5)
 					if (y < height)
+					if (density > 0.4)
 					{
 						firstH = y;
 						c.unsafeGet(x, y, z).setType(BlockTypes::stone);
@@ -344,28 +386,28 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 			calculateBlockPass1(firstH, &c.unsafeGet(x, 0, z), biome);
 
-			for (int y = 1; y < firstH; y++)
-			{
-				auto density = getSpagettiNoiseVal(x, y, z);
-				float bias = (y - 1) / (256 - 1.f - 1);
-				bias = glm::clamp(bias, 0.f, 1.f);
-				bias = 1.f - bias;
-
-				bias = powf(bias, wg.spagettiNoiseBiasPower);
-
-				if (density > wg.spagettiNoiseBias * bias)
-				{
-					//stone
-				}
-				else
-				{
-					if (c.unsafeGet(x, y, z).getType() != BlockTypes::water)
-					{
-						c.unsafeGet(x, y, z).setType(BlockTypes::air);
-					}
-				}
-
-			}
+			//for (int y = 1; y < firstH; y++)
+			//{
+			//	auto density = getSpagettiNoiseVal(x, y, z);
+			//	float bias = (y - 1) / (256 - 1.f - 1);
+			//	bias = glm::clamp(bias, 0.f, 1.f);
+			//	bias = 1.f - bias;
+			//
+			//	bias = powf(bias, wg.spagettiNoiseBiasPower);
+			//
+			//	if (density > wg.spagettiNoiseBias * bias)
+			//	{
+			//		//stone
+			//	}
+			//	else
+			//	{
+			//		if (c.unsafeGet(x, y, z).getType() != BlockTypes::water)
+			//		{
+			//			c.unsafeGet(x, y, z).setType(BlockTypes::air);
+			//		}
+			//	}
+			//
+			//}
 
 			auto generateTreeFunction = [&](unsigned char treeType)
 			{
@@ -555,7 +597,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	FastNoiseSIMD::FreeNoiseSet(continentalness);
 	FastNoiseSIMD::FreeNoiseSet(peaksAndValies);
 	FastNoiseSIMD::FreeNoiseSet(wierdness);
-	//FastNoiseSIMD::FreeNoiseSet(densityNoise);
+	FastNoiseSIMD::FreeNoiseSet(densityNoise);
 	FastNoiseSIMD::FreeNoiseSet(vegetationNoise);
 	FastNoiseSIMD::FreeNoiseSet(vegetationNoise2);
 	FastNoiseSIMD::FreeNoiseSet(whiteNoise);

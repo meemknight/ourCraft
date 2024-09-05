@@ -110,8 +110,8 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	regionsHeightNoise->SetAxisScales(1, 1, 1);
 	//regionsHeightNoise->SetFrequency(0.002);
 	//regionsHeightNoise->SetFrequency(0.024); //original intended scale
-	regionsHeightNoise->SetFrequency(0.040);
-	//regionsHeightNoise->SetFrequency(0.2);
+	//egionsHeightNoise->SetFrequency(0.040); //probably will use this
+	regionsHeightNoise->SetFrequency(0.2);
 	//regionsHeightNoise->SetFrequency(0.4);
 
 	regionsHeightNoise->SetNoiseType(FastNoiseSIMD::NoiseType::Cellular);
