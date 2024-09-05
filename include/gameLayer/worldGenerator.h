@@ -31,7 +31,7 @@ struct StructureToGenerate
 	float randomNumber3 = 0;
 	float randomNumber4 = 0;
 	bool replaceBlocks = 0;
-
+	bool addRandomTreeHeight = 0;
 };
 
 void generateChunk(Chunk &c, WorldGenerator &wg, StructuresManager &structuresManager, BiomesManager &biomesManager

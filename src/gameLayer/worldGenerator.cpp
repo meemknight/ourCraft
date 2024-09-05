@@ -79,13 +79,14 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 		float interp = value - int(value);
 
+		//return rez;
 		return glm::mix(rez, rez2, interp);
 	};
 
-	int startValues[] = {22, 40, 66, 70, 100, 150};
+	int startValues[] = {22, 45, 66, 80, 90, 150};
 	int maxlevels[] = {40, 64, 70, 90, 150, 250};
 	int biomes[] = {BiomesManager::plains, BiomesManager::plains, 
-		BiomesManager::plains, BiomesManager::plains, BiomesManager::snow, BiomesManager::snow};
+		BiomesManager::plains, BiomesManager::forest, BiomesManager::snow, BiomesManager::snow};
 
 
 
@@ -125,10 +126,10 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		= wg.vegetationNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 
 	float *whiteNoise
-		= wg.whiteNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+		= wg.whiteNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE + 1, (1), CHUNK_SIZE + 1);
 
 	float *whiteNoise2
-		= wg.whiteNoise2->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE + 1, (1), CHUNK_SIZE + 1, 1);
+		= wg.whiteNoise2->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE + 1, (1), CHUNK_SIZE + 1);
 
 	float *temperatureNoise
 		= wg.temperatureNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
@@ -151,7 +152,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	}
 
 
-	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	for (int i = 0; i < (CHUNK_SIZE + 1) * (CHUNK_SIZE + 1); i++)
 	{
 		whiteNoise[i] += 1;
 		whiteNoise[i] /= 2;
@@ -169,6 +170,11 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		vegetationNoise[i] /= 2;
 		vegetationNoise[i] = powf(vegetationNoise[i], wg.vegetationPower);
 		vegetationNoise[i] = wg.vegetationSplines.applySpline(vegetationNoise[i]);
+
+		vegetationNoise2[i] += 1;
+		vegetationNoise2[i] /= 2;
+		vegetationNoise2[i] = powf(vegetationNoise2[i], wg.vegetationPower);
+		vegetationNoise2[i] = wg.vegetationSplines.applySpline(vegetationNoise2[i]);
 	}
 
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
@@ -190,6 +196,11 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		peaksAndValies[i] = wg.peaksValiesSplines.applySpline(peaksAndValies[i]);
 
 		continentalness[i] = lerp(continentalness[i], peaksAndValies[i], wg.peaksValiesContributionSplines.applySpline(val));
+
+		//if (currentBiomeHeight % 2)
+		//{
+		//	continentalness[i] = 1.f - continentalness[i];
+		//}
 	}
 
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
@@ -227,7 +238,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	
 	auto getWhiteNoiseVal = [whiteNoise](int x, int z)
 	{
-		return whiteNoise[x * CHUNK_SIZE + z];
+		return whiteNoise[x * (CHUNK_SIZE + 1) + z];
 	};
 
 	auto getWhiteNoise2Val = [whiteNoise2](int x, int z)
@@ -363,6 +374,10 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				if (treeType == Biome::treeNormal)
 				{
 					str.type = Structure_Tree;
+				}else if (treeType == Biome::treeNormalTall)
+				{
+					str.type = Structure_Tree;
+					str.addRandomTreeHeight = true;
 				}
 				else if (treeType == Biome::treeJungle)
 				{
@@ -404,24 +419,35 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 					auto &noiseSettings = biome.vegetationNoises[noiseIndex];
 
 					float noiseVal = 0;
+					float noiseVal1 = 0;
+					float noiseVal2 = 0;
+					float noiseVal3 = 0;
 
 					if (noiseIndex == 0)
 					{
 						noiseVal = getVegetationNoiseVal(x, z);
+						noiseVal1 = getVegetationNoiseVal(x+1, z);
+						noiseVal2 = getVegetationNoiseVal(x, z+1);
+						noiseVal3 = getVegetationNoiseVal(x+1, z+1);
 					}
 					else if (noiseIndex == 1)
 					{
 						noiseVal = getVegetation2NoiseVal(x, z);
+						noiseVal1 = getVegetation2NoiseVal(x+1, z);
+						noiseVal2 = getVegetation2NoiseVal(x, z+1);
+						noiseVal3 = getVegetation2NoiseVal(x+1, z+1);
 					}
 					else
 					{
 						permaAssert(0);
 					}
 
+					bool generated = 0;
+
 					//one distribution element, can be multiple things there tho
 					for (auto &entry : noiseSettings.entry)
 					{
-						bool generated = 0;
+
 						if (noiseVal >= entry.minTresshold && entry.maxTresshold >= noiseVal)
 						{
 
@@ -451,7 +477,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 									float noiseVal = getWhiteNoise2Val(x, z);
 
 									int index = fromFloatNoiseValToIntegers(noiseVal, count);
-
 									auto &growElement = growThing.elements[index];
 
 									assert(growElement.block || growElement.treeType);
@@ -464,8 +489,47 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 									}
 									else if (growElement.treeType)
 									{
+
+										//don't put trees too together...
+										float noiseVal1 = getWhiteNoise2Val(x + 1, z);
+										float noiseVal2 = getWhiteNoise2Val(x, z + 1);
+										float noiseVal3 = getWhiteNoise2Val(x + 1, z + 1);
+
+										if ( 0 &&
+											noiseVal1 >= entry.minTresshold && entry.maxTresshold >= noiseVal1 ||
+											noiseVal2 >= entry.minTresshold && entry.maxTresshold >= noiseVal2 ||
+											noiseVal3 >= entry.minTresshold && entry.maxTresshold >= noiseVal3
+											)
+										{
+
+											float chanceRemap1 = linearRemap(noiseVal1, entry.minTresshold, entry.maxTresshold,
+												entry.chanceRemap.x, entry.chanceRemap.y);
+											float chanceRemap2 = linearRemap(noiseVal2, entry.minTresshold, entry.maxTresshold,
+												entry.chanceRemap.x, entry.chanceRemap.y);
+											float chanceRemap3 = linearRemap(noiseVal3, entry.minTresshold, entry.maxTresshold,
+												entry.chanceRemap.x, entry.chanceRemap.y);
+
+											if (
+												getWhiteNoiseChance(x + 1, z, chanceRemap1) ||
+												getWhiteNoiseChance(x, z + 1, chanceRemap2) ||
+												getWhiteNoiseChance(x + 1, z + 1, chanceRemap3)
+												)
+											{
+												int index1 = fromFloatNoiseValToIntegers(noiseVal, count);
+												int index2 = fromFloatNoiseValToIntegers(noiseVal, count);
+												int index3 = fromFloatNoiseValToIntegers(noiseVal, count);
+
+												if (index1 == index || index2 == index || index3 == index)
+												{
+													continue;
+												}
+											}
+										}
+
+
 										generateTreeFunction(growElement.treeType);
 										generated = true;
+										break;
 									}
 								}
 
@@ -475,77 +539,13 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 						if (generated) { break; }
 					}
+					//if (generated) { break; }
+
 
 				}
 
 			}
 
-			//add trees and grass
-			//bool generateTree = biome.growTreesOn != BlockTypes::air && biome.treeType;
-			//
-			//if(generateTree || biome.growGrassOn != BlockTypes::air)
-			//if(firstH < CHUNK_HEIGHT-1)
-			//{
-			//	auto b = c.unsafeGet(x, firstH, z).getType();
-			//
-			//
-			//	if (b == biome.growTreesOn || b == biome.growGrassOn)
-			//	{
-			//		float currentNoise = getVegetationNoiseVal(x, z);
-			//
-			//		if (currentNoise > biome.forestTresshold)
-			//		{
-			//			float chance = linearRemap(currentNoise, biome.forestTresshold, 1, 
-			//				biome.treeChanceRemap.x, biome.treeChanceRemap.y);
-			//
-			//			float chance2 = linearRemap(currentNoise, biome.jusGrassTresshold, biome.forestTresshold,
-			//				biome.grassChanceForestRemap.x, biome.grassChanceForestRemap.y);
-			//			
-			//			if (getWhiteNoiseChance(x, z, chance) && b == biome.growTreesOn && generateTree)
-			//			{
-			//				generateTreeFunction();
-			//			}
-			//			else if(b == biome.growGrassOn && biome.growGrassOn != BlockTypes::air)
-			//			{
-			//				if(getWhiteNoise2Chance(x, z, chance2))
-			//				{
-			//					c.unsafeGet(x, firstH+1, z).setType(biome.grassType);
-			//				}
-			//			}
-			//		}
-			//		else
-			//		{
-			//
-			//			if (currentNoise > biome.jusTreeTresshold)
-			//			{
-			//
-			//				float chance = linearRemap(currentNoise, biome.jusTreeTresshold, 1,
-			//					biome.justTreeChanceRemap.x, biome.justTreeChanceRemap.y);
-			//
-			//				if (getWhiteNoiseChance(x, z, chance) && b == biome.growTreesOn && generateTree)
-			//				{
-			//					generateTreeFunction();
-			//				}
-			//			}
-			//			else
-			//			if (currentNoise > biome.jusGrassTresshold)
-			//			{
-			//				float chance = linearRemap(currentNoise, biome.jusGrassTresshold, biome.forestTresshold,
-			//					biome.justGrassChanceRemap.x, biome.justGrassChanceRemap.y);
-			//
-			//				if (b == biome.growGrassOn && biome.growGrassOn != BlockTypes::air && getWhiteNoiseChance(x, z, chance))
-			//				{
-			//					c.unsafeGet(x, firstH + 1, z).setType(biome.grassType);
-			//				}
-			//			}
-			//
-			//			
-			//
-			//		}
-			//	}
-			//
-			//	
-			//}
 
 
 		}

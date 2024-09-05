@@ -806,15 +806,38 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 		}
 	};
 
-	if (s.pos.y + size.y <= CHUNK_HEIGHT)
+	auto chooseRandomElement = [](float randVal, int elementCount)
+	{
+		return int(floor(randVal * elementCount));
+	};
+
+
+	int bonusRandomHeight = 0;
+	if (s.addRandomTreeHeight)
+	{
+		bonusRandomHeight = chooseRandomElement(s.randomNumber4, 6) + 2;
+	}
+
+	if (s.pos.y + size.y + bonusRandomHeight <= CHUNK_HEIGHT)
 	{
 
+	
 
 
 		glm::ivec3 startPos = s.pos;
 		startPos.x -= size.x / 2;
 		startPos.z -= size.z / 2;
 		glm::ivec3 endPos = startPos + size;
+
+
+		//for (int y = s.pos.y; y < s.pos.y + bonusRandomHeight; y++)
+		//{
+		//	int x = s.pos.x;
+		//	int z = s.pos.z;
+		//
+		//}
+		//s.pos.y += bonusRandomHeight;
+
 
 		for (int x = startPos.x; x < endPos.x; x++)
 			for (int z = startPos.z; z < endPos.z; z++)
@@ -1025,75 +1048,75 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 			controlBlocks);
 	}
 	else
-		if (s.type == Structure_JungleTree)
+	if (s.type == Structure_JungleTree)
+	{
+
+		auto tree = structureManager.jungleTrees
+			[chooseRandomElement(s.randomNumber1, structureManager.jungleTrees.size())];
+
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+	}if (s.type == Structure_PalmTree)
+	{
+
+		auto tree = structureManager.palmTrees
+			[chooseRandomElement(s.randomNumber1, structureManager.palmTrees.size())];
+
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks,
+			sendNewBlocksToPlayers, controlBlocks);
+
+	}if (s.type == Structure_TreeHouse)
+	{
+
+		auto tree = structureManager.treeHouses
+			[chooseRandomElement(s.randomNumber1, structureManager.treeHouses.size())];
+
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks,
+			sendNewBlocksToPlayers, controlBlocks);
+
+	}if (s.type == Structure_Pyramid)
+	{
+
+		auto tree = structureManager.smallPyramids
+			[chooseRandomElement(s.randomNumber1, structureManager.smallPyramids.size())];
+
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks,
+			sendNewBlocksToPlayers, controlBlocks);
+
+	}if (s.type == Structure_BirchTree)
+	{
+		auto tree = structureManager.birchTrees
+			[chooseRandomElement(s.randomNumber1, structureManager.birchTrees.size())];
+
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
+			newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+
+	}if (s.type == Structure_Igloo)
+	{
+		auto tree = structureManager.igloos
+			[chooseRandomElement(s.randomNumber1, structureManager.igloos.size())];
+
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
+			newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+
+	}
+	if (s.type == Structure_Spruce)
+	{
+		auto tree = structureManager.spruceTrees
+			[chooseRandomElement(s.randomNumber1, structureManager.spruceTrees.size())];
+
+		if (s.randomNumber3 > 0.5)
 		{
-
-			auto tree = structureManager.jungleTrees
-				[chooseRandomElement(s.randomNumber1, structureManager.jungleTrees.size())];
-
-			return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
-		}if (s.type == Structure_PalmTree)
+			return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
+				newCreatedChunks, sendNewBlocksToPlayers, controlBlocks, true,
+				BlockTypes::spruce_leaves, BlockTypes::spruce_leaves_red);
+		}
+		else
 		{
-
-			auto tree = structureManager.palmTrees
-				[chooseRandomElement(s.randomNumber1, structureManager.palmTrees.size())];
-
-			return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks,
-				sendNewBlocksToPlayers, controlBlocks);
-
-		}if (s.type == Structure_TreeHouse)
-		{
-
-			auto tree = structureManager.treeHouses
-				[chooseRandomElement(s.randomNumber1, structureManager.treeHouses.size())];
-
-			return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks,
-				sendNewBlocksToPlayers, controlBlocks);
-
-		}if (s.type == Structure_Pyramid)
-		{
-
-			auto tree = structureManager.smallPyramids
-				[chooseRandomElement(s.randomNumber1, structureManager.smallPyramids.size())];
-
-			return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks,
-				sendNewBlocksToPlayers, controlBlocks);
-
-		}if (s.type == Structure_BirchTree)
-		{
-			auto tree = structureManager.birchTrees
-				[chooseRandomElement(s.randomNumber1, structureManager.birchTrees.size())];
-
 			return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
 				newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
-
-		}if (s.type == Structure_Igloo)
-		{
-			auto tree = structureManager.igloos
-				[chooseRandomElement(s.randomNumber1, structureManager.igloos.size())];
-
-			return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
-				newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
-
 		}
-		if (s.type == Structure_Spruce)
-		{
-			auto tree = structureManager.spruceTrees
-				[chooseRandomElement(s.randomNumber1, structureManager.spruceTrees.size())];
 
-			if (s.randomNumber3 > 0.5)
-			{
-				return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
-					newCreatedChunks, sendNewBlocksToPlayers, controlBlocks, true,
-					BlockTypes::spruce_leaves, BlockTypes::spruce_leaves_red);
-			}
-			else
-			{
-				return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
-					newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
-			}
-
-		}
+	}
 
 
 		return 0;

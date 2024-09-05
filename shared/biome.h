@@ -47,6 +47,7 @@ struct Biome
 	{
 		treeNone = 0,
 		treeNormal,
+		treeNormalTall,
 		treeJungle,
 		treePalm,
 		treeBirch,

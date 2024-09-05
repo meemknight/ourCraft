@@ -1,7 +1,7 @@
 seed: 1234;
 continentalnessNoise:
 	{
-	scale: 0.031000;
+	scale: 0.141000;
 	type: SimplexFractal;
 	frequency: 0.016000;
 	octaves: 4;

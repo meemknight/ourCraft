@@ -13,7 +13,7 @@ bool BiomesManager::loadAllBiomes()
 	roseGrowElement.block = BlockTypes::rose;
 
 	GrowElement basictreeElement;
-	basictreeElement.treeType = Biome::treeNormal;
+	basictreeElement.treeType = Biome::treeNormalTall;
 
 	GrowElement birchTree;
 	birchTree.treeType = Biome::treeBirch;
@@ -56,6 +56,11 @@ bool BiomesManager::loadAllBiomes()
 	growRosePatchesVegetation.minTresshold = 0.9;
 	growRosePatchesVegetation.chanceRemap = {0.1, 0.5};
 
+	VegetationSettings ForestVegetation;
+	ForestVegetation.growThing = growTree;
+	ForestVegetation.minTresshold = 0.1;
+	ForestVegetation.chanceRemap = {0.01, 0.2};
+
 	//forest 0
 	{
 		Biome plains;
@@ -64,14 +69,14 @@ bool BiomesManager::loadAllBiomes()
 		plains.surfaceBlock = BlockTypes::grassBlock;
 		plains.secondaryBlock = BlockTypes::dirt;
 		
-		//plains.treeType = Biome::treeNormal;
-		//plains.forestTresshold = 0.55;
-		//plains.jusGrassTresshold = 0.3;
-		//plains.treeChanceRemap = {0.01, 0.1};
-		//plains.grassChanceForestRemap = {0.2, 0.22};
-		//plains.justGrassChanceRemap = {0.12, 0.2};
-		//plains.growTreesOn = BlockTypes::grassBlock;
-		//plains.growGrassOn = BlockTypes::grassBlock;
+		
+
+		VegetationNoiseSettings noiseSettings;
+		noiseSettings.entry.push_back(ForestVegetation);
+		noiseSettings.entry.push_back(growFullGrassVegetation);
+		plains.vegetationNoises.push_back(noiseSettings);
+
+	
 
 		plains.grassType = BlockTypes::grass;
 		plains.waterType = BlockTypes::water;
@@ -112,12 +117,15 @@ bool BiomesManager::loadAllBiomes()
 		VegetationNoiseSettings noiseSettings;
 		noiseSettings.entry.push_back(growRandomTreesVegetation);
 		noiseSettings.entry.push_back(growFullGrassVegetation);
-		plains.vegetationNoises.push_back(noiseSettings);
 
 
 		VegetationNoiseSettings noiseSettings2;
 		noiseSettings2.entry.push_back(growRosePatchesVegetation);
+		
+		
+		plains.vegetationNoises.push_back(noiseSettings);
 		plains.vegetationNoises.push_back(noiseSettings2);
+
 
 
 		//plains.treeType = Biome::treeNormal;
