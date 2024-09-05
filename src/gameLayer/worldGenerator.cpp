@@ -122,7 +122,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 	const float SHIFT = 16;
 	float *spagettiNoise2
-		= wg.spagettiNoise->GetNoiseSet(xPadd + SHIFT + 6, 0 + SHIFT + 6, zPadd + SHIFT, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
+		= wg.spagettiNoise->GetNoiseSet(xPadd + SHIFT + 6, 0 + SHIFT + 3, zPadd + SHIFT, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
 
 	//float *spagettiNoise3
 	//	= wg.spagettiNoise->GetNoiseSet(xPadd - SHIFT + 6, 0 - SHIFT + 6, zPadd - SHIFT, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
@@ -134,6 +134,11 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		spagettiNoise[i] /= 2;
 		spagettiNoise[i] = powf(spagettiNoise[i], wg.spagettiNoisePower);
 		spagettiNoise[i] = wg.spagettiNoiseSplines.applySpline(spagettiNoise[i]);
+
+		spagettiNoise2[i] += 1;
+		spagettiNoise2[i] /= 2;
+		spagettiNoise2[i] = powf(spagettiNoise2[i], wg.spagettiNoisePower);
+		spagettiNoise2[i] = wg.spagettiNoiseSplines.applySpline(spagettiNoise2[i]);
 	}
 	
 	float *vegetationNoise

@@ -1006,7 +1006,7 @@ void main()
 		//light = 0;
 
 		//sun light
-		vec3 sunLightColor = u_sunLightColor * 0.9;
+		vec3 sunLightColor = u_sunLightColor * 1.9;
 		if(v_skyLightUnchanged > 3)
 		{
 			

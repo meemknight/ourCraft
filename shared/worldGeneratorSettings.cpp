@@ -183,10 +183,10 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ, 
 			float rez = 0;
 			int counter = 0;
 			
-			for (int y = -8; y < 8; y++)
-				for (int x = -8; x < 8; x++)
+			for (int y = -14; y < 14; y++)
+				for (int x = -14; x < 14; x++)
 				{
-					if (x * x + y * y > 8 * 8) { continue; } //round up corners
+					if (x * x + y * y > 14 * 14) { continue; } //round up corners
 
 					int rezX = i + x;
 					int rezY = j + y;
