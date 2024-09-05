@@ -6,9 +6,9 @@
 #include <math.h>
 #include <algorithm>
 
-int waterLevel = 65;
+const int waterLevel = 65;
 
-void calculateBlockPass1(int height, Block *startPos, Biome &biome)
+void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road)
 {
 
 	int y = height;
@@ -36,7 +36,14 @@ void calculateBlockPass1(int height, Block *startPos, Biome &biome)
 	{
 		if (startPos[y].getType() == BlockTypes::air)
 		{
-			startPos[y].setType(biome.waterType);
+			if(road && y == waterLevel)
+			{
+				startPos[y].setType(BlockTypes::wooden_plank);
+			}
+			else
+			{
+				startPos[y].setType(biome.waterType);
+			}
 		}
 		else
 		{
@@ -84,12 +91,12 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	};
 	                   //water    plains   hills
 	int startValues[] = {22, 45,  66,      75,     80, 140};
-	int maxlevels[] =   {40, 64,  75,      120,     170, 250};
+	int maxlevels[] =   {40, 64,  71,      120,     170, 250};
 	int biomes[] = {BiomesManager::plains, BiomesManager::plains, 
 		BiomesManager::plains, BiomesManager::forest, BiomesManager::snow, BiomesManager::snow};
 
 	int valuesToAddToStart[] = {5, 5, 10,  20,  20,  20};
-	int valuesToAddToMax[] = {5, 5, 10,  20,  10,  0};
+	int valuesToAddToMax[] = {5, 5, 5,  20,  10,  0};
 	float peaksPower[] = {1,1, 0.5, 1, 1, 1};
 
 	c.clear();
@@ -143,14 +150,23 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		temperatureNoise[i] = wg.temperatureSplines.applySpline(temperatureNoise[i]);
 	}
 
-	float *humidityNoise
-		= wg.humidityNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+	float *riversNoise
+		= wg.riversNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+
+	float *roadNoise =
+		wg.roadNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
-		humidityNoise[i] += 1;
-		humidityNoise[i] /= 2;
-		humidityNoise[i] = powf(humidityNoise[i], wg.humidityPower);
-		humidityNoise[i] = wg.humiditySplines.applySpline(humidityNoise[i]);
+		riversNoise[i] += 1;
+		riversNoise[i] /= 2;
+		riversNoise[i] = powf(riversNoise[i], wg.riversPower);
+		riversNoise[i] = wg.riversSplines.applySpline(riversNoise[i]);
+
+		roadNoise[i] += 1;
+		roadNoise[i] /= 2;
+		roadNoise[i] = powf(roadNoise[i], wg.roadPower);
+		roadNoise[i] = wg.roadSplines.applySpline(roadNoise[i]);
 	}
 
 
@@ -235,9 +251,14 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return temperatureNoise[x * CHUNK_SIZE + z];
 	};
 
-	auto getHumidity = [humidityNoise](int x, int z)
+	auto getRivers = [riversNoise](int x, int z)
 	{
-		return humidityNoise[x * CHUNK_SIZE + z];
+		return riversNoise[x * CHUNK_SIZE + z];
+	};
+
+	auto getRoads = [roadNoise](int x, int z)
+	{
+		return roadNoise[x * CHUNK_SIZE + z];
 	};
 
 	auto getPeaksAndValies = [peaksAndValies](int x, int z)
@@ -298,18 +319,73 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		{
 
 			float localWierdness = getWierdness(x, z);
+			float peaks = getPeaksAndValies(x, z);
 
 			int startLevel = interpolator(startValues, interpolateValues[z + x * CHUNK_SIZE]);
 			int maxMountainLevel = interpolator(maxlevels, interpolateValues[z + x * CHUNK_SIZE]);
 			
+
+			bool placeRoad = 0;
+			//plains roads
+			if (currentBiomeHeight == 2)
+			{
+				float road = getRoads(x, z);
+
+				if (road < 0.5)
+				{
+					placeRoad = true;
+				}
+
+				maxMountainLevel = glm::mix(maxMountainLevel-2, maxMountainLevel, road);
+
+
+				localWierdness = glm::mix(1.f, localWierdness, road);
+				//todo investigate wierdness
+				peaks = glm::mix(0.5f, peaks, road);
+			}
+			else if (currentBiomeHeight == 3)
+			{
+				float road = getRoads(x, z);
+
+				if (road < 0.5)
+				{
+					placeRoad = true;
+				}
+
+				maxMountainLevel = glm::mix(maxMountainLevel - 3, maxMountainLevel, road);
+				startLevel = glm::mix(startLevel - 1, startLevel, road);
+
+				localWierdness = glm::mix(1.f, localWierdness, road);
+				//todo investigate wierdness
+				peaks = glm::mix(0.5f, peaks, road);
+
+			}
+
+
+			//plains rivers
+			if (currentBiomeHeight == 2)
+			{
+				float rivers = getRivers(x, z);
+
+				startLevel = glm::mix(waterLevel - 5, startLevel, rivers);
+				maxMountainLevel = glm::mix(waterLevel - 2, maxMountainLevel, rivers);
+			}
+
+
 			int valueToAddToStart = valuesToAddToStart[currentBiomeHeight];
 			int valueToAddToEnd = valuesToAddToMax[currentBiomeHeight];
 				
-			float peaks = getPeaksAndValies(x, z);
 			peaks = std::powf(peaks, peaksPower[currentBiomeHeight]);
-
 			startLevel += (peaks * valueToAddToStart) - 3;
 			maxMountainLevel += (peaks * valueToAddToEnd) - 3;
+
+			if (startLevel >= maxMountainLevel)
+			{
+				startLevel = maxMountainLevel;
+				startLevel--;
+				maxMountainLevel++;
+			}
+
 
 			int heightDiff = maxMountainLevel - startLevel;
 
@@ -317,7 +393,13 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			//squishFactor = std::max(squishFactor, 0.f);
 
 			int biomeIndex = biomes[currentBiomeHeight];
-			auto &biome = biomesManager.biomes[biomeIndex];
+			auto biome = biomesManager.biomes[biomeIndex];
+
+			//todo change
+			if (placeRoad)
+			{
+				biome.surfaceBlock = BlockTypes::coarseDirt;
+			}
 
 			c.unsafeGetCachedBiome(x, z) = biomeIndex;
 
@@ -330,8 +412,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			for (int y = 0; y < 256; y++)
 			{
 
-
-				
 
 				float density = 1;
 				{
@@ -354,7 +434,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 					float heightNormalized = (y - startLevel) / (float)heightDiff;
 					heightNormalized = glm::clamp(heightNormalized, 0.f, 1.f);
-					float heightNormalizedRemapped = linearRemap(heightNormalized, 0, 1, 0.1, 5);
+					float heightNormalizedRemapped = linearRemap(heightNormalized, 0, 1, 0.2, 7);
 
 					heightNormalized = glm::mix(0.1f, heightNormalizedRemapped, localWierdness);
 					//heightNormalized = 0.1f;
@@ -384,7 +464,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			}
 
 
-			calculateBlockPass1(firstH, &c.unsafeGet(x, 0, z), biome);
+			calculateBlockPass1(firstH, &c.unsafeGet(x, 0, z), biome, placeRoad);
 
 			//for (int y = 1; y < firstH; y++)
 			//{
@@ -602,10 +682,11 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	FastNoiseSIMD::FreeNoiseSet(vegetationNoise2);
 	FastNoiseSIMD::FreeNoiseSet(whiteNoise);
 	FastNoiseSIMD::FreeNoiseSet(whiteNoise2);
-	FastNoiseSIMD::FreeNoiseSet(humidityNoise);
+	FastNoiseSIMD::FreeNoiseSet(riversNoise);
+	FastNoiseSIMD::FreeNoiseSet(roadNoise);
 	FastNoiseSIMD::FreeNoiseSet(temperatureNoise);
 	FastNoiseSIMD::FreeNoiseSet(spagettiNoise);
-
+	
 
 
 }

@@ -72,7 +72,8 @@ gl2d::Texture wierdnessT;
 gl2d::Texture vegetationT;
 gl2d::Texture spagettiT;
 
-gl2d::Texture humidityT;
+gl2d::Texture riversT;
+gl2d::Texture roadT;
 gl2d::Texture temperatureT;
 
 gl2d::Texture fractalT;
@@ -210,16 +211,28 @@ void recreate()
 	}
 	createFromGrayScale(noiseT, testNoise, size);
 
-	float *humidityNoise
-		= wg.humidityNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
+	float *riversNoise
+		= wg.riversNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
 	for (int i = 0; i < size.x * size.y; i++)
 	{
-		humidityNoise[i] += 1;
-		humidityNoise[i] /= 2;
-		humidityNoise[i] = std::pow(humidityNoise[i], settings.humidityNoise.power);
-		humidityNoise[i] = applySpline(humidityNoise[i], settings.humidityNoise.spline);
+		riversNoise[i] += 1;
+		riversNoise[i] /= 2;
+		riversNoise[i] = std::pow(riversNoise[i], settings.riversNoise.power);
+		riversNoise[i] = applySpline(riversNoise[i], settings.riversNoise.spline);
 	}
-	createFromGrayScale(humidityT, humidityNoise, size);
+	createFromGrayScale(riversT, riversNoise, size);
+
+	float *roadNoise
+		= wg.roadNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
+	for (int i = 0; i < size.x * size.y; i++)
+	{
+		roadNoise[i] += 1;
+		roadNoise[i] /= 2;
+		roadNoise[i] = std::pow(roadNoise[i], settings.roadsNoise.power);
+		roadNoise[i] = applySpline(roadNoise[i], settings.roadsNoise.spline);
+	}
+	createFromGrayScale(roadT, roadNoise, size);
+
 
 	float *temperatureNoise
 		= wg.temperatureNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
@@ -512,7 +525,7 @@ void recreate()
 	FastNoiseSIMD::FreeNoiseSet(peaksNoise);
 	FastNoiseSIMD::FreeNoiseSet(wierdnessNoise);
 	FastNoiseSIMD::FreeNoiseSet(stoneNoise);
-	FastNoiseSIMD::FreeNoiseSet(humidityNoise);
+	FastNoiseSIMD::FreeNoiseSet(riversNoise);
 	FastNoiseSIMD::FreeNoiseSet(temperatureNoise);
 	FastNoiseSIMD::FreeNoiseSet(spagettiNoise);
 
@@ -692,10 +705,15 @@ bool gameLogic(float deltaTime)
 
 		noiseEditor(settings.temperatureNoise, "Temperature");
 
-		ImGui::Separator();
-
-		noiseEditor(settings.humidityNoise, "Humidity");
 	}
+
+	ImGui::Separator();
+
+	noiseEditor(settings.riversNoise, "Rivers");
+
+	ImGui::Separator();
+
+	noiseEditor(settings.roadsNoise, "Roads");
 
 	{
 		//noiseEditor(fractalSettings, "Fractal");
@@ -795,8 +813,12 @@ bool gameLogic(float deltaTime)
 	if (showHumidityAndTemperature)
 	{
 		drawNoise("Temperature", temperatureT);
-		drawNoise("Humidity", humidityT);
 	}
+
+	drawNoise("Rivers", riversT);
+
+	drawNoise("Road", roadT);
+
 
 	drawNoise("Fractal", fractalT);
 

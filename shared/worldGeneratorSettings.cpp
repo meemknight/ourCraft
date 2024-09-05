@@ -17,7 +17,8 @@ void WorldGenerator::init()
 	spagettiNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
 	temperatureNoise = FastNoiseSIMD::NewFastNoiseSIMD();
-	humidityNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	riversNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	roadNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
 
 	regionsHeightNoise = FastNoiseSIMD::NewFastNoiseSIMD();
@@ -38,6 +39,10 @@ void WorldGenerator::clear()
 	delete whiteNoise;
 	delete whiteNoise2;
 	delete spagettiNoise;
+	delete roadNoise;
+	delete temperatureNoise;
+	delete riversNoise;
+	delete regionsHeightNoise;
 
 	*this = {};
 }
@@ -98,10 +103,13 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	temperaturePower = s.temperatureNoise.power;
 	temperatureSplines = s.temperatureNoise.spline;
 
-	apply(humidityNoise, s.seed + 9, s.humidityNoise);
-	humidityPower = s.humidityNoise.power;
-	humiditySplines = s.humidityNoise.spline;
+	apply(riversNoise, s.seed + 9, s.riversNoise);
+	riversPower = s.riversNoise.power;
+	riversSplines = s.riversNoise.spline;
 
+	apply(roadNoise, s.seed + 10, s.roadsNoise);
+	roadPower = s.roadsNoise.power;
+	roadSplines = s.roadsNoise.spline;
 
 	regionsHeightSplines = s.regionsHeightSpline;
 
@@ -285,8 +293,11 @@ std::string WorldGeneratorSettings::saveSettings()
 	rez += "stonetDnoise:\n";
 	rez += stone3Dnoise.saveSettings(1);
 
-	rez += "humidityNoise:\n";
-	rez += humidityNoise.saveSettings(1);
+	rez += "riversNoise:\n";
+	rez += riversNoise.saveSettings(1);
+
+	rez += "roadsNoise:\n";
+	rez += roadsNoise.saveSettings(1);
 
 	rez += "temperatureNoise:\n";
 	rez += temperatureNoise.saveSettings(1);
@@ -316,7 +327,7 @@ void WorldGeneratorSettings::sanitize()
 	peaksAndValies.sanitize();
 	wierdness.sanitize();
 	stone3Dnoise.sanitize();
-	humidityNoise.sanitize();
+	riversNoise.sanitize();
 	temperatureNoise.sanitize();
 	vegetationNoise.sanitize();
 	
@@ -765,12 +776,22 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 						return 0;
 					}
 				}
-				else if (s == "humidityNoise")
+				else if (s == "riversNoise")
 				{
 					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
 					if (isEof()) { return 0; }
 
-					if (!consumeNoise(humidityNoise))
+					if (!consumeNoise(riversNoise))
+					{
+						return 0;
+					}
+				}
+				else if (s == "roadsNoise")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(roadsNoise))
 					{
 						return 0;
 					}

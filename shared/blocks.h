@@ -58,7 +58,7 @@ enum BlockTypes : unsigned short
 	testBlock,
 	torch,
 	craftingTable,
-	whiteWool,
+	coarseDirt,
 	birch_planks,
 
 	black_stained_glass,
@@ -77,7 +77,7 @@ enum BlockTypes : unsigned short
 	purple_stained_glass,
 	magenta_stained_glass,
 	pink_stained_glass,
-
+	whiteWool,
 
 	BlocksCount
 };

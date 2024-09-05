@@ -68,7 +68,7 @@ const char *texturesNames[] = {
 	"crafting_table_front",	//58
 	"crafting_table_side",	//59
 	"crafting_table_top",	//60
-	"white_wool",		//61
+	"gravel-dirt-bloc",		//61
 	"birch_planks",		//62
 	"black_stained_glass",	//63
 	"gray_stained_glass",	//64
@@ -86,7 +86,7 @@ const char *texturesNames[] = {
 	"purple_stained_glass",	//76
 	"magenta_stained_glass",//77
 	"pink_stained_glass",	//78
-
+	"white_wool",		//79
 
 };
 
@@ -276,7 +276,8 @@ uint16_t blocksLookupTable[] = {
 	77, 77, 77, 77, 77, 77,
 	78, 78, 78, 78, 78, 78,
 
-
+	//whool
+	79,79,79,79,79,79,
 
 };
 

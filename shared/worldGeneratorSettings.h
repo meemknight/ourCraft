@@ -28,7 +28,8 @@ struct WorldGeneratorSettings
 	NoiseSetting peaksAndValies;
 	NoiseSetting wierdness;
 	NoiseSetting stone3Dnoise;
-	NoiseSetting humidityNoise;
+	NoiseSetting riversNoise;
+	NoiseSetting roadsNoise;
 	NoiseSetting temperatureNoise;
 	NoiseSetting spagettiNoise;
 
@@ -99,9 +100,13 @@ struct WorldGenerator
 	Spline temperatureSplines;
 	float temperaturePower = 1.f;
 
-	FastNoiseSIMD *humidityNoise;
-	Spline humiditySplines;
-	float humidityPower = 1.f;
+	FastNoiseSIMD *riversNoise;
+	Spline riversSplines;
+	float riversPower = 1.f;
+
+	FastNoiseSIMD *roadNoise;
+	Spline roadSplines;
+	float roadPower = 1.f;
 
 	FastNoiseSIMD *vegetationNoise;
 	FastNoiseSIMD *vegetationNoise2;
