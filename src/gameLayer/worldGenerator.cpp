@@ -90,7 +90,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return glm::mix(rez, rez2, interp);
 	};
 	                   //water    plains   hills
-	int startValues[] = {22, 45,  66,      75,     80, 140};
+	int startValues[] = {22, 45,  66,      72,     80, 140};
 	int maxlevels[] =   {40, 64,  71,      120,     170, 250};
 	int biomes[] = {BiomesManager::plains, BiomesManager::plains, 
 		BiomesManager::plains, BiomesManager::forest, BiomesManager::snow, BiomesManager::snow};
@@ -119,6 +119,14 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 	float *spagettiNoise
 		= wg.spagettiNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
+
+	const float SHIFT = 16;
+	float *spagettiNoise2
+		= wg.spagettiNoise->GetNoiseSet(xPadd + SHIFT + 6, 0 + SHIFT + 6, zPadd + SHIFT, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
+
+	//float *spagettiNoise3
+	//	= wg.spagettiNoise->GetNoiseSet(xPadd - SHIFT + 6, 0 - SHIFT + 6, zPadd - SHIFT, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
+
 
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
 	{
@@ -306,6 +314,16 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return spagettiNoise[x * CHUNK_SIZE * (CHUNK_HEIGHT)+y * CHUNK_SIZE + z];
 	};
 
+	auto getSpagettiNoiseVal2 = [spagettiNoise2](int x, int y, int z) //todo more cache friendly operation here please
+	{
+		return spagettiNoise2[x * CHUNK_SIZE * (CHUNK_HEIGHT)+y * CHUNK_SIZE + z];
+	};
+
+	//auto getSpagettiNoiseVal3 = [spagettiNoise3](int x, int y, int z) //todo more cache friendly operation here please
+	//{
+	//	return spagettiNoise3[x * CHUNK_SIZE * (CHUNK_HEIGHT)+y * CHUNK_SIZE + z];
+	//};
+
 	auto getWierdness = [&](int x, int z)
 	{
 		return wierdness[x * CHUNK_SIZE + z];
@@ -463,31 +481,42 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 			}
 
+			auto screenBlend = [](float a, float b)
+			{
+				return 1.f - (1.f - a) * (1.f - b);
+			};
 
 			calculateBlockPass1(firstH, &c.unsafeGet(x, 0, z), biome, placeRoad);
 
-			//for (int y = 1; y < firstH; y++)
-			//{
-			//	auto density = getSpagettiNoiseVal(x, y, z);
-			//	float bias = (y - 1) / (256 - 1.f - 1);
-			//	bias = glm::clamp(bias, 0.f, 1.f);
-			//	bias = 1.f - bias;
-			//
-			//	bias = powf(bias, wg.spagettiNoiseBiasPower);
-			//
-			//	if (density > wg.spagettiNoiseBias * bias)
-			//	{
-			//		//stone
-			//	}
-			//	else
-			//	{
-			//		if (c.unsafeGet(x, y, z).getType() != BlockTypes::water)
-			//		{
-			//			c.unsafeGet(x, y, z).setType(BlockTypes::air);
-			//		}
-			//	}
-			//
-			//}
+			for (int y = 1; y < firstH; y++)
+			{
+				auto density = getSpagettiNoiseVal(x, y, z);
+				float density2 = getSpagettiNoiseVal2(x, y, z);
+				//float density3 = getSpagettiNoiseVal3(x, y, z);
+				density = screenBlend(density, density2);
+				//density = screenBlend(density, density3);
+
+
+
+				float bias = (y - 1) / (256 - 1.f - 1);
+				bias = glm::clamp(bias, 0.f, 1.f);
+				bias = 1.f - bias;
+			
+				bias = powf(bias, wg.spagettiNoiseBiasPower);
+			
+				if (density > wg.spagettiNoiseBias * bias)
+				{
+					//stone
+				}
+				else
+				{
+					if (c.unsafeGet(x, y, z).getType() != BlockTypes::water)
+					{
+						c.unsafeGet(x, y, z).setType(BlockTypes::air);
+					}
+				}
+			
+			}
 
 			auto generateTreeFunction = [&](unsigned char treeType)
 			{
@@ -686,8 +715,9 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	FastNoiseSIMD::FreeNoiseSet(roadNoise);
 	FastNoiseSIMD::FreeNoiseSet(temperatureNoise);
 	FastNoiseSIMD::FreeNoiseSet(spagettiNoise);
+	FastNoiseSIMD::FreeNoiseSet(spagettiNoise2);
+	//FastNoiseSIMD::FreeNoiseSet(spagettiNoise3);
 	
-
 
 }
 

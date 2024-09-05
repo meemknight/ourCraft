@@ -1194,6 +1194,14 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	BoneTransform &playerHand, int currentHeldItemIndex
 	)
 {
+
+
+	//glPolygonMode(GL_FRONT, GL_POINT);
+	//glPolygonMode(GL_BACK, GL_FILL);
+	//glEnable(GL_CULL_FACE);
+	//glCullFace(GL_FRONT);
+	//glFrontFace(GL_CW);
+
 	glViewport(0, 0, screenX, screenY);
 
 
