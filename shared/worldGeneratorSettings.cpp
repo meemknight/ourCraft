@@ -11,6 +11,7 @@ void WorldGenerator::init()
 	wierdnessNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	stone3Dnoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	vegetationNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	vegetationNoise2 = FastNoiseSIMD::NewFastNoiseSIMD();
 	whiteNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	whiteNoise2 = FastNoiseSIMD::NewFastNoiseSIMD();
 	spagettiNoise = FastNoiseSIMD::NewFastNoiseSIMD();
@@ -33,6 +34,7 @@ void WorldGenerator::clear()
 	delete wierdnessNoise;
 	delete stone3Dnoise;
 	delete vegetationNoise;
+	delete vegetationNoise2;
 	delete whiteNoise;
 	delete whiteNoise2;
 	delete spagettiNoise;
@@ -90,7 +92,7 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	apply(vegetationNoise, s.seed + 7, s.vegetationNoise);
 	vegetationPower = s.vegetationNoise.power;
 	vegetationSplines = s.vegetationNoise.spline;
-
+	apply(vegetationNoise2, s.seed + 17, s.vegetationNoise);
 
 	apply(temperatureNoise, s.seed + 8, s.temperatureNoise);
 	temperaturePower = s.temperatureNoise.power;

@@ -104,6 +104,7 @@ struct WorldGenerator
 	float humidityPower = 1.f;
 
 	FastNoiseSIMD *vegetationNoise;
+	FastNoiseSIMD *vegetationNoise2;
 	float vegetationPower = 1;
 	Spline vegetationSplines;
 

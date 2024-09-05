@@ -5,7 +5,7 @@
 #include <glad/glad.h>
 #include <glm/vec3.hpp>
 
-enum BlockTypes
+enum BlockTypes : unsigned short
 {
 	air = 0,
 	grassBlock,
