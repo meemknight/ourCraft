@@ -140,7 +140,10 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 	float interpolateValues[16 * 16] = {};
 	float borderingFactor[16 * 16] = {};
-	int currentBiomeHeight = wg.getRegionHeightAndBlendingsForChunk(c.x, c.z, interpolateValues, borderingFactor);
+	float vegetationMaster = 0;
+	int currentBiomeHeight = wg.getRegionHeightAndBlendingsForChunk(c.x, c.z, interpolateValues, borderingFactor, vegetationMaster);
+
+	float vegetationPower = linearRemap(vegetationMaster, 0, 1, 0.9, 1.8);
 
 	auto interpolator = [&](int *ptr, float value)
 	{
@@ -161,7 +164,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	int startValues[] = {22, 45,  66,      72,     80, 140};
 	int maxlevels[] =   {40, 64,  71,      120,     170, 250};
 	int biomes[] = {BiomesManager::plains, BiomesManager::plains, 
-		BiomesManager::plains, BiomesManager::forest, BiomesManager::snow, BiomesManager::snow};
+		BiomesManager::plains, BiomesManager::forest,
+		BiomesManager::snow, BiomesManager::snow};
 
 	int valuesToAddToStart[] = {5, 5, 10,  20,  20,  20};
 	int valuesToAddToMax[] = {5, 5, 5,  20,  10,  0};
@@ -304,21 +308,27 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		vegetationNoise[i] /= 2;
 		vegetationNoise[i] = powf(vegetationNoise[i], wg.vegetationPower);
 		vegetationNoise[i] = wg.vegetationSplines.applySpline(vegetationNoise[i]);
+		vegetationNoise[i] = powf(vegetationNoise[i], vegetationPower);
+
 
 		vegetationNoise2[i] += 1;
 		vegetationNoise2[i] /= 2;
 		vegetationNoise2[i] = powf(vegetationNoise2[i], wg.vegetationPower);
 		vegetationNoise2[i] = wg.vegetationSplines.applySpline(vegetationNoise2[i]);
+		vegetationNoise2[i] = powf(vegetationNoise[i], vegetationPower);
 
 		vegetationNoise3[i] += 1;
 		vegetationNoise3[i] /= 2;
 		vegetationNoise3[i] = powf(vegetationNoise3[i], wg.vegetationPower);
 		vegetationNoise3[i] = wg.vegetationSplines.applySpline(vegetationNoise3[i]);
+		vegetationNoise3[i] = powf(vegetationNoise[i], vegetationPower);
 
 		vegetationNoise4[i] += 1;
 		vegetationNoise4[i] /= 2;
 		vegetationNoise4[i] = powf(vegetationNoise4[i], wg.vegetationPower);
 		vegetationNoise4[i] = wg.vegetationSplines.applySpline(vegetationNoise4[i]);
+		vegetationNoise4[i] = powf(vegetationNoise[i], vegetationPower);
+
 	}
 
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
@@ -714,7 +724,16 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 					}
 					else
 					{
-						block = BlockTypes::clay;
+
+						if (biome.isICy)
+						{
+							block = BlockTypes::ice;
+						}
+						else
+						{
+							block = BlockTypes::clay;
+						}
+
 					}
 
 				}

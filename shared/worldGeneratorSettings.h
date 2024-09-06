@@ -63,6 +63,7 @@ struct WorldGenerator
 
 	FastNoiseSIMD *regionsHeightNoise;
 	FastNoiseSIMD *regionsHeightTranzition;
+	FastNoiseSIMD *regionsRandomNumber;
 	Spline regionsHeightSplines;
 
 
@@ -120,6 +121,7 @@ struct WorldGenerator
 	float vegetationPower = 1;
 	Spline vegetationSplines;
 
+
 	FastNoiseSIMD *whiteNoise;
 
 	FastNoiseSIMD *whiteNoise2;
@@ -139,6 +141,6 @@ struct WorldGenerator
 	int getRegionHeightForChunk(int chunkX, int chunkZ);
 
 	int getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ, float values[16*16],
-		float borderingFactor[16 * 16]);
+		float borderingFactor[16 * 16], float &vegetationMaster);
 
 };

@@ -17,6 +17,7 @@ void WorldGenerator::init()
 	whiteNoise2 = FastNoiseSIMD::NewFastNoiseSIMD();
 	spagettiNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	hillsDropsNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	regionsRandomNumber = FastNoiseSIMD::NewFastNoiseSIMD();
 
 	temperatureNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	riversNoise = FastNoiseSIMD::NewFastNoiseSIMD();
@@ -52,6 +53,7 @@ void WorldGenerator::clear()
 	delete regionsHeightTranzition;
 	delete randomStonesNoise;
 	delete hillsDropsNoise;
+	delete regionsRandomNumber;
 	delete randomSandPatchesNoise;
 
 	*this = {};
@@ -138,9 +140,9 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	regionsHeightNoise->SetAxisScales(1, 1, 1);
 	//regionsHeightNoise->SetFrequency(0.002);
 	//regionsHeightNoise->SetFrequency(0.024); //original intended scale
-	//egionsHeightNoise->SetFrequency(0.040); //probably will use this
-	regionsHeightNoise->SetFrequency(0.2);
-	//regionsHeightNoise->SetFrequency(0.4);
+	//regionsHeightNoise->SetFrequency(0.040); //probably will use this
+	//regionsHeightNoise->SetFrequency(0.2);
+	regionsHeightNoise->SetFrequency(0.4);
 
 	regionsHeightNoise->SetNoiseType(FastNoiseSIMD::NoiseType::Cellular);
 	regionsHeightNoise->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::NoiseLookup);
@@ -155,6 +157,9 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	regionsHeightTranzition->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::Distance);
 
 
+	*regionsRandomNumber = *regionsHeightNoise;
+	regionsRandomNumber->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::CellValue);
+
 
 	randomStonesNoise->SetSeed(s.seed + 100);
 	randomStonesNoise->SetNoiseType(FastNoiseSIMD::NoiseType::Simplex);
@@ -163,30 +168,13 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	randomStonesNoise->SetFrequency(0.015);
 
 
-
 }
 
-int WorldGenerator::getRegionHeightForChunk(int chunkX, int chunkZ)
-{
-	float *rezult
-		= regionsHeightNoise->GetNoiseSet(chunkX, 0, chunkZ,
-		1, (1), 1, 1);
-	float copy = *rezult;
-	FastNoiseSIMD::FreeNoiseSet(rezult);
 
-	copy = regionsHeightSplines.applySpline((copy + 1) / 2.f);
-
-	copy *= 6;
-	copy = floor(copy);
-	copy += 0.1;
-
-	int finalRez = copy;
-	return finalRez;
-}
 
 
 int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
-	float values[16 * 16], float borderingFactor[16 * 16])
+	float values[16 * 16], float borderingFactor[16 * 16], float &vegetationMaster)
 {
 	float *rezult
 		= regionsHeightNoise->GetNoiseSet(chunkX-1, 0, chunkZ-1,
@@ -194,6 +182,12 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 
 	float *rezult2 = regionsHeightTranzition->GetNoiseSet(chunkX * 16, 0, chunkZ * 16, 16, 1, 16,
 		1.f / 16.f);
+
+	float *rezult3
+		= regionsRandomNumber->GetNoiseSet(chunkX, 0, chunkZ,
+		1, (1), 1, 1);
+
+	vegetationMaster = rezult3[0];
 
 	for (int i = 0; i < 16 * 16; i++)
 	{
@@ -249,6 +243,7 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 
 	FastNoiseSIMD::FreeNoiseSet(rezult);
 	FastNoiseSIMD::FreeNoiseSet(rezult2);
+	FastNoiseSIMD::FreeNoiseSet(rezult3);
 
 	return value;
 }

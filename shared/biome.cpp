@@ -5,7 +5,6 @@ bool BiomesManager::loadAllBiomes()
 	*this = {};
 
 
-
 	GrowElement grassGrowElement;
 	grassGrowElement.block = BlockTypes::grass;
 
@@ -309,6 +308,7 @@ bool BiomesManager::loadAllBiomes()
 		//b.growTreesOn = BlockTypes::snow_dirt;
 		//b.growGrassOn = BlockTypes::snow_dirt;
 
+		b.isICy = true;
 		b.grassType = 0;
 		b.waterType = BlockTypes::ice;
 

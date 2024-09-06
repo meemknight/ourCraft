@@ -69,6 +69,7 @@ struct Biome
 
 	const char *name = "";
 	glm::vec3 color = {};
+	bool isICy = 0;
 
 	BlockType surfaceBlock;
 	BlockType secondaryBlock; //todo add height variation here
