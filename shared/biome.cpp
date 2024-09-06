@@ -13,7 +13,16 @@ bool BiomesManager::loadAllBiomes()
 	roseGrowElement.block = BlockTypes::rose;
 
 	GrowElement basictreeElement;
-	basictreeElement.treeType = Biome::treeNormalTall;
+	basictreeElement.treeType = Biome::treeNormal;
+
+	GrowElement tallForestTrees;
+	tallForestTrees.treeType = Biome::treeNormalTall;
+
+	GrowElement tallSlimSpruceOakCenterTrees;
+	tallSlimSpruceOakCenterTrees.treeType = Biome::treeSpruceTallOakCenter;
+
+	GrowElement normalSpruceTree;
+	normalSpruceTree.treeType = Biome::treeSpruce;
 
 	GrowElement birchTree;
 	birchTree.treeType = Biome::treeBirch;
@@ -28,6 +37,30 @@ bool BiomesManager::loadAllBiomes()
 	GrowingThing growTree;
 	growTree.elements.push_back(basictreeElement);
 	growTree.growOn = growOnNormalPlants;
+
+	GrowingThing grawTallTrees;
+	grawTallTrees.elements.push_back(tallForestTrees);
+	grawTallTrees.elements.push_back(tallForestTrees);
+	grawTallTrees.elements.push_back(basictreeElement);
+	grawTallTrees.growOn = growOnNormalPlants;
+
+	GrowingThing grawTallSpruces;
+	grawTallSpruces.elements.push_back(tallSlimSpruceOakCenterTrees);
+	grawTallSpruces.elements.push_back(tallSlimSpruceOakCenterTrees);
+	grawTallSpruces.elements.push_back(tallSlimSpruceOakCenterTrees);
+	grawTallSpruces.elements.push_back(tallSlimSpruceOakCenterTrees);
+	grawTallSpruces.elements.push_back(tallSlimSpruceOakCenterTrees);
+	grawTallSpruces.elements.push_back(tallSlimSpruceOakCenterTrees);
+	grawTallSpruces.elements.push_back(tallSlimSpruceOakCenterTrees);
+	grawTallSpruces.elements.push_back(tallSlimSpruceOakCenterTrees);
+	grawTallSpruces.elements.push_back(normalSpruceTree);
+	grawTallSpruces.growOn = growOnNormalPlants;
+
+
+	GrowingThing growThickSpruce;
+	growThickSpruce.elements.push_back(normalSpruceTree);
+	growThickSpruce.growOn = growOnNormalPlants;
+
 
 	GrowingThing growBirch;
 	growBirch.elements.push_back(birchTree);
@@ -44,7 +77,7 @@ bool BiomesManager::loadAllBiomes()
 
 	VegetationSettings growFullGrassVegetation;
 	growFullGrassVegetation.growThing = growGrass;
-	growFullGrassVegetation.chanceRemap = {0.1, 0.6};
+	growFullGrassVegetation.chanceRemap = {0.1, 0.5};
 
 	VegetationSettings growRandomTreesVegetation;
 	growRandomTreesVegetation.growThing = growTreeOrBirch;
@@ -56,10 +89,16 @@ bool BiomesManager::loadAllBiomes()
 	growRosePatchesVegetation.minTresshold = 0.9;
 	growRosePatchesVegetation.chanceRemap = {0.1, 0.5};
 
-	VegetationSettings ForestVegetation;
-	ForestVegetation.growThing = growTree;
-	ForestVegetation.minTresshold = 0.1;
-	ForestVegetation.chanceRemap = {0.01, 0.2};
+	VegetationSettings tallSpruceForestVegetation;
+	tallSpruceForestVegetation.growThing = grawTallSpruces;
+	tallSpruceForestVegetation.minTresshold = 0.40;
+	tallSpruceForestVegetation.chanceRemap = {0.01, 0.07};
+
+	VegetationSettings rareThickSpruce;
+	rareThickSpruce.growThing = growThickSpruce;
+	rareThickSpruce.minTresshold = 0.80;
+	rareThickSpruce.chanceRemap = {0.01, 0.04};
+	
 
 	//forest 0
 	{
@@ -68,13 +107,26 @@ bool BiomesManager::loadAllBiomes()
 		plains.color = {0.2,0.7,0.3};
 		plains.surfaceBlock = BlockTypes::grassBlock;
 		plains.secondaryBlock = BlockTypes::dirt;
-		
-		
 
-		VegetationNoiseSettings noiseSettings;
-		noiseSettings.entry.push_back(ForestVegetation);
-		noiseSettings.entry.push_back(growFullGrassVegetation);
-		plains.vegetationNoises.push_back(noiseSettings);
+
+		{
+			VegetationNoiseSettings noiseSettings;
+			noiseSettings.entry.push_back(growRandomTreesVegetation);
+			plains.vegetationNoises.push_back(noiseSettings);
+		};
+
+		{
+			VegetationNoiseSettings noiseSettings;
+			noiseSettings.entry.push_back(rareThickSpruce);
+			plains.vegetationNoises.push_back(noiseSettings);
+		};
+
+		{
+			VegetationNoiseSettings noiseSettings;
+			noiseSettings.entry.push_back(tallSpruceForestVegetation);
+			noiseSettings.entry.push_back(growFullGrassVegetation);
+			plains.vegetationNoises.push_back(noiseSettings);
+		};
 
 	
 

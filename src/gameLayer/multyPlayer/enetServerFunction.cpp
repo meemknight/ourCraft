@@ -430,6 +430,18 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			break;
 		}
 
+		case headerPlaceBlockForce:
+		{
+			Packet_ClientPlaceBlockForce packetData = *(Packet_ClientPlaceBlockForce *)data;
+			serverTask.t.taskType = Task::placeBlockForce;
+			serverTask.t.pos = packetData.blockPos;
+			serverTask.t.blockType = packetData.blockType;
+			serverTask.t.eventId = packetData.eventId;
+
+			serverTasks.push_back(serverTask);
+			break;
+		}
+
 		case headerBreakBlock:
 		{
 			Packet_ClientBreakBlock packetData = *(Packet_ClientBreakBlock *)data;
@@ -503,7 +515,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 		{
 			if (size != sizeof(Packet_ClientDroppedItem))
 			{
-				//error checking + cick clients that send corrupted data?
+				//error checking + kick clients that send corrupted data? hard reset
 				reportError("corrupted packet or something Packet_ClientDroppedItem");
 				break;
 			}
@@ -777,7 +789,6 @@ void enetServerFunction(std::string path)
 			exit(0); 
 		}
 	}
-
 
 	if (!structuresManager.loadAllStructures())
 	{

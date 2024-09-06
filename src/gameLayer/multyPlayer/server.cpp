@@ -644,11 +644,72 @@ void serverWorkerUpdate(
 			if (wasGenerated) { chunksGenerated++; }
 		}
 		else
+			if (i.t.taskType == Task::placeBlockForce)
+			{
+
+				bool wasGenerated = 0;
+				//std::cout << "server recieved place block\n";
+				//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
+				auto chunk = sd.chunkCache.getOrCreateChunk(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z), wg, structuresManager
+					, biomesManager, sendNewBlocksToPlayers, true, nullptr, worldSaver, &wasGenerated);
+				int convertedX = modBlockToChunk(i.t.pos.x);
+				int convertedZ = modBlockToChunk(i.t.pos.z);
+
+				//todo check if place is legal
+				bool noNeedToNotifyUndo = 0;
+
+				auto client = getClientNotLocked(i.cid);
+
+				if (client)
+				{
+
+					auto b = chunk->chunk.safeGet(convertedX, i.t.pos.y, convertedZ);
+					bool good = 0;
+
+					if (b)
+					{
+						auto block = i.t.blockType;
+
+						if (isBlock(block) || block == 0)
+						{
+							good = true;
+						}
+
+						bool legal = computeRevisionStuff(*client, good, i.t.eventId);
+
+						if (legal)
+						{
+							auto lastBlock = b->getType();
+							b->setType(i.t.blockType);
+							chunk->otherData.dirty = true;
+
+							{
+								Packet packet;
+								packet.cid = i.cid;
+								packet.header = headerPlaceBlocks;
+
+								Packet_PlaceBlocks packetData;
+								packetData.blockPos = i.t.pos;
+								packetData.blockType = i.t.blockType;
+
+								broadCastNotLocked(packet, &packetData, sizeof(Packet_PlaceBlocks),
+									client->peer, true, channelChunksAndBlocks);
+							}
+							
+						}
+
+					}
+
+
+				}
+
+
+
+			}else
 			if (i.t.taskType == Task::placeBlock
 				|| i.t.taskType == Task::breakBlock
 				)
 			{
-				//todo revision number here and creative
 
 				bool wasGenerated = 0;
 				//std::cout << "server recieved place block\n";

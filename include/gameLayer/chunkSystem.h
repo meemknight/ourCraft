@@ -82,6 +82,14 @@ struct ChunkSystem
 		LightSystem &lightSystem, PlayerInventory &inventory, bool decreaseCounter
 	);
 
+
+	bool placeBlockByClientForce(glm::ivec3 pos, BlockType blockType,
+		UndoQueue &undoQue, glm::dvec3 playerPos,
+		LightSystem &lightSystem);
+
+
+
+
 	//a client breaks a block and sends a task to the server for it to be blocked
 	//returns true if succeeded
 	bool breakBlockByClient(glm::ivec3 pos,

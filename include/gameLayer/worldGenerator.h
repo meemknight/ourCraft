@@ -19,6 +19,8 @@ enum
 	Structure_Igloo,
 	Structure_BirchTree,
 	Structure_Spruce,
+	Structure_SpruceSlim,
+	Structure_SmallStone,
 };
 
 //used to report back
@@ -32,6 +34,8 @@ struct StructureToGenerate
 	float randomNumber4 = 0;
 	bool replaceBlocks = 0;
 	bool addRandomTreeHeight = 0;
+	BlockType replaceLeavesWith = 0;
+	BlockType replaceLogWith = 0;
 };
 
 void generateChunk(Chunk &c, WorldGenerator &wg, StructuresManager &structuresManager, BiomesManager &biomesManager

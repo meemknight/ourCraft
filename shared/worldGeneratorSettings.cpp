@@ -23,6 +23,8 @@ void WorldGenerator::init()
 
 	regionsHeightNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
+	randomStonesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+
 
 	WorldGeneratorSettings s;
 	applySettings(s);
@@ -43,6 +45,7 @@ void WorldGenerator::clear()
 	delete temperatureNoise;
 	delete riversNoise;
 	delete regionsHeightNoise;
+	delete randomStonesNoise;
 
 	*this = {};
 }
@@ -131,6 +134,11 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	regionsHeightNoise->SetCellularNoiseLookupFrequency(0.25);
 
 
+	randomStonesNoise->SetSeed(s.seed + 100);
+	randomStonesNoise->SetNoiseType(FastNoiseSIMD::NoiseType::Simplex);
+	float scale = 0.05 * 16;
+	randomStonesNoise->SetAxisScales(scale, scale, scale);
+	randomStonesNoise->SetFrequency(0.015);
 
 
 

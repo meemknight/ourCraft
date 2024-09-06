@@ -795,6 +795,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 {
 	auto size = structure->size;
 
+	//the user can replace a block with another
 	auto replaceB = [&](BlockType &b)
 	{
 		if (replace)
@@ -803,6 +804,16 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 			{
 				b = to;
 			}
+		}
+
+		if (s.replaceLeavesWith && isAnyLeaves(b))
+		{
+			b = s.replaceLeavesWith;
+		}
+
+		if (s.replaceLogWith && isAnyWoddenLOG(b))
+		{
+			b = s.replaceLogWith;
 		}
 	};
 
@@ -818,25 +829,49 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 		bonusRandomHeight = chooseRandomElement(s.randomNumber4, 6) + 2;
 	}
 
+
+
 	if (s.pos.y + size.y + bonusRandomHeight <= CHUNK_HEIGHT)
 	{
 
-	
-
 
 		glm::ivec3 startPos = s.pos;
+
+		if(bonusRandomHeight)
+		{
+
+			int x = startPos.x;
+			int z = startPos.z;
+
+			int chunkX = divideChunk(x);
+			int chunkZ = divideChunk(z);
+
+			auto c = getChunkOrGetNull(chunkX, chunkZ);
+
+			int inChunkX = modBlockToChunk(x);
+			int inChunkZ = modBlockToChunk(z);
+
+			if (c)
+			{
+				c->otherData.dirty = true;
+
+				for (int y = s.pos.y; y < s.pos.y + bonusRandomHeight; y++)
+				{
+					auto &b = c->chunk.unsafeGet(inChunkX, y, inChunkZ);
+					if (b.getType() == BlockTypes::air)
+					{
+						b.setType(s.replaceLogWith);
+					}
+				}
+			}
+			else {} //we can assume that this chunk is loaded so no need for ghost blocks...
+
+			startPos.y += bonusRandomHeight;
+		}
+
 		startPos.x -= size.x / 2;
 		startPos.z -= size.z / 2;
 		glm::ivec3 endPos = startPos + size;
-
-
-		//for (int y = s.pos.y; y < s.pos.y + bonusRandomHeight; y++)
-		//{
-		//	int x = s.pos.x;
-		//	int z = s.pos.z;
-		//
-		//}
-		//s.pos.y += bonusRandomHeight;
 
 
 		for (int x = startPos.x; x < endPos.x; x++)
@@ -925,50 +960,14 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 
 							replaceB(b);
 
-							GhostBlock ghostBlock;
-							ghostBlock.type = b;
-							ghostBlock.replaceAnything = replaceAnything;
-
-							rez[{inChunkX, y, inChunkZ}] = ghostBlock; //todo either ghost either send
-
-							if (sendDataToPlayers)
+							if (b != BlockTypes::air)
 							{
-								SendBlocksBack sendB;
-								sendB.pos = {x,y,z};
-								sendB.block = b;
-								sendNewBlocksToPlayers.push_back(sendB);
-							}
 
-							if (controlBlocks)
-							{
-								if (isControlBlock(b))
-								{
-									controlBlocks->push_back({x,y,z});
-								}
-							}
-						}
+								GhostBlock ghostBlock;
+								ghostBlock.type = b;
+								ghostBlock.replaceAnything = replaceAnything;
 
-						ghostBlocks[{chunkX, chunkZ}] = rez;
-
-					}
-					else
-					{
-						for (int y = startPos.y; y < endPos.y; y++)
-						{
-							auto b = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z,
-								rotation);
-
-							replaceB(b);
-
-							GhostBlock ghostBlock;
-							ghostBlock.type = b;
-							ghostBlock.replaceAnything = replaceAnything;
-
-							auto blockIt = it->second.find({inChunkX, y, inChunkZ});
-
-							if (blockIt == it->second.end())
-							{
-								it->second[{inChunkX, y, inChunkZ}] = ghostBlock;
+								rez[{inChunkX, y, inChunkZ}] = ghostBlock; //todo either ghost either send
 
 								if (sendDataToPlayers)
 								{
@@ -985,12 +984,34 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 										controlBlocks->push_back({x,y,z});
 									}
 								}
-							}
-							else
+
+							};
+
+						}
+
+						ghostBlocks[{chunkX, chunkZ}] = rez;
+
+					}
+					else
+					{
+						for (int y = startPos.y; y < endPos.y; y++)
+						{
+							auto b = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z,
+								rotation);
+
+							replaceB(b);
+
+							if (b != BlockTypes::air)
 							{
-								if (replaceAnything)
+								GhostBlock ghostBlock;
+								ghostBlock.type = b;
+								ghostBlock.replaceAnything = replaceAnything;
+
+								auto blockIt = it->second.find({inChunkX, y, inChunkZ});
+
+								if (blockIt == it->second.end())
 								{
-									blockIt->second = ghostBlock;
+									it->second[{inChunkX, y, inChunkZ}] = ghostBlock;
 
 									if (sendDataToPlayers)
 									{
@@ -1008,8 +1029,30 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 										}
 									}
 								}
-							}
+								else
+								{
+									if (replaceAnything)
+									{
+										blockIt->second = ghostBlock;
 
+										if (sendDataToPlayers)
+										{
+											SendBlocksBack sendB;
+											sendB.pos = {x,y,z};
+											sendB.block = b;
+											sendNewBlocksToPlayers.push_back(sendB);
+										}
+
+										if (controlBlocks)
+										{
+											if (isControlBlock(b))
+											{
+												controlBlocks->push_back({x,y,z});
+											}
+										}
+									}
+								}
+							};
 
 						}
 					}
@@ -1055,7 +1098,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 			[chooseRandomElement(s.randomNumber1, structureManager.jungleTrees.size())];
 
 		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
-	}if (s.type == Structure_PalmTree)
+	}else if (s.type == Structure_PalmTree)
 	{
 
 		auto tree = structureManager.palmTrees
@@ -1064,7 +1107,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks,
 			sendNewBlocksToPlayers, controlBlocks);
 
-	}if (s.type == Structure_TreeHouse)
+	}else if (s.type == Structure_TreeHouse)
 	{
 
 		auto tree = structureManager.treeHouses
@@ -1073,7 +1116,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks,
 			sendNewBlocksToPlayers, controlBlocks);
 
-	}if (s.type == Structure_Pyramid)
+	}else if (s.type == Structure_Pyramid)
 	{
 
 		auto tree = structureManager.smallPyramids
@@ -1082,7 +1125,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks,
 			sendNewBlocksToPlayers, controlBlocks);
 
-	}if (s.type == Structure_BirchTree)
+	}else if (s.type == Structure_BirchTree)
 	{
 		auto tree = structureManager.birchTrees
 			[chooseRandomElement(s.randomNumber1, structureManager.birchTrees.size())];
@@ -1090,7 +1133,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
 			newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
 
-	}if (s.type == Structure_Igloo)
+	}else if (s.type == Structure_Igloo)
 	{
 		auto tree = structureManager.igloos
 			[chooseRandomElement(s.randomNumber1, structureManager.igloos.size())];
@@ -1099,6 +1142,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 			newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
 
 	}
+	else
 	if (s.type == Structure_Spruce)
 	{
 		auto tree = structureManager.spruceTrees
@@ -1115,11 +1159,25 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 			return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
 				newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
 		}
+	}else if (s.type == Structure_SpruceSlim)
+	{
+		auto tree = structureManager.spruceTreesSlim
+			[chooseRandomElement(s.randomNumber1, structureManager.spruceTreesSlim.size())];
 
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
+			newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+	}
+	else if (s.type == Structure_SmallStone)
+	{
+		auto stone = structureManager.smallStones
+			[chooseRandomElement(s.randomNumber1, structureManager.smallStones.size())];
+
+		return generateStructure(s, stone, chooseRandomElement(s.randomNumber2, 4),
+			newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
 	}
 
 
-		return 0;
+	return 0;
 }
 
 Block *ServerChunkStorer::getBlockSafe(glm::ivec3 pos)

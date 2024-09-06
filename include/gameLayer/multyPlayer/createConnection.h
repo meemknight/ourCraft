@@ -14,6 +14,7 @@ struct Task
 	{
 		none = 0,
 		placeBlock,
+		placeBlockForce,
 		breakBlock,
 		droppedItemEntity,
 		clientMovedItem,

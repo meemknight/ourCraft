@@ -549,12 +549,11 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 			const stbtt_aligned_quad  q = internal::fontGetGlyphQuad(*this, c);
 			const float               m = q.y1 - q.y0;
 
-			if (m > max_height && m < 2000)
+			if (m > max_height && m < 400)
 			{
 				max_height = m;
 			}
 		}
-
 	}
 
 	void Font::createFromFile(const char *file)

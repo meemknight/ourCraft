@@ -50,6 +50,7 @@ enum : std::uint32_t
 	headerReceiveCIDAndData,
 	headerRequestChunk,
 	headerPlaceBlock,
+	headerPlaceBlockForce,
 	headerBreakBlock,
 	headerPlaceBlocks,
 	headerClientDroppedItem,
@@ -290,6 +291,14 @@ struct Packet_ClientPlaceBlock
 	BlockType blockType = {};
 	unsigned char inventoryRevision;
 	unsigned char inventorySlot = 0;
+};
+
+//used by creative players to paste structures
+struct Packet_ClientPlaceBlockForce
+{
+	glm::ivec3 blockPos = {};
+	EventId eventId = {}; //event id is used by the player
+	BlockType blockType = {};
 };
 
 struct Packet_ClientBreakBlock

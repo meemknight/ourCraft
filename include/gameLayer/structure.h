@@ -67,6 +67,8 @@ struct StructuresManager
 	std::vector<StructureData *> birchTrees;
 	std::vector<StructureData *> igloos;
 	std::vector<StructureData *> spruceTrees;
+	std::vector<StructureData *> spruceTreesSlim;
+	std::vector<StructureData *> smallStones;
 
 	void clear();
 };

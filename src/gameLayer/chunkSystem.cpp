@@ -1140,6 +1140,45 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot
 	return false;
 }
 
+bool ChunkSystem::placeBlockByClientForce(glm::ivec3 pos, BlockType blockType, 
+	UndoQueue &undoQue, glm::dvec3 playerPos, LightSystem &lightSystem)
+{
+	Chunk *chunk = 0;
+	auto b = getBlockSafeAndChunk(pos.x, pos.y, pos.z, chunk);
+
+	if (b != nullptr)
+	{
+
+		Packet p = {};
+		p.cid = getConnectionData().cid;
+		p.header = headerPlaceBlockForce;
+
+		Packet_ClientPlaceBlockForce packetData = {};
+		packetData.blockPos = pos;
+		packetData.blockType = blockType;
+		packetData.eventId = undoQue.currentEventId;
+
+		sendPacket(getConnectionData().server,
+			p, (char *)&packetData, sizeof(packetData), 1,
+			channelChunksAndBlocks);
+
+		undoQue.addPlaceBlockEvent(pos, b->getType(), blockType, playerPos);
+
+		changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->getType(),
+			blockType, lightSystem);
+
+		b->setType(blockType);
+		if (b->isOpaque()) { b->lightLevel = 0; }
+
+		setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
+
+		return true;
+	}
+
+
+	return false;
+}
+
 
 bool ChunkSystem::breakBlockByClient(glm::ivec3 pos, UndoQueue &undoQueue, 
 	glm::dvec3 playerPos, LightSystem &lightSystem)

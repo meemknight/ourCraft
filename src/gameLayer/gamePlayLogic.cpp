@@ -32,6 +32,7 @@
 #include <rendering/renderSettings.h>
 #include <audioEngine.h>
 
+
 struct GameData
 {
 	Camera c;
@@ -51,7 +52,7 @@ struct GameData
 	glm::ivec3 point = {};
 	glm::ivec3 pointSize = {};
 	glm::dvec3 entityTest = {-4, 113, 3};
-	bool renderBox = 0;
+	bool renderBox = 1;
 	bool renderPlayerPos = 0;
 	bool renderColliders = 0;
 	
@@ -139,6 +140,30 @@ void loadCurrentSkin()
 
 	sendPlayerSkinPacket(getServer(), getConnectionData().cid, gameData.currentSkinTexture);
 
+}
+
+bool ShowOpenFileDialog(HWND hwnd, char *filePath, DWORD filePathSize, const char *initialDir,
+	const char *filter)
+{
+	// Initialize the OPENFILENAME structure
+	OPENFILENAMEA ofn;
+	ZeroMemory(&ofn, sizeof(ofn));
+
+	// Zero out the file path buffer
+	ZeroMemory((void*)filePath, filePathSize);
+
+
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = hwnd;
+	ofn.lpstrFile = filePath;
+	ofn.nMaxFile = filePathSize;
+	ofn.lpstrInitialDir = initialDir;
+	ofn.lpstrFilter = filter;
+	ofn.nFilterIndex = 1;
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
+
+	// Show the file open dialog
+	return GetOpenFileNameA(&ofn);
 }
 
 bool initGameplay(ProgramData &programData, const char *c) //GAME STUFF!
@@ -1449,7 +1474,18 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			if (ImGui::CollapsingHeader("Load Save Stuff",
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
 			{
+
 				static char fileBuff[256] = RESOURCES_PATH "gameData/structures/test.structure";
+
+
+				if (ImGui::Button("OPEN FILE DIALOGUE"))
+				{
+					ShowOpenFileDialog(0, fileBuff, sizeof(fileBuff),
+						RESOURCES_PATH "gameData/structures/",
+						".structure");
+				}
+
+
 				ImGui::InputText("File:", fileBuff, sizeof(fileBuff));
 
 				if (ImGui::Button("Save structure"))
@@ -1497,12 +1533,11 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 								{
 									glm::ivec3 pos = gameData.point + glm::ivec3(x, y, z);
 
-									std::cout << "Not implemented!\n";
+									//todo implement the bulk version...
+									gameData.chunkSystem.placeBlockByClientForce(pos,
+										s->unsafeGet(x, y, z), gameData.undoQueue,
+										gameData.entityManager.localPlayer.entity.position, gameData.lightSystem);
 
-									//todo implement
-									//gameData.chunkSystem.placeBlockByClient(pos, s->unsafeGet(x, y, z),
-									//	gameData.undoQueue, 
-									//	gameData.entityManager.localPlayer.entity.position, gameData.lightSystem);
 								}
 
 						gameData.pointSize = s->size;

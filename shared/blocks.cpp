@@ -97,6 +97,16 @@ bool isAnyWoddenBlock(BlockType type)
 		type == spruce_log;
 }
 
+bool isAnyWoddenLOG(BlockType type)
+{
+	return isWoodPlank(type) ||
+		type == woodLog ||
+		type == birch_log ||
+		type == jungle_log ||
+		type == palm_log ||
+		type == spruce_log;
+}
+
 bool isAnyWool(BlockType type)
 {
 	return type == whiteWool;
@@ -195,7 +205,7 @@ unsigned char isInteractable(BlockType type)
 	return InteractionTypes::none;
 }
 
-bool isBlock(std::uint16_t type)
+bool isBlock(std::uint16_t type) //todo == 0 ???????????????????/
 {
 	return type > 0 && type < BlocksCount;
 }

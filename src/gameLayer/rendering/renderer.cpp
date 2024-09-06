@@ -2941,7 +2941,7 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 
 	{
 		//newPos.y = 120;
-		newPos.y += 50;
+		newPos.y += 60;
 
 		glm::vec3 moveDir = sunPos;
 
@@ -2966,9 +2966,9 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 
 	//posInt += glm::vec3(0, 0, 10);
 
-	float projectSize = 50;
+	float projectSize = 60;
 
-	float near_plane = 1.0f, far_plane = 260.f;
+	float near_plane = 1.0f, far_plane = 460.f;
 	glm::mat4 lightProjection = glm::ortho(-projectSize, projectSize, -projectSize, projectSize,
 		near_plane,		far_plane);
 	//auto mvp = lightProjection * glm::lookAt({},

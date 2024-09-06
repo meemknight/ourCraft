@@ -745,7 +745,7 @@ float getBlockAO()
 	
 	float ao = texture2D(u_ao, newUV).r;
 	//return clamp(pow(ao, 1.2) * 1.4f, 0.62f,1);
-	return clamp(pow(ao, 1.2) * 1.4f, 0.70f,1);
+	return clamp(pow(ao, 1.2) * 1.2f, 0.70f,1) * 0.9;
 	//return clamp(pow(ao, 1.5) * 1.8f, 0.1f,1);
 }
 
@@ -781,7 +781,7 @@ void main()
 		computedAmbient *= vec3(0.38,0.4,0.42);
 	}
 
-	if(v_isSkyLightMain == 1)
+	if(v_isSkyLightMain == 1 || v_normalLight == 0)
 	{
 		computedAmbient *= u_ambientColor;
 	}else
@@ -1206,6 +1206,7 @@ void main()
 			//float mixFactor = clamp(fresnelSchlickWater(reflectivity),0,1);
 			//float mixFactor = pow(clamp(1-reflectivity, 0, 1),2) * 0.2+0.1;
 			float mixFactor = clamp(pow(1-clamp(reflectivity,0,1),2) * 0.8+0.1,0,1);
+			//mixFactor = sqrt(mixFactor); more reflective water
 			//float mixFactor = 1-clamp(reflectivity,0,1);
 			//if(ssrSuccess){mixFactor = pow(mixFactor, 0.9);}
 

@@ -5,6 +5,16 @@
 #include <vector>
 
 
+struct BlockVariation
+{
+	StaticVector<BlockTypes, 10> block;
+	BlockTypes getRandomBLock(float f)
+	{
+		if (f >= 0.99) { f = 0.99; }
+		return block[int(f * block.size())];
+	}
+};
+
 struct GrowElement
 {
 	//only one or the other!
@@ -49,6 +59,9 @@ struct Biome
 		treeNormal,
 		treeNormalTall,
 		treeJungle,
+		treeSpruceTallOakCenter,
+		treeSpruceTallOakCenterRed,
+		treeSpruceTallOakCenterYellow,
 		treePalm,
 		treeBirch,
 		treeSpruce,
@@ -61,7 +74,7 @@ struct Biome
 	BlockType secondaryBlock; //todo add height variation here
 
 
-	StaticVector<VegetationNoiseSettings, 2> vegetationNoises;
+	StaticVector<VegetationNoiseSettings, 4> vegetationNoises;
 
 
 	BlockType grassType;

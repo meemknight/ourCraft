@@ -6,6 +6,7 @@
 //////////////////////////////////////////
 
 #include <initializer_list>
+#include <assert.h>
 
 template<class T, size_t N>
 struct StaticVector
@@ -146,21 +147,21 @@ struct StaticVector
 
 	void push_back(const T &el)
 	{
-		//permaAssertComment(size_ < MAX_SIZE, "exceded max size in push back");
+		assert(size_ < MAX_SIZE, "exceded max size in push back");
 		beg_[size_] = el;
 		size_++;
 	}
 
 	void push_back(T &&el)
 	{
-		//permaAssertComment(size_ < MAX_SIZE, "exceded max size in push back");
+		assert(size_ < MAX_SIZE, "exceded max size in push back");
 		beg_[size_] = std::forward<T>(el);
 		size_++;
 	}
 
 	void pop_back()
 	{
-		//permaAssertComment(size_ > 0, "buffer underflow on pop back");
+		assert(size_ > 0, "buffer underflow on pop back");
 		size_--;
 	}
 

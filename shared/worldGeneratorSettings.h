@@ -117,6 +117,10 @@ struct WorldGenerator
 
 	FastNoiseSIMD *whiteNoise2;
 
+
+	FastNoiseSIMD *randomStonesNoise;
+
+
 	void init();
 	void clear();
 
