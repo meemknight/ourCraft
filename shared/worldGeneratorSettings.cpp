@@ -2,6 +2,7 @@
 #include <FastNoiseSIMD.h>
 #include <magic_enum.hpp>
 #include <glm/glm.hpp>
+#include <iostream>
 
 void WorldGenerator::init()
 {
@@ -15,13 +16,16 @@ void WorldGenerator::init()
 	whiteNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	whiteNoise2 = FastNoiseSIMD::NewFastNoiseSIMD();
 	spagettiNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	hillsDropsNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
 	temperatureNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	riversNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	roadNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	randomSandPatchesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
 
 	regionsHeightNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	regionsHeightTranzition = FastNoiseSIMD::NewFastNoiseSIMD();
 
 	randomStonesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
@@ -45,7 +49,10 @@ void WorldGenerator::clear()
 	delete temperatureNoise;
 	delete riversNoise;
 	delete regionsHeightNoise;
+	delete regionsHeightTranzition;
 	delete randomStonesNoise;
+	delete hillsDropsNoise;
+	delete randomSandPatchesNoise;
 
 	*this = {};
 }
@@ -117,6 +124,16 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	regionsHeightSplines = s.regionsHeightSpline;
 
 
+	apply(hillsDropsNoise, s.seed + 11, s.hillsDrops);
+	hillsDropsPower = s.hillsDrops.power;
+	hillsDropsSpline = s.hillsDrops.spline;
+
+
+	apply(randomSandPatchesNoise, s.seed + 12, s.randomSand);
+	randomSandPower = s.randomSand.power;
+	randomSandSplines = s.randomSand.spline;
+
+
 	regionsHeightNoise->SetSeed(s.seed);
 	regionsHeightNoise->SetAxisScales(1, 1, 1);
 	//regionsHeightNoise->SetFrequency(0.002);
@@ -132,6 +149,11 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	regionsHeightNoise->SetCellularNoiseLookupType(FastNoiseSIMD::NoiseType::Perlin);
 	//regionsHeightNoise->SetCellularNoiseLookupFrequency(0.22); //original
 	regionsHeightNoise->SetCellularNoiseLookupFrequency(0.25);
+
+
+	*regionsHeightTranzition = *regionsHeightNoise;
+	regionsHeightTranzition->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::Distance);
+
 
 
 	randomStonesNoise->SetSeed(s.seed + 100);
@@ -163,15 +185,28 @@ int WorldGenerator::getRegionHeightForChunk(int chunkX, int chunkZ)
 }
 
 
-int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ, float values[16 * 16])
+int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
+	float values[16 * 16], float borderingFactor[16 * 16])
 {
 	float *rezult
 		= regionsHeightNoise->GetNoiseSet(chunkX-1, 0, chunkZ-1,
 		3, (1), 3, 1);
 
+	float *rezult2 = regionsHeightTranzition->GetNoiseSet(chunkX * 16, 0, chunkZ * 16, 16, 1, 16,
+		1.f / 16.f);
+
+	for (int i = 0; i < 16 * 16; i++)
+	{
+		//rezult2[i] = std::powf(rezult2[i], 1.1);
+		if (rezult2[i] < 0.05f) { rezult2[i] = 0; }
+		borderingFactor[i] = rezult2[i];
+	}
 
 	for (int i = 0; i < 3*3; i++)
 	{
+		//rezult[i] += 1;
+		//rezult[i] /= 2.f;
+
 		rezult[i] = regionsHeightSplines.applySpline((rezult[i] + 1) / 2.f);
 
 		rezult[i] *= 6;
@@ -213,6 +248,7 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ, 
 	int value = getRezultValues(1, 1);
 
 	FastNoiseSIMD::FreeNoiseSet(rezult);
+	FastNoiseSIMD::FreeNoiseSet(rezult2);
 
 	return value;
 }
@@ -309,6 +345,12 @@ std::string WorldGeneratorSettings::saveSettings()
 
 	rez += "temperatureNoise:\n";
 	rez += temperatureNoise.saveSettings(1);
+
+	rez += "randomSand:\n";
+	rez += randomSand.saveSettings(1);
+
+	rez += "hillsDrop:\n";
+	rez += hillsDrops.saveSettings(1);
 
 	rez += "spagettiNoise:\n";
 	rez += spagettiNoise.saveSettings(1);
@@ -814,6 +856,16 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 						return 0;
 					}
 				}
+				else if (s == "randomSand")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(randomSand))
+					{
+						return 0;
+					}
+				}
 				else if (s == "peaksAndValies")
 				{
 					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
@@ -850,6 +902,16 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					if (isEof()) { return 0; }
 
 					if (!consumeNoise(spagettiNoise))
+					{
+						return 0;
+					}
+				}
+				else if (s == "hillsDrop")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(hillsDrops))
 					{
 						return 0;
 					}

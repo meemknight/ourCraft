@@ -32,6 +32,8 @@ struct WorldGeneratorSettings
 	NoiseSetting roadsNoise;
 	NoiseSetting temperatureNoise;
 	NoiseSetting spagettiNoise;
+	NoiseSetting hillsDrops;
+	NoiseSetting randomSand;
 
 	Spline peaksAndValiesContributionSpline;
 	Spline regionsHeightSpline;
@@ -60,6 +62,7 @@ struct WorldGenerator
 
 
 	FastNoiseSIMD *regionsHeightNoise;
+	FastNoiseSIMD *regionsHeightTranzition;
 	Spline regionsHeightSplines;
 
 
@@ -104,6 +107,10 @@ struct WorldGenerator
 	Spline riversSplines;
 	float riversPower = 1.f;
 
+	FastNoiseSIMD *hillsDropsNoise;
+	Spline hillsDropsSpline;
+	float hillsDropsPower = 1.f;
+
 	FastNoiseSIMD *roadNoise;
 	Spline roadSplines;
 	float roadPower = 1.f;
@@ -117,8 +124,11 @@ struct WorldGenerator
 
 	FastNoiseSIMD *whiteNoise2;
 
-
 	FastNoiseSIMD *randomStonesNoise;
+
+	FastNoiseSIMD *randomSandPatchesNoise;
+	Spline randomSandSplines;
+	float randomSandPower = 1.f;
 
 
 	void init();
@@ -128,6 +138,7 @@ struct WorldGenerator
 
 	int getRegionHeightForChunk(int chunkX, int chunkZ);
 
-	int getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ, float values[16*16]);
+	int getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ, float values[16*16],
+		float borderingFactor[16 * 16]);
 
 };

@@ -73,7 +73,9 @@ gl2d::Texture vegetationT;
 gl2d::Texture spagettiT;
 
 gl2d::Texture riversT;
+gl2d::Texture hillsDropT;
 gl2d::Texture roadT;
+gl2d::Texture randomSandT;
 gl2d::Texture temperatureT;
 
 gl2d::Texture fractalT;
@@ -222,6 +224,19 @@ void recreate()
 	}
 	createFromGrayScale(riversT, riversNoise, size);
 
+
+	float *hillsDropnNoise = 
+		wg.hillsDropsNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
+	for (int i = 0; i < size.x * size.y; i++)
+	{
+		hillsDropnNoise[i] += 1;
+		hillsDropnNoise[i] /= 2;
+		hillsDropnNoise[i] = std::pow(hillsDropnNoise[i], settings.hillsDrops.power);
+		hillsDropnNoise[i] = applySpline(hillsDropnNoise[i], settings.hillsDrops.spline);
+	}
+	createFromGrayScale(hillsDropT, hillsDropnNoise, size);
+
+
 	float *roadNoise
 		= wg.roadNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
 	for (int i = 0; i < size.x * size.y; i++)
@@ -232,6 +247,18 @@ void recreate()
 		roadNoise[i] = applySpline(roadNoise[i], settings.roadsNoise.spline);
 	}
 	createFromGrayScale(roadT, roadNoise, size);
+
+	float *randomSandNoise
+		= wg.randomSandPatchesNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
+	for (int i = 0; i < size.x * size.y; i++)
+	{
+		randomSandNoise[i] += 1;
+		randomSandNoise[i] /= 2;
+		randomSandNoise[i] = std::pow(randomSandNoise[i], settings.randomSand.power);
+		randomSandNoise[i] = applySpline(randomSandNoise[i], settings.randomSand.spline);
+	}
+	createFromGrayScale(randomSandT, randomSandNoise, size);
+
 
 
 	float *temperatureNoise
@@ -526,6 +553,9 @@ void recreate()
 	FastNoiseSIMD::FreeNoiseSet(wierdnessNoise);
 	FastNoiseSIMD::FreeNoiseSet(stoneNoise);
 	FastNoiseSIMD::FreeNoiseSet(riversNoise);
+	FastNoiseSIMD::FreeNoiseSet(hillsDropnNoise);
+	FastNoiseSIMD::FreeNoiseSet(roadNoise);
+	FastNoiseSIMD::FreeNoiseSet(randomSandNoise);
 	FastNoiseSIMD::FreeNoiseSet(temperatureNoise);
 	FastNoiseSIMD::FreeNoiseSet(spagettiNoise);
 
@@ -708,12 +738,22 @@ bool gameLogic(float deltaTime)
 	}
 
 	ImGui::Separator();
+	
+	noiseEditor(settings.randomSand, "Random sand");
+
+
+	ImGui::Separator();
 
 	noiseEditor(settings.riversNoise, "Rivers");
 
 	ImGui::Separator();
 
 	noiseEditor(settings.roadsNoise, "Roads");
+
+	ImGui::Separator();
+
+	noiseEditor(settings.hillsDrops, "HillsDrops");
+
 
 	{
 		//noiseEditor(fractalSettings, "Fractal");
@@ -818,6 +858,10 @@ bool gameLogic(float deltaTime)
 	drawNoise("Rivers", riversT);
 
 	drawNoise("Road", roadT);
+
+	drawNoise("Hills drops", hillsDropT);
+
+	drawNoise("RandomSandT", randomSandT);
 
 
 	drawNoise("Fractal", fractalT);
