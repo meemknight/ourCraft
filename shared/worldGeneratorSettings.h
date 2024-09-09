@@ -34,6 +34,7 @@ struct WorldGeneratorSettings
 	NoiseSetting spagettiNoise;
 	NoiseSetting hillsDrops;
 	NoiseSetting randomSand;
+	NoiseSetting stonePatches;
 
 	Spline peaksAndValiesContributionSpline;
 	Spline regionsHeightSpline;
@@ -111,6 +112,10 @@ struct WorldGenerator
 	FastNoiseSIMD *hillsDropsNoise;
 	Spline hillsDropsSpline;
 	float hillsDropsPower = 1.f;
+
+	FastNoiseSIMD *stonePatchesNoise;
+	Spline stonePatchesSpline;
+	float stonePatchesPower = 1.f;
 
 	FastNoiseSIMD *roadNoise;
 	Spline roadSplines;

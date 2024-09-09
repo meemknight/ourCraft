@@ -831,6 +831,7 @@ void enetServerFunction(std::string path)
 		}
 		else
 		{
+			std::cout << "NOISE LOADING ERROR";
 			exit(0); //todo error out
 		}
 		f.close();

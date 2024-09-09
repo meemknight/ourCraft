@@ -65,6 +65,7 @@ struct Biome
 		treePalm,
 		treeBirch,
 		treeSpruce,
+		treeTallOak,
 	};
 
 	const char *name = "";

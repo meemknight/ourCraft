@@ -165,6 +165,23 @@ roadsNoise:
 		1.000000,1.000000;
 		}
 	}
+stonePatches:
+	{
+	scale: -0.350000;
+	type: SimplexFractal;
+	frequency: 0.026000;
+	octaves: 4;
+	perturbFractalOctaves: 0;
+	power: 1.400000;
+	spline:
+		{
+		0.000000,1.000000;
+		0.066994,0.000000;
+		0.508170,0.000000;
+		0.742647,0.983660;
+		1.000000,1.000000;
+		}
+	}
 temperatureNoise:
 	{
 	scale: 0.070000;
@@ -197,8 +214,8 @@ randomSand:
 		{
 		0.000000,0.000000;
 		0.000000,1.000000;
-		0.040849,0.000000;
-		0.961602,0.000000;
+		0.024509,0.000000;
+		0.977942,0.000000;
 		0.979984,1.000000;
 		0.998366,1.000000;
 		1.000000,0.000000;
@@ -228,9 +245,9 @@ hillsDrop:
 	}
 spagettiNoise:
 	{
-	scale: 0.561000;
+	scale: 0.911000;
 	type: CubicFractal;
-	frequency: 0.038000;
+	frequency: 0.025000;
 	octaves: 2;
 	perturbFractalOctaves: 0;
 	power: 0.810000;

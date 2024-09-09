@@ -1175,6 +1175,14 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 		return generateStructure(s, stone, chooseRandomElement(s.randomNumber2, 4),
 			newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
 	}
+	else if (s.type == Structure_TallSlimTree)
+	{
+		auto tree = structureManager.tallTreesSlim
+			[chooseRandomElement(s.randomNumber1, structureManager.tallTreesSlim.size())];
+
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
+			newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+	}
 
 
 	return 0;

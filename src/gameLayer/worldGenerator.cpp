@@ -10,7 +10,7 @@
 const int waterLevel = 65;
 
 void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, float roadValue,
-	float randomNumber, bool sandShore)
+	float randomNumber, bool sandShore, bool stonePatch)
 {
 
 
@@ -22,6 +22,18 @@ void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, f
 		surfaceBlock = BlockTypes::sand;
 		secondBlock = BlockTypes::sand;
 	}
+
+	if (stonePatch)
+	{
+		surfaceBlock = BlockTypes::stone;
+		secondBlock = BlockTypes::stone;
+
+		if (sandShore)
+		{
+			surfaceBlock = BlockTypes::cobblestone;
+		}
+	}
+
 
 #pragma region road
 	if(road)
@@ -205,9 +217,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	float *spagettiNoise2
 		= wg.spagettiNoise->GetNoiseSet(xPadd + SHIFT + 6, 0 + SHIFT + 3, zPadd + SHIFT, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
 
-	//float *spagettiNoise3
-	//	= wg.spagettiNoise->GetNoiseSet(xPadd - SHIFT + 6, 0 - SHIFT + 6, zPadd - SHIFT, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
-
 	float *randomStones = wg.randomStonesNoise->GetNoiseSet(xPadd, 0, zPadd, 1, 1, 1);
 	*randomStones = std::pow(((*randomStones + 1.f) / 2.f)*0.5, 3.0);
 
@@ -245,6 +254,16 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 	float *whiteNoise3
 		= wg.whiteNoise2->GetNoiseSet(xPadd, 100, zPadd, CHUNK_SIZE + 1, (1), CHUNK_SIZE + 1);
+
+	float *stonePatches =
+		wg.stonePatchesNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, 1, CHUNK_SIZE);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		stonePatches[i] += 1;
+		stonePatches[i] /= 2;
+		stonePatches[i] = powf(stonePatches[i], wg.stonePatchesPower);
+		stonePatches[i] = wg.stonePatchesSpline.applySpline(stonePatches[i]);
+	}
 
 	//float *temperatureNoise
 	//	= wg.temperatureNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
@@ -338,6 +357,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		continentalness[i] = powf(continentalness[i], wg.continentalPower);
 		continentalness[i] = wg.continentalSplines.applySpline(continentalness[i]);
 	}
+
+	
 
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
@@ -440,6 +461,11 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return whiteNoise3[x * (CHUNK_SIZE + 1) + z];
 	};
 
+	auto getStonePatches = [stonePatches](int x, int z)
+	{
+		return stonePatches[x * CHUNK_SIZE + z];
+	};
+
 	auto getWhiteNoiseChance = [getWhiteNoiseVal](int x, int z, float chance)
 	{
 		return getWhiteNoiseVal(x, z) < chance;
@@ -516,6 +542,9 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	for (int x = 0; x < CHUNK_SIZE; x++)
 		for (int z = 0; z < CHUNK_SIZE; z++)
 		{
+
+			//this will be some random places where there is stone instead of grass or sand or whatever
+			float stonePatchesVal = getStonePatches(x, z);
 
 			float wierdnessTresshold = 0.4;
 			float localWierdness = getWierdness(x, z);
@@ -758,16 +787,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			}
 
 			calculateBlockPass1(firstH, &c.unsafeGet(x, 0, z), biome, placeRoad, roadValue, 
-				getWhiteNoiseVal(x,z), sandShore);
-
-
-		#pragma region random patches of stuff
-
-
-
-
-		#pragma endregion
-
+				getWhiteNoiseVal(x,z), sandShore, stonePatchesVal > 0.5);
 
 
 
@@ -851,6 +871,13 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				{
 					str.type = Structure_Spruce;
 				}
+				else if (treeType == Biome::treeTallOak)
+				{
+					str.type = Structure_TallSlimTree;
+					str.addRandomTreeHeight = true;
+					str.replaceLogWith = BlockTypes::woodLog;
+					str.replaceLeavesWith = BlockTypes::leaves;
+				}
 				else
 				{
 					assert(0);
@@ -874,7 +901,9 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 				//random stones
 				{
-					float stonesChance = 0.008;
+
+					float stonesChance = glm::mix(0.008, 0.04, stonePatchesVal);
+
 					stonesChance *= randomStones[0];
 
 					if (getWhiteNoiseChance(x, z, stonesChance))
@@ -1029,7 +1058,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 						if (generated) { break; }
 					}
-					//if (generated) { break; }
+					if (generated) { break; }
 
 
 				}
@@ -1062,7 +1091,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	FastNoiseSIMD::FreeNoiseSet(spagettiNoise);
 	FastNoiseSIMD::FreeNoiseSet(spagettiNoise2);
 	FastNoiseSIMD::FreeNoiseSet(randomStones);
-	//FastNoiseSIMD::FreeNoiseSet(spagettiNoise3);
+	FastNoiseSIMD::FreeNoiseSet(stonePatches);
 	
 
 }

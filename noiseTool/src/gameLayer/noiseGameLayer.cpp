@@ -74,6 +74,7 @@ gl2d::Texture spagettiT;
 
 gl2d::Texture riversT;
 gl2d::Texture hillsDropT;
+gl2d::Texture stonePatchesT;
 gl2d::Texture roadT;
 gl2d::Texture randomSandT;
 gl2d::Texture temperatureT;
@@ -106,7 +107,6 @@ void createFromFloats(gl2d::Texture &t, float *data, glm::ivec2 s)
 
 void createFromGrayScale(gl2d::Texture &t, float *data, glm::ivec2 s)
 {
-
 	float *dataConverted = new float[s.x * s.y * 4];
 	{
 		int j = 0;
@@ -198,8 +198,6 @@ void recreate()
 
 
 
-
-
 	float *finalNoise = new float[size.x * size.y];
 
 	float *testNoise
@@ -226,7 +224,7 @@ void recreate()
 
 
 	float *hillsDropnNoise = 
-		wg.hillsDropsNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
+		wg.hillsDropsNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x);
 	for (int i = 0; i < size.x * size.y; i++)
 	{
 		hillsDropnNoise[i] += 1;
@@ -235,6 +233,17 @@ void recreate()
 		hillsDropnNoise[i] = applySpline(hillsDropnNoise[i], settings.hillsDrops.spline);
 	}
 	createFromGrayScale(hillsDropT, hillsDropnNoise, size);
+
+	float *stonePatchesNoise =
+		wg.stonePatchesNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x);
+	for (int i = 0; i < size.x * size.y; i++)
+	{
+		stonePatchesNoise[i] += 1;
+		stonePatchesNoise[i] /= 2;
+		stonePatchesNoise[i] = std::pow(stonePatchesNoise[i], settings.stonePatches.power);
+		stonePatchesNoise[i] = applySpline(stonePatchesNoise[i], settings.stonePatches.spline);
+	}
+	createFromGrayScale(stonePatchesT, stonePatchesNoise, size);
 
 
 	float *roadNoise
@@ -754,6 +763,11 @@ bool gameLogic(float deltaTime)
 
 	noiseEditor(settings.hillsDrops, "HillsDrops");
 
+	ImGui::Separator();
+
+	noiseEditor(settings.stonePatches, "StonePatches");
+
+	ImGui::Separator();
 
 	{
 		//noiseEditor(fractalSettings, "Fractal");
@@ -863,6 +877,7 @@ bool gameLogic(float deltaTime)
 
 	drawNoise("RandomSandT", randomSandT);
 
+	drawNoise("stonePatchesT", stonePatchesT);
 
 	drawNoise("Fractal", fractalT);
 

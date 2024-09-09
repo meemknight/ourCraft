@@ -18,6 +18,7 @@ void WorldGenerator::init()
 	spagettiNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	hillsDropsNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	regionsRandomNumber = FastNoiseSIMD::NewFastNoiseSIMD();
+	stonePatchesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
 	temperatureNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	riversNoise = FastNoiseSIMD::NewFastNoiseSIMD();
@@ -55,6 +56,7 @@ void WorldGenerator::clear()
 	delete hillsDropsNoise;
 	delete regionsRandomNumber;
 	delete randomSandPatchesNoise;
+	delete stonePatchesNoise;
 
 	*this = {};
 }
@@ -134,6 +136,10 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	apply(randomSandPatchesNoise, s.seed + 12, s.randomSand);
 	randomSandPower = s.randomSand.power;
 	randomSandSplines = s.randomSand.spline;
+
+	apply(stonePatchesNoise, s.seed + 13, s.stonePatches);
+	stonePatchesPower = s.stonePatches.power;
+	stonePatchesSpline = s.stonePatches.spline;
 
 
 	regionsHeightNoise->SetSeed(s.seed);
@@ -337,6 +343,9 @@ std::string WorldGeneratorSettings::saveSettings()
 
 	rez += "roadsNoise:\n";
 	rez += roadsNoise.saveSettings(1);
+
+	rez += "stonePatches:\n";
+	rez += stonePatches.saveSettings(1);
 
 	rez += "temperatureNoise:\n";
 	rez += temperatureNoise.saveSettings(1);
@@ -762,14 +771,16 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					if (!isNumber()) { return 0; }
 					seed = consumeNumber();
 					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
-				}else if (s == "densityBias")
+				}
+				else if (s == "densityBias")
 				{
 					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
 					if (isEof()) { return 0; }
 					if (!isNumber()) { return 0; }
 					densityBias = consumeNumber();
 					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
-				}else if (s == "densityBiasPower")
+				}
+				else if (s == "densityBiasPower")
 				{
 					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
 					if (isEof()) { return 0; }
@@ -847,6 +858,16 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					if (isEof()) { return 0; }
 
 					if (!consumeNoise(temperatureNoise))
+					{
+						return 0;
+					}
+				}
+				else if (s == "stonePatches")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(stonePatches))
 					{
 						return 0;
 					}
@@ -957,6 +978,8 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 
 			}else
 			{
+
+				int test = 0;
 				return 0;
 			}
 

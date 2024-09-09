@@ -21,6 +21,7 @@ enum
 	Structure_Spruce,
 	Structure_SpruceSlim,
 	Structure_SmallStone,
+	Structure_TallSlimTree,
 };
 
 //used to report back

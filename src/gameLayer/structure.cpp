@@ -55,6 +55,7 @@ bool StructuresManager::loadAllStructures()
 	loadFolder(RESOURCES_PATH "gameData/structures/spruce", spruceTrees);
 	loadFolder(RESOURCES_PATH "gameData/structures/spruceSlim", spruceTreesSlim);
 	loadFolder(RESOURCES_PATH "gameData/structures/smallStones", smallStones);
+	loadFolder(RESOURCES_PATH "gameData/structures/tallTree", tallTreesSlim);
 	
 	if (trees.empty()) { return 0; }
 	if (jungleTrees.empty()) { return 0; }
@@ -125,6 +126,12 @@ void StructuresManager::clear()
 	}
 
 	for (auto &i : smallStones)
+	{
+		unsigned char *d = (unsigned char *)i;
+		delete[] d;
+	}
+
+	for (auto &i : tallTreesSlim)
 	{
 		unsigned char *d = (unsigned char *)i;
 		delete[] d;
