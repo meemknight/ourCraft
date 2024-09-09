@@ -83,16 +83,16 @@ wierdness:
 	}
 vegetationNoise:
 	{
-	scale: 0.080000;
-	type: Simplex;
-	frequency: 0.078000;
+	scale: 0.350000;
+	type: SimplexFractal;
+	frequency: 0.015000;
 	octaves: 3;
 	perturbFractalOctaves: 0;
 	power: 1.000000;
 	spline:
 		{
-		0.000000,0.001634;
-		1.000000,0.998366;
+		0.000000,0.000000;
+		1.000000,1.000000;
 		}
 	}
 stonetDnoise:
@@ -167,7 +167,7 @@ roadsNoise:
 	}
 stonePatches:
 	{
-	scale: -0.350000;
+	scale: 0.001000;
 	type: SimplexFractal;
 	frequency: 0.026000;
 	octaves: 4;
@@ -240,6 +240,36 @@ hillsDrop:
 		0.792485,0.261233;
 		0.803002,0.456597;
 		0.803002,1.000000;
+		1.000000,1.000000;
+		}
+	}
+treesAmountNoise:
+	{
+	scale: 0.130000;
+	type: SimplexFractal;
+	frequency: 0.015000;
+	octaves: 3;
+	perturbFractalOctaves: 0;
+	power: 1.900000;
+	spline:
+		{
+		0.000000,0.000000;
+		0.089869,0.000000;
+		0.960784,1.000000;
+		1.000000,1.000000;
+		}
+	}
+treesTypeNoise:
+	{
+	scale: 0.160000;
+	type: SimplexFractal;
+	frequency: 0.015000;
+	octaves: 3;
+	perturbFractalOctaves: 0;
+	power: 1.100000;
+	spline:
+		{
+		0.000000,0.000000;
 		1.000000,1.000000;
 		}
 	}

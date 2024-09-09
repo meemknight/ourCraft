@@ -101,7 +101,7 @@ bool BiomesManager::loadAllBiomes()
 
 	VegetationSettings tallSpruceForestVegetation;
 	tallSpruceForestVegetation.growThing = grawTallSpruces;
-	tallSpruceForestVegetation.minTresshold = 0.40;
+	tallSpruceForestVegetation.minTresshold = 0.50;
 	tallSpruceForestVegetation.chanceRemap = {0.01, 0.07};
 
 	VegetationSettings rareThickSpruce;
@@ -111,8 +111,23 @@ bool BiomesManager::loadAllBiomes()
 	
 	VegetationSettings tallForestVegetation;
 	tallForestVegetation.growThing = growTallOak;
-	tallForestVegetation.minTresshold = 0.60;
+	tallForestVegetation.minTresshold = 0.5;
 	tallForestVegetation.chanceRemap = {0.02, 0.08};
+
+	{
+		VegetationNoiseSettings noiseSettings;
+		noiseSettings.entry.push_back(tallForestVegetation);
+		//noiseSettings.entry.push_back(growFullGrassVegetation);
+		greenBiomes.push_back(noiseSettings);
+	}
+
+	{
+		VegetationNoiseSettings noiseSettings;
+		noiseSettings.entry.push_back(tallSpruceForestVegetation);
+		//noiseSettings.entry.push_back(growFullGrassVegetation);
+		greenBiomes.push_back(noiseSettings);
+	}
+
 
 	//forest 0
 	{

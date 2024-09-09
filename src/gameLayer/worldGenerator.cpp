@@ -153,9 +153,11 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	float interpolateValues[16 * 16] = {};
 	float borderingFactor[16 * 16] = {};
 	float vegetationMaster = 0;
-	int currentBiomeHeight = wg.getRegionHeightAndBlendingsForChunk(c.x, c.z, interpolateValues, borderingFactor, vegetationMaster);
+	int currentBiomeHeight = wg.getRegionHeightAndBlendingsForChunk(c.x, c.z,
+		interpolateValues, borderingFactor, vegetationMaster);
 
-	float vegetationPower = linearRemap(vegetationMaster, 0, 1, 0.9, 1.8);
+	vegetationMaster = 0.5;
+	float vegetationPower = linearRemap(vegetationMaster, 0, 1, 1, 0.5);
 
 	auto interpolator = [&](int *ptr, float value)
 	{
@@ -187,6 +189,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	
 	int xPadd = c.x * 16;
 	int zPadd = c.z * 16;
+
+	c.vegetation = vegetationMaster;
 
 	float* continentalness
 		= wg.continentalnessNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
@@ -234,17 +238,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		spagettiNoise2[i] = wg.spagettiNoiseSplines.applySpline(spagettiNoise2[i]);
 	}
 	
-	float *vegetationNoise
-		= wg.vegetationNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
-
-	float *vegetationNoise2
-		= wg.vegetationNoise->GetNoiseSet(xPadd, 100, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
-
-	float *vegetationNoise3
-		= wg.vegetationNoise->GetNoiseSet(xPadd, 200, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
-
-	float *vegetationNoise4
-		= wg.vegetationNoise->GetNoiseSet(xPadd, 300, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 
 	float *whiteNoise
 		= wg.whiteNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE + 1, (1), CHUNK_SIZE + 1);
@@ -302,6 +295,28 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		hillsDropDownsNoise[i] = wg.hillsDropsSpline.applySpline(hillsDropDownsNoise[i]);
 	}
 
+	float *treeAmountNoise1 =
+		wg.treesAmountNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		treeAmountNoise1[i] += 1;
+		treeAmountNoise1[i] /= 2;
+		treeAmountNoise1[i] = powf(treeAmountNoise1[i], wg.treesAmountPower);
+		treeAmountNoise1[i] = wg.treesAmountSpline.applySpline(treeAmountNoise1[i]);
+	}
+
+	float *treeAmountNoise2 =
+		wg.treesAmountNoise->GetNoiseSet(xPadd + 10000, 1000, zPadd + 10000, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		treeAmountNoise2[i] += 1;
+		treeAmountNoise2[i] /= 2;
+		treeAmountNoise2[i] = powf(treeAmountNoise2[i], wg.treesAmountPower);
+		treeAmountNoise2[i] = wg.treesAmountSpline.applySpline(treeAmountNoise2[i]);
+	}
+
 
 	for (int i = 0; i < (CHUNK_SIZE + 1) * (CHUNK_SIZE + 1); i++)
 	{
@@ -321,34 +336,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		whiteNoise3[i] /= 2;
 	}
 
-	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
-	{
-		vegetationNoise[i] += 1;
-		vegetationNoise[i] /= 2;
-		vegetationNoise[i] = powf(vegetationNoise[i], wg.vegetationPower);
-		vegetationNoise[i] = wg.vegetationSplines.applySpline(vegetationNoise[i]);
-		vegetationNoise[i] = powf(vegetationNoise[i], vegetationPower);
-
-
-		vegetationNoise2[i] += 1;
-		vegetationNoise2[i] /= 2;
-		vegetationNoise2[i] = powf(vegetationNoise2[i], wg.vegetationPower);
-		vegetationNoise2[i] = wg.vegetationSplines.applySpline(vegetationNoise2[i]);
-		vegetationNoise2[i] = powf(vegetationNoise[i], vegetationPower);
-
-		vegetationNoise3[i] += 1;
-		vegetationNoise3[i] /= 2;
-		vegetationNoise3[i] = powf(vegetationNoise3[i], wg.vegetationPower);
-		vegetationNoise3[i] = wg.vegetationSplines.applySpline(vegetationNoise3[i]);
-		vegetationNoise3[i] = powf(vegetationNoise[i], vegetationPower);
-
-		vegetationNoise4[i] += 1;
-		vegetationNoise4[i] /= 2;
-		vegetationNoise4[i] = powf(vegetationNoise4[i], wg.vegetationPower);
-		vegetationNoise4[i] = wg.vegetationSplines.applySpline(vegetationNoise4[i]);
-		vegetationNoise4[i] = powf(vegetationNoise[i], vegetationPower);
-
-	}
 
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
@@ -436,6 +423,16 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return hillsDropDownsNoise[x * CHUNK_SIZE + z];
 	};
 
+	auto getTreeAmount1 = [treeAmountNoise1](int x, int z)
+	{
+		return treeAmountNoise1[x * CHUNK_SIZE + z];
+	};
+	
+	auto getTreeAmount2 = [treeAmountNoise2](int x, int z)
+	{
+		return treeAmountNoise2[x * CHUNK_SIZE + z];
+	};
+
 	auto getRoads = [roadNoise](int x, int z)
 	{
 		return roadNoise[x * CHUNK_SIZE + z];
@@ -476,25 +473,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return getWhiteNoise2Val(x, z) < chance;
 	};
 
-	auto getVegetationNoiseVal = [vegetationNoise](int x, int z)
-	{
-		return vegetationNoise[x * CHUNK_SIZE + z];
-	};
-
-	auto getVegetation2NoiseVal = [vegetationNoise2](int x, int z)
-	{
-		return vegetationNoise2[x * CHUNK_SIZE + z];
-	};
-
-	auto getVegetation3NoiseVal = [vegetationNoise3](int x, int z)
-	{
-		return vegetationNoise3[x * CHUNK_SIZE + z];
-	};
-
-	auto getVegetation4NoiseVal = [vegetationNoise4](int x, int z)
-	{
-		return vegetationNoise4[x * CHUNK_SIZE + z];
-	};
 
 	auto getDensityNoiseVal = [densityNoise](int x, int y, int z) //todo more cache friendly operation here please
 	{
@@ -555,6 +533,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			int startLevel = interpolator(startValues, currentInterpolatedValue);
 			int maxMountainLevel = interpolator(maxlevels, currentInterpolatedValue);
 			
+			float treeAmountVal1 = getTreeAmount1(x, z);
+			float treeAmountVal2 = getTreeAmount2(x, z);
 
 		#pragma region roads
 			bool placeRoad = 0;
@@ -790,7 +770,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				getWhiteNoiseVal(x,z), sandShore, stonePatchesVal > 0.5);
 
 
-
 			for (int y = 1; y < firstH; y++)
 			{
 				auto density = getSpagettiNoiseVal(x, y, z);
@@ -923,6 +902,121 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 					}
 				}
 
+				auto generateOneFeature = [&](float treeAmount, int index)
+				{
+					treeAmount = std::powf(treeAmount, vegetationPower);
+					float noiseVal = treeAmount;
+
+					VegetationNoiseSettings &veg = biomesManager.greenBiomes[index];
+
+					//one distribution element, can be multiple things there tho
+					for (auto &entry : veg.entry)
+					{
+						if (noiseVal >= entry.minTresshold && entry.maxTresshold >= noiseVal)
+						{
+
+							float chanceRemap = linearRemap(noiseVal, entry.minTresshold, entry.maxTresshold,
+								entry.chanceRemap.x, entry.chanceRemap.y);
+
+							//float chanceRemap = linearRemap(noiseVal, 0, 1,
+							//	entry.chanceRemap.x, entry.chanceRemap.y);
+
+							if (getWhiteNoiseChance(x, z, chanceRemap))
+							{
+
+								//pick the block to place
+								auto &growThing = entry.growThing;
+
+								bool canGrow = 0;
+
+								for (auto &growOn : growThing.growOn)
+								{
+									if (b == growOn)
+									{
+										canGrow = true;
+									}
+								}
+
+								if (canGrow)
+								{
+									int count = growThing.elements.size();
+									float noiseVal = getWhiteNoise2Val(x, z);
+
+									int index = fromFloatNoiseValToIntegers(noiseVal, count);
+									auto &growElement = growThing.elements[index];
+
+									assert(growElement.block || growElement.treeType);
+									assert(!(growElement.block != 0 && growElement.treeType != 0));
+
+									if (growElement.block)
+									{
+										c.unsafeGet(x, firstH + 1, z).setType(growElement.block);
+										generatedSomethingElse = true;
+									}
+									else if (growElement.treeType)
+									{
+
+										//don't put trees too together...
+										float noiseVal1 = getWhiteNoise2Val(x + 1, z);
+										float noiseVal2 = getWhiteNoise2Val(x, z + 1);
+										float noiseVal3 = getWhiteNoise2Val(x + 1, z + 1);
+
+										if (0 &&
+											noiseVal1 >= entry.minTresshold && entry.maxTresshold >= noiseVal1 ||
+											noiseVal2 >= entry.minTresshold && entry.maxTresshold >= noiseVal2 ||
+											noiseVal3 >= entry.minTresshold && entry.maxTresshold >= noiseVal3
+											)
+										{
+
+											float chanceRemap1 = linearRemap(noiseVal1, entry.minTresshold, entry.maxTresshold,
+												entry.chanceRemap.x, entry.chanceRemap.y);
+											float chanceRemap2 = linearRemap(noiseVal2, entry.minTresshold, entry.maxTresshold,
+												entry.chanceRemap.x, entry.chanceRemap.y);
+											float chanceRemap3 = linearRemap(noiseVal3, entry.minTresshold, entry.maxTresshold,
+												entry.chanceRemap.x, entry.chanceRemap.y);
+
+											if (
+												getWhiteNoiseChance(x + 1, z, chanceRemap1) ||
+												getWhiteNoiseChance(x, z + 1, chanceRemap2) ||
+												getWhiteNoiseChance(x + 1, z + 1, chanceRemap3)
+												)
+											{
+												int index1 = fromFloatNoiseValToIntegers(noiseVal, count);
+												int index2 = fromFloatNoiseValToIntegers(noiseVal, count);
+												int index3 = fromFloatNoiseValToIntegers(noiseVal, count);
+
+												if (index1 == index || index2 == index || index3 == index)
+												{
+													continue;
+												}
+											}
+										}
+
+										generateTreeFunction(growElement.treeType);
+										generatedSomethingElse = true;
+										break;
+									}
+								}
+
+							}
+
+						}
+
+						if (generatedSomethingElse) { break; }
+					}
+				};
+
+				if (!generatedSomethingElse)
+				{
+					generateOneFeature(treeAmountVal1, 0);
+				}
+
+				if (!generatedSomethingElse)
+				{
+					generateOneFeature(treeAmountVal2, 1);
+				}
+
+				/*
 				if(!generatedSomethingElse)
 				for (int noiseIndex = 0; noiseIndex < biome.vegetationNoises.size(); noiseIndex++)
 				{
@@ -1062,6 +1156,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 
 				}
+				*/
 
 			}
 
@@ -1077,17 +1172,14 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	FastNoiseSIMD::FreeNoiseSet(randomSand);
 	FastNoiseSIMD::FreeNoiseSet(randomGravel);
 	FastNoiseSIMD::FreeNoiseSet(randomClay);
-	FastNoiseSIMD::FreeNoiseSet(vegetationNoise);
-	FastNoiseSIMD::FreeNoiseSet(vegetationNoise2);
-	FastNoiseSIMD::FreeNoiseSet(vegetationNoise3);
-	FastNoiseSIMD::FreeNoiseSet(vegetationNoise4);
 	FastNoiseSIMD::FreeNoiseSet(whiteNoise);
 	FastNoiseSIMD::FreeNoiseSet(whiteNoise2);
 	FastNoiseSIMD::FreeNoiseSet(whiteNoise3);
 	FastNoiseSIMD::FreeNoiseSet(riversNoise);
 	FastNoiseSIMD::FreeNoiseSet(hillsDropDownsNoise);
+	FastNoiseSIMD::FreeNoiseSet(treeAmountNoise1);
+	FastNoiseSIMD::FreeNoiseSet(treeAmountNoise2);
 	FastNoiseSIMD::FreeNoiseSet(roadNoise);
-	//FastNoiseSIMD::FreeNoiseSet(temperatureNoise);
 	FastNoiseSIMD::FreeNoiseSet(spagettiNoise);
 	FastNoiseSIMD::FreeNoiseSet(spagettiNoise2);
 	FastNoiseSIMD::FreeNoiseSet(randomStones);

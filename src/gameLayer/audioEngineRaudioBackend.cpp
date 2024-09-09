@@ -95,6 +95,7 @@ namespace AudioEngine
 		//todo transition period
 		StopMusicStream(allMusic[index]);
 
+		allMusic[index].looping = false;
 		PlayMusicStream(allMusic[index]);
 		SetMusicVolume(allMusic[index], 1.f);
 		

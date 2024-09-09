@@ -11,14 +11,14 @@ void WorldGenerator::init()
 	peaksValiesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	wierdnessNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	stone3Dnoise = FastNoiseSIMD::NewFastNoiseSIMD();
-	vegetationNoise = FastNoiseSIMD::NewFastNoiseSIMD();
-	vegetationNoise2 = FastNoiseSIMD::NewFastNoiseSIMD();
 	whiteNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	whiteNoise2 = FastNoiseSIMD::NewFastNoiseSIMD();
 	spagettiNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	hillsDropsNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	regionsRandomNumber = FastNoiseSIMD::NewFastNoiseSIMD();
 	stonePatchesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	treesAmountNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	treesTypeNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
 	temperatureNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	riversNoise = FastNoiseSIMD::NewFastNoiseSIMD();
@@ -42,8 +42,6 @@ void WorldGenerator::clear()
 	delete peaksValiesNoise;
 	delete wierdnessNoise;
 	delete stone3Dnoise;
-	delete vegetationNoise;
-	delete vegetationNoise2;
 	delete whiteNoise;
 	delete whiteNoise2;
 	delete spagettiNoise;
@@ -57,6 +55,8 @@ void WorldGenerator::clear()
 	delete regionsRandomNumber;
 	delete randomSandPatchesNoise;
 	delete stonePatchesNoise;
+	delete treesTypeNoise;
+	delete treesAmountNoise;
 
 	*this = {};
 }
@@ -108,11 +108,6 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	wierdnessSplines = s.wierdness.spline;
 	wierdnessPower = s.wierdness.power;
 
-	apply(vegetationNoise, s.seed + 7, s.vegetationNoise);
-	vegetationPower = s.vegetationNoise.power;
-	vegetationSplines = s.vegetationNoise.spline;
-	apply(vegetationNoise2, s.seed + 17, s.vegetationNoise);
-
 	apply(temperatureNoise, s.seed + 8, s.temperatureNoise);
 	temperaturePower = s.temperatureNoise.power;
 	temperatureSplines = s.temperatureNoise.spline;
@@ -140,6 +135,14 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	apply(stonePatchesNoise, s.seed + 13, s.stonePatches);
 	stonePatchesPower = s.stonePatches.power;
 	stonePatchesSpline = s.stonePatches.spline;
+
+	apply(treesAmountNoise, s.seed + 14, s.treesAmountNoise);
+	treesAmountPower = s.treesAmountNoise.power;
+	treesAmountSpline = s.treesAmountNoise.spline;
+
+	apply(treesTypeNoise, s.seed + 15, s.treesTypeNoise);
+	treesTypePower = s.treesTypeNoise.power;
+	treesTypeSpline = s.treesTypeNoise.spline;
 
 
 	regionsHeightNoise->SetSeed(s.seed);
@@ -356,6 +359,12 @@ std::string WorldGeneratorSettings::saveSettings()
 	rez += "hillsDrop:\n";
 	rez += hillsDrops.saveSettings(1);
 
+	rez += "treesAmountNoise:\n";
+	rez += treesAmountNoise.saveSettings(1);
+
+	rez += "treesTypeNoise:\n";
+	rez += treesTypeNoise.saveSettings(1);
+
 	rez += "spagettiNoise:\n";
 	rez += spagettiNoise.saveSettings(1);
 	rez += "spagettiBias: "; rez += std::to_string(spagettiBias); rez += ";\n";
@@ -375,6 +384,7 @@ std::string WorldGeneratorSettings::saveSettings()
 	return rez;
 }
 
+
 void WorldGeneratorSettings::sanitize()
 {
 	continentalnessNoiseSettings.sanitize();
@@ -384,7 +394,12 @@ void WorldGeneratorSettings::sanitize()
 	riversNoise.sanitize();
 	temperatureNoise.sanitize();
 	vegetationNoise.sanitize();
-	
+	treesTypeNoise.sanitize();
+	treesAmountNoise.sanitize();
+	hillsDrops.sanitize();
+	randomSand.sanitize();
+	stonePatches.sanitize();
+
 	peaksAndValiesContributionSpline.sanitize();
 
 	densityBias = glm::clamp(densityBias, 0.f, 1.f);
@@ -580,7 +595,7 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 		for (int i = 0; i < tokens.size();)
 		{
 
-			auto isString = [&]() -> bool 
+			auto isString = [&]() -> bool
 			{
 				return tokens[i].type == TokenString;
 			};
@@ -599,9 +614,9 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					return false;
 				}
 			};
-		
+
 			auto isEof = [&]() { return i >= tokens.size(); };
-			
+
 			auto isNumber = [&]()
 			{
 				return (tokens[i].type == TokenNumber);
@@ -612,7 +627,7 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 				if (tokens[i].type == TokenNumber)
 				{
 					i++;
-					return tokens[i-1].number;
+					return tokens[i - 1].number;
 				};
 				assert(0);
 				return 0;
@@ -670,7 +685,8 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 							if (!isNumber()) { return 0; }
 							settings.scale = consumeNumber();
 							if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
-						}else if (s == "frequency")
+						}
+						else if (s == "frequency")
 						{
 							if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
 							if (isEof()) { return 0; }
@@ -706,9 +722,9 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 						{
 							if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
 							if (isEof()) { return 0; }
-							
+
 							if (!isString()) { return 0; }
-							
+
 							auto s = tokens[i].s; //todo to lower
 							i++;
 							settings.type = -1;
@@ -727,7 +743,7 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 							}
 
 							if (settings.type < 0) { return 0; }
-							
+
 							if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
 						}
 						else if (s == "spline")
@@ -741,7 +757,7 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 							return 0;
 						}
 
-						
+
 					}
 					else if (consume(Token{TokenSymbol, "", ';', 0}))
 					{
@@ -932,6 +948,26 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 						return 0;
 					}
 				}
+				else if (s == "treesAmountNoise")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(treesAmountNoise))
+					{
+						return 0;
+					}
+				}
+				else if (s == "treesTypeNoise")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(treesTypeNoise))
+					{
+						return 0;
+					}
+				}
 				else if (s == "spagettiBias")
 				{
 					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
@@ -976,7 +1012,8 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 			else if (consume(Token{TokenSymbol, "", ';', 0}))
 			{
 
-			}else
+			}
+			else
 			{
 
 				int test = 0;

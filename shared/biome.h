@@ -33,7 +33,7 @@ struct VegetationSettings
 {
 	float minTresshold = 0;
 	float maxTresshold = 1;
-	glm::vec2 chanceRemap = {0, 1};
+	glm::vec2 chanceRemap = {0, 0.95};
 
 	GrowingThing growThing;
 };
@@ -88,6 +88,8 @@ struct BiomesManager
 {
 
 	std::vector<Biome> biomes;
+
+	std::vector<VegetationNoiseSettings> greenBiomes;
 
 	bool loadAllBiomes();
 

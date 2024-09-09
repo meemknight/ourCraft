@@ -81,6 +81,9 @@ gl2d::Texture temperatureT;
 
 gl2d::Texture fractalT;
 
+gl2d::Texture treesAmountT;
+gl2d::Texture treesTypeT;
+
 
 void createFromFloats(gl2d::Texture &t, float *data, glm::ivec2 s)
 {
@@ -281,6 +284,32 @@ void recreate()
 	}
 	createFromGrayScale(temperatureT, temperatureNoise, size);
 
+
+	float *treesAmountNoise =
+		wg.treesAmountNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, 1, size.x);
+	for (int i = 0; i < size.x * size.y; i++)
+	{
+		treesAmountNoise[i] += 1;
+		treesAmountNoise[i] /= 2;
+		treesAmountNoise[i] = std::pow(treesAmountNoise[i], settings.treesAmountNoise.power);
+		treesAmountNoise[i] = applySpline(treesAmountNoise[i], settings.treesAmountNoise.spline);
+	}
+	createFromGrayScale(treesAmountT, treesAmountNoise, size);
+
+
+	float *treesTypeNoise =
+		wg.treesTypeNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, 1, size.x);
+	for (int i = 0; i < size.x * size.y; i++)
+	{
+		treesTypeNoise[i] += 1;
+		treesTypeNoise[i] /= 2;
+		treesTypeNoise[i] = std::pow(treesTypeNoise[i], settings.treesTypeNoise.power);
+		treesTypeNoise[i] = applySpline(treesTypeNoise[i], settings.treesTypeNoise.spline);
+	}
+	createFromGrayScale(treesTypeT, treesTypeNoise, size);
+
+
+
 	
 	float *peaksNoise;
 	{
@@ -327,28 +356,6 @@ void recreate()
 	{
 		return wierdnessNoise[y * size.x + x];
 	};
-
-	{
-		float *vegetationNoise;
-
-		vegetationNoise
-			= wg.vegetationNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
-
-		for (int i = 0; i < size.x * size.y; i++)
-		{
-			vegetationNoise[i] += 1;
-			vegetationNoise[i] /= 2;
-			vegetationNoise[i] = std::pow(vegetationNoise[i], settings.vegetationNoise.power);
-			vegetationNoise[i] = applySpline(vegetationNoise[i], settings.vegetationNoise.spline);
-
-		}
-
-		createFromGrayScale(vegetationT, vegetationNoise, size);
-		
-		FastNoiseSIMD::FreeNoiseSet(vegetationNoise);
-
-
-	}
 
 	float *stoneNoise;
 	{
@@ -559,6 +566,8 @@ void recreate()
 
 	FastNoiseSIMD::FreeNoiseSet(testNoise);
 	FastNoiseSIMD::FreeNoiseSet(peaksNoise);
+	FastNoiseSIMD::FreeNoiseSet(treesAmountNoise);
+	FastNoiseSIMD::FreeNoiseSet(treesTypeNoise);
 	FastNoiseSIMD::FreeNoiseSet(wierdnessNoise);
 	FastNoiseSIMD::FreeNoiseSet(stoneNoise);
 	FastNoiseSIMD::FreeNoiseSet(riversNoise);
@@ -747,6 +756,14 @@ bool gameLogic(float deltaTime)
 	}
 
 	ImGui::Separator();
+
+	noiseEditor(settings.treesAmountNoise, "Trees amount");
+
+	ImGui::Separator();
+
+	noiseEditor(settings.treesTypeNoise, "Trees type");
+
+	ImGui::Separator();
 	
 	noiseEditor(settings.randomSand, "Random sand");
 
@@ -868,6 +885,10 @@ bool gameLogic(float deltaTime)
 	{
 		drawNoise("Temperature", temperatureT);
 	}
+
+	drawNoise("Trees amount", treesAmountT);
+
+	drawNoise("Trees type", treesTypeT);
 
 	drawNoise("Rivers", riversT);
 
