@@ -668,6 +668,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				return 1.f - (1.f - a) * (1.f - b);
 			};
 
+			float underGroundRivers = 0;
 			//plains rivers
 			if (currentBiomeHeight == 2)
 			{
@@ -675,6 +676,10 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 				startLevel = glm::mix(waterLevel - 5, startLevel, rivers);
 				maxMountainLevel = glm::mix(waterLevel - 2, maxMountainLevel, rivers);
+			}
+			else if (currentBiomeHeight >= 3)
+			{
+				underGroundRivers = 1-getRivers(x, z);
 			}
 
 
@@ -814,6 +819,18 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 					//else cave
 				}
 
+			}
+
+			if (underGroundRivers > 0.2)
+			{
+				int water = waterLevel;
+				int min = water - 4 * underGroundRivers;
+				int max = water + 8 * underGroundRivers;
+
+				for (int y = min; y < max; y++)
+				{
+					c.unsafeGet(x, y, z).setType(BlockTypes::air);
+				}
 			}
 
 			calculateBlockPass1(firstH, &c.unsafeGet(x, 0, z), biome, placeRoad, roadValue, 
@@ -1093,8 +1110,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 						if (generatedSomethingElse) { break; }
 					}
 				};
-
-				generatedSomethingElse = true;
 
 				if (!generatedSomethingElse)
 				{
