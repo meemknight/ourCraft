@@ -30,5 +30,8 @@ struct MapEngine
 
 	std::unordered_map<glm::ivec2, MapChunk> mapChunks;
 
+	glm::ivec2 mouseHovered = {};
+	float mouseHoveredId = {-1};
+
 
 };

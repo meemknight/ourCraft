@@ -219,6 +219,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	int currentBiomeHeight = wg.getRegionHeightAndBlendingsForChunk(c.x, c.z,
 		interpolateValues, borderingFactor, vegetationMaster, tightBorders);
 
+	c.vegetation = vegetationMaster;
+
 	//vegetationMaster = 1.f;
 	float vegetationPower = linearRemap(vegetationMaster, 0, 1, 1.2, 0.4);
 

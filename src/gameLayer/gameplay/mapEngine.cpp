@@ -96,6 +96,41 @@ void MapEngine::update(ProgramData &programData, float deltaTime,
 	renderer.pushCamera(camera);
 	{
 		
+		auto cameraBox = renderer.getViewRect();
+		glm::vec2 mousePosInViewRect = glm::vec2(cameraBox);
+		mousePosInViewRect += glm::vec2(cameraBox.z, cameraBox.w) * glm::vec2(platform::getRelMousePosition()) /
+			glm::vec2(renderer.windowW, renderer.windowH);
+
+		mouseHoveredId = -1;
+
+		//first pass
+		for (int z = 0; z < chunkSystem.squareSize; z++)
+		{
+			for (int x = 0; x < chunkSystem.squareSize; x++)
+			{
+
+				auto c = chunkSystem.getChunksInMatrixSpaceUnsafe(x, z);
+
+				if (c)
+				{
+					int chunkX = c->data.x;
+					int chunkZ = c->data.z;
+
+					glm::vec4 pos = glm::vec4{x,z,1,1};
+					pos.x += chunkSystem.cornerPos.x;
+					pos.y += chunkSystem.cornerPos.y;
+					pos *= (float)CHUNK_SIZE;
+
+					if (glui::aabb(pos, mousePosInViewRect))
+					{
+						mouseHovered = glm::ivec2(pos);
+						mouseHoveredId = c->data.vegetation; //todo
+						//color = {0.5,0.5,0.5,0.5};
+					}
+				}
+			}
+		}
+
 		for (int z = 0; z < chunkSystem.squareSize; z++)
 		{
 			for (int x = 0; x < chunkSystem.squareSize; x++)
@@ -123,13 +158,23 @@ void MapEngine::update(ProgramData &programData, float deltaTime,
 					glm::vec4 pos = glm::vec4{x,z,1,1};
 					pos.x += chunkSystem.cornerPos.x;
 					pos.y += chunkSystem.cornerPos.y;
+					pos *= (float)CHUNK_SIZE;
+
+					glm::vec4 color = Colors_White;
 
 					//renderer.renderRectangle(pos * (float)CHUNK_SIZE,
 					//	color);
 					
-					renderer.renderRectangle(pos * (float)CHUNK_SIZE, found->second.t, 
-						Colors_White,
+					renderer.renderRectangle(pos, found->second.t, 
+						color,
 						{}, 0, {0,0,1,1});
+
+
+					if (mouseHoveredId == c->data.vegetation)
+					{
+						renderer.renderRectangle(pos, glm::vec4{232, 207, 149, 125} / 255.f);
+
+					}
 
 				}
 
@@ -137,6 +182,8 @@ void MapEngine::update(ProgramData &programData, float deltaTime,
 
 			}
 		}
+
+		//renderer.renderRectangle({mousePosInViewRect, 5, 5}, Colors_Red);
 
 	}
 	renderer.popCamera();

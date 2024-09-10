@@ -210,10 +210,15 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 		1.f / 16.f);
 
 	float *rezult3
-		= regionsRandomNumber->GetNoiseSet(chunkX, 0, chunkZ,
-		1, (1), 1, 1);
+		= regionsRandomNumber->GetNoiseSet(chunkX-1, 0, chunkZ-1,
+		3, (1), 3);
 
-	vegetationMaster = rezult3[0];
+	//float *test = 
+		//regionsHeightNoise->SetCellularDistanceFunction()
+	//FastNoiseSIMD::CellularDistanceFunction;
+	
+
+	vegetationMaster = rezult3[4];
 	vegetationMaster += 1.f;
 	vegetationMaster /= 2.f;
 
@@ -247,24 +252,29 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 		return rezult[x + y * 3];
 	};
 
+	auto getRezult3Values = [&](int x, int y)
+	{
+		return rezult3[x + y * 3];
+	};
+
 	for (int j = 0; j < 16; j++)
 		for (int i = 0; i < 16; i++)
 		{
 			tightBorders[i + j * 16] = 0;
 
-			if (j == 0 && getRezultValues(1, 1) != getRezultValues(1, 0))
+			if (j == 0 && getRezult3Values(1, 1) != getRezult3Values(1, 0))
 			{
 				tightBorders[i + j * 16] = 1;
 			}
-			else if (j == 15 && getRezultValues(1, 1) != getRezultValues(1, 2))
+			else if (j == 15 && getRezult3Values(1, 1) != getRezult3Values(1, 2))
 			{
 				tightBorders[i + j * 16] = 1;
 			}
-			else if (i == 0 && getRezultValues(1, 1) != getRezultValues(0, 1))
+			else if (i == 0 && getRezult3Values(1, 1) != getRezult3Values(0, 1))
 			{
 				tightBorders[i + j * 16] = 1;
 			}
-			else if (i == 15 && getRezultValues(1, 1) != getRezultValues(2, 1))
+			else if (i == 15 && getRezult3Values(1, 1) != getRezult3Values(2, 1))
 			{
 				tightBorders[i + j * 16] = 1;
 			}
