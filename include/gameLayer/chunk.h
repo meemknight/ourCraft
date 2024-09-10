@@ -17,7 +17,18 @@ struct ChunkData
 
 	//todo send this to the player and save it in the future, or just remove it
 	//also save it.
-	unsigned char cachedBiomes[CHUNK_SIZE][CHUNK_SIZE];
+	//unsigned char cachedBiomes[CHUNK_SIZE][CHUNK_SIZE];
+	unsigned char flags[CHUNK_SIZE][CHUNK_SIZE] = {};
+
+	void setBorderFlag(int x, int z)
+	{
+		flags[x][z] |= 0b1;
+	}
+
+	bool isBorder(int x, int z)
+	{
+		return flags[x][z] & 0b1;
+	}
 
 	int x, z;
 
@@ -26,10 +37,10 @@ struct ChunkData
 		return blocks[x][z][y];
 	}
 
-	unsigned char &unsafeGetCachedBiome(int x, int z)
-	{
-		return cachedBiomes[x][z];
-	}
+	//unsigned char &unsafeGetCachedBiome(int x, int z)
+	//{
+	//	return cachedBiomes[x][z];
+	//}
 
 	void clear()
 	{

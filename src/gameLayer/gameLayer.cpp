@@ -156,6 +156,7 @@ void loadAllDefaultTexturePacks()
 
 	programData.blocksLoader.loadAllTextures(RESOURCES_PATH "assets/");
 	programData.blocksLoader.loadAllItemsGeometry();
+	programData.blocksLoader.setupAllColors();
 
 	programData.renderer.recreateBlocksTexturesBuffer(programData.blocksLoader);
 

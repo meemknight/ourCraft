@@ -1113,8 +1113,61 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 
 }
 
+void BlocksLoader::setupAllColors()
+{
+	blocksColors.resize(BlockTypes::BlocksCount);
+
+	for (int i = 0; i < BlockTypes::BlocksCount; i++)
+	{
+		
+		int idIndex = getGpuIdIndexForBlock(i, 2);
+
+		gl2d::Texture t;
+		t.id = texturesIds[idIndex];
+
+		int mipmap = 0;
+		//glBindTexture(GL_TEXTURE_2D, t.id);
+		//glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, &mipmap);
+		//mipmap += 1;
+		//
+
+
+		glm::ivec2 size = {};
+		auto data = t.readTextureData(mipmap, &size);
+
+		glm::vec3 color = {};
+		int divizor = 0;
+
+		for (int y = 0; y < size.y; y++)
+			for (int x = 0; x < size.x; x++)
+			{
+				glm::vec4 c = {};
+				c.r = data[(x + y * size.x) * 4 + 0] / 255.f;
+				c.g = data[(x + y * size.x) * 4 + 1] / 255.f;
+				c.b = data[(x + y * size.x) * 4 + 2] / 255.f;
+				c.a = data[(x + y * size.x) * 4 + 3] / 255.f;
+
+				if (c.a > 0.1)
+				{
+					color += glm::vec3(c);
+					divizor++;
+				}
+
+			}
+
+		if (divizor)
+		{
+			color /= divizor;
+		}
+
+		blocksColors[i] = color;
+	}
+}
+
 void BlocksLoader::clearAllTextures()
 {
+	blocksColors.clear();
+
 	spawnEgg.cleanup();
 	
 	spawnEggOverlay.cleanup();
@@ -1548,6 +1601,7 @@ uint16_t getGpuIdIndexForBlock(short type, int face)
 {
 	return blocksLookupTable[type * 6 + face] * 3;
 }
+
 
 void BlocksLoader::ItemGeometry::clear()
 {

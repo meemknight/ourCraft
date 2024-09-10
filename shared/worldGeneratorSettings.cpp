@@ -165,9 +165,9 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	regionsHeightNoise->SetAxisScales(1, 1, 1);
 	//regionsHeightNoise->SetFrequency(0.002);
 	//regionsHeightNoise->SetFrequency(0.024); //original intended scale
-	regionsHeightNoise->SetFrequency(0.040); //probably will use this
+	//regionsHeightNoise->SetFrequency(0.040); //probably will use this
 	//regionsHeightNoise->SetFrequency(0.2);
-	//regionsHeightNoise->SetFrequency(0.4);
+	regionsHeightNoise->SetFrequency(0.4);
 
 	regionsHeightNoise->SetNoiseType(FastNoiseSIMD::NoiseType::Cellular);
 	regionsHeightNoise->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::NoiseLookup);
@@ -199,7 +199,8 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 
 
 int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
-	float values[16 * 16], float borderingFactor[16 * 16], float &vegetationMaster)
+	float values[16 * 16], float borderingFactor[16 * 16], float &vegetationMaster,
+	float tightBorders[16 * 16])
 {
 	float *rezult
 		= regionsHeightNoise->GetNoiseSet(chunkX-1, 0, chunkZ-1,
@@ -219,6 +220,8 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 	for (int i = 0; i < 16 * 16; i++)
 	{
 		//todo investigate here!!!!!!!!!!!!!!!!!1
+		//rezult2[i] += 1;
+		//rezult2[i] /= 2;
 		//rezult2[i] = std::powf(rezult2[i], 1.1);
 		if (rezult2[i] < 0.05f) { rezult2[i] = 0; }
 		borderingFactor[i] = rezult2[i];
@@ -243,6 +246,29 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 	{
 		return rezult[x + y * 3];
 	};
+
+	for (int j = 0; j < 16; j++)
+		for (int i = 0; i < 16; i++)
+		{
+			tightBorders[i + j * 16] = 0;
+
+			if (j == 0 && getRezultValues(1, 1) != getRezultValues(1, 0))
+			{
+				tightBorders[i + j * 16] = 1;
+			}
+			else if (j == 15 && getRezultValues(1, 1) != getRezultValues(1, 2))
+			{
+				tightBorders[i + j * 16] = 1;
+			}
+			else if (i == 0 && getRezultValues(1, 1) != getRezultValues(0, 1))
+			{
+				tightBorders[i + j * 16] = 1;
+			}
+			else if (i == 15 && getRezultValues(1, 1) != getRezultValues(2, 1))
+			{
+				tightBorders[i + j * 16] = 1;
+			}
+		}
 
 	for (int j = 0; j < 16; j++)
 		for (int i = 0; i < 16; i++)

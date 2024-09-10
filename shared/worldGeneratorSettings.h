@@ -162,6 +162,6 @@ struct WorldGenerator
 	int getRegionHeightForChunk(int chunkX, int chunkZ);
 
 	int getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ, float values[16*16],
-		float borderingFactor[16 * 16], float &vegetationMaster);
+		float borderingFactor[16 * 16], float &vegetationMaster, float tightBorders[16 * 16]);
 
 };

@@ -31,6 +31,7 @@
 #include <gameplay/crafting.h>
 #include <rendering/renderSettings.h>
 #include <audioEngine.h>
+#include <gameplay/mapEngine.h>
 
 
 struct GameData
@@ -47,6 +48,9 @@ struct GameData
 	SunShadow sunShadow;
 
 	Profiler gameplayFrameProfiler;
+
+	MapEngine mapEngine;
+	bool isInsideMapView;
 
 	//debug stuff
 	glm::ivec3 point = {};
@@ -454,6 +458,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma region input
 
+	bool stopMainInput = gameData.escapePressed || gameData.killed || gameData.insideInventoryMenu ||
+		gameData.isInsideMapView;
+
 	static float moveSpeed = 40.f;
 	float isPlayerMovingSpeed = 0;
 
@@ -475,23 +482,24 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		gameData.showImgui = !gameData.showImgui;
 	}
 
-	//inventory and menu stuff
-	if (!gameData.escapePressed && !gameData.killed)
+
+	if(!stopMainInput || gameData.insideInventoryMenu)
+	if (platform::isKeyReleased(platform::Button::E))
 	{
-
-		if (platform::isKeyReleased(platform::Button::E))
+		if (gameData.insideInventoryMenu)
 		{
-			if (gameData.insideInventoryMenu)
-			{
-				exitInventoryMenu();
-			}
-			else
-			{
-				gameData.insideInventoryMenu = true;
-				gameData.blockInteractionType = 0;
-			}
-
+			exitInventoryMenu();
 		}
+		else
+		{
+			gameData.insideInventoryMenu = true;
+			gameData.blockInteractionType = 0;
+		}
+	}
+
+	//inventory and menu stuff
+	if (!stopMainInput)
+	{
 
 		if (platform::isKeyPressedOn(platform::Button::R))
 		{
@@ -506,154 +514,151 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 		//move
-		if(!gameData.insideInventoryMenu)
-	{
-		float speed = moveSpeed * deltaTime;
-		glm::vec3 moveDir = {};
-		if (platform::isKeyHeld(platform::Button::Up)
-			|| platform::isKeyHeld(platform::Button::W)
-			|| platform::getControllerButtons().buttons[platform::ControllerButtons::Up].held
-			)
 		{
-			moveDir.z -= speed;
-		}
-		if (platform::isKeyHeld(platform::Button::Down)
-			|| platform::isKeyHeld(platform::Button::S)
-			|| platform::getControllerButtons().buttons[platform::ControllerButtons::Down].held
-			)
-		{
-			moveDir.z += speed;
-		}
-		if (platform::isKeyHeld(platform::Button::Left)
-			|| platform::isKeyHeld(platform::Button::A)
-			|| platform::getControllerButtons().buttons[platform::ControllerButtons::Left].held
-			)
-		{
-			moveDir.x -= speed;
-
-		}
-		if (platform::isKeyHeld(platform::Button::Right)
-			|| platform::isKeyHeld(platform::Button::D)
-			|| platform::getControllerButtons().buttons[platform::ControllerButtons::Right].held
-			)
-		{
-			moveDir.x += speed;
-		}
-
-		if (player.entity.fly)
-		{
-			if (platform::isKeyHeld(platform::Button::LeftShift)
-				|| platform::getControllerButtons().buttons[platform::ControllerButtons::RBumper].held
+			float speed = moveSpeed * deltaTime;
+			glm::vec3 moveDir = {};
+			if (platform::isKeyHeld(platform::Button::Up)
+				|| platform::isKeyHeld(platform::Button::W)
+				|| platform::getControllerButtons().buttons[platform::ControllerButtons::Up].held
 				)
 			{
-				moveDir.y -= speed;
+				moveDir.z -= speed;
 			}
-			if (platform::isKeyHeld(platform::Button::Space)
-				|| platform::getControllerButtons().buttons[platform::ControllerButtons::LBumper].held
+			if (platform::isKeyHeld(platform::Button::Down)
+				|| platform::isKeyHeld(platform::Button::S)
+				|| platform::getControllerButtons().buttons[platform::ControllerButtons::Down].held
 				)
 			{
-				moveDir.y += speed;
+				moveDir.z += speed;
 			}
-		}
-		else
-		{
+			if (platform::isKeyHeld(platform::Button::Left)
+				|| platform::isKeyHeld(platform::Button::A)
+				|| platform::getControllerButtons().buttons[platform::ControllerButtons::Left].held
+				)
+			{
+				moveDir.x -= speed;
+
+			}
+			if (platform::isKeyHeld(platform::Button::Right)
+				|| platform::isKeyHeld(platform::Button::D)
+				|| platform::getControllerButtons().buttons[platform::ControllerButtons::Right].held
+				)
+			{
+				moveDir.x += speed;
+			}
+
+			if (player.entity.fly)
+			{
+				if (platform::isKeyHeld(platform::Button::LeftShift)
+					|| platform::getControllerButtons().buttons[platform::ControllerButtons::RBumper].held
+					)
+				{
+					moveDir.y -= speed;
+				}
+				if (platform::isKeyHeld(platform::Button::Space)
+					|| platform::getControllerButtons().buttons[platform::ControllerButtons::LBumper].held
+					)
+				{
+					moveDir.y += speed;
+				}
+			}
+			else
+			{
+				if (platform::isKeyPressedOn(platform::Button::Space)
+					|| platform::getControllerButtons().buttons[platform::ControllerButtons::LBumper].held
+					)
+				{
+					gameData.entityManager.localPlayer.entity.jump();
+				}
+
+
+			}
+
+			static float jumpTimer = 0;
 			if (platform::isKeyPressedOn(platform::Button::Space)
-				|| platform::getControllerButtons().buttons[platform::ControllerButtons::LBumper].held
-				)
+				|| platform::getControllerButtons().buttons[platform::ControllerButtons::LBumper].pressed)
 			{
-				gameData.entityManager.localPlayer.entity.jump();
-			}
-
-
-		}
-
-		static float jumpTimer = 0;
-		if (platform::isKeyPressedOn(platform::Button::Space)
-			|| platform::getControllerButtons().buttons[platform::ControllerButtons::LBumper].pressed)
-		{
-			if (player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE)
-			{
-				if (jumpTimer > 0)
+				if (player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE)
 				{
-					gameData.entityManager.localPlayer.entity.fly =
-						!gameData.entityManager.localPlayer.entity.fly;
+					if (jumpTimer > 0)
+					{
+						gameData.entityManager.localPlayer.entity.fly =
+							!gameData.entityManager.localPlayer.entity.fly;
 
-					gameData.entityManager.localPlayer.entity.forces = {};
-				}
-				else
-				{
-					jumpTimer = 0.2;
+						gameData.entityManager.localPlayer.entity.forces = {};
+					}
+					else
+					{
+						jumpTimer = 0.2;
+					}
 				}
 			}
+			jumpTimer -= deltaTime;
+			jumpTimer = std::max(jumpTimer, 0.f);
+
+			if (player.entity.fly)
+			{
+				gameData.entityManager.localPlayer.entity.flyFPS(moveDir, gameData.c.viewDirection);
+			}
+			else
+			{
+				gameData.entityManager.localPlayer.entity.moveFPS(moveDir, gameData.c.viewDirection);
+			}
+
+			//gameData.c.moveFPS(moveDir);
+
+			setBodyAndLookOrientation(gameData.entityManager.localPlayer.entity.bodyOrientation,
+				gameData.entityManager.localPlayer.entity.lookDirectionAnimation, moveDir, gameData.c.viewDirection);
+
+			//gameData.entityManager.localPlayer.bodyOrientation = 
+			//gameData.entityManager.localPlayer.lookDirection = 
+
+			bool rotate = !gameData.escapePressed;
+			if (platform::isRMouseHeld()) { rotate = true; }
+			gameData.c.rotateFPS(platform::getRelMousePosition(), 0.22f * deltaTime, rotate);
+
+			if (!gameData.escapePressed)
+			{
+				platform::setRelMousePosition(w / 2, h / 2);
+				gameData.c.lastMousePos = {w / 2, h / 2};
+			}
+
+			if (glm::length(glm::vec2{moveDir.x, moveDir.z}))
+			{
+				isPlayerMovingSpeed = 1;
+			}
+
 		}
-		jumpTimer -= deltaTime;
-		jumpTimer = std::max(jumpTimer, 0.f);
-
-		if (player.entity.fly)
-		{
-			gameData.entityManager.localPlayer.entity.flyFPS(moveDir, gameData.c.viewDirection);
-		}
-		else
-		{
-			gameData.entityManager.localPlayer.entity.moveFPS(moveDir, gameData.c.viewDirection);
-		}
-
-		//gameData.c.moveFPS(moveDir);
-
-		setBodyAndLookOrientation(gameData.entityManager.localPlayer.entity.bodyOrientation,
-			gameData.entityManager.localPlayer.entity.lookDirectionAnimation, moveDir, gameData.c.viewDirection);
-
-		//gameData.entityManager.localPlayer.bodyOrientation = 
-		//gameData.entityManager.localPlayer.lookDirection = 
-
-		bool rotate = !gameData.escapePressed;
-		if (platform::isRMouseHeld()) { rotate = true; }
-		gameData.c.rotateFPS(platform::getRelMousePosition(), 0.22f * deltaTime, rotate);
-
-		if (!gameData.escapePressed)
-		{
-			platform::setRelMousePosition(w / 2, h / 2);
-			gameData.c.lastMousePos = {w / 2, h / 2};
-		}
-
-		if (glm::length(glm::vec2{moveDir.x, moveDir.z}))
-		{
-			isPlayerMovingSpeed = 1;
-		}
-
-	}
 
 
 		//keyPad
-		if (!gameData.insideInventoryMenu)
-	{
-
-		for (int i = 0; i < 9; i++)
 		{
-			if (platform::isKeyPressedOn(platform::Button::NR1 + i))
+
+			for (int i = 0; i < 9; i++)
 			{
-				gameData.currentItemSelected = i;
+				if (platform::isKeyPressedOn(platform::Button::NR1 + i))
+				{
+					gameData.currentItemSelected = i;
+				}
 			}
-		}
 
-		auto scroll = platform::getScroll();
-		if (scroll < -0.5)
-		{
-			gameData.currentItemSelected++;
-		}
-		else if (scroll > 0.5)
-		{
-			gameData.currentItemSelected--;
-		}
+			auto scroll = platform::getScroll();
+			if (scroll < -0.5)
+			{
+				gameData.currentItemSelected++;
+			}
+			else if (scroll > 0.5)
+			{
+				gameData.currentItemSelected--;
+			}
 
-		gameData.currentItemSelected = std::clamp(gameData.currentItemSelected, 0, 8);
+			gameData.currentItemSelected = std::clamp(gameData.currentItemSelected, 0, 8);
 
-	}
+		}
 
 
 	#pragma region drop items
 
-		if (!gameData.insideInventoryMenu && !gameData.escapePressed)
 			if (platform::isKeyPressedOn(platform::Button::Q))
 			{
 				gameData.entityManager.dropItemByClient(
@@ -799,7 +804,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 
-
 #pragma region place blocks
 
 	glm::ivec3 rayCastPos = {};
@@ -809,7 +813,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	glm::uint64 targetedEntity = 0;
 	float raycastDist = 0;
 
-	if (!gameData.insideInventoryMenu && !gameData.killed)
+	if (!stopMainInput)
 	{
 
 		if (platform::isLMouseHeld() || platform::isRMousePressed())
@@ -1123,6 +1127,25 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma endregion
 
 
+	if (!stopMainInput || gameData.isInsideMapView)
+	{
+		if (platform::isKeyReleased(platform::Button::M))
+		{
+			if (gameData.isInsideMapView)
+			{
+				gameData.isInsideMapView = false;
+				gameData.mapEngine.close();
+			}
+			else
+			{
+				gameData.isInsideMapView = true;
+				gameData.mapEngine.open(programData,
+					{posInt.x, posInt.z}, gameData.chunkSystem);
+			}
+		}
+	}
+
+
 #pragma region update lights
 
 	gameData.gameplayFrameProfiler.startSubProfile("lightsSystem");
@@ -1145,16 +1168,16 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 #pragma region chunks and rendering
-	if(w != 0 && h != 0)
+
 	{
-		
-		
 		gameData.gameplayFrameProfiler.startSubProfile("chunkSystem");
 		gameData.chunkSystem.update(blockPositionPlayer, deltaTime, gameData.undoQueue,
 			gameData.lightSystem);
 		gameData.gameplayFrameProfiler.endSubProfile("chunkSystem");
+	}
 
-
+	if(w != 0 && h != 0 && !gameData.isInsideMapView)
+	{
 
 		gameData.gameplayFrameProfiler.startSubProfile("rendering");
 
@@ -1241,120 +1264,124 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	
 #pragma region debug and gyzmos stuff
 	
-	programData.GPUProfiler.startSubProfile("Debug rendering");
-
-
-	programData.pointDebugRenderer.renderCubePoint(gameData.c, gameData.point);
-
-	if (gameData.renderBox)
+	if (!gameData.isInsideMapView)
 	{
-		//programData.gyzmosRenderer.drawCube(from3DPointToBlock(point));
-		programData.gyzmosRenderer.drawCube(gameData.point);
 
-		if (gameData.pointSize != glm::ivec3{})
+		programData.GPUProfiler.startSubProfile("Debug rendering");
+
+
+		programData.pointDebugRenderer.renderCubePoint(gameData.c, gameData.point);
+
+		if (gameData.renderBox)
 		{
-			programData.gyzmosRenderer.drawCube(from3DPointToBlock(gameData.point + glm::ivec3(gameData.pointSize)));
-			programData.gyzmosRenderer.drawCube(from3DPointToBlock(gameData.point + glm::ivec3(gameData.pointSize) - glm::ivec3(1,0,0)));
-			programData.gyzmosRenderer.drawCube(from3DPointToBlock(gameData.point + glm::ivec3(gameData.pointSize) - glm::ivec3(0,1,0)));
-			programData.gyzmosRenderer.drawCube(from3DPointToBlock(gameData.point + glm::ivec3(gameData.pointSize) - glm::ivec3(0,0,1)));
+			//programData.gyzmosRenderer.drawCube(from3DPointToBlock(point));
+			programData.gyzmosRenderer.drawCube(gameData.point);
+
+			if (gameData.pointSize != glm::ivec3{})
+			{
+				programData.gyzmosRenderer.drawCube(from3DPointToBlock(gameData.point + glm::ivec3(gameData.pointSize)));
+				programData.gyzmosRenderer.drawCube(from3DPointToBlock(gameData.point + glm::ivec3(gameData.pointSize) - glm::ivec3(1, 0, 0)));
+				programData.gyzmosRenderer.drawCube(from3DPointToBlock(gameData.point + glm::ivec3(gameData.pointSize) - glm::ivec3(0, 1, 0)));
+				programData.gyzmosRenderer.drawCube(from3DPointToBlock(gameData.point + glm::ivec3(gameData.pointSize) - glm::ivec3(0, 0, 1)));
+			}
 		}
+
+
+		auto drawPlayerBox = [&](glm::dvec3 pos, glm::vec3 boxSize)
+		{
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2),
+				pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2));
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2),
+				pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2));
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2),
+				pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2));
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2),
+				pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2));
+
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2),
+				pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2));
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2),
+				pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2));
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2),
+				pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2));
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2),
+				pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2));
+
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2),
+				pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2));
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2),
+				pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2));
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2),
+				pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2));
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2),
+				pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2));
+		};
+
+		if (gameData.renderColliders)
+		{
+
+			for (auto &p : gameData.entityManager.pigs)
+			{
+				programData.pointDebugRenderer.
+					renderPoint(gameData.c, p.second.getRubberBandPosition());
+
+				auto boxSize = glm::vec3(0.8, 0.8, 0.8);
+				auto pos = p.second.getRubberBandPosition();
+
+				drawPlayerBox(pos, boxSize);
+			}
+
+			for (auto &p : gameData.entityManager.players)
+			{
+				programData.pointDebugRenderer.
+					renderPoint(gameData.c, p.second.getRubberBandPosition());
+
+				auto boxSize = p.second.entity.getColliderSize();
+				auto pos = p.second.getRubberBandPosition();
+
+				drawPlayerBox(pos, boxSize);
+			}
+
+			for (auto &p : gameData.entityManager.zombies)
+			{
+
+				programData.pointDebugRenderer.
+					renderPoint(gameData.c, p.second.getRubberBandPosition());
+
+				auto boxSize = p.second.entity.getColliderSize();
+				auto pos = p.second.getRubberBandPosition();
+
+				drawPlayerBox(pos, boxSize);
+			}
+
+			for (auto &p : gameData.entityManager.cats)
+			{
+
+				programData.pointDebugRenderer.
+					renderPoint(gameData.c, p.second.getRubberBandPosition());
+
+				auto boxSize = p.second.entity.getColliderSize();
+				auto pos = p.second.getRubberBandPosition();
+
+				drawPlayerBox(pos, boxSize);
+			}
+
+		}
+
+
+		//programData.gyzmosRenderer.drawLine(
+		//	gameData.point,
+		//	glm::vec3(gameData.point) + glm::vec3(gameData.pointSize));
+
+		if (gameData.renderPlayerPos)
+		{
+			programData.gyzmosRenderer.drawCube(blockPositionPlayer);
+		}
+
+		programData.gyzmosRenderer.render(gameData.c, posInt, posFloat);
+
+		programData.GPUProfiler.endSubProfile("Debug rendering");
 	}
-
-
-	auto drawPlayerBox = [&](glm::dvec3 pos, glm::vec3 boxSize)
-	{
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2),
-			pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2));
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2),
-			pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2));
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2),
-			pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2));
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2),
-			pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2));
-	
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2),
-			pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2));
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2),
-			pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2));
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2),
-			pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2));
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2),
-			pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2));
-	
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2),
-			pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2));
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2),
-			pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2));
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2),
-			pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2));
-		programData.gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2),
-			pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2));
-	};
-	
-	if (gameData.renderColliders)
-	{
-
-		for (auto &p : gameData.entityManager.pigs)
-		{
-			programData.pointDebugRenderer.
-				renderPoint(gameData.c, p.second.getRubberBandPosition());
-		
-			auto boxSize = glm::vec3(0.8, 0.8, 0.8);
-			auto pos = p.second.getRubberBandPosition();
-		
-			drawPlayerBox(pos, boxSize);
-		}
-
-		for (auto &p : gameData.entityManager.players)
-		{
-			programData.pointDebugRenderer.
-				renderPoint(gameData.c, p.second.getRubberBandPosition());
-		
-			auto boxSize = p.second.entity.getColliderSize();
-			auto pos = p.second.getRubberBandPosition();
-		
-			drawPlayerBox(pos, boxSize);
-		}
-		
-		for (auto &p : gameData.entityManager.zombies)
-		{
-		
-			programData.pointDebugRenderer.
-				renderPoint(gameData.c, p.second.getRubberBandPosition());
-		
-			auto boxSize = p.second.entity.getColliderSize();
-			auto pos = p.second.getRubberBandPosition();
-		
-			drawPlayerBox(pos, boxSize);
-		}
-
-		for (auto &p : gameData.entityManager.cats)
-		{
-
-			programData.pointDebugRenderer.
-				renderPoint(gameData.c, p.second.getRubberBandPosition());
-
-			auto boxSize = p.second.entity.getColliderSize();
-			auto pos = p.second.getRubberBandPosition();
-
-			drawPlayerBox(pos, boxSize);
-		}
-
-	}
-
-
-	//programData.gyzmosRenderer.drawLine(
-	//	gameData.point,
-	//	glm::vec3(gameData.point) + glm::vec3(gameData.pointSize));
-
-	if (gameData.renderPlayerPos)
-	{
-		programData.gyzmosRenderer.drawCube(blockPositionPlayer);
-	}
-
-	programData.gyzmosRenderer.render(gameData.c, posInt, posFloat);
-
-	programData.GPUProfiler.endSubProfile("Debug rendering");
 
 #pragma endregion
 
@@ -1801,13 +1828,24 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	int cursorSelected = -2;
 	unsigned short selectedCreativeItem = 0;
 
-	programData.ui.renderGameUI(deltaTime, w, h, gameData.currentItemSelected,
-		player.inventory, programData.blocksLoader, gameData.insideInventoryMenu,
-		cursorSelected, itemToCraft, 
-		(gameData.blockInteractionType == InteractionTypes::craftingTable),
-		gameData.currentInventoryTab, player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE,
-		selectedCreativeItem, player.life, programData, player
+	if (!gameData.isInsideMapView)
+	{
+		programData.ui.renderGameUI(deltaTime, w, h, gameData.currentItemSelected,
+			player.inventory, programData.blocksLoader, gameData.insideInventoryMenu,
+			cursorSelected, itemToCraft,
+			(gameData.blockInteractionType == InteractionTypes::craftingTable),
+			gameData.currentInventoryTab, player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE,
+			selectedCreativeItem, player.life, programData, player
 		);
+	}
+	else
+	{
+
+		gameData.mapEngine.update(programData, deltaTime, {posInt.x, posInt.z},
+			gameData.chunkSystem);
+
+	}
+
 
 
 #pragma endregion
@@ -2025,6 +2063,14 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			exitInventoryMenu();
 		}
 	}
+	else if (gameData.isInsideMapView)
+	{
+		if (platform::isKeyReleased(platform::Button::Escape))
+		{
+			gameData.isInsideMapView = false;
+			gameData.mapEngine.close();
+		}
+	}
 	else
 	{
 		if (platform::isKeyReleased(platform::Button::Escape) && !gameData.escapePressed)
@@ -2095,7 +2141,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	}
 
 	platform::showMouse(gameData.escapePressed || gameData.insideInventoryMenu ||
-		gameData.killed);
+		gameData.killed || gameData.isInsideMapView);
 
 
 #pragma endregion
@@ -2124,6 +2170,8 @@ void closeGameLogic()
 	gameData.chunkSystem.cleanup();
 	gameData.currentSkinTexture.cleanup();
 	gameData.entityManager.cleanup();
+	
+	gameData.mapEngine.close();
 
 	gameData = GameData(); //free all resources
 }

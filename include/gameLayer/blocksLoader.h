@@ -8,6 +8,7 @@ struct BlocksLoader
 	std::vector<GLuint> texturesIds;
 
 	void loadAllTextures(std::string path);
+	void setupAllColors();
 	void clearAllTextures();
 
 	void loadAllItemsGeometry();
@@ -31,6 +32,9 @@ struct BlocksLoader
 
 	gl2d::Texture backgroundTexture;
 
+	std::vector<glm::vec3> blocksColors;
+
 };
 
 uint16_t getGpuIdIndexForBlock(short type, int face);
+

@@ -192,6 +192,8 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 
 		//generateGhostAndStructures = false;
 
+		//strucutres todo remove or something or remake...
+		/*
 		if (generateGhostAndStructures)
 		{
 			int metaChunkX = divideMetaChunk(posX);
@@ -735,6 +737,8 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 			FastNoiseSIMD::FreeNoiseSet(randValues);
 
 		}
+
+		*/
 
 		if (generateGhostAndStructures)
 		{

@@ -214,9 +214,10 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 	float interpolateValues[16 * 16] = {};
 	float borderingFactor[16 * 16] = {};
+	float tightBorders[16 * 16] = {};
 	float vegetationMaster = 0;
 	int currentBiomeHeight = wg.getRegionHeightAndBlendingsForChunk(c.x, c.z,
-		interpolateValues, borderingFactor, vegetationMaster);
+		interpolateValues, borderingFactor, vegetationMaster, tightBorders);
 
 	//vegetationMaster = 1.f;
 	float vegetationPower = linearRemap(vegetationMaster, 0, 1, 1.2, 0.4);
@@ -667,6 +668,17 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			float lakeNoiseVal = getLakesNoiseVal(x, z); //this one is 1 for lake 0 for no lake
 			float localBorderingFactor = borderingFactor[z + x * CHUNK_SIZE];
 
+			if (tightBorders[z + x * CHUNK_SIZE])
+			{
+				c.setBorderFlag(x, z);
+			}
+
+			//if (localBorderingFactor > 0.95)
+			//{
+			//	c.setBorderFlag(x, z);
+			//	//std::cout << "YESSS ";
+			//}
+
 		#pragma region roads
 			bool placeRoad = 0;
 			float roadValue = 0;
@@ -831,7 +843,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			int biomeIndex = biomes[currentBiomeHeight];
 			auto biome = biomesManager.biomes[biomeIndex];
 
-			c.unsafeGetCachedBiome(x, z) = biomeIndex;
+			//c.unsafeGetCachedBiome(x, z) = biomeIndex;
 
 			constexpr int stoneNoiseStartLevel = 1;
 
