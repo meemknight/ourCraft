@@ -1359,6 +1359,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma endregion
 
 
+	auto centerChunk = gameData.chunkSystem.getChunkSafeFromBlockPos(posInt.x, posInt.z);
+
 #pragma region imgui
 	
 	bool terminate = false;
@@ -1376,6 +1378,11 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			ImGui::SliderFloat("Day time", &dayTime, 0, 1);
 
+			if (centerChunk)
+			{
+				ImGui::Text("Vegetaion: %f", centerChunk->data.vegetation);
+			}
+	
 			int l = player.life.life;
 			ImGui::SliderInt("Player Life", &l, 0, 20);
 			player.life.life = l;

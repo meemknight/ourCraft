@@ -64,6 +64,9 @@ struct Biome
 		treeSpruceTallOakCenterYellow,
 		treePalm,
 		treeBirch,
+		treeBirchTall,
+		treeRedBirchTall,
+		treeRedBirch,
 		treeSpruce,
 		treeTallOak,
 	};
@@ -89,7 +92,10 @@ struct BiomesManager
 
 	std::vector<Biome> biomes;
 
-	std::vector<VegetationNoiseSettings> greenBiomes;
+	std::vector<VegetationNoiseSettings> greenBiomesTrees;
+
+	std::vector<VegetationNoiseSettings> greenBiomesGrass;
+
 
 	bool loadAllBiomes();
 

@@ -156,8 +156,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	int currentBiomeHeight = wg.getRegionHeightAndBlendingsForChunk(c.x, c.z,
 		interpolateValues, borderingFactor, vegetationMaster);
 
-	vegetationMaster = 0.5;
-	float vegetationPower = linearRemap(vegetationMaster, 0, 1, 1, 0.5);
+	//vegetationMaster = 1.f;
+	float vegetationPower = linearRemap(vegetationMaster, 0, 1, 1.2, 0.4);
 
 	auto interpolator = [&](int *ptr, float value)
 	{
@@ -307,7 +307,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	}
 
 	float *treeAmountNoise2 =
-		wg.treesAmountNoise->GetNoiseSet(xPadd + 10000, 1000, zPadd + 10000, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+		wg.treesAmountNoise->GetNoiseSet(xPadd + 10000, 1000, zPadd + 10000, CHUNK_SIZE, (1), CHUNK_SIZE, 2);
 
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
@@ -316,6 +316,28 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		treeAmountNoise2[i] = powf(treeAmountNoise2[i], wg.treesAmountPower);
 		treeAmountNoise2[i] = wg.treesAmountSpline.applySpline(treeAmountNoise2[i]);
 	}
+
+	float *treeTypeNoise1 =
+		wg.treesTypeNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		treeTypeNoise1[i] += 1;
+		treeTypeNoise1[i] /= 2;
+		treeTypeNoise1[i] = powf(treeTypeNoise1[i], wg.treesTypePower);
+		treeTypeNoise1[i] = wg.treesTypeSpline.applySpline(treeTypeNoise1[i]);
+	}
+
+
+	float *treeTypeNoise2 =
+		wg.treesTypeNoise->GetNoiseSet(xPadd + 10000, 1000, zPadd + 10000, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		treeTypeNoise2[i] += 1;
+		treeTypeNoise2[i] /= 2;
+		treeTypeNoise2[i] = powf(treeTypeNoise2[i], wg.treesTypePower);
+		treeTypeNoise2[i] = wg.treesTypeSpline.applySpline(treeTypeNoise2[i]);
+	}
+
 
 
 	for (int i = 0; i < (CHUNK_SIZE + 1) * (CHUNK_SIZE + 1); i++)
@@ -433,6 +455,16 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return treeAmountNoise2[x * CHUNK_SIZE + z];
 	};
 
+	auto getTreeType1 = [treeTypeNoise1](int x, int z)
+	{
+		return treeTypeNoise1[x * CHUNK_SIZE + z];
+	};
+
+	auto getTreeType2 = [treeTypeNoise2](int x, int z)
+	{
+		return treeTypeNoise2[x * CHUNK_SIZE + z];
+	};
+
 	auto getRoads = [roadNoise](int x, int z)
 	{
 		return roadNoise[x * CHUNK_SIZE + z];
@@ -514,6 +546,12 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return wierdness[x * CHUNK_SIZE + z];
 	};
 
+	auto getIntFromFloat = [](float f, int maxExclusive)
+	{
+		if (f >= 0.99) { f = 0.99; }
+		return int(f * maxExclusive);
+	};
+
 #pragma endregion
 
 
@@ -535,6 +573,10 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			
 			float treeAmountVal1 = getTreeAmount1(x, z);
 			float treeAmountVal2 = getTreeAmount2(x, z);
+
+			float treeType1 = getTreeType1(x, z);
+			float treeType2 = getTreeType2(x, z);
+
 
 		#pragma region roads
 			bool placeRoad = 0;
@@ -846,6 +888,27 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				{
 					str.type = Structure_BirchTree;
 				}
+				else if (treeType == Biome::treeBirchTall)
+				{	
+					str.type = Structure_BirchTree;
+					str.addRandomTreeHeight = true;
+					str.replaceLogWith = BlockTypes::birch_log;
+					str.replaceLeavesWith = BlockTypes::birch_leaves;
+				}
+				else if (treeType == Biome::treeRedBirchTall)
+				{
+					str.type = Structure_BirchTree;
+					str.addRandomTreeHeight = true;
+					str.replaceLogWith = BlockTypes::birch_log;
+					str.replaceLeavesWith = BlockTypes::spruce_leaves_red;
+				}
+				else if (treeType == Biome::treeRedBirch)
+				{
+					str.type = Structure_BirchTree;
+					//str.addRandomTreeHeight = true;
+					//str.replaceLogWith = BlockTypes::birch_log;
+					str.replaceLeavesWith = BlockTypes::spruce_leaves_red;
+				}
 				else if (treeType == Biome::treeSpruce)
 				{
 					str.type = Structure_Spruce;
@@ -902,12 +965,11 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 					}
 				}
 
-				auto generateOneFeature = [&](float treeAmount, int index)
+				auto generateOneFeature = [&](float treeAmount, 
+					VegetationNoiseSettings &veg)
 				{
 					treeAmount = std::powf(treeAmount, vegetationPower);
 					float noiseVal = treeAmount;
-
-					VegetationNoiseSettings &veg = biomesManager.greenBiomes[index];
 
 					//one distribution element, can be multiple things there tho
 					for (auto &entry : veg.entry)
@@ -1008,12 +1070,20 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 				if (!generatedSomethingElse)
 				{
-					generateOneFeature(treeAmountVal1, 0);
+					int type = getIntFromFloat(treeType1, biomesManager.greenBiomesTrees.size());
+					generateOneFeature(treeAmountVal1, biomesManager.greenBiomesTrees[type]);
 				}
 
 				if (!generatedSomethingElse)
 				{
-					generateOneFeature(treeAmountVal2, 1);
+					int type = getIntFromFloat(treeType2, biomesManager.greenBiomesTrees.size());
+					generateOneFeature(treeAmountVal2, biomesManager.greenBiomesTrees[type]);
+				}
+
+				if (!generatedSomethingElse)
+				{
+					//todo
+					generateOneFeature(0.6, biomesManager.greenBiomesGrass[0]);
 				}
 
 				/*
@@ -1179,6 +1249,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	FastNoiseSIMD::FreeNoiseSet(hillsDropDownsNoise);
 	FastNoiseSIMD::FreeNoiseSet(treeAmountNoise1);
 	FastNoiseSIMD::FreeNoiseSet(treeAmountNoise2);
+	FastNoiseSIMD::FreeNoiseSet(treeTypeNoise1);
+	FastNoiseSIMD::FreeNoiseSet(treeTypeNoise2);
 	FastNoiseSIMD::FreeNoiseSet(roadNoise);
 	FastNoiseSIMD::FreeNoiseSet(spagettiNoise);
 	FastNoiseSIMD::FreeNoiseSet(spagettiNoise2);

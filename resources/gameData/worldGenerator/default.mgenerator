@@ -3,6 +3,7 @@ continentalnessNoise:
 	{
 	scale: 0.351000;
 	type: SimplexFractal;
+	celularReturnType: Distance;
 	frequency: 0.016000;
 	octaves: 4;
 	perturbFractalOctaves: 1;
@@ -33,6 +34,7 @@ peaksAndValies:
 	{
 	scale: 0.280000;
 	type: PerlinFractal;
+	celularReturnType: Distance;
 	frequency: 0.060000;
 	octaves: 3;
 	perturbFractalOctaves: 0;
@@ -64,6 +66,7 @@ wierdness:
 	{
 	scale: 0.610000;
 	type: SimplexFractal;
+	celularReturnType: Distance;
 	frequency: 0.006000;
 	octaves: 3;
 	perturbFractalOctaves: 0;
@@ -85,6 +88,7 @@ vegetationNoise:
 	{
 	scale: 0.350000;
 	type: SimplexFractal;
+	celularReturnType: Distance;
 	frequency: 0.015000;
 	octaves: 3;
 	perturbFractalOctaves: 0;
@@ -99,6 +103,7 @@ stonetDnoise:
 	{
 	scale: 1.691000;
 	type: SimplexFractal;
+	celularReturnType: Distance;
 	frequency: 0.007000;
 	octaves: 4;
 	perturbFractalOctaves: 0;
@@ -127,6 +132,7 @@ riversNoise:
 	{
 	scale: 0.141000;
 	type: SimplexFractal;
+	celularReturnType: Distance;
 	frequency: 0.018000;
 	octaves: 3;
 	perturbFractalOctaves: 0;
@@ -148,6 +154,7 @@ roadsNoise:
 	{
 	scale: 0.140000;
 	type: SimplexFractal;
+	celularReturnType: Distance;
 	frequency: 0.028000;
 	octaves: 2;
 	perturbFractalOctaves: 0;
@@ -169,6 +176,7 @@ stonePatches:
 	{
 	scale: 0.001000;
 	type: SimplexFractal;
+	celularReturnType: Distance;
 	frequency: 0.026000;
 	octaves: 4;
 	perturbFractalOctaves: 0;
@@ -186,6 +194,7 @@ temperatureNoise:
 	{
 	scale: 0.070000;
 	type: ValueFractal;
+	celularReturnType: Distance;
 	frequency: 0.015000;
 	octaves: 3;
 	perturbFractalOctaves: 0;
@@ -206,6 +215,7 @@ randomSand:
 	{
 	scale: 13.650000;
 	type: SimplexFractal;
+	celularReturnType: Distance;
 	frequency: 0.015000;
 	octaves: 2;
 	perturbFractalOctaves: 0;
@@ -226,6 +236,7 @@ hillsDrop:
 	{
 	scale: 0.080000;
 	type: SimplexFractal;
+	celularReturnType: Distance;
 	frequency: 0.019000;
 	octaves: 2;
 	perturbFractalOctaves: 0;
@@ -247,6 +258,7 @@ treesAmountNoise:
 	{
 	scale: 0.130000;
 	type: SimplexFractal;
+	celularReturnType: Distance;
 	frequency: 0.015000;
 	octaves: 3;
 	perturbFractalOctaves: 0;
@@ -261,8 +273,9 @@ treesAmountNoise:
 	}
 treesTypeNoise:
 	{
-	scale: 0.160000;
-	type: SimplexFractal;
+	scale: 0.221000;
+	type: Cellular;
+	celularReturnType: CellValue;
 	frequency: 0.015000;
 	octaves: 3;
 	perturbFractalOctaves: 0;
@@ -277,6 +290,7 @@ spagettiNoise:
 	{
 	scale: 0.911000;
 	type: CubicFractal;
+	celularReturnType: Distance;
 	frequency: 0.025000;
 	octaves: 2;
 	perturbFractalOctaves: 0;

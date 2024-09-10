@@ -26,6 +26,15 @@ bool BiomesManager::loadAllBiomes()
 	GrowElement birchTree;
 	birchTree.treeType = Biome::treeBirch;
 
+	GrowElement tallBirchTree;
+	tallBirchTree.treeType = Biome::treeBirchTall;
+
+	GrowElement redBirchTree;
+	redBirchTree.treeType = Biome::treeRedBirch;
+
+	GrowElement redBirchTreeTall;
+	redBirchTreeTall.treeType = Biome::treeRedBirchTall;
+
 	GrowElement tallOakElement;
 	tallOakElement.treeType = Biome::treeTallOak;
 
@@ -82,17 +91,45 @@ bool BiomesManager::loadAllBiomes()
 
 	GrowingThing growTreeOrBirch;
 	growTreeOrBirch.elements.push_back(basictreeElement);
+	growTreeOrBirch.elements.push_back(basictreeElement);
 	growTreeOrBirch.elements.push_back(birchTree);
 	growTreeOrBirch.growOn = growOnNormalPlants;
+
+	GrowingThing growBirchForest;
+	growBirchForest.elements.push_back(birchTree);
+	growBirchForest.elements.push_back(birchTree);
+	growBirchForest.elements.push_back(tallBirchTree);
+	growBirchForest.growOn = growOnNormalPlants;
+
+	GrowingThing growRedBirchForest;
+	growRedBirchForest.elements.push_back(redBirchTree);
+	growRedBirchForest.elements.push_back(redBirchTree);
+	growRedBirchForest.elements.push_back(redBirchTreeTall);
+	growRedBirchForest.growOn = growOnNormalPlants;
 
 	VegetationSettings growFullGrassVegetation;
 	growFullGrassVegetation.growThing = growGrass;
 	growFullGrassVegetation.chanceRemap = {0.1, 0.5};
 
+	VegetationSettings growNormalTree;
+	growNormalTree.growThing = growTree;
+	growNormalTree.minTresshold = 0.5;
+	growNormalTree.chanceRemap = {0.01, 0.08};
+
+	VegetationSettings growBirchVegetation;
+	growBirchVegetation.growThing = growBirchForest;
+	growBirchVegetation.minTresshold = 0.5;
+	growBirchVegetation.chanceRemap = {0.012, 0.09};
+
+	VegetationSettings growRedBirchVegetation;
+	growRedBirchVegetation.growThing = growRedBirchForest;
+	growRedBirchVegetation.minTresshold = 0.5;
+	growRedBirchVegetation.chanceRemap = {0.015, 0.05};
+
 	VegetationSettings growRandomTreesVegetation;
 	growRandomTreesVegetation.growThing = growTreeOrBirch;
-	growRandomTreesVegetation.minTresshold = 0.6;
-	growRandomTreesVegetation.chanceRemap = {0.00005, 0.0002};
+	growRandomTreesVegetation.minTresshold = 0.65;
+	growRandomTreesVegetation.chanceRemap = {0.01, 0.04};
 
 	VegetationSettings growRosePatchesVegetation;
 	growRosePatchesVegetation.growThing = growRose;
@@ -104,28 +141,37 @@ bool BiomesManager::loadAllBiomes()
 	tallSpruceForestVegetation.minTresshold = 0.50;
 	tallSpruceForestVegetation.chanceRemap = {0.01, 0.07};
 
-	VegetationSettings rareThickSpruce;
-	rareThickSpruce.growThing = growThickSpruce;
-	rareThickSpruce.minTresshold = 0.80;
-	rareThickSpruce.chanceRemap = {0.01, 0.04};
+	VegetationSettings ThickSpruce;
+	ThickSpruce.growThing = growThickSpruce;
+	ThickSpruce.minTresshold = 0.50;
+	ThickSpruce.chanceRemap = {0.01, 0.04};
 	
 	VegetationSettings tallForestVegetation;
 	tallForestVegetation.growThing = growTallOak;
 	tallForestVegetation.minTresshold = 0.5;
-	tallForestVegetation.chanceRemap = {0.02, 0.08};
+	tallForestVegetation.chanceRemap = {0.03, 0.10};
+
+	auto pushTreeVegetation = [&](VegetationSettings &v)
+	{
+		VegetationNoiseSettings noiseSettings;
+		noiseSettings.entry.push_back(v);
+		greenBiomesTrees.push_back(noiseSettings);
+	};
+	
+
+	pushTreeVegetation(growNormalTree);
+	pushTreeVegetation(growRandomTreesVegetation);
+	pushTreeVegetation(growBirchVegetation);
+	pushTreeVegetation(tallForestVegetation);
+	pushTreeVegetation(tallSpruceForestVegetation);
+	pushTreeVegetation(growRedBirchVegetation);
+	pushTreeVegetation(ThickSpruce);
+	
 
 	{
 		VegetationNoiseSettings noiseSettings;
-		noiseSettings.entry.push_back(tallForestVegetation);
-		//noiseSettings.entry.push_back(growFullGrassVegetation);
-		greenBiomes.push_back(noiseSettings);
-	}
-
-	{
-		VegetationNoiseSettings noiseSettings;
-		noiseSettings.entry.push_back(tallSpruceForestVegetation);
-		//noiseSettings.entry.push_back(growFullGrassVegetation);
-		greenBiomes.push_back(noiseSettings);
+		noiseSettings.entry.push_back(growFullGrassVegetation);
+		greenBiomesGrass.push_back(noiseSettings);
 	}
 
 
@@ -146,7 +192,7 @@ bool BiomesManager::loadAllBiomes()
 
 		{
 			VegetationNoiseSettings noiseSettings;
-			noiseSettings.entry.push_back(rareThickSpruce);
+			noiseSettings.entry.push_back(ThickSpruce);
 			plains.vegetationNoises.push_back(noiseSettings);
 		};
 

@@ -34,6 +34,12 @@ void renderSettingsForOneNoise(const char *name, NoiseSetting &n)
 	ImGui::DragInt("Perturb Fractal Octaves", &n.perturbFractalOctaves, 0.5, 0, 8);
 	ImGui::DragFloat("Power", &n.power, 0.1, 0.1, 10);
 
+	if (n.type == FastNoiseSIMD::NoiseType::Cellular)
+	{
+		ImGui::Combo("Cellular return type", &n.cellularReturnType,
+			"CellValue\0Distance\0Distance2\0Distance2Add\0Distance2Sub\0Distance2Mul\0Distance2Div\0NoiseLookup\0Distance2Cave");
+	}
+
 	ImGui::PopID();
 }
 
@@ -47,8 +53,6 @@ bool showWierdness = 0;
 bool showVegetation = 0;
 bool show3DStone = 0;
 bool showSpagetti = 0;
-
-bool showHumidityAndTemperature = 0;
 
 
 bool initGame()
@@ -71,6 +75,7 @@ gl2d::Texture stone3DNoiseT;
 gl2d::Texture wierdnessT;
 gl2d::Texture vegetationT;
 gl2d::Texture spagettiT;
+
 
 gl2d::Texture riversT;
 gl2d::Texture hillsDropT;
@@ -747,13 +752,6 @@ bool gameLogic(float deltaTime)
 		noiseEditor(settings.vegetationNoise, "Vegetation");
 	}
 
-	if (showHumidityAndTemperature)
-	{
-		ImGui::Separator();
-
-		noiseEditor(settings.temperatureNoise, "Temperature");
-
-	}
 
 	ImGui::Separator();
 
@@ -828,7 +826,6 @@ bool gameLogic(float deltaTime)
 	ImGui::Checkbox("showWierdness", &showWierdness); ImGui::SameLine();
 	ImGui::Checkbox("show3DStone", &show3DStone); ImGui::SameLine();
 	ImGui::Checkbox("showVegetation", &showVegetation);
-	ImGui::Checkbox("showHumidityAndTemperature", &showHumidityAndTemperature); ImGui::SameLine();
 	ImGui::Checkbox("showSpagetti", &showSpagetti);
 
 	if (show3DStone)
@@ -879,11 +876,6 @@ bool gameLogic(float deltaTime)
 	if (showVegetation)
 	{
 		drawNoise("Vegetation", vegetationT);
-	}
-
-	if (showHumidityAndTemperature)
-	{
-		drawNoise("Temperature", temperatureT);
 	}
 
 	drawNoise("Trees amount", treesAmountT);

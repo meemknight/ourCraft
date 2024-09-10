@@ -77,6 +77,11 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 		noise->SetFrequency(s.frequency);
 		noise->SetFractalOctaves(s.octaves);
 		noise->SetPerturbFractalOctaves(s.perturbFractalOctaves);
+
+		if (s.type == FastNoiseSIMD::NoiseType::Cellular)
+		{
+			noise->SetCellularReturnType((FastNoiseSIMD::CellularReturnType)s.cellularReturnType);
+		}
 	};
 
 	apply(continentalnessNoise, s.seed + 2, s.continentalnessNoiseSettings);
@@ -197,6 +202,8 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 		1, (1), 1, 1);
 
 	vegetationMaster = rezult3[0];
+	vegetationMaster += 1.f;
+	vegetationMaster /= 2.f;
 
 	for (int i = 0; i < 16 * 16; i++)
 	{
@@ -204,6 +211,9 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 		if (rezult2[i] < 0.05f) { rezult2[i] = 0; }
 		borderingFactor[i] = rezult2[i];
 	}
+
+	//if (rezult[0] < 0) { std::cout << rezult[0] << " "; }
+	//if (rezult2[0] < 0) { std::cout << rezult2[0] << " "; }
 
 	for (int i = 0; i < 3*3; i++)
 	{
@@ -427,6 +437,7 @@ std::string NoiseSetting::saveSettings(int tabs, bool saveSpline)
 	addTabs();
 	rez += "scale: "; rez += std::to_string(scale); rez += ";\n"; addTabs();
 	rez += "type: "; rez += magic_enum::enum_name((FastNoiseSIMD::NoiseType)type); rez += ";\n"; addTabs();
+	rez += "celularReturnType: "; rez += magic_enum::enum_name((FastNoiseSIMD::CellularReturnType)cellularReturnType); rez += ";\n"; addTabs();
 	rez += "frequency: "; rez += std::to_string(frequency); rez += ";\n"; addTabs();
 	rez += "octaves: "; rez += std::to_string(octaves); rez += ";\n"; addTabs();
 	rez += "perturbFractalOctaves: "; rez += std::to_string(perturbFractalOctaves); rez += ";\n"; addTabs();
@@ -456,8 +467,8 @@ void NoiseSetting::sanitize()
 	octaves = glm::clamp(octaves, 0, 8);
 	perturbFractalOctaves = glm::clamp(perturbFractalOctaves, 0, 8);
 	power = glm::clamp(power, 0.1f, 10.f);
+	cellularReturnType = glm::clamp(cellularReturnType, (int)FastNoiseSIMD::CellularReturnType::CellValue, (int)FastNoiseSIMD::CellularReturnType::Distance2Cave);
 
-	//todo the rest
 
 }
 
@@ -743,6 +754,35 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 							}
 
 							if (settings.type < 0) { return 0; }
+
+							if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
+						}
+						else if (s == "celularReturnType")
+						{
+							if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+							if (isEof()) { return 0; }
+
+							if (!isString()) { return 0; }
+
+							auto s = tokens[i].s; //todo to lower
+							i++;
+							settings.cellularReturnType = -1;
+
+							const char *types[] = {
+								"CellValue", "Distance", 
+								"Distance2", "Distance2Add", "Distance2Sub", 
+								"Distance2Mul", "Distance2Div", "NoiseLookup", "Distance2Cave"};
+
+							for (int t = 0; t < sizeof(types) / sizeof(types[0]); t++)
+							{
+								if (s == types[t])
+								{
+									settings.cellularReturnType = t;
+									break;
+								}
+							}
+
+							if (settings.cellularReturnType < 0) { return 0; }
 
 							if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
 						}

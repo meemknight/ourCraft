@@ -7,6 +7,7 @@ struct NoiseSetting
 {
 	float scale = 0.35;
 	int type = FastNoiseSIMD::NoiseType::SimplexFractal;
+	int cellularReturnType = FastNoiseSIMD::CellularReturnType::Distance;
 	float frequency = 0.015;
 	int octaves = 3;
 	int perturbFractalOctaves = 0;
