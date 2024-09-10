@@ -76,6 +76,7 @@ gl2d::Texture wierdnessT;
 gl2d::Texture vegetationT;
 gl2d::Texture spagettiT;
 gl2d::Texture cavesT;
+gl2d::Texture lakesNoiseT;
 
 
 gl2d::Texture riversT;
@@ -415,6 +416,23 @@ void recreate()
 	createFromGrayScale(cavesT, cavesNoise, glm::ivec2{size.x,256});
 
 
+	float *lakesNoise;
+	{
+		lakesNoise
+			= wg.lakesNoise->GetNoiseSet(displacement.x, 0, displacement.y, 1, 256, size.x, 1);
+
+		for (int i = 0; i < size.x * 256; i++)
+		{
+			lakesNoise[i] += 1;
+			lakesNoise[i] /= 2;
+			lakesNoise[i] = std::pow(lakesNoise[i], settings.lakesNoise.power);
+			lakesNoise[i] = applySpline(lakesNoise[i], settings.lakesNoise.spline);
+		}
+	}
+	createFromGrayScale(lakesNoiseT, lakesNoise, glm::ivec2{size.x,256});
+
+
+
 	createFromGrayScale(finalTexture, finalNoise, size);
 
 	{
@@ -598,6 +616,8 @@ void recreate()
 	FastNoiseSIMD::FreeNoiseSet(randomSandNoise);
 	FastNoiseSIMD::FreeNoiseSet(temperatureNoise);
 	FastNoiseSIMD::FreeNoiseSet(spagettiNoise);
+	FastNoiseSIMD::FreeNoiseSet(lakesNoise);
+	FastNoiseSIMD::FreeNoiseSet(cavesNoise);
 
 
 	delete[] finalNoise;
@@ -770,6 +790,10 @@ bool gameLogic(float deltaTime)
 	}
 
 	ImGui::Separator();
+
+	noiseEditor(settings.lakesNoise, "Lakes noise");
+
+	ImGui::Separator();
 	noiseEditor(settings.cavesNoise, "Caves");
 
 	ImGui::Separator();
@@ -895,6 +919,8 @@ bool gameLogic(float deltaTime)
 	{
 		drawNoise("Vegetation", vegetationT);
 	}
+
+	drawNoise("Lakes Noise", lakesNoiseT);
 
 	drawNoise("Caves Noise", cavesT);
 

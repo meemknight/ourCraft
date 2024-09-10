@@ -37,6 +37,7 @@ struct WorldGeneratorSettings
 	NoiseSetting randomSand;
 	NoiseSetting stonePatches;
 	NoiseSetting treesAmountNoise;
+	NoiseSetting lakesNoise;
 	NoiseSetting treesTypeNoise;
 	NoiseSetting cavesNoise;
 
@@ -137,6 +138,10 @@ struct WorldGenerator
 	Spline roadSplines;
 	float roadPower = 1.f;
 
+
+	FastNoiseSIMD *lakesNoise;
+	Spline lakesSplines;
+	float lakesPower = 1.f;
 
 	FastNoiseSIMD *whiteNoise;
 

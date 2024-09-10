@@ -488,16 +488,26 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 	int currentBaked = 0;
 	int currentBakedTransparency = 0;
-	const int maxToBake = 2; //this frame //max to bake
-	const int maxToBakeTransparency = 2; //this frame //max to bake
+	int maxToBake = 2; //this frame //max to bake
+	int maxToBakeTransparency = 2; //this frame //max to bake
 
-	auto chunkVectorCopy = loadedChunks;
-	
-	std::sort(chunkVectorCopy.begin(), chunkVectorCopy.end(),
+	std::vector<Chunk *>chunkVectorCopyNoNulls;
+	chunkVectorCopyNoNulls.reserve(loadedChunks.size());
+
+	bool close = 0;
+	for (auto &c : loadedChunks)
+	{
+		if (c)
+		{
+			chunkVectorCopyNoNulls.push_back(c);
+		}
+	}
+
+	std::sort(chunkVectorCopyNoNulls.begin(), chunkVectorCopyNoNulls.end(),
 		[x, z](Chunk* a, Chunk* b) 
 			{
-				if (a == nullptr) { return false; }
-				if (b == nullptr) { return true; }
+				//if (a == nullptr) { return false; }
+				//if (b == nullptr) { return true; }
 				
 				int ax = a->data.x - x;
 				int az = a->data.z - z;
@@ -512,10 +522,9 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 			}
 		);
 	
-	for (int i = 0; i < chunkVectorCopy.size(); i++)
+	for (int i = 0; i < chunkVectorCopyNoNulls.size(); i++)
 	{
-		auto chunk = chunkVectorCopy[i];
-		if (chunk == nullptr) { continue; }
+		auto chunk = chunkVectorCopyNoNulls[i];
 		if (chunk->isDontDrawYet() == true) { chunk->setDontDrawYet(false); continue; }
 	
 		int x = chunk->data.x - minPos.x;
@@ -535,13 +544,14 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 			//todo add corners for baking cache stuff
 			//if (chunk->shouldBakeOnlyBecauseOfTransparency(left, right, front, back))
+			bool baked = 0;
 			if (chunk->isDirtyTransparency()) 
 			{
 				if (currentBakedTransparency < maxToBakeTransparency)
 				{
 					auto b = chunk->bake(left, right, 
 						front, back, frontLeft, frontRight, backLeft, backRight, playerBlockPosition, gpuBuffer);
-					if (b) { currentBakedTransparency++; }
+					if (b) { currentBakedTransparency++; baked = true; }
 				}
 			}
 			else
@@ -550,7 +560,16 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 				{
 					auto b = chunk->bake(left, right, front, back, frontLeft, frontRight, backLeft, backRight,
 						playerBlockPosition, gpuBuffer);
-					if (b) { currentBaked++; }
+					if (b) { currentBaked++; baked = true;}
+				}
+			}
+
+			if (baked)
+			{
+				if (i > 20)
+				{
+					maxToBake = 1;
+					maxToBakeTransparency = 1;
 				}
 			}
 		}

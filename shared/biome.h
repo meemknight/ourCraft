@@ -7,7 +7,7 @@
 
 struct BlockVariation
 {
-	StaticVector<BlockTypes, 10> block;
+	StaticVector<BlockTypes, 16> block;
 	BlockTypes getRandomBLock(float f)
 	{
 		if (f >= 0.99) { f = 0.99; }

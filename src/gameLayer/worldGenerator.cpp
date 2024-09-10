@@ -9,11 +9,12 @@
 
 const int waterLevel = 65;
 
+
+//riverValue is from 0 to 1 where 1 means river
 void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, float roadValue,
-	float randomNumber, bool sandShore, bool stonePatch)
+	float randomNumber, bool sandShore, bool stonePatch, float riverValue)
 {
-
-
+	
 	BlockType surfaceBlock = biome.surfaceBlock;
 	BlockType secondBlock = biome.secondaryBlock;
 
@@ -34,6 +35,44 @@ void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, f
 		}
 	}
 
+	if (riverValue > 0.20)
+	{
+		BlockVariation roadShape;
+		roadShape.block.push_back(BlockTypes::cobblestone);
+		roadShape.block.push_back(BlockTypes::stone);
+		roadShape.block.push_back(BlockTypes::gravel);
+		roadShape.block.push_back(BlockTypes::coarseDirt);
+		roadShape.block.push_back((BlockTypes)surfaceBlock);
+
+		if (riverValue < 0.5)
+		{
+			roadShape.block.push_back((BlockTypes)surfaceBlock);
+		}
+
+		if (riverValue < 0.4)
+		{
+			roadShape.block.push_back((BlockTypes)surfaceBlock);
+		}
+
+		if (riverValue < 0.35)
+		{
+			roadShape.block.push_back((BlockTypes)surfaceBlock);
+		}
+
+		if (riverValue < 0.30)
+		{
+			roadShape.block.push_back((BlockTypes)surfaceBlock);
+			roadShape.block.push_back((BlockTypes)surfaceBlock);
+		}
+
+		if (riverValue < 0.25)
+		{
+			roadShape.block.push_back((BlockTypes)surfaceBlock);
+			roadShape.block.push_back((BlockTypes)surfaceBlock);
+		}
+
+		surfaceBlock = roadShape.getRandomBLock(randomNumber);
+	}
 
 #pragma region road
 	if(road)
@@ -82,6 +121,29 @@ void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, f
 
 	for (y = waterLevel; y >= 20; y--)
 	{
+
+		if (startPos[y].getType() == BlockTypes::stone && startPos[y+1].getType() == biome.waterType)
+		{
+			//water block
+			if (riverValue > 0.2)
+			{
+				BlockVariation roadShape;
+
+				if (riverValue > 0.9)
+				{
+					roadShape.block.push_back(BlockTypes::stone);
+				}
+
+				roadShape.block.push_back(BlockTypes::stone);
+				roadShape.block.push_back(BlockTypes::gravel);
+				roadShape.block.push_back(BlockTypes::gravel);
+				roadShape.block.push_back(BlockTypes::cobblestone);
+				roadShape.block.push_back(BlockTypes::cobblestone);
+
+				startPos[y].setType(roadShape.getRandomBLock(randomNumber));
+			}
+
+		}else
 		if (startPos[y].getType() == BlockTypes::air)
 		{
 			if(road && y == waterLevel)
@@ -246,6 +308,14 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		cavesNoise[i] = wg.cavesSpline.applySpline(cavesNoise[i]);
 	}
 
+	float *lakesNoise = wg.lakesNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, 1, CHUNK_SIZE);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		lakesNoise[i] += 1;
+		lakesNoise[i] /= 2;
+		lakesNoise[i] = powf(lakesNoise[i], wg.lakesPower);
+		lakesNoise[i] = wg.lakesSplines.applySpline(lakesNoise[i]);
+	}
 
 	float *whiteNoise
 		= wg.whiteNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE + 1, (1), CHUNK_SIZE + 1);
@@ -485,6 +555,11 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return whiteNoise[x * (CHUNK_SIZE + 1) + z];
 	};
 
+	auto getLakesNoiseVal = [lakesNoise](int x, int z)
+	{
+		return lakesNoise[x * (CHUNK_SIZE) + z];
+	};
+
 	auto getWhiteNoise2Val = [whiteNoise2](int x, int z)
 	{
 		return whiteNoise2[x * (CHUNK_SIZE + 1) + z];
@@ -589,6 +664,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			float treeType1 = getTreeType1(x, z);
 			float treeType2 = getTreeType2(x, z);
 
+			float lakeNoiseVal = getLakesNoiseVal(x, z); //this one is 1 for lake 0 for no lake
+			float localBorderingFactor = borderingFactor[z + x * CHUNK_SIZE];
 
 		#pragma region roads
 			bool placeRoad = 0;
@@ -653,7 +730,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			if (
 				//currentBiomeHeight == 2 
 				currentInterpolatedValue <= 1.9f && currentInterpolatedValue > 1.1f
-				&& borderingFactor[z + x * CHUNK_SIZE] > 0.1)
+				&& localBorderingFactor > 0.1)
 			{
 				sandShore = 1;
 			}
@@ -661,18 +738,45 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		#pragma endregion
 
 
-
-
 			auto screenBlend = [](float a, float b)
 			{
 				return 1.f - (1.f - a) * (1.f - b);
 			};
 
+
+		#pragma region lakes
+			if (lakeNoiseVal < 0.1) 
+			{
+				lakeNoiseVal = 0;
+			}
+
+			if (currentBiomeHeight != 2)
+			{
+				lakeNoiseVal = 0;
+			}
+			else
+			{
+				lakeNoiseVal *= (1.f - localBorderingFactor);
+
+				//if (lakeNoiseVal > 0.1)
+				//{
+				//	startLevel = glm::mix(startLevel, waterLevel - 5, lakeNoiseVal);
+				//	maxMountainLevel = glm::mix(maxMountainLevel, waterLevel - 2, lakeNoiseVal);
+				//}
+			}
+		#pragma endregion
+
+
+
 			float underGroundRivers = 0;
+			float riverChanceValue = 0;
 			//plains rivers
 			if (currentBiomeHeight == 2)
 			{
 				float rivers = getRivers(x, z);
+				rivers *= (1 - lakeNoiseVal);
+
+				riverChanceValue = 1 - rivers;
 
 				startLevel = glm::mix(waterLevel - 5, startLevel, rivers);
 				maxMountainLevel = glm::mix(waterLevel - 2, maxMountainLevel, rivers);
@@ -680,6 +784,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			else if (currentBiomeHeight >= 3)
 			{
 				underGroundRivers = 1-getRivers(x, z);
+				riverChanceValue = underGroundRivers;
+
 			}
 
 
@@ -719,7 +825,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				maxMountainLevel++;
 			}
 
-
+			if (maxMountainLevel <= startLevel) { startLevel = maxMountainLevel - 1; }
 			int heightDiff = maxMountainLevel - startLevel;
 
 			int biomeIndex = biomes[currentBiomeHeight];
@@ -833,8 +939,15 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				}
 			}
 
+			float riverValueForPlacingRocks = screenBlend(riverChanceValue, lakeNoiseVal);
+			if (currentBiomeHeight != 2 && currentBiomeHeight != 1)
+			{
+				riverValueForPlacingRocks = 0;
+			}
+
 			calculateBlockPass1(firstH, &c.unsafeGet(x, 0, z), biome, placeRoad, roadValue, 
-				getWhiteNoiseVal(x,z), sandShore, stonePatchesVal > 0.5);
+				getWhiteNoiseVal(x,z), sandShore, stonePatchesVal > 0.5, 
+				riverValueForPlacingRocks);
 
 			//all caves
 			for (int y = 2; y < firstH; y++)
@@ -990,6 +1103,14 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 					float stonesChance = glm::mix(0.008, 0.04, stonePatchesVal);
 
 					stonesChance *= randomStones[0];
+
+					//more stones near rivers
+					if (riverChanceValue > 0.2 && currentBiomeHeight == 2)
+					{
+						stonesChance += 0.002;
+					}
+
+					//if()
 
 					if (getWhiteNoiseChance(x, z, stonesChance))
 					{
@@ -1286,6 +1407,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	FastNoiseSIMD::FreeNoiseSet(randomGravel);
 	FastNoiseSIMD::FreeNoiseSet(randomClay);
 	FastNoiseSIMD::FreeNoiseSet(whiteNoise);
+	FastNoiseSIMD::FreeNoiseSet(lakesNoise);
 	FastNoiseSIMD::FreeNoiseSet(whiteNoise2);
 	FastNoiseSIMD::FreeNoiseSet(whiteNoise3);
 	FastNoiseSIMD::FreeNoiseSet(riversNoise);
