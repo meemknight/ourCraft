@@ -38,6 +38,7 @@ struct WorldGeneratorSettings
 	NoiseSetting stonePatches;
 	NoiseSetting treesAmountNoise;
 	NoiseSetting treesTypeNoise;
+	NoiseSetting cavesNoise;
 
 	Spline peaksAndValiesContributionSpline;
 	Spline regionsHeightSpline;
@@ -100,7 +101,7 @@ struct WorldGenerator
 	
 	FastNoiseSIMD *spagettiNoise;
 	Spline spagettiNoiseSplines;
-	float spagettiNoisePower = 1.f;
+	float spagettiNoisePower = 1.f; //todo remove?
 	float spagettiNoiseBias = 0.1;
 	float spagettiNoiseBiasPower = 1;
 
@@ -111,6 +112,10 @@ struct WorldGenerator
 	FastNoiseSIMD *riversNoise;
 	Spline riversSplines;
 	float riversPower = 1.f;
+
+	FastNoiseSIMD *cavesNoise;
+	Spline cavesSpline;
+	float cavesPower = 1.f;
 
 	FastNoiseSIMD *treesAmountNoise;
 	Spline treesAmountSpline;

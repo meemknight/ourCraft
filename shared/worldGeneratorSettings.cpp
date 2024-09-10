@@ -19,6 +19,7 @@ void WorldGenerator::init()
 	stonePatchesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	treesAmountNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	treesTypeNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	cavesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
 	temperatureNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	riversNoise = FastNoiseSIMD::NewFastNoiseSIMD();
@@ -56,6 +57,7 @@ void WorldGenerator::clear()
 	delete randomSandPatchesNoise;
 	delete stonePatchesNoise;
 	delete treesTypeNoise;
+	delete cavesNoise;
 	delete treesAmountNoise;
 
 	*this = {};
@@ -149,6 +151,9 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	treesTypePower = s.treesTypeNoise.power;
 	treesTypeSpline = s.treesTypeNoise.spline;
 
+	apply(cavesNoise, s.seed + 16, s.cavesNoise);
+	cavesPower = s.cavesNoise.power;
+	cavesSpline = s.cavesNoise.spline;
 
 	regionsHeightNoise->SetSeed(s.seed);
 	regionsHeightNoise->SetAxisScales(1, 1, 1);
@@ -375,6 +380,9 @@ std::string WorldGeneratorSettings::saveSettings()
 	rez += "treesTypeNoise:\n";
 	rez += treesTypeNoise.saveSettings(1);
 
+	rez += "cavesNoise:\n";
+	rez += cavesNoise.saveSettings(1);
+
 	rez += "spagettiNoise:\n";
 	rez += spagettiNoise.saveSettings(1);
 	rez += "spagettiBias: "; rez += std::to_string(spagettiBias); rez += ";\n";
@@ -409,6 +417,7 @@ void WorldGeneratorSettings::sanitize()
 	hillsDrops.sanitize();
 	randomSand.sanitize();
 	stonePatches.sanitize();
+	cavesNoise.sanitize();
 
 	peaksAndValiesContributionSpline.sanitize();
 
@@ -928,6 +937,16 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 						return 0;
 					}
 				}
+				else if (s == "cavesNoise")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(cavesNoise))
+					{
+						return 0;
+					}
+					}
 				else if (s == "randomSand")
 				{
 					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }

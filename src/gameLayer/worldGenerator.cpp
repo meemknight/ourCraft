@@ -224,7 +224,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	float *randomStones = wg.randomStonesNoise->GetNoiseSet(xPadd, 0, zPadd, 1, 1, 1);
 	*randomStones = std::pow(((*randomStones + 1.f) / 2.f)*0.5, 3.0);
 
-
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
 	{
 		spagettiNoise[i] += 1;
@@ -238,6 +237,15 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		spagettiNoise2[i] = wg.spagettiNoiseSplines.applySpline(spagettiNoise2[i]);
 	}
 	
+	float *cavesNoise = wg.cavesNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
+	{
+		cavesNoise[i] += 1;
+		cavesNoise[i] /= 2;
+		cavesNoise[i] = powf(cavesNoise[i], wg.cavesPower);
+		cavesNoise[i] = wg.cavesSpline.applySpline(cavesNoise[i]);
+	}
+
 
 	float *whiteNoise
 		= wg.whiteNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE + 1, (1), CHUNK_SIZE + 1);
@@ -392,9 +400,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		wierdness[i] += 1;
 		wierdness[i] /= 2;
 		wierdness[i] = powf(wierdness[i], wg.wierdnessPower);
-
-		float val = wierdness[i];
-
 	}
 
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
@@ -536,6 +541,11 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return spagettiNoise2[x * CHUNK_SIZE * (CHUNK_HEIGHT)+y * CHUNK_SIZE + z];
 	};
 
+	auto getCavesNoiseVal = [cavesNoise](int x, int y, int z)
+	{
+		return cavesNoise[x * CHUNK_SIZE * (CHUNK_HEIGHT)+y * CHUNK_SIZE + z];
+	};
+
 	//auto getSpagettiNoiseVal3 = [spagettiNoise3](int x, int y, int z) //todo more cache friendly operation here please
 	//{
 	//	return spagettiNoise3[x * CHUNK_SIZE * (CHUNK_HEIGHT)+y * CHUNK_SIZE + z];
@@ -564,6 +574,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 			float wierdnessTresshold = 0.4;
 			float localWierdness = getWierdness(x, z);
+			//localWierdness = 0;
+
 			float peaks = getPeaksAndValies(x, z);
 			float continentalness = getNoiseVal(x, 0, z);
 
@@ -602,7 +614,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 
 				//localWierdness = glm::mix(1.f, localWierdness, roadValue);
-				//todo investigate wierdness
 				//wierdnessTresshold = glm::mix(0.f, wierdnessTresshold, roadValue);
 				//wierdnessTresshold = 0;
 
@@ -706,9 +717,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 			int heightDiff = maxMountainLevel - startLevel;
 
-			//float squishFactor = wg.densitySquishFactor + getWierdness(x, z) * 30 - 15;
-			//squishFactor = std::max(squishFactor, 0.f);
-
 			int biomeIndex = biomes[currentBiomeHeight];
 			auto biome = biomesManager.biomes[biomeIndex];
 
@@ -811,34 +819,52 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			calculateBlockPass1(firstH, &c.unsafeGet(x, 0, z), biome, placeRoad, roadValue, 
 				getWhiteNoiseVal(x,z), sandShore, stonePatchesVal > 0.5);
 
-
-			for (int y = 1; y < firstH; y++)
+			//all caves
+			for (int y = 2; y < firstH; y++)
 			{
-				auto density = getSpagettiNoiseVal(x, y, z);
-				float density2 = getSpagettiNoiseVal2(x, y, z);
-				//float density3 = getSpagettiNoiseVal3(x, y, z);
-				density = screenBlend(density, density2);
-				//density = screenBlend(density, density3);
+				
+				auto caveDensity = getCavesNoiseVal(x, y, z);
+				//auto caveDensityBellow = getCavesNoiseVal(x, y - 1, z);
+				//auto caveDensityBellow2 = getCavesNoiseVal(x, y-2, z);
+				//|| caveDensityBellow < 0.5 || caveDensityBellow2 < 0.5
 
-
-
-				float bias = (y - 1) / (256 - 1.f - 1);
-				bias = glm::clamp(bias, 0.f, 1.f);
-				bias = 1.f - bias;
-			
-				bias = powf(bias, wg.spagettiNoiseBiasPower);
-			
-				if (density > wg.spagettiNoiseBias * bias)
+				if (caveDensity < 0.5 )
 				{
-					//stone
-				}
-				else
-				{
+					//cave
 					if (c.unsafeGet(x, y, z).getType() != BlockTypes::water)
 					{
 						c.unsafeGet(x, y, z).setType(BlockTypes::air);
 					}
 				}
+				else
+				{
+					auto density = getSpagettiNoiseVal(x, y, z);
+					float density2 = getSpagettiNoiseVal2(x, y, z);
+					//float density3 = getSpagettiNoiseVal3(x, y, z);
+					density = screenBlend(density, density2);
+					//density = screenBlend(density, density3);
+
+					float bias = (y - 1) / (256 - 1.f - 1);
+					bias = glm::clamp(bias, 0.f, 1.f);
+					bias = 1.f - bias;
+
+					bias = powf(bias, wg.spagettiNoiseBiasPower);
+
+					if (density > wg.spagettiNoiseBias * bias)
+					{
+						//stone
+					}
+					else
+					{
+						//spagetti cave
+						if (c.unsafeGet(x, y, z).getType() != BlockTypes::water)
+						{
+							c.unsafeGet(x, y, z).setType(BlockTypes::air);
+						}
+					}
+				}
+
+				
 			
 			}
 
@@ -1068,6 +1094,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 					}
 				};
 
+				generatedSomethingElse = true;
+
 				if (!generatedSomethingElse)
 				{
 					int type = getIntFromFloat(treeType1, biomesManager.greenBiomesTrees.size());
@@ -1254,6 +1282,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	FastNoiseSIMD::FreeNoiseSet(roadNoise);
 	FastNoiseSIMD::FreeNoiseSet(spagettiNoise);
 	FastNoiseSIMD::FreeNoiseSet(spagettiNoise2);
+	FastNoiseSIMD::FreeNoiseSet(cavesNoise);
 	FastNoiseSIMD::FreeNoiseSet(randomStones);
 	FastNoiseSIMD::FreeNoiseSet(stonePatches);
 	

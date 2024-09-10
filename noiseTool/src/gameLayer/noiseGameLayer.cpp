@@ -75,6 +75,7 @@ gl2d::Texture stone3DNoiseT;
 gl2d::Texture wierdnessT;
 gl2d::Texture vegetationT;
 gl2d::Texture spagettiT;
+gl2d::Texture cavesT;
 
 
 gl2d::Texture riversT;
@@ -397,6 +398,22 @@ void recreate()
 			createFromGrayScale(spagettiT, spagettiNoise, glm::ivec2{size.x,256});
 		}
 	}
+
+	float *cavesNoise;
+	{
+		cavesNoise
+			= wg.cavesNoise->GetNoiseSet(displacement.x, 0, displacement.y, 1, 256, size.x, 1);
+
+		for (int i = 0; i < size.x * 256; i++)
+		{
+			cavesNoise[i] += 1;
+			cavesNoise[i] /= 2;
+			cavesNoise[i] = std::pow(cavesNoise[i], settings.cavesNoise.power);
+			cavesNoise[i] = applySpline(cavesNoise[i], settings.cavesNoise.spline);
+		}
+	}
+	createFromGrayScale(cavesT, cavesNoise, glm::ivec2{size.x,256});
+
 
 	createFromGrayScale(finalTexture, finalNoise, size);
 
@@ -752,9 +769,10 @@ bool gameLogic(float deltaTime)
 		noiseEditor(settings.vegetationNoise, "Vegetation");
 	}
 
+	ImGui::Separator();
+	noiseEditor(settings.cavesNoise, "Caves");
 
 	ImGui::Separator();
-
 	noiseEditor(settings.treesAmountNoise, "Trees amount");
 
 	ImGui::Separator();
@@ -877,6 +895,8 @@ bool gameLogic(float deltaTime)
 	{
 		drawNoise("Vegetation", vegetationT);
 	}
+
+	drawNoise("Caves Noise", cavesT);
 
 	drawNoise("Trees amount", treesAmountT);
 

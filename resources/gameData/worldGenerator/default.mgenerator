@@ -107,7 +107,7 @@ stonetDnoise:
 	frequency: 0.007000;
 	octaves: 4;
 	perturbFractalOctaves: 0;
-	power: 1.200000;
+	power: 1.000000;
 	spline:
 		{
 		0.000000,0.000000;
@@ -283,6 +283,24 @@ treesTypeNoise:
 	spline:
 		{
 		0.000000,0.000000;
+		1.000000,1.000000;
+		}
+	}
+cavesNoise:
+	{
+	scale: 0.900000;
+	type: SimplexFractal;
+	celularReturnType: Distance;
+	frequency: 0.014000;
+	octaves: 3;
+	perturbFractalOctaves: 0;
+	power: 1.000000;
+	spline:
+		{
+		0.000000,0.000000;
+		0.287582,0.000000;
+		0.287582,0.441177;
+		0.315360,0.998366;
 		1.000000,1.000000;
 		}
 	}
