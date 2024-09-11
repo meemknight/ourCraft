@@ -6,6 +6,7 @@
 #include <math.h>
 #include <algorithm>
 #include <iostream>
+#include <profilerLib/include/profilerLib.h>
 
 const int waterLevel = 65;
 
@@ -107,7 +108,7 @@ void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, f
 		{
 			startPos[y].setType(surfaceBlock);
 
-			for (y--; y > height - 4; y--)
+			for (y--; y > height - 4; y--) //todo randomness here
 			{
 				if (startPos[y].getType() != BlockTypes::air)
 				{
@@ -179,6 +180,8 @@ int fromFloatNoiseValToIntegers(float noise, int maxExclusive)
 void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structuresManager, BiomesManager &biomesManager,
 	std::vector<StructureToGenerate> &generateStructures)
 {
+	PL::Profiler profiler;
+	profiler.start();
 
 
 	//super flat
@@ -209,8 +212,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	//		}
 	//	}
 	//return;
-
-
 
 	float interpolateValues[16 * 16] = {};
 	float borderingFactor[16 * 16] = {};
@@ -257,13 +258,14 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 	c.vegetation = vegetationMaster;
 
+	//static float continentalness[CHUNK_SIZE * CHUNK_SIZE] = {};
+
 	float* continentalness
 		= wg.continentalnessNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 
 	float *peaksAndValies
 		= wg.peaksValiesNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 
-	//todo fix this bug in an older commit
 	float *wierdness
 		= wg.wierdnessNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 
@@ -339,16 +341,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		stonePatches[i] = wg.stonePatchesSpline.applySpline(stonePatches[i]);
 	}
 
-	//float *temperatureNoise
-	//	= wg.temperatureNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
-	//for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
-	//{
-	//	temperatureNoise[i] += 1;
-	//	temperatureNoise[i] /= 2;
-	//	temperatureNoise[i] = powf(temperatureNoise[i], wg.temperaturePower);
-	//	temperatureNoise[i] = wg.temperatureSplines.applySpline(temperatureNoise[i]);
-	//}
-
 	float *riversNoise
 		= wg.riversNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 
@@ -420,7 +412,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	}
 
 
-
 	for (int i = 0; i < (CHUNK_SIZE + 1) * (CHUNK_SIZE + 1); i++)
 	{
 		whiteNoise[i] += 1;
@@ -448,24 +439,12 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		continentalness[i] = wg.continentalSplines.applySpline(continentalness[i]);
 	}
 
-	
-
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
 		peaksAndValies[i] += 1;
 		peaksAndValies[i] /= 2;
 		peaksAndValies[i] = powf(peaksAndValies[i], wg.peaksValiesPower);
-
-		float val = peaksAndValies[i];
-
 		peaksAndValies[i] = wg.peaksValiesSplines.applySpline(peaksAndValies[i]);
-
-		//continentalness[i] = lerp(continentalness[i], peaksAndValies[i], wg.peaksValiesContributionSplines.applySpline(val));
-
-		//if (currentBiomeHeight % 2)
-		//{
-		//	continentalness[i] = 1.f - continentalness[i];
-		//}
 	}
 
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
@@ -473,6 +452,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		wierdness[i] += 1;
 		wierdness[i] /= 2;
 		wierdness[i] = powf(wierdness[i], wg.wierdnessPower);
+		wierdness[i] = wg.wierdnessSplines.applySpline(wierdness[i]);
 	}
 
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
@@ -507,11 +487,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	{
 		return continentalness[x * CHUNK_SIZE * (1) + y * CHUNK_SIZE + z];
 	};
-
-	//auto getTemperature = [temperatureNoise](int x, int z)
-	//{
-	//	return temperatureNoise[x * CHUNK_SIZE + z];
-	//};
 
 	auto getRivers = [riversNoise](int x, int z)
 	{
@@ -588,7 +563,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return getWhiteNoise2Val(x, z) < chance;
 	};
 
-
 	auto getDensityNoiseVal = [densityNoise](int x, int y, int z) //todo more cache friendly operation here please
 	{
 		return densityNoise[x * CHUNK_SIZE * (CHUNK_HEIGHT) + y * CHUNK_SIZE + z];
@@ -624,11 +598,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return cavesNoise[x * CHUNK_SIZE * (CHUNK_HEIGHT)+y * CHUNK_SIZE + z];
 	};
 
-	//auto getSpagettiNoiseVal3 = [spagettiNoise3](int x, int y, int z) //todo more cache friendly operation here please
-	//{
-	//	return spagettiNoise3[x * CHUNK_SIZE * (CHUNK_HEIGHT)+y * CHUNK_SIZE + z];
-	//};
-
 	auto getWierdness = [&](int x, int z)
 	{
 		return wierdness[x * CHUNK_SIZE + z];
@@ -641,7 +610,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	};
 
 #pragma endregion
-
 
 	for (int x = 0; x < CHUNK_SIZE; x++)
 		for (int z = 0; z < CHUNK_SIZE; z++)
@@ -751,12 +719,10 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 		#pragma endregion
 
-
 			auto screenBlend = [](float a, float b)
 			{
 				return 1.f - (1.f - a) * (1.f - b);
 			};
-
 
 		#pragma region lakes
 			if (lakeNoiseVal < 0.1) 
@@ -781,7 +747,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		#pragma endregion
 
 
-
+		#pragma region rivers
 			float underGroundRivers = 0;
 			float riverChanceValue = 0;
 			//plains rivers
@@ -801,12 +767,20 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				riverChanceValue = underGroundRivers;
 
 			}
+		#pragma endregion
 
 
+		#pragma region hills drop downs
 			//hills drop downs
 			if (currentBiomeHeight == 3)
 			{
 				float dropDown = getHillsDropDowns(x, z);
+
+				//decrease contribution in plains
+				if (currentBiomeHeight == 2)
+				{
+					dropDown /= 2.f;
+				}
 
 				//make sure we don't do this near edges...
 				if (interpolateValues[z + x * CHUNK_SIZE] > 3.f)
@@ -814,6 +788,12 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 					float interpolator = interpolateValues[z + x * CHUNK_SIZE] - int(interpolateValues[z + x * CHUNK_SIZE]);
 					dropDown = screenBlend(dropDown, interpolator);
 				}
+				//else
+				//if(interpolateValues[z + x * CHUNK_SIZE] < 2.8f)
+				//{
+				//	float interpolator = interpolateValues[z + x * CHUNK_SIZE] - int(interpolateValues[z + x * CHUNK_SIZE]);
+				//	dropDown = dropDown * interpolator;
+				//}
 
 				if (dropDown < 0.9)
 				{
@@ -821,8 +801,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 					maxMountainLevel = glm::mix(71, maxMountainLevel, dropDown);
 				}
 			}
-
-
+		#pragma endregion
 
 
 			int valueToAddToStart = valuesToAddToStart[currentBiomeHeight];
@@ -951,6 +930,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				{
 					c.unsafeGet(x, y, z).setType(BlockTypes::air);
 				}
+
+				
 			}
 
 			float riverValueForPlacingRocks = screenBlend(riverChanceValue, lakeNoiseVal);
@@ -984,17 +965,16 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				{
 					auto density = getSpagettiNoiseVal(x, y, z);
 					float density2 = getSpagettiNoiseVal2(x, y, z);
-					//float density3 = getSpagettiNoiseVal3(x, y, z);
 					density = screenBlend(density, density2);
-					//density = screenBlend(density, density3);
 
-					float bias = (y - 1) / (256 - 1.f - 1);
-					bias = glm::clamp(bias, 0.f, 1.f);
-					bias = 1.f - bias;
+					float height = y / (CHUNK_HEIGHT-1);
+					//height = height * height;
+					float heightRemapped = linearRemap(height, 0, 1, 0.25, 0.1);
 
-					bias = powf(bias, wg.spagettiNoiseBiasPower);
 
-					if (density > wg.spagettiNoiseBias * bias)
+					//bias = powf(bias, wg.spagettiNoiseBiasPower);
+
+					if (density > 0.75 - heightRemapped)
 					{
 						//stone
 					}
@@ -1411,7 +1391,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 
 		}
-
 	
 	FastNoiseSIMD::FreeNoiseSet(continentalness);
 	FastNoiseSIMD::FreeNoiseSet(peaksAndValies);
@@ -1437,6 +1416,11 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	FastNoiseSIMD::FreeNoiseSet(randomStones);
 	FastNoiseSIMD::FreeNoiseSet(stonePatches);
 	
+	profiler.end();
+
+
+	std::cout << "Time ms: " << profiler.rezult.timeSeconds * 1000 << "\n";
+
 
 }
 

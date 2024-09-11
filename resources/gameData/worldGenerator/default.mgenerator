@@ -190,27 +190,6 @@ stonePatches:
 		1.000000,1.000000;
 		}
 	}
-temperatureNoise:
-	{
-	scale: 0.070000;
-	type: ValueFractal;
-	celularReturnType: Distance;
-	frequency: 0.015000;
-	octaves: 3;
-	perturbFractalOctaves: 0;
-	power: 1.000000;
-	spline:
-		{
-		0.000000,0.013072;
-		0.334967,0.013072;
-		0.336601,0.354575;
-		0.571078,0.360295;
-		0.584150,0.607434;
-		0.764298,0.610396;
-		0.769200,1.000000;
-		1.000000,1.000000;
-		}
-	}
 randomSand:
 	{
 	scale: 13.650000;
@@ -345,13 +324,6 @@ spagettiNoise:
 		1.000000,1.000000;
 		}
 	}
-spagettiBias: 0.102000;
-spagettiBiasPower: 0.752000;
-densityBias: 0.007000;
-densityBiasPower: 0.681000;
-densitySquishFactor: 5.162000;
-densitySquishPower: 0.869000;
-densityHeightoffset: -6;
 regionsHeightSpline: 	{
 	0.000000,1.000000;
 	0.129085,1.000000;

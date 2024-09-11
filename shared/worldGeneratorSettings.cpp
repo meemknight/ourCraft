@@ -22,7 +22,6 @@ void WorldGenerator::init()
 	cavesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	lakesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
-	temperatureNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	riversNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	roadNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	randomSandPatchesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
@@ -48,7 +47,6 @@ void WorldGenerator::clear()
 	delete whiteNoise2;
 	delete spagettiNoise;
 	delete roadNoise;
-	delete temperatureNoise;
 	delete riversNoise;
 	delete regionsHeightNoise;
 	delete regionsHeightTranzition;
@@ -95,18 +93,11 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	apply(stone3Dnoise, s.seed + 3, s.stone3Dnoise);
 	stone3DnoiseSplines = s.stone3Dnoise.spline;
 	stone3Dpower = s.stone3Dnoise.power;
-	densityBias = s.densityBias;
-	densityBiasPower = s.densityBiasPower;
 
-	densitySquishFactor = s.densitySquishFactor;
-	densitySquishPower = s.densitySquishPower;
-	densityHeightoffset = s.densityHeightoffset;
 
 	apply(spagettiNoise, s.seed + 4, s.spagettiNoise);
 	spagettiNoiseSplines = s.spagettiNoise.spline;
 	spagettiNoisePower = s.spagettiNoise.power;
-	spagettiNoiseBias = s.spagettiBias;
-	spagettiNoiseBiasPower = s.spagettiBiasPower;
 
 	apply(peaksValiesNoise, s.seed + 5, s.peaksAndValies);
 	peaksValiesSplines = s.peaksAndValies.spline;
@@ -116,10 +107,6 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	apply(wierdnessNoise, s.seed + 6, s.wierdness);
 	wierdnessSplines = s.wierdness.spline;
 	wierdnessPower = s.wierdness.power;
-
-	apply(temperatureNoise, s.seed + 8, s.temperatureNoise);
-	temperaturePower = s.temperatureNoise.power;
-	temperatureSplines = s.temperatureNoise.spline;
 
 	apply(riversNoise, s.seed + 9, s.riversNoise);
 	riversPower = s.riversNoise.power;
@@ -408,9 +395,6 @@ std::string WorldGeneratorSettings::saveSettings()
 	rez += "stonePatches:\n";
 	rez += stonePatches.saveSettings(1);
 
-	rez += "temperatureNoise:\n";
-	rez += temperatureNoise.saveSettings(1);
-
 	rez += "randomSand:\n";
 	rez += randomSand.saveSettings(1);
 
@@ -431,16 +415,16 @@ std::string WorldGeneratorSettings::saveSettings()
 
 	rez += "spagettiNoise:\n";
 	rez += spagettiNoise.saveSettings(1);
-	rez += "spagettiBias: "; rez += std::to_string(spagettiBias); rez += ";\n";
-	rez += "spagettiBiasPower: "; rez += std::to_string(spagettiBiasPower); rez += ";\n";
+	//rez += "spagettiBias: "; rez += std::to_string(spagettiBias); rez += ";\n";
+	//rez += "spagettiBiasPower: "; rez += std::to_string(spagettiBiasPower); rez += ";\n";
 
 
-	rez += "densityBias: "; rez += std::to_string(densityBias); rez += ";\n";
-	rez += "densityBiasPower: "; rez += std::to_string(densityBiasPower); rez += ";\n";
+	//rez += "densityBias: "; rez += std::to_string(densityBias); rez += ";\n";
+	//rez += "densityBiasPower: "; rez += std::to_string(densityBiasPower); rez += ";\n";
 
-	rez += "densitySquishFactor: "; rez += std::to_string(densitySquishFactor); rez += ";\n";
-	rez += "densitySquishPower: "; rez += std::to_string(densitySquishPower); rez += ";\n";
-	rez += "densityHeightoffset: "; rez += std::to_string(densityHeightoffset); rez += ";\n";
+	//rez += "densitySquishFactor: "; rez += std::to_string(densitySquishFactor); rez += ";\n";
+	//rez += "densitySquishPower: "; rez += std::to_string(densitySquishPower); rez += ";\n";
+	//rez += "densityHeightoffset: "; rez += std::to_string(densityHeightoffset); rez += ";\n";
 
 	rez += "regionsHeightSpline: "; rez += regionsHeightSpline.saveSettings(1);
 
@@ -456,7 +440,6 @@ void WorldGeneratorSettings::sanitize()
 	wierdness.sanitize();
 	stone3Dnoise.sanitize();
 	riversNoise.sanitize();
-	temperatureNoise.sanitize();
 	vegetationNoise.sanitize();
 	treesTypeNoise.sanitize();
 	treesAmountNoise.sanitize();
@@ -468,13 +451,13 @@ void WorldGeneratorSettings::sanitize()
 
 	peaksAndValiesContributionSpline.sanitize();
 
-	densityBias = glm::clamp(densityBias, 0.f, 1.f);
-	densityBiasPower = glm::clamp(densityBiasPower, 0.1f, 10.f);
+	//densityBias = glm::clamp(densityBias, 0.f, 1.f);
+	//densityBiasPower = glm::clamp(densityBiasPower, 0.1f, 10.f);
 
 
 	spagettiNoise.sanitize();
-	spagettiBias = glm::clamp(spagettiBias, 0.f, 10.f);
-	spagettiBiasPower = glm::clamp(spagettiBiasPower, 0.1f, 10.f);
+	//spagettiBias = glm::clamp(spagettiBias, 0.f, 10.f);
+	//spagettiBiasPower = glm::clamp(spagettiBiasPower, 0.1f, 10.f);
 
 }
 
@@ -876,52 +859,12 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 				auto s = tokens[i].s; //todo to lower
 				i++;
 
-				if (s == "seed")
+				if (s == "seed") //todo remove from here
 				{
 					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
 					if (isEof()) { return 0; }
 					if (!isNumber()) { return 0; }
 					seed = consumeNumber();
-					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
-				}
-				else if (s == "densityBias")
-				{
-					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
-					if (isEof()) { return 0; }
-					if (!isNumber()) { return 0; }
-					densityBias = consumeNumber();
-					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
-				}
-				else if (s == "densityBiasPower")
-				{
-					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
-					if (isEof()) { return 0; }
-					if (!isNumber()) { return 0; }
-					densityBiasPower = consumeNumber();
-					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
-				}
-				else if (s == "densitySquishFactor")
-				{
-					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
-					if (isEof()) { return 0; }
-					if (!isNumber()) { return 0; }
-					densitySquishFactor = consumeNumber();
-					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
-				}
-				else if (s == "densitySquishPower")
-				{
-					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
-					if (isEof()) { return 0; }
-					if (!isNumber()) { return 0; }
-					densitySquishPower = consumeNumber();
-					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
-				}
-				else if (s == "densityHeightoffset")
-				{
-					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
-					if (isEof()) { return 0; }
-					if (!isNumber()) { return 0; }
-					densityHeightoffset = consumeNumber();
 					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
 				}
 				else if (s == "continentalnessNoise")
@@ -960,16 +903,6 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					if (isEof()) { return 0; }
 
 					if (!consumeNoise(roadsNoise))
-					{
-						return 0;
-					}
-				}
-				else if (s == "temperatureNoise")
-				{
-					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
-					if (isEof()) { return 0; }
-
-					if (!consumeNoise(temperatureNoise))
 					{
 						return 0;
 					}
@@ -1083,22 +1016,6 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					{
 						return 0;
 					}
-				}
-				else if (s == "spagettiBias")
-				{
-					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
-					if (isEof()) { return 0; }
-					if (!isNumber()) { return 0; }
-					spagettiBias = consumeNumber();
-					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
-				}
-				else if (s == "spagettiBiasPower")
-				{
-					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
-					if (isEof()) { return 0; }
-					if (!isNumber()) { return 0; }
-					spagettiBiasPower = consumeNumber();
-					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
 				}
 				else if (s == "peaksAndValiesContributionSpline")
 				{

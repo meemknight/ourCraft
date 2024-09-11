@@ -31,7 +31,6 @@ struct WorldGeneratorSettings
 	NoiseSetting stone3Dnoise;
 	NoiseSetting riversNoise;
 	NoiseSetting roadsNoise;
-	NoiseSetting temperatureNoise;
 	NoiseSetting spagettiNoise;
 	NoiseSetting hillsDrops;
 	NoiseSetting randomSand;
@@ -45,16 +44,6 @@ struct WorldGeneratorSettings
 	Spline regionsHeightSpline;
 
 	NoiseSetting vegetationNoise;
-
-	float densityBias = 0.1;
-	float densityBiasPower = 1;
-	float densitySquishFactor = 1;
-	float densitySquishPower = 1;
-	int densityHeightoffset = 1;
-
-	float spagettiBias = 0.1;
-	float spagettiBiasPower = 1;
-
 
 	std::string saveSettings();
 
@@ -93,22 +82,10 @@ struct WorldGenerator
 	FastNoiseSIMD *stone3Dnoise;
 	Spline stone3DnoiseSplines;
 	float stone3Dpower = 1.f;
-	float densityBias = 0.1;
-	float densityBiasPower = 1;
 
-	float densitySquishFactor = 1;
-	float densitySquishPower = 1;
-	int densityHeightoffset = 1;
-	
 	FastNoiseSIMD *spagettiNoise;
 	Spline spagettiNoiseSplines;
-	float spagettiNoisePower = 1.f; //todo remove?
-	float spagettiNoiseBias = 0.1;
-	float spagettiNoiseBiasPower = 1;
-
-	FastNoiseSIMD *temperatureNoise;
-	Spline temperatureSplines;
-	float temperaturePower = 1.f;
+	float spagettiNoisePower = 1.f;
 
 	FastNoiseSIMD *riversNoise;
 	Spline riversSplines;

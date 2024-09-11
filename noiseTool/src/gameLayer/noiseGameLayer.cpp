@@ -84,7 +84,6 @@ gl2d::Texture hillsDropT;
 gl2d::Texture stonePatchesT;
 gl2d::Texture roadT;
 gl2d::Texture randomSandT;
-gl2d::Texture temperatureT;
 
 gl2d::Texture fractalT;
 
@@ -277,19 +276,6 @@ void recreate()
 		randomSandNoise[i] = applySpline(randomSandNoise[i], settings.randomSand.spline);
 	}
 	createFromGrayScale(randomSandT, randomSandNoise, size);
-
-
-
-	float *temperatureNoise
-		= wg.temperatureNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
-	for (int i = 0; i < size.x * size.y; i++)
-	{
-		temperatureNoise[i] += 1;
-		temperatureNoise[i] /= 2;
-		temperatureNoise[i] = std::pow(temperatureNoise[i], settings.temperatureNoise.power);
-		temperatureNoise[i] = applySpline(temperatureNoise[i], settings.temperatureNoise.spline);
-	}
-	createFromGrayScale(temperatureT, temperatureNoise, size);
 
 
 	float *treesAmountNoise =
@@ -614,7 +600,6 @@ void recreate()
 	FastNoiseSIMD::FreeNoiseSet(hillsDropnNoise);
 	FastNoiseSIMD::FreeNoiseSet(roadNoise);
 	FastNoiseSIMD::FreeNoiseSet(randomSandNoise);
-	FastNoiseSIMD::FreeNoiseSet(temperatureNoise);
 	FastNoiseSIMD::FreeNoiseSet(spagettiNoise);
 	FastNoiseSIMD::FreeNoiseSet(lakesNoise);
 	FastNoiseSIMD::FreeNoiseSet(cavesNoise);
