@@ -258,53 +258,115 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 	c.vegetation = vegetationMaster;
 
-	//static float continentalness[CHUNK_SIZE * CHUNK_SIZE] = {};
 
-	float* continentalness
-		= wg.continentalnessNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+#pragma region noises
+	static alignas(32) float continentalness[CHUNK_SIZE * CHUNK_SIZE] = {};
+	wg.continentalnessNoise->FillNoiseSet(continentalness, xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		continentalness[i] += 1;
+		continentalness[i] /= 2;
+		continentalness[i] = powf(continentalness[i], wg.continentalPower);
+		continentalness[i] = wg.continentalSplines.applySpline(continentalness[i]);
+	}
 
-	float *peaksAndValies
-		= wg.peaksValiesNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 
-	float *wierdness
-		= wg.wierdnessNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+	static alignas(32) float peaksAndValies[CHUNK_SIZE * CHUNK_SIZE] = {};
+	wg.peaksValiesNoise->FillNoiseSet(peaksAndValies, xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		peaksAndValies[i] += 1;
+		peaksAndValies[i] /= 2;
+		peaksAndValies[i] = powf(peaksAndValies[i], wg.peaksValiesPower);
+		peaksAndValies[i] = wg.peaksValiesSplines.applySpline(peaksAndValies[i]);
+	}
 
-	float *densityNoise
-		= wg.stone3Dnoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
 
-	float *randomSand
-		= wg.randomStonesNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
+	static alignas(32) float wierdness[CHUNK_SIZE * CHUNK_SIZE] = {};
+	wg.wierdnessNoise->FillNoiseSet(wierdness, xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		wierdness[i] += 1;
+		wierdness[i] /= 2;
+		wierdness[i] = powf(wierdness[i], wg.wierdnessPower);
+		wierdness[i] = wg.wierdnessSplines.applySpline(wierdness[i]);
+	}
 
-	float *randomGravel
-		= wg.randomStonesNoise->GetNoiseSet(xPadd, 300, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
 
-	float *randomClay
-		= wg.randomStonesNoise->GetNoiseSet(xPadd, 600, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
+	static alignas(32) float densityNoise[CHUNK_SIZE * CHUNK_HEIGHT * CHUNK_SIZE] = {};
+	wg.stone3Dnoise->FillNoiseSet(densityNoise, xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
+	{
+		densityNoise[i] += 1;
+		densityNoise[i] /= 2;
+		densityNoise[i] = powf(densityNoise[i], wg.stone3Dpower);
+		densityNoise[i] = wg.stone3DnoiseSplines.applySpline(densityNoise[i]);
+	}
 
-	float *spagettiNoise
-		= wg.spagettiNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
 
-	const float SHIFT = 16;
-	float *spagettiNoise2
-		= wg.spagettiNoise->GetNoiseSet(xPadd + SHIFT + 6, 0 + SHIFT + 3, zPadd + SHIFT, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
+	static alignas(32) float randomSand[CHUNK_SIZE * CHUNK_HEIGHT * CHUNK_SIZE] = {};
+	wg.randomStonesNoise->FillNoiseSet(randomSand, xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
+	{
+		randomSand[i] += 1;
+		randomSand[i] /= 2;
+		randomSand[i] = powf(randomSand[i], wg.randomSandPower);
+		randomSand[i] = wg.randomSandSplines.applySpline(randomSand[i]);
+	}
 
-	float *randomStones = wg.randomStonesNoise->GetNoiseSet(xPadd, 0, zPadd, 1, 1, 1);
-	*randomStones = std::pow(((*randomStones + 1.f) / 2.f)*0.5, 3.0);
 
+	static alignas(32) float randomGravel[CHUNK_SIZE * CHUNK_HEIGHT * CHUNK_SIZE] = {};
+	wg.randomStonesNoise->FillNoiseSet(randomGravel, xPadd, 300, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
+	{
+		randomGravel[i] += 1;
+		randomGravel[i] /= 2;
+		randomGravel[i] = powf(randomGravel[i], wg.randomSandPower + 0.1);
+		randomGravel[i] = wg.randomSandSplines.applySpline(randomGravel[i]);
+	}
+	
+
+	static alignas(32) float randomClay[CHUNK_SIZE * CHUNK_HEIGHT * CHUNK_SIZE] = {};
+	wg.randomStonesNoise->FillNoiseSet(randomClay, xPadd, 600, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
+	{	
+		randomClay[i] += 1;
+		randomClay[i] /= 2;
+		randomClay[i] = powf(randomClay[i], wg.randomSandPower + 0.5);
+		randomClay[i] = wg.randomSandSplines.applySpline(randomClay[i]);
+	}
+
+
+	static alignas(32) float spagettiNoise[CHUNK_SIZE * CHUNK_HEIGHT * CHUNK_SIZE] = {};
+	wg.spagettiNoise->FillNoiseSet(spagettiNoise, xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
 	{
 		spagettiNoise[i] += 1;
 		spagettiNoise[i] /= 2;
 		spagettiNoise[i] = powf(spagettiNoise[i], wg.spagettiNoisePower);
 		spagettiNoise[i] = wg.spagettiNoiseSplines.applySpline(spagettiNoise[i]);
+	}
 
+
+	const float SHIFT = 16;
+	static alignas(32) float spagettiNoise2[CHUNK_SIZE * CHUNK_HEIGHT * CHUNK_SIZE] = {};
+	wg.spagettiNoise->FillNoiseSet(spagettiNoise2, xPadd + SHIFT + 6, 0 + SHIFT + 3, zPadd + SHIFT,
+		CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
+	{
 		spagettiNoise2[i] += 1;
 		spagettiNoise2[i] /= 2;
 		spagettiNoise2[i] = powf(spagettiNoise2[i], wg.spagettiNoisePower);
 		spagettiNoise2[i] = wg.spagettiNoiseSplines.applySpline(spagettiNoise2[i]);
 	}
+
+	static alignas(32) float randomStones[1] = {};
+	wg.randomStonesNoise->FillNoiseSet(randomStones, xPadd, 0, zPadd, 1, 1, 1);
+	*randomStones = std::pow(((*randomStones + 1.f) / 2.f)*0.5, 3.0);
+
 	
-	float *cavesNoise = wg.cavesNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE, 1);
+	static alignas(32) float cavesNoise[CHUNK_SIZE * CHUNK_HEIGHT * CHUNK_SIZE] = {};
+	wg.cavesNoise->FillNoiseSet(cavesNoise, xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE);
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
 	{
 		cavesNoise[i] += 1;
@@ -313,7 +375,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		cavesNoise[i] = wg.cavesSpline.applySpline(cavesNoise[i]);
 	}
 
-	float *lakesNoise = wg.lakesNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, 1, CHUNK_SIZE);
+	static alignas(32) float lakesNoise[CHUNK_SIZE * CHUNK_SIZE] = {};
+	wg.lakesNoise->FillNoiseSet(lakesNoise, xPadd, 0, zPadd, CHUNK_SIZE, 1, CHUNK_SIZE);
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
 		lakesNoise[i] += 1;
@@ -322,17 +385,33 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		lakesNoise[i] = wg.lakesSplines.applySpline(lakesNoise[i]);
 	}
 
-	float *whiteNoise
-		= wg.whiteNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE + 1, (1), CHUNK_SIZE + 1);
+	static alignas(32) float whiteNoise[(CHUNK_SIZE + 1) * (CHUNK_SIZE + 1)] = {};
+	wg.whiteNoise->FillNoiseSet(whiteNoise, xPadd, 0, zPadd, CHUNK_SIZE + 1, (1), CHUNK_SIZE + 1);
+	for (int i = 0; i < (CHUNK_SIZE + 1) * (CHUNK_SIZE + 1); i++)
+	{
+		whiteNoise[i] += 1;
+		whiteNoise[i] /= 2;
+	}
 
-	float *whiteNoise2
-		= wg.whiteNoise2->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE + 1, (1), CHUNK_SIZE + 1);
+	static alignas(32) float whiteNoise2[(CHUNK_SIZE + 1) * (CHUNK_SIZE + 1)] = {};
+	wg.whiteNoise2->FillNoiseSet(whiteNoise2, xPadd, 0, zPadd, CHUNK_SIZE + 1, (1), CHUNK_SIZE + 1);
+	for (int i = 0; i < (CHUNK_SIZE + 1) * (CHUNK_SIZE + 1); i++)
+	{
+		whiteNoise2[i] += 1;
+		whiteNoise2[i] /= 2;
+	}
 
-	float *whiteNoise3
-		= wg.whiteNoise2->GetNoiseSet(xPadd, 100, zPadd, CHUNK_SIZE + 1, (1), CHUNK_SIZE + 1);
+	static alignas(32) float whiteNoise3[(CHUNK_SIZE + 1) * (CHUNK_SIZE + 1)] = {};
+	wg.whiteNoise2->FillNoiseSet(whiteNoise3, xPadd, 100, zPadd, CHUNK_SIZE + 1, (1), CHUNK_SIZE + 1);
+	for (int i = 0; i < (CHUNK_SIZE + 1) * (CHUNK_SIZE + 1); i++)
+	{
+		whiteNoise3[i] += 1;
+		whiteNoise3[i] /= 2;
+	}
 
-	float *stonePatches =
-		wg.stonePatchesNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, 1, CHUNK_SIZE);
+
+	static alignas(32) float stonePatches[CHUNK_SIZE * CHUNK_SIZE] = {};
+	wg.stonePatchesNoise->FillNoiseSet(stonePatches, xPadd, 0, zPadd, CHUNK_SIZE, 1, CHUNK_SIZE);
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
 		stonePatches[i] += 1;
@@ -341,36 +420,42 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		stonePatches[i] = wg.stonePatchesSpline.applySpline(stonePatches[i]);
 	}
 
-	float *riversNoise
-		= wg.riversNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 
-	float *hillsDropDownsNoise
-		= wg.hillsDropsNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
-
-	float *roadNoise =
-		wg.roadNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
-
+	static alignas(32) float riversNoise[CHUNK_SIZE * CHUNK_SIZE] = {};
+	wg.riversNoise->FillNoiseSet(riversNoise, xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE);
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
 		riversNoise[i] += 1;
 		riversNoise[i] /= 2;
 		riversNoise[i] = powf(riversNoise[i], wg.riversPower);
 		riversNoise[i] = wg.riversSplines.applySpline(riversNoise[i]);
+	}
 
-		roadNoise[i] += 1;
-		roadNoise[i] /= 2;
-		roadNoise[i] = powf(roadNoise[i], wg.roadPower);
-		roadNoise[i] = wg.roadSplines.applySpline(roadNoise[i]);
 
+	static alignas(32) float hillsDropDownsNoise[CHUNK_SIZE * CHUNK_SIZE] = {};
+	wg.hillsDropsNoise->FillNoiseSet(hillsDropDownsNoise, xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
 		hillsDropDownsNoise[i] += 1;
 		hillsDropDownsNoise[i] /= 2;
 		hillsDropDownsNoise[i] = powf(hillsDropDownsNoise[i], wg.hillsDropsPower);
 		hillsDropDownsNoise[i] = wg.hillsDropsSpline.applySpline(hillsDropDownsNoise[i]);
 	}
 
-	float *treeAmountNoise1 =
-		wg.treesAmountNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 
+	static alignas(32) float roadNoise[CHUNK_SIZE * CHUNK_SIZE] = {};
+	wg.roadNoise->FillNoiseSet(roadNoise, xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		roadNoise[i] += 1;
+		roadNoise[i] /= 2;
+		roadNoise[i] = powf(roadNoise[i], wg.roadPower);
+		roadNoise[i] = wg.roadSplines.applySpline(roadNoise[i]);
+	}
+
+
+	static alignas(32) float treeAmountNoise1[CHUNK_SIZE * CHUNK_SIZE] = {};
+	wg.treesAmountNoise->FillNoiseSet(treeAmountNoise1, xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
 		treeAmountNoise1[i] += 1;
@@ -379,8 +464,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		treeAmountNoise1[i] = wg.treesAmountSpline.applySpline(treeAmountNoise1[i]);
 	}
 
-	float *treeAmountNoise2 =
-		wg.treesAmountNoise->GetNoiseSet(xPadd + 10000, 1000, zPadd + 10000, CHUNK_SIZE, (1), CHUNK_SIZE, 2);
+	static alignas(32) float treeAmountNoise2[CHUNK_SIZE * CHUNK_SIZE] = {};
+	wg.treesAmountNoise->FillNoiseSet(treeAmountNoise2, xPadd + 10000, 1000, zPadd + 10000, CHUNK_SIZE, (1), CHUNK_SIZE, 2);
 
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
@@ -390,8 +475,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		treeAmountNoise2[i] = wg.treesAmountSpline.applySpline(treeAmountNoise2[i]);
 	}
 
-	float *treeTypeNoise1 =
-		wg.treesTypeNoise->GetNoiseSet(xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+	static alignas(32) float treeTypeNoise1[CHUNK_SIZE * CHUNK_SIZE] = {};
+	wg.treesTypeNoise->FillNoiseSet(treeTypeNoise1, xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
 		treeTypeNoise1[i] += 1;
@@ -401,8 +486,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	}
 
 
-	float *treeTypeNoise2 =
-		wg.treesTypeNoise->GetNoiseSet(xPadd + 10000, 1000, zPadd + 10000, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+	static alignas(32) float treeTypeNoise2[CHUNK_SIZE * CHUNK_SIZE] = {};
+	wg.treesTypeNoise->FillNoiseSet(treeTypeNoise2, xPadd + 10000, 1000, zPadd + 10000, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
 		treeTypeNoise2[i] += 1;
@@ -410,145 +495,77 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		treeTypeNoise2[i] = powf(treeTypeNoise2[i], wg.treesTypePower);
 		treeTypeNoise2[i] = wg.treesTypeSpline.applySpline(treeTypeNoise2[i]);
 	}
+#pragma endregion
 
-
-	for (int i = 0; i < (CHUNK_SIZE + 1) * (CHUNK_SIZE + 1); i++)
-	{
-		whiteNoise[i] += 1;
-		whiteNoise[i] /= 2;
-	}
-
-	for (int i = 0; i < (CHUNK_SIZE+1) * (CHUNK_SIZE+1); i++)
-	{
-		whiteNoise2[i] += 1;
-		whiteNoise2[i] /= 2;
-	}
-
-	for (int i = 0; i < (CHUNK_SIZE + 1) * (CHUNK_SIZE + 1); i++)
-	{
-		whiteNoise3[i] += 1;
-		whiteNoise3[i] /= 2;
-	}
-
-
-	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
-	{
-		continentalness[i] += 1;
-		continentalness[i] /= 2;
-		continentalness[i] = powf(continentalness[i], wg.continentalPower);
-		continentalness[i] = wg.continentalSplines.applySpline(continentalness[i]);
-	}
-
-	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
-	{
-		peaksAndValies[i] += 1;
-		peaksAndValies[i] /= 2;
-		peaksAndValies[i] = powf(peaksAndValies[i], wg.peaksValiesPower);
-		peaksAndValies[i] = wg.peaksValiesSplines.applySpline(peaksAndValies[i]);
-	}
-
-	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
-	{
-		wierdness[i] += 1;
-		wierdness[i] /= 2;
-		wierdness[i] = powf(wierdness[i], wg.wierdnessPower);
-		wierdness[i] = wg.wierdnessSplines.applySpline(wierdness[i]);
-	}
-
-	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
-	{
-		densityNoise[i] += 1;
-		densityNoise[i] /= 2;
-		densityNoise[i] = powf(densityNoise[i], wg.stone3Dpower);
-		densityNoise[i] = wg.stone3DnoiseSplines.applySpline(densityNoise[i]);
-	}
-
-	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
-	{
-		randomSand[i] += 1;
-		randomSand[i] /= 2;
-		randomSand[i] = powf(randomSand[i], wg.randomSandPower);
-		randomSand[i] = wg.randomSandSplines.applySpline(randomSand[i]);
-
-		randomGravel[i] += 1;
-		randomGravel[i] /= 2;
-		randomGravel[i] = powf(randomGravel[i], wg.randomSandPower + 0.1);
-		randomGravel[i] = wg.randomSandSplines.applySpline(randomGravel[i]);
-
-		randomClay[i] += 1;
-		randomClay[i] /= 2;
-		randomClay[i] = powf(randomClay[i], wg.randomSandPower + 0.5);
-		randomClay[i] = wg.randomSandSplines.applySpline(randomClay[i]);
-	}
 
 #pragma region gets
 
-	auto getNoiseVal = [continentalness](int x, int y, int z)
+	auto getNoiseVal = [](int x, int y, int z)
 	{
 		return continentalness[x * CHUNK_SIZE * (1) + y * CHUNK_SIZE + z];
 	};
 
-	auto getRivers = [riversNoise](int x, int z)
+	auto getRivers = [](int x, int z)
 	{
 		return riversNoise[x * CHUNK_SIZE + z];
 	};
 
-	auto getHillsDropDowns = [hillsDropDownsNoise](int x, int z)
+	auto getHillsDropDowns = [](int x, int z)
 	{
 		return hillsDropDownsNoise[x * CHUNK_SIZE + z];
 	};
 
-	auto getTreeAmount1 = [treeAmountNoise1](int x, int z)
+	auto getTreeAmount1 = [](int x, int z)
 	{
 		return treeAmountNoise1[x * CHUNK_SIZE + z];
 	};
 	
-	auto getTreeAmount2 = [treeAmountNoise2](int x, int z)
+	auto getTreeAmount2 = [](int x, int z)
 	{
 		return treeAmountNoise2[x * CHUNK_SIZE + z];
 	};
 
-	auto getTreeType1 = [treeTypeNoise1](int x, int z)
+	auto getTreeType1 = [](int x, int z)
 	{
 		return treeTypeNoise1[x * CHUNK_SIZE + z];
 	};
 
-	auto getTreeType2 = [treeTypeNoise2](int x, int z)
+	auto getTreeType2 = [](int x, int z)
 	{
 		return treeTypeNoise2[x * CHUNK_SIZE + z];
 	};
 
-	auto getRoads = [roadNoise](int x, int z)
+	auto getRoads = [](int x, int z)
 	{
 		return roadNoise[x * CHUNK_SIZE + z];
 	};
 
-	auto getPeaksAndValies = [peaksAndValies](int x, int z)
+	auto getPeaksAndValies = [](int x, int z)
 	{
 		return peaksAndValies[x * CHUNK_SIZE + z];
 	};
 	
-	auto getWhiteNoiseVal = [whiteNoise](int x, int z)
+	auto getWhiteNoiseVal = [](int x, int z)
 	{
 		return whiteNoise[x * (CHUNK_SIZE + 1) + z];
 	};
 
-	auto getLakesNoiseVal = [lakesNoise](int x, int z)
+	auto getLakesNoiseVal = [](int x, int z)
 	{
 		return lakesNoise[x * (CHUNK_SIZE) + z];
 	};
 
-	auto getWhiteNoise2Val = [whiteNoise2](int x, int z)
+	auto getWhiteNoise2Val = [](int x, int z)
 	{
 		return whiteNoise2[x * (CHUNK_SIZE + 1) + z];
 	};
 
-	auto getWhiteNoise3Val = [whiteNoise3](int x, int z)
+	auto getWhiteNoise3Val = [](int x, int z)
 	{
 		return whiteNoise3[x * (CHUNK_SIZE + 1) + z];
 	};
 
-	auto getStonePatches = [stonePatches](int x, int z)
+	auto getStonePatches = [](int x, int z)
 	{
 		return stonePatches[x * CHUNK_SIZE + z];
 	};
@@ -563,42 +580,42 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return getWhiteNoise2Val(x, z) < chance;
 	};
 
-	auto getDensityNoiseVal = [densityNoise](int x, int y, int z) //todo more cache friendly operation here please
+	auto getDensityNoiseVal = [](int x, int y, int z) //todo more cache friendly operation here please
 	{
 		return densityNoise[x * CHUNK_SIZE * (CHUNK_HEIGHT) + y * CHUNK_SIZE + z];
 	};
 
-	auto getRandomSandVal = [randomSand](int x, int y, int z)
+	auto getRandomSandVal = [](int x, int y, int z)
 	{
 		return randomSand[x * CHUNK_SIZE * (CHUNK_HEIGHT)+y * CHUNK_SIZE + z];
 	};
 
-	auto getRandomGravelVal = [randomGravel](int x, int y, int z)
+	auto getRandomGravelVal = [](int x, int y, int z)
 	{
 		return randomGravel[x * CHUNK_SIZE * (CHUNK_HEIGHT)+y * CHUNK_SIZE + z];
 	};
 
-	auto getRandomClayVal = [randomClay](int x, int y, int z)
+	auto getRandomClayVal = [](int x, int y, int z)
 	{
 		return randomClay[x * CHUNK_SIZE * (CHUNK_HEIGHT)+y * CHUNK_SIZE + z];
 	};
 
-	auto getSpagettiNoiseVal = [spagettiNoise](int x, int y, int z) //todo more cache friendly operation here please
+	auto getSpagettiNoiseVal = [](int x, int y, int z) //todo more cache friendly operation here please
 	{
 		return spagettiNoise[x * CHUNK_SIZE * (CHUNK_HEIGHT)+y * CHUNK_SIZE + z];
 	};
 
-	auto getSpagettiNoiseVal2 = [spagettiNoise2](int x, int y, int z) //todo more cache friendly operation here please
+	auto getSpagettiNoiseVal2 = [](int x, int y, int z) //todo more cache friendly operation here please
 	{
 		return spagettiNoise2[x * CHUNK_SIZE * (CHUNK_HEIGHT)+y * CHUNK_SIZE + z];
 	};
 
-	auto getCavesNoiseVal = [cavesNoise](int x, int y, int z)
+	auto getCavesNoiseVal = [](int x, int y, int z)
 	{
 		return cavesNoise[x * CHUNK_SIZE * (CHUNK_HEIGHT)+y * CHUNK_SIZE + z];
 	};
 
-	auto getWierdness = [&](int x, int z)
+	auto getWierdness = [](int x, int z)
 	{
 		return wierdness[x * CHUNK_SIZE + z];
 	};
@@ -1392,29 +1409,29 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 		}
 	
-	FastNoiseSIMD::FreeNoiseSet(continentalness);
-	FastNoiseSIMD::FreeNoiseSet(peaksAndValies);
-	FastNoiseSIMD::FreeNoiseSet(wierdness);
-	FastNoiseSIMD::FreeNoiseSet(densityNoise);
-	FastNoiseSIMD::FreeNoiseSet(randomSand);
-	FastNoiseSIMD::FreeNoiseSet(randomGravel);
-	FastNoiseSIMD::FreeNoiseSet(randomClay);
-	FastNoiseSIMD::FreeNoiseSet(whiteNoise);
-	FastNoiseSIMD::FreeNoiseSet(lakesNoise);
-	FastNoiseSIMD::FreeNoiseSet(whiteNoise2);
-	FastNoiseSIMD::FreeNoiseSet(whiteNoise3);
-	FastNoiseSIMD::FreeNoiseSet(riversNoise);
-	FastNoiseSIMD::FreeNoiseSet(hillsDropDownsNoise);
-	FastNoiseSIMD::FreeNoiseSet(treeAmountNoise1);
-	FastNoiseSIMD::FreeNoiseSet(treeAmountNoise2);
-	FastNoiseSIMD::FreeNoiseSet(treeTypeNoise1);
-	FastNoiseSIMD::FreeNoiseSet(treeTypeNoise2);
-	FastNoiseSIMD::FreeNoiseSet(roadNoise);
-	FastNoiseSIMD::FreeNoiseSet(spagettiNoise);
-	FastNoiseSIMD::FreeNoiseSet(spagettiNoise2);
-	FastNoiseSIMD::FreeNoiseSet(cavesNoise);
-	FastNoiseSIMD::FreeNoiseSet(randomStones);
-	FastNoiseSIMD::FreeNoiseSet(stonePatches);
+	//FastNoiseSIMD::FreeNoiseSet(continentalness);
+	//FastNoiseSIMD::FreeNoiseSet(peaksAndValies);
+	//FastNoiseSIMD::FreeNoiseSet(wierdness);
+	//FastNoiseSIMD::FreeNoiseSet(densityNoise);
+	//FastNoiseSIMD::FreeNoiseSet(randomSand);
+	//FastNoiseSIMD::FreeNoiseSet(randomGravel);
+	//FastNoiseSIMD::FreeNoiseSet(randomClay);
+	//FastNoiseSIMD::FreeNoiseSet(whiteNoise);
+	//FastNoiseSIMD::FreeNoiseSet(lakesNoise);
+	//FastNoiseSIMD::FreeNoiseSet(whiteNoise2);
+	//FastNoiseSIMD::FreeNoiseSet(whiteNoise3);
+	//FastNoiseSIMD::FreeNoiseSet(riversNoise);
+	//FastNoiseSIMD::FreeNoiseSet(hillsDropDownsNoise);
+	//FastNoiseSIMD::FreeNoiseSet(treeAmountNoise1);
+	//FastNoiseSIMD::FreeNoiseSet(treeAmountNoise2);
+	//FastNoiseSIMD::FreeNoiseSet(treeTypeNoise1);
+	//FastNoiseSIMD::FreeNoiseSet(treeTypeNoise2);
+	//FastNoiseSIMD::FreeNoiseSet(roadNoise);
+	//FastNoiseSIMD::FreeNoiseSet(spagettiNoise);
+	//FastNoiseSIMD::FreeNoiseSet(spagettiNoise2);
+	//FastNoiseSIMD::FreeNoiseSet(cavesNoise);
+	//FastNoiseSIMD::FreeNoiseSet(randomStones);
+	//FastNoiseSIMD::FreeNoiseSet(stonePatches);
 	
 	profiler.end();
 

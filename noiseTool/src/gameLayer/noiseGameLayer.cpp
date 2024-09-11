@@ -567,9 +567,9 @@ void recreate()
 				bias = glm::clamp(bias, 0.f, 1.f);
 				bias = 1.f - bias;
 
-				bias = powf(bias, wg.spagettiNoiseBiasPower);
+				//bias = powf(bias, wg.spagettiNoiseBiasPower);
 
-				if (density > wg.spagettiNoiseBias * bias)
+				if (density > 0.5)
 				{
 					//stone
 				}
