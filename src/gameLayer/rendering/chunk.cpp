@@ -16,6 +16,7 @@ constexpr int cornerUpStartGeometry = 40;
 constexpr int topHalfStartGeometry = 48;
 constexpr int topHalfBottomPartStartGeometry = 52;
 constexpr int frontalMiddleTopPieceStartGeometry = 56;
+constexpr int slabTopFace = 60;
 
 
 Block *Chunk::safeGet(int x, int y, int z)
@@ -801,7 +802,6 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		}
 
 
-
 		//top face
 		if (sides[2] != nullptr && !(sides[2])->isOpaque()
 			|| y == CHUNK_HEIGHT - 1
@@ -853,17 +853,18 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		}
 
 		//middle faces
-		//if (
-		//	(y == CHUNK_HEIGHT - 1) ||
-		//	(sides[0] != nullptr && !(sides[0])->isOpaque()) ||
-		//	(sides[1] != nullptr && !(sides[1])->isOpaque()) ||
-		//	(sides[2] != nullptr && !(sides[2])->isOpaque()) ||
-		//	(sides[4] != nullptr && !(sides[4])->isOpaque()) ||
-		//	(sides[5] != nullptr && !(sides[5])->isOpaque())
-		//	)
+		if (
+			(y == CHUNK_HEIGHT - 1) ||
+			(sides[0] != nullptr && !(sides[0])->isOpaque()) ||
+			(sides[1] != nullptr && !(sides[1])->isOpaque()) ||
+			(sides[2] != nullptr && !(sides[2])->isOpaque()) ||
+			(sides[4] != nullptr && !(sides[4])->isOpaque()) ||
+			(sides[5] != nullptr && !(sides[5])->isOpaque())
+			)
 		{
 			int aoShape = determineAOShape(2, sides);
-			bool isInWater = (sides[2] != nullptr) && sides[2]->getType() == BlockTypes::water;
+			//bool isInWater = (sides[2] != nullptr) && sides[2]->getType() == BlockTypes::water;
+			bool isInWater = 0;
 			unsigned char sunLight = 0;
 			unsigned char torchLight = 0;
 			calculateLightThings(sunLight, torchLight, sides[2], b, 2, y);
@@ -926,6 +927,115 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 		}
 
+
+	};
+
+	auto blockBakeLogicForSlabs = [&](int x, int y, int z,
+		std::vector<int> *currentVector, Block &b)
+	{
+		Block *sides[26] = {};
+		getNeighboursLogic(x, y, z, sides);
+
+		glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y, z + this->data.z * CHUNK_SIZE};
+
+		for (int i = 0; i < 6; i++)
+		{
+
+
+			int aoShape = determineAOShape(i, sides);
+			bool isInWater = (sides[i] != nullptr) && sides[i]->getType() == BlockTypes::water;
+			unsigned char sunLight = 0;
+			unsigned char torchLight = 0;
+			calculateLightThings(sunLight, torchLight, sides[i], b, i, y);
+
+
+			auto placeFlagsLightsNormally = [&]()
+			{
+				pushFlagsLightAndPosition(*currentVector, position, 0, isInWater,
+					sunLight, torchLight, aoShape);
+			};
+
+			auto placeNormally = [&]()
+			{
+				currentVector->push_back(mergeShorts(i, getGpuIdIndexForBlock(b.getType(), i)));
+				placeFlagsLightsNormally();
+			};
+
+			if (
+				(sides[i] != nullptr && !(sides[i])->isOpaque())
+				|| (
+				//(i == 3 && y == 0) ||		//display the bottom face
+				(i == 2 && y == CHUNK_HEIGHT - 1) //display the top face
+				)
+				)
+			{
+
+				//bottom face
+				if (i == 3)
+				{
+					placeNormally();
+				}
+				else if (i == 2)
+				{
+					//top face
+
+				}
+				else if (i == 0)
+				{
+					currentVector->push_back(mergeShorts(halfBottomStartGeometry + 0
+						, getGpuIdIndexForBlock(b.getType(), 0
+					)));
+					placeFlagsLightsNormally();
+				}
+				else if (i == 1)
+				{
+					currentVector->push_back(mergeShorts(halfBottomStartGeometry + 1
+						, getGpuIdIndexForBlock(b.getType(), 0
+					)));
+					placeFlagsLightsNormally();
+				}
+				else if (i == 4)
+				{
+					currentVector->push_back(mergeShorts(halfBottomStartGeometry + 2
+						, getGpuIdIndexForBlock(b.getType(), 0
+					)));
+					placeFlagsLightsNormally();
+				}
+				else if (i == 5)
+				{
+					currentVector->push_back(mergeShorts(halfBottomStartGeometry + 3
+						, getGpuIdIndexForBlock(b.getType(), 0
+					)));
+					placeFlagsLightsNormally();
+				}
+
+
+			}
+
+
+		}
+
+		if (
+			(y == CHUNK_HEIGHT - 1) ||
+			(sides[0] != nullptr && !(sides[0])->isOpaque()) ||
+			(sides[1] != nullptr && !(sides[1])->isOpaque()) ||
+			(sides[2] != nullptr && !(sides[2])->isOpaque()) ||
+			(sides[4] != nullptr && !(sides[4])->isOpaque()) ||
+			(sides[5] != nullptr && !(sides[5])->isOpaque())
+			)
+		{
+			int aoShape = determineAOShape(2, sides);
+			//bool isInWater = (sides[2] != nullptr) && sides[2]->getType() == BlockTypes::water;
+			bool isInWater = 0;
+			unsigned char sunLight = 0;
+			unsigned char torchLight = 0;
+			calculateLightThings(sunLight, torchLight, sides[2], b, 2, y);
+
+			currentVector->push_back(mergeShorts(slabTopFace,
+				getGpuIdIndexForBlock(b.getType(), 2)));
+			pushFlagsLightAndPosition(*currentVector, position, 0, isInWater,
+				sunLight, torchLight, aoShape);
+		}
 
 	};
 
@@ -1223,6 +1333,10 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 							blockBakeLogicForStairs(x, y, z, &opaqueGeometry, b);
 
+						}
+						else if (b.isSlabMesh())
+						{
+							blockBakeLogicForSlabs(x, y, z, &opaqueGeometry, b);
 						}else
 						if (b.isGrassMesh())
 						{

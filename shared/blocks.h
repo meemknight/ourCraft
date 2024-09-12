@@ -79,6 +79,7 @@ enum BlockTypes : unsigned short
 	pink_stained_glass,
 	whiteWool,
 	wooden_stairs,
+	wooden_slab,
 
 	BlocksCount
 };
@@ -88,6 +89,8 @@ using BlockType = uint16_t;
 bool isBlockMesh(BlockType type);
 
 bool isStairsMesh(BlockType type);
+
+bool isSlabMesh(BlockType type);
 
 bool isCrossMesh(BlockType type);
 
@@ -159,6 +162,12 @@ bool canBeMinedByShovel(std::uint16_t type);
 bool canBeMinedByAxe(std::uint16_t type);
 
 
+struct BlockCollider
+{
+	glm::vec3 size = {1,1,1};
+	glm::vec3 offset = {};
+};
+
 struct Block
 {
 	BlockType typeAndFlags = 0;
@@ -200,6 +209,18 @@ struct Block
 		return ::isOpaque(getType());
 	}
 
+	BlockCollider getCollider()
+	{
+		if (isSlabMesh())
+		{
+			BlockCollider b{};
+			b.size.y = 0.5;
+			return b;
+		}
+
+		return BlockCollider{};
+	}
+
 	//rename is animated leaves
 	bool isAnimatedBlock()
 	{
@@ -218,6 +239,11 @@ struct Block
 	bool isStairsMesh()
 	{
 		return ::isStairsMesh(getType());
+	}
+
+	bool isSlabMesh()
+	{
+		return ::isSlabMesh(getType());
 	}
 
 	bool isGrassMesh()

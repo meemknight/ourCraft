@@ -215,6 +215,14 @@ bool boxColideBlock(glm::dvec3 p1, glm::vec3 s1, glm::ivec3 b)
 	return boxColide(p1, s1, {b.x,b.y - BLOCK_SIZE / 2.f,b.z}, glm::vec3(BLOCK_SIZE));
 }
 
+//collider is offset, size
+bool boxColideBlockWithCollider(glm::dvec3 p1, glm::vec3 s1, glm::ivec3 b, BlockCollider collider)
+{
+	return boxColide(p1, s1, glm::vec3{b.x,b.y - collider.size.y / 2.f,b.z} + collider.offset, 
+		collider.size);
+}
+
+
 /*
 //https://stackoverflow.com/questions/3235385/given-a-bounding-box-and-a-line-two-points-determine-if-the-line-intersects-t
 
@@ -462,21 +470,19 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 					{
 						auto blockPos = fromBlockPosToBlockPosInChunk({x,y,z});
 
-						auto b = c->safeGet(blockPos);
-						if (!b)
-						{
-							std::cout << "ERROR WELP IT DIDN'T WORK\n";
-						}
+						auto b = c->unsafeGet(blockPos.x, blockPos.y, blockPos.z);
 						//todo remove later and use unsafe get
 						
-						if (b->isColidable())
+						if (b.isColidable())
 						{
-							float friction = b->getFriction();
+							float friction = b.getFriction();
+							
+							auto collider = b.getCollider();
 
-							if (boxColideBlock(pos, size, {x,y,z}))
+							if (boxColideBlockWithCollider(pos, size, {x,y,z}, collider))
 							{
 
-								if (!boxColideBlock(lastPos, size, {x,y,z}))
+								if (!boxColideBlockWithCollider(lastPos, size, {x,y,z}, collider))
 								{
 									if (delta.x != 0)
 									{
@@ -517,13 +523,13 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 										if (delta.y < 0) //moving down
 										{
 											if(forces)forces->setColidesBottom(true);
-											pos.y = y * BLOCK_SIZE + BLOCK_SIZE / 2.0;
+											pos.y = y * BLOCK_SIZE + collider.size.y / 2.0;
 											goto end;
 										}
 										else //moving up
 										{
 											if (forces)forces->setColidesTop(true);
-											pos.y = y * BLOCK_SIZE - BLOCK_SIZE / 2.0 - size.y;
+											pos.y = y * BLOCK_SIZE - collider.size.y / 2.0 - size.y;
 											goto end;
 										}
 										
