@@ -12,6 +12,11 @@ bool isBlockMesh(BlockType type)
 	return !isCrossMesh(type);
 }
 
+bool isStairsMesh(BlockType type)
+{
+	return type == wooden_stairs;
+}
+
 bool isCrossMesh(BlockType type)
 {
 	return isGrassMesh(type);
@@ -32,14 +37,9 @@ bool isOpaque(BlockType type)
 
 	return
 		type != BlockTypes::air
-		&& type != BlockTypes::leaves
-		&& type != BlockTypes::jungle_leaves
-		&& type != BlockTypes::palm_leaves
-		&& type != BlockTypes::birch_leaves
-		&& type != BlockTypes::spruce_leaves
-		&& type != BlockTypes::spruce_leaves_red
-		&& type != BlockTypes::glowstone
 		&& type != BlockTypes::torch
+		&& type != BlockTypes::wooden_stairs
+		&& !(isAnyLeaves(type))
 		&& !(isTransparentGeometry(type))
 		&& !(isGrassMesh(type));
 }
@@ -94,6 +94,7 @@ bool isAnyWoddenBlock(BlockType type)
 		type == jungle_log ||
 		type == palm_log ||
 		type == craftingTable ||
+		type == wooden_stairs ||
 		type == spruce_log;
 }
 

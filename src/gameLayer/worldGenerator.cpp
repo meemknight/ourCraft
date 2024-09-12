@@ -180,8 +180,8 @@ int fromFloatNoiseValToIntegers(float noise, int maxExclusive)
 void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structuresManager, BiomesManager &biomesManager,
 	std::vector<StructureToGenerate> &generateStructures)
 {
-	PL::Profiler profiler;
-	profiler.start();
+	//PL::Profiler profiler;
+	//profiler.start();
 
 
 	//super flat
@@ -1433,10 +1433,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	//FastNoiseSIMD::FreeNoiseSet(randomStones);
 	//FastNoiseSIMD::FreeNoiseSet(stonePatches);
 	
-	profiler.end();
-
-
-	std::cout << "Time ms: " << profiler.rezult.timeSeconds * 1000 << "\n";
+	//profiler.end();
+	//std::cout << "Time ms: " << profiler.rezult.timeSeconds * 1000 << "\n";
 
 
 }

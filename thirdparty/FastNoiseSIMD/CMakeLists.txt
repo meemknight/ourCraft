@@ -1,4 +1,8 @@
 cmake_minimum_required(VERSION 3.1)
+
+cmake_policy(SET CMP0069 NEW)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+
 project(fastNoiseSIMD)
 
 

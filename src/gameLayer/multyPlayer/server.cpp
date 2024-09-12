@@ -763,6 +763,9 @@ void serverWorkerUpdate(
 						auto b = chunk->chunk.safeGet(convertedX, i.t.pos.y, convertedZ);
 						Item *item = 0;
 
+						Block actualPlacedBLock;
+						actualPlacedBLock.typeAndFlags = i.t.blockType;
+
 						if (!b)
 						{
 							legal = false;
@@ -774,8 +777,10 @@ void serverWorkerUpdate(
 							{
 								item = client->playerData.inventory.getItemFromIndex(i.t.inventroySlot);
 
+
+
 								if(item && item->isBlock() && 
-									i.t.blockType == item->type
+									actualPlacedBLock.getType() == item->type
 									&& item->counter
 									)
 								{
@@ -790,7 +795,7 @@ void serverWorkerUpdate(
 
 							if (i.t.taskType == Task::placeBlock)
 							{
-								if (!canBlockBePlaced(i.t.blockType, b->getType()))
+								if (!canBlockBePlaced(actualPlacedBLock.getType(), b->getType()))
 								{
 									legal = false;
 								}
@@ -805,7 +810,7 @@ void serverWorkerUpdate(
 							}
 							
 
-							if (i.t.taskType == Task::placeBlock && isColidable(i.t.blockType))
+							if (i.t.taskType == Task::placeBlock && isColidable(actualPlacedBLock.getType()))
 							{
 								//don't place blocks over entities
 
@@ -823,7 +828,7 @@ void serverWorkerUpdate(
 						if (legal)
 						{
 							auto lastBlock = b->getType();
-							b->setType(i.t.blockType);
+							*b = actualPlacedBLock;
 							chunk->otherData.dirty = true;
 
 							{

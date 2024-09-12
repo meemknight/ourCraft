@@ -79,7 +79,8 @@ struct ChunkSystem
 	//returns true if succeeded
 	bool placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot,
 		UndoQueue &undoQueue, glm::dvec3 playerPos, 
-		LightSystem &lightSystem, PlayerInventory &inventory, bool decreaseCounter
+		LightSystem &lightSystem, PlayerInventory &inventory, bool decreaseCounter,
+		int faceDirection
 	);
 
 

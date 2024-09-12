@@ -444,6 +444,11 @@ const char *getItemTextureName(int itemId)
 	return itemsNames[itemId-ItemsStartPoint];
 }
 
+bool isItem(unsigned short type)
+{
+	return type >= ItemsStartPoint && type < ItemTypes::lastItem;
+}
+
 Item itemCreator(unsigned short type, unsigned char counter)
 {
 	if (!counter) { return {}; }

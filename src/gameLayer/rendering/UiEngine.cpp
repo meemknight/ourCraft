@@ -259,7 +259,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 			float aspectIncrease = 0;
 
-			if (insideCraftingTable)
+			if (insideCraftingTable || currentInventoryTab == INVENTORY_TAB_ITEMS || currentInventoryTab == INVENTORY_TAB_BLOCKS)
 			{
 				aspectIncrease = 0.10;
 			}
@@ -323,6 +323,8 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 					itemBox.z = itemBox.w;
 					for (int i = start; i < start + 9; i++)
 					{
+						if (!isItem(i) && !isBlock(i)) { continue; }
+
 						itemBox.x = box.x + itemBox.z * (i - start);
 						if (glui::aabb(itemBox, mousePos))
 						{
@@ -377,6 +379,47 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 				tabBox.w = oneItemSize / 2;
 				tabBox.x += oneItemSize / 4.f;
 				tabBox.y -= oneItemSize / 2.f;
+
+				const int BARS_COUNT = 7;
+
+				//render side bar
+				auto renderSideSlider = [&](glm::ivec4 box)
+				{
+					glm::vec4 barBox = box;
+					barBox.y -= box.w * (BARS_COUNT - 1);
+					barBox.x += box.z;
+					barBox.z = barBox.w;
+					barBox.w = box.w * (BARS_COUNT);
+
+					//renderer2d.renderRectangle(barBox, Colors_Red);
+
+					glm::ivec4 topBox = barBox;
+					topBox.w = topBox.z;
+
+					glm::ivec4 bottomBox = barBox;
+					bottomBox.y += barBox.w - barBox.z;
+					bottomBox.w = bottomBox.z;
+
+					int slider = 0;
+
+					if (glui::drawButton(renderer2d, topBox, Colors_White, "",
+						font, buttonTexture, platform::getRelMousePosition(),
+						platform::isLMouseHeld(), platform::isLMouseReleased()))
+					{
+						slider--;
+					}
+
+					if (glui::drawButton(renderer2d, bottomBox, Colors_White, "",
+						font, buttonTexture, platform::getRelMousePosition(),
+						platform::isLMouseHeld(), platform::isLMouseReleased()))
+					{
+						slider++;
+					}
+
+					slider += platform::getScroll();
+
+					return slider;
+				};
 
 				if(currentInventoryTab == INVENTORY_TAB_DEFAULT)
 				{
@@ -557,6 +600,15 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 				else if (currentInventoryTab == INVENTORY_TAB_BLOCKS)
 				{
 
+					auto inventoryBars = glui::Box().xCenter().yBottomPerc(-0.17).xDimensionPercentage(0.9).
+						yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
+
+					static int currentStartRow = 0;
+					currentStartRow += renderSideSlider(inventoryBars);
+					currentStartRow = glm::clamp(currentStartRow, 0,
+						(((int)BlocksCount / 9) - BARS_COUNT) + 1);
+					if (currentStartRow < 0) { currentStartRow = 0; }
+
 					//render items
 					auto renderCreativeBlocks = [&](int start, glm::ivec4 box)
 					{
@@ -572,15 +624,12 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						}
 					};
 
-					auto inventoryBars = glui::Box().xCenter().yBottomPerc(-0.17).xDimensionPercentage(0.9).
-						yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
-
-					for (int i = 0; i < 7; i++)
+					for (int i = 0; i < BARS_COUNT; i++)
 					{
 						renderer2d.renderRectangle(inventoryBars, itemsBarInventory);
 
-						checkInsideCreativeMenu((6 - i) * 9 + 1, inventoryBars);
-						renderCreativeBlocks((6 - i) * 9 + 1, inventoryBars);
+						checkInsideCreativeMenu((6 - i) * 9 + 1 + currentStartRow * 9, inventoryBars);
+						renderCreativeBlocks((6 - i) * 9 + 1 + currentStartRow * 9, inventoryBars);
 
 						inventoryBars.y -= inventoryBars.w;
 					}
@@ -607,13 +656,18 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 					auto inventoryBars = glui::Box().xCenter().yBottomPerc(-0.17).xDimensionPercentage(0.9).
 						yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
 						
-					for (int i = 0; i < 7; i++)
-					{
+					static int currentStartRow = 0;
+					currentStartRow += renderSideSlider(inventoryBars);
+					currentStartRow = glm::clamp(currentStartRow, 0,
+						(((int)(lastItem - ItemsStartPoint) / 9) - BARS_COUNT) + 1);
+					if (currentStartRow < 0) { currentStartRow = 0; }
 
+					for (int i = 0; i < BARS_COUNT; i++)
+					{
 						renderer2d.renderRectangle(inventoryBars, itemsBarInventory);
 
-						checkInsideCreativeMenu((6 - i) * 9 + ItemsStartPoint, inventoryBars);
-						renderCreativeItems((6-i) * 9 + ItemsStartPoint, inventoryBars);
+						checkInsideCreativeMenu((6 - i) * 9 + ItemsStartPoint + currentStartRow*9, inventoryBars);
+						renderCreativeItems((6-i) * 9 + ItemsStartPoint + currentStartRow * 9, inventoryBars);
 
 						inventoryBars.y -= inventoryBars.w;
 					}

@@ -6,6 +6,9 @@
 #include <glm/mat3x3.hpp>
 #include <glm/gtx/transform.hpp>
 
+
+int getViewDirectionRotation(glm::vec3 vec);
+
 struct Camera
 {
 	Camera() = default;
@@ -35,6 +38,11 @@ struct Camera
 	glm::mat4x4 getViewProjectionWithPositionMatrix();
 	
 	glm::dmat4x4 getViewProjectionWithPositionMatrixDouble();
+
+	int getViewDirectionRotation()
+	{
+		return ::getViewDirectionRotation(viewDirection);
+	}
 
 	void rotateCamera(const glm::vec2 delta);
 	float yaw = 0.f;

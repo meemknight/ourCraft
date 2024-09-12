@@ -279,6 +279,9 @@ uint16_t blocksLookupTable[] = {
 	//whool
 	79,79,79,79,79,79,
 
+	//wooden_stairs
+	7, 7, 7, 7, 7, 7,
+
 };
 
 void fixAlphaForNormals(unsigned char *buffer, int w, int h)

@@ -7,6 +7,7 @@ struct BlocksLoader
 	std::vector<GLuint64> gpuIds;
 	std::vector<GLuint> texturesIds;
 
+	//load all blocks loadallblocks
 	void loadAllTextures(std::string path);
 	void setupAllColors();
 	void clearAllTextures();

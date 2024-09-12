@@ -147,6 +147,44 @@ void Camera::decomposePosition(glm::vec3& floatPart, glm::ivec3& intPart)
 	::decomposePosition(position, floatPart, intPart);
 }
 
+int getViewDirectionRotation(glm::vec3 vec)
+{
+	// If the vector is zero or facing straight up/down, return 0 as default
+	if (vec.x == 0.0f && vec.z == 0.0f)
+	{
+		return 0;
+	}
+
+	// Normalize the vector in the xz-plane
+	glm::vec2 xzVec(vec.x, vec.z);
+	if (glm::length(xzVec) != 0)
+	{
+		xzVec = glm::normalize(xzVec);
+	}
+	else
+	{
+		return 0;
+	}
+
+	// Check direction by comparing x and z components
+	if (xzVec.y >= 0.0f && std::abs(xzVec.y) > std::abs(xzVec.x))
+	{
+		return 2;  // Facing +Z
+	}
+	else if (xzVec.x <= 0.0f && std::abs(xzVec.x) > std::abs(xzVec.y))
+	{
+		return 1;  // Facing -X
+	}
+	else if (xzVec.y <= 0.0f && std::abs(xzVec.y) > std::abs(xzVec.x))
+	{
+		return 0;  // Facing -Z
+	}
+	else
+	{
+		return 3;  // Facing +X
+	}
+}
+
 void decomposePosition(glm::dvec3 in, glm::vec3 &floatPart, glm::ivec3 &intPart)
 {
 	intPart = glm::floor(in);

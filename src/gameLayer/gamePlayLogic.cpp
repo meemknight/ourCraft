@@ -461,7 +461,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	bool stopMainInput = gameData.escapePressed || gameData.killed || gameData.insideInventoryMenu ||
 		gameData.isInsideMapView;
 
-	static float moveSpeed = 40.f;
+	static float moveSpeed = 7.f;
 	float isPlayerMovingSpeed = 0;
 
 
@@ -813,6 +813,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	glm::uint64 targetedEntity = 0;
 	float raycastDist = 0;
 
+	int facingDirection = gameData.c.getViewDirectionRotation();
+	//std::cout << facingDirection << "\n";
+
 	if (!stopMainInput)
 	{
 
@@ -1004,7 +1007,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 										gameData.entityManager.localPlayer.entity.position,
 										gameData.lightSystem,
 										player.inventory,
-										player.otherPlayerSettings.gameMode == OtherPlayerSettings::SURVIVAL
+										player.otherPlayerSettings.gameMode == OtherPlayerSettings::SURVIVAL,
+										facingDirection
 									);
 
 									AudioEngine::playSound(getSoundForBlockStepping(item.type),

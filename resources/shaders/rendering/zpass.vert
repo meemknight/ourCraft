@@ -89,7 +89,7 @@ vec3 calculateVertexPos(int vertexId)
 	vec3 pos = vec3(0);
 	vec3 vertexShape = vec3(0);
 
-	if(in_faceOrientation >= 22) //water
+	if(in_faceOrientation >= 22 && in_faceOrientation < 36) //water
 	{
 			int mask = waterMask[(in_faceOrientation-22)*4+vertexId];
 

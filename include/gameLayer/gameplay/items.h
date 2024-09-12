@@ -76,6 +76,7 @@ void addMetaData(std::vector<unsigned char> &vector, T data)
 	std::memcpy(&vector[vector.size() - sizeof(T)], &data, sizeof(T));
 }
 
+bool isItem(unsigned short type);
 
 Item itemCreator(unsigned short type, unsigned char counter = 1);
 

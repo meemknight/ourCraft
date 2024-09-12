@@ -1097,7 +1097,8 @@ void ChunkSystem::dropChunkAtIndexSafe(int index, BigGpuBuffer *gpuBuffer)
 
 bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot,
 	UndoQueue &undoQueue, glm::dvec3 playerPos,
-	LightSystem &lightSystem, PlayerInventory &inventory, bool decreaseCounter)
+	LightSystem &lightSystem, PlayerInventory &inventory, bool decreaseCounter, 
+	int faceDirection)
 {
 	Chunk *chunk = 0;
 	auto b = getBlockSafeAndChunk(pos.x, pos.y, pos.z, chunk);
@@ -1119,9 +1120,16 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot
 			p.cid = getConnectionData().cid;
 			p.header = headerPlaceBlock;
 
+			Block block;
+			block.setType(item->type);
+			if (block.hasRotationFor365RotationTypeBlocks())
+			{
+				block.setRotationFor365RotationTypeBlocks(faceDirection);
+			}
+
 			Packet_ClientPlaceBlock packetData = {};
 			packetData.blockPos = pos;
-			packetData.blockType = item->type;
+			packetData.blockType = block.typeAndFlags;
 			packetData.eventId = undoQueue.currentEventId;
 			packetData.inventoryRevision = inventory.revisionNumber;
 			packetData.inventorySlot = inventorySlot;
@@ -1130,23 +1138,21 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot
 				p, (char *)&packetData, sizeof(packetData), 1,
 				channelChunksAndBlocks);
 
-			undoQueue.addPlaceBlockEvent(pos, b->getType(), item->type, playerPos);
+			undoQueue.addPlaceBlockEvent(pos, b->getType(), block.typeAndFlags, playerPos);
 
 			changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->getType(),
-				item->type, lightSystem);
+				block.typeAndFlags, lightSystem);
 
-			b->setType(item->type);
+			b->typeAndFlags = block.typeAndFlags;
 			if (b->isOpaque()) { b->lightLevel = 0; }
 
 			setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
-
 
 			if (decreaseCounter)
 			{
 				item->counter--;
 				item->sanitize();
 			};
-
 
 			return true;
 		}

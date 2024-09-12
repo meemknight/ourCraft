@@ -78,6 +78,7 @@ enum BlockTypes : unsigned short
 	magenta_stained_glass,
 	pink_stained_glass,
 	whiteWool,
+	wooden_stairs,
 
 	BlocksCount
 };
@@ -85,6 +86,8 @@ enum BlockTypes : unsigned short
 using BlockType = uint16_t;
 
 bool isBlockMesh(BlockType type);
+
+bool isStairsMesh(BlockType type);
 
 bool isCrossMesh(BlockType type);
 
@@ -158,13 +161,32 @@ bool canBeMinedByAxe(std::uint16_t type);
 
 struct Block
 {
-	BlockType typeAndFlags;
-	unsigned char lightLevel; //first 4 bytes represent the sun level and bottom 4 bytes the other lights level
-	unsigned char notUsed;
+	BlockType typeAndFlags = 0;
+	unsigned char lightLevel = 0; //first 4 bytes represent the sun level and bottom 4 bytes the other lights level
+	unsigned char notUsed = 0;
 
 	BlockType getType()
 	{
 		return typeAndFlags & 0b11'1111'1111;
+	}
+
+	//used for stairs, or furnace type blocks
+	unsigned char getRotationFor365RotationTypeBlocks()
+	{
+		return (typeAndFlags >> 10) & 0b0000'11;
+	}
+
+	void setRotationFor365RotationTypeBlocks(int rotation)
+	{
+		rotation <<= 10;
+		typeAndFlags &= 0b1111'1100'1111'1111;
+		typeAndFlags |= rotation;
+	}
+
+	//used for stairs, or furnace type blocks
+	bool hasRotationFor365RotationTypeBlocks()
+	{
+		return getType() == wooden_stairs;
 	}
 
 	void setType(BlockType t)
@@ -191,6 +213,11 @@ struct Block
 	bool isTransparentGeometry()
 	{
 		return ::isTransparentGeometry(getType());
+	}
+
+	bool isStairsMesh()
+	{
+		return ::isStairsMesh(getType());
 	}
 
 	bool isGrassMesh()
