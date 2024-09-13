@@ -523,13 +523,17 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 										if (delta.y < 0) //moving down
 										{
 											if(forces)forces->setColidesBottom(true);
-											pos.y = y * BLOCK_SIZE + collider.size.y / 2.0;
+											pos.y = y * BLOCK_SIZE + collider.size.y / 2.0
+												+ collider.offset.y
+												;
 											goto end;
 										}
 										else //moving up
 										{
 											if (forces)forces->setColidesTop(true);
-											pos.y = y * BLOCK_SIZE - collider.size.y / 2.0 - size.y;
+											pos.y = y * BLOCK_SIZE - BLOCK_SIZE / 2.0 - size.y
+												+collider.offset.y
+												;
 											goto end;
 										}
 										

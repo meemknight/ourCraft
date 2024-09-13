@@ -11,9 +11,10 @@
 #include <fstream>
 #include <shader.h>
 #include <camera.h>
+#include <deque>
 
 
-gl2d::Texture t;
+gl2d::Texture colorT;
 Shader shader;
 Camera c;
 
@@ -87,7 +88,7 @@ bool initGame()
 	glEnable(GL_DEPTH_TEST);
 
 
-	t.loadFromFile(RESOURCES_PATH "cobblestone.png", true, true);
+	colorT.loadFromFile(RESOURCES_PATH "cobblestone.png", true, true);
 
 	glGenVertexArrays(1, &cubeVao);
 	glBindVertexArray(cubeVao);
@@ -136,7 +137,41 @@ glm::mat4 createTBNMatrix(const glm::vec3 &direction, const glm::vec3 &up = glm:
 	return glm::mat4(rotationMatrix);
 }
 
-void imageEditor(const char *name, gl2d::Texture &t)
+
+struct UndoRedo
+{
+	glm::ivec3 newColor = {};
+	glm::ivec3 oldColor = {};
+	glm::ivec2 position = {};
+	int textureIndex = 0;
+};
+
+std::deque<UndoRedo> undoRedo;
+int undoRedoPosition = 0;
+
+void writeAtIndex(glm::ivec3 color, glm::ivec2 position, int index)
+{
+
+	gl2d::Texture t;
+	if (index == 0)
+	{
+		t = colorT;
+	}
+
+	glm::ivec2 size = {};
+	std::vector<unsigned char> data = t.readTextureData(0, &size);
+
+	int inTexture = (position.y * size.x + position.x) * 4;
+	data[inTexture + 0] = color.x; // R
+	data[inTexture + 1] = color.y; // G
+	data[inTexture + 2] = color.z; // B
+
+	t.cleanup();
+	t.createFromBuffer((char *)data.data(), size.x, size.y, true, true);
+
+}
+
+void imageEditor(const char *name, gl2d::Texture &t, int textureIndex)
 {
 	glm::ivec2 size = {};
 	std::vector<unsigned char> data = t.readTextureData(0, &size);
@@ -153,7 +188,8 @@ void imageEditor(const char *name, gl2d::Texture &t)
 
 	// Display the texture with a fixed size of 512x512
 	ImGui::Text("%s", name);
-	ImGui::Image((void *)(intptr_t)t.id, ImVec2(512, 512), {0,1}, {1,0});
+	ImGui::Image((void *)(intptr_t)t.id, ImVec2(512, 512), {0,1}, {1,0}, {1,1,1,1}, 
+		{0.5,0.5,0.5,1});
 
 	// Get the image position on the window
 	ImVec2 image_pos = ImGui::GetItemRectMin();
@@ -179,17 +215,56 @@ void imageEditor(const char *name, gl2d::Texture &t)
 
 			// Left mouse button for painting
 			if (ImGui::IsMouseDown(0) || ImGui::IsMouseDragging(0))
-			//if(platform::isLMouseHeld())
 			{
-				std::cout << "Yess\n";
-				is_drawing = true;
 
-				// Set the pixel color
-				data[index + 0] = static_cast<unsigned char>(brush_color.x * 255.0f); // R
-				data[index + 1] = static_cast<unsigned char>(brush_color.y * 255.0f); // G
-				data[index + 2] = static_cast<unsigned char>(brush_color.z * 255.0f); // B
-				data[index + 3] = 255; // A
-				changed = true;
+				//color picker
+				if (platform::isKeyHeld(platform::Button::LeftCtrl))
+				{
+					brush_color.x = data[index + 0] / 255.f;
+					brush_color.y = data[index + 1] / 255.f;
+					brush_color.z = data[index + 2] / 255.f;
+				}
+				else
+				{
+
+					if (
+						data[index + 0] != brush_color.x * 255.0f &&
+						data[index + 1] != brush_color.y * 255.0f &&
+						data[index + 2] != brush_color.z * 255.0f
+						)
+					{
+						UndoRedo undo;
+						undo.textureIndex = textureIndex;
+						undo.position = {x, y};
+						undo.oldColor.x = data[index + 0];
+						undo.oldColor.y = data[index + 1];
+						undo.oldColor.z = data[index + 2];
+						undo.newColor.x = brush_color.x * 255.0f;
+						undo.newColor.y = brush_color.y * 255.0f;
+						undo.newColor.z = brush_color.z * 255.0f;
+
+						if (undoRedoPosition < undoRedo.size())
+						{
+							undoRedo.erase(undoRedo.begin() + undoRedoPosition, undoRedo.end());
+						}
+
+						undoRedo.push_back(undo);
+						undoRedoPosition = undoRedo.size();
+
+						//std::cout << "Yess\n";
+						is_drawing = true;
+
+						// Set the pixel color
+						data[index + 0] = static_cast<unsigned char>(brush_color.x * 255.0f); // R
+						data[index + 1] = static_cast<unsigned char>(brush_color.y * 255.0f); // G
+						data[index + 2] = static_cast<unsigned char>(brush_color.z * 255.0f); // B
+						data[index + 3] = 255; // A
+						changed = true;
+					}
+					
+				}
+
+				
 			}
 		}
 	}
@@ -288,15 +363,58 @@ bool gameLogic(float deltaTime)
 
 
 	//ImGui::Image((ImTextureID)t.id, {512, 512}, {0,1}, {1,0});
-	imageEditor("Color", t);
+	imageEditor("Color", colorT, 0);
 
 
 	ImGui::End();
 
+	while (undoRedo.size() > 200)
+	{
+		undoRedo.pop_front();
+	}
+
+#pragma endregion
+
+#pragma region undo redo
+
+	if (platform::isKeyHeld(platform::Button::LeftCtrl) &&
+		platform::isKeyReleased(platform::Button::Z)
+		)
+	{
+		if (undoRedoPosition > 0)
+		{
+			undoRedoPosition--;
+			writeAtIndex(undoRedo[undoRedoPosition].oldColor, undoRedo[undoRedoPosition].position,
+				undoRedo[undoRedoPosition].textureIndex);
+		}
+	}
+
+	if (platform::isKeyHeld(platform::Button::LeftCtrl) &&
+		platform::isKeyReleased(platform::Button::Y))
+	{
+		if (undoRedoPosition < undoRedo.size())
+		{
+			writeAtIndex(undoRedo[undoRedoPosition].newColor, undoRedo[undoRedoPosition].position,
+				undoRedo[undoRedoPosition].textureIndex);
+			undoRedoPosition++;
+
+		}
+	}
+
+	if (undoRedoPosition < 0)
+	{
+		undoRedoPosition = 0;
+	}
+
+	if (undoRedoPosition > undoRedo.size())
+	{
+		undoRedoPosition = undoRedo.size();
+	}
+
 #pragma endregion
 
 
-#pragma region drawing
+#pragma region rendering
 	shader.bind();
 	glBindVertexArray(cubeVao);
 
@@ -307,7 +425,7 @@ bool gameLogic(float deltaTime)
 	glUniformMatrix4fv(u_modelMatrix, 1, GL_FALSE, glm::value_ptr(model));
 	glUniformMatrix4fv(u_viewProjection, 1, GL_FALSE, glm::value_ptr(viewProj));
 	
-	t.bind(0);
+	colorT.bind(0);
 
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
