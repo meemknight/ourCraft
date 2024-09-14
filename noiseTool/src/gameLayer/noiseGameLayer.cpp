@@ -443,8 +443,8 @@ void recreate()
 			float heightPercentage = finalNoise[i + size.y - 1];
 			int height = int(startLevel + heightPercentage * heightDiff);
 
-			float squishFactor = settings.densitySquishFactor + getWierdness(i,0) * 30 - 15;
-			squishFactor = std::max(squishFactor, 0.f);
+			//float squishFactor = settings.densitySquishFactor + getWierdness(i,0) * 30 - 15;
+			//squishFactor = std::max(squishFactor, 0.f);
 
 
 			float firstH = 1;
@@ -453,20 +453,20 @@ void recreate()
 
 				auto density = getDensityNoiseVal(i, y);
 
-				int heightOffset = height + settings.densityHeightoffset;
+				int heightOffset = height;// +settings.densityHeightoffset;
 				int difference = y - heightOffset;
 				float differenceMultiplier = 
-					glm::clamp(pow(abs(difference)/ squishFactor, settings.densitySquishPower),
-					1.f, 10.f);
+					//glm::clamp(pow(abs(difference)/ squishFactor, settings.densitySquishPower),
+					//1.f, 10.f);
 
-				if (difference > 0)
-				{
-					density = powf(density, differenceMultiplier);
-				}
-				else if (difference < 0)
-				{
-					density = powf(density, 1.f/(differenceMultiplier));
-				}
+				//if (difference > 0)
+				//{
+				//	density = powf(density, differenceMultiplier);
+				//}
+				//else if (difference < 0)
+				//{
+				//	density = powf(density, 1.f/(differenceMultiplier));
+				//}
 
 
 				if (y < stoneNoiseStartLevel)
@@ -750,12 +750,12 @@ bool gameLogic(float deltaTime)
 	{
 		noiseEditor(settings.stone3Dnoise, "3D noise");
 
-		ImGui::SliderFloat("3D bias", &settings.densityBias, 0, 1);
-		ImGui::SliderFloat("3D noise bias power", &settings.densityBiasPower, 0.1, 10);
-
-		ImGui::SliderFloat("3D noise squish factor", &settings.densitySquishFactor, 0.1, 100);
-		ImGui::SliderFloat("3D noise squish power", &settings.densitySquishPower, 0.1, 10);
-		ImGui::SliderInt("3D noise density height offset", &settings.densityHeightoffset, -100, 100);
+		//ImGui::SliderFloat("3D bias", &settings.densityBias, 0, 1);
+		//ImGui::SliderFloat("3D noise bias power", &settings.densityBiasPower, 0.1, 10);
+		//
+		//ImGui::SliderFloat("3D noise squish factor", &settings.densitySquishFactor, 0.1, 100);
+		//ImGui::SliderFloat("3D noise squish power", &settings.densitySquishPower, 0.1, 10);
+		//ImGui::SliderInt("3D noise density height offset", &settings.densityHeightoffset, -100, 100);
 
 	}
 
@@ -763,8 +763,8 @@ bool gameLogic(float deltaTime)
 	{
 		noiseEditor(settings.spagettiNoise, "Spagetti noise");
 
-		ImGui::SliderFloat("Spagetti noise bias", &settings.spagettiBias, 0, 10);
-		ImGui::SliderFloat("Spagetti noise bias power", &settings.spagettiBiasPower, 0.1, 10);
+		//ImGui::SliderFloat("Spagetti noise bias", &settings.spagettiBias, 0, 10);
+		//ImGui::SliderFloat("Spagetti noise bias power", &settings.spagettiBiasPower, 0.1, 10);
 	}
 
 	if (showVegetation)

@@ -1110,7 +1110,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	
 #pragma endregion
 
-	
 #pragma region get player positions and stuff
 
 	glm::ivec3 blockPositionPlayer = from3DPointToBlock(gameData.c.position);
@@ -1428,6 +1427,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				gameData.entityManager.localPlayer.entity.lastPosition 
 					= gameData.entityManager.localPlayer.entity.position;
 
+				ImGui::Text("Entity pos: %lf, %lf, %lf", player.entity.position.x, player.entity.position.y, player.entity.position.z);
 				ImGui::Text("camera float: %f, %f, %f", posFloat.x, posFloat.y, posFloat.z);
 				ImGui::Text("camera int: %d, %d, %d", posInt.x, posInt.y, posInt.z);
 				ImGui::Text("camera view: %f, %f, %f", gameData.c.viewDirection.x, gameData.c.viewDirection.y, gameData.c.viewDirection.z);

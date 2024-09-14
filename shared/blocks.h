@@ -209,9 +209,14 @@ struct Block
 		return ::isOpaque(getType());
 	}
 
+	bool hasSecondCollider()
+	{
+		return isStairsMesh();
+	}
+
 	BlockCollider getCollider()
 	{
-		if (isSlabMesh())
+		if (isSlabMesh() || isStairsMesh())
 		{
 			BlockCollider b{};
 			b.size.y = 0.5;
@@ -219,6 +224,48 @@ struct Block
 		}
 
 		return BlockCollider{};
+	}
+
+	BlockCollider getSecondCollider()
+	{
+		if (isStairsMesh())
+		{
+			int rotation = getRotationFor365RotationTypeBlocks();
+
+			if (rotation == 0)
+			{
+				BlockCollider b{};
+				b.size.z = 0.5;
+				b.offset.z = -0.25;
+				return b;
+			}
+			else if (rotation == 2)
+			{
+				BlockCollider b{};
+				b.size.z = 0.5;
+				b.offset.z = 0.25;
+				return b;
+			}
+			else if (rotation == 1)
+			{
+				BlockCollider b{};
+				b.size.x = 0.5;
+				b.offset.x = -0.25;
+				return b;
+			}
+			else if (rotation == 3)
+			{
+				BlockCollider b{};
+				b.size.x = 0.5;
+				b.offset.x = 0.25;
+				return b;
+			}
+
+		}
+
+			BlockCollider b;
+			b.size = {};
+			return b;
 	}
 
 	//rename is animated leaves

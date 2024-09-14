@@ -1409,29 +1409,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 		}
 	
-	//FastNoiseSIMD::FreeNoiseSet(continentalness);
-	//FastNoiseSIMD::FreeNoiseSet(peaksAndValies);
-	//FastNoiseSIMD::FreeNoiseSet(wierdness);
-	//FastNoiseSIMD::FreeNoiseSet(densityNoise);
-	//FastNoiseSIMD::FreeNoiseSet(randomSand);
-	//FastNoiseSIMD::FreeNoiseSet(randomGravel);
-	//FastNoiseSIMD::FreeNoiseSet(randomClay);
-	//FastNoiseSIMD::FreeNoiseSet(whiteNoise);
-	//FastNoiseSIMD::FreeNoiseSet(lakesNoise);
-	//FastNoiseSIMD::FreeNoiseSet(whiteNoise2);
-	//FastNoiseSIMD::FreeNoiseSet(whiteNoise3);
-	//FastNoiseSIMD::FreeNoiseSet(riversNoise);
-	//FastNoiseSIMD::FreeNoiseSet(hillsDropDownsNoise);
-	//FastNoiseSIMD::FreeNoiseSet(treeAmountNoise1);
-	//FastNoiseSIMD::FreeNoiseSet(treeAmountNoise2);
-	//FastNoiseSIMD::FreeNoiseSet(treeTypeNoise1);
-	//FastNoiseSIMD::FreeNoiseSet(treeTypeNoise2);
-	//FastNoiseSIMD::FreeNoiseSet(roadNoise);
-	//FastNoiseSIMD::FreeNoiseSet(spagettiNoise);
-	//FastNoiseSIMD::FreeNoiseSet(spagettiNoise2);
-	//FastNoiseSIMD::FreeNoiseSet(cavesNoise);
-	//FastNoiseSIMD::FreeNoiseSet(randomStones);
-	//FastNoiseSIMD::FreeNoiseSet(stonePatches);
 	
 	//profiler.end();
 	//std::cout << "Time ms: " << profiler.rezult.timeSeconds * 1000 << "\n";

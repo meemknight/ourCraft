@@ -450,7 +450,7 @@ int main()
 		stop = std::chrono::high_resolution_clock::now();
 
 		float augmentedDeltaTime = deltaTime;
-		if (augmentedDeltaTime > 1.f / 5) { augmentedDeltaTime = 1.f / 5; }
+		if (augmentedDeltaTime > 1.f / 6) { augmentedDeltaTime = 1.f / 6; }
 	
 	#pragma endregion
 

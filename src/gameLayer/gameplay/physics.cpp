@@ -42,10 +42,11 @@ bool resolveConstrains(
 
 	float distance = glm::length(lastPos - pos);
 	const float BLOCK_SIZE = 1;
+	const float RESOLUTION = 0.4;
 
 	forces->colides = 0;
 
-	if (distance < BLOCK_SIZE)
+	if (distance < BLOCK_SIZE * RESOLUTION)
 	{
 		rez = checkCollisionBrute(pos,
 			lastPos,
@@ -57,7 +58,7 @@ bool resolveConstrains(
 		glm::dvec3 newPos = lastPos;
 		glm::vec3 delta = pos - lastPos;
 		delta = glm::normalize(delta);
-		delta *= 0.9 * BLOCK_SIZE;
+		delta *= RESOLUTION * BLOCK_SIZE;
 
 		int hardLimit = 10000;
 
@@ -215,10 +216,12 @@ bool boxColideBlock(glm::dvec3 p1, glm::vec3 s1, glm::ivec3 b)
 	return boxColide(p1, s1, {b.x,b.y - BLOCK_SIZE / 2.f,b.z}, glm::vec3(BLOCK_SIZE));
 }
 
-//collider is offset, size
+
 bool boxColideBlockWithCollider(glm::dvec3 p1, glm::vec3 s1, glm::ivec3 b, BlockCollider collider)
 {
-	return boxColide(p1, s1, glm::vec3{b.x,b.y - collider.size.y / 2.f,b.z} + collider.offset, 
+	const float BLOCK_SIZE = 1.f;
+	//b is block pos.
+	return boxColide(p1, s1, glm::vec3{b.x,b.y - BLOCK_SIZE / 2.f,b.z} + collider.offset,
 		collider.size);
 }
 
@@ -476,98 +479,128 @@ glm::dvec3 performCollision(glm::dvec3 pos, glm::dvec3 lastPos, glm::vec3 size, 
 						if (b.isColidable())
 						{
 							float friction = b.getFriction();
-							
 							auto collider = b.getCollider();
 
-							if (boxColideBlockWithCollider(pos, size, {x,y,z}, collider))
+							auto doCollision = [&](BlockCollider collider) -> bool
 							{
-
-								if (!boxColideBlockWithCollider(lastPos, size, {x,y,z}, collider))
+								if (boxColideBlockWithCollider(pos, size, {x,y,z}, collider))
 								{
-									if (delta.x != 0)
+
+									if (!boxColideBlockWithCollider(lastPos, size, {x,y,z}, collider))
 									{
-										if (forces)
+										if (delta.x != 0)
 										{
-											drag.y = std::max(friction * physicalSettings.sideFriction, drag.y);
-											drag.z = std::max(friction * physicalSettings.sideFriction, drag.z);
+											if (forces)
+											{
+												drag.y = std::max(friction * physicalSettings.sideFriction, drag.y);
+												drag.z = std::max(friction * physicalSettings.sideFriction, drag.z);
 
-											forces->acceleration.x = 0;
-											forces->velocity.x = 0;
-										}
+												forces->acceleration.x = 0;
+												forces->velocity.x = 0;
+											}
 
-										if (delta.x < 0) // moving left
-										{
-											if (forces)forces->setColidesLeft(true);
-											pos.x = x * BLOCK_SIZE + BLOCK_SIZE / 2.0 + size.x / 2.0;
-											goto end;
+											if (delta.x < 0) // moving left
+											{
+												if (forces)forces->setColidesLeft(true);
+												//pos.x = x * BLOCK_SIZE + BLOCK_SIZE / 2.0 + size.x / 2.0;
+												pos.x = x * BLOCK_SIZE
+													+ collider.size.x / 2 + collider.offset.x
+													+ size.x / 2.0;
+												return 1;
+											}
+											else
+											{
+												if (forces)forces->setColidesRight(true);
+												//pos.x = x * BLOCK_SIZE - BLOCK_SIZE / 2.0 - size.x / 2.0;
+												pos.x = x * BLOCK_SIZE
+													- collider.size.x / 2 + collider.offset.x
+													- size.x / 2.0;
+												return 1;
+											}
+
 										}
-										else
+										else if (delta.y != 0)
 										{
-											if (forces)forces->setColidesRight(true);
-											pos.x = x * BLOCK_SIZE - BLOCK_SIZE / 2.0 - size.x / 2.0;
-											goto end;
+											if (forces)
+											{
+												drag.x = std::max(friction, drag.x);
+												drag.z = std::max(friction, drag.z);
+
+												forces->acceleration.y = 0;
+												forces->velocity.y = 0;
+											}
+
+											if (delta.y < 0) //moving down
+											{
+												if (forces)forces->setColidesBottom(true);
+												pos.y = y * BLOCK_SIZE - (BLOCK_SIZE / 2.f) + collider.size.y
+													+ collider.offset.y
+													;
+												return 1;
+											}
+											else //moving up
+											{
+												if (forces)forces->setColidesTop(true);
+												pos.y = y * BLOCK_SIZE - BLOCK_SIZE / 2.0 - size.y
+													+ collider.offset.y
+													;
+												return 1;
+											}
+
 										}
-										
+										else if (delta.z != 0)
+										{
+											if (forces)
+											{
+												drag.x = std::max(drag.x, friction * physicalSettings.sideFriction);
+												drag.y = std::max(drag.y, friction * physicalSettings.sideFriction);
+
+												forces->acceleration.z = 0;
+												forces->velocity.z = 0;
+											}
+
+											//std::cout << "Yes ";
+
+											if (delta.z < 0) // moving back
+											{
+												if (forces)forces->setColidesFront(true);
+												pos.z = z * BLOCK_SIZE
+													+ (collider.size.z / 2) + collider.offset.z
+													+ size.z / 2.0;
+												return 1;
+											}
+											else
+											{
+												if (forces)forces->setColidesBack(true);
+												pos.z = z * BLOCK_SIZE
+													- (collider.size.z / 2) + collider.offset.z
+													- size.z / 2.0;
+												return 1;
+											}
+
+
+										}
 									}
-									else if (delta.y != 0)
-									{
-										if (forces)
-										{
-											drag.x = std::max(friction, drag.x);
-											drag.z = std::max(friction, drag.z);
-
-											forces->acceleration.y = 0;
-											forces->velocity.y = 0;
-										}
-
-										if (delta.y < 0) //moving down
-										{
-											if(forces)forces->setColidesBottom(true);
-											pos.y = y * BLOCK_SIZE + collider.size.y / 2.0
-												+ collider.offset.y
-												;
-											goto end;
-										}
-										else //moving up
-										{
-											if (forces)forces->setColidesTop(true);
-											pos.y = y * BLOCK_SIZE - BLOCK_SIZE / 2.0 - size.y
-												+collider.offset.y
-												;
-											goto end;
-										}
-										
-									}
-									else if (delta.z != 0)
-									{
-										if (forces)
-										{
-											drag.x = std::max(drag.x, friction * physicalSettings.sideFriction);
-											drag.y = std::max(drag.y, friction * physicalSettings.sideFriction);
-
-											forces->acceleration.z = 0;
-											forces->velocity.z = 0;
-										}
-
-										if (delta.z < 0) // moving left
-										{
-											if (forces)forces->setColidesFront(true);
-											pos.z = z * BLOCK_SIZE + BLOCK_SIZE / 2.0 + size.z / 2.0;
-											goto end;
-										}
-										else
-										{
-											if (forces)forces->setColidesBack(true);
-											pos.z = z * BLOCK_SIZE - BLOCK_SIZE / 2.0 - size.z / 2.0;
-											goto end;
-										}
-
-										
-									}
-								}
 
 
+								};
+
+								return 0;
 							};
+
+							bool rez = 0;
+
+							rez = doCollision(collider);
+
+							if (b.hasSecondCollider())
+							{
+								rez |= doCollision(b.getSecondCollider());
+							}
+
+							if (rez)
+							{
+								goto end;
+							}
 
 						}
 

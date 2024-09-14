@@ -6,19 +6,19 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-cmake_policy(SET CMP0069 NEW)
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+#cmake_policy(SET CMP0069 NEW)
+#set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+
+#if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+#	add_compile_options(-ffast-math)
+#elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+#	add_compile_options(/fp:fast)
+#endif()
 
 
 #make shure the runtime library is statically linked
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-
-
-if (MSVC)
-	# Add the compiler flag to disable exceptions globally
-	add_compile_options(/EHsc-)
-endif()
 
 project(ourCraft)
 
