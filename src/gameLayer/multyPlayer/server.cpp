@@ -1018,7 +1018,6 @@ void serverWorkerUpdate(
 							//todo they should always be sanitized so we should check during task creation if they are
 
 
-							//todo this can be abstracted
 							if (from->type != i.t.itemType
 								|| (i.t.blockCount > from->counter)
 								)
@@ -1037,7 +1036,7 @@ void serverWorkerUpdate(
 
 									if (!from->counter) { *from = {}; }
 								}
-								else if (to->type == from->type)
+								else if (areItemsTheSame(*to, *from))
 								{
 
 									if (to->counter >= to->getStackSize())

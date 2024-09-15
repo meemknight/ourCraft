@@ -823,7 +823,7 @@ bool placeItem(PlayerInventory &inventory, int from, int to, int counter)
 				&packet, sizeof(packet), true, channelChunksAndBlocks);
 			return 1;
 		}
-		else if(toItem->type == fromItem->type)
+		else if(areItemsTheSame(*toItem, *fromItem))
 		{
 
 			//see how many I can move

@@ -1860,7 +1860,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	if (gameData.insideInventoryMenu && !gameData.escapePressed)
 	{
 
-		//blocks or items
+		//pickup blocks or items from the creative inventory
 		if (selectedCreativeItem)
 		{
 
@@ -1890,7 +1890,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			if (platform::isLMousePressed())
 			{
-
+				//crafting
 				if (cursorSelected == PlayerInventory::CRAFTING_RESULT_INDEX && itemToCraft.type)
 				{
 					Item *cursor = &player.inventory.heldInMouse;

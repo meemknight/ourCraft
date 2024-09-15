@@ -15,6 +15,16 @@ enum ItemTypes
 	wooddenPickaxe,
 	wooddenAxe,
 	wooddenShovel,
+
+	trainingScythe,
+	trainingSword,
+	trainingWarHammer,
+	trainingFlail,
+	trainingSpear,
+	trainingKnife,
+	trainingBattleAxe,
+
+
 	zombieSpawnEgg,
 	pigSpawnEgg,
 	catSpawnEgg,
@@ -49,8 +59,6 @@ struct Item
 	void sanitize();
 
 	unsigned char getStackSize();
-
-	bool canHaveMetaData();
 
 	bool isTool();
 

@@ -143,12 +143,6 @@ void Item::sanitize()
 	}
 	else
 	{
-		//todo check if item should have meta data
-		if (!canHaveMetaData())
-		{
-			metaData.clear();
-		}
-
 		if (counter > getStackSize())
 		{
 			counter = getStackSize();
@@ -168,18 +162,6 @@ unsigned char Item::getStackSize()
 		return 64;
 	}
 
-}
-
-bool Item::canHaveMetaData()
-{
-	if (isTool())
-	{
-		return 1;
-	}
-	else
-	{
-		return false;
-	}
 }
 
 bool Item::isTool()
@@ -404,7 +386,7 @@ void PlayerInventory::craft9(int count)
 	}
 }
 
-
+//for textures
 const char *itemsNames[] = 
 {
 	"stick.png",
@@ -413,6 +395,15 @@ const char *itemsNames[] =
 	"wooden_pickaxe.png",
 	"wooden_axe.png",
 	"wooden_shovel.png",
+
+	"trainingScythe.png",
+	"trainingSword.png",
+	"trainingWarHammer.png",
+	"trainingFlail.png",
+	"trainingSpear.png",
+	"trainingKnife.png",
+	"trainingBattleAxe.png",
+
 	"", //eggs
 	"",
 	"",
