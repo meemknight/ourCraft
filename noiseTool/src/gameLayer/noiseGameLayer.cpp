@@ -455,7 +455,7 @@ void recreate()
 
 				int heightOffset = height;// +settings.densityHeightoffset;
 				int difference = y - heightOffset;
-				float differenceMultiplier = 
+				//float differenceMultiplier = 
 					//glm::clamp(pow(abs(difference)/ squishFactor, settings.densitySquishPower),
 					//1.f, 10.f);
 

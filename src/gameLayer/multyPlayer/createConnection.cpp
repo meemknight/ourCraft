@@ -965,6 +965,7 @@ bool grabItem(PlayerInventory &inventory, int from, int to, int counter)
 
 bool forceOverWriteItem(PlayerInventory &inventory, int index, Item &item)
 {
+	static std::vector<unsigned char> tempData;
 
 	auto to = inventory.getItemFromIndex(index);
 
@@ -977,9 +978,15 @@ bool forceOverWriteItem(PlayerInventory &inventory, int index, Item &item)
 		packet.itemType = item.type;
 		packet.to = index;
 		packet.revisionNumber = inventory.revisionNumber;
+		packet.metadataSize = item.metaData.size();
+
+		tempData.resize(sizeof(Packet_ClientOverWriteItem) + item.metaData.size());
+
+		memcpy(tempData.data(), &packet, sizeof(packet));
+		memcpy(tempData.data() + sizeof(packet), item.metaData.data(), item.metaData.size());
 
 		sendPacket(clientData.server, headerClientOverWriteItem, clientData.cid,
-			&packet, sizeof(packet), true, channelChunksAndBlocks);
+			tempData.data(), tempData.size(), true, channelChunksAndBlocks);
 
 		return 1;
 	}

@@ -41,23 +41,28 @@ void Item::formatIntoData(std::vector<unsigned char> &data)
 	{
 		writeData(data, type);
 		writeData(data, counter);
+		unsigned short metaDataSize = 0;
+		permaAssert(metaData.size() < USHRT_MAX); 
 
+		metaDataSize = metaData.size();
+		writeData(data, metaDataSize);
 		
-		if (hasDurability())
-		{
-			if (metaData.size() == 2)
-			{
-				unsigned short durability = 0;
-				readDataUnsafe(metaData.data(), durability);
-				writeData(data, durability);
-			}
-			else
-			{
-				permaAssert(0); //todo something better here
-			}
-		}
+		writeData(data, metaData.data(), sizeof(unsigned char) * metaData.size());
 
-		//todo more stuff here
+		//if (hasDurability())
+		//{
+		//	if (metaData.size() == 2)
+		//	{
+		//		unsigned short durability = 0;
+		//		readDataUnsafe(metaData.data(), durability);
+		//		writeData(data, durability);
+		//	}
+		//	else
+		//	{
+		//		permaAssert(0);
+		//	}
+		//}
+
 	}
 
 	static_assert(sizeof(unsigned short) == sizeof(type));
@@ -88,22 +93,38 @@ int Item::readFromData(void *data, size_t size)
 
 		readDataUnsafe((unsigned char*)data + 2, counter);
 
-
-		if (hasDurability())
+		if (size < 5)
 		{
-			if (size < 5)
-			{
-				return -1;
-			}
-			unsigned short durability = 0;
-			readDataUnsafe((unsigned char *)data + 3, durability);
-			writeData(metaData, durability);
-
-			return 5;
+			return -1;
 		}
-		else
+
+		unsigned short metaDataSize = 0;
+		readDataUnsafe((unsigned char *)data + 3, metaDataSize);
+
+		if (size - 5 < metaDataSize)
 		{
-			return 3; //one short + one char
+			return -1; 
+		}
+
+		metaData.resize(metaDataSize);
+		readDataIntoVectorUnsafeUnresized((unsigned char *)data + 5, 0, metaDataSize, metaData);
+
+		//if (hasDurability())
+		//{
+		//	if (size < 5)
+		//	{
+		//		return -1;
+		//	}
+		//	unsigned short durability = 0;
+		//	readDataUnsafe((unsigned char *)data + 3, durability);
+		//	writeData(metaData, durability);
+		//
+		//	return 5;
+		//}
+		//else
+
+		{
+			return 5 + metaDataSize; //one short + one char + one short
 		}
 
 	}
@@ -161,18 +182,6 @@ bool Item::canHaveMetaData()
 	}
 }
 
-bool Item::hasDurability()
-{
-	if (isTool())
-	{
-		return 1;
-	}
-	else
-	{
-		return false;
-	}
-}
-
 bool Item::isTool()
 {
 	if (type == wooddenSword
@@ -204,38 +213,11 @@ bool Item::isShovel()
 	return type == wooddenShovel;
 }
 
-unsigned short Item::getDurability()
-{
-	if (hasDurability() && metaData.size() >= 2)
-	{
-		unsigned short durability = 0;
-		readDataUnsafe(metaData.data(), durability);
-		return durability;
-	}
-
-	return 0;
-}
-
-void Item::setDurability(unsigned short durability)
-{
-	if (hasDurability())
-	{
-		if (metaData.size() < 2)
-		{
-			metaData.resize(2);
-		}
-
-		writeDataUnsafe(metaData.data(), durability);
-	}
-}
-
 std::string Item::formatMetaDataToString()
 {
-	if (hasDurability())
+	if (metaData.size())
 	{
-		unsigned short durability = getDurability();
-
-		return std::string("Durability: ") + std::to_string(durability);
+		return "Yes";
 	}
 
 	return "";
@@ -444,24 +426,35 @@ const char *getItemTextureName(int itemId)
 	return itemsNames[itemId-ItemsStartPoint];
 }
 
+
+//doesn't compare size
+bool areItemsTheSame(Item &a, Item &b)
+{
+	if (a.type != b.type)
+	{
+		return 0;
+	}
+
+	if (a.metaData != b.metaData)
+	{
+		return 0;
+	}
+
+	return 1;
+}
+
 bool isItem(unsigned short type)
 {
 	return type >= ItemsStartPoint && type < ItemTypes::lastItem;
 }
 
+//create item createItem
 Item itemCreator(unsigned short type, unsigned char counter)
 {
 	if (!counter) { return {}; }
 
 	Item ret(type);
 	ret.counter = counter;
-
-	//todo add max durability per item
-	if (Item(type).hasDurability())
-	{
-		//durability
-		addMetaData(ret.metaData, unsigned short(256));
-	}
 
 	return ret;
 }

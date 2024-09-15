@@ -52,8 +52,6 @@ struct Item
 
 	bool canHaveMetaData();
 
-	bool hasDurability();
-
 	bool isTool();
 
 	bool isAxe();
@@ -62,12 +60,11 @@ struct Item
 
 	bool isShovel();
 
-	unsigned short getDurability();
-
-	void setDurability(unsigned short durability);
-
 	std::string formatMetaDataToString();
 };
+
+//doesn't compare size
+bool areItemsTheSame(Item &a, Item &b);
 
 template<class T>
 void addMetaData(std::vector<unsigned char> &vector, T data)

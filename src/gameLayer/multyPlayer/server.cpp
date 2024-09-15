@@ -953,7 +953,8 @@ void serverWorkerUpdate(
 							//todo get or create chunk here, so we create a function that cant fail.
 							spawnDroppedItemEntity(sd.chunkCache,
 								worldSaver, i.t.blockCount, i.t.blockType, &from->metaData,
-								i.t.doublePos, i.t.motionState, newId, computeRestantTimer(i.t.timer, currentTimer));
+								i.t.doublePos, i.t.motionState, newId,
+								computeRestantTimer(i.t.timer, currentTimer));
 
 							//std::cout << "restant: " << newEntity.restantTime << "\n";
 
@@ -1109,6 +1110,7 @@ void serverWorkerUpdate(
 								*to = {};
 								to->counter = i.t.blockCount;
 								to->type = i.t.itemType;
+								to->metaData = std::move(i.t.metaData);
 							}
 							else
 							{

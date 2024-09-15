@@ -583,7 +583,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 
 		case headerClientOverWriteItem:
 		{
-			if (size != sizeof(Packet_ClientOverWriteItem))
+			if (size < sizeof(Packet_ClientOverWriteItem))
 			{
 				break;
 			}
@@ -594,7 +594,19 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.to = packetData->to;
 			serverTask.t.blockCount = packetData->counter;
 			serverTask.t.revisionNumber = packetData->revisionNumber;
-			serverTasks.push_back(serverTask);
+
+			int metaDataSize = packetData->metadataSize;
+
+			if (size - sizeof(Packet_ClientOverWriteItem) != metaDataSize)
+			{
+				//todo hard reset on errors.
+				break;
+			}
+
+			serverTask.t.metaData.resize(metaDataSize);
+			memcpy(serverTask.t.metaData.data(), data + sizeof(Packet_ClientOverWriteItem), metaDataSize);
+
+			serverTasks.push_back(std::move(serverTask));
 
 			break;
 		}

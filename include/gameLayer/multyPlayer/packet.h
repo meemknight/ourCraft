@@ -165,6 +165,7 @@ struct Packet_ClientCraftedItem
 struct Packet_ClientOverWriteItem
 {
 	unsigned short itemType;
+	unsigned short metadataSize = 0;
 	unsigned char to;
 	unsigned char counter;
 	unsigned char revisionNumber;

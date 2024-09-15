@@ -18,9 +18,12 @@ void writeDataUnsafe(void *into, T data)
 	memcpy(into, &data, sizeof(data));
 }
 
-
 template <class T>
 void readDataUnsafe(void *data, T &t)
 {
 	memcpy(&t, data, sizeof(T));
 }
+
+void readDataIntoVectorUnsafeUnresized(void *data, size_t pos,
+	size_t size,
+	std::vector<unsigned char> &v);

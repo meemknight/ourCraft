@@ -50,7 +50,7 @@ struct Task
 	unsigned char revisionNumber = 0;
 	unsigned char inventroySlot = 0;
 	short damage = 0;
-
+	std::vector<unsigned char> metaData;
 };
 
 void submitTaskClient(Task &t);
