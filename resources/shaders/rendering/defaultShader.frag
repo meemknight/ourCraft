@@ -712,6 +712,7 @@ vec2 flipTextureCoord(vec2 a)
 }
 
 
+//getao
 float getBlockAO()
 {
 	//return 1;
@@ -745,7 +746,7 @@ float getBlockAO()
 	
 	float ao = texture2D(u_ao, newUV).r;
 	//return clamp(pow(ao, 1.2) * 1.4f, 0.62f,1);
-	return clamp(pow(ao, 1.2) * 1.2f, 0.70f,1) * 0.9;
+	return clamp(pow(ao, 1.0) * 1.2f, 0.70f,1) * 0.9;
 	//return clamp(pow(ao, 1.5) * 1.8f, 0.1f,1);
 }
 
@@ -767,7 +768,7 @@ void main()
 	}
 
 	const bool blockIsInWater = ((v_flags & 2) != 0);
-	const float baseAmbient = 0.38;
+	const float baseAmbient = 0.30;
 	const float multiplier = 0.70;
 	vec3 computedAmbient = multiplier *  vec3(min(toLinear(v_ambient * (1.f-baseAmbient) + baseAmbient), 1));
 

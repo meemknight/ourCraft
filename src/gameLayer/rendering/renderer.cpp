@@ -1616,8 +1616,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	glm::vec3 sunLightColor = {1,1,1};
 	{
 
-		glm::vec3 daySkyLight(2.0f);
-		glm::vec3 nightSkyLight = (glm::vec3(47, 135, 244) / 255.f) * 0.65f;
+		glm::vec3 daySkyLight(1.5f);
+		glm::vec3 nightSkyLight = (glm::vec3(47, 135, 244) / 255.f) * 0.50f;
 		glm::vec3 twilightLight = (glm::vec3(255, 159, 107) / 255.f) * 0.2f;
 		
 		sunLightColor = doDayLightCalculations(daySkyLight, nightSkyLight, twilightLight);
