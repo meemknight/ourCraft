@@ -973,7 +973,6 @@ void main()
 		
 
 		vec3 finalColor = vec3(0);
-
 		
 
 		vec3 F0 = vec3(0.04); 

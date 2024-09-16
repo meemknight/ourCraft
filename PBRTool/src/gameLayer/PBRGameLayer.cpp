@@ -18,7 +18,8 @@
 
 
 gl2d::Texture colorT;
-gl2d::Texture pbrT;   //R -> reflectiveness, G -> Metallic
+gl2d::Texture pbrT;
+gl2d::Texture brdfT;  
 Shader shader;
 Camera c;
 
@@ -84,6 +85,7 @@ GLuint cubeVbo = 0;
 
 GLint u_viewProjection = 0;
 GLint u_modelMatrix = 0;
+GLint u_view = 0;
 
 bool ShowOpenFileDialog(HWND hwnd, char *filePath, DWORD filePathSize, const char *initialDir,
 	const char *filter)
@@ -201,6 +203,10 @@ bool initGame()
 
 	u_viewProjection = shader.getUniform("u_viewProjection");
 	u_modelMatrix = shader.getUniform("u_modelMatrix");
+	u_view = shader.getUniform("u_view");
+	
+
+	brdfT.loadFromFile(RESOURCES_PATH "other/brdf.png");
 
 
 	return true;
@@ -733,8 +739,11 @@ bool gameLogic(float deltaTime)
 	
 	glUniformMatrix4fv(u_modelMatrix, 1, GL_FALSE, glm::value_ptr(model));
 	glUniformMatrix4fv(u_viewProjection, 1, GL_FALSE, glm::value_ptr(viewProj));
+	glUniformMatrix4fv(u_view, 1, GL_FALSE, glm::value_ptr(c.getViewMatrix()));
 	
 	colorT.bind(0);
+	pbrT.bind(1);
+	brdfT.bind(2);
 
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
