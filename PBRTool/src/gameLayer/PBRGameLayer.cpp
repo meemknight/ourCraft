@@ -1,4 +1,5 @@
 #define GLM_ENABLE_EXPERIMENTAL
+#define NOMINMAX
 #include "gameLayer.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -12,9 +13,12 @@
 #include <shader.h>
 #include <camera.h>
 #include <deque>
+#include <Windows.h>
+#include <filesystem>
 
 
 gl2d::Texture colorT;
+gl2d::Texture pbrT;   //R -> reflectiveness, G -> Metallic
 Shader shader;
 Camera c;
 
@@ -81,14 +85,99 @@ GLuint cubeVbo = 0;
 GLint u_viewProjection = 0;
 GLint u_modelMatrix = 0;
 
+bool ShowOpenFileDialog(HWND hwnd, char *filePath, DWORD filePathSize, const char *initialDir,
+	const char *filter)
+{
+	// Initialize the OPENFILENAME structure
+	OPENFILENAMEA ofn;
+	ZeroMemory(&ofn, sizeof(ofn));
+
+	// Zero out the file path buffer
+	ZeroMemory((void *)filePath, filePathSize);
+
+	//strcpy(filePath, initialDir);
+
+
+
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = hwnd;
+	ofn.lpstrFile = filePath;
+	ofn.nMaxFile = filePathSize;
+	ofn.lpstrInitialDir = initialDir;
+	ofn.lpstrFilter = filter;
+	ofn.nFilterIndex = 1;
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
+
+	// Show the file open dialog
+	return GetOpenFileNameA(&ofn);
+}
+
+
+struct UndoRedo
+{
+	glm::ivec3 newColor = {};
+	glm::ivec3 oldColor = {};
+	glm::ivec2 position = {};
+	int textureIndex = 0;
+};
+
+std::deque<UndoRedo> undoRedo;
+int undoRedoPosition = 0;
+
+
+std::string filePath = "";
+bool enableBrush = 0;
+
+void loadTexture(std::string path)
+{
+	filePath = {};
+	pbrT = {};
+	undoRedo = {};
+	undoRedoPosition = 0;
+	colorT.loadFromFile(path.c_str(), true, true);
+
+	if (colorT.id)
+	{
+		filePath = path;
+
+		std::string pbrPath = filePath;
+
+		glm::ivec2 size = {};
+		size = colorT.GetSize();
+
+		if (pbrPath.size() > 4)
+		{
+			pbrPath.pop_back();
+			pbrPath.pop_back();
+			pbrPath.pop_back();
+			pbrPath.pop_back();
+
+			pbrPath += "_s.png";
+
+			pbrT.loadFromFile(pbrPath.c_str(), true, true);
+
+			if (!pbrT.id)
+			{
+				std::vector<unsigned char> data;
+				data.resize(size.x * size.y * 4);
+				for (int i = 0; i < size.x * size.y; i++)
+				{
+					data[i * 4 + 3] = 255;
+				}
+			}
+		}
+
+
+	}
+
+
+}
 
 bool initGame()
 {
 
 	glEnable(GL_DEPTH_TEST);
 
-
-	colorT.loadFromFile(RESOURCES_PATH "cobblestone.png", true, true);
 
 	glGenVertexArrays(1, &cubeVao);
 	glBindVertexArray(cubeVao);
@@ -138,16 +227,59 @@ glm::mat4 createTBNMatrix(const glm::vec3 &direction, const glm::vec3 &up = glm:
 }
 
 
-struct UndoRedo
+void automaticallyFillPbrTexture(float power, int channelNumber, bool reverse)
 {
-	glm::ivec3 newColor = {};
-	glm::ivec3 oldColor = {};
-	glm::ivec2 position = {};
-	int textureIndex = 0;
-};
 
-std::deque<UndoRedo> undoRedo;
-int undoRedoPosition = 0;
+	glm::ivec2 size;
+	auto data = colorT.readTextureData(0, &size);
+
+	if (size.x && size.y)
+	{
+		auto pbrData = pbrT.readTextureData(0, &size);
+
+		if (pbrData.size())
+		{
+
+			undoRedo = {};
+			undoRedoPosition = 0;
+
+
+			for (int y = 0; y < size.y; y++)
+			{
+				for (int x = 0; x < size.x; x++)
+				{
+
+					int index = (x + y * size.x) * 4;
+
+
+					glm::vec3 color;
+					color.r = data[index + 0] / 255.f;
+					color.g = data[index + 1] / 255.f;
+					color.b = data[index + 2] / 255.f;
+
+					float rez = glm::dot(color, glm::vec3(0.6,0.3,0.1));
+					if (reverse)
+					{
+						rez = 1 - rez;
+					}
+					rez = powf(rez, power);
+
+					index += channelNumber;
+					pbrData[index] = rez * 255;
+
+				}
+			}
+
+			pbrT.createFromBuffer((char*)pbrData.data(), size.x, size.y, true, true);
+
+		}
+
+
+
+	}
+
+}
+
 
 void writeAtIndex(glm::ivec3 color, glm::ivec2 position, int index)
 {
@@ -171,7 +303,11 @@ void writeAtIndex(glm::ivec3 color, glm::ivec2 position, int index)
 
 }
 
-void imageEditor(const char *name, gl2d::Texture &t, int textureIndex)
+float secondTextureAlpha = 0.5;
+
+void imageEditor(const char *name, gl2d::Texture &t,
+	ImVec4 &brush_color,
+	int textureIndex, int filter = 0, gl2d::Texture *bottomImgae = 0)
 {
 	glm::ivec2 size = {};
 	std::vector<unsigned char> data = t.readTextureData(0, &size);
@@ -181,25 +317,76 @@ void imageEditor(const char *name, gl2d::Texture &t, int textureIndex)
 	static ImVec2 draw_start_pos;
 	static bool is_drawing = false;
 
-	// Color picker for brush color
-	static ImVec4 brush_color = ImVec4(1.0f, 0.0f, 0.0f, 1.0f); // Red by default
-
 	ImGui::PushID(name);
+
+	ImVec4 filterColor[] = 
+	{
+		ImVec4(1,1,1,1),
+		ImVec4(1,0,0,1),
+		ImVec4(0,1,0,1),
+		ImVec4(0,0,1,1),
+	};
 
 	// Display the texture with a fixed size of 512x512
 	ImGui::Text("%s", name);
-	ImGui::Image((void *)(intptr_t)t.id, ImVec2(512, 512), {0,1}, {1,0}, {1,1,1,1}, 
-		{0.5,0.5,0.5,1});
+
+	auto displaySize = ImVec2(512, 512);
+
+	if (bottomImgae)
+	{
+		auto c = filterColor[filter];
+		c.w = secondTextureAlpha;
+
+		ImVec2 p = ImGui::GetCursorScreenPos();
+
+		ImGui::Image((void *)bottomImgae->id, displaySize, {0,1}, {1,0}, {1,1,1,1},
+			{0.5,0.5,0.5,1});
+
+		
+		ImGui::GetWindowDrawList()->AddImage((void *)(intptr_t)t.id, p, ImVec2(p.x + displaySize.x, p.y + displaySize.y),
+			ImVec2(0, 1), ImVec2(1, 0), ImGui::ColorConvertFloat4ToU32(c));
+
+
+		//ImGui::SetCursorPos({ImGui::GetCursorPos().x - displaySize.x, ImGui::GetCursorPos().y - displaySize.y});
+		//ImGui::Image((void *)bottomImgae->id, displaySize, {0,1}, {1,0}, ImVec4{1,1,1,0.5});
+
+	
+
+	}
+	else
+	{
+		ImGui::Image((void *)(intptr_t)t.id, displaySize, {0,1}, {1,0}, filterColor[filter],
+			{0.5,0.5,0.5,1});
+
+	}
+
 
 	// Get the image position on the window
 	ImVec2 image_pos = ImGui::GetItemRectMin();
 
-	// Color picker
-	ImGui::ColorEdit3("Brush Color", (float *)&brush_color);
+
+	if (filter == 0)
+	{
+		// Color picker
+		ImGui::ColorEdit3("Brush Color", (float *)&brush_color);
+	}
+	else if (filter == 1)
+	{
+		ImGui::SliderFloat("Brush Color##1", &brush_color.x, 0, 1);
+		ImGui::SameLine();
+		ImGui::ColorButton("##ColorDisplay1", brush_color, ImGuiColorEditFlags_NoTooltip, ImVec2(40, 40));
+	}
+	else if (filter == 2)
+	{
+		ImGui::SliderFloat("Brush Color##2", &brush_color.y, 0, 1);
+		ImGui::SameLine();
+		ImGui::ColorButton("##ColorDisplay2", brush_color, ImGuiColorEditFlags_NoTooltip, ImVec2(40, 40));
+	}
 
 
 	// Handle mouse interaction
 	//if (ImGui::IsItemHovered())
+	if(enableBrush)
 	{
 		ImVec2 mouse_pos = ImGui::GetMousePos();
 		ImVec2 uv((mouse_pos.x - image_pos.x) / 512.f, (mouse_pos.y - image_pos.y) / 512.f);
@@ -228,20 +415,33 @@ void imageEditor(const char *name, gl2d::Texture &t, int textureIndex)
 				{
 
 					if (
-						data[index + 0] != brush_color.x * 255.0f &&
-						data[index + 1] != brush_color.y * 255.0f &&
+						data[index + 0] != brush_color.x * 255.0f ||
+						data[index + 1] != brush_color.y * 255.0f ||
 						data[index + 2] != brush_color.z * 255.0f
 						)
 					{
+						auto brushCopy = brush_color;
+
+						if (filter == 1)
+						{
+							brushCopy.y = data[index + 1] / 255.f;
+							brushCopy.z = data[index + 2] / 255.f;
+						}
+						else if (filter == 2)
+						{
+							brushCopy.x = data[index + 0] / 255.f;
+							brushCopy.z = data[index + 2] / 255.f;
+						}
+
 						UndoRedo undo;
 						undo.textureIndex = textureIndex;
 						undo.position = {x, y};
 						undo.oldColor.x = data[index + 0];
 						undo.oldColor.y = data[index + 1];
 						undo.oldColor.z = data[index + 2];
-						undo.newColor.x = brush_color.x * 255.0f;
-						undo.newColor.y = brush_color.y * 255.0f;
-						undo.newColor.z = brush_color.z * 255.0f;
+						undo.newColor.x = brushCopy.x * 255.0f;
+						undo.newColor.y = brushCopy.y * 255.0f;
+						undo.newColor.z = brushCopy.z * 255.0f;
 
 						if (undoRedoPosition < undoRedo.size())
 						{
@@ -255,9 +455,9 @@ void imageEditor(const char *name, gl2d::Texture &t, int textureIndex)
 						is_drawing = true;
 
 						// Set the pixel color
-						data[index + 0] = static_cast<unsigned char>(brush_color.x * 255.0f); // R
-						data[index + 1] = static_cast<unsigned char>(brush_color.y * 255.0f); // G
-						data[index + 2] = static_cast<unsigned char>(brush_color.z * 255.0f); // B
+						data[index + 0] = static_cast<unsigned char>(brushCopy.x * 255.0f); // R
+						data[index + 1] = static_cast<unsigned char>(brushCopy.y * 255.0f); // G
+						data[index + 2] = static_cast<unsigned char>(brushCopy.z * 255.0f); // B
 						data[index + 3] = 255; // A
 						changed = true;
 					}
@@ -359,14 +559,123 @@ bool gameLogic(float deltaTime)
 
 #pragma region imgui
 
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, {66 / 255.f,66 / 255.f,66 / 255.f,0.5f});
+	ImGui::PushStyleColor(ImGuiCol_DockingEmptyBg, {66 / 255.f,66 / 255.f,66 / 255.f,0.5f});
 	ImGui::Begin("Editor");
 
+	ImDrawList *draw_list = ImGui::GetWindowDrawList();
 
-	//ImGui::Image((ImTextureID)t.id, {512, 512}, {0,1}, {1,0});
-	imageEditor("Color", colorT, 0);
+	// Get the window's position and size
+	ImVec2 window_pos = ImGui::GetWindowPos();
+	ImVec2 window_size = ImGui::GetWindowSize();
+
+	// Draw a filled rectangle as the background
+	draw_list->AddRectFilled(
+		window_pos,
+		ImVec2(window_pos.x + window_size.x, window_pos.y + window_size.y),
+		ImGui::ColorConvertFloat4ToU32(ImVec4(66 / 255.f, 66 / 255.f, 66 / 255.f, 0.5f))
+	);
+
+	ImGui::Checkbox("Enable brush", &enableBrush);
+
+
+	if (ImGui::BeginMainMenuBar())
+	{
+		// File Menu
+		if (ImGui::BeginMenu("File"))
+		{
+			if (ImGui::MenuItem("Open"))
+			{
+				char path[300] = {};
+				if (ShowOpenFileDialog(0, path, sizeof(path), RESOURCES_PATH, ".png"))
+				{
+					loadTexture(path);
+				}
+			}
+
+			ImGui::Separator();
+
+			if (ImGui::MenuItem("Save"))
+			{
+
+			}
+
+
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Automatic"))
+		{
+
+			if (ImGui::BeginMenu("Automatic fill roughness"))
+			{
+				ImGui::PushID(5431);
+
+				static float power = 1;
+				static bool reverse= 0;
+				ImGui::SliderFloat("Power", &power, 0.01, 10);
+				ImGui::Checkbox("reverse", &reverse);
+
+				if (ImGui::Button("Fill!"))
+				{
+					automaticallyFillPbrTexture(power, 0, reverse);
+				}
+
+
+				ImGui::PopID();
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Automatic fill metallic"))
+			{
+				ImGui::PushID(5432);
+
+				static float power = 1;
+				static bool reverse = 0;
+				ImGui::SliderFloat("Power", &power, 0.01, 10);
+				ImGui::Checkbox("reverse", &reverse);
+
+				if (ImGui::Button("Fill!"))
+				{
+					automaticallyFillPbrTexture(power, 1, reverse);
+				}
+
+
+				ImGui::PopID();
+				ImGui::EndMenu();
+			}
+
+			ImGui::EndMenu();
+		}
+
+
+		ImGui::EndMainMenuBar();
+	}
+
+
+
+	static ImVec4 brush_color = ImVec4(1.0f, 0.0f, 0.0f, 1.0f); // Red by default
+	imageEditor("Color", colorT, brush_color, 0);
+
+
+	ImGui::SliderFloat("Show albedo", &secondTextureAlpha, 0, 1);
+
+	static ImVec4 reflectiveColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+	reflectiveColor.y = 0;
+	reflectiveColor.z = 0;
+	reflectiveColor.w = 1;
+	imageEditor("Reflectiveness", pbrT, reflectiveColor, 1, 1, &colorT);
+
+
+	static ImVec4 metallicColor = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
+	metallicColor.x = 0;
+	metallicColor.z = 0;
+	metallicColor.w = 1;
+	imageEditor("Metallic", pbrT, metallicColor, 1, 2, &colorT);
 
 
 	ImGui::End();
+	ImGui::PopStyleColor(2);
 
 	while (undoRedo.size() > 200)
 	{

@@ -256,7 +256,11 @@ vec3 calculateVertexPos(int vertexId)
 
 out vec3 v_semiViewSpacePos;
 
-vec3 normals[6] = {vec3(0,0,1),vec3(0,0,-1),vec3(0,1,0),vec3(0,-1,0),vec3(-1,0,0),vec3(1,0,0)};
+vec3 normals[10] = 
+{vec3(0,0,1),vec3(0,0,-1),vec3(0,1,0),vec3(0,-1,0),vec3(-1,0,0),vec3(1,0,0),
+vec3(0,1,0),vec3(0,1,0),vec3(0,1,0),vec3(0,1,0) //grass
+
+};
 
 out flat int v_isSkyLightMain;
 
