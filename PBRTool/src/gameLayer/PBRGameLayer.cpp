@@ -15,7 +15,7 @@
 #include <deque>
 #include <Windows.h>
 #include <filesystem>
-
+#include <stb_image/stb_image_write.h>
 
 gl2d::Texture colorT;
 gl2d::Texture pbrT;
@@ -175,6 +175,65 @@ void loadTexture(std::string path)
 
 }
 
+
+void saveOneTexture(std::string path, gl2d::Texture t)
+{
+
+	glm::ivec2 size = {};
+	std::vector<unsigned char> data = t.readTextureData(0, &size);
+
+	std::vector<unsigned char> dataFlipped;
+	dataFlipped.resize(data.size());
+
+	for (int y = 0; y < size.y; y++)
+		for (int x = 0; x < size.x; x++)
+		{
+			int firstIndex = (x + y * size.x) * 4;
+			int flippedIndex = (x + (size.y - y - 1) * size.x) * 4;
+
+			dataFlipped[flippedIndex + 0] = data[firstIndex + 0];
+			dataFlipped[flippedIndex + 1] = data[firstIndex + 1];
+			dataFlipped[flippedIndex + 2] = data[firstIndex + 2];
+			dataFlipped[flippedIndex + 3] = data[firstIndex + 3];
+		}
+
+	if (size.x && size.y)
+	{
+		
+		// Save as PNG
+		// Assuming the texture is in RGBA format, with 4 channels (R, G, B, A)
+		int channels = 4;  // Change this if you have a different format
+		stbi_write_png(path.c_str(), size.x, size.y, channels, dataFlipped.data(), size.x * channels);
+	}
+
+}
+
+void saveTextures(std::string path)
+{
+
+	if (filePath != "")
+	{
+
+		saveOneTexture(path, colorT);
+
+		if (path.size() > 4)
+		{
+			path.pop_back();
+			path.pop_back();
+			path.pop_back();
+			path.pop_back();
+
+			path += "_s.png";
+
+			saveOneTexture(path, pbrT);
+		}
+
+	}
+
+
+
+}
+
 bool initGame()
 {
 
@@ -295,6 +354,10 @@ void writeAtIndex(glm::ivec3 color, glm::ivec2 position, int index)
 	{
 		t = colorT;
 	}
+	else if (index == 1 || index == 2)
+	{
+		t = pbrT;
+	}
 
 	glm::ivec2 size = {};
 	std::vector<unsigned char> data = t.readTextureData(0, &size);
@@ -370,6 +433,7 @@ void imageEditor(const char *name, gl2d::Texture &t,
 	// Get the image position on the window
 	ImVec2 image_pos = ImGui::GetItemRectMin();
 
+	ImGui::NewLine();
 
 	if (filter == 0)
 	{
@@ -603,7 +667,7 @@ bool gameLogic(float deltaTime)
 
 			if (ImGui::MenuItem("Save"))
 			{
-
+				saveTextures(filePath);
 			}
 
 
