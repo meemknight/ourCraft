@@ -1036,6 +1036,7 @@ void Renderer::create()
 
 	fboCoppy.create(GL_R11F_G11F_B10F, true);
 	filteredBloomColor.create(GL_R11F_G11F_B10F, false);
+
 	fboMain.create(GL_R11F_G11F_B10F, true, GL_RGB16F, GL_RGB16UI);
 	glBindTexture(GL_TEXTURE_2D, fboMain.secondaryColor);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -1046,6 +1047,35 @@ void Renderer::create()
 	fboHBAO.create(GL_RED, false);
 	fboSkyBox.create(GL_R11F_G11F_B10F, false);
 
+
+	{
+
+		glGenFramebuffers(1, &filterFbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, filterFbo);
+
+		glGenFramebuffers(2, blurFbo);
+		glGenTextures(2, bluredColorBuffer);
+
+		//bluredBloomColor[0].create(GL_R11F_G11F_B10F, false);
+		//bluredBloomColor[1].create(GL_R11F_G11F_B10F, false);
+
+		for (int i = 0; i < 2; i++)
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER, blurFbo[i]);
+			float borderColor[] = {0.0f, 0.0f, 0.0f, 0.0f};
+
+			glBindTexture(GL_TEXTURE_2D, bluredColorBuffer[i]);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_R11F_G11F_B10F, 1, 1, 0, GL_RGB, GL_FLOAT, NULL);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+			glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, bluredColorBuffer[i], 0);
+		}
+
+
+	}
 
 
 	{
@@ -1323,6 +1353,28 @@ void Renderer::reloadShaders()
 		RESOURCES_PATH "shaders/postProcess/applyBloomData.frag");
 
 
+	filterDownShader.shader.clear();
+	filterDownShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
+		RESOURCES_PATH "shaders/postProcess/filterDown.frag");
+	GET_UNIFORM2(filterDownShader, u_texture);
+	GET_UNIFORM2(filterDownShader, u_mip);
+
+
+	addMipsShader.shader.clear();
+	addMipsShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
+		RESOURCES_PATH "shaders/postProcess/addMipsShader.frag");
+	GET_UNIFORM2(addMipsShader, u_texture);
+	GET_UNIFORM2(addMipsShader, u_mip);
+
+
+	gausianBLurShader.shader.clear();
+	gausianBLurShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
+		RESOURCES_PATH "shaders/postProcess/gausianBlur.frag");
+	GET_UNIFORM2(gausianBLurShader, u_horizontal);
+	GET_UNIFORM2(gausianBLurShader, u_mip);
+	GET_UNIFORM2(gausianBLurShader, u_texel);
+
+
 #pragma endregion
 
 
@@ -1495,6 +1547,8 @@ void Renderer::reloadShaders()
 
 
 
+
+
 #pragma endregion
 	
 }
@@ -1562,6 +1616,63 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	filteredBloomColor.updateSize(screenX, screenY);
 	filteredBloomColor.clearFBO();
+
+
+	if (filterBloomSize != glm::ivec2(screenX, screenY))
+	{
+		filterBloomSize = glm::ivec2(screenX, screenY);
+
+		int w = screenX;
+		int h = screenY;
+
+		//16 = max mips
+		int mips = 0;
+		{
+			int mipW = w / 2;
+			int mipH = h / 2;
+			for (int i = 0; i < 16; i++)
+			{
+				if (mipW <= 4 || mipH <= 4 ||
+					(mipW < 12 && mipH < 12)
+					)
+				{
+					break;
+				}
+
+				mipW /= 2;
+				mipH /= 2;
+				mips = i;
+			}
+		}
+
+		{
+			currentMips = mips;
+
+			for (int i = 0; i < 2; i++)
+			{
+				glBindTexture(GL_TEXTURE_2D, bluredColorBuffer[i]);
+
+				int mipW = w / 2;
+				int mipH = h / 2;
+
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mips);
+
+
+				for (int m = 0; m <= mips; m++)
+				{
+					glTexImage2D(GL_TEXTURE_2D, m, GL_R11F_G11F_B10F, mipW, mipH, 0, GL_RGB, GL_FLOAT, NULL);
+
+					mipW = mipW /= 2;
+					mipH = mipH /= 2;
+				}
+			}
+		}
+
+	}
+
+
+
+
 
 	fboMain.updateSize(screenX, screenY);
 	fboMain.clearFBO();
@@ -2275,9 +2386,137 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	glViewport(0, 0, screenX, screenY);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+#pragma endregion
 
+
+#pragma region bloom blur
+	bool lastBloomChannel = 0;
+	if (1)
+	{
+		glBindVertexArray(vaoQuad);
+
+
+		int finalMip = currentMips;
+
+		{
+			bool horizontal = 0; bool firstTime = 1;
+			int mipW = screenX;
+			int mipH = screenY;
+			lastBloomChannel = !horizontal;
+
+			for (int i = 0; i < currentMips + 1; i++)
+			{
+			#pragma region scale down
+				mipW /= 2;
+				mipH /= 2;
+				glViewport(0, 0, mipW, mipH);
+
+				glBindFramebuffer(GL_FRAMEBUFFER, blurFbo[horizontal]);
+				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+					bluredColorBuffer[horizontal], i);
+
+				filterDownShader.shader.bind();
+				glActiveTexture(GL_TEXTURE0);
+				glUniform1i(filterDownShader.u_texture, 0);
+				glUniform1i(filterDownShader.u_mip, firstTime ? 0 : i - 1);
+				
+				glBindTexture(GL_TEXTURE_2D,
+					firstTime ? filteredBloomColor.color : bluredColorBuffer[lastBloomChannel]);
+
+				glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+				lastBloomChannel = horizontal;
+			#pragma endregion
+
+			#pragma region copy data
+
+				glBindFramebuffer(GL_FRAMEBUFFER, blurFbo[!horizontal]);
+				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+					bluredColorBuffer[!horizontal], i);
+
+				addMipsShader.shader.bind();
+				glActiveTexture(GL_TEXTURE0);
+				glUniform1i(addMipsShader.u_texture, 0);
+				glUniform1i(addMipsShader.u_mip, i);
+				glBindTexture(GL_TEXTURE_2D,
+					bluredColorBuffer[lastBloomChannel]);
+
+				glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+				lastBloomChannel = !horizontal;
+
+			#pragma endregion
+
+
+			#pragma region blur
+				gausianBLurShader.shader.bind();
+				glActiveTexture(GL_TEXTURE0);
+				//glUniform1i(gausianBLurShader.u_toBlurcolorInput, 0);
+				glUniform2f(gausianBLurShader.u_texel, 1.f / mipW, 1.f / mipH);
+				glUniform1i(gausianBLurShader.u_mip, i);
+				//horizontal = !horizontal;
+
+				for (int j = 0; j < 2; j++)
+				{
+					glBindFramebuffer(GL_FRAMEBUFFER, blurFbo[horizontal]);
+					glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+						bluredColorBuffer[horizontal], i);
+					glClear(GL_COLOR_BUFFER_BIT);
+					glUniform1i(gausianBLurShader.u_horizontal, horizontal);
+
+					glBindTexture(GL_TEXTURE_2D, bluredColorBuffer[lastBloomChannel]);
+
+					glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+					lastBloomChannel = horizontal;
+					horizontal = !horizontal;
+					firstTime = false;
+				}
+				horizontal = !horizontal;
+
+			#pragma endregion
+
+			}
+		}
+
+
+		{
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_ONE, GL_ONE);
+			addMipsShader.shader.bind();
+
+			glActiveTexture(GL_TEXTURE0);
+			glUniform1i(addMipsShader.u_texture, 0);
+			for (; finalMip > 0; finalMip--)
+			{
+				int mipW = screenX;
+				int mipH = screenY;
+
+				for (int i = 0; i < finalMip; i++)
+				{
+					mipW /= 2;
+					mipH /= 2;
+				}
+				glViewport(0, 0, mipW, mipH);
+
+				glBindFramebuffer(GL_FRAMEBUFFER, blurFbo[!lastBloomChannel]);
+				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+					bluredColorBuffer[!lastBloomChannel], finalMip - 1);
+
+				glUniform1i(addMipsShader.u_mip, finalMip);
+				glBindTexture(GL_TEXTURE_2D, bluredColorBuffer[lastBloomChannel]);
+
+				glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+				lastBloomChannel = !lastBloomChannel;
+
+			}
+
+			glDisable(GL_BLEND);
+			glViewport(0, 0, screenX, screenY);
+
+		}
 		
 
+
+	}
 #pragma endregion
 
 
@@ -2352,7 +2591,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glBindVertexArray(vaoQuad);
 		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.color);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, filteredBloomColor.color);
+		glBindTexture(GL_TEXTURE_2D, bluredColorBuffer[lastBloomChannel]);
 
 
 		glEnable(GL_BLEND);

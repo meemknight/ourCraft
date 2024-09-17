@@ -137,6 +137,28 @@ struct Renderer
 
 	}filterBloomDataShader;
 
+	struct FilterDownShader
+	{
+		Shader shader;
+		uniform u_texture;
+		uniform u_mip;
+	}filterDownShader;
+
+	struct AddMipsShader
+	{
+		Shader shader;
+		uniform u_texture;
+		uniform u_mip;
+	}addMipsShader;
+
+	struct GausianBLurShader
+	{
+		Shader shader;
+		uniform u_horizontal;
+		uniform u_mip;
+		uniform u_texel;
+	}gausianBLurShader;
+
 	struct ApplyBloomDataShader
 	{
 		Shader shader;
@@ -307,6 +329,12 @@ struct Renderer
 	FBO fboLastFramePositions;
 
 	FBO filteredBloomColor;
+	
+	GLuint filterFbo;
+	GLuint blurFbo[2];
+	GLuint bluredColorBuffer[2];
+	glm::ivec2 filterBloomSize = {};
+	int currentMips = 0;
 
 
 	GLuint drawCommandsOpaqueBuffer;
