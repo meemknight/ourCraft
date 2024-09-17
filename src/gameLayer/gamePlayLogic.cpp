@@ -1628,11 +1628,17 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			if (ImGui::CollapsingHeader("Filtered bloom color",
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
 			{
-				ImGui::Image((void *)programData.renderer.filteredBloomColor.color, {256, 256},
+				ImGui::Image((void *)programData.renderer.fboMain.fourthColor, {256, 256},
 					{0, 1}, {1, 0});
 
-				ImGui::SliderFloat("Multiplier", &programData.renderer.bloomMultiplier, 0.0001, 2);
-				ImGui::SliderFloat("Tresshold", &programData.renderer.bloomTresshold, 0.0001, 2);
+				ImGui::Image((void *)programData.renderer.bluredColorBuffer[0], {256, 256},
+					{0, 1}, {1, 0});
+
+				ImGui::Image((void *)programData.renderer.bluredColorBuffer[1], {256, 256},
+					{0, 1}, {1, 0});
+
+				ImGui::SliderFloat("Multiplier", &programData.renderer.bloomMultiplier, 0.0001, 3);
+				ImGui::SliderFloat("Tresshold", &programData.renderer.bloomTresshold, 0.0001, 10);
 			}
 
 			if (ImGui::CollapsingHeader("Chunk system",

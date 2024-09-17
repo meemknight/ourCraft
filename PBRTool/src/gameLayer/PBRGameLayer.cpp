@@ -354,7 +354,7 @@ void writeAtIndex(glm::ivec3 color, glm::ivec2 position, int index)
 	{
 		t = colorT;
 	}
-	else if (index == 1 || index == 2)
+	else if (index == 1 || index == 2 || index == 3)
 	{
 		t = pbrT;
 	}
@@ -452,7 +452,12 @@ void imageEditor(const char *name, gl2d::Texture &t,
 		ImGui::SameLine();
 		ImGui::ColorButton("##ColorDisplay2", brush_color, ImGuiColorEditFlags_NoTooltip, ImVec2(40, 40));
 	}
-
+	else if (filter == 3)
+	{
+		ImGui::SliderFloat("Brush Color##3", &brush_color.z, 0, 1);
+		ImGui::SameLine();
+		ImGui::ColorButton("##ColorDisplay3", brush_color, ImGuiColorEditFlags_NoTooltip, ImVec2(40, 40));
+	}
 
 	// Handle mouse interaction
 	//if (ImGui::IsItemHovered())
@@ -715,6 +720,25 @@ bool gameLogic(float deltaTime)
 				ImGui::EndMenu();
 			}
 
+			if (ImGui::BeginMenu("Automatic fill Emissive"))
+			{
+				ImGui::PushID(5432);
+
+				static float power = 1;
+				static bool reverse = 0;
+				ImGui::SliderFloat("Power", &power, 0.01, 10);
+				ImGui::Checkbox("reverse", &reverse);
+
+				if (ImGui::Button("Fill!"))
+				{
+					automaticallyFillPbrTexture(power, 2, reverse);
+				}
+
+
+				ImGui::PopID();
+				ImGui::EndMenu();
+			}
+
 			ImGui::EndMenu();
 		}
 
@@ -742,6 +766,13 @@ bool gameLogic(float deltaTime)
 	metallicColor.z = 0;
 	metallicColor.w = 1;
 	imageEditor("Metallic", pbrT, metallicColor, 1, 2, &colorT);
+
+
+	static ImVec4 EmissiveColor = ImVec4(0.0f, 0.0f, 1.0f, 1.0f);
+	EmissiveColor.x = 0;
+	EmissiveColor.y = 0;
+	EmissiveColor.w = 1;
+	imageEditor("EmissiveColor", pbrT, EmissiveColor, 1, 3, &colorT);
 
 
 	ImGui::End();

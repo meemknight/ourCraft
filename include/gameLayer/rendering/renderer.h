@@ -22,7 +22,7 @@ struct Renderer
 	struct FBO
 	{
 		void create(GLint addColor, bool addDepth, GLint addSecondaryRenderTarget = 0,
-			GLint addThirdRenderTarget = 0);
+			GLint addThirdRenderTarget = 0, GLint addFourthRenderTarget = 0);
 
 		void updateSize(int x, int y);
 
@@ -31,15 +31,18 @@ struct Renderer
 		GLuint fboOnlyFirstTarget = 0;
 		GLuint fboOnlySecondTarget = 0;
 		GLuint fboOnlyThirdTarget = 0;
+		GLuint fboOnlyFourthTarget = 0;
 
 		GLuint color = 0;
 		GLuint secondaryColor = 0;
 		GLuint thirdColor = 0;
+		GLuint fourthColor = 0;
 		GLuint depth = 0;
 
 		GLint colorFormat = 0;
 		GLint secondaryColorFormat = 0;
 		GLint thirdColorFormat = 0;
+		GLint fourthColorFormat = 0;
 
 		void copyDepthFromMainFBO(int w, int h);
 		void copyColorFromMainFBO(int w, int h);
@@ -318,8 +321,8 @@ struct Renderer
 	bool ssao = 1;
 	int waterRefraction = 1;
 
-	float bloomTresshold = 0.7;
-	float bloomMultiplier = 1;
+	float bloomTresshold = 1.7;
+	float bloomMultiplier = 0.008;
 
 	FBO fboHBAO;
 	FBO fboMain;
@@ -328,7 +331,7 @@ struct Renderer
 	FBO fboLastFrame;
 	FBO fboLastFramePositions;
 
-	FBO filteredBloomColor;
+	//FBO filteredBloomColor;
 	
 	GLuint filterFbo;
 	GLuint blurFbo[2];

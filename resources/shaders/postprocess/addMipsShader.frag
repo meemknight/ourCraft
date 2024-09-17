@@ -25,7 +25,8 @@ void main()
 	outColor.rgb += textureLod(u_texture, v_texCoords + texel*vec2(0, -1), u_mip).rgb*2;
 	outColor.rgb += textureLod(u_texture, v_texCoords + texel*vec2(+1, -1), u_mip).rgb;
 
-	outColor.rgb /= 16.f;
+	//outColor.rgb /= 16.f;
+	outColor.rgb /= 12.f;
 	outColor.a = 1;
 
 }

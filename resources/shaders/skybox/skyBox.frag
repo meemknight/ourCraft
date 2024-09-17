@@ -1,6 +1,11 @@
 #version 430
 
 layout(location = 0) out vec4 a_outColor;
+layout (location = 1) out vec4 out_screenSpacePositions;
+layout (location = 2) out ivec3 out_normals;
+layout (location = 3) out vec3 out_bloom;
+
+
 
 in vec3 v_viewDirection;
 
@@ -116,4 +121,6 @@ void main()
 
 	// Ensure that the alpha channel is 1.0
 	a_outColor.a = 1.0;
+
+	out_bloom.rgb = vec3(0,0,0);
 }

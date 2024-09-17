@@ -4,7 +4,7 @@
 
 //donotupdatelightsystem
 //donotoptimizelightsystem
-bool constexpr dontUpdateLightSystem = 1;
+bool constexpr dontUpdateLightSystem = 0;
 
 struct ChunkSystem;
 struct Chunk;

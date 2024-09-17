@@ -1,11 +1,11 @@
 #version 430 core
 #extension GL_ARB_bindless_texture: require
-#pragma debug
 
 
 layout (location = 0) out vec4 out_color;
 layout (location = 1) out vec4 out_screenSpacePositions;
 layout (location = 2) out ivec3 out_normals;
+layout (location = 3) out vec3 out_bloom;
 
 
 layout(binding = 0) uniform sampler2D u_numbers;
@@ -794,6 +794,8 @@ void main()
 	computedAmbient *= blockAO;
 	computedAmbient *= 1.2;
 
+	out_bloom = vec3(0,0,0);
+
 	if(u_shaders == 0)
 	{
 		//load albedo
@@ -887,8 +889,9 @@ void main()
 		//load material
 		float metallic = 0;
 		float roughness = 0;
+		float emissive = 0;
 		{
-			vec2 materialColor = texture(sampler2D(v_materialSampler), v_uv).rg;
+			vec3 materialColor = texture(sampler2D(v_materialSampler), v_uv).rgb;
 			
 			roughness = pow((1 - materialColor.r),2);
 			metallic =pow((materialColor.g),0.5);
@@ -898,6 +901,8 @@ void main()
 
 			roughness = clamp(roughness, 0.09, 0.99);
 			metallic = clamp(metallic, 0.0, 0.98);
+
+			emissive = materialColor.b;
 		}
 
 		//load albedo
@@ -917,6 +922,8 @@ void main()
 			}
 		}
 		
+		out_bloom += emissive * 0.12 * textureColor.rgb;
+
 		
 		vec3 skyBoxColor = texture(u_skyTexture, (gl_FragCoord.xy / textureSize(u_skyTexture, 0)) ).rgb;
 
@@ -947,6 +954,7 @@ void main()
 		
 		//caustics
 		vec3 causticsColor = vec3(1);
+		float localCausticsPower = 0;
 		if(blockIsInWater)
 		{
 			vec2 dudv = vec2(0);
@@ -962,7 +970,7 @@ void main()
 			causticsColor.r = pow(texture(u_caustics, coords + vec2(0,0)).r, causticsLightPower) * causticsLightStrength;
 			causticsColor.g = pow(texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)).g, causticsLightPower) * causticsLightStrength;
 			causticsColor.b = pow(texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)*2.0).b, causticsLightPower) * causticsLightStrength;
-
+			localCausticsPower = dot(causticsColor, vec3(0.6, 0.3, 0.1));
 
 			//causticsColor = max(causticsColor, vec3(0,0,0));
 			//out_color.rgb = texture(u_caustics, coords).rgb;
@@ -1030,10 +1038,15 @@ void main()
 
 			if(dot(u_sunDirection, vec3(0,1,0))> -0.2)
 			{
-
-				finalColor += computePointLightSource(L, 
+				vec3 colorAdition = computePointLightSource(L, 
 					metallic, roughness, sunLightColor * causticsColor, V, 
 					textureColor.rgb, N, F0) * shadow * sqrt(blockAO);
+				finalColor += colorAdition;
+
+				if(localCausticsPower > 1.2)
+				{
+					out_bloom += max(colorAdition, vec3(4,4,4)) * 0.0008;
+				}
 			}
 		}
 		
