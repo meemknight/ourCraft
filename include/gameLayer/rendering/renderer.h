@@ -128,6 +128,20 @@ struct Renderer
 
 	}defaultShader;
 
+	struct FilterBloomDataShader
+	{
+		Shader shader;
+		uniform u_exposure;
+		uniform u_tresshold;
+		uniform u_multiplier;
+
+	}filterBloomDataShader;
+
+	struct ApplyBloomDataShader
+	{
+		Shader shader;
+	}applyBloomDataShader;
+
 	struct HBAOShader
 	{
 		Shader shader;
@@ -282,12 +296,18 @@ struct Renderer
 	bool ssao = 1;
 	int waterRefraction = 1;
 
+	float bloomTresshold = 0.7;
+	float bloomMultiplier = 1;
+
 	FBO fboHBAO;
 	FBO fboMain;
 	FBO fboSkyBox;
 	FBO fboCoppy;
 	FBO fboLastFrame;
 	FBO fboLastFramePositions;
+
+	FBO filteredBloomColor;
+
 
 	GLuint drawCommandsOpaqueBuffer;
 

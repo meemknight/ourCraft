@@ -1035,6 +1035,7 @@ void Renderer::create()
 {
 
 	fboCoppy.create(GL_R11F_G11F_B10F, true);
+	filteredBloomColor.create(GL_R11F_G11F_B10F, false);
 	fboMain.create(GL_R11F_G11F_B10F, true, GL_RGB16F, GL_RGB16UI);
 	glBindTexture(GL_TEXTURE_2D, fboMain.secondaryColor);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -1231,7 +1232,6 @@ void Renderer::create()
 
 
 
-
 }
 
 void Renderer::reloadShaders()
@@ -1306,6 +1306,25 @@ void Renderer::reloadShaders()
 
 	defaultShader.u_lights = getStorageBlockIndex(defaultShader.shader.id, "u_lights");
 	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_lights, 4);
+
+#pragma region bloom
+
+	filterBloomDataShader.shader.clear();
+	filterBloomDataShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
+		RESOURCES_PATH "shaders/postProcess/filterBloomData.frag");
+	filterBloomDataShader.shader.bind();
+	GET_UNIFORM2(filterBloomDataShader, u_exposure);
+	GET_UNIFORM2(filterBloomDataShader, u_tresshold);
+	GET_UNIFORM2(filterBloomDataShader, u_multiplier);
+
+
+	applyBloomDataShader.shader.clear();
+	applyBloomDataShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
+		RESOURCES_PATH "shaders/postProcess/applyBloomData.frag");
+
+
+#pragma endregion
+
 
 #pragma region zpass
 	{
@@ -1540,6 +1559,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	fboCoppy.updateSize(screenX, screenY);
 	fboCoppy.clearFBO();
+
+	filteredBloomColor.updateSize(screenX, screenY);
+	filteredBloomColor.clearFBO();
 
 	fboMain.updateSize(screenX, screenY);
 	fboMain.clearFBO();
@@ -2238,6 +2260,28 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	}
 
+#pragma region get bloom filtered data
+
+	glBindVertexArray(vaoQuad);
+	glBindFramebuffer(GL_FRAMEBUFFER, filteredBloomColor.fbo);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, fboMain.color);
+	filterBloomDataShader.shader.bind();
+
+
+	glUniform1f(filterBloomDataShader.u_exposure, defaultShader.shadingSettings.exposure);
+	glUniform1f(filterBloomDataShader.u_tresshold, bloomTresshold);
+	glUniform1f(filterBloomDataShader.u_multiplier, bloomMultiplier);
+
+	glViewport(0, 0, screenX, screenY);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+		
+
+#pragma endregion
+
+
+
 #pragma region post process
 
 	//hbao
@@ -2299,6 +2343,29 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	};
 
 	GLuint currentTexture = 0;
+
+	//bloom
+	{
+
+		applyBloomDataShader.shader.bind();
+
+		glBindVertexArray(vaoQuad);
+		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.color);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, filteredBloomColor.color);
+
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
+		glBlendEquation(GL_FUNC_ADD);
+
+		glViewport(0, 0, screenX, screenY);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		
+
+		glDisable(GL_BLEND);
+
+	}
 
 	//warp
 	if (underWater)

@@ -1264,7 +1264,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 			if (dontUpdateLightSystem)
 			{
-				pushFlagsLightAndPosition(*currentVector, position, 0, 0, 15, 15, 0);
+				pushFlagsLightAndPosition(*currentVector, position, 0, 0, 15, 0, 0);
 			}
 			else
 			{
