@@ -101,6 +101,7 @@ bool isAnyWoddenBlock(BlockType type)
 		type == palm_log ||
 		type == craftingTable ||
 		type == wooden_stairs ||
+		type == wooden_wall ||
 		type == wooden_slab ||
 		type == spruce_log;
 }
@@ -162,6 +163,7 @@ bool isAnyStone(BlockType type)
 		type == gold_ore ||
 		type == diamond_ore ||
 		type == iron_ore ||
+		type == tiledStoneBricks ||
 		type == gold_block;
 }
 

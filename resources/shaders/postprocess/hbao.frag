@@ -197,8 +197,8 @@ uniform mat4 u_projection; //
 
 const int kernelSize = 64;
 
-float radius = 1.5;
-float bias = 0.100;
+float radius = 0.5;
+float bias = 0.200;
 int samplesTestSize = 32; // should be less than kernelSize
 
 vec3 samples[64] = vec3[64](

@@ -80,6 +80,8 @@ enum BlockTypes : unsigned short
 	whiteWool,
 	wooden_stairs,
 	wooden_slab,
+	wooden_wall,
+	tiledStoneBricks,
 
 	BlocksCount
 };

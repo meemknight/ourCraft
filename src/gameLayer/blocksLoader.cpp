@@ -6,6 +6,8 @@
 #include <gameplay/items.h>
 #include <platformTools.h>
 
+//loadallblocks
+
 const char *texturesNames[] = {
 	
 	"dirt",				//1
@@ -86,7 +88,8 @@ const char *texturesNames[] = {
 	"purple_stained_glass",	//76
 	"magenta_stained_glass",//77
 	"pink_stained_glass",	//78
-	"white_wool",		//79
+	"white_wool",			//79
+	"tiledStoneBrick",		//80
 
 };
 
@@ -285,6 +288,11 @@ uint16_t blocksLookupTable[] = {
 	//wooden_slab
 	7, 7, 7, 7, 7, 7,
 
+	//wooden_wall
+	7, 7, 7, 7, 7, 7,
+
+	//tiled_stone_brick
+	80, 80, 80, 80, 80, 80,
 };
 
 void fixAlphaForNormals(unsigned char *buffer, int w, int h)
@@ -699,8 +707,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		
-		//todo compare
-		//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.f);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.f);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 4.f);
 
 		glGenerateMipmap(GL_TEXTURE_2D);
@@ -821,7 +828,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 		t.bind();
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.f);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.f);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 4.f);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -896,7 +903,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 				data.clear();
 				data.resize(dataGrayScale.size() * 4 * magnify * magnify);
 
-				float pixelSize = (1.f / size.x) * 2.2f;
+				float pixelSize = (1.f / size.x) * 2.8f;
 				//the last constant represents the height of the normal map result, hence the strength, smaller constant stronger normal
 
 				auto sample = [&](float u, float v)

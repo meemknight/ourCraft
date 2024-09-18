@@ -56,6 +56,5 @@ void main()
 
 
 	outColor = vec4(0,0,0, aoValue * AO_STRENGTH * (computeFog(dist)) );
-	//outColor = vec4(0,0,0, aoValue * AO_STRENGTH );
 	//outColor = vec4(0,0,0,0);
 }
