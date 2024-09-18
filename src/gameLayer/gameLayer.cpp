@@ -44,6 +44,9 @@ void clearOtherTextures()
 	programData.aoTexture.cleanup();
 	programData.brdfTexture.cleanup();
 	programData.crackTexture.cleanup();
+	programData.lensDirtTexture.cleanup();
+	programData.hitDirtTexture.cleanup();
+	programData.waterDirtTexture.cleanup();
 	programData.heartsTexture.cleanup();
 	programData.heartsAtlas = {};
 }
@@ -131,6 +134,21 @@ void loadOtherTextures(const char *basePath)
 	if (!programData.crackTexture.id)
 	{
 		programData.crackTexture.loadFromFile((p + "crack.png").c_str(), true, true);
+	}
+
+	if (!programData.lensDirtTexture.id)
+	{
+		programData.lensDirtTexture.loadFromFile((p + "lensDirt.png").c_str(), true, true);
+	}
+
+	if (!programData.hitDirtTexture.id)
+	{
+		programData.hitDirtTexture.loadFromFile((p + "hitLensDirt.png").c_str(), true, true);
+	}
+
+	if (!programData.waterDirtTexture.id)
+	{
+		programData.waterDirtTexture.loadFromFile((p + "waterLensDirt.png").c_str(), true, true);
 	}
 
 	if (!programData.heartsTexture.id)

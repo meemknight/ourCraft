@@ -2634,6 +2634,15 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, bluredColorBuffer[lastBloomChannel]);
 
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, programData.lensDirtTexture.id);
+
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, programData.hitDirtTexture.id);
+
+
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, programData.waterDirtTexture.id);
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE);

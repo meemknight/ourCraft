@@ -700,8 +700,8 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		
 		//todo compare
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 6.f);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 6.f);
+		//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.f);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 4.f);
 
 		glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -821,8 +821,8 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 		t.bind();
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 6.f);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 6.f);
+		//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.f);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 4.f);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
 		setGpuIds(desinationIndex);
@@ -955,8 +955,8 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 				t.bind();
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 6.f);
-				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 6.f);
+				//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 6.f);
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 4.f);
 				glGenerateMipmap(GL_TEXTURE_2D);
 
 				auto handle = glGetTextureHandleARB(texturesIds[i*3 + 1]);
