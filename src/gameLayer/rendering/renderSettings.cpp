@@ -113,13 +113,13 @@ glm::ivec4 shrinkPercentage(glm::ivec4 dimensions, glm::vec2 p)
 	return dimensions;
 }
 
-bool texturePackDirty = 0;
+bool texturePackDirty = 1;
 int leftAdvance = 0;
 int rightAdvance = 0;
 std::vector<std::filesystem::path> loadedTexturePacks;
 std::unordered_map<std::string, gl2d::Texture> logoTextures;
 
-std::vector<std::filesystem::path> usedTexturePacks;
+std::vector<std::filesystem::path> usedTexturePacks{"ourcraft"};
 
 bool shouldReloadTexturePacks()
 {

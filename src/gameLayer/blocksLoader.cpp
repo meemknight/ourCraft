@@ -840,19 +840,19 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 
 		//test texture
 
-		if(gpuIds[getGpuIdIndexForBlock(BlockTypes::diamond_ore, 0)] != gpuIds[0])
+		if(gpuIds[getGpuIdIndexForBlock(BlockTypes::cobblestone, 0)] != gpuIds[0])
 		copyFromOtherTextureAndApplyModifications(56 * 3, 
-			getGpuIdIndexForBlock(BlockTypes::diamond_ore, 0),
+			getGpuIdIndexForBlock(BlockTypes::cobblestone, 0),
 			[](glm::vec3 in) ->glm::vec3
 		{
-			
+
 			//in = glm::pow(in, glm::vec3(1.5f, 1.5f, 0.5f));
 
 			//in = glm::pow(in, glm::vec3(0.5f));
 
 
 			in = rgbToHSV(in);
-			
+
 			//if (in.g > 0.2)
 			//{
 			//	in.g = 0;
@@ -863,9 +863,23 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 			//	in.b = std::pow(in.b, 1.5);
 			//}
 
-			in.x += 0.3;
+			in.x += 0.65;
 			in.x = glm::fract(in.x);
-			
+
+			if (in.z > 0.4)
+			{
+				in.y -= 0.1;
+				if (in.y < 0) { in.y = 0; }
+				in.z = std::powf(in.z, 0.25);
+			}
+			else
+			{
+				in.y += 0.1;
+				if (in.y > 1) { in.y = 1; }
+				in.z = std::powf(in.z, 1.2);
+			}
+
+
 			in = hsv2rgb(in);
 			
 			return in;
