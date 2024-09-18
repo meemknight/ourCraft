@@ -36,6 +36,8 @@ struct ProgramData
 	gl2d::Texture waterDirtTexture;
 	gl2d::Texture heartsTexture;
 	gl2d::TextureAtlasPadding heartsAtlas;
+	std::vector<gl2d::Texture> lensFlare;
+	float maxFlareSize = 0;
 	int currentFps = 0;
 
 	struct OtherSettings

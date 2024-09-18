@@ -100,6 +100,9 @@ struct GameData
 	bool handHit = 0;
 	bool killed = 0;
 
+	//water drops blur
+	float dropsStrength = 0;
+	bool lastFrameInWater = 0;
 
 }gameData;
 
@@ -1179,6 +1182,29 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		gameData.gameplayFrameProfiler.endSubProfile("chunkSystem");
 	}
 
+
+#pragma region underwater water drops
+	if (gameData.lastFrameInWater)
+	{
+		if (!underWater)
+		{
+			gameData.dropsStrength = 4;
+		}
+	}
+	
+	if (underWater)
+	{
+		gameData.dropsStrength = 0;
+	}
+	gameData.lastFrameInWater = underWater;
+
+	gameData.dropsStrength -= deltaTime;
+	if (gameData.dropsStrength < 0) { gameData.dropsStrength = 0; }
+
+	float finalDropStrength = std::min(1.f, gameData.dropsStrength/3.f);
+#pragma endregion
+
+
 	if(w != 0 && h != 0 && !gameData.isInsideMapView)
 	{
 
@@ -1190,7 +1216,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			programData.modelsManager, gameData.showLightLevels,
 			gameData.point, underWater, w, h, deltaTime, dayTime, gameData.currentSkinBindlessTexture,
 			gameData.handHit, isPlayerMovingSpeed, gameData.playerFOVHandTransform,
-			gameData.currentItemSelected
+			gameData.currentItemSelected, finalDropStrength
 			);
 
 

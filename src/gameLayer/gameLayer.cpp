@@ -49,6 +49,13 @@ void clearOtherTextures()
 	programData.waterDirtTexture.cleanup();
 	programData.heartsTexture.cleanup();
 	programData.heartsAtlas = {};
+
+	for (auto &t : programData.lensFlare)
+	{
+		t.cleanup();
+	}
+	programData.lensFlare = {};
+
 }
 
 void clearAllTexturePacks()
@@ -158,6 +165,34 @@ void loadOtherTextures(const char *basePath)
 			9, true, false);
 		auto s = programData.heartsTexture.GetSize();
 		programData.heartsAtlas = gl2d::TextureAtlasPadding(5, 1, s.x, s.y);
+	}
+
+	if (programData.lensFlare.empty())
+	{
+
+		auto path = RESOURCES_PATH "assets/otherTextures/lensFlare";
+		programData.maxFlareSize = 0;
+		
+		if (std::filesystem::exists(path))
+		{
+
+			for (auto &f : std::filesystem::directory_iterator(path))
+			{
+				gl2d::Texture t = {};
+				t.loadFromFile(f.path().string().c_str());
+
+				if (t.id)
+				{
+					programData.lensFlare.push_back(t);
+
+					programData.maxFlareSize = std::max(programData.maxFlareSize, (float)t.GetSize().x);
+				}
+
+
+			}
+
+		}
+
 	}
 
 }

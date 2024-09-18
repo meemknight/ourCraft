@@ -8,6 +8,7 @@ layout(binding = 1) uniform sampler2D u_lensDirt;
 layout(binding = 2) uniform sampler2D u_hitDirt;
 layout(binding = 3) uniform sampler2D u_waterDirt;
 
+uniform float u_waterDropsPower;
 
 vec3 reinhard(vec3 v)
 {
@@ -34,7 +35,7 @@ void main()
 
 	readColor += addLensBlur(dirtIntensity * readColor, lensDirtPresence, lensDirtStrength);
 	//readColor += addLensBlur(hitIntensity * readColor, 10, 4);
-	//readColor += addLensBlur(waterIntensity * readColor, 6, 4);
+	readColor += addLensBlur(waterIntensity * readColor, 6 * u_waterDropsPower, 4);
 
 	outColor.a = 1;
 	outColor.rgb = readColor;

@@ -768,7 +768,7 @@ void main()
 	}
 
 	const bool blockIsInWater = ((v_flags & 2) != 0);
-	const float baseAmbient = 0.30;
+	const float baseAmbient = 0.20;
 	const float multiplier = 0.70;
 	vec3 computedAmbient = multiplier *  vec3(min(toLinear(v_ambient * (1.f-baseAmbient) + baseAmbient), 1));
 
@@ -829,7 +829,7 @@ void main()
 
 		if(v_skyLightUnchanged > 3)
 		{
-			vec3 sunLightColor = u_sunLightColor * 0.9;
+			vec3 sunLightColor = u_sunLightColor * 1.9;
 			sunLightColor *= 1-((15-v_skyLightUnchanged)/9.f);
 			//sunLightColor *= ((v_ambientInt/15.f)*0.6 + 0.4f);
 

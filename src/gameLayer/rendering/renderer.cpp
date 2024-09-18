@@ -1351,6 +1351,10 @@ void Renderer::reloadShaders()
 	applyBloomDataShader.shader.clear();
 	applyBloomDataShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
 		RESOURCES_PATH "shaders/postProcess/applyBloomData.frag");
+	applyBloomDataShader.shader.bind();
+	GET_UNIFORM2(applyBloomDataShader, u_waterDropsPower);
+
+
 
 
 	filterDownShader.shader.clear();
@@ -1570,7 +1574,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	, bool showLightLevels, glm::dvec3 pointPos, bool underWater, int screenX, int screenY,
 	float deltaTime, float dayTime, 
 	GLuint64 currentSkinBindlessTexture, bool &playerClicked, float playerRunning,
-	BoneTransform &playerHand, int currentHeldItemIndex
+	BoneTransform &playerHand, int currentHeldItemIndex, float waterDropsStrength
 	)
 {
 
@@ -1840,17 +1844,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	fboSkyBox.copyColorFromOtherFBO(fboMain.color,
 		fboMain.size.x, fboMain.size.y);
 
-	glEnablei(GL_BLEND, 0);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
-	programData.sunRenderer.render(c, sunPos, programData.skyBoxLoaderAndDrawer.sunTexture);
-
-	programData.sunRenderer.render(c, -sunPos, programData.skyBoxLoaderAndDrawer.moonTexture);
-
-
-	glDisable(GL_BLEND);
-	glDepthFunc(GL_LESS);
 
 #pragma endregion
 
@@ -2285,6 +2278,19 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		fboCoppy.copyDepthFromOtherFBO(fboMain.fbo, screenX, screenY);
 	#pragma endregion
 
+
+		//render sun moon
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LEQUAL);
+		glEnablei(GL_BLEND, 0);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
+		programData.sunRenderer.render(c, sunPos, programData.skyBoxLoaderAndDrawer.sunTexture);
+		programData.sunRenderer.render(c, -sunPos, programData.skyBoxLoaderAndDrawer.moonTexture);
+		glDisable(GL_BLEND);
+		glDepthFunc(GL_LESS);
+
+
 		//disable bloom for transparent geometry
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
@@ -2413,7 +2419,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		if (underWater)
 		{
-			glUniform1f(filterBloomDataShader.u_tresshold/2, bloomTresshold);
+			glUniform1f(filterBloomDataShader.u_tresshold, bloomTresshold / 2);
 		}
 		else
 		{
@@ -2607,6 +2613,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		
 		applyHBAOShader.shader.bind();
 		glEnable(GL_BLEND);
+		glBlendFunci(0, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, fboHBAO.color);
 		glUniform1i(applyHBAOShader.u_hbao, 0);
@@ -2643,6 +2650,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, programData.waterDirtTexture.id);
+
+		glUniform1f(applyBloomDataShader.u_waterDropsPower, waterDropsStrength);
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE);
@@ -2728,6 +2737,100 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	}
 
 	fboMain.copyDepthToMainFbo(fboMain.size.x, fboMain.size.y);
+
+#pragma endregion
+
+
+#pragma region lens flare
+
+
+
+	{
+		auto &renderer2d = programData.ui.renderer2d;
+		renderer2d.pushCamera();
+		
+
+		//sunPos
+
+		glm::vec2 screenCoords = {};
+		glm::vec4 sun3Dpos = glm::vec4(sunPos, 1);
+		glm::vec4 sunProjectedCoords = c.getProjectionMatrix() * c.getViewMatrix() * sun3Dpos;
+
+		if (sunProjectedCoords.w > 0)
+		{
+			sunProjectedCoords.x /= sunProjectedCoords.w;
+			sunProjectedCoords.y /= sunProjectedCoords.w;
+			sunProjectedCoords.x += 1;
+			sunProjectedCoords.x /= 2;
+			sunProjectedCoords.y += 1;
+			sunProjectedCoords.y /= 2;
+			sunProjectedCoords.y = 1.f - sunProjectedCoords.y;
+
+
+			float sunSize = 0;
+			{
+				auto c2 = c;
+				c2.viewDirection = glm::vec3(0, 0, -1);
+
+				glm::vec4 sunEdge3Dpos1 = glm::vec4(glm::vec3(0, 0, -4), 1);
+				glm::vec4 sunEdge3Dpos2 = glm::vec4(glm::vec3(1, 0, -4), 1);
+				glm::vec4 sunEdgeProjectedCoords = c.getProjectionMatrix() * c2.getViewMatrix() * sunEdge3Dpos1;
+				glm::vec4 sunEdgeProjectedCoords2 = c.getProjectionMatrix() * c2.getViewMatrix() * sunEdge3Dpos2;
+				sunEdgeProjectedCoords.x /= sunEdgeProjectedCoords.w;
+				sunEdgeProjectedCoords.x += 1;
+				sunEdgeProjectedCoords.x /= 2;
+
+				sunEdgeProjectedCoords2.x /= sunEdgeProjectedCoords2.w;
+				sunEdgeProjectedCoords2.x += 1;
+				sunEdgeProjectedCoords2.x /= 2;
+
+				sunSize = std::abs(sunEdgeProjectedCoords.x - sunEdgeProjectedCoords2.x) * 1.4;
+			}
+
+			glm::vec2 center = {0.5,0.5};
+			glm::vec2 sunPos = sunProjectedCoords;
+			glm::vec2 vectorTwardsCenter = (center - sunPos) * 2.f;
+
+			float globalBrightness = 1 - (glm::length(center - sunPos) / 0.6f);
+
+			if (globalBrightness > 0)
+			{
+
+				glm::vec2 flarePos = sunPos;
+				for (int i = 0; i < programData.lensFlare.size(); i++)
+				{
+					float size = sunSize * screenX;
+					//float size = 800;
+					flarePos += vectorTwardsCenter / (float)programData.lensFlare.size();
+
+					float textureSize = programData.lensFlare[i].GetSize().x;
+					size *= textureSize / programData.maxFlareSize;
+
+					float distanceToCenter = glm::distance(flarePos, center);
+					float alpha = 1.f - (distanceToCenter / glm::length(vectorTwardsCenter));
+					alpha = glm::clamp(alpha, 0.f, 1.f) * 0.24;
+					alpha *= globalBrightness;
+
+					renderer2d.renderRectangle({
+						flarePos.x * screenX - size / 2.f, flarePos.y * screenY - size / 2.f,
+						size,size}, programData.lensFlare[i],
+						{1,1,1,alpha});
+
+				}
+
+			};
+
+
+
+		}
+
+
+	
+
+
+		renderer2d.popCamera();
+	}
+
 
 #pragma endregion
 

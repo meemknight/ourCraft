@@ -760,8 +760,6 @@ void SunRenderer::render(Camera camera,
 
 	sunTexture.bind(0);
 
-	glDepthFunc(GL_ALWAYS);
-
 	auto finalMatrix = camera.getProjectionMatrix() * camera.getViewMatrix() * createTBNMatrix(sunPos);
 	glUniformMatrix4fv(u_modelViewProjectionMatrix, 1, GL_FALSE, &finalMatrix[0][0]);
 

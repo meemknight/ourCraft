@@ -165,6 +165,7 @@ struct Renderer
 	struct ApplyBloomDataShader
 	{
 		Shader shader;
+		uniform u_waterDropsPower;
 	}applyBloomDataShader;
 
 	struct HBAOShader
@@ -321,8 +322,8 @@ struct Renderer
 	bool ssao = 1;
 	int waterRefraction = 1;
 
-	float bloomTresshold = 1.7;
-	float bloomMultiplier = 0.008;
+	float bloomTresshold = 0.01; // 1.7
+	float bloomMultiplier = 0.00003;
 
 	FBO fboHBAO;
 	FBO fboMain;
@@ -354,7 +355,7 @@ struct Renderer
 		bool showLightLevels, glm::dvec3 pointPos,
 		bool underWater, int screenX, int screenY, float deltaTime, float dayTime,
 		GLuint64 currentSkinBindlessTexture, bool &playerClicked, float playerRunning,
-		BoneTransform &playerHand, int currentHeldItemIndex);
+		BoneTransform &playerHand, int currentHeldItemIndex, float waterDropsStrength);
 	
 	void renderDecal(glm::ivec3 position, Camera &c, Block b, ProgramData &programData, 
 		float crack);
