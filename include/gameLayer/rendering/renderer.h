@@ -16,8 +16,28 @@ struct BoneTransform;
 
 using uniform = GLint;
 
+
+struct QueryObject
+{
+
+	GLuint id = 0;
+
+	void create();
+	void begin();
+	void end();
+
+	bool hasResult();
+	int getQueryResult();
+
+	void clear();
+};
+
+
 struct Renderer
 {
+
+	int sunFlareQueryPos = 0;
+	QueryObject sunFlareQueries[3] = {};
 
 	struct FBO
 	{

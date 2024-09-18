@@ -1034,6 +1034,11 @@ void Renderer::recreateBlocksTexturesBuffer(BlocksLoader &blocksLoader)
 void Renderer::create()
 {
 
+	for (int i = 0; i < sizeof(sunFlareQueries) / sizeof(sunFlareQueries[0]); i++)
+	{
+		sunFlareQueries[i].create();
+	}
+
 	fboCoppy.create(GL_R11F_G11F_B10F, true);
 	//filteredBloomColor.create(GL_R11F_G11F_B10F, false);
 
@@ -2246,6 +2251,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glEnable(GL_CULL_FACE);
 	};
 
+	int queryDataForSunFlare = 0;
+
 	if (waterRefraction)
 	{
 
@@ -2285,7 +2292,16 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glEnablei(GL_BLEND, 0);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
+
+		queryDataForSunFlare = sunFlareQueries[sunFlareQueryPos].getQueryResult();
+
+		sunFlareQueries[sunFlareQueryPos].begin();
 		programData.sunRenderer.render(c, sunPos, programData.skyBoxLoaderAndDrawer.sunTexture);
+		sunFlareQueries[sunFlareQueryPos].end();
+		sunFlareQueryPos++;
+		sunFlareQueryPos %= (sizeof(sunFlareQueries) / sizeof(sunFlareQueries[0]));
+
+
 		programData.sunRenderer.render(c, -sunPos, programData.skyBoxLoaderAndDrawer.moonTexture);
 		glDisable(GL_BLEND);
 		glDepthFunc(GL_LESS);
@@ -2768,6 +2784,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 
 			float sunSize = 0;
+			float maxSize = 0;
 			{
 				auto c2 = c;
 				c2.viewDirection = glm::vec3(0, 0, -1);
@@ -2784,14 +2801,21 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 				sunEdgeProjectedCoords2.x += 1;
 				sunEdgeProjectedCoords2.x /= 2;
 
-				sunSize = std::abs(sunEdgeProjectedCoords.x - sunEdgeProjectedCoords2.x) * 1.4;
+				sunSize = std::abs(sunEdgeProjectedCoords.x - sunEdgeProjectedCoords2.x) * 1.6;
+				maxSize = std::abs(sunEdgeProjectedCoords.x - sunEdgeProjectedCoords2.x);
+
+				//std::cout << queryDataForSunFlare << "\n";
+				//std::cout << "MAX: " << int(maxSize * screenX) * int(maxSize * screenX) * 4 << " ";
+				maxSize = int(maxSize * screenX) * int(maxSize * screenX) * 4;
 			}
+			float sunOcclusionFactor = glm::clamp(queryDataForSunFlare / maxSize, 0.f, 1.f);
+			sunOcclusionFactor *= sunOcclusionFactor;
 
 			glm::vec2 center = {0.5,0.5};
 			glm::vec2 sunPos = sunProjectedCoords;
 			glm::vec2 vectorTwardsCenter = (center - sunPos) * 2.f;
 
-			float globalBrightness = 1 - (glm::length(center - sunPos) / 0.6f);
+			float globalBrightness = (1 - (glm::length(center - sunPos) / 0.6f)) * sunOcclusionFactor;
 
 			if (globalBrightness > 0)
 			{
@@ -2808,7 +2832,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 					float distanceToCenter = glm::distance(flarePos, center);
 					float alpha = 1.f - (distanceToCenter / glm::length(vectorTwardsCenter));
-					alpha = glm::clamp(alpha, 0.f, 1.f) * 0.24;
+					alpha = glm::clamp(alpha, 0.3f, 1.f) * 0.35;
 					alpha *= globalBrightness;
 
 					renderer2d.renderRectangle({
@@ -4425,3 +4449,39 @@ void Renderer::FBO::clearFBO()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+void QueryObject::create()
+{
+	glGenQueries(1, &id);
+}
+
+void QueryObject::begin()
+{
+	glBeginQuery(GL_SAMPLES_PASSED, id);
+}
+
+void QueryObject::end()
+{
+	glEndQuery(GL_SAMPLES_PASSED);
+}
+
+bool QueryObject::hasResult()
+{
+	GLint available = 0;
+	glGetQueryObjectiv(id, GL_QUERY_RESULT_AVAILABLE, &available);
+	return available == GL_TRUE;
+}
+
+int QueryObject::getQueryResult()
+{
+	if (!hasResult()) { return 0; }
+
+	GLint result = 0;
+	glGetQueryObjectiv(id, GL_QUERY_RESULT, &result);
+	return result;
+}
+
+void QueryObject::clear()
+{
+	glDeleteQueries(1, &id);
+	*this = {};
+}
