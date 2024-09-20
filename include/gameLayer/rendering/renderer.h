@@ -135,7 +135,7 @@ struct Renderer
 
 		struct ShadingSettings
 		{
-			glm::vec3 waterColor = (glm::vec3(6, 27, 43) / 255.f);
+			glm::vec3 waterColor = (glm::vec3(6, 42, 52) / 255.f); // (glm::vec3(6, 27, 43) / 255.f);
 			int tonemapper = 0;
 			glm::vec3 underWaterColor = (glm::vec3(0, 17, 25) / 255.f);
 			float fogDistance = 10 * 16 / 2; //this is controlled by chunk size

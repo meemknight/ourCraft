@@ -226,6 +226,7 @@ namespace AudioEngine
 		SoundCollection(RESOURCES_PATH "/sounds/wool"),
 		SoundCollection(RESOURCES_PATH "/sounds/clay"),
 		SoundCollection(RESOURCES_PATH "/sounds/sandStone"),
+		SoundCollection(RESOURCES_PATH "/sounds/bricks"),
 		
 
 		SoundCollection(RESOURCES_PATH "sounds/toolBreakWood"),
@@ -293,6 +294,11 @@ int getSoundForBlockBreaking(unsigned int type)
 	if (!isBlock(type)) { return 0; }
 	if (type == water) { return 0; }
 
+
+	if(isBricksSound(type))
+	{
+		return AudioEngine::bricks;
+	}
 
 	if (type == gold_block)
 	{

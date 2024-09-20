@@ -29,7 +29,7 @@ void main()
 	vec3 waterIntensity = texture(u_waterDirt, v_texCoords).rgb;
 
 
-	const float lensDirtStrength = 2.0; //final power
+	const float lensDirtStrength = 2.1; //final power
 	const float lensDirtPresence = 1.5; //how easy is it for it to appear
 	readColor = min(readColor, vec3(1,1,1) * 2);
 

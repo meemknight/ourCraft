@@ -106,6 +106,15 @@ bool isAnyWoddenBlock(BlockType type)
 		type == spruce_log;
 }
 
+bool isBricksSound(BlockType type)
+{
+	return type == bricks ||
+		type == tiledStoneBricks;
+
+}
+
+
+
 bool isAnyWoddenLOG(BlockType type)
 {
 	return isWoodPlank(type) ||

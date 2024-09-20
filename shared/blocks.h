@@ -113,6 +113,8 @@ bool isWoodPlank(BlockType type);
 //used for breaking
 bool isAnyWoddenBlock(BlockType type);
 
+bool isBricksSound(BlockType type);
+
 bool isAnyWoddenLOG(BlockType type);
 
 //used for breaking
