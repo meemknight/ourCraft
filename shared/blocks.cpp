@@ -14,17 +14,35 @@ bool isBlockMesh(BlockType type)
 
 bool isStairsMesh(BlockType type)
 {
-	return type == wooden_stairs;
+	return 
+		type == wooden_stairs ||
+		type == bricks_stairts ||
+		type == stone_stairts ||
+		type == cobbleStone_stairts ||
+		type == stoneBricks_stairts ||
+		type == tiledStoneBricks_stairs
+		;
 }
 
 bool isSlabMesh(BlockType type)
 {
-	return type == wooden_slab;
+	return type == wooden_slab ||
+		type == bricks_slabs ||
+		type == stone_slabs ||
+		type == cobbleStone_slabs ||
+		type == stoneBricks_slabs ||
+		type == tiledStoneBricks_slab;
 }
 
 bool isWallMesh(BlockType type)
 {
-	return type == wooden_wall;
+	return type == wooden_wall ||
+		type == bricks_wall ||
+		type == stone_wall ||
+		type == cobbleStone_wall ||
+		type == stoneBricks_wall ||
+		type == tiledStoneBricks_wall;
+
 }
 
 bool isCrossMesh(BlockType type)
@@ -113,8 +131,10 @@ bool isAnyWoddenBlock(BlockType type)
 bool isBricksSound(BlockType type)
 {
 	return type == bricks ||
-		type == tiledStoneBricks;
-
+		type == tiledStoneBricks ||
+		type == bricks_stairts ||
+		type == bricks_slabs ||
+		type == bricks_wall;
 }
 
 
@@ -177,7 +197,24 @@ bool isAnyStone(BlockType type)
 		type == diamond_ore ||
 		type == iron_ore ||
 		type == tiledStoneBricks ||
-		type == gold_block;
+		type == gold_block ||
+
+		type == stone_stairts ||
+		type == stone_slabs ||
+		type == stone_wall ||
+		type == cobbleStone_stairts ||
+		type == cobbleStone_slabs ||
+		type == cobbleStone_wall ||
+		type == tiledStoneBricks_stairs ||
+		type == tiledStoneBricks_slab ||
+		type == tiledStoneBricks_wall ||
+		type == bricks_stairts ||
+		type == bricks_slabs ||
+		type == bricks_wall ||
+
+		type == stoneBricks_stairts ||
+		type == stoneBricks_slabs ||
+		type == stoneBricks_wall;
 }
 
 bool isAnyPlant(BlockType type)

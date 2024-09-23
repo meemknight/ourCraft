@@ -82,7 +82,23 @@ enum BlockTypes : unsigned short
 	wooden_slab,
 	wooden_wall,
 	tiledStoneBricks,
-	blah,
+
+	stone_stairts,
+	stone_slabs,
+	stone_wall,
+	cobbleStone_stairts,
+	cobbleStone_slabs,
+	cobbleStone_wall,
+	tiledStoneBricks_stairs,
+	tiledStoneBricks_slab,
+	tiledStoneBricks_wall,
+	bricks_stairts,
+	bricks_slabs,
+	bricks_wall,
+
+	stoneBricks_stairts,
+	stoneBricks_slabs,
+	stoneBricks_wall,
 
 	BlocksCount
 };

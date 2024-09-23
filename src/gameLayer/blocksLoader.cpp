@@ -91,6 +91,7 @@ const char *texturesNames[] = {
 	"white_wool",			//79
 	"tiledStoneBrick",		//80
 
+
 };
 
 //front
@@ -293,6 +294,32 @@ uint16_t blocksLookupTable[] = {
 
 	//tiled_stone_brick
 	80, 80, 80, 80, 80, 80,
+
+
+	//stone stairs slabs wall
+	29, 29, 29, 29, 29, 29,
+	29, 29, 29, 29, 29, 29,
+	29, 29, 29, 29, 29, 29,
+
+	//cobble stone stairs slabs wall
+	8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8,
+
+	//tiles stone bricks stairs slabs wall
+	80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80,
+	80, 80, 80, 80, 80, 80,
+	
+	//bricks stairs slabs wall
+	10, 10, 10, 10, 10, 10,
+	10, 10, 10, 10, 10, 10,
+	10, 10, 10, 10, 10, 10,
+
+	//stone bricks stairs slabs wall
+	20, 20, 20, 20, 20, 20,
+	20, 20, 20, 20, 20, 20,
+	20, 20, 20, 20, 20, 20,
 };
 
 void fixAlphaForNormals(unsigned char *buffer, int w, int h)
