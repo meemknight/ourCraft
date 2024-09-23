@@ -91,6 +91,9 @@ bool DroppedItemServer::update(float deltaTime, decltype(chunkGetterSignature) *
 							item.counter += p.second.item.counter;
 							othersDeleted.insert(p.first);
 							c->entityData.droppedItems.erase(p.first);
+
+							stayTimer = std::max(stayTimer, p.second.stayTimer);
+
 							break;
 						}
 						else if(item.counter < stackSize && p.second.item.counter < stackSize)

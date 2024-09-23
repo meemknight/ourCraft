@@ -37,7 +37,6 @@ struct EntityIdHolder
 	//todo an init method and stuff
 	void create()
 	{
-		//we skip the player entity
 		for (int i = 0; i < EntitiesTypesCount; i++)
 		{
 			entityIds[i] = RESERVED_CLIENTS_ID + 1;

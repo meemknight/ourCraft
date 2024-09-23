@@ -26,6 +26,11 @@ inline unsigned char getEntityTypeFromEID(std::uint64_t eid)
 	return (eid >> 56);
 }
 
+inline unsigned char getOnlyIdFromEID(std::uint64_t eid)
+{
+	return ((eid << 6) >> 6);
+}
+
 template<typename B>
 struct EntityGetter
 {

@@ -922,7 +922,10 @@ void serverWorkerUpdate(
 							serverAllows = 0;
 						}
 
-						if (i.t.entityId >= RESERVED_CLIENTS_ID)
+					
+						if (
+							getEntityTypeFromEID(i.t.entityId) != EntityType::droppedItems ||
+							getOnlyIdFromEID(i.t.entityId)  >= RESERVED_CLIENTS_ID)
 						{
 							//todo well this can cause problems
 							//so we should better do a hard reset here

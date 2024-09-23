@@ -18,14 +18,20 @@ struct PlayerInventory;
 struct ClientEntityManager : public EntityDataClient
 {
 
+	ClientEntityManager()
+	{
+		for (int i = 0; i < EntitiesTypesCount; i++)
+		{
+			entityIds[i] = 1;
+		}
+	}
 
 	LocalPlayer localPlayer;
 
 	void dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int playerSquareDistance);
 
-	std::uint64_t idCounter = 1;
-
-	std::uint64_t consumeId();
+	std::uint64_t entityIds[EntitiesTypesCount] = {};
+	std::uint64_t consumeId(unsigned short entityType);
 
 	//leave count 0 to drop the full stack
 	bool dropItemByClient(glm::dvec3 playerPos, 

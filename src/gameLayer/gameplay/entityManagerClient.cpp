@@ -92,14 +92,17 @@ void ClientEntityManager::dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int 
 	
 }
 
-std::uint64_t ClientEntityManager::consumeId()
+std::uint64_t ClientEntityManager::consumeId(unsigned short entityType)
 {
-	auto rez = idCounter;
-	idCounter++;
-	if (idCounter >= RESERVED_CLIENTS_ID)
+	auto rez = entityIds[entityType];
+	entityIds[entityType]++;
+	if (entityIds[entityType] >= RESERVED_CLIENTS_ID)
 	{
-		idCounter = 1;
+		entityIds[entityType] = 1;
 	}
+
+	rez |= ((std::uint64_t)((unsigned char)entityType)) << 56;
+
 	return rez;
 }
 
@@ -118,7 +121,7 @@ bool ClientEntityManager::dropItemByClient(
 
 	if (count == 0) { count = from->counter; }
 
-	std::uint64_t newEntityId = consumeId();
+	std::uint64_t newEntityId = consumeId(EntityType::droppedItems);
 
 	if (!newEntityId) { return 0; }
 

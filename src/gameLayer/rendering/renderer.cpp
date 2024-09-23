@@ -1118,6 +1118,7 @@ void Renderer::create()
 	glGenBuffers(1, &automatixExposureReadBUffer);
 	glBindBuffer(GL_PIXEL_PACK_BUFFER, automatixExposureReadBUffer);
 	glBufferData(GL_PIXEL_PACK_BUFFER, 4 * sizeof(GLfloat), NULL, GL_STREAM_READ);
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 
 
 	{
@@ -2537,6 +2538,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			}
 		}
 
+		glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 
 	}
 #pragma endregion
@@ -2808,8 +2810,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	//warp
 	if (underWater)
 	{
-
-		printf("Yesssss");
 
 		programData.GPUProfiler.startSubProfile("under water post process");
 
