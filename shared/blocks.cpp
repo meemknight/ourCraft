@@ -38,8 +38,6 @@ bool isControlBlock(BlockType type)
 
 bool isOpaque(BlockType type)
 {
-	//todo all leaves ?
-
 	return
 		type != BlockTypes::air
 		&& type != BlockTypes::torch

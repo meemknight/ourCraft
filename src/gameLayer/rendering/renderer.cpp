@@ -495,12 +495,43 @@ float vertexData[] = {
 		0, 0.5, -0.5,
 		0, 0, -0.5,
 
-	//top slabs!!!
+	//bottom slabs!!!
 	//top
 	-0.5, 0, -0.5,
 	-0.5, 0, 0.5,
 	0.5, 0, 0.5,
 	0.5, 0, -0.5,
+
+	//half top
+	//front
+			0.5, 0.5, 0.5,
+			-0.5, 0.5, 0.5,
+			-0.5, 0.0, 0.5,
+			0.5, 0.0, 0.5,
+
+			//back
+			-0.5, 0.0, -0.5,
+			-0.5, 0.5, -0.5,
+			0.5, 0.5, -0.5,
+			0.5, 0.0, -0.5,
+
+			//left
+			-0.5, 0.0, 0.5,
+			-0.5, 0.5, 0.5,
+			-0.5, 0.5, -0.5,
+			-0.5, 0.0, -0.5,
+
+			//right
+			0.5, 0.5, -0.5,
+			0.5, 0.5, 0.5,
+			0.5, 0.0, 0.5,
+			0.5, 0.0, -0.5,
+
+		//bottom moddle part
+		0.5, 0.0, 0.5,
+		-0.5, 0.0, 0.5,
+		-0.5, 0.0, -0.5,
+		0.5, 0.0, -0.5,
 
 };
 
@@ -870,8 +901,39 @@ float vertexUV[] = {
 		0, 1,
 		0, 0,
 
-	//top slabs!!!
+	//bottom slabs!!!
 	//top
+	1, 1,
+	0, 1,
+	0, 0,
+	1, 0,
+
+	//half botom
+	//front
+		1, 0.5,
+		0, 0.5,
+		0, 0,
+		1, 0,
+
+		//back
+		0, 0,
+		0, 0.5,
+		1, 0.5,
+		1, 0,
+
+		//left
+		1, 0,
+		1, 0.5,
+		0, 0.5,
+		0, 0,
+
+		//right
+		1, 0.5,
+		0, 0.5,
+		0, 0,
+		1, 0,
+
+	//bottom
 	1, 1,
 	0, 1,
 	0, 0,
@@ -1051,6 +1113,11 @@ void Renderer::create()
 	fboLastFramePositions.create(GL_RGB16F, false);
 	fboHBAO.create(GL_RED, false);
 	fboSkyBox.create(GL_R11F_G11F_B10F, false);
+
+
+	glGenBuffers(1, &automatixExposureReadBUffer);
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, automatixExposureReadBUffer);
+	glBufferData(GL_PIXEL_PACK_BUFFER, 4 * sizeof(GLfloat), NULL, GL_STREAM_READ);
 
 
 	{
@@ -2418,6 +2485,63 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	}
 
+
+#pragma region get automatic exposure
+	if(0)
+	{
+		static bool reading = 0;
+
+		if (!reading)
+		{
+
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, fboMain.color);
+			glGenerateMipmap(GL_TEXTURE_2D);
+
+			GLint mipLevels = 1 + (GLint)floor(log2(std::max(screenX, screenY)));
+			// Bind the texture at the last mip level
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, mipLevels - 1);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipLevels - 1);
+
+			glBindBuffer(GL_PIXEL_PACK_BUFFER, automatixExposureReadBUffer);
+
+			glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fboOnlyFirstTarget);
+			glReadBuffer(GL_COLOR_ATTACHMENT0); // Assuming you are reading from a framebuffer
+			glReadPixels(0, 0, 1, 1, GL_RGB, GL_FLOAT, 0); // Reading to the PBO
+
+
+
+			//reset
+			glBindTexture(GL_TEXTURE_2D, fboMain.color);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipLevels - 1);
+			reading = 1;
+		}else
+		{
+			glBindBuffer(GL_PIXEL_PACK_BUFFER, automatixExposureReadBUffer);
+			GLfloat *ptr = (GLfloat *)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+
+			if (ptr)
+			{
+				averageLuminosity = glm::dot(glm::vec3(ptr[0], ptr[1], ptr[2]), glm::vec3(0.2126, 0.7152, 0.0722));
+				//std::cout << averageLuminosity << "\n";
+				std::cout << ptr[0] << " " <<  ptr[1] << " " << ptr[2] << "\n";
+
+				glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+				reading = 0;
+			}
+			else
+			{
+				//std::cout << "no\n";
+			}
+		}
+
+
+	}
+#pragma endregion
+
+
 #pragma region get bloom filtered data
 	{
 		glEnable(GL_BLEND);
@@ -2684,6 +2808,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	//warp
 	if (underWater)
 	{
+
+		printf("Yesssss");
+
 		programData.GPUProfiler.startSubProfile("under water post process");
 
 		glBindVertexArray(vaoQuad);

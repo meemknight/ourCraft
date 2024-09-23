@@ -937,8 +937,30 @@ Block *ChunkSystem::rayCast(glm::dvec3 from, glm::vec3 dir, glm::ivec3 &outPos,
 		{
 			if (!b->air())
 			{
-				outPos = intPos;
-				return b;
+				
+				bool collide = 0;
+
+
+				collide = boxColideBlockWithCollider(pos, glm::dvec3(0, 0, 0),
+					intPos, b->getCollider());
+
+				if (b->hasSecondCollider())
+				{
+					collide |= boxColideBlockWithCollider(pos, glm::dvec3(0, 0, 0),
+						intPos, b->getSecondCollider());
+				}
+
+
+				if(collide)
+				{
+					outPos = intPos;
+					return b;
+				}
+				else
+				{
+					prevBlockForPlace = std::nullopt;
+				}
+				
 			}
 			else
 			{
@@ -1098,7 +1120,7 @@ void ChunkSystem::dropChunkAtIndexSafe(int index, BigGpuBuffer *gpuBuffer)
 bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot,
 	UndoQueue &undoQueue, glm::dvec3 playerPos,
 	LightSystem &lightSystem, PlayerInventory &inventory, bool decreaseCounter, 
-	int faceDirection)
+	int faceDirection, int topPartForSlabs)
 {
 	Chunk *chunk = 0;
 	auto b = getBlockSafeAndChunk(pos.x, pos.y, pos.z, chunk);
@@ -1125,6 +1147,10 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot
 			if (block.hasRotationFor365RotationTypeBlocks())
 			{
 				block.setRotationFor365RotationTypeBlocks(faceDirection);
+			}
+			else if (block.isSlabMesh())
+			{
+				block.setTopPartForSlabs(topPartForSlabs);
 			}
 
 			Packet_ClientPlaceBlock packetData = {};

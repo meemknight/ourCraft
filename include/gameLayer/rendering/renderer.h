@@ -36,8 +36,11 @@ struct QueryObject
 struct Renderer
 {
 
+	//todo reset these
 	int sunFlareQueryPos = 0;
 	QueryObject sunFlareQueries[3] = {};
+	float averageLuminosity = 0;
+
 
 	struct FBO
 	{
@@ -359,6 +362,8 @@ struct Renderer
 	GLuint bluredColorBuffer[2];
 	glm::ivec2 filterBloomSize = {};
 	int currentMips = 0;
+
+	GLuint automatixExposureReadBUffer = 0;
 
 
 	GLuint drawCommandsOpaqueBuffer;

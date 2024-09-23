@@ -226,81 +226,70 @@ bool boxColideBlockWithCollider(glm::dvec3 p1, glm::vec3 s1, glm::ivec3 b, Block
 }
 
 
-/*
-//https://stackoverflow.com/questions/3235385/given-a-bounding-box-and-a-line-two-points-determine-if-the-line-intersects-t
-
-bool getIntersection(float fDst1, float fDst2, glm::dvec3 P1, glm::dvec3 P2, glm::dvec3 &Hit)
+bool lineIntersectBoxGetPos(glm::dvec3 start, glm::dvec3 dir, glm::dvec3 box, glm::dvec3 size,
+	glm::dvec3 &outPos, float &outDist, int &outFace
+)
 {
-	if ((fDst1 * fDst2) >= 0.0f) return false;
-	if (fDst1 == fDst2) return false;
-	Hit = P1 + (P2 - P1) * (double)(-fDst1 / (fDst2 - fDst1));
 
-	return true;
-}
 
-bool inBox(glm::dvec3 Hit, glm::dvec3 B1, glm::dvec3 B2, int Axis)
-{
-	if (Axis == 1 && Hit.z > B1.z && Hit.z < B2.z && Hit.y > B1.y && Hit.y < B2.y) return true;
-	if (Axis == 2 && Hit.z > B1.z && Hit.z < B2.z && Hit.x > B1.x && Hit.x < B2.x) return true;
-	if (Axis == 3 && Hit.x > B1.x && Hit.x < B2.x && Hit.y > B1.y && Hit.y < B2.y) return true;
-	return false;
-}
+	dir = glm::normalize(dir);
+	glm::dvec3 planeBottom = {box};
+	glm::dvec3 planeFront = {box + glm::dvec3(0,0,size.z / 2)};
+	glm::dvec3 planeBack = {box + glm::dvec3(0,0,-size.z / 2)};
+	glm::dvec3 planeTop = {box + glm::dvec3(0,size.y,0)};
+	glm::dvec3 planeLeft = {box + glm::dvec3(-size.x / 2,0,0)};
+	glm::dvec3 planeRight = {box + glm::dvec3(size.x / 2,0,0)};
 
-bool checkLineBox(glm::dvec3 B1, glm::dvec3 B2, glm::dvec3 L1, glm::dvec3 L2, glm::dvec3 &Hit)
-{
-	if (L2.x < B1.x && L1.x < B1.x) return false;
-	if (L2.x > B2.x && L1.x > B2.x) return false;
-	if (L2.y < B1.y && L1.y < B1.y) return false;
-	if (L2.y > B2.y && L1.y > B2.y) return false;
-	if (L2.z < B1.z && L1.z < B1.z) return false;
-	if (L2.z > B2.z && L1.z > B2.z) return false;
-	if (L1.x > B1.x && L1.x < B2.x &&
-		L1.y > B1.y && L1.y < B2.y &&
-		L1.z > B1.z && L1.z < B2.z)
+	//std::cout << planeBottom.x << " " << planeBottom.y << " " << planeBottom.z << " ---- \n";
+	//std::cout << start.x << " " << start.y << " " << start.z << " ---- \n";
+
+	outDist = 99999999999999.f;
+	bool retVal = 0;
+	
+
+	auto doTest = [&](glm::dvec3 plane, glm::dvec3 normal, int face)
 	{
-		Hit = L1;
-		return true;
-	}
+		double distance = 0;
+		if (glm::intersectRayPlane(start, dir, plane, normal, distance))
+		{
+			if (distance >= 0)
+			{
+				glm::dvec3 intersectPoint = start + dir * distance;
 
-	if (getIntersection(L1.x - B1.x, L2.x - B1.x, L1, L2, Hit))
-	{
-		if(inBox(Hit, B1, B2, 1)){return true;z}
-	}
+				if (pointInsideBox(intersectPoint, box, size, 0.000001))
+				{
+					if (distance < outDist)
+					{
+						outDist = distance;
+						retVal = true;
+						outFace = face;
+						outPos = intersectPoint;
+					}
+
+					return 1;
+				}
+			};
+		}
+		return 0;
+	};
+
+	doTest(planeFront, {0,0,1}, 0);
+	doTest(planeBack, {0,0,-1}, 1);
+	doTest(planeTop, {0,1,0}, 2);
+	doTest(planeBottom, {0,-1,0}, 3);
+	doTest(planeLeft, {-1,0,0}, 4);
+	doTest(planeRight, {1,0,0}, 5);
 
 
+	return retVal;
 
-	if (getIntersection(L1.y - B1.y, L2.y - B1.y, L1, L2, Hit))
-	{
-		if (inBox(Hit, B1, B2, 2)) { return true; }
-
-	}
-		|| (getIntersection(L1.z - B1.z, L2.z - B1.z, L1, L2, Hit) && inBox(Hit, B1, B2, 3))
-		|| (getIntersection(L1.x - B2.x, L2.x - B2.x, L1, L2, Hit) && inBox(Hit, B1, B2, 1))
-		|| (getIntersection(L1.y - B2.y, L2.y - B2.y, L1, L2, Hit) && inBox(Hit, B1, B2, 2))
-		|| (getIntersection(L1.z - B2.z, L2.z - B2.z, L1, L2, Hit) && inBox(Hit, B1, B2, 3)))
-		return true;
-
-	return false;
 }
-
-
-bool lineIntersectBox(glm::dvec3 start, glm::dvec3 dir, glm::dvec3 p2, glm::dvec3 size)
-{
-	glm::dvec3 min = {p2.x - size.x / 2.f, p2.y, p2.x - size.z / 2.f};
-	glm::dvec3 max = {p2.x + size.x / 2.f, p2.y + size.y, p2.x + size.z / 2.f};
-	glm::dvec3 hit = {};
-
-	return checkLineBox(start, start + dir, min, max, hit);
-}
-*/
-
-
 
 
 bool lineIntersectBox(glm::dvec3 start, glm::dvec3 dir, glm::dvec3 box, glm::dvec3 size)
 {
 
-	if (pointInsideBox(start, box, size, 0.2))
+	if (pointInsideBox(start, box, size, 0.1))
 	{
 		return 1;
 	}
@@ -327,7 +316,7 @@ bool lineIntersectBox(glm::dvec3 start, glm::dvec3 dir, glm::dvec3 box, glm::dve
 				glm::dvec3 intersectPoint = start + dir * distance;
 
 				//std::cout << distance << " ";
-				if (pointInsideBox(intersectPoint, box, size, 0.2))
+				if (pointInsideBox(intersectPoint, box, size, 0.1))
 				{
 					return 1;
 				}
@@ -336,7 +325,7 @@ bool lineIntersectBox(glm::dvec3 start, glm::dvec3 dir, glm::dvec3 box, glm::dve
 		return 0;
 	};
 
-	if (doTest(planeBottom, {0,1,0})) { return 1; };
+	if (doTest(planeBottom, {0,-1,0})) { return 1; };
 	if (doTest(planeTop, {0,1,0})) { return 1; };
 	if (doTest(planeFront, {0,0,1})) { return 1; };
 	if (doTest(planeBack, {0,0,-1})) { return 1; };

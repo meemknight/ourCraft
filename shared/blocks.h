@@ -82,6 +82,7 @@ enum BlockTypes : unsigned short
 	wooden_slab,
 	wooden_wall,
 	tiledStoneBricks,
+	blah,
 
 	BlocksCount
 };
@@ -192,8 +193,21 @@ struct Block
 	void setRotationFor365RotationTypeBlocks(int rotation)
 	{
 		rotation <<= 10;
-		typeAndFlags &= 0b1111'1100'1111'1111;
+		typeAndFlags &= 0b1111'0011'1111'1111;
 		typeAndFlags |= rotation;
+	}
+
+	void setTopPartForSlabs(int topPart)
+	{
+		topPart = (bool)topPart;
+		topPart <<= 10;
+		typeAndFlags &= 0b1111'1011'1111'1111;
+		typeAndFlags |= topPart;
+	}
+
+	bool getTopPartForSlabs()
+	{
+		return (typeAndFlags >> 10) & 0b0000'01;
 	}
 
 	//used for stairs, or furnace type blocks
@@ -220,11 +234,29 @@ struct Block
 
 	BlockCollider getCollider()
 	{
-		if (isSlabMesh() || isStairsMesh())
+
+		if (isStairsMesh())
 		{
 			BlockCollider b{};
 			b.size.y = 0.5;
 			return b;
+		}
+
+		if (isSlabMesh())
+		{
+			if (getTopPartForSlabs())
+			{
+				BlockCollider b{};
+				b.size.y = 0.5;
+				b.offset.y = 0.5;
+				return b;
+			}
+			else
+			{
+				BlockCollider b{};
+				b.size.y = 0.5;
+				return b;
+			}
 		}
 
 		return BlockCollider{};
@@ -267,9 +299,9 @@ struct Block
 
 		}
 
-			BlockCollider b;
-			b.size = {};
-			return b;
+		BlockCollider b;
+		b.size = {};
+		return b;
 	}
 
 	//rename is animated leaves

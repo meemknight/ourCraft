@@ -815,6 +815,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	Block *raycastBlock = 0;
 	glm::uint64 targetedEntity = 0;
 	float raycastDist = 0;
+	bool topPartForSlabs = 0;
 
 	int facingDirection = gameData.c.getViewDirectionRotation();
 	//std::cout << facingDirection << "\n";
@@ -835,9 +836,43 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		if (raycastBlock)
 		{
+
+			glm::dvec3 intersectPos = {};
+			float intersectDist = 0;
+			int intersectFace = 0;
+
+			if (lineIntersectBoxGetPos(cameraRayPos, gameData.c.viewDirection, glm::dvec3(rayCastPos) -
+				glm::dvec3(0, 0.5, 0), glm::dvec3(1.f), intersectPos, intersectDist, intersectFace))
+			{
+
+				//const char * names[] = {"front", "back", "top", "bottom", "left", "right"};
+				//std::cout << names[intersectFace] << "\n";
+
+				//top
+				if (intersectFace == 2)
+				{
+					topPartForSlabs = 0;
+				}
+				else if (intersectFace == 3) //bottom
+				{
+					topPartForSlabs = 1;
+				}
+				else if (intersectPos.y - int(intersectPos.y) < 0.5)
+				{
+					topPartForSlabs = 1;
+				}else
+				{
+					topPartForSlabs = 0;
+				}
+				//std::cout << (topPartForSlabs ? "top\n" : "bottom\n");
+
+			}
+
+
+
+
 			dist = raycastDist - 0.1;
 		}
-
 
 		targetedEntity = gameData.entityManager.intersectAllAttackableEntities(cameraRayPos,
 			gameData.c.viewDirection, dist);
@@ -1011,7 +1046,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 										gameData.lightSystem,
 										player.inventory,
 										player.otherPlayerSettings.gameMode == OtherPlayerSettings::SURVIVAL,
-										facingDirection
+										facingDirection, topPartForSlabs
 									);
 
 									AudioEngine::playSound(getSoundForBlockStepping(item.type),
