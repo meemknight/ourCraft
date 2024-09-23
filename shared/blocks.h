@@ -95,6 +95,8 @@ bool isStairsMesh(BlockType type);
 
 bool isSlabMesh(BlockType type);
 
+bool isWallMesh(BlockType type);
+
 bool isCrossMesh(BlockType type);
 
 bool isControlBlock(BlockType type);
@@ -213,7 +215,7 @@ struct Block
 	//used for stairs, or furnace type blocks
 	bool hasRotationFor365RotationTypeBlocks()
 	{
-		return getType() == wooden_stairs;
+		return isStairsMesh() || isWallMesh();
 	}
 
 	void setType(BlockType t)
@@ -240,8 +242,7 @@ struct Block
 			BlockCollider b{};
 			b.size.y = 0.5;
 			return b;
-		}
-
+		}else
 		if (isSlabMesh())
 		{
 			if (getTopPartForSlabs())
@@ -255,6 +256,39 @@ struct Block
 			{
 				BlockCollider b{};
 				b.size.y = 0.5;
+				return b;
+			}
+		}else
+		if (isWallMesh())
+		{
+			int rotation = getRotationFor365RotationTypeBlocks();
+
+			if (rotation == 0)
+			{
+				BlockCollider b{};
+				b.size.z = 0.5;
+				b.offset.z = -0.25;
+				return b;
+			}
+			else if (rotation == 2)
+			{
+				BlockCollider b{};
+				b.size.z = 0.5;
+				b.offset.z = 0.25;
+				return b;
+			}
+			else if (rotation == 1)
+			{
+				BlockCollider b{};
+				b.size.x = 0.5;
+				b.offset.x = -0.25;
+				return b;
+			}
+			else if (rotation == 3)
+			{
+				BlockCollider b{};
+				b.size.x = 0.5;
+				b.offset.x = 0.25;
 				return b;
 			}
 		}
@@ -324,6 +358,11 @@ struct Block
 		return ::isStairsMesh(getType());
 	}
 
+	bool isWallMesh()
+	{
+		return ::isWallMesh(getType());
+	}
+
 	bool isSlabMesh()
 	{
 		return ::isSlabMesh(getType());
@@ -381,7 +420,9 @@ struct Block
 
 	bool stopsGrassFromGrowingIfOnTop()
 	{
-		return isColidable() && !isAnyLeaves(getType());
+		return isColidable() && !isAnyLeaves(getType())
+			&& !isWallMesh() && !(isSlabMesh() && getTopPartForSlabs())
+			;
 	}
 
 	float getFriction();
