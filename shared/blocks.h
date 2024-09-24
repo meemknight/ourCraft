@@ -100,6 +100,8 @@ enum BlockTypes : unsigned short
 	stoneBricks_slabs,
 	stoneBricks_wall,
 
+	structureBase,
+
 	BlocksCount
 };
 
@@ -451,7 +453,8 @@ namespace InteractionTypes
 	enum 
 	{
 		none = 0,
-		craftingTable = 1,
+		craftingTable,
+		structureBaseBlock,
 	};
 
 };

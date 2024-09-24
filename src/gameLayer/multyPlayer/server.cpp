@@ -680,6 +680,8 @@ void serverWorkerUpdate(
 						if (legal)
 						{
 							auto lastBlock = b->getType();
+							chunk->removeBlockWithData({convertedX,
+								i.t.pos.y, convertedZ}, lastBlock);
 							b->setType(i.t.blockType);
 							chunk->otherData.dirty = true;
 
@@ -828,6 +830,8 @@ void serverWorkerUpdate(
 						if (legal)
 						{
 							auto lastBlock = b->getType();
+							chunk->removeBlockWithData({convertedX,
+								i.t.pos.y, convertedZ}, lastBlock);
 							*b = actualPlacedBLock;
 							chunk->otherData.dirty = true;
 

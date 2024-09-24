@@ -9,8 +9,15 @@
 #include "multyPlayer/undoQueue.h"
 #include "chunk.h"
 #include <rendering/bigGpuBuffer.h>
+#include <gameplay/blocks/blocksWithData.h>
 
 struct LightSystem;
+
+struct ChunkDataClient
+{
+	Chunk chunk;
+	BlocksWithDataHolder blockData;
+};
 
 
 struct ChunkSystem

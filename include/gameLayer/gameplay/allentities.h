@@ -66,7 +66,7 @@ struct EntityGetter
 
 };
 
-
+//server
 struct EntityData: public EntityGetter<EntityData>
 {
 	std::unordered_map <std::uint64_t, PlayerServer*> players;

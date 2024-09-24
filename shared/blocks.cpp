@@ -261,6 +261,9 @@ unsigned char isInteractable(BlockType type)
 	if (type == BlockTypes::craftingTable)
 	{
 		return InteractionTypes::craftingTable;
+	}else if (type == BlockTypes::structureBase)
+	{
+		return InteractionTypes::structureBaseBlock;
 	}
 
 	return InteractionTypes::none;

@@ -1911,13 +1911,23 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	if (!gameData.isInsideMapView)
 	{
-		programData.ui.renderGameUI(deltaTime, w, h, gameData.currentItemSelected,
-			player.inventory, programData.blocksLoader, gameData.insideInventoryMenu,
-			cursorSelected, itemToCraft,
-			(gameData.blockInteractionType == InteractionTypes::craftingTable),
-			gameData.currentInventoryTab, player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE,
-			selectedCreativeItem, player.life, programData, player
-		);
+
+		if (gameData.blockInteractionType == InteractionTypes::structureBaseBlock)
+		{
+
+		}
+		else
+		{
+			programData.ui.renderGameUI(deltaTime, w, h, gameData.currentItemSelected,
+				player.inventory, programData.blocksLoader, gameData.insideInventoryMenu,
+				cursorSelected, itemToCraft,
+				(gameData.blockInteractionType == InteractionTypes::craftingTable),
+				gameData.currentInventoryTab, player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE,
+				selectedCreativeItem, player.life, programData, player
+			);
+		}
+
+
 	}
 	else
 	{

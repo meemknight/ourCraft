@@ -5,6 +5,7 @@
 
 #include <platformTools.h>
 #include <repeat.h>
+#include <gameplay/blocks/blocksWithData.h>
 
 
 template<class T>
@@ -1629,4 +1630,16 @@ void ServerChunkStorer::hitEntityByPlayer(std::uint64_t eid,
 
 }
 
+void SavedChunk::removeBlockWithData(glm::ivec3 pos,
+	std::uint16_t blockType)
+{
 
+	if (blockType == BlockTypes::structureBase)
+	{
+		blockData.baseBlocks.erase(getBlockPosInChunkToHashValue(pos.x, 
+			pos.y, pos.z));
+	}
+
+
+
+}

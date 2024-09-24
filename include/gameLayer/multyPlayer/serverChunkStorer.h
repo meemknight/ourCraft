@@ -8,6 +8,7 @@
 #include <gameplay/droppedItem.h>
 #include <gameplay/allentities.h>
 #include <gameplay/physics.h>
+#include <gameplay/blocks/blocksWithData.h>
 
 
 //https://www.geeksforgeeks.org/how-to-create-an-unordered_map-of-user-defined-class-in-cpp/
@@ -102,6 +103,11 @@ struct SavedChunk
 	}otherData;
 
 	EntityData entityData;
+
+	BlocksWithDataHolder blockData;
+
+	//removes the data for a block with data
+	void removeBlockWithData(glm::ivec3 pos, std::uint16_t blockType);
 };
 
 struct SendBlocksBack
@@ -169,6 +175,7 @@ struct ServerChunkStorer
 
 	void hitEntityByPlayer(std::uint64_t eid, glm::dvec3 playerPosition,
 		Item &weapon, bool &wasKilled, glm::vec3 dir);
+
 };
 
 

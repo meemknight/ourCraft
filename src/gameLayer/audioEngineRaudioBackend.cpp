@@ -198,7 +198,10 @@ namespace AudioEngine
 
 			auto &picked = sounds[s];
 
+			float pitch = 5.0;
+
 			SetSoundVolume(picked, volume);
+			SetSoundPitch(picked, pitch);
 			PlaySound(picked);
 		}
 	};

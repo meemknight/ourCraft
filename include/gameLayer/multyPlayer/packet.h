@@ -88,7 +88,7 @@ enum : std::uint32_t
 	headerRespawnPlayer,
 	headerClientDamageLocally,
 	headerClientDamageLocallyAndDied,
-
+	headerUpdateSimpleBlockWithData,
 };
 
 enum 
@@ -101,6 +101,12 @@ enum
 	SERVER_CHANNELS
 
 };
+
+struct Packet_UpdateSimpleBlockWithData
+{
+	std::uint16_t blockType = 0;
+};
+
 
 struct Packet_DisconectOtherPlayer
 {
