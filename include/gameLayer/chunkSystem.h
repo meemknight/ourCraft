@@ -13,13 +13,6 @@
 
 struct LightSystem;
 
-struct ChunkDataClient
-{
-	Chunk chunk;
-	BlocksWithDataHolder blockData;
-};
-
-
 struct ChunkSystem
 {
 

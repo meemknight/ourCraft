@@ -316,6 +316,75 @@ namespace glui
 		
 	}
 
+
+	void renderTextInput(gl2d::Renderer2D &renderer, const std::string &str,
+		char *text, size_t textSizeWithNullChar, const std::string &typedInput,
+		gl2d::Font &f, glm::vec4 transform, glm::vec4 colors, const gl2d::Texture texture,
+		bool displayText,
+		bool enabled
+	)
+	{
+		size_t n = textSizeWithNullChar;
+		int pos = strlen(text);
+
+		bool hovered = 0;
+		bool clicked = 0;
+
+		if (enabled)
+		{
+			for (auto i : typedInput)
+			{
+				if (i == 8) //backspace
+				{
+					if (pos > 0)
+					{
+						pos--;
+						text[pos] = 0;
+					}
+				}
+				else if (i == '\n')
+				{
+					//ignore
+				}
+				else
+				{
+					if (pos < n - 1)
+					{
+						text[pos] = i;
+						pos++;
+						text[pos] = 0;
+					}
+				}
+			}
+		}
+
+		if (texture.id != 0)
+		{
+			renderFancyBox(renderer, transform,
+				colors, texture, hovered, clicked);
+		}
+
+		std::string textCopy = text;
+
+		if (displayText)
+		{
+			textCopy = getString(str) + textCopy;
+		}
+
+		if (enabled)
+		{
+			//if ((int)timer % 2)
+			//{
+			//	textCopy += "|";
+			//}
+		}
+
+		renderText(renderer, textCopy, f, transform, Colors_White, true,
+			!hovered);
+
+	}
+	
+
 	glm::vec4 computeTextureNewPosition(glm::vec4 transform, gl2d::Texture t)
 	{
 		auto tsize = t.GetSize();

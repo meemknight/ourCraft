@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 
 #include <metrics.h>
+#include <gameplay/blocks/blocksWithData.h>
 
 struct BigGpuBuffer;
 
@@ -70,6 +71,7 @@ struct ChunkData
 #define DECLARE_FLAG(N, I)	bool is##N () { return flags[ I ]; } \
 void set##N (bool flag) { flags[ I ] = flag; }
 
+//this is for the client
 struct Chunk
 {
 	Chunk()
@@ -79,6 +81,9 @@ struct Chunk
 	}
 
 	ChunkData data;
+
+	BlocksWithDataHolder blockData;
+
 
 	GLuint opaqueGeometryBuffer = 0;
 	GLuint opaqueGeometryIndex = 0;

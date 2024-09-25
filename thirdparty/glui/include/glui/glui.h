@@ -260,6 +260,13 @@ namespace glui
 	void renderText(gl2d::Renderer2D &renderer, const std::string &str, gl2d::Font &f, glm::vec4 transform,
 		glm::vec4 color, bool noTexture, bool minimize = true, bool alignLeft = false);
 
+	void renderTextInput(gl2d::Renderer2D &renderer, const std::string &str,
+		char *text, size_t textSizeWithNullChar, const std::string &typedInput,
+		gl2d::Font &f, glm::vec4 transform, glm::vec4 colors, const gl2d::Texture texture,
+		bool displayText,
+		bool enabled
+	);
+
 	void renderTexture(gl2d::Renderer2D &renderer, glm::vec4 transform, gl2d::Texture t, gl2d::Color4f c, glm::vec4 textureCoordonates);
 
 	bool drawButton(gl2d::Renderer2D &renderer, glm::vec4 transform, glm::vec4 color,

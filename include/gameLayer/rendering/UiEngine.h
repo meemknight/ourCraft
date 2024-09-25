@@ -10,6 +10,7 @@ struct CraftingTableInventory;
 struct Life;
 struct ProgramData;
 struct LocalPlayer;
+struct BaseBlock;
 
 struct UiENgine
 {
@@ -53,6 +54,11 @@ struct UiENgine
 		bool insideCraftingTable, int &currentInventoryTab, bool isCreative,
 		unsigned short &selectedItem, Life &playerHealth, ProgramData &programData,
 		LocalPlayer &player
+		);
+
+	bool renderBaseBlockUI(float deltaTime,
+		int w, int h, ProgramData &programData, 
+		BaseBlock &baseBlock
 		);
 
 };

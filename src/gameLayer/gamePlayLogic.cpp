@@ -71,9 +71,16 @@ struct GameData
 
 	int currentItemSelected = 0;
 
+	struct InteractionData
+	{
+		unsigned char blockInteractionType = 0;
+		glm::ivec3 blockInteractionPosition = {0, -1, 0};
+		BaseBlock baseBlockHolder = {};
+
+	}interaction;
 	unsigned char currentBlockInteractionRevisionNumber = 0;
-	unsigned char blockInteractionType = 0;
-	glm::ivec3 blockInteractionPosition = {0, -1, 0};
+
+
 
 	bool insideInventoryMenu = 0;
 	int currentInventoryTab = 0;
@@ -253,7 +260,7 @@ void dealDamageToLocalPlayer(int damage)
 void exitInventoryMenu()
 {
 
-	if (gameData.blockInteractionType)
+	if (gameData.interaction.blockInteractionType)
 	{
 
 		Packet_RecieveExitBlockInteraction packetData;
@@ -264,8 +271,7 @@ void exitInventoryMenu()
 			true, channelChunksAndBlocks);
 	}
 
-	gameData.blockInteractionType = 0;
-	gameData.blockInteractionPosition = {0, -1, 0};
+	gameData.interaction = {};
 
 	gameData.insideInventoryMenu = false;
 }
@@ -322,8 +328,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		if (shouldExitBlockInteraction)
 		{
 			//exit block interaction
-			gameData.blockInteractionPosition = {0,-1,0};
-			gameData.blockInteractionType = 0;
+			gameData.interaction = {};
 			gameData.insideInventoryMenu = 0;
 		}
 
@@ -476,7 +481,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	if (gameData.killed)
 	{
 		gameData.insideInventoryMenu = false;
-		gameData.blockInteractionType = 0;
+		gameData.interaction = {};
 	}
 
 
@@ -496,7 +501,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		else
 		{
 			gameData.insideInventoryMenu = true;
-			gameData.blockInteractionType = 0;
+			gameData.interaction = {};
 		}
 	}
 
@@ -969,8 +974,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					if (platform::isRMousePressed())
 					{
 						bool didAction = 0;
-
-						auto b = gameData.chunkSystem.getBlockSafe(rayCastPos);
+						Chunk *c = 0;
+						auto b = gameData.chunkSystem.getBlockSafeAndChunk(rayCastPos.x, 
+							rayCastPos.y, rayCastPos.z, c);
 						if(b)
 						{
 							
@@ -980,9 +986,22 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 							{
 								didAction = true;
 
+
+								gameData.interaction = {};
 								gameData.currentBlockInteractionRevisionNumber++;
-								gameData.blockInteractionType = actionType;
-								gameData.blockInteractionPosition = rayCastPos;
+								gameData.interaction.blockInteractionType = actionType;
+								gameData.interaction.blockInteractionPosition = rayCastPos;
+
+								if (actionType == InteractionTypes::structureBaseBlock)
+								{
+									auto baseBlock = c->blockData.getBaseBlock(
+										modBlockToChunk(rayCastPos.x), rayCastPos.y, modBlockToChunk(rayCastPos.z));
+									if (baseBlock)
+									{
+										gameData.interaction.baseBlockHolder = *baseBlock;
+									}
+								};
+
 
 								sendBlockInteractionMessage(player.entityId, rayCastPos,
 									b->getType(), gameData.currentBlockInteractionRevisionNumber);
@@ -1888,7 +1907,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	if (gameData.insideInventoryMenu)
 	{
-		if (gameData.blockInteractionType == InteractionTypes::craftingTable)
+		if (gameData.interaction.blockInteractionType == InteractionTypes::craftingTable)
 		{
 			itemToCraft = craft9(player.inventory.crafting);
 		}
@@ -1912,16 +1931,34 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	if (!gameData.isInsideMapView)
 	{
 
-		if (gameData.blockInteractionType == InteractionTypes::structureBaseBlock)
+		if (gameData.interaction.blockInteractionType == InteractionTypes::structureBaseBlock)
 		{
+			if (programData.ui.renderBaseBlockUI(deltaTime, w, h, programData,
+				gameData.interaction.baseBlockHolder))
+			{
 
+				auto c = gameData.chunkSystem.
+					getChunkSafeFromBlockPos(gameData.interaction.blockInteractionPosition.x,
+					gameData.interaction.blockInteractionPosition.z);
+
+				if (c)
+				{
+					auto blockData = c->blockData.getOrCreateBaseBlock(
+						modBlockToChunk(gameData.interaction.blockInteractionPosition.x),
+						gameData.interaction.blockInteractionPosition.y,
+						modBlockToChunk(gameData.interaction.blockInteractionPosition.z));
+
+					*blockData = gameData.interaction.baseBlockHolder;
+				}
+
+			}
 		}
 		else
 		{
 			programData.ui.renderGameUI(deltaTime, w, h, gameData.currentItemSelected,
 				player.inventory, programData.blocksLoader, gameData.insideInventoryMenu,
 				cursorSelected, itemToCraft,
-				(gameData.blockInteractionType == InteractionTypes::craftingTable),
+				(gameData.interaction.blockInteractionType == InteractionTypes::craftingTable),
 				gameData.currentInventoryTab, player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE,
 				selectedCreativeItem, player.life, programData, player
 			);
@@ -1987,7 +2024,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 						//craft one
 						*cursor = itemToCraft;
-						if (gameData.blockInteractionType == InteractionTypes::craftingTable)
+						if (gameData.interaction.blockInteractionType == InteractionTypes::craftingTable)
 						{
 							player.inventory.craft9();
 						}
@@ -2007,7 +2044,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 							if (cursor->counter + itemToCraft.counter <= cursor->getStackSize())
 							{
 								cursor->counter += itemToCraft.counter;
-								if (gameData.blockInteractionType == InteractionTypes::craftingTable)
+								if (gameData.interaction.blockInteractionType == InteractionTypes::craftingTable)
 								{
 									player.inventory.craft9();
 								}

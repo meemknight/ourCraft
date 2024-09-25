@@ -5,6 +5,7 @@
 #include <gameplay/life.h>
 #include <gamePlayLogic.h>
 #include <gameplay/player.h>
+#include <gameplay/blocks/structureBaseBlock.h>
 
 float determineTextSize(gl2d::Renderer2D &renderer, const std::string &str,
 	gl2d::Font &f, glm::vec4 transform, bool minimize = true)
@@ -940,6 +941,50 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 	}
 
 
+}
+
+bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
+	ProgramData &programData, BaseBlock &baseBlock)
+{
+
+	if (w != 0 && h != 0)
+	{
+
+		glui::Frame f({0,0, w, h});
+
+		auto textBox = glui::Box().xCenter().yTopPerc(0.3).xDimensionPercentage(0.8).
+			yDimensionPixels(150)();
+
+		renderer2d.renderRectangle({0,0,w,h}, {0.1,0.1,0.1,0.1});
+
+
+
+		//glui::renderTextInput(renderer2d, "", baseBlock.name,
+		//	sizeof(baseBlock.name), platform::getTypedInput(), font,
+		//	textBox, Colors_Gray, buttonTexture, false, true);
+
+		menuRenderer.Begin(5391);
+		menuRenderer.SetAlignModeFixedSizeWidgets({0,150});
+
+		menuRenderer.InputText("##123", baseBlock.name, sizeof(baseBlock.name), Colors_Gray,
+			buttonTexture);
+
+		glm::ivec3 offset = {baseBlock.offsetX,baseBlock.offsetY,baseBlock.offsetZ};
+		glm::ivec3 size = {baseBlock.sizeX, baseBlock.sizeY, baseBlock.sizeZ};
+
+		menuRenderer.sliderInt("Offset X", &offset.x, -16, 16, Colors_White, buttonTexture, Colors_Gray);
+		menuRenderer.sliderInt("Offset Y", &offset.x, -16, 16, Colors_White, buttonTexture, Colors_Gray);
+		menuRenderer.sliderInt("Offset Z", &offset.x, -16, 16, Colors_White, buttonTexture, Colors_Gray);
+
+
+		bool rez = menuRenderer.Button("Save", Colors_Gray, buttonTexture);
+
+		menuRenderer.End();
+
+		return rez;
+	}
+
+	return false;
 }
 
 void Oscilator::update(float deltaTime)
