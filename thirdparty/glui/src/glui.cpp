@@ -431,12 +431,13 @@ namespace glui
 		renderer.renderRectangle(newPos, t, c);
 	}
 
-	void renderSliderFloat(gl2d::Renderer2D &renderer, glm::vec4 transform, float *value, float min, float max, 
+	bool renderSliderFloat(gl2d::Renderer2D &renderer, glm::vec4 transform, float *value, float min, float max, 
 		bool &sliderBeingDragged,
 		gl2d::Texture barT, gl2d::Color4f barC, gl2d::Texture ballT, 
 		gl2d::Color4f ballC, RendererUi::Internal::InputData &input)
 	{
 
+		bool returnVal = 0;
 		float barSize = 7;
 		float barIndent = 16;
 		float bulletSize = 14.f;
@@ -500,6 +501,10 @@ namespace glui
 			mouseVal *= max - min;
 			mouseVal += min;
 
+			if (*value != mouseVal)
+			{
+				returnVal = true;
+			}
 			*value = mouseVal;
 		}
 		else
@@ -509,13 +514,16 @@ namespace glui
 
 		renderFancyBox(renderer, bulletTransform, ballC, ballT,
 			hovered, clicked);
+
+		return returnVal;
 	}
 
-	void renderSliderInt(gl2d::Renderer2D &renderer, glm::vec4 transform, int *value, int min, int max,
+	bool renderSliderInt(gl2d::Renderer2D &renderer, glm::vec4 transform, int *value, int min, int max,
 		bool &sliderBeingDragged,
 		gl2d::Texture barT, gl2d::Color4f barC, gl2d::Texture ballT, gl2d::Color4f ballC, RendererUi::Internal::InputData &input)
 	{
 
+		bool returnVal = 0;
 		float barSize = 7;
 		float barIndent = 16;
 		float bulletSize = 14.f;
@@ -579,6 +587,10 @@ namespace glui
 			mouseVal *= max - min;
 			mouseVal += min;
 
+			if (*value != mouseVal)
+			{
+				returnVal = true;
+			}
 			*value = mouseVal;
 		}
 		else
@@ -589,6 +601,7 @@ namespace glui
 		renderFancyBox(renderer, bulletTransform, ballC, ballT,
 			hovered, clicked);
 
+		return returnVal;
 	}
 
 	float timer=0;
@@ -658,7 +671,7 @@ namespace glui
 		bool escapeReleased, const std::string& typedInput, 
 		float deltaTime,
 		bool *anyButtonPressed, bool *backPressed, bool *anyCustomWidgetPressed
-		, bool *anyToggleToggeled, bool *anyToggleDetoggeled
+		, bool *anyToggleToggeled, bool *anyToggleDetoggeled, bool *andSliderDragged
 	)
 	{
 		if (anyButtonPressed) { *anyButtonPressed = 0; }
@@ -666,6 +679,7 @@ namespace glui
 		if (anyCustomWidgetPressed) { *anyCustomWidgetPressed = 0; }
 		if (anyToggleToggeled) { *anyToggleToggeled = 0; }
 		if (anyToggleDetoggeled) { *anyToggleDetoggeled = 0; }
+		if (andSliderDragged) { *andSliderDragged = 0; }
 
 		if (!idWasSet)
 		{
@@ -1348,10 +1362,17 @@ namespace glui
 
 						text = getString(text) + ": " + s.str();
 
-						renderSliderFloat(renderer, sliderTransform,
+						if(renderSliderFloat(renderer, sliderTransform,
 							value, j.second.min, j.second.max, j.second.pd.sliderBeingDragged,
 							j.second.texture, j.second.colors, 
-							j.second.textureOver, j.second.colors2, input);
+							j.second.textureOver, j.second.colors2, input))
+						{
+							if (andSliderDragged)
+							{
+								*andSliderDragged = 1;
+							}
+						}
+
 
 						renderText(renderer, text, font, textTransform, j.second.colors3,
 							true);
@@ -1456,9 +1477,15 @@ namespace glui
 
 						text = getString(text) + ": " + std::to_string(*value);
 
-						renderSliderInt(renderer, sliderTransform,
+						if (renderSliderInt(renderer, sliderTransform,
 							value, j.second.minInt, j.second.maxInt, j.second.pd.sliderBeingDragged,
-							j.second.texture, j.second.colors, j.second.textureOver, j.second.colors2, input);
+							j.second.texture, j.second.colors, j.second.textureOver, j.second.colors2, input))
+						{
+							if (andSliderDragged)
+							{
+								*andSliderDragged = 1;
+							}
+						}
 
 						renderText(renderer, text, font, textTransform, j.second.colors3, true);
 

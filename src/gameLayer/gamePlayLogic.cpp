@@ -646,18 +646,34 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			{
 				if (platform::isKeyPressedOn(platform::Button::NR1 + i))
 				{
+					if (gameData.currentItemSelected != i)
+					{
+						AudioEngine::playSound(AudioEngine::sounds::uiSlider, UI_SOUND_VOLUME);
+					}
+
 					gameData.currentItemSelected = i;
+
+					
 				}
 			}
 
 			auto scroll = platform::getScroll();
 			if (scroll < -0.5)
-			{
-				gameData.currentItemSelected++;
+			{	
+				if (gameData.currentItemSelected < 8)
+				{
+					AudioEngine::playSound(AudioEngine::sounds::uiSlider, UI_SOUND_VOLUME);
+					gameData.currentItemSelected++;
+				}
+
 			}
 			else if (scroll > 0.5)
 			{
-				gameData.currentItemSelected--;
+				if (gameData.currentItemSelected > 0)
+				{
+					AudioEngine::playSound(AudioEngine::sounds::uiSlider, UI_SOUND_VOLUME);
+					gameData.currentItemSelected--;
+				}
 			}
 
 			gameData.currentItemSelected = std::clamp(gameData.currentItemSelected, 0, 8);

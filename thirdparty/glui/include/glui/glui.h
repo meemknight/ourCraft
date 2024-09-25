@@ -40,7 +40,9 @@ namespace glui
 			bool escapeReleased,
 			const std::string &typedInput,
 			float deltaTime
-			, bool *anyButtonPressed, bool *backPressed, bool *anyCustomWidgetPressed, bool *anyToggleToggeled, bool *anyToggleDetoggeled
+			, bool *anyButtonPressed, bool *backPressed,
+			bool *anyCustomWidgetPressed, bool *anyToggleToggeled,
+			bool *anyToggleDetoggeled, bool *andSliderDragged
 		);
 
 		bool Button(std::string name,
@@ -268,6 +270,10 @@ namespace glui
 	);
 
 	void renderTexture(gl2d::Renderer2D &renderer, glm::vec4 transform, gl2d::Texture t, gl2d::Color4f c, glm::vec4 textureCoordonates);
+
+	bool renderSliderFloat(gl2d::Renderer2D &renderer, glm::vec4 transform, float *value, float min, float max, bool &sliderBeingDragged, gl2d::Texture barT, gl2d::Color4f barC, gl2d::Texture ballT, gl2d::Color4f ballC, RendererUi::Internal::InputData &input);
+
+	bool renderSliderInt(gl2d::Renderer2D &renderer, glm::vec4 transform, int *value, int min, int max, bool &sliderBeingDragged, gl2d::Texture barT, gl2d::Color4f barC, gl2d::Texture ballT, gl2d::Color4f ballC, RendererUi::Internal::InputData &input);
 
 	bool drawButton(gl2d::Renderer2D &renderer, glm::vec4 transform, glm::vec4 color,
 		const std::string &s,

@@ -76,3 +76,4 @@ constexpr static float BREAKED_BLOCK_SOUND_VOLUME = 1.0;
 constexpr static float STEPPING_SOUND_VOLUME = 0.75;
 constexpr static float HIT_SOUND_VOLUME = 0.8;
 constexpr static float FALL_SOUND_VOLUME = 0.65;
+constexpr static float UI_SOUND_VOLUME = 0.9;

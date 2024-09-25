@@ -582,29 +582,33 @@ bool gameLogic(float deltaTime)
 	bool anyCustomWidgetPressed = 0;
 	bool anyToggleToggeled = 0;
 	bool anyToggleDetoggeled = 0;
+	bool andSliderDragged = 0;
 
 	programData.ui.menuRenderer.renderFrame(programData.ui.renderer2d, programData.ui.font, platform::getRelMousePosition(),
 		platform::isLMousePressed(), platform::isLMouseHeld(), platform::isLMouseReleased(),
 		platform::isKeyReleased(platform::Button::Escape), platform::getTypedInput(), deltaTime, &anyButtonPressed, &backPressed,
-		&anyCustomWidgetPressed, &anyToggleToggeled, &anyToggleDetoggeled);
+		&anyCustomWidgetPressed, &anyToggleToggeled, &anyToggleDetoggeled, &andSliderDragged);
 
 
 	if (anyToggleToggeled)
 	{
-		AudioEngine::playSound(AudioEngine::uiOn, 0.9);
+		AudioEngine::playSound(AudioEngine::uiOn, UI_SOUND_VOLUME);
 	}
-	else if(anyToggleDetoggeled)
+	if(anyToggleDetoggeled)
 	{
-		AudioEngine::playSound(AudioEngine::uiOff, 0.9);
+		AudioEngine::playSound(AudioEngine::uiOff, UI_SOUND_VOLUME);
 	}
-	else
 	if (anyButtonPressed)
 	{
-		AudioEngine::playSound(AudioEngine::uiButtonPress, 0.9);
+		AudioEngine::playSound(AudioEngine::uiButtonPress, UI_SOUND_VOLUME);
 	}
-	else if(backPressed)
+	if(backPressed)
 	{
-		AudioEngine::playSound(AudioEngine::uiButtonBack, 0.9);
+		AudioEngine::playSound(AudioEngine::uiButtonBack, UI_SOUND_VOLUME);
+	}
+	if (andSliderDragged)
+	{
+		AudioEngine::playSound(AudioEngine::uiSlider, UI_SOUND_VOLUME);
 	}
 
 
