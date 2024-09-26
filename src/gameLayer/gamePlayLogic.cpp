@@ -1306,7 +1306,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 #pragma region drop entities that are too far
-	//todo we shouldn't drop players!!!!!!1
+	//todo we shouldn't drop players!!!!!!,
+	//we should just not update/draw them instead
 	gameData.entityManager.dropEntitiesThatAreTooFar({blockPositionPlayer.x,blockPositionPlayer.z},
 		gameData.chunkSystem.squareSize);
 
@@ -1579,7 +1580,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				ImGui::SliderFloat("fogGradientUnderWater",
 					&programData.renderer.defaultShader.shadingSettings.fogGradientUnderWater,
 					0, 10);
-
 
 				if (glm::length(programData.renderer.sunPos[0]) != 0)
 				{
@@ -1868,6 +1868,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				&programData.renderer.ssao);
 			//ImGui::Checkbox("Water Refraction",
 			//	&programData.renderer.waterRefraction);
+
+			ImGui::Checkbox("Bloom", &programData.renderer.bloom);
+
 
 			if (ImGui::CollapsingHeader("Music ",
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))

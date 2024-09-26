@@ -2573,9 +2573,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	#pragma endregion
 
 
-	#pragma region copy depth 3
+	//copy depth 3
 		fboCoppy.copyDepthFromOtherFBO(fboMain.fbo, screenX, screenY);
-	#pragma endregion
+	
 
 
 		//render sun moon
@@ -2681,12 +2681,13 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	#pragma region render entities
 		programData.GPUProfiler.startSubProfile("entities");
 		renderEntities(deltaTime, c, modelsManager, blocksLoader,
-			entityManager, vp, viewMatrix, c.getProjectionMatrix(), posFloat, posInt,
-			programData.renderer.defaultShader.shadingSettings.exposure, chunkSystem, skyLightIntensity, 
+			entityManager, vp, c.getProjectionMatrix(), viewMatrix, posFloat, posInt,
+			programData.renderer.defaultShader.shadingSettings.exposure, chunkSystem, skyLightIntensity,
 			currentSkinBindlessTexture, playerClicked, playerRunning, playerHand, currentHeldItemIndex);
 		programData.GPUProfiler.endSubProfile("entities");
 	#pragma endregion
 
+	//copy depth 3
 		fboCoppy.copyDepthFromOtherFBO(fboMain.fbo, screenX, screenY);
 
 		//disable bloom for transparent geometry
@@ -2767,9 +2768,16 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	}
 #pragma endregion
 
+	bool lastBloomChannel = 0;
+	if (bloom)
+	{
+		programData.GPUProfiler.startSubProfile("Bloom");
 
 #pragma region get bloom filtered data
+	if(bloom)
 	{
+		glDisable(GL_DEPTH_TEST);
+
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE);
 		glBlendEquation(GL_FUNC_ADD);
@@ -2801,10 +2809,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	}
 #pragma endregion
 
-
 #pragma region bloom blur
-	bool lastBloomChannel = 0;
-	if (1)
+	if (bloom)
 	{
 		glBindVertexArray(vaoQuad);
 
@@ -2932,6 +2938,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	}
 #pragma endregion
 
+		programData.GPUProfiler.endSubProfile("Bloom");
+	};
 
 
 #pragma region post process
@@ -2998,7 +3006,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	GLuint currentTexture = 0;
 
 	//bloom
+	if(bloom)
 	{
+		glDisable(GL_DEPTH_TEST);
 
 		applyBloomDataShader.shader.bind();
 
@@ -3310,6 +3320,7 @@ void Renderer::renderDecal(glm::ivec3 position, Camera &c, Block b, ProgramData 
 
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 	
 	glDisable(GL_BLEND);
