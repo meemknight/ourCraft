@@ -4,7 +4,7 @@
 BaseBlock *BlocksWithDataHolder::getBaseBlock
 (unsigned char x, unsigned char y, unsigned char z)
 {
-	auto hash = getBlockPosInChunkToHashValue(x, y, z);
+	auto hash = fromBlockPosInChunkToHashValue(x, y, z);
 
 	auto found = baseBlocks.find(hash);
 
@@ -20,7 +20,7 @@ BaseBlock *BlocksWithDataHolder::getBaseBlock
 
 BaseBlock *BlocksWithDataHolder::getOrCreateBaseBlock(unsigned char x, unsigned char y, unsigned char z)
 {
-	auto hash = getBlockPosInChunkToHashValue(x, y, z);
+	auto hash = fromBlockPosInChunkToHashValue(x, y, z);
 
 	auto found = baseBlocks.find(hash);
 
@@ -36,7 +36,7 @@ BaseBlock *BlocksWithDataHolder::getOrCreateBaseBlock(unsigned char x, unsigned 
 	}
 }
 
-std::uint16_t getBlockPosInChunkToHashValue(unsigned char x, unsigned char y, unsigned char z)
+std::uint16_t fromBlockPosInChunkToHashValue(unsigned char x, unsigned char y, unsigned char z)
 {
 	assert(x < 16);
 	assert(z < 16);

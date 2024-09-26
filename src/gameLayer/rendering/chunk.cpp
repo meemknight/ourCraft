@@ -1909,6 +1909,73 @@ void Chunk::clearGpuData(BigGpuBuffer *gpuBuffer)
 	}
 }
 
+void Chunk::removeBlockDataFromThisPos(Block lastBlock,
+	std::uint8_t x, std::uint8_t y, std::uint8_t z)
+{
+
+	auto type = lastBlock.getType();
+	if (type == BlockTypes::structureBase)
+	{
+		blockData.baseBlocks.erase(fromBlockPosInChunkToHashValue(x, y, z));
+	}
+
+
+}
+
+std::vector<unsigned char> Chunk::getExtraDataForThisPosAndRemoveIt(Block lastBlock,
+	std::uint8_t x, std::uint8_t y, std::uint8_t z)
+{
+	std::vector<unsigned char> rez;
+
+	auto type = lastBlock.getType();
+	if (type == BlockTypes::structureBase)
+	{
+		auto found = blockData.baseBlocks.find(fromBlockPosInChunkToHashValue(x, y, z));
+
+		if (found != blockData.baseBlocks.end())
+		{
+			found->second.formatIntoData(rez);
+			blockData.baseBlocks.erase(found);
+		}
+
+	}
+
+	return rez;
+}
+
+void Chunk::addExtraDataToBlock(std::vector<unsigned char> &data, unsigned char x, unsigned char y, unsigned char z)
+{
+
+	//todo change later to unsafe get!
+	auto b = this->safeGet(x, y, z);
+
+	permaAssertComment(b, "error in addExtraDataToBlock");
+
+	if (b)
+	{
+	
+		auto type = b->getType();
+
+		if(type == BlockTypes::structureBase)
+		{
+			BaseBlock baseBlock;
+			size_t _ = 0;
+			if(baseBlock.readFromBuffer(data.data(), data.size(), _))
+			{
+				auto writePlace = blockData.getOrCreateBaseBlock(x, y, z);
+				*writePlace = baseBlock;
+			}
+		
+		}
+
+
+	}
+
+
+}
+
+
+
 void ChunkData::clearLightLevels()
 {
 

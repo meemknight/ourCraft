@@ -134,6 +134,15 @@ struct Chunk
 	void createGpuData();
 
 	void clearGpuData(BigGpuBuffer *gpuBuffer);
+
+	void removeBlockDataFromThisPos(Block lastBlock, std::uint8_t x, 
+		std::uint8_t y, std::uint8_t z);
+
+	std::vector<unsigned char> getExtraDataForThisPosAndRemoveIt(Block lastBlock, std::uint8_t x,
+		std::uint8_t y, std::uint8_t z);
+
+	//the block already needs to be there!
+	void addExtraDataToBlock(std::vector<unsigned char> &data, unsigned char x, unsigned char y, unsigned char z);
 };
 
 #undef DECLARE_FLAG

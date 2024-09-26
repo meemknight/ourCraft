@@ -84,10 +84,11 @@ struct ChunkSystem
 	);
 
 
-	bool placeBlockByClientForce(glm::ivec3 pos, BlockType blockType,
-		UndoQueue &undoQue, glm::dvec3 playerPos,
-		LightSystem &lightSystem);
-
+	//used by the client to place blocks in creative mode using copy paste stuff
+	bool placeBlockByClientForce(glm::ivec3 pos, Block block,
+		UndoQueue &undoQue, LightSystem &lightSystem
+	
+	);
 
 
 
@@ -99,7 +100,8 @@ struct ChunkSystem
 	);
 
 	//just place the block, forcely by server
-	void placeBlockNoClient(glm::ivec3 pos, BlockType type, LightSystem &lightSystem);
+	void placeBlockNoClient(glm::ivec3 pos, Block block,
+		LightSystem &lightSystem, std::vector<unsigned char> *optionalData);
 
 	//internal use
 	void changeBlockLightStuff(glm::ivec3 pos, int currentSkyLightLevel, int currentNormalLightLevel,

@@ -347,6 +347,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			}
 		}
 
+		//undo stuff
 		if (inValidateRevision)
 		{
 			if (gameData.undoQueue.events.empty())
@@ -373,9 +374,14 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 				auto &e = gameData.undoQueue.events[i];
 
-				if (e.type == Event::iPlacedBlock)
+				if (e.type == UndoQueueEvent::iPlacedBlock)
 				{
-					gameData.chunkSystem.placeBlockNoClient(e.blockPos, e.originalBlock, gameData.lightSystem);
+					//todo change!
+					Block block;
+					block.setType(e.originalBlock);
+					gameData.chunkSystem.placeBlockNoClient(e.blockPos, block, gameData.lightSystem,
+						&e.blockData);
+
 
 					if (e.blockPos == gameData.currentBlockBreaking.pos)
 					{
@@ -383,16 +389,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					}
 
 				}
-				else if (e.type == Event::iDroppedItemFromInventory)
+				else if (e.type == UndoQueueEvent::iDroppedItemFromInventory)
 				{
 					gameData.entityManager.removeDroppedItem(e.entityId);
 				}
 
 
 			}
-
-			gameData.entityManager.localPlayer.entity.position = gameData.undoQueue.events[0].playerPos;
-			gameData.entityManager.localPlayer.entity.lastPosition = gameData.undoQueue.events[0].playerPos;
 
 			gameData.undoQueue.events.clear();
 
@@ -1752,10 +1755,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 								{
 									glm::ivec3 pos = gameData.point + glm::ivec3(x, y, z);
 
+									Block block;
+									block.setType(s->unsafeGet(x, y, z));
+
 									//todo implement the bulk version...
 									gameData.chunkSystem.placeBlockByClientForce(pos,
-										s->unsafeGet(x, y, z), gameData.undoQueue,
-										gameData.entityManager.localPlayer.entity.position, gameData.lightSystem);
+										block, gameData.undoQueue,
+										gameData.lightSystem);
 
 								}
 

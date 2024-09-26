@@ -158,8 +158,7 @@ bool ClientEntityManager::dropItemByClient(
 	sendPacket(getServer(), p, (char *)&packetData, sizeof(packetData), true,
 		channelChunksAndBlocks);
 
-	undoQueue.addDropItemFromInventoryEvent(position + glm::dvec3(0, 1.5, 0),
-		position, newEntityId);
+	undoQueue.addDropItemFromInventoryEvent(position + glm::dvec3(0, 1.5, 0), newEntityId);
 
 	{
 		//todo add meta data here
@@ -327,9 +326,9 @@ void ClientEntityManager::addOrUpdateDroppedItem(std::uint64_t eid,
 
 		for (auto &e : undoQueue.events)
 		{
-			if (e.type == Event::iDroppedItemFromInventory && e.entityId == eid)
+			if (e.type == UndoQueueEvent::iDroppedItemFromInventory && e.entityId == eid)
 			{
-				e.type = Event::doNothing;
+				e.type = UndoQueueEvent::doNothing;
 			}
 		}
 

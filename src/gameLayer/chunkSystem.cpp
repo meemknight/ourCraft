@@ -448,8 +448,10 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 			)
 		{
 			//process block placement
-
-			placeBlockNoClient(message.blockPos, message.blockType, lightSystem);
+			//todo change!!!
+			Block block;
+			block.setType(message.blockType);
+			placeBlockNoClient(message.blockPos, block, lightSystem, 0);
 
 			//Chunk *c = 0;
 			//auto rez = getBlockSafeAndChunk(message.blockPos.x, message.blockPos.y, message.blockPos.z, c);
@@ -466,17 +468,14 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 			//ignore message
 		}
 
-
 		//remove undo queue
 
 		for (auto &e :undoQueue.events)
 		{
-
-			if (e.type == Event::iPlacedBlock && e.blockPos == pos)
+			if (e.type == UndoQueueEvent::iPlacedBlock && e.blockPos == pos)
 			{
-				e.type = Event::doNothing;
+				e.type = UndoQueueEvent::doNothing;
 			}
-
 		}
 
 
@@ -1164,10 +1163,21 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot
 				p, (char *)&packetData, sizeof(packetData), 1,
 				channelChunksAndBlocks);
 
-			undoQueue.addPlaceBlockEvent(pos, b->getType(), block.typeAndFlags, playerPos);
+			undoQueue.addPlaceBlockEvent(pos, b->getType(), block.typeAndFlags);
 
 			changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->getType(),
 				block.typeAndFlags, lightSystem);
+
+			
+			//add extra data to undo queue and also that data
+			{
+				std::vector<unsigned char> extraData;
+				extraData = chunk->getExtraDataForThisPosAndRemoveIt(*b, modBlockToChunk(pos.x), pos.y, modBlockToChunk(pos.z));
+				if (extraData.size())
+				{
+					undoQueue.addDataToLastBlockEvent(std::move(extraData));
+				}
+			}
 
 			b->typeAndFlags = block.typeAndFlags;
 			if (b->isOpaque()) { b->lightLevel = 0; }
@@ -1191,8 +1201,8 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot
 	return false;
 }
 
-bool ChunkSystem::placeBlockByClientForce(glm::ivec3 pos, BlockType blockType, 
-	UndoQueue &undoQue, glm::dvec3 playerPos, LightSystem &lightSystem)
+bool ChunkSystem::placeBlockByClientForce(glm::ivec3 pos, Block block,
+	UndoQueue &undoQue, LightSystem &lightSystem)
 {
 	Chunk *chunk = 0;
 	auto b = getBlockSafeAndChunk(pos.x, pos.y, pos.z, chunk);
@@ -1206,20 +1216,33 @@ bool ChunkSystem::placeBlockByClientForce(glm::ivec3 pos, BlockType blockType,
 
 		Packet_ClientPlaceBlockForce packetData = {};
 		packetData.blockPos = pos;
-		packetData.blockType = blockType;
+		packetData.blockType = block.getType();
 		packetData.eventId = undoQue.currentEventId;
 
 		sendPacket(getConnectionData().server,
 			p, (char *)&packetData, sizeof(packetData), 1,
 			channelChunksAndBlocks);
 
-		undoQue.addPlaceBlockEvent(pos, b->getType(), blockType, playerPos);
+		undoQue.addPlaceBlockEvent(pos, b->getType(), block.getType());
 
+
+		//add extra data to undo queue and also that data
+		{
+			std::vector<unsigned char> extraData;
+			extraData = chunk->getExtraDataForThisPosAndRemoveIt(*b, modBlockToChunk(pos.x), pos.y, modBlockToChunk(pos.z));
+			if (extraData.size())
+			{
+				undoQue.addDataToLastBlockEvent(std::move(extraData));
+			}
+		}
+
+		*b = block;
+		
 		changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->getType(),
-			blockType, lightSystem);
-
-		b->setType(blockType);
+			block.getType(), lightSystem);
+		
 		if (b->isOpaque()) { b->lightLevel = 0; }
+
 
 		setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
 
@@ -1256,10 +1279,20 @@ bool ChunkSystem::breakBlockByClient(glm::ivec3 pos, UndoQueue &undoQueue,
 				p, (char *)&packetData, sizeof(packetData), 1,
 				channelChunksAndBlocks);
 
-			undoQueue.addPlaceBlockEvent(pos, b->getType(), BlockTypes::air, playerPos);
+			undoQueue.addPlaceBlockEvent(pos, b->getType(), BlockTypes::air);
 
 			changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->getType(),
 				BlockTypes::air, lightSystem);
+
+			//add extra data to undo queue and also that data
+			{
+				std::vector<unsigned char> extraData;
+				extraData = chunk->getExtraDataForThisPosAndRemoveIt(*b, modBlockToChunk(pos.x), pos.y, modBlockToChunk(pos.z));
+				if (extraData.size())
+				{
+					undoQueue.addDataToLastBlockEvent(std::move(extraData));
+				}
+			}
 
 			b->setType(BlockTypes::air);
 
@@ -1278,7 +1311,8 @@ bool ChunkSystem::breakBlockByClient(glm::ivec3 pos, UndoQueue &undoQueue,
 	return false;
 }
 
-void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, BlockType type, LightSystem &lightSystem)
+void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, Block block, LightSystem &lightSystem,
+	std::vector<unsigned char> *optionalData)
 {
 
 	//this is forcely placed by server
@@ -1287,11 +1321,24 @@ void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, BlockType type, LightSystem
 
 	if (b != nullptr)
 	{
-		changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->getType(), type, lightSystem);
+		chunk->removeBlockDataFromThisPos(*b, modBlockToChunk(pos.x), pos.y, modBlockToChunk(pos.z));
 
-		b->setType(type);
+		*b = block;
+
+		changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->getType(), block.getType(), lightSystem);
+
 		if (b->isOpaque()) { b->lightLevel = 0; }
 
 		setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
+
+
+		//block data
+		if (optionalData && optionalData->size())
+		{
+			//continue here
+			//if(type ==)
+
+
+		}
 	}
 }

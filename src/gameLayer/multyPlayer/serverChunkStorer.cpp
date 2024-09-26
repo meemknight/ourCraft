@@ -1636,7 +1636,7 @@ void SavedChunk::removeBlockWithData(glm::ivec3 pos,
 
 	if (blockType == BlockTypes::structureBase)
 	{
-		blockData.baseBlocks.erase(getBlockPosInChunkToHashValue(pos.x, 
+		blockData.baseBlocks.erase(fromBlockPosInChunkToHashValue(pos.x, 
 			pos.y, pos.z));
 	}
 

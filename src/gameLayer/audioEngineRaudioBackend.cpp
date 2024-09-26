@@ -198,8 +198,8 @@ namespace AudioEngine
 
 			auto &picked = sounds[s];
 
-			float pitch = 0.8f;
-			pitch += 0.4f * ((rand() % 100) / 100.f);
+			float pitch = 0.7f;
+			pitch += 0.3f * ((rand() % 100) / 100.f);
 
 			SetSoundVolume(picked, volume);
 			SetSoundPitch(picked, pitch);

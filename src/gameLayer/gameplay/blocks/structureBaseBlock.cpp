@@ -13,6 +13,7 @@ bool BaseBlock::readFromBuffer(unsigned char *data, size_t s, size_t &outReadSiz
 {
 	outReadSize = 0;
 	if (s < sizeof(BaseBlock)) { return 0; };
+	if (!data) { return 0; }
 
 	memcpy(this, data, sizeof(BaseBlock));
 
