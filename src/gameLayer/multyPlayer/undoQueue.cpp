@@ -1,7 +1,7 @@
 #include "multyPlayer/undoQueue.h"
 
 
-void UndoQueue::addPlaceBlockEvent(glm::ivec3 pos, BlockType old, BlockType newType)
+void UndoQueue::addPlaceBlockEvent(glm::ivec3 pos, Block old, Block newType)
 {
 	UndoQueueEvent e;
 	e.setTimer();

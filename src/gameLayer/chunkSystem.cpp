@@ -1163,7 +1163,7 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot
 				p, (char *)&packetData, sizeof(packetData), 1,
 				channelChunksAndBlocks);
 
-			undoQueue.addPlaceBlockEvent(pos, b->getType(), block.typeAndFlags);
+			undoQueue.addPlaceBlockEvent(pos, *b, block);
 
 			changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->getType(),
 				block.typeAndFlags, lightSystem);
@@ -1223,7 +1223,7 @@ bool ChunkSystem::placeBlockByClientForce(glm::ivec3 pos, Block block,
 			p, (char *)&packetData, sizeof(packetData), 1,
 			channelChunksAndBlocks);
 
-		undoQue.addPlaceBlockEvent(pos, b->getType(), block.getType());
+		undoQue.addPlaceBlockEvent(pos, *b, block);
 
 
 		//add extra data to undo queue and also that data
@@ -1279,7 +1279,9 @@ bool ChunkSystem::breakBlockByClient(glm::ivec3 pos, UndoQueue &undoQueue,
 				p, (char *)&packetData, sizeof(packetData), 1,
 				channelChunksAndBlocks);
 
-			undoQueue.addPlaceBlockEvent(pos, b->getType(), BlockTypes::air);
+			Block airBlock;
+			airBlock.setType(BlockTypes::air);
+			undoQueue.addPlaceBlockEvent(pos, *b, airBlock);
 
 			changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->getType(),
 				BlockTypes::air, lightSystem);
@@ -1321,7 +1323,8 @@ void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, Block block, LightSystem &l
 
 	if (b != nullptr)
 	{
-		chunk->removeBlockDataFromThisPos(*b, modBlockToChunk(pos.x), pos.y, modBlockToChunk(pos.z));
+		glm::ivec3 posInChunk = glm::ivec3(modBlockToChunk(pos.x), pos.y, modBlockToChunk(pos.z));
+		chunk->removeBlockDataFromThisPos(*b, posInChunk.x, posInChunk.y, posInChunk.z);
 
 		*b = block;
 
@@ -1335,9 +1338,16 @@ void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, Block block, LightSystem &l
 		//block data
 		if (optionalData && optionalData->size())
 		{
-			//continue here
-			//if(type ==)
-
+			if (block.getType() == BlockTypes::structureBase)
+			{
+				BaseBlock baseBlock;
+				size_t _ = 0;
+				if (baseBlock.readFromBuffer(optionalData->data(), optionalData->size(), _))
+				{
+					auto rez = chunk->blockData.getOrCreateBaseBlock(posInChunk.x, posInChunk.y, posInChunk.z);
+					*rez = baseBlock;
+				}
+			}
 
 		}
 	}

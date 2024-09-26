@@ -2,6 +2,7 @@
 #include "packet.h"
 #include <deque>
 #include <vector>
+#include <blocks.h>
 
 
 struct UndoQueueEvent
@@ -10,8 +11,8 @@ struct UndoQueueEvent
 
 	glm::ivec3 blockPos = {};
 	glm::dvec3 doublePos = {};
-	BlockType originalBlock = 0;
-	BlockType newBlock = 0;
+	Block originalBlock = {};
+	Block newBlock = {};
 	std::uint64_t entityId = 0;
 	std::uint64_t createTime = 0;
 
@@ -40,7 +41,7 @@ struct UndoQueue
 
 	std::deque<UndoQueueEvent> events;
 
-	void addPlaceBlockEvent(glm::ivec3 pos, BlockType old, BlockType newType);
+	void addPlaceBlockEvent(glm::ivec3 pos, Block old, Block newType);
 	void addDataToLastBlockEvent(std::vector<unsigned char> &dataToSteal);
 
 	void addDropItemFromInventoryEvent(glm::dvec3 pos, std::uint64_t entityId);

@@ -376,12 +376,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 				if (e.type == UndoQueueEvent::iPlacedBlock)
 				{
-					//todo change!
-					Block block;
-					block.setType(e.originalBlock);
-					gameData.chunkSystem.placeBlockNoClient(e.blockPos, block, gameData.lightSystem,
-						&e.blockData);
 
+					gameData.chunkSystem.placeBlockNoClient(e.blockPos, e.originalBlock, gameData.lightSystem,
+						&e.blockData);
 
 					if (e.blockPos == gameData.currentBlockBreaking.pos)
 					{
