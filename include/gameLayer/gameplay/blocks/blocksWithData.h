@@ -19,3 +19,11 @@ struct BlocksWithDataHolder
 	BaseBlock *getOrCreateBaseBlock(unsigned char x, unsigned char y, unsigned char z);
 
 };
+
+
+struct InteractionData
+{
+	unsigned char blockInteractionType = 0;
+	glm::ivec3 blockInteractionPosition = {0, -1, 0};
+	BaseBlock baseBlockHolder = {};
+};

@@ -116,7 +116,7 @@ Client *getClientNotLocked(std::uint64_t cid)
 	return &it->second;
 }
 
-//todo, check if every use of this is good, and that it is ok that it is a copy
+//todo, check if every use of this is good, and that it is ok that it is a copy, or remove it completely
 std::unordered_map<std::uint64_t, Client> getAllClients()
 {
 	auto rez = connections;

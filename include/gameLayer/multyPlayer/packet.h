@@ -89,6 +89,7 @@ enum : std::uint32_t
 	headerClientDamageLocally,
 	headerClientDamageLocallyAndDied,
 	headerUpdateSimpleBlockWithData,
+	headerClientUpdatedBlockData,
 };
 
 enum 
@@ -339,6 +340,13 @@ struct Packet_AttackEntity
 	std::uint64_t entityID = 0;
 	glm::vec3 direction = {};
 	unsigned char inventorySlot = 0;
+};
+
+struct Packet_ClientUpdatedBlockData
+{
+	glm::ivec3 blockPos = {};
+	BlockType blockType = {};
+	unsigned char revisionNumber;
 };
 
 

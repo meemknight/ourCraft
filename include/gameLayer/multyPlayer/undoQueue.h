@@ -25,6 +25,7 @@ struct UndoQueueEvent
 		doNothing = 0, //this happens when the server overwrides your block placement
 		iPlacedBlock,
 		iDroppedItemFromInventory,
+		changedBlockData,
 	};
 
 	void setTimer()
@@ -42,6 +43,7 @@ struct UndoQueue
 	std::deque<UndoQueueEvent> events;
 
 	void addPlaceBlockEvent(glm::ivec3 pos, Block old, Block newType);
+	void changedBlockDataEvent(glm::ivec3 pos, Block block, std::vector<unsigned char> &dataToSteal);
 	void addDataToLastBlockEvent(std::vector<unsigned char> &dataToSteal);
 
 	void addDropItemFromInventoryEvent(glm::dvec3 pos, std::uint64_t entityId);

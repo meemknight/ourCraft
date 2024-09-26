@@ -70,14 +70,8 @@ struct GameData
 	glm::dvec3 lastSendPos = {-INFINITY,0,0};
 
 	int currentItemSelected = 0;
-
-	struct InteractionData
-	{
-		unsigned char blockInteractionType = 0;
-		glm::ivec3 blockInteractionPosition = {0, -1, 0};
-		BaseBlock baseBlockHolder = {};
-
-	}interaction;
+	
+	InteractionData interaction;
 	unsigned char currentBlockInteractionRevisionNumber = 0;
 
 
@@ -378,7 +372,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				{
 
 					gameData.chunkSystem.placeBlockNoClient(e.blockPos, e.originalBlock, gameData.lightSystem,
-						&e.blockData);
+						&e.blockData, gameData.interaction);
 
 					if (e.blockPos == gameData.currentBlockBreaking.pos)
 					{
@@ -389,6 +383,39 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				else if (e.type == UndoQueueEvent::iDroppedItemFromInventory)
 				{
 					gameData.entityManager.removeDroppedItem(e.entityId);
+				}
+				else if (e.type == UndoQueueEvent::changedBlockData)
+				{
+
+					if (e.originalBlock.getType() == BlockTypes::structureBase)
+					{
+
+						BaseBlock block;
+						size_t _ = 0;
+						if (block.readFromBuffer(e.blockData.data(), e.blockData.size(), _))
+						{
+							
+							auto *c = gameData.chunkSystem.getChunkSafeFromBlockPos(e.blockPos.x, e.blockPos.z);
+
+							if (c)
+							{
+
+								auto blockData = c->blockData.getBaseBlock(modBlockToChunk(e.blockPos.x), e.blockPos.y,
+									modBlockToChunk(e.blockPos.z));
+
+								if (blockData)
+								{
+									*blockData = block;
+								}
+
+							}
+
+						}
+
+
+					}
+
+
 				}
 
 
@@ -1248,7 +1275,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	{
 		gameData.gameplayFrameProfiler.startSubProfile("chunkSystem");
 		gameData.chunkSystem.update(blockPositionPlayer, deltaTime, gameData.undoQueue,
-			gameData.lightSystem);
+			gameData.lightSystem, gameData.interaction);
 		gameData.gameplayFrameProfiler.endSubProfile("chunkSystem");
 	}
 
@@ -2044,11 +2071,14 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				gameData.interaction.baseBlockHolder))
 			{
 
+				auto block = gameData.chunkSystem.getBlockSafe(gameData.interaction.blockInteractionPosition.x, gameData.interaction.blockInteractionPosition.y,
+					gameData.interaction.blockInteractionPosition.z);
+
 				auto c = gameData.chunkSystem.
 					getChunkSafeFromBlockPos(gameData.interaction.blockInteractionPosition.x,
 					gameData.interaction.blockInteractionPosition.z);
 
-				if (c)
+				if (c && block)
 				{
 					auto blockData = c->blockData.getOrCreateBaseBlock(
 						modBlockToChunk(gameData.interaction.blockInteractionPosition.x),
@@ -2056,6 +2086,14 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 						modBlockToChunk(gameData.interaction.blockInteractionPosition.z));
 
 					*blockData = gameData.interaction.baseBlockHolder;
+
+					std::vector<unsigned char> vectorData;
+					blockData->formatIntoData(vectorData);
+
+					gameData.undoQueue.changedBlockDataEvent(gameData.interaction.blockInteractionPosition,
+						*block, vectorData);
+
+					//todo send packet
 				}
 
 			}

@@ -53,7 +53,8 @@ struct ChunkSystem
 
 	void cleanup();
 
-	void update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQueue &undoQueue, LightSystem &lightSystem);
+	void update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQueue &undoQueue, LightSystem &lightSystem,
+		InteractionData &interaction);
 	int lastX = 0, lastZ = 0, created = 0;
 
 	glm::ivec3 lastPlayerBlockPosition = {};
@@ -101,7 +102,8 @@ struct ChunkSystem
 
 	//just place the block, forcely by server
 	void placeBlockNoClient(glm::ivec3 pos, Block block,
-		LightSystem &lightSystem, std::vector<unsigned char> *optionalData);
+		LightSystem &lightSystem, std::vector<unsigned char> *optionalData, 
+		InteractionData &playerInteraction);
 
 	//internal use
 	void changeBlockLightStuff(glm::ivec3 pos, int currentSkyLightLevel, int currentNormalLightLevel,

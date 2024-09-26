@@ -885,6 +885,27 @@ void serverWorkerUpdate(
 							sendPlayerInventoryAndIncrementRevision(*client);
 						}
 
+						if (legal)
+						{
+
+							for (auto &c : getAllClientsReff())
+							{
+
+								if (c.second.playerData.interactingWithBlock &&
+									c.second.playerData.currentBlockInteractWithPosition ==
+									i.t.pos
+									)
+								{
+									//close interaction with block.
+									//todo close chests here.
+									c.second.playerData.interactingWithBlock = 0;
+									c.second.playerData.currentBlockInteractWithPosition = {0,-1,0};
+								}
+							}
+
+
+						}
+
 					}
 					else
 					{

@@ -57,7 +57,7 @@ void ChunkSystem::cleanup()
 
 //x and z are the block positions of the player
 void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQueue &undoQueue
-	, LightSystem &lightSystem)
+	, LightSystem &lightSystem, InteractionData &interaction)
 {
 
 
@@ -451,7 +451,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 			//todo change!!!
 			Block block;
 			block.setType(message.blockType);
-			placeBlockNoClient(message.blockPos, block, lightSystem, 0);
+			placeBlockNoClient(message.blockPos, block, lightSystem, 0, interaction);
 
 			//Chunk *c = 0;
 			//auto rez = getBlockSafeAndChunk(message.blockPos.x, message.blockPos.y, message.blockPos.z, c);
@@ -472,7 +472,9 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 		for (auto &e :undoQueue.events)
 		{
-			if (e.type == UndoQueueEvent::iPlacedBlock && e.blockPos == pos)
+			if ((e.type == UndoQueueEvent::iPlacedBlock 
+				|| e.type == UndoQueueEvent::changedBlockData)
+				&& e.blockPos == pos)
 			{
 				e.type = UndoQueueEvent::doNothing;
 			}
@@ -1314,7 +1316,7 @@ bool ChunkSystem::breakBlockByClient(glm::ivec3 pos, UndoQueue &undoQueue,
 }
 
 void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, Block block, LightSystem &lightSystem,
-	std::vector<unsigned char> *optionalData)
+	std::vector<unsigned char> *optionalData, InteractionData &playerInteraction)
 {
 
 	//this is forcely placed by server
@@ -1334,6 +1336,10 @@ void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, Block block, LightSystem &l
 
 		setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
 
+		if (pos == playerInteraction.blockInteractionPosition)
+		{
+			playerInteraction = {};
+		}
 
 		//block data
 		if (optionalData && optionalData->size())
