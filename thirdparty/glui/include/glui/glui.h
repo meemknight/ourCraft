@@ -83,6 +83,16 @@ namespace glui
 			gl2d::Texture sliderTexture = {}, gl2d::Color4f sliderColor = {1,1,1,1},
 			gl2d::Texture ballTexture = {}, gl2d::Color4f ballColor = {1,1,1,1});
 
+		void sliderUint8(std::string name, unsigned char *value, unsigned char min, unsigned char max,
+			gl2d::Color4f textColor = {1,1,1,1},
+			gl2d::Texture sliderTexture = {}, gl2d::Color4f sliderColor = {1,1,1,1},
+			gl2d::Texture ballTexture = {}, gl2d::Color4f ballColor = {1,1,1,1});
+
+		void sliderint8(std::string name, signed char *value, signed char min, signed char max,
+			gl2d::Color4f textColor = {1,1,1,1},
+			gl2d::Texture sliderTexture = {}, gl2d::Color4f sliderColor = {1,1,1,1},
+			gl2d::Texture ballTexture = {}, gl2d::Color4f ballColor = {1,1,1,1});
+
 		void colorPicker(std::string name, float *color3Component, gl2d::Texture sliderTexture = {},
 			gl2d::Texture ballTexture = {}, gl2d::Color4f color = {0,0,0,0}
 			,gl2d::Color4f color2 = {0,0,0,0});

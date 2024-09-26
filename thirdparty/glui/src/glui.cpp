@@ -53,6 +53,8 @@ namespace glui
 		colorPickerW,
 		newColumW,
 		sliderIntW,
+		sliderUint8,
+		sliderint8,
 		customWidget,
 		optionsToggle,
 	};
@@ -603,6 +605,97 @@ namespace glui
 
 		return returnVal;
 	}
+
+	template<class T>
+	bool renderSliderGeneric(gl2d::Renderer2D &renderer, glm::vec4 transform, T *value, T min, T max,
+		bool &sliderBeingDragged,
+		gl2d::Texture barT, gl2d::Color4f barC, gl2d::Texture ballT, gl2d::Color4f ballC, RendererUi::Internal::InputData &input)
+	{
+
+		bool returnVal = 0;
+		float barSize = 7;
+		float barIndent = 16;
+		float bulletSize = 14.f;
+
+		if (MINECRAFT_LOOK_SLIDER)
+		{
+			barSize = transform.w;
+			barIndent = 0;
+			bulletSize = transform.w;
+		}
+
+		glm::vec4 barTransform(transform.x + barIndent, transform.y + (transform.w - barSize) / 2.f,
+			transform.z - barIndent * 2.f, barSize);
+
+		glm::vec4 bulletTransform(barTransform.x, barTransform.y + (barSize - bulletSize) / 2.f,
+			bulletSize / 2.f, bulletSize);
+
+
+		bulletTransform.x += std::max(std::min((*value - min) / (float)(max - min), 1.f), 0.f)
+			* (barTransform.z - bulletTransform.z);
+
+		//todo color
+		renderFancyBox(renderer, barTransform, barC, barT, 0, 0);
+
+		bool hovered = false;
+		bool clicked = false;
+
+		if (sliderBeingDragged == true && input.mouseHeld)
+		{
+			hovered = true;
+			clicked = true;
+		}
+		else
+		{
+			if (aabb(barTransform, input.mousePos))
+			{
+				hovered = true;
+
+				if (input.mouseClick)
+				{
+					clicked = true;
+				}
+			}
+		}
+
+		if (clicked)
+		{
+			sliderBeingDragged = true;
+
+			float ballSizeHalf = bulletTransform.z / 2;
+			int begin = barTransform.x + ballSizeHalf;
+			int end = barTransform.x + barTransform.z - ballSizeHalf;
+
+
+			int mouseX = input.mousePos.x;
+
+			float mouseVal = (mouseX - (float)begin) / (end - (float)begin);
+
+			mouseVal = glm::clamp(mouseVal, 0.f, 1.f);
+
+			mouseVal *= max - min;
+			mouseVal += min;
+
+			
+
+			if (*value != mouseVal)
+			{
+				returnVal = true;
+			}
+			*value = mouseVal;
+		}
+		else
+		{
+			sliderBeingDragged = false;
+		}
+
+		renderFancyBox(renderer, bulletTransform, ballC, ballT,
+			hovered, clicked);
+
+		return returnVal;
+	}
+
+
 
 	float timer=0;
 	bool idWasSet = 0;
@@ -1362,7 +1455,7 @@ namespace glui
 
 						text = getString(text) + ": " + s.str();
 
-						if(renderSliderFloat(renderer, sliderTransform,
+						if(renderSliderGeneric<float>(renderer, sliderTransform,
 							value, j.second.min, j.second.max, j.second.pd.sliderBeingDragged,
 							j.second.texture, j.second.colors, 
 							j.second.textureOver, j.second.colors2, input))
@@ -1451,6 +1544,86 @@ namespace glui
 						break;
 					}
 
+					case widgetType::sliderUint8:
+					{
+						if (j.second.maxInt <= j.second.minInt) { break; }
+
+						auto computedPos = colums[currentColum].first;
+
+						glm::vec4 textTransform{computedPos.x, computedPos.y, computedPos.z / 2, computedPos.w};
+						glm::vec4 sliderTransform{computedPos.x + computedPos.z / 2, computedPos.y, computedPos.z / 2, computedPos.w};
+
+						if (MINECRAFT_LOOK_SLIDER)
+						{
+							textTransform = computedPos;
+							sliderTransform = computedPos;
+						}
+
+						unsigned char *value = (unsigned char *)j.second.pointer;
+						if (!value) { break; }
+
+						*value = std::min(*value, (unsigned char)j.second.maxInt);
+						*value = std::max(*value, (unsigned char)j.second.minInt);
+
+						std::string text = j.first;
+
+						text = getString(text) + ": " + std::to_string(*value);
+
+						if (renderSliderGeneric<unsigned char>(renderer, sliderTransform,
+							value, j.second.minInt, j.second.maxInt, j.second.pd.sliderBeingDragged,
+							j.second.texture, j.second.colors, j.second.textureOver, j.second.colors2, input))
+						{
+							if (andSliderDragged)
+							{
+								*andSliderDragged = 1;
+							}
+						}
+
+						renderText(renderer, text, font, textTransform, j.second.colors3, true);
+
+						break;
+					}
+
+					case widgetType::sliderint8:
+					{
+						if (j.second.maxInt <= j.second.minInt) { break; }
+
+						auto computedPos = colums[currentColum].first;
+
+						glm::vec4 textTransform{computedPos.x, computedPos.y, computedPos.z / 2, computedPos.w};
+						glm::vec4 sliderTransform{computedPos.x + computedPos.z / 2, computedPos.y, computedPos.z / 2, computedPos.w};
+
+						if (MINECRAFT_LOOK_SLIDER)
+						{
+							textTransform = computedPos;
+							sliderTransform = computedPos;
+						}
+
+						signed char *value = (signed char *)j.second.pointer;
+						if (!value) { break; }
+
+						*value = std::min(*value, (signed char)j.second.maxInt);
+						*value = std::max(*value, (signed char)j.second.minInt);
+
+						std::string text = j.first;
+
+						text = getString(text) + ": " + std::to_string(*value);
+
+						if (renderSliderGeneric<signed char>(renderer, sliderTransform,
+							value, j.second.minInt, j.second.maxInt, j.second.pd.sliderBeingDragged,
+							j.second.texture, j.second.colors, j.second.textureOver, j.second.colors2, input))
+						{
+							if (andSliderDragged)
+							{
+								*andSliderDragged = 1;
+							}
+						}
+
+						renderText(renderer, text, font, textTransform, j.second.colors3, true);
+
+						break;
+					}
+
 					case widgetType::sliderIntW: 
 					{
 						if (j.second.maxInt <= j.second.minInt) { break; }
@@ -1477,7 +1650,7 @@ namespace glui
 
 						text = getString(text) + ": " + std::to_string(*value);
 
-						if (renderSliderInt(renderer, sliderTransform,
+						if (renderSliderGeneric<int>(renderer, sliderTransform,
 							value, j.second.minInt, j.second.maxInt, j.second.pd.sliderBeingDragged,
 							j.second.texture, j.second.colors, j.second.textureOver, j.second.colors2, input))
 						{
@@ -1488,8 +1661,6 @@ namespace glui
 						}
 
 						renderText(renderer, text, font, textTransform, j.second.colors3, true);
-
-						
 					
 						break;
 					}
@@ -1927,6 +2098,50 @@ namespace glui
 		widget.textureOver = ballTexture;
 
 		internal.widgetsVector.push_back({name, widget});
+	}
+
+	void RendererUi::sliderint8(std::string name, signed char *value, signed char min, signed char max,
+		gl2d::Color4f textColor,
+		gl2d::Texture sliderTexture, gl2d::Color4f sliderColor,
+		gl2d::Texture ballTexture, gl2d::Color4f ballColor)
+	{
+		Internal::Widget widget = {};
+		widget.type = widgetType::sliderint8;
+		widget.pointer = value;
+		widget.usedThisFrame = true;
+		widget.justCreated = true;
+		widget.minInt = min;
+		widget.maxInt = max;
+		widget.colors = sliderColor;
+		widget.colors2 = ballColor;
+		widget.colors3 = textColor;
+		widget.texture = sliderTexture;
+		widget.textureOver = ballTexture;
+
+		internal.widgetsVector.push_back({name, widget});
+
+	}
+
+	void RendererUi::sliderUint8(std::string name, unsigned char *value, unsigned char min, unsigned char max,
+		gl2d::Color4f textColor,
+		gl2d::Texture sliderTexture, gl2d::Color4f sliderColor,
+		gl2d::Texture ballTexture, gl2d::Color4f ballColor)
+	{
+		Internal::Widget widget = {};
+		widget.type = widgetType::sliderUint8;
+		widget.pointer = value;
+		widget.usedThisFrame = true;
+		widget.justCreated = true;
+		widget.minInt = min;
+		widget.maxInt = max;
+		widget.colors = sliderColor;
+		widget.colors2 = ballColor;
+		widget.colors3 = textColor;
+		widget.texture = sliderTexture;
+		widget.textureOver = ballTexture;
+
+		internal.widgetsVector.push_back({name, widget});
+
 	}
 
 	void RendererUi::sliderInt(std::string name, int *value, int min, int max,

@@ -969,12 +969,14 @@ bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
 		menuRenderer.InputText("##123", baseBlock.name, sizeof(baseBlock.name), Colors_Gray,
 			buttonTexture);
 
-		glm::ivec3 offset = {baseBlock.offsetX,baseBlock.offsetY,baseBlock.offsetZ};
-		glm::ivec3 size = {baseBlock.sizeX, baseBlock.sizeY, baseBlock.sizeZ};
 
-		menuRenderer.sliderInt("Offset X", &offset.x, -16, 16, Colors_White, buttonTexture, Colors_Gray);
-		menuRenderer.sliderInt("Offset Y", &offset.x, -16, 16, Colors_White, buttonTexture, Colors_Gray);
-		menuRenderer.sliderInt("Offset Z", &offset.x, -16, 16, Colors_White, buttonTexture, Colors_Gray);
+		menuRenderer.sliderint8("Offset X", &baseBlock.offsetX, -16, 16, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
+		menuRenderer.sliderint8("Offset Y", &baseBlock.offsetY, -16, 16, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
+		menuRenderer.sliderint8("Offset Z", &baseBlock.offsetZ, -16, 16, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
+
+		menuRenderer.sliderUint8("Size X", &baseBlock.sizeX, 0, 120, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
+		menuRenderer.sliderUint8("Size Y", &baseBlock.sizeY, 0, 120, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
+		menuRenderer.sliderUint8("Size Z", &baseBlock.sizeZ, 0, 120, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
 
 
 		bool rez = menuRenderer.Button("Save", Colors_Gray, buttonTexture);

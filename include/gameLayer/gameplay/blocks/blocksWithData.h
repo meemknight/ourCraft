@@ -8,6 +8,7 @@
 
 std::uint16_t 
 getBlockPosInChunkToHashValue(unsigned char x, unsigned char y, unsigned char z);
+glm::ivec3 fromHashValueToBlockPosinChunk(std::uint16_t hashValue);
 
 struct BlocksWithDataHolder
 {

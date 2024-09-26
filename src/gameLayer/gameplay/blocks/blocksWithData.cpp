@@ -46,7 +46,18 @@ std::uint16_t getBlockPosInChunkToHashValue(unsigned char x, unsigned char y, un
 	rezult = x;
 	rezult <<= 4;
 	rezult |= z;
-	rezult <<= 4;
+	rezult <<= 8;
 	rezult |= y;
 	return rezult;
+}
+
+glm::ivec3 fromHashValueToBlockPosinChunk(std::uint16_t hashValue)
+{
+	glm::ivec3 rez = {};
+
+	rez.x = (hashValue & 0b1111'0000'0000'0000) >> 12;
+	rez.z = (hashValue & 0b0000'1111'0000'0000) >> 8;
+	rez.y = (hashValue & 0b0000'0000'1111'1111);
+
+	return rez;
 }

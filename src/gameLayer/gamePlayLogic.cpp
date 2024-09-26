@@ -1417,6 +1417,91 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2));
 		};
 
+		auto drawBox = [&](glm::dvec3 pos, glm::vec3 boxSize)
+		{
+			programData.gyzmosRenderer.drawLine(pos,
+				pos + glm::dvec3(boxSize.x, 0, 0));
+
+			programData.gyzmosRenderer.drawLine(pos,
+				pos + glm::dvec3(0, 0, boxSize.z));
+
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x, 0, 0),
+				pos + glm::dvec3(boxSize.x, 0, boxSize.z));
+
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(0, 0, boxSize.z),
+				pos + glm::dvec3(boxSize.x, 0, boxSize.z));
+
+
+
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(0,boxSize.y,0),
+				pos + glm::dvec3(boxSize.x, boxSize.y, 0));
+
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(0, boxSize.y, 0),
+				pos + glm::dvec3(0, boxSize.y, boxSize.z));
+
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x, boxSize.y, 0),
+				pos + glm::dvec3(boxSize.x, boxSize.y, boxSize.z));
+
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(0, boxSize.y, boxSize.z),
+				pos + glm::dvec3(boxSize.x, boxSize.y, boxSize.z));
+
+
+			programData.gyzmosRenderer.drawLine(pos,
+				pos + glm::dvec3(0, boxSize.y, 0));
+
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x, 0, 0),
+				pos + glm::dvec3(boxSize.x, boxSize.y, 0));
+
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(0, 0, boxSize.z),
+				pos + glm::dvec3(0, boxSize.y, boxSize.z));
+
+			programData.gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x, 0, boxSize.z),
+				pos + glm::dvec3(boxSize.x, boxSize.y, boxSize.z));
+		};
+
+		if (player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE)
+		{
+			//todo sort the chunks in the chunk system once and than keep that vector because we need it
+			int maxCount = 100;
+			for (auto &c : gameData.chunkSystem.loadedChunks)
+			{
+				if (c)
+				{
+
+					for (auto &b : c->blockData.baseBlocks)
+					{
+
+						glm::ivec3 pos = fromHashValueToBlockPosinChunk(b.first);
+						glm::vec3 size = {b.second.sizeX,b.second.sizeY,b.second.sizeZ};
+
+						if (size.x != 0 && size.y != 0 && size.z != 0)
+						{
+							maxCount--;
+
+							glm::dvec3 posD = pos + glm::ivec3(c->data.x * CHUNK_SIZE,0, c->data.z * CHUNK_SIZE);
+							posD += glm::dvec3(0.5, -0.5, 0.5);
+							posD += glm::ivec3(b.second.offsetX, b.second.offsetY, b.second.offsetZ);
+
+							drawBox(posD, size);
+						}
+
+						if (maxCount <= 0)
+						{
+							break;
+						}
+					}
+
+
+				}
+
+				if (maxCount <= 0)
+				{
+					break;
+				}
+			}
+		};
+
+
 		if (gameData.renderColliders)
 		{
 
