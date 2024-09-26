@@ -43,6 +43,7 @@ namespace AudioEngine
 		clay,
 		sandStone,
 		bricks,
+		gravel,
 
 		toolBreakingWood,
 		toolBreakingStone,
