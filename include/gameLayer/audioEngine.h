@@ -24,6 +24,15 @@ namespace AudioEngine
 
 	void playHurtSound();
 
+	float &getMasterVolume();
+	float &getMusicVolume();
+	float &getUIVolume();
+	float &getSoundsVolume();
+
+	void loadSettingsOrSetToDefaultIfFail();
+
+	void saveSettings();
+
 
 	enum sounds
 	{
@@ -49,17 +58,17 @@ namespace AudioEngine
 		toolBreakingStone,
 		toolBreakingIron,
 
-		uiButtonPress,
-		uiButtonBack,
-		uiOn,
-		uiOff,
-		uiSlider,
-
 		hit,
 		fallLow,
 		fallMedium,
 		fallHigh,
 		hurt,
+
+		uiButtonPress,
+		uiButtonBack,
+		uiOn,
+		uiOff,
+		uiSlider,
 
 
 		LAST_SOUND

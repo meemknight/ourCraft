@@ -2,7 +2,7 @@
 //do not remove this notice
 //(c) Luta Vlad
 // 
-// safeSave 1.0.0
+// safeSave 1.0.1
 // 
 ///////////////////////////////////////////
 

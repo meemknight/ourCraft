@@ -2,7 +2,7 @@
 //do not remove this notice
 //(c) Luta Vlad
 // 
-// safeSave 1.0.0
+// safeSave 1.0.1
 // 
 ///////////////////////////////////////////
 
@@ -858,7 +858,7 @@ namespace sfs
 			}
 			else if (d.type == Entry::Types::float_type)
 			{
-				float f = d.primitives.intData;
+				float f = d.primitives.floatData;
 				ret.push_back(((char *)(&f))[0]);
 				ret.push_back(((char *)(&f))[1]);
 				ret.push_back(((char *)(&f))[2]);

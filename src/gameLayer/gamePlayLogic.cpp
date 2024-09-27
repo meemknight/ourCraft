@@ -2374,7 +2374,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.escapePressed = false;
 		}
 
-		displayRenderSettingsMenuButton(programData);
+		displaySettingsMenuButton(programData);
 
 		displaySkinSelectorMenuButton(programData);
 

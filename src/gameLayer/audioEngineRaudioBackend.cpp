@@ -3,6 +3,8 @@
 #include <vector>
 #include <filesystem>
 #include <blocks.h>
+#include <safeSave.h>
+#include <glm/glm.hpp>
 
 namespace AudioEngine
 {
@@ -11,6 +13,67 @@ namespace AudioEngine
 	std::vector<Music> allMusic;
 	int currentMusicPlaying = 0;
 	bool inited = 0;
+
+	float masterVolume = 0.5;
+	float lastMasterVolume = -1;
+	float musicVolume = 0.5;
+	float lastMusicVolume = -1;
+	float uiVolume = 0.5;
+	float lastUiVolume = 0.5;
+	float soundsVolume = 0.5;
+	float lastSoundsVolume = 0.5;
+
+
+	void setDefaultSettings()
+	{
+		masterVolume = 0.5;
+		musicVolume = 0.5;
+		uiVolume = 0.5;
+		soundsVolume = 0.5;
+
+	}
+
+
+	void loadSettingsOrSetToDefaultIfFail()
+	{
+		setDefaultSettings();
+
+		sfs::SafeSafeKeyValueData data;
+
+		if (sfs::safeLoad(data, RESOURCES_PATH "../playerSettings/soundSettings", 0) == sfs::noError)
+		{
+
+			data.getFloat("masterVolume", masterVolume);
+			data.getFloat("musicVolume", musicVolume);
+			data.getFloat("uiVolume", uiVolume);
+			data.getFloat("soundsVolume", soundsVolume);
+
+		}
+
+		masterVolume = glm::clamp(masterVolume, 0.f, 1.f);
+		musicVolume = glm::clamp(musicVolume, 0.f, 1.f);
+		uiVolume = glm::clamp(uiVolume, 0.f, 1.f);
+		soundsVolume = glm::clamp(soundsVolume, 0.f, 1.f);
+
+
+	}
+
+	void saveSettings()
+	{
+
+
+		sfs::SafeSafeKeyValueData data;
+
+		data.setInt("Version", 1);
+		data.setFloat("masterVolume", masterVolume);
+		data.setFloat("musicVolume", musicVolume);
+		data.setFloat("uiVolume", uiVolume);
+		data.setFloat("soundsVolume", soundsVolume);
+
+		sfs::safeSave(data, RESOURCES_PATH "../playerSettings/soundSettings", 0);
+
+
+	}
 
 	struct MusicIndex
 	{
@@ -118,8 +181,34 @@ namespace AudioEngine
 	{
 		if (!inited) { return; }
 
+
+
+		if (lastMusicVolume != musicVolume ||
+			lastMasterVolume != masterVolume ||
+			lastUiVolume != uiVolume ||
+			lastSoundsVolume != soundsVolume)
+		{
+			saveSettings();
+		}
+
+
+		if (lastMusicVolume != musicVolume || lastMasterVolume != masterVolume)
+		{
+
+			for (auto &m : allMusic)
+			{
+				SetMusicVolume(m, std::powf(musicVolume * masterVolume, 2));
+			}
+		}
+
+
 		UpdateMusicStream(allMusic[currentMusicPlaying]);
 
+
+		lastMusicVolume = musicVolume;
+		lastMasterVolume = masterVolume;
+		lastUiVolume = uiVolume;
+		lastSoundsVolume = soundsVolume;
 
 
 	}
@@ -191,9 +280,13 @@ namespace AudioEngine
 		void playRandomSound(float volume = 1)
 		{
 			if (sounds.size() == 0) { return; }
+			if (volume <= 0.001) { return; }
+
 
 			int s = rand() % sounds.size();
 			if (s == lastSound) { s = rand() % sounds.size(); }
+			//if (IsSoundPlaying(sounds[s])) { s = rand() % sounds.size(); }
+			//if (IsSoundPlaying(sounds[s])) { return; }
 			lastSound = s;
 
 			auto &picked = sounds[s];
@@ -235,11 +328,6 @@ namespace AudioEngine
 		SoundCollection(RESOURCES_PATH "sounds/toolBreakStone"),
 		SoundCollection(RESOURCES_PATH "sounds/toolBreakMetal"),
 
-		SoundCollection(RESOURCES_PATH "/sounds/buttonPress"),
-		SoundCollection(RESOURCES_PATH "/sounds/buttonBack"),
-		SoundCollection(RESOURCES_PATH "/sounds/buttonOn"),
-		SoundCollection(RESOURCES_PATH "/sounds/buttonOff"),
-		SoundCollection(RESOURCES_PATH "/sounds/buttonSlider"),
 
 		SoundCollection(RESOURCES_PATH "/sounds/hit"),
 
@@ -249,6 +337,12 @@ namespace AudioEngine
 
 		SoundCollection(RESOURCES_PATH "/sounds/hurt"),
 
+		SoundCollection(RESOURCES_PATH "/sounds/buttonPress"),
+		SoundCollection(RESOURCES_PATH "/sounds/buttonBack"),
+		SoundCollection(RESOURCES_PATH "/sounds/buttonOn"),
+		SoundCollection(RESOURCES_PATH "/sounds/buttonOff"),
+		SoundCollection(RESOURCES_PATH "/sounds/buttonSlider"),
+
 
 	};
 
@@ -257,6 +351,17 @@ namespace AudioEngine
 		static_assert(sizeof(allSounds) / sizeof(allSounds[0]) == LAST_SOUND);
 
 		if (sound <= none || sound >= LAST_SOUND) { return; }
+
+		level *= masterVolume * masterVolume;
+
+		if (sound >= uiButtonPress)
+		{
+			level *= uiVolume * uiVolume;
+		}
+		else
+		{
+			level *= soundsVolume * soundsVolume;
+		}
 
 		allSounds[sound].playRandomSound(level);
 	}
@@ -270,6 +375,27 @@ namespace AudioEngine
 	{
 		playSound(hurt, HIT_SOUND_VOLUME);
 	}
+
+	float &getMasterVolume()
+	{
+		return masterVolume;
+	}
+
+	float &getMusicVolume()
+	{
+		return musicVolume;
+	}
+
+	float &getUIVolume()
+	{
+		return uiVolume;
+	}
+
+	float &getSoundsVolume()
+	{
+		return soundsVolume;
+	}
+
 
 
 };

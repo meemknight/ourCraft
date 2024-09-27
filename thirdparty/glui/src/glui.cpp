@@ -676,13 +676,12 @@ namespace glui
 			mouseVal *= max - min;
 			mouseVal += min;
 
-			
-
-			if (*value != mouseVal)
+			if (*value != (T)mouseVal)
 			{
 				returnVal = true;
+				std::cout << "Yes ";
 			}
-			*value = mouseVal;
+			*value = (T)mouseVal;
 		}
 		else
 		{
@@ -2053,6 +2052,11 @@ namespace glui
 		widget.usedThisFrame = true;
 		widget.justCreated = true;
 		internal.widgetsVector.push_back({name, widget});
+	}
+
+	void RendererUi::newLine()
+	{
+		Text("", {});
 	}
 
 	void RendererUi::InputText(std::string name, char* text, size_t textSizeWithNullChar,

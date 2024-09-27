@@ -300,13 +300,15 @@ bool initGame() //main server and title screen stuff
 	srand(time(0));
 	createErrorFile();
 
-	programData.GPUProfiler.initGPUProfiler();
+	std::filesystem::create_directory(RESOURCES_PATH "../playerSettings/");
 
+
+	programData.GPUProfiler.initGPUProfiler();
 
 	gl2d::setVsync(false);
 
 	AudioEngine::init();
-
+	AudioEngine::loadSettingsOrSetToDefaultIfFail();
 
 	programData.ui.init();
 
@@ -484,7 +486,7 @@ bool gameLogic(float deltaTime)
 			Colors_Gray, programData.ui.buttonTexture, false);
 
 
-		displayRenderSettingsMenuButton(programData);
+		displaySettingsMenuButton(programData);
 
 		displaySkinSelectorMenuButton(programData);
 

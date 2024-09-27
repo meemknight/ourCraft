@@ -11,8 +11,10 @@ void displayWorldSelectorMenuButton(ProgramData &programData);
 void displayWorldSelectorMenu(ProgramData &programData);
 
 void displayRenderSettingsMenuButton(ProgramData &programData);
-
 void displayRenderSettingsMenu(ProgramData &programData);
+
+void displaySettingsMenuButton(ProgramData &programData);
+void displaySettingsMenu(ProgramData &programData);
 
 bool shouldReloadTexturePacks();
 
@@ -25,5 +27,10 @@ void displayTexturePacksSettingsMenu(ProgramData &programData);
 void displaySkinSelectorMenu(ProgramData &programData);
 
 void displaySkinSelectorMenuButton(ProgramData &programData);
+
+void displayVolumeMenu(ProgramData &programData);
+
+void displayVolumeMenuButton(ProgramData &programData);
+
 
 std::string getSkinName();

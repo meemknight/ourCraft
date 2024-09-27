@@ -4,6 +4,7 @@
 #include <iostream>
 #include <platform/platformInput.h>
 #include "multyPlayer/createConnection.h"
+#include <audioEngine.h>
 
 void displayRenderSettingsMenuButton(ProgramData &programData)
 {
@@ -120,6 +121,25 @@ std::vector<std::filesystem::path> loadedTexturePacks;
 std::unordered_map<std::string, gl2d::Texture> logoTextures;
 
 std::vector<std::filesystem::path> usedTexturePacks{"ourcraft"};
+
+void displaySettingsMenuButton(ProgramData &programData)
+{
+	programData.ui.menuRenderer.BeginMenu("Settings", Colors_Gray, programData.ui.buttonTexture);
+
+	displaySettingsMenu(programData);
+
+	programData.ui.menuRenderer.EndMenu();
+}
+
+void displaySettingsMenu(ProgramData &programData)
+{
+
+	programData.ui.menuRenderer.Text("Settings", Colors_White);
+
+	displayRenderSettingsMenuButton(programData);
+	
+	displayVolumeMenuButton(programData);
+}
 
 bool shouldReloadTexturePacks()
 {
@@ -692,6 +712,28 @@ void displaySkinSelectorMenuButton(ProgramData &programData)
 	displaySkinSelectorMenu(programData);
 
 	programData.ui.menuRenderer.EndMenu();
+}
+
+void displayVolumeMenuButton(ProgramData &programData)
+{
+	programData.ui.menuRenderer.BeginMenu("Audio Settings", Colors_Gray, programData.ui.buttonTexture);
+
+	displayVolumeMenu(programData);
+
+	programData.ui.menuRenderer.EndMenu();
+}
+
+void displayVolumeMenu(ProgramData &programData)
+{
+
+	programData.ui.menuRenderer.Text("Audio Settings", Colors_White);
+
+	programData.ui.menuRenderer.sliderFloat("Master Volume", &AudioEngine::getMasterVolume(), 0, 1, Colors_White, programData.ui.buttonTexture, Colors_Gray, programData.ui.buttonTexture, Colors_White);
+	programData.ui.menuRenderer.newLine();
+	programData.ui.menuRenderer.sliderFloat("Music Volume", &AudioEngine::getMusicVolume(), 0, 1, Colors_White, programData.ui.buttonTexture, Colors_Gray, programData.ui.buttonTexture, Colors_White);
+	programData.ui.menuRenderer.sliderFloat("UI Volume", &AudioEngine::getUIVolume(), 0, 1, Colors_White, programData.ui.buttonTexture, Colors_Gray, programData.ui.buttonTexture, Colors_White);
+	programData.ui.menuRenderer.sliderFloat("Sounds Volume", &AudioEngine::getSoundsVolume(), 0, 1, Colors_White, programData.ui.buttonTexture, Colors_Gray, programData.ui.buttonTexture, Colors_White);
+
 }
 
 
