@@ -93,103 +93,17 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 	auto checkChunkInRadius = [&](glm::ivec2 pos)
 	{
-		glm::vec2 center{squareSize / 2,squareSize / 2};
-		center -= glm::vec2(pos);
+		//glm::vec2 center{squareSize / 2,squareSize / 2};
+		//center -= glm::vec2(pos);
+		//
+		//return std::sqrt(glm::dot(center, center)) <= (squareSize/2);
 
-		return std::sqrt(glm::dot(center, center)) <= (squareSize/2);
+		return isChunkInRadius({playerBlockPosition.x, playerBlockPosition.z},
+			pos + cornerPos);
 	};
 
 	cornerPos = minPos;
 
-
-
-	//TODO
-	//THIS SHOULD BE AFTER SET CHUNKS IN MATRIX!!!!
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-#pragma region recieve chunks by the server
-	auto recievedChunk = getRecievedChunks();
-
-	//chunksToAddLight is in chunk system coordonates space
-	std::vector<glm::ivec2> chunksToAddLight;
-
-	for (auto &i : recievedChunk)
-	{
-
-		//remove from recently requested chunks so we can request again
-		//if needed for some reason
-		{
-			auto f = recentlyRequestedChunks.find({i->data.x, i->data.z});
-			if (f != recentlyRequestedChunks.end())
-			{
-				recentlyRequestedChunks.erase(f); 
-					
-			}
-		}
-
-		int x = i->data.x - minPos.x;
-		int z = i->data.z - minPos.y;
-
-		if (x < 0 || z < 0 || x >= squareSize || z >= squareSize
-			|| !checkChunkInRadius({x,z})
-			)
-		{
-			delete i; // ignore chunk, not of use anymore
-			continue;
-		}
-		else
-		{
-			if (loadedChunks[x * squareSize + z] != nullptr)
-			{
-				delete i; //double request, ignore
-			}
-			else
-			{
-				if (dontUpdateLightSystem)
-				{
-					shouldUpdateLights = true;
-				}
-
-				i->createGpuData();
-				//permaAssert(loadedChunks[x * squareSize + z] == nullptr); //no need for assert we check the if above 
-				loadedChunks[x * squareSize + z] = i;
-
-				int xBegin = i->data.x * CHUNK_SIZE;
-				int zBegin = i->data.z * CHUNK_SIZE;
-
-				if(!dontUpdateLightSystem)
-				{
-					i->setDontDrawYet(true);
-
-					//c is in chunk system coordonates space, not chunk space!
-					chunksToAddLight.push_back({x, z});
-
-					for (int x = 0; x < CHUNK_SIZE; x++)
-						for (int z = 0; z < CHUNK_SIZE; z++)
-							for (int y = 0; y < CHUNK_HEIGHT; y++)
-							{
-
-								auto &b = i->unsafeGet(x, y, z);
-
-								if (isLightEmitor(b.getType()))
-								{
-									lightSystem.addLight(*this,
-										{i->data.x * CHUNK_SIZE + x, y, i->data.z * CHUNK_SIZE + z},
-										15);
-
-									shouldUpdateLights = true;
-								}
-
-							}
-
-				}
-
-			}
-
-		}
-	}
-
-#pragma endregion
 
 
 #pragma region set chunk in matrix
@@ -239,7 +153,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	//don't call chunk position related things untill this line!
 
 #pragma region add lights
-
+	
 	if (!dontUpdateLightSystem)
 	{
 
@@ -339,9 +253,10 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 			}
 
 		}
-
-
+	
 	}
+		
+	chunksToAddLight.clear();
 
 #pragma endregion
 
@@ -586,6 +501,31 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	
 
 	
+}
+
+bool ChunkSystem::isChunkInRadius(glm::ivec2 playerPos, glm::ivec2 chunkPos)
+{
+
+	playerPos.x = divideChunk(playerPos.x);
+	playerPos.y = divideChunk(playerPos.y);
+
+	glm::vec2 diff = playerPos - chunkPos;
+
+	return std::sqrt(glm::dot(diff, diff)) <= (squareSize / 2);
+
+}
+
+bool ChunkSystem::isChunkInRadiusAndBounds(glm::ivec2 playerPos, 
+	glm::ivec2 chunkPos)
+{
+
+	int x = chunkPos.x - cornerPos.x;
+	int z = chunkPos.y - cornerPos.y;
+
+	if (x < 0 || z < 0 || x >= squareSize || z >= squareSize) { return 0; }
+
+	return isChunkInRadius(playerPos, chunkPos);
+
 }
 
 Chunk *ChunkSystem::getChunkSafeFromBlockPos(int x, int z)

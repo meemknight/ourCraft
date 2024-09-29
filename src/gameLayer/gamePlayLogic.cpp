@@ -307,8 +307,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		bool respawned = 0;
 
 		clientMessageLoop(validateEvent, inValidateRevision,
-			gameData.entityManager.localPlayer.entity.position, gameData.chunkSystem.squareSize,
-			gameData.entityManager, gameData.undoQueue, gameData.serverTimer, disconnect, 
+			from3DPointToBlock(gameData.c.position), gameData.chunkSystem.squareSize,
+			gameData.entityManager, gameData.undoQueue,
+			gameData.chunkSystem, gameData.lightSystem,
+			gameData.serverTimer, disconnect, 
 			gameData.currentBlockInteractionRevisionNumber, shouldExitBlockInteraction,
 			gameData.killed, respawned);
 

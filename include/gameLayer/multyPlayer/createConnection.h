@@ -7,6 +7,8 @@
 
 struct ClientEntityManager;
 struct UndoQueue;
+struct ChunkSystem;
+struct LightSystem;
 
 struct Task
 {
@@ -67,14 +69,12 @@ struct ConnectionData
 	ENetHost *client = 0;
 	ENetPeer *server = 0;
 	std::uint64_t cid = 0;
-	std::vector<Chunk *> recievedChunks = {};
 	std::vector<Packet_PlaceBlocks> recievedBlocks = {};
 	bool conected = false;
 };
 
 
 
-std::vector<Chunk *> getRecievedChunks();
 std::vector<Packet_PlaceBlocks> getRecievedBlocks();
 ConnectionData getConnectionData();
 bool createConnection(Packet_ReceiveCIDAndData &playerData, const char *c);
@@ -91,7 +91,9 @@ bool grabItem(PlayerInventory &inventory, int from, int to, int counter = 0);
 bool forceOverWriteItem(PlayerInventory &inventory, int index, Item &item);
 void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision
 	,glm::ivec3 playerPosition, int squareDistance, ClientEntityManager& entityManager,
-	UndoQueue &undoQueue, std::uint64_t &serverTimer, bool &disconnect,
+	UndoQueue &undoQueue, ChunkSystem &chunkSystem,
+	LightSystem &lightSystem,
+	std::uint64_t &serverTimer, bool &disconnect,
 	unsigned char revisionNumberBlockInteraction, bool &shouldExitBlockInteraction,
 	bool &killedPlayer, bool &respawn
 	);

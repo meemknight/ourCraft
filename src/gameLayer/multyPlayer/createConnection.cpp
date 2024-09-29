@@ -10,6 +10,7 @@
 #include <gameplay/items.h>
 #include <audioEngine.h>
 #include <gameplay/blocks/blocksWithData.h>
+#include <lightSystem.h>
 
 static ConnectionData clientData;
 
@@ -89,15 +90,6 @@ ENetPeer *getServer()
 	return clientData.server;
 }
 
-
-std::vector<Chunk *> getRecievedChunks()
-{
-	//auto ret = std::move(recievedChunks);
-	auto ret = clientData.recievedChunks;
-	clientData.recievedChunks.clear();
-	return ret;
-}
-
 std::vector<Packet_PlaceBlocks> getRecievedBlocks()
 {
 	//auto ret = std::move(recievedBlocks);
@@ -118,7 +110,9 @@ void recieveDataClient(ENetEvent &event,
 	RevisionNumber &invalidateRevision,
 	glm::ivec3 playerPosition, int squareDistance,
 	ClientEntityManager &entityManager,
-	UndoQueue &undoQueue, std::uint64_t &yourTimer,
+	UndoQueue &undoQueue, ChunkSystem &chunkSystem, 
+	LightSystem &lightSystem,
+	std::uint64_t &yourTimer,
 	unsigned char revisionNumberBlockInteraction,
 	bool &shouldExitBlockInteraction, bool &killedPlayer, bool &respawn
 	)
@@ -163,16 +157,101 @@ void recieveDataClient(ENetEvent &event,
 				break;
 			}
 
-			if (checkIfPlayerShouldGetChunk({playerPosition.x, playerPosition.z},
-				{chunkPacket->chunk.x, chunkPacket->chunk.z}, squareDistance))
+			if (chunkSystem.isChunkInRadiusAndBounds({playerPosition.x, playerPosition.z},
+				{chunkPacket->chunk.x, chunkPacket->chunk.z}))
 			{
-				Chunk *c = new Chunk();
-				c->data = chunkPacket->chunk;
-				clientData.recievedChunks.push_back(c);
+				
+
+				{
+					//remove from recently requested chunks so we can request again
+					//if needed for some reason
+					{
+						auto f = chunkSystem.recentlyRequestedChunks.find({chunkPacket->chunk.x, chunkPacket->chunk.z});
+						if (f != chunkSystem.recentlyRequestedChunks.end())
+						{
+							chunkSystem.recentlyRequestedChunks.erase(f);
+
+						}
+					}
+
+					int x = chunkPacket->chunk.x - chunkSystem.cornerPos.x;
+					int z = chunkPacket->chunk.z - chunkSystem.cornerPos.y;
+
+					//if (x < 0 || z < 0 || x >= chunkSystem.squareSize || z >= chunkSystem.squareSize
+					//	|| !checkChunkInRadius({x,z})
+					//	)
+					//{
+					//	delete i; // ignore chunk, not of use anymore
+					//	continue;
+					//}
+					//else
+					{
+						if (chunkSystem.loadedChunks[x * chunkSystem.squareSize + z] 
+							!= nullptr)
+						{
+							//delete i; //double request, ignore
+						}
+						else
+						{
+							//Chunk *c = new Chunk();
+							//c->data = chunkPacket->chunk;
+
+							if (dontUpdateLightSystem)
+							{
+								chunkSystem.shouldUpdateLights = true;
+							}
+
+
+							//permaAssert(loadedChunks[x * squareSize + z] == nullptr); //no need for assert we check the if above 
+							
+							chunkSystem.loadedChunks[x * chunkSystem.squareSize + z] = new Chunk();
+							chunkSystem.loadedChunks[x * chunkSystem.squareSize + z]->data = chunkPacket->chunk;
+							chunkSystem.loadedChunks[x * chunkSystem.squareSize + z]->createGpuData();
+
+							Chunk *chunk = chunkSystem.loadedChunks[x * chunkSystem.squareSize + z];
+
+							int xBegin = chunkPacket->chunk.x * CHUNK_SIZE;
+							int zBegin = chunkPacket->chunk.z * CHUNK_SIZE;
+
+							if (!dontUpdateLightSystem)
+							{
+								chunk->setDontDrawYet(true);
+
+								//c is in chunk system coordonates space, not chunk space!
+								chunkSystem.chunksToAddLight.push_back({x, z});
+
+								for (int x = 0; x < CHUNK_SIZE; x++)
+									for (int z = 0; z < CHUNK_SIZE; z++)
+										for (int y = 0; y < CHUNK_HEIGHT; y++)
+										{
+
+											auto &b = chunk->unsafeGet(x, y, z);
+
+											if (isLightEmitor(b.getType()))
+											{
+												lightSystem.addLight(chunkSystem,
+													{chunk->data.x * CHUNK_SIZE + x, y, chunk->data.z * CHUNK_SIZE + z},
+													15);
+
+												chunkSystem.shouldUpdateLights = true;
+											}
+
+										}
+
+							}
+
+						}
+
+					}
+
+
+
+				}
+
 			}
 			else
 			{
-				//std::cout << "Early rejected chunk by the client\n";
+				
 			}
 			
 
@@ -602,7 +681,9 @@ void recieveDataClient(ENetEvent &event,
 //this is not multy threaded
 void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateRevision
 	,glm::ivec3 playerPosition, int squareDistance, ClientEntityManager &entityManager,
-	UndoQueue &undoQueue, std::uint64_t &serverTimer, bool &disconnect
+	UndoQueue &undoQueue, ChunkSystem &chunkSystem,
+	LightSystem &lightSystem,
+	std::uint64_t &serverTimer, bool &disconnect
 	, unsigned char revisionNumberBlockInteraction, bool &shouldExitBlockInteraction,
 	bool &killedPlayer, bool &respawn
 	)
@@ -620,7 +701,8 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 				{
 					
 					recieveDataClient(event, validatedEvent, invalidateRevision,
-						playerPosition, squareDistance, entityManager, undoQueue, serverTimer,
+						playerPosition, squareDistance, entityManager, undoQueue,
+						chunkSystem, lightSystem, serverTimer,
 						revisionNumberBlockInteraction, shouldExitBlockInteraction, killedPlayer,
 						respawn);
 					

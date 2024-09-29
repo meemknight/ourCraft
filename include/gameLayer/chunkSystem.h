@@ -31,7 +31,9 @@ struct ChunkSystem
 	bool shouldUpdateLights = 0;
 
 	std::vector<Chunk*> loadedChunks;
-	int squareSize = 3;
+	int squareSize = 4;
+	std::vector<glm::ivec2> chunksToAddLight;
+
 
 	//[0 -> squareSize)
 	Chunk *getChunksInMatrixSpaceUnsafe(int x, int z);
@@ -55,6 +57,11 @@ struct ChunkSystem
 
 	void update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQueue &undoQueue, LightSystem &lightSystem,
 		InteractionData &interaction);
+
+	bool isChunkInRadius(glm::ivec2 playerPos, glm::ivec2 chunkPos);
+
+	bool isChunkInRadiusAndBounds(glm::ivec2 playerPos, glm::ivec2 chunkPos);
+
 	int lastX = 0, lastZ = 0, created = 0;
 
 	glm::ivec3 lastPlayerBlockPosition = {};
