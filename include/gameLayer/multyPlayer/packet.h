@@ -55,6 +55,7 @@ enum : std::uint32_t
 	headerPlaceBlocks,
 	headerClientDroppedItem,
 	headerRecieveChunk,
+	headerRecieveBlockData,
 	headerValidateEvent,
 	headerValidateEventAndChangeID,
 	headerInValidateEvent,

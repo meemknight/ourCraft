@@ -14,7 +14,7 @@ struct BaseBlock
 	std::uint8_t sizeY = 0;
 	std::uint8_t sizeZ = 0;
 
-	void formatIntoData(std::vector<unsigned char> &appendTo);
+	size_t formatIntoData(std::vector<unsigned char> &appendTo);
 
 	bool readFromBuffer(unsigned char *data, size_t s, size_t &outReadSize);
 };

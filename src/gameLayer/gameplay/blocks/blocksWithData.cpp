@@ -1,5 +1,5 @@
 #include <gameplay/blocks/blocksWithData.h>
-
+#include <chunk.h>
 
 BaseBlock *BlocksWithDataHolder::getBaseBlock
 (unsigned char x, unsigned char y, unsigned char z)
@@ -34,6 +34,39 @@ BaseBlock *BlocksWithDataHolder::getOrCreateBaseBlock(unsigned char x, unsigned 
 		found = baseBlocks.find(hash);
 		return &found->second;
 	}
+}
+
+void BlocksWithDataHolder::formatBlockData
+	(std::vector<unsigned char> &dataToAppend, int chunkXChunkSpace, int chunkZChunkSpace)
+{
+
+	size_t extraSize = baseBlocks.size() * (sizeof(BaseBlock) + sizeof(BlockDataHeader));
+	glm::ivec3 chunkBlockPos = glm::ivec3(chunkXChunkSpace * CHUNK_SIZE, 0, chunkZChunkSpace * CHUNK_SIZE);
+
+	if (extraSize)
+	{
+		dataToAppend.reserve(dataToAppend.size() + extraSize);
+
+		for (auto &b : baseBlocks)
+		{
+
+			size_t headerStart = dataToAppend.size();
+			dataToAppend.resize(dataToAppend.size() + sizeof(BlockDataHeader));
+
+			//write the data
+			size_t wroteData = b.second.formatIntoData(dataToAppend);
+
+			BlockDataHeader header = {};
+
+			header.pos = chunkBlockPos + fromHashValueToBlockPosinChunk(b.first);
+			header.blockType = BlockTypes::structureBase;
+			header.dataSize = wroteData;
+
+			std::memcpy(dataToAppend.data() + headerStart, &header, sizeof(header));
+		}
+
+	}
+
 }
 
 std::uint16_t fromBlockPosInChunkToHashValue(unsigned char x, unsigned char y, unsigned char z)

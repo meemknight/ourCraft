@@ -2,13 +2,21 @@
 
 #include "structureBaseBlock.h"
 #include <unordered_map>
-
+#include <blocks.h>
 
 
 
 std::uint16_t 
 fromBlockPosInChunkToHashValue(unsigned char x, unsigned char y, unsigned char z);
 glm::ivec3 fromHashValueToBlockPosinChunk(std::uint16_t hashValue);
+
+//used for saving data
+struct BlockDataHeader
+{
+	glm::ivec3 pos = {};
+	BlockType blockType = 0;
+	std::uint16_t dataSize = 0;
+};
 
 struct BlocksWithDataHolder
 {
@@ -18,6 +26,7 @@ struct BlocksWithDataHolder
 	BaseBlock *getBaseBlock(unsigned char x, unsigned char y, unsigned char z);
 	BaseBlock *getOrCreateBaseBlock(unsigned char x, unsigned char y, unsigned char z);
 
+	void formatBlockData(std::vector<unsigned char> &dataToAppend, int chunkXChunkSpace, int chunkZChunkSpace);
 };
 
 

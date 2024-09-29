@@ -617,13 +617,11 @@ void serverWorkerUpdate(
 				//}
 
 				Packet packet;
-				packet.cid = i.cid; //todo is this cid here needed? should I just put 0?
 				packet.header = headerRecieveChunk;
 
 
 				//if you have modified Packet_RecieveChunk make sure you didn't break this!
 				static_assert(sizeof(Packet_RecieveChunk) == sizeof(ChunkData));
-
 
 				{
 					auto client = getClientNotLocked(i.cid);
@@ -632,6 +630,28 @@ void serverWorkerUpdate(
 						sendPacketAndCompress(client->peer, packet, (char *)(&rez->chunk),
 							sizeof(Packet_RecieveChunk), true, channelChunksAndBlocks);
 					}
+
+					std::vector<unsigned char> blockData;
+					rez->blockData.formatBlockData(blockData, rez->chunk.x, rez->chunk.z);
+
+					if (blockData.size())
+					{
+						Packet packet;
+						packet.header = headerRecieveBlockData;
+
+						if (blockData.size() > 1000)
+						{
+							sendPacketAndCompress(client->peer, packet, (char*)blockData.data(),
+								blockData.size(), true, channelChunksAndBlocks);
+						}
+						else
+						{
+							sendPacket(client->peer, packet, (char *)blockData.data(),
+								blockData.size(), true, channelChunksAndBlocks);
+						};
+
+					}
+
 				}
 
 			}

@@ -9,6 +9,7 @@
 #include <platformTools.h>
 #include <gameplay/items.h>
 #include <audioEngine.h>
+#include <gameplay/blocks/blocksWithData.h>
 
 static ConnectionData clientData;
 
@@ -132,12 +133,12 @@ void recieveDataClient(ENetEvent &event,
 	{
 		//std::cout << "Decompressing\n";
 		size_t newSize = {};
-		auto compressedData = unCompressData(data, size, newSize);
+		auto deCompressedData = unCompressData(data, size, newSize);
 		
-		if (compressedData)
+		if (deCompressedData)
 		{
 			wasCompressed = true;
-			data = (char*)compressedData;
+			data = (char*)deCompressedData;
 			size = newSize;
 		}
 		else
@@ -174,6 +175,48 @@ void recieveDataClient(ENetEvent &event,
 				//std::cout << "Early rejected chunk by the client\n";
 			}
 			
+
+			break;
+		}
+
+		case headerRecieveBlockData:
+		{
+			if (size == 0) { break; }
+			
+				
+			size_t pointer = 0;
+			while (size - pointer > 0)
+			{
+				if (size < sizeof(BlockDataHeader)) { break; } //todo request hard reset here
+
+				BlockDataHeader blockHeader = {};
+				memcpy(&blockHeader, data + pointer, sizeof(BlockDataHeader));
+				pointer += sizeof(blockHeader);
+
+				//check if corupted data
+				if(blockHeader.pos.y < 0 || blockHeader.pos.y >= CHUNK_HEIGHT) { break; } //todo request hard reset here
+
+				if (blockHeader.blockType == BlockTypes::structureBase)
+				{
+
+					if (blockHeader.dataSize)
+					{
+
+					}
+					else
+					{
+
+					}
+
+				}
+				else
+				{
+					{ break; } //todo request hard reset here
+				}
+
+				
+			}
+
 
 			break;
 		}

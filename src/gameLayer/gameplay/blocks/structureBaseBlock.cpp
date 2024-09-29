@@ -1,12 +1,13 @@
 #include "gameplay/blocks/structureBaseBlock.h"
 
-void BaseBlock::formatIntoData
+size_t BaseBlock::formatIntoData
 (std::vector<unsigned char> &appendTo)
 {
 	size_t startPos = appendTo.size();
 	appendTo.resize(appendTo.size() + sizeof(BaseBlock));
 
 	memcpy(appendTo.data() + startPos, this, sizeof(BaseBlock));
+	return sizeof(size_t);
 }
 
 bool BaseBlock::readFromBuffer(unsigned char *data, size_t s, size_t &outReadSize)
