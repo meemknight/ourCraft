@@ -74,7 +74,7 @@ struct GameData
 	InteractionData interaction;
 	unsigned char currentBlockInteractionRevisionNumber = 0;
 
-
+	AdaptiveExposure adaptiveExposure;
 
 	bool insideInventoryMenu = 0;
 	int currentInventoryTab = 0;
@@ -1312,7 +1312,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		//programData.renderer.render(data, gameData.c, programData.texture);
 		programData.renderer.renderFromBakedData(gameData.sunShadow,gameData.chunkSystem, 
 			gameData.c, programData, programData.blocksLoader, gameData.entityManager,
-			programData.modelsManager, gameData.showLightLevels,
+			programData.modelsManager, 
+			gameData.adaptiveExposure, gameData.showLightLevels,
 			gameData.point, underWater, w, h, deltaTime, dayTime, gameData.currentSkinBindlessTexture,
 			gameData.handHit, isPlayerMovingSpeed, gameData.playerFOVHandTransform,
 			gameData.currentItemSelected, finalDropStrength
@@ -1670,8 +1671,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				ImGui::SliderInt("skyLightIntensity", &gameData.skyLightIntensity, 0, 15);
 				ImGui::SliderFloat("metallic", &programData.renderer.metallic, 0, 1);
 				ImGui::SliderFloat("roughness", &programData.renderer.roughness, 0, 1);
-				ImGui::SliderFloat("exposure", &programData.renderer.defaultShader
-					.shadingSettings.exposure, 0.001, 10);
+				ImGui::SliderFloat("exposure", &gameData.adaptiveExposure.currentExposure, 0.001, 10);
 				ImGui::Combo("Tonemapper", &programData.renderer.defaultShader.
 					shadingSettings.tonemapper, "ACES\0AgX\0ZCAM\0");
 

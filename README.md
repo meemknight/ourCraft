@@ -16,14 +16,6 @@ Go check out the videos on [YouTube about it](https://www.youtube.com/watch?v=St
 Features and todos:
 
 - [ ] Rendering system
-  - [x] Basic features:
-	- [x] Camera
-	- [x] Texture atlas
-	- [x] Render block faces instanced   
-	- [x] 3D models
-	- [x] Animations
-	- [x] Transparency
-	- [x] Skybox
   - [ ] Shaders:
   	- [x] Animated nice water 😻
 	- [x] No visual artifacts on textures
@@ -34,19 +26,19 @@ Features and todos:
 	- [x] SSR
 	- [x] HBAO / SSAO
 	- [x] HDR, ACES tone mapping
-	- [ ] Bloom
-	- [ ] Automatic exposure
-	- [ ] Lens flare
+	- [x] Bloom
+	- [x] Automatic exposure
+	- [x] Lens flare
 	- [x] Color grading
-	- [ ] Fog
+	- [x] Fog -(todo improve)
 	- [x] Underwater fog -(todo improve)
 	- [ ] God rays	
 	- [x] Fake Shadows for all light types (todo improve)
   	- [x] Shadows (todo optimize)
    	- [ ] Cascaded shadow maps
 	- [ ] Depth of field (maybe blur far stuff)
-	- [ ] world curvature maybe?
-
+  - [ ] Use the same shader for all things in game
+	
 - [x] Chunk system
 
 - [ ] Multy player

@@ -59,7 +59,7 @@ uniform sampler2D u_brdf;
 
 uniform vec3 u_sunLightColor;
 uniform vec3 u_ambientColor;
-
+uniform float u_baseAmbientExtra;
 
 uniform sampler2D u_depthTexture;
 uniform int u_depthPeelwaterPass = 0;
@@ -768,7 +768,7 @@ void main()
 	}
 
 	const bool blockIsInWater = ((v_flags & 2) != 0);
-	const float baseAmbient = 0.20;
+	const float baseAmbient = 0.20 + u_baseAmbientExtra;
 	const float multiplier = 0.70;
 	vec3 computedAmbient = multiplier *  vec3(min(toLinear(v_ambient * (1.f-baseAmbient) + baseAmbient), 1));
 

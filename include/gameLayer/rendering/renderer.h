@@ -32,6 +32,19 @@ struct QueryObject
 	void clear();
 };
 
+struct AdaptiveExposure
+{
+
+	float currentExposure = 1.6;
+	float minExposure = 1.2;
+	float maxExposure = 2.0;
+	float moveSpeed = 0;
+
+	float bonusAmbient = 0;
+	float currentLuminosity = 0.5;
+
+	void update(float deltaTime, float newLuminosity);
+};
 
 struct Renderer
 {
@@ -39,7 +52,7 @@ struct Renderer
 	//todo reset these
 	int sunFlareQueryPos = 0;
 	QueryObject sunFlareQueries[3] = {};
-	float averageLuminosity = 0;
+	float averageLuminosity = 0.5;
 
 
 	struct FBO
@@ -135,7 +148,8 @@ struct Renderer
 		GLuint u_shadingSettings = 0;
 		GLuint shadingSettingsBuffer = 0;
 		uniform u_lastViewProj = -1;
-
+		uniform u_baseAmbientExtra = -1;
+		
 		struct ShadingSettings
 		{
 			glm::vec3 waterColor = (glm::vec3(6, 42, 52) / 255.f); // (glm::vec3(6, 27, 43) / 255.f);
@@ -377,7 +391,8 @@ struct Renderer
 
 	void renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSystem, Camera &c,
 		ProgramData &programData, BlocksLoader &blocksLoader,
-		ClientEntityManager &entityManager, ModelsManager &modelsManager,
+		ClientEntityManager &entityManager, ModelsManager &modelsManager, 
+		AdaptiveExposure &adaptiveExposure,
 		bool showLightLevels, glm::dvec3 pointPos,
 		bool underWater, int screenX, int screenY, float deltaTime, float dayTime,
 		GLuint64 currentSkinBindlessTexture, bool &playerClicked, float playerRunning,

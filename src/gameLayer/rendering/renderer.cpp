@@ -19,6 +19,8 @@
 #include <glm/gtx/quaternion.hpp>
 #include <lightSystem.h>
 
+#include <imgui-docking/imgui/imgui.h>
+
 #define GET_UNIFORM(s, n) n = s.getUniform(#n);
 #define GET_UNIFORM2(s, n) s. n = s.shader.getUniform(#n);
 
@@ -1614,6 +1616,7 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(defaultShader, u_lastViewProj);
 	GET_UNIFORM2(defaultShader, u_skyTexture);
 	GET_UNIFORM2(defaultShader, u_ao);
+	GET_UNIFORM2(defaultShader, u_baseAmbientExtra);
 	
 
 	defaultShader.u_shadingSettings
@@ -1867,14 +1870,16 @@ struct DrawElementsIndirectCommand
 
 void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSystem, Camera &c,
 	ProgramData &programData, BlocksLoader &blocksLoader, ClientEntityManager &entityManager, 
-	ModelsManager &modelsManager
-	, bool showLightLevels, glm::dvec3 pointPos, bool underWater, int screenX, int screenY,
+	ModelsManager &modelsManager, 
+	AdaptiveExposure &adaptiveExposure,
+	bool showLightLevels, glm::dvec3 pointPos, bool underWater, int screenX, int screenY,
 	float deltaTime, float dayTime, 
 	GLuint64 currentSkinBindlessTexture, bool &playerClicked, float playerRunning,
 	BoneTransform &playerHand, int currentHeldItemIndex, float waterDropsStrength
 	)
 {
 
+	defaultShader.shadingSettings.exposure = adaptiveExposure.currentExposure;
 
 	//glPolygonMode(GL_FRONT, GL_POINT);
 	//glPolygonMode(GL_BACK, GL_FILL);
@@ -2234,6 +2239,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glBindTexture(GL_TEXTURE_2D, programData.aoTexture.id);
 		glUniform1i(defaultShader.u_ao, 11);
 	#pragma endregion
+
+
+		glUniform1f(defaultShader.u_baseAmbientExtra, adaptiveExposure.bonusAmbient);
 
 		glUniform1f(defaultShader.u_timeGrass, timeGrass);
 
@@ -2713,9 +2721,19 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 
 #pragma region get automatic exposure
-	if(0)
+	if(1)
 	{
 		static bool reading = 0;
+
+		static ImVec4 color = {0,0,0,1};
+
+		if (ImGui::Begin("client controll"))
+		{
+			ImGui::ColorButton("Colror", color);
+			ImGui::Text("Average Luminosity: %f", averageLuminosity);
+			ImGui::Text("Bonus ambient: %f", adaptiveExposure.bonusAmbient);
+		}
+		ImGui::End();
 
 		if (!reading)
 		{
@@ -2727,21 +2745,24 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 			GLint mipLevels = 1 + (GLint)floor(log2(std::max(screenX, screenY)));
 			// Bind the texture at the last mip level
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, mipLevels - 1);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipLevels - 1);
+			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, mipLevels - 1);
+			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipLevels - 1);
 
 			glBindBuffer(GL_PIXEL_PACK_BUFFER, automatixExposureReadBUffer);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fboOnlyFirstTarget);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboMain.color, mipLevels - 1);
+
 			glReadBuffer(GL_COLOR_ATTACHMENT0); // Assuming you are reading from a framebuffer
 			glReadPixels(0, 0, 1, 1, GL_RGB, GL_FLOAT, 0); // Reading to the PBO
 
 
 
 			//reset
-			glBindTexture(GL_TEXTURE_2D, fboMain.color);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipLevels - 1);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboMain.color, 0);
+			//glBindTexture(GL_TEXTURE_2D, fboMain.color);
+			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipLevels - 1);
 			reading = 1;
 		}else
 		{
@@ -2750,9 +2771,17 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 			if (ptr)
 			{
-				averageLuminosity = glm::dot(glm::vec3(ptr[0], ptr[1], ptr[2]), glm::vec3(0.2126, 0.7152, 0.0722));
+
+				glm::vec3 screenColor = glm::vec3(ptr[0], ptr[1], ptr[2]);
+				screenColor = glm::pow(screenColor, glm::vec3(1.f / 2.2f));
+
+				averageLuminosity = glm::dot(screenColor, glm::vec3(0.2126, 0.7152, 0.0722));
 				//std::cout << averageLuminosity << "\n";
-				std::cout << ptr[0] << " " <<  ptr[1] << " " << ptr[2] << "\n";
+				//std::cout << ptr[0] << " " <<  ptr[1] << " " << ptr[2] << "\n";
+
+				color.x = screenColor[0];
+				color.y = screenColor[1];
+				color.z = screenColor[2];
 
 				glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
 				reading = 0;
@@ -2764,6 +2793,11 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		}
 
 		glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+
+
+		//update automatic exposure
+		adaptiveExposure.update(deltaTime, averageLuminosity);
+
 
 	}
 #pragma endregion
@@ -3104,7 +3138,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glBindTexture(GL_TEXTURE_2D, currentTexture);
 		glUniform1i(applyToneMapper.u_color, 0);
 		glUniform1i(applyToneMapper.u_tonemapper, defaultShader.shadingSettings.tonemapper);
-		glUniform1f(applyToneMapper.u_exposure, defaultShader.shadingSettings.exposure);
+		glUniform1f(applyToneMapper.u_exposure, adaptiveExposure.currentExposure);
 
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -4846,4 +4880,57 @@ void QueryObject::clear()
 {
 	glDeleteQueries(1, &id);
 	*this = {};
+}
+
+void AdaptiveExposure::update(float deltaTime, float newLuminosity)
+{
+
+	auto moveTowards = [&](float &current, float to, float speed)
+	{
+		float diff = to - current;
+
+		if (diff < 0)
+		{
+			current -= deltaTime * speed;
+
+			if (current < to)
+			{
+				current = to;
+			}
+		}
+		else if (diff > 0)
+		{
+			current += deltaTime * speed;
+
+			if (current > to)
+			{
+				current = to;
+			}
+		}
+	};
+
+	moveTowards(currentLuminosity, newLuminosity, 0.4);
+
+	float newValue = linearRemap(currentLuminosity, 0, 1, maxExposure, minExposure);
+	moveTowards(currentExposure, newValue, 0.1);
+
+
+	float newValuebonusAmbient = linearRemap(currentLuminosity, 0, 0.3, 0.3, 0);
+	moveTowards(bonusAmbient, newValuebonusAmbient, 0.1);
+
+	//if (currentLuminosity > 0.50)
+	//{
+	//	currentExposure -= deltaTime * 0.2;
+	//}
+	//
+	//if (currentLuminosity < 0.4)
+	//{
+	//	currentExposure += deltaTime * 0.2;
+	//}
+
+	currentExposure = glm::clamp(currentExposure, minExposure, maxExposure);
+	bonusAmbient = glm::clamp(bonusAmbient, 0.f, 0.3f);
+
+
+
 }

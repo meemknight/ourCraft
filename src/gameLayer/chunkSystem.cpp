@@ -161,8 +161,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 		for (auto &c : chunksToAddLight)
 		{
 			auto chunk = getChunkSafeFromMatrixSpace(c.x, c.y);
-			assert(chunk);
-
+			if (!chunk) { continue; }
 			
 			int xStart = chunk->data.x * CHUNK_SIZE;
 			int ZStart = chunk->data.z * CHUNK_SIZE;
