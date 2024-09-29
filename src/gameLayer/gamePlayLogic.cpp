@@ -825,6 +825,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 							AudioEngine::playSound(sound, 1);
 						}
 					}
+					else if (rez > 8)
+					{
+						if (sound)
+						{
+							AudioEngine::playSound(sound, 1);
+						}
+					}
 
 
 					if (player.otherPlayerSettings.gameMode ==
@@ -1155,13 +1162,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 							}
 						}
 
-						if (soundTimer <= 0)
-						{
-							soundTimer = 0.2;
-							auto sound = getSoundForBlockBreaking(raycastBlock->getType());
-							AudioEngine::playSound(sound, MINING_BLOCK_SOUND_VOLUME);
-						}
-						soundTimer -= deltaTime;
+
 
 						if (rayCastPos != gameData.currentBlockBreaking.pos)
 						{
@@ -1174,15 +1175,25 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 							
 							if (gameData.currentBlockBreaking.timer <= 0)
 							{
+								auto sound = getSoundForBlockBreaking(raycastBlock->getType());
+								AudioEngine::playSound(sound, BREAKED_BLOCK_SOUND_VOLUME);
+
 								//break block
 								gameData.chunkSystem.breakBlockByClient(rayCastPos
 									, gameData.undoQueue,
 									gameData.entityManager.localPlayer.entity.position,
 									gameData.lightSystem);
 								gameData.currentBlockBreaking = {};
-
-								auto sound = getSoundForBlockBreaking(raycastBlock->getType());
-								AudioEngine::playSound(sound, BREAKED_BLOCK_SOUND_VOLUME);
+							}
+							else
+							{
+								if (soundTimer <= 0)
+								{
+									soundTimer = 0.2;
+									auto sound = getSoundForBlockStepping(raycastBlock->getType());
+									AudioEngine::playSound(sound, MINING_BLOCK_SOUND_VOLUME);
+								}
+								soundTimer -= deltaTime;
 							}
 
 						}

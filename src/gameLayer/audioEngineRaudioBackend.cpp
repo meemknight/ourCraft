@@ -322,6 +322,8 @@ namespace AudioEngine
 		SoundCollection(RESOURCES_PATH "/sounds/sandStone"),
 		SoundCollection(RESOURCES_PATH "/sounds/bricks"),
 		SoundCollection(RESOURCES_PATH "/sounds/gravel"),
+		SoundCollection(RESOURCES_PATH "/sounds/ice"),
+		SoundCollection(RESOURCES_PATH "/sounds/iceBreak"),
 		
 
 		SoundCollection(RESOURCES_PATH "sounds/toolBreakWood"),
@@ -410,7 +412,7 @@ int getSoundForBlockStepping(unsigned int blockType)
 
 	if (blockType == ice)
 	{
-		return AudioEngine::glassStep; //todo?
+		return AudioEngine::ice;
 	}
 
 	return getSoundForBlockBreaking(blockType);
@@ -494,7 +496,7 @@ int getSoundForBlockBreaking(unsigned int type)
 
 	if (type == ice)
 	{
-		return AudioEngine::glassBreak; //todo?
+		return AudioEngine::iceBreak;
 	}
 
 	if (isAnyLeaves(type))

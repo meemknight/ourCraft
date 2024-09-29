@@ -4915,7 +4915,7 @@ void AdaptiveExposure::update(float deltaTime, float newLuminosity)
 	moveTowards(currentExposure, newValue, 0.1);
 
 
-	float newValuebonusAmbient = linearRemap(currentLuminosity, 0, 0.3, 0.3, 0);
+	float newValuebonusAmbient = linearRemap(currentLuminosity, 0, 0.3, 0.35, 0);
 	moveTowards(bonusAmbient, newValuebonusAmbient, 0.1);
 
 	//if (currentLuminosity > 0.50)
@@ -4929,7 +4929,7 @@ void AdaptiveExposure::update(float deltaTime, float newLuminosity)
 	//}
 
 	currentExposure = glm::clamp(currentExposure, minExposure, maxExposure);
-	bonusAmbient = glm::clamp(bonusAmbient, 0.f, 0.3f);
+	bonusAmbient = glm::clamp(bonusAmbient, 0.f, 0.35f);
 
 
 

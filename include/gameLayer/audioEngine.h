@@ -53,6 +53,8 @@ namespace AudioEngine
 		sandStone,
 		bricks,
 		gravel,
+		ice,
+		iceBreak,
 
 		toolBreakingWood,
 		toolBreakingStone,
