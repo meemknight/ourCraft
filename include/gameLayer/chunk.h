@@ -15,11 +15,12 @@ struct ChunkData
 	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_HEIGHT];
 
 
-	//todo send this to the player and save it in the future, or just remove it
-	//also save it.
+	//todo save it in the future,
 	//unsigned char cachedBiomes[CHUNK_SIZE][CHUNK_SIZE];
 	unsigned char flags[CHUNK_SIZE][CHUNK_SIZE] = {};
 	float vegetation = 0;
+	float cellValueX = 0;
+	float cellValueZ = 0;
 
 	void setBorderFlag(int x, int z)
 	{

@@ -11,7 +11,7 @@
 #include <worldGeneratorSettings.h>
 #include <bezie.h>
 #include <fstream>
-
+#include <voronoi.h>
 
 gl2d::Renderer2D renderer;
 WorldGenerator wg;

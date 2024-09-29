@@ -14,6 +14,8 @@ void WorldGenerator::init()
 	whiteNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	whiteNoise2 = FastNoiseSIMD::NewFastNoiseSIMD();
 	spagettiNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	regionsX = FastNoiseSIMD::NewFastNoiseSIMD();
+	regionsZ = FastNoiseSIMD::NewFastNoiseSIMD();
 	hillsDropsNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	regionsRandomNumber = FastNoiseSIMD::NewFastNoiseSIMD();
 	stonePatchesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
@@ -59,6 +61,8 @@ void WorldGenerator::clear()
 	delete cavesNoise;
 	delete treesAmountNoise;
 	delete lakesNoise;
+	delete regionsX;
+	delete regionsZ;
 
 	*this = {};
 }
@@ -173,6 +177,10 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	regionsRandomNumber->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::CellValue);
 
 
+	*regionsX = *regionsHeightNoise;
+	regionsX->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::CellX);
+
+
 	randomStonesNoise->SetSeed(s.seed + 100);
 	randomStonesNoise->SetNoiseType(FastNoiseSIMD::NoiseType::Simplex);
 	float scale = 0.05 * 16;
@@ -187,7 +195,7 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 
 int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 	float values[16 * 16], float borderingFactor[16 * 16], float &vegetationMaster,
-	float tightBorders[16 * 16])
+	float tightBorders[16 * 16], float &xValue, float &zValue)
 {
 	float *rezult
 		= regionsHeightNoise->GetNoiseSet(chunkX-1, 0, chunkZ-1,
@@ -199,6 +207,9 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 	float *rezult3
 		= regionsRandomNumber->GetNoiseSet(chunkX-1, 0, chunkZ-1,
 		3, (1), 3);
+
+	float *rezultX = regionsX->GetNoiseSet(chunkX, 0, chunkZ, 1, 1, 1);
+	xValue = (*rezultX);
 
 	//float *test = 
 		//regionsHeightNoise->SetCellularDistanceFunction()
@@ -298,6 +309,7 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 	FastNoiseSIMD::FreeNoiseSet(rezult);
 	FastNoiseSIMD::FreeNoiseSet(rezult2);
 	FastNoiseSIMD::FreeNoiseSet(rezult3);
+	FastNoiseSIMD::FreeNoiseSet(rezultX);
 
 	return value;
 }

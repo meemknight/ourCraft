@@ -107,7 +107,7 @@ public:
 	enum PerturbType { None, Gradient, GradientFractal, Normalise, Gradient_Normalise, GradientFractal_Normalise };
 
 	enum CellularDistanceFunction { Euclidean, Manhattan, Natural };
-	enum CellularReturnType { CellValue, Distance, Distance2, Distance2Add, Distance2Sub, Distance2Mul, Distance2Div, NoiseLookup, Distance2Cave };
+	enum CellularReturnType { CellValue, Distance, Distance2, Distance2Add, Distance2Sub, Distance2Mul, Distance2Div, NoiseLookup, Distance2Cave, CellX };
 
 	// Creates new FastNoiseSIMD for the highest supported instuction set of the CPU 
 	static FastNoiseSIMD* NewFastNoiseSIMD(int seed = 1337);
