@@ -252,13 +252,13 @@ treesAmountNoise:
 	}
 treesTypeNoise:
 	{
-	scale: 0.221000;
+	scale: 0.131000;
 	type: Cellular;
 	celularReturnType: CellValue;
 	frequency: 0.015000;
-	octaves: 3;
+	octaves: 0;
 	perturbFractalOctaves: 0;
-	power: 1.100000;
+	power: 1.050000;
 	spline:
 		{
 		0.000000,0.000000;

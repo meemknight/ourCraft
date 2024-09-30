@@ -107,7 +107,7 @@ public:
 	enum PerturbType { None, Gradient, GradientFractal, Normalise, Gradient_Normalise, GradientFractal_Normalise };
 
 	enum CellularDistanceFunction { Euclidean, Manhattan, Natural };
-	enum CellularReturnType { CellValue, Distance, Distance2, Distance2Add, Distance2Sub, Distance2Mul, Distance2Div, NoiseLookup, Distance2Cave, CellX };
+	enum CellularReturnType { CellValue, Distance, Distance2, Distance2Add, Distance2Sub, Distance2Mul, Distance2Div, NoiseLookup, Distance2Cave, CellX, CellZ };
 
 	// Creates new FastNoiseSIMD for the highest supported instuction set of the CPU 
 	static FastNoiseSIMD* NewFastNoiseSIMD(int seed = 1337);
@@ -157,6 +157,8 @@ public:
 	// Default: 0.01
 	void SetFrequency(float frequency) { m_frequency = frequency; }
 
+	float GetFrequency() { return m_frequency; }
+
 	// Sets noise return type of (Get/Fill)NoiseSet()
 	// Default: Simplex
 	void SetNoiseType(NoiseType noiseType) { m_noiseType = noiseType; }
@@ -165,6 +167,9 @@ public:
 	// Defaults: 1.0
 	void SetAxisScales(float xScale, float yScale, float zScale) { m_xScale = xScale; m_yScale = yScale; m_zScale = zScale; }
 
+	float GetAxisScaleX() { return m_xScale; }
+	float GetAxisScaleY() { return m_yScale; }
+	float GetAxisScaleZ() { return m_zScale; }
 
 	// Sets octave count for all fractal noise types
 	// Default: 3

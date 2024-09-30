@@ -1655,10 +1655,26 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y,
 			z + this->data.z * CHUNK_SIZE};
 
+		bool snowGrass = 0;
+		if (b.getType() == grass)
+		{
+			if (sides[BOTTOM] && sides[BOTTOM]->getType() == BlockTypes::snow_dirt)
+			{
+				snowGrass = true;
+			}
+		}
+
 		for (int i = 6; i <= 9; i++)
 		{
-			//opaqueGeometry.push_back(mergeShorts(i, b.getType()));
-			currentVector->push_back(mergeShorts(i, getGpuIdIndexForBlock(b.getType(), 0)));
+			
+			if (snowGrass)
+			{
+				currentVector->push_back(mergeShorts(i, SNOW_GRASS_TEXTURE_INDEX * 3));
+			}
+			else
+			{
+				currentVector->push_back(mergeShorts(i, getGpuIdIndexForBlock(b.getType(), 0)));
+			}
 
 			if (dontUpdateLightSystem)
 			{

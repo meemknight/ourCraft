@@ -43,6 +43,7 @@ void createMapChunkFromChunk(ChunkData &chunkData, MapEngine::MapChunk &chunk, P
 			unsigned char colorA = 255;
 
 			bool bordering = chunkData.isBorder(textureX, textureY);
+			bool center = chunkData.x == chunkData.regionCenterX && chunkData.z == chunkData.regionCenterZ;
 
 			for (int y = CHUNK_HEIGHT - 1; y >= 0; y--)
 			{
@@ -50,6 +51,11 @@ void createMapChunkFromChunk(ChunkData &chunkData, MapEngine::MapChunk &chunk, P
 				if (b.getType())
 				{
 					auto color = programData.blocksLoader.blocksColors[b.getType()];
+
+					if (center)
+					{
+						color = glm::mix(color, glm::vec3{0.2, 0.2, 0.9}, 0.5f);
+					}
 
 					if (bordering)
 					{
@@ -85,7 +91,6 @@ void MapEngine::update(ProgramData &programData, float deltaTime,
 	camera.zoom = glm::clamp(camera.zoom, 0.6f, 10.f);
 
 
-
 	//programData.blocksLoader.
 	auto &renderer = programData.ui.renderer2d;
 	
@@ -101,7 +106,7 @@ void MapEngine::update(ProgramData &programData, float deltaTime,
 		mousePosInViewRect += glm::vec2(cameraBox.z, cameraBox.w) * glm::vec2(platform::getRelMousePosition()) /
 			glm::vec2(renderer.windowW, renderer.windowH);
 
-		mouseHoveredId = -1;
+		mouseHoveredId = UINT64_MAX;
 
 		//first pass
 		for (int z = 0; z < chunkSystem.squareSize; z++)
@@ -124,7 +129,7 @@ void MapEngine::update(ProgramData &programData, float deltaTime,
 					if (glui::aabb(pos, mousePosInViewRect))
 					{
 						mouseHovered = glm::ivec2(pos);
-						mouseHoveredId = c->data.vegetation; //todo
+						mouseHoveredId = getRegionId(c->data.regionCenterX, c->data.regionCenterZ); //todo
 						//color = {0.5,0.5,0.5,0.5};
 					}
 				}
@@ -170,14 +175,13 @@ void MapEngine::update(ProgramData &programData, float deltaTime,
 						{}, 0, {0,0,1,1});
 
 
-					if (mouseHoveredId == c->data.vegetation)
+					if (mouseHoveredId == getRegionId(c->data.regionCenterX, c->data.regionCenterZ))
 					{
 						renderer.renderRectangle(pos, glm::vec4{232, 207, 149, 125} / 255.f);
 
 					}
 
 				}
-
 				
 
 			}

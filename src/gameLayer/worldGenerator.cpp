@@ -223,8 +223,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		interpolateValues, borderingFactor, vegetationMaster, tightBorders, xCellValue, zCellValue);
 
 	c.vegetation = vegetationMaster;
-	c.cellValueX = xCellValue;
-	c.cellValueZ = zCellValue;
+	c.regionCenterX = xCellValue;
+	c.regionCenterZ = zCellValue;
 
 	//vegetationMaster = 1.f;
 	float vegetationPower = linearRemap(vegetationMaster, 0, 1, 1.2, 0.4);
@@ -245,8 +245,11 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return glm::mix(rez, rez2, interp);
 	};
 	                   //water    plains   hills
-	int startValues[] = {22, 45,  66,      72,     80, 140};
-	int maxlevels[] =   {40, 64,  71,      120,     170, 250};
+	//int startValues[] = {22, 45,  66,      72,     80, 140};
+	//int maxlevels[] =   {40, 64,  71,      120,     170, 250};
+
+	int startValues[] = {22, 45,  66,      72,     74, 100};
+	int maxlevels[] =   {40, 64,  71,      120,     170, 240};
 	int biomes[] = {BiomesManager::plains, BiomesManager::plains, 
 		BiomesManager::plains, BiomesManager::forest,
 		BiomesManager::snow, BiomesManager::snow};

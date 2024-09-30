@@ -90,8 +90,8 @@ const char *texturesNames[] = {
 	"pink_stained_glass",	//78
 	"white_wool",			//79
 	"tiledStoneBrick",		//80
-
-	"structureBase",	//81
+	"structureBase",		//81
+	"snowGrass",			//82
 
 };
 

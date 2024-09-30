@@ -157,8 +157,8 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	//regionsHeightNoise->SetFrequency(0.002);
 	//regionsHeightNoise->SetFrequency(0.024); //original intended scale
 	//regionsHeightNoise->SetFrequency(0.040); //probably will use this
-	//regionsHeightNoise->SetFrequency(0.2);
-	regionsHeightNoise->SetFrequency(0.4);
+	regionsHeightNoise->SetFrequency(0.1);
+	//regionsHeightNoise->SetFrequency(0.4); //for testing
 
 	regionsHeightNoise->SetNoiseType(FastNoiseSIMD::NoiseType::Cellular);
 	regionsHeightNoise->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::NoiseLookup);
@@ -180,6 +180,8 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	*regionsX = *regionsHeightNoise;
 	regionsX->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::CellX);
 
+	*regionsZ = *regionsHeightNoise;
+	regionsZ->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::CellZ);
 
 	randomStonesNoise->SetSeed(s.seed + 100);
 	randomStonesNoise->SetNoiseType(FastNoiseSIMD::NoiseType::Simplex);
@@ -191,6 +193,13 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 }
 
 
+float truncateTo4Decimals(float number)
+{
+	// Multiply by 10^4 to shift the decimal point 4 places to the right
+	float factor = 10000.0f;
+	number = std::floor(number * factor) / factor; // Truncate the decimals
+	return number;
+}
 
 
 int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
@@ -208,8 +217,23 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 		= regionsRandomNumber->GetNoiseSet(chunkX-1, 0, chunkZ-1,
 		3, (1), 3);
 
-	float *rezultX = regionsX->GetNoiseSet(chunkX, 0, chunkZ, 1, 1, 1);
-	xValue = (*rezultX);
+	float *rezultX = regionsX->GetNoiseSet(chunkX-1, 0, chunkZ-1, 3, 1, 3);
+	for (int i = 0; i < 9; i++)
+	{
+		rezultX[i] = truncateTo4Decimals(rezultX[i]);
+		rezultX[i] *= (1.f / regionsX->GetFrequency()) * (1.f / regionsX->GetAxisScaleX());
+	}
+	xValue = rezultX[4];
+
+	float *rezultZ = regionsZ->GetNoiseSet(chunkX-1, 0, chunkZ-1, 3, 1, 3);
+	for (int i = 0; i < 9; i++)
+	{
+		rezultZ[i] = truncateTo4Decimals(rezultZ[i]);
+		rezultZ[i] *= (1.f / regionsZ->GetFrequency()) * (1.f / regionsZ->GetAxisScaleZ());
+	}
+	zValue = rezultZ[4];
+	
+
 
 	//float *test = 
 		//regionsHeightNoise->SetCellularDistanceFunction()
@@ -255,24 +279,34 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 		return rezult3[x + y * 3];
 	};
 
+	auto getXValues = [&](int x, int y)
+	{
+		return rezultX[x + y * 3];
+	};
+
+	auto getZValues = [&](int x, int y)
+	{
+		return rezultZ[x + y * 3];
+	};
+
 	for (int j = 0; j < 16; j++)
 		for (int i = 0; i < 16; i++)
 		{
 			tightBorders[i + j * 16] = 0;
 
-			if (j == 0 && getRezult3Values(1, 1) != getRezult3Values(1, 0))
+			if (j == 0 && ((getXValues(1, 1) != getXValues(1, 0)) || (getZValues(1, 1) != getZValues(1, 0))) )
 			{
 				tightBorders[i + j * 16] = 1;
 			}
-			else if (j == 15 && getRezult3Values(1, 1) != getRezult3Values(1, 2))
+			else if (j == 15 && (  (getXValues(1, 1) != getXValues(1, 2)) || (getZValues(1, 1) != getZValues(1, 2))  )   )
 			{
 				tightBorders[i + j * 16] = 1;
 			}
-			else if (i == 0 && getRezult3Values(1, 1) != getRezult3Values(0, 1))
+			else if (i == 0 &&( (getXValues(1, 1) != getXValues(0, 1)) || (getZValues(1, 1) != getZValues(0, 1)))  )
 			{
 				tightBorders[i + j * 16] = 1;
 			}
-			else if (i == 15 && getRezult3Values(1, 1) != getRezult3Values(2, 1))
+			else if (i == 15 && ( (getXValues(1, 1) != getXValues(2, 1))  ||  (getZValues(1, 1) != getZValues(2, 1)))  )
 			{
 				tightBorders[i + j * 16] = 1;
 			}
@@ -310,6 +344,7 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 	FastNoiseSIMD::FreeNoiseSet(rezult2);
 	FastNoiseSIMD::FreeNoiseSet(rezult3);
 	FastNoiseSIMD::FreeNoiseSet(rezultX);
+	FastNoiseSIMD::FreeNoiseSet(rezultZ);
 
 	return value;
 }

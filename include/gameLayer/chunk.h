@@ -9,6 +9,24 @@
 struct BigGpuBuffer;
 
 
+inline std::uint64_t getRegionId(int x, int z)
+{
+	std::uint64_t rez = 0;
+	rez |= x;
+	rez <<= 32;
+	rez |= z;
+	return rez;
+}
+
+inline void getRegionCenterFromId(std::uint64_t id, int &x, int &z)
+{
+	x = 0;
+	z = 0;
+
+	x |= (id >> 32);
+	z |= (id);
+}
+
 struct ChunkData
 {
 
@@ -19,8 +37,8 @@ struct ChunkData
 	//unsigned char cachedBiomes[CHUNK_SIZE][CHUNK_SIZE];
 	unsigned char flags[CHUNK_SIZE][CHUNK_SIZE] = {};
 	float vegetation = 0;
-	float cellValueX = 0;
-	float cellValueZ = 0;
+	int regionCenterX = 0;
+	int regionCenterZ = 0;
 
 	void setBorderFlag(int x, int z)
 	{

@@ -39,3 +39,5 @@ struct BlocksLoader
 
 uint16_t getGpuIdIndexForBlock(short type, int face);
 
+#define SNOW_GRASS_TEXTURE_INDEX 82
+

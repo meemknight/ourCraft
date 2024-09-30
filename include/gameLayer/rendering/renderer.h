@@ -36,7 +36,7 @@ struct AdaptiveExposure
 {
 
 	float currentExposure = 1.6;
-	float minExposure = 1.2;
+	float minExposure = 1.0;
 	float maxExposure = 2.0;
 	float moveSpeed = 0;
 

@@ -1634,8 +1634,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			if (centerChunk)
 			{
 				ImGui::Text("Vegetaion: %f", centerChunk->data.vegetation);
-				ImGui::Text("CellValue X: %f", centerChunk->data.cellValueX);
-				ImGui::Text("CellValue Z: %f", centerChunk->data.cellValueZ);
+				ImGui::Text("CellValue X: %d", centerChunk->data.regionCenterX);
+				ImGui::Text("CellValue Z: %d", centerChunk->data.regionCenterZ);
 			}
 	
 			int l = player.life.life;
