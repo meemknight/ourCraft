@@ -50,10 +50,10 @@ const char *texturesNames[] = {
 	"dead_bush",		//38
 	"jungle_planks",	//39
 	"clay",				//40
-	"hardened_clay",	//41
+	"clayBricks",		//41
 	"mud",				//42
-	"packed_mud",		//43
-	"mud_bricks",		//44
+	"redClay",			//43
+	"redClayBricks",	//44
 	"controll1",		//45
 	"controll2",		//46
 	"controll3",		//47
@@ -92,6 +92,19 @@ const char *texturesNames[] = {
 	"tiledStoneBrick",		//80
 	"structureBase",		//81
 	"snowGrass",			//82
+	"hardSandStone",		//83
+	"dungeonBricks",		//84
+	"volcanicHotRock",		//85
+	"vulcanicRock",			//86
+	"smoothStone",			//87
+	"limeStone",			//88
+	"smoothLimeStone",		//89
+	"marble",				//90
+	"smoothMarble",			//91
+	"marbleBricks",			//92
+	"marblePillar",			//93
+	"marbleTop",			//94
+
 
 };
 
@@ -324,6 +337,84 @@ uint16_t blocksLookupTable[] = {
 
 	//"structureBase",
 	81, 81, 81, 81, 81, 81,
+
+
+	//hardSandStone
+	83, 83, 14, 13, 83, 83,
+
+	//hardSandStone_stairts,
+	//hardSandStone_slabs,
+	//hardSandStone_wall,
+	83, 83, 14, 13, 83, 83,
+	83, 83, 14, 13, 83, 83,
+	83, 83, 14, 13, 83, 83,
+
+	
+	//sandStone_stairts,
+	//sandStone_slabs,
+	//sandStone_wall,
+	12, 12, 14, 13, 12, 12,
+	12, 12, 14, 13, 12, 12,
+	12, 12, 14, 13, 12, 12,
+
+	//dungeonBrick
+	//dungeonBrick_stairts
+	//dungeonBrick_slabs
+	//dungeonBrick_wall
+	84, 84, 84, 84, 84, 84,
+	84, 84, 84, 84, 84, 84,
+	84, 84, 84, 84, 84, 84,
+	84, 84, 84, 84, 84, 84,
+
+
+	//"volcanicHotRock",		//85
+	85, 85, 85, 85, 85, 85,
+
+	//"vulcanicRock",			//86
+	86, 86, 86, 86, 86, 86,
+	86, 86, 86, 86, 86, 86,
+	86, 86, 86, 86, 86, 86,
+	86, 86, 86, 86, 86, 86,
+
+
+	//smoothStone
+	87, 87, 87, 87, 87, 87,
+	87, 87, 87, 87, 87, 87,
+	87, 87, 87, 87, 87, 87,
+	87, 87, 87, 87, 87, 87,
+
+
+	//limeStone,
+	88, 88, 88, 88, 88, 88,
+
+	//smoothLimeStone,
+	//smoothLimeStone_stairs,
+	//smoothLimeStone_slabs,
+	//smoothLimeStone_wall,
+	89, 89, 89, 89, 89, 89,
+	89, 89, 89, 89, 89, 89,
+	89, 89, 89, 89, 89, 89,
+	89, 89, 89, 89, 89, 89,
+
+	//marble block
+	90, 90, 90, 90, 90, 90,
+	90, 90, 90, 90, 90, 90,
+	90, 90, 90, 90, 90, 90,
+	90, 90, 90, 90, 90, 90,
+
+	//smooth marble
+	91, 91, 91, 91, 91, 91,
+
+	//marble bricks
+	92, 92, 92, 92, 92, 92,
+	92, 92, 92, 92, 92, 92,
+	92, 92, 92, 92, 92, 92,
+	92, 92, 92, 92, 92, 92,
+
+	//marble pillar
+	93, 93, 94, 94, 93, 93,
+
+
 
 };
 

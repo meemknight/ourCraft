@@ -1164,6 +1164,13 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 			bool isInWater = 0;
 			unsigned char sunLight = b.getSkyLight();
 			unsigned char torchLight = b.getLight();
+
+			if (dontUpdateLightSystem)
+			{
+				sunLight = 15;
+				torchLight = 0;
+			}
+
 			//calculateLightThings(sunLight, torchLight, sides[i], b, i, y);
 
 			auto placeFlagsLightsNormally = [&]()
@@ -1312,8 +1319,16 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 				unsigned char torchLight = 0;
 				//calculateLightThings(sunLight, torchLight, sides[2], b, 2, y);
 
-				sunLight = b.getSkyLight();
-				torchLight = b.getLight();
+				if (dontUpdateLightSystem)
+				{
+					sunLight = 15;
+					torchLight = 0;
+				}
+				else
+				{
+					sunLight = b.getSkyLight();
+					torchLight = b.getLight();
+				}
 
 				currentVector->push_back(mergeShorts(slabFaceUnderside,
 					getGpuIdIndexForBlock(b.getType(), 2)));
@@ -1423,8 +1438,16 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 				unsigned char torchLight = 0;
 				//calculateLightThings(sunLight, torchLight, sides[2], b, 2, y);
 
-				sunLight = b.getSkyLight();
-				torchLight = b.getLight();
+				if (dontUpdateLightSystem)
+				{
+					sunLight = 15;
+					torchLight = 0;
+				}
+				else
+				{
+					sunLight = b.getSkyLight();
+					torchLight = b.getLight();
+				}
 
 				currentVector->push_back(mergeShorts(slabTopFace,
 					getGpuIdIndexForBlock(b.getType(), 2)));

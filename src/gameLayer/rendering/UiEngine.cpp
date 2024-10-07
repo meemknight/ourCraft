@@ -417,7 +417,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						slider++;
 					}
 
-					slider += platform::getScroll();
+					slider -= platform::getScroll();
 
 					return slider;
 				};

@@ -205,16 +205,6 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 
 		c.playerData.otherPlayerSettings.gameMode = OtherPlayerSettings::CREATIVE;
 
-		c.playerData.inventory.items[0] = Item(BlockTypes::black_stained_glass);
-		c.playerData.inventory.items[1] = Item(BlockTypes::gray_stained_glass);
-		c.playerData.inventory.items[2] = Item(BlockTypes::light_gray_stained_glass);
-		c.playerData.inventory.items[3] = Item(BlockTypes::white_stained_glass);
-		c.playerData.inventory.items[4] = Item(BlockTypes::brown_stained_glass);
-		c.playerData.inventory.items[5] = Item(spruce_log, 64);
-		c.playerData.inventory.items[6] = Item(torch);
-		c.playerData.inventory.items[7] = Item(BlockTypes::red_stained_glass);
-		c.playerData.inventory.items[8] = Item(BlockTypes::orange_stained_glass);
-		c.playerData.inventory.items[9] = Item(BlockTypes::bookShelf);
 		c.playerData.inventory.items[10] = Item(BlockTypes::yellow_stained_glass);
 		c.playerData.inventory.items[11] = Item(BlockTypes::lime_stained_glass);
 		c.playerData.inventory.items[12] = Item(BlockTypes::green_stained_glass);
@@ -230,12 +220,10 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 		c.playerData.inventory.items[22] = Item(BlockTypes::palm_log, 64);
 		c.playerData.inventory.items[23] = Item(BlockTypes::glowstone, 64);
 		c.playerData.inventory.items[24] = Item(BlockTypes::stoneBrick, 64);
-		c.playerData.inventory.items[25] = Item(BlockTypes::packed_mud, 64);
 		c.playerData.inventory.items[26] = Item(BlockTypes::mud, 64);
 		c.playerData.inventory.items[27] = Item(BlockTypes::birch_log, 64);
 		c.playerData.inventory.items[28] = itemCreator(ItemTypes::wooddenSword);
 		c.playerData.inventory.items[29] = itemCreator(ItemTypes::coal, 64);
-		c.playerData.inventory.items[30] = itemCreator(BlockTypes::hardened_clay, 64);
 		c.playerData.inventory.items[31] = itemCreator(ItemTypes::catSpawnEgg);
 		c.playerData.inventory.items[32] = itemCreator(ItemTypes::zombieSpawnEgg);
 		c.playerData.inventory.items[33] = itemCreator(ItemTypes::pigSpawnEgg);

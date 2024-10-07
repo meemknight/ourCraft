@@ -40,10 +40,10 @@ enum BlockTypes : unsigned short
 	dead_bush,
 	jungle_planks,
 	clay,
-	hardened_clay,
+	clayBricks,
 	mud,
-	packed_mud,
-	mud_bricks,
+	redClay,
+	redClayBricks,
 	control1,
 	control2,
 	control3,
@@ -102,6 +102,49 @@ enum BlockTypes : unsigned short
 
 	structureBase,
 
+	hardSandStone,
+	hardSandStone_stairs,
+	hardSandStone_slabs,
+	hardSandStone_wall,
+
+	sandStone_stairts,
+	sandStone_slabs,
+	sandStone_wall,
+
+	dungeonBricks,
+	dungeonBricks_stairts,
+	dungeonBricks_slabs,
+	dungeonBricks_wall,
+
+	volcanicHotRock,
+	volcanicRock,
+	volcanicRock_stairts,
+	volcanicRock_slabs,
+	volcanicRock_wall,
+
+	smoothStone,
+	smoothStone_stairts,
+	smoothStone_slabs,
+	smoothStone_wall,
+
+	limeStone,
+	smoothLimeStone,
+	smoothLimeStone_stairs,
+	smoothLimeStone_slabs,
+	smoothLimeStone_wall,
+
+	marbleBlock,
+	marbleBlock_stairs,
+	marbleBlock_slabs,
+	marbleBlock_wall,
+	smoothMarbleBlock,
+	marbleBricks,
+	marbleBricks_stairs,
+	marbleBricks_slabs,
+	marbleBricks_wall,
+	marblePillar,
+
+
 	BlocksCount
 };
 
@@ -136,6 +179,10 @@ bool isAnyWoddenBlock(BlockType type);
 
 bool isBricksSound(BlockType type);
 
+bool isVolcanicActiveSound(BlockType type);
+bool isVolcanicInActiveSound(BlockType type);
+
+
 bool isAnyWoddenLOG(BlockType type);
 
 //used for breaking
@@ -167,6 +214,9 @@ bool isTriviallyBreakable(BlockType type);
 
 //used for breaking, bedrock type blocks, that can be breaked in creative!
 bool isAnyUnbreakable(BlockType type);
+
+//used for sound
+bool isAnyHotSoundingBlock(BlockType type);
 
 //used for breaking
 bool isAnyLeaves(BlockType type);

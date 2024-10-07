@@ -20,6 +20,14 @@ bool isStairsMesh(BlockType type)
 		type == stone_stairts ||
 		type == cobbleStone_stairts ||
 		type == stoneBricks_stairts ||
+		type == hardSandStone_stairs ||
+		type == sandStone_stairts ||
+		type == dungeonBricks_stairts ||
+		type == volcanicRock_stairts ||
+		type == smoothStone_stairts ||
+		type == smoothLimeStone_stairs ||
+		type == marbleBlock_stairs ||
+		type == marbleBricks_stairs ||
 		type == tiledStoneBricks_stairs
 		;
 }
@@ -31,6 +39,14 @@ bool isSlabMesh(BlockType type)
 		type == stone_slabs ||
 		type == cobbleStone_slabs ||
 		type == stoneBricks_slabs ||
+		type == hardSandStone_slabs ||
+		type == sandStone_slabs ||
+		type == dungeonBricks_slabs ||
+		type == volcanicRock_slabs ||
+		type == smoothStone_slabs ||
+		type == smoothLimeStone_slabs ||
+		type == marbleBlock_slabs ||
+		type == marbleBricks_slabs ||
 		type == tiledStoneBricks_slab;
 }
 
@@ -41,6 +57,14 @@ bool isWallMesh(BlockType type)
 		type == stone_wall ||
 		type == cobbleStone_wall ||
 		type == stoneBricks_wall ||
+		type == hardSandStone_wall ||
+		type == sandStone_wall ||
+		type == dungeonBricks_wall ||
+		type == volcanicRock_wall ||
+		type == smoothStone_wall ||
+		type == smoothLimeStone_wall ||
+		type == marbleBlock_wall ||
+		type == marbleBricks_wall ||
 		type == tiledStoneBricks_wall;
 
 }
@@ -134,14 +158,31 @@ bool isBricksSound(BlockType type)
 		type == tiledStoneBricks ||
 		type == bricks_stairts ||
 		type == bricks_slabs ||
+		type == marbleBricks ||
+		type == marbleBricks_stairs ||
+		type == marbleBricks_slabs ||
+		type == marbleBricks_wall ||
 		type == bricks_wall;
+}
+
+bool isVolcanicActiveSound(BlockType type)
+{
+	return type == volcanicHotRock;
+}
+
+bool isVolcanicInActiveSound(BlockType type)
+{
+	return type == volcanicRock ||
+		type == volcanicRock_stairts ||
+		type == volcanicRock_slabs ||
+		type == volcanicRock_wall;
 }
 
 
 
 bool isAnyWoddenLOG(BlockType type)
 {
-	return isWoodPlank(type) ||
+	return
 		type == woodLog ||
 		type == birch_log ||
 		type == jungle_log ||
@@ -167,7 +208,8 @@ bool isAnyDirtBlock(BlockType type)
 bool isAnyClayBlock(BlockType type)
 {
 	return
-		type == clay;
+		type == clay ||
+		type == redClay;
 		
 }
 
@@ -180,10 +222,14 @@ bool isAnySandyBlock(BlockType type)
 
 bool isAnySemiHardBlock(BlockType type)
 {
-	return type == hardened_clay ||
-		type == mud_bricks ||
-		type == packed_mud ||
-		type == sand_stone;
+	return type == clayBricks ||
+		type == redClayBricks ||
+		type == sand_stone ||
+		type == sandStone_wall ||
+		type == sandStone_slabs ||
+		type == sandStone_stairts;
+
+
 }
 
 bool isAnyStone(BlockType type)
@@ -198,6 +244,22 @@ bool isAnyStone(BlockType type)
 		type == iron_ore ||
 		type == tiledStoneBricks ||
 		type == gold_block ||
+		type == limeStone ||
+		type == smoothLimeStone ||
+		type == smoothLimeStone_wall ||
+		type == smoothLimeStone_stairs ||
+		type == smoothLimeStone_slabs ||
+
+		type == marbleBlock ||
+		type == marbleBlock_stairs ||
+		type == marbleBlock_slabs ||
+		type == marbleBlock_wall ||
+		type == smoothMarbleBlock ||
+		type == marbleBricks ||
+		type == marbleBricks_stairs ||
+		type == marbleBricks_slabs ||
+		type == marbleBricks_wall ||
+		type == marblePillar ||
 
 		type == stone_stairts ||
 		type == stone_slabs ||
@@ -211,6 +273,27 @@ bool isAnyStone(BlockType type)
 		type == bricks_stairts ||
 		type == bricks_slabs ||
 		type == bricks_wall ||
+
+		type == volcanicHotRock ||
+		type == volcanicRock ||
+		type == volcanicRock_slabs ||
+		type == volcanicRock_stairts ||
+		type == volcanicRock_wall ||
+
+		type == hardSandStone ||
+		type == hardSandStone_slabs ||
+		type == hardSandStone_stairs ||
+		type == hardSandStone_wall ||
+
+		type == dungeonBricks ||
+		type == dungeonBricks_slabs ||
+		type == dungeonBricks_stairts  ||
+		type == dungeonBricks_wall ||
+
+		type == smoothStone ||
+		type == smoothStone_stairts ||
+		type == smoothStone_slabs ||
+		type == smoothStone_wall ||
 
 		type == stoneBricks_stairts ||
 		type == stoneBricks_slabs ||
@@ -238,6 +321,11 @@ bool isTriviallyBreakable(BlockType type)
 bool isAnyUnbreakable(BlockType type)
 {
 	return isControlBlock(type);
+}
+
+bool isAnyHotSoundingBlock(BlockType type)
+{
+	return type == volcanicHotRock;
 }
 
 bool isAnyLeaves(BlockType type)

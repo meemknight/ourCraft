@@ -55,6 +55,8 @@ namespace AudioEngine
 		gravel,
 		ice,
 		iceBreak,
+		volcanicRockActive,
+		volcanicRockInActive,
 
 		toolBreakingWood,
 		toolBreakingStone,

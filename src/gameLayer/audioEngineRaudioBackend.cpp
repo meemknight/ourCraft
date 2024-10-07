@@ -324,7 +324,8 @@ namespace AudioEngine
 		SoundCollection(RESOURCES_PATH "/sounds/gravel"),
 		SoundCollection(RESOURCES_PATH "/sounds/ice"),
 		SoundCollection(RESOURCES_PATH "/sounds/iceBreak"),
-		
+		SoundCollection(RESOURCES_PATH "/sounds/volcanicRock/active"),
+		SoundCollection(RESOURCES_PATH "/sounds/volcanicRock/inactive"),
 
 		SoundCollection(RESOURCES_PATH "sounds/toolBreakWood"),
 		SoundCollection(RESOURCES_PATH "sounds/toolBreakStone"),
@@ -424,6 +425,17 @@ int getSoundForBlockBreaking(unsigned int type)
 	if (!isBlock(type)) { return 0; }
 	if (type == water) { return 0; }
 
+
+	
+	if (isVolcanicActiveSound(type))
+	{
+		return AudioEngine::volcanicRockActive;
+	}
+
+	if (isVolcanicInActiveSound(type))
+	{
+		return AudioEngine::volcanicRockInActive;
+	}
 
 	if(isBricksSound(type))
 	{
