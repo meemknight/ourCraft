@@ -32,21 +32,8 @@ bool recepieExists(int recepieIndex);
 
 CraftingRecepie getRecepieFromIndexUnsafe(int recepieIndex);
 
-//struct CraftingRecepie
-//{
-//
-//	//add flags and stuff
-//
-//	Item items[9] = {};
-//
-//	Item result = {};
-//
-//	CraftingRecepie() {};
-//
-//	bool anyWoodType = 0;
-//
-//};
-//
-//CraftingRecepie recepie(Item result, std::array<Item, 9> items, bool anyWoodType = 0,
-//	bool applyItemCreator = 1);
+bool canItemBeCrafted(CraftingRecepie &recepie, PlayerInventory &inventory);
 
+
+//removes items from the inventory in order to craft the recepie
+void craftItemUnsafe(CraftingRecepie &recepie, PlayerInventory &inventory);

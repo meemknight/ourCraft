@@ -1262,12 +1262,22 @@ void serverWorkerUpdate(
 								else
 								{
 
-
-									if (!canItemBeMovedToAndMoveIt(resultCrafting.result, *toslot))
+									if (!canItemBeCrafted(resultCrafting, client->playerData.inventory))
 									{
 										sendPlayerInventoryAndIncrementRevision(*client);
-									}
 
+									}
+									else
+									{
+										if (!canItemBeMovedToAndMoveIt(resultCrafting.result, *toslot))
+										{
+											sendPlayerInventoryAndIncrementRevision(*client);
+										}
+										else
+										{
+											craftItemUnsafe(resultCrafting, client->playerData.inventory);
+										}
+									}
 
 								}
 

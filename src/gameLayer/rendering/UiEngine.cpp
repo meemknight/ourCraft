@@ -473,8 +473,9 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 							int minVal = 0;
 							if (allItems.size() <= 7)
 							{
-								minVal = -(allItems.size() - 6);
+								minVal = -(allItems.size() - 2);
 							}
+
 							craftingSlider = glm::clamp(craftingSlider, -1, std::max((int)allItems.size() + 7 - 9, minVal));
 
 							if (currentPos != craftingSlider && platform::getScroll())

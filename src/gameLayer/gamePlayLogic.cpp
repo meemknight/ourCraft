@@ -2135,17 +2135,29 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 					auto recepie = getRecepieFromIndexUnsafe(craftedItemIndex);
 
-					if (canItemBeMovedToAndMoveIt(recepie.result, 
-						*player.inventory.getItemFromIndex(PlayerInventory::CURSOR_INDEX)))
-					{
-						Packet_ClientCraftedItem packet;
-						packet.recepieIndex = craftedItemIndex;
-						packet.to = PlayerInventory::CURSOR_INDEX;
-						packet.revisionNumber = player.inventory.revisionNumber;
 
-						sendPacket(getServer(), headerClientCraftedItem, player.entityId,
-							&packet, sizeof(packet), true, channelChunksAndBlocks);
-					}
+					if (canItemBeCrafted(recepie, player.inventory))
+					{
+
+						if (canItemBeMovedToAndMoveIt(recepie.result,
+							*player.inventory.getItemFromIndex(PlayerInventory::CURSOR_INDEX)))
+						{
+							Packet_ClientCraftedItem packet;
+							packet.recepieIndex = craftedItemIndex;
+							packet.to = PlayerInventory::CURSOR_INDEX;
+							packet.revisionNumber = player.inventory.revisionNumber;
+
+							sendPacket(getServer(), headerClientCraftedItem, player.entityId,
+								&packet, sizeof(packet), true, channelChunksAndBlocks);
+
+
+							craftItemUnsafe(recepie, player.inventory);
+
+						}
+
+						
+
+					};
 
 				}
 

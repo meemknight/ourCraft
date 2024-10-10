@@ -144,7 +144,6 @@ static CraftingRecepie recepies[] =
 
 
 
-
 };
 
 
@@ -155,7 +154,12 @@ std::vector<CraftingRecepieIndex> getAllPossibleRecepies(PlayerInventory &player
 
 	for (int i = 0; i < sizeof(recepies) / sizeof(recepies[0]); i++)
 	{
-		rez.push_back({recepies[i], i});
+
+		if (canItemBeCrafted(recepies[i], playerInventory))
+		{
+			rez.push_back({recepies[i], i});
+		}
+
 	}
 
 	return rez;
@@ -184,7 +188,86 @@ CraftingRecepie getRecepieFromIndexUnsafe(int recepieIndex)
 bool canItemBeCrafted(CraftingRecepie &recepie, PlayerInventory &inventory)
 {
 
+	Item neededItems[sizeof(recepie.items) / sizeof(recepie.items[0])];
+
+	for (int i = 0; i < sizeof(recepie.items) / sizeof(recepie.items[0]); i++)
+	{
+		neededItems[i] = recepie.items[i];
+	}
+
+	for (int i = 0; i < sizeof(recepie.items) / sizeof(recepie.items[0]); i++)
+	{
+
+		if (neededItems[i].type == 0) { break; }
+
+		for (int j = 0; j < PlayerInventory::INVENTORY_CAPACITY; j++)
+		{
+
+			if (areItemsTheSame(inventory.items[j], neededItems[i]))
+			{
+				if (neededItems[i].counter <= inventory.items[j].counter)
+				{
+					neededItems[i] = Item();
+					break;
+				}
+				else
+				{
+					neededItems[i].counter -= inventory.items[j].counter;
+				}
+			}
+		}
+	}
+
+	bool good = 1;
+	for (int i = 0; i < sizeof(recepie.items) / sizeof(recepie.items[0]); i++)
+	{
+		if (neededItems[i].type != 0) { good = false; }
+	}
+
+	return good;
+}
 
 
-	return 0;
+void craftItemUnsafe(CraftingRecepie &recepie, PlayerInventory &inventory)
+{
+	Item neededItems[sizeof(recepie.items) / sizeof(recepie.items[0])];
+
+	for (int i = 0; i < sizeof(recepie.items) / sizeof(recepie.items[0]); i++)
+	{
+		neededItems[i] = recepie.items[i];
+	}
+	
+	for (int i = 0; i < sizeof(recepie.items) / sizeof(recepie.items[0]); i++)
+	{
+
+		if (neededItems[i].type == 0) { break; }
+
+		for (int j = 0; j < PlayerInventory::INVENTORY_CAPACITY; j++)
+		{
+
+			if (areItemsTheSame(inventory.items[j], neededItems[i]))
+			{
+
+				if (neededItems[i].counter == inventory.items[j].counter)
+				{
+					neededItems[i] = Item();
+					inventory.items[j] = Item();
+					break;
+
+				}
+				if (neededItems[i].counter < inventory.items[j].counter)
+				{
+					inventory.items[j].counter -= neededItems[i].counter;
+					neededItems[i] = Item();
+					break;
+				}
+				else
+				{
+					neededItems[i].counter -= inventory.items[j].counter;
+					inventory.items[j] = Item();
+				}
+			}
+		}
+	}
+
 }
