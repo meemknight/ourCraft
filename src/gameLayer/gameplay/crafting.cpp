@@ -3,164 +3,113 @@
 
 
 
-static CraftingRecepie recepies[] =
+//static CraftingRecepie recepies[] =
+//{
+//	recepie(Item(ItemTypes::stick, 4), 
+//		{Item(),Item(),Item(),
+//		Item(BlockTypes::wooden_plank), Item(), Item(),
+//		Item(BlockTypes::wooden_plank), Item(), Item()}, true),
+//
+//	recepie(Item(BlockTypes::wooden_plank, 4),
+//		{Item(),Item(),Item(),
+//		Item(), Item(), Item(),
+//		Item(BlockTypes::woodLog), Item(), Item()}),
+//
+//	recepie(Item(BlockTypes::wooden_plank, 4),
+//		{Item(),Item(),Item(),
+//		Item(), Item(), Item(),
+//		Item(BlockTypes::spruce_log), Item(), Item()}),
+//
+//	recepie(Item(BlockTypes::birch_planks, 4),
+//		{Item(),Item(),Item(),
+//		Item(), Item(), Item(),
+//		Item(BlockTypes::birch_log), Item(), Item()}),
+//
+//	recepie(Item(BlockTypes::jungle_planks, 4),
+//		{Item(),Item(),Item(),
+//		Item(), Item(), Item(),
+//		Item(BlockTypes::jungle_log), Item(), Item()}),
+//
+//	recepie(Item(BlockTypes::craftingTable, 1),
+//		{Item(),Item(),Item(),
+//		Item(BlockTypes::wooden_plank), Item(BlockTypes::wooden_plank), Item(),
+//		Item(BlockTypes::wooden_plank), Item(BlockTypes::wooden_plank), Item()}, true),
+//
+//	recepie(Item(BlockTypes::sand_stone, 1),
+//		{Item(),Item(),Item(),
+//		Item(BlockTypes::sand), Item(BlockTypes::sand), Item(),
+//		Item(BlockTypes::sand), Item(BlockTypes::sand), Item()}),
+//
+//	recepie(Item(ItemTypes::wooddenSword, 1),
+//		{Item(BlockTypes::wooden_plank),Item(),Item(),
+//		Item(BlockTypes::wooden_plank), Item(), Item(),
+//		Item(ItemTypes::stick), Item(), Item()}, true),
+//
+//
+//	recepie(Item(ItemTypes::wooddenPickaxe, 1),
+//		{Item(BlockTypes::wooden_plank),Item(BlockTypes::wooden_plank),Item(BlockTypes::wooden_plank),
+//		Item(), Item(ItemTypes::stick), Item(),
+//		Item(), Item(ItemTypes::stick), Item()}, true),
+//
+//	recepie(Item(ItemTypes::wooddenAxe, 1),
+//		{Item(BlockTypes::wooden_plank),Item(BlockTypes::wooden_plank),Item(),
+//		Item(BlockTypes::wooden_plank), Item(ItemTypes::stick), Item(),
+//		Item(), Item(ItemTypes::stick), Item()}, true),
+//
+//	recepie(Item(ItemTypes::wooddenAxe, 1),
+//		{Item(BlockTypes::wooden_plank),Item(BlockTypes::wooden_plank), Item(),
+//		Item(ItemTypes::stick), Item(BlockTypes::wooden_plank), Item(),
+//		Item(ItemTypes::stick), Item(), Item()}, true),
+//
+//	recepie(Item(ItemTypes::wooddenShovel, 1),
+//		{Item(BlockTypes::wooden_plank), Item(),Item(),
+//		Item(ItemTypes::stick), Item(), Item(),
+//		Item(ItemTypes::stick), Item(), Item()}, true),
+//
+//	recepie(Item(BlockTypes::stoneBrick, 4),
+//		{Item(),Item(),Item(),
+//		Item(BlockTypes::stone), Item(BlockTypes::stone), Item(),
+//		Item(BlockTypes::stone), Item(BlockTypes::stone), Item()}),
+//
+//	recepie(Item(BlockTypes::torch, 4),
+//		{Item(),Item(),Item(),
+//		Item(ItemTypes::coal), Item(), Item(),
+//		Item(ItemTypes::stick), Item(), Item()}),
+//
+//};
+
+
+//CraftingRecepie recepie(Item result, std::array<Item, 9> items,
+//	bool anyWoodType, bool applyItemCreator)
+//{
+//	CraftingRecepie ret;
+//
+//	if (applyItemCreator)
+//	{
+//		ret.result = itemCreator(result.type);
+//		ret.result.counter = result.counter;
+//	}
+//	else
+//	{
+//		ret.result = result;
+//	}
+//	
+//	for (int i = 0; i < 9; i++)
+//	{
+//		ret.items[i] = items[i];
+//	}
+//
+//	ret.anyWoodType = anyWoodType;
+//
+//	return ret;
+//}
+
+template<long long I>
+CraftingRecepie recepie(Item result, std::array<Item, I> items, bool applyItemCreator = 0)
 {
-	recepie(Item(ItemTypes::stick, 4), 
-		{Item(),Item(),Item(),
-		Item(BlockTypes::wooden_plank), Item(), Item(),
-		Item(BlockTypes::wooden_plank), Item(), Item()}, true),
 
-	recepie(Item(BlockTypes::wooden_plank, 4),
-		{Item(),Item(),Item(),
-		Item(), Item(), Item(),
-		Item(BlockTypes::woodLog), Item(), Item()}),
-
-	recepie(Item(BlockTypes::wooden_plank, 4),
-		{Item(),Item(),Item(),
-		Item(), Item(), Item(),
-		Item(BlockTypes::spruce_log), Item(), Item()}),
-
-	recepie(Item(BlockTypes::birch_planks, 4),
-		{Item(),Item(),Item(),
-		Item(), Item(), Item(),
-		Item(BlockTypes::birch_log), Item(), Item()}),
-
-	recepie(Item(BlockTypes::jungle_planks, 4),
-		{Item(),Item(),Item(),
-		Item(), Item(), Item(),
-		Item(BlockTypes::jungle_log), Item(), Item()}),
-
-	recepie(Item(BlockTypes::craftingTable, 1),
-		{Item(),Item(),Item(),
-		Item(BlockTypes::wooden_plank), Item(BlockTypes::wooden_plank), Item(),
-		Item(BlockTypes::wooden_plank), Item(BlockTypes::wooden_plank), Item()}, true),
-
-	recepie(Item(BlockTypes::sand_stone, 1),
-		{Item(),Item(),Item(),
-		Item(BlockTypes::sand), Item(BlockTypes::sand), Item(),
-		Item(BlockTypes::sand), Item(BlockTypes::sand), Item()}),
-
-	recepie(Item(ItemTypes::wooddenSword, 1),
-		{Item(BlockTypes::wooden_plank),Item(),Item(),
-		Item(BlockTypes::wooden_plank), Item(), Item(),
-		Item(ItemTypes::stick), Item(), Item()}, true),
-
-
-	recepie(Item(ItemTypes::wooddenPickaxe, 1),
-		{Item(BlockTypes::wooden_plank),Item(BlockTypes::wooden_plank),Item(BlockTypes::wooden_plank),
-		Item(), Item(ItemTypes::stick), Item(),
-		Item(), Item(ItemTypes::stick), Item()}, true),
-
-	recepie(Item(ItemTypes::wooddenAxe, 1),
-		{Item(BlockTypes::wooden_plank),Item(BlockTypes::wooden_plank),Item(),
-		Item(BlockTypes::wooden_plank), Item(ItemTypes::stick), Item(),
-		Item(), Item(ItemTypes::stick), Item()}, true),
-
-	recepie(Item(ItemTypes::wooddenAxe, 1),
-		{Item(BlockTypes::wooden_plank),Item(BlockTypes::wooden_plank), Item(),
-		Item(ItemTypes::stick), Item(BlockTypes::wooden_plank), Item(),
-		Item(ItemTypes::stick), Item(), Item()}, true),
-
-	recepie(Item(ItemTypes::wooddenShovel, 1),
-		{Item(BlockTypes::wooden_plank), Item(),Item(),
-		Item(ItemTypes::stick), Item(), Item(),
-		Item(ItemTypes::stick), Item(), Item()}, true),
-
-	recepie(Item(BlockTypes::stoneBrick, 4),
-		{Item(),Item(),Item(),
-		Item(BlockTypes::stone), Item(BlockTypes::stone), Item(),
-		Item(BlockTypes::stone), Item(BlockTypes::stone), Item()}),
-
-	recepie(Item(BlockTypes::torch, 4),
-		{Item(),Item(),Item(),
-		Item(ItemTypes::coal), Item(), Item(),
-		Item(ItemTypes::stick), Item(), Item()}),
-
-};
-
-
-
-
-Item craft4(Item items[4])
-{
-
-	Item newItems[9] = {};
-
-	newItems[0] = items[0];
-	newItems[1] = items[1];
-	newItems[3] = items[2];
-	newItems[4] = items[3];
-
-	return craft9(newItems);
-}
-
-Item craft9(Item items[9])
-{
-
-	Item newItems[9] = {};
-
-	int shiftLeft = 0;
-	if ((!items[0].type) && (!items[3].type) && (!items[6].type))
-	{
-		shiftLeft = 1;
-		if ((!items[1].type) && (!items[4].type) && (!items[7].type))
-		{
-			shiftLeft = 2;
-		}
-	}
-
-	int shiftDown = 0;
-	if ((!items[6].type) && (!items[7].type) && (!items[8].type))
-	{
-		shiftDown = 1;
-		if ((!items[3].type) && (!items[4].type) && (!items[5].type))
-		{
-			shiftDown = 2;
-		}
-	}
-
-	for (int i = shiftLeft, x = 0; i < 3; i++, x++)
-		for (int j = shiftDown, y = 0; j < 3; j++, y++)
-		{
-			newItems[x + j * 3] = items[i + y * 3];
-		}
-
-
-	for (int r = 0; r < sizeof(recepies) / sizeof(recepies[0]); r++)
-	{
-		bool good = true;
-		for (int i = 0; i < 9; i++)
-		{
-
-			if (recepies[r].anyWoodType && 
-				isWoodPlank(newItems[i].type) && isWoodPlank(recepies[r].items[i].type))
-			{
-				//good
-			}
-			else
-			{
-				if (newItems[i].type != recepies[r].items[i].type)
-				{
-					good = false;
-					break;
-				}
-			}
-		}
-		
-		if (good)
-		{
-			return recepies[r].result;
-		}
-	}
-
-	return Item();
-}
-
-CraftingRecepie recepie(Item result, std::array<Item, 9> items,
-	bool anyWoodType, bool applyItemCreator)
-{
 	CraftingRecepie ret;
-
+	
 	if (applyItemCreator)
 	{
 		ret.result = itemCreator(result.type);
@@ -171,12 +120,71 @@ CraftingRecepie recepie(Item result, std::array<Item, 9> items,
 		ret.result = result;
 	}
 	
-	for (int i = 0; i < 9; i++)
+	for (int i = 0; i < sizeof(items)/sizeof(items[0]); i++)
 	{
 		ret.items[i] = items[i];
 	}
-
-	ret.anyWoodType = anyWoodType;
-
+	
 	return ret;
+}
+
+
+static CraftingRecepie recepies[] =
+{
+
+	recepie<1>(Item(BlockTypes::wooden_plank, 4), {Item(BlockTypes::woodLog)}),
+	recepie<1>(Item(BlockTypes::wooden_plank, 4), {Item(BlockTypes::spruce_log)}),
+	recepie<1>(Item(BlockTypes::birch_planks, 4), {Item(BlockTypes::birch_log)}),
+	recepie<1>(Item(BlockTypes::jungle_planks, 4),{Item(BlockTypes::jungle_log)}),
+	recepie<1>(Item(BlockTypes::craftingTable, 1),{Item(BlockTypes::wooden_plank, 4)}),
+	recepie<1>(Item(BlockTypes::sand_stone, 1),{Item(BlockTypes::sand, 2)}),
+	recepie<1>(Item(BlockTypes::hardSandStone, 1),{Item(BlockTypes::sand, 2)}),
+	recepie<1>(Item(BlockTypes::stoneBrick, 1),{Item(BlockTypes::stone, 2)}),
+	recepie<2>(Item(BlockTypes::torch, 4),{Item(BlockTypes::wooden_plank, 1), Item(ItemTypes::coal)}),
+
+
+
+
+};
+
+
+std::vector<CraftingRecepieIndex> getAllPossibleRecepies(PlayerInventory &playerInventory)
+{
+	std::vector<CraftingRecepieIndex> rez;
+	rez.reserve(sizeof(recepies) / sizeof(recepies[0]));
+
+	for (int i = 0; i < sizeof(recepies) / sizeof(recepies[0]); i++)
+	{
+		rez.push_back({recepies[i], i});
+	}
+
+	return rez;
+}
+
+
+
+bool recepieExists(int recepieIndex)
+{
+	if (recepieIndex < 0) { return 0; }
+	if (recepieIndex >= sizeof(recepies) / sizeof(recepies[0])) { return 0; }
+
+	return 1;
+}
+
+
+
+CraftingRecepie getRecepieFromIndexUnsafe(int recepieIndex)
+{
+	return recepies[recepieIndex];
+}
+
+
+
+
+bool canItemBeCrafted(CraftingRecepie &recepie, PlayerInventory &inventory)
+{
+
+
+
+	return 0;
 }

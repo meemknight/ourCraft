@@ -216,13 +216,6 @@ Item *PlayerInventory::getItemFromIndex(int index)
 	{
 		return &heldInMouse;
 	}
-	else if (index < PlayerInventory::CRAFTING_INDEX + 9)
-	{
-		return &crafting[index - PlayerInventory::CRAFTING_INDEX];
-	}if (index == PlayerInventory::CRAFTING_RESULT_INDEX)
-	{
-		return 0;
-	}
 
 	return nullptr;
 }
@@ -241,10 +234,6 @@ void PlayerInventory::formatIntoData(std::vector<unsigned char> &data)
 
 	heldInMouse.formatIntoData(data);
 
-	for (int i = 0; i < 4; i++)
-	{
-		crafting[i].formatIntoData(data);
-	}
 
 }
 
@@ -282,11 +271,6 @@ bool PlayerInventory::readFromData(void *data, size_t size)
 	}
 
 	if (!readOne(heldInMouse)) { return 0; }
-
-	for (int i = 0; i < 4; i++)
-	{
-		if (!readOne(crafting[i])) { return 0; }
-	}
 
 	
 	return true;
@@ -344,47 +328,6 @@ int PlayerInventory::tryPickupItem(const Item &item)
 	return 0;
 }
 
-void PlayerInventory::craft4(int count)
-{
-	for (int i = 0; i < 4; i++)
-	{
-		if (crafting[i].counter < count)
-		{
-			crafting[i] = {};
-			permaAssertComment(0, "Error in craft method in player inventory");
-		}
-		else
-		{
-			crafting[i].counter -= count;
-
-			if (crafting[i].counter <= 0)
-			{
-				crafting[i] = {};
-			}
-		}
-	}
-}
-
-void PlayerInventory::craft9(int count)
-{
-	for (int i = 0; i < 9; i++)
-	{
-		if (crafting[i].counter < count)
-		{
-			crafting[i] = {};
-			permaAssertComment(0, "Error in craft method in player inventory");
-		}
-		else
-		{
-			crafting[i].counter -= count;
-
-			if (crafting[i].counter <= 0)
-			{
-				crafting[i] = {};
-			}
-		}
-	}
-}
 
 //for textures
 const char *itemsNames[] = 
@@ -434,10 +377,43 @@ bool areItemsTheSame(Item &a, Item &b)
 	return 1;
 }
 
+
 bool isItem(unsigned short type)
 {
 	return type >= ItemsStartPoint && type < ItemTypes::lastItem;
 }
+
+
+bool canItemBeMovedToAndMoveIt(Item &from, Item &to)
+{
+
+	if (to.type == 0)
+	{
+		to = std::move(from);
+		from = Item();
+		return true;
+	}
+	else if(areItemsTheSame(from, to))
+	{
+
+		int totalSize = from.counter + to.counter;
+
+		if (totalSize > from.getStackSize())
+		{
+			return 0;
+		}
+		else
+		{
+			to.counter += from.counter;
+			from = Item();
+			return 1;
+		}
+	}
+
+	return 0;
+
+}
+
 
 //create item createItem
 Item itemCreator(unsigned short type, unsigned char counter)

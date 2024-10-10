@@ -1006,20 +1006,6 @@ bool placeItem(PlayerInventory &inventory, int from, int to, int counter)
 }
 
 
-void cratedOneItem(PlayerInventory &inventory, Item &itemToCraft, int to)
-{
-	//auto toItem = inventory.getItemFromIndex(to);
-
-	Packet_ClientCraftedItem packet;
-	packet.counter = itemToCraft.counter;
-	packet.to = to;
-	packet.itemType = itemToCraft.type;
-	packet.revisionNumber = inventory.revisionNumber;
-
-	sendPacket(clientData.server, headerClientCraftedItem, clientData.cid,
-		&packet, sizeof(packet), true, channelChunksAndBlocks);
-}
-
 bool swapItems(PlayerInventory &inventory, int from, int to)
 {
 

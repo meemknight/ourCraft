@@ -83,6 +83,9 @@ void addMetaData(std::vector<unsigned char> &vector, T data)
 
 bool isItem(unsigned short type);
 
+//check if you can put from on top of to completely and does it
+bool canItemBeMovedToAndMoveIt(Item &from, Item &to);
+
 Item itemCreator(unsigned short type, unsigned char counter = 1);
 
 float computeMineDurationTime(BlockType type, Item &item);
@@ -92,13 +95,10 @@ struct PlayerInventory
 	
 	constexpr static int INVENTORY_CAPACITY = 36;
 	constexpr static int CURSOR_INDEX = 36;
-	constexpr static int CRAFTING_INDEX = 37;
-	constexpr static int CRAFTING_RESULT_INDEX = 46;
 	Item items[INVENTORY_CAPACITY] = {};
 	
 	Item heldInMouse = {};
 
-	Item crafting[9] = {};
 
 	Item *getItemFromIndex(int index);
 
@@ -111,12 +111,6 @@ struct PlayerInventory
 
 	//returns how many items were picked!
 	int tryPickupItem(const Item &item);
-
-	//removes crafting ingredients from crafting slot
-	void craft4(int count = 1);
-
-	//removes crafting ingredients from crafting slot
-	void craft9(int count = 1);
 
 	unsigned char revisionNumber = 0;
 };

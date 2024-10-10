@@ -163,8 +163,7 @@ struct Packet_ClientMovedItem
 
 struct Packet_ClientCraftedItem
 {
-	unsigned short itemType;
-	unsigned short counter;
+	unsigned short recepieIndex;
 	unsigned char to;
 	unsigned char revisionNumber;
 };

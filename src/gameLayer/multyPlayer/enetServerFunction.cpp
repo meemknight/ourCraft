@@ -560,8 +560,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			Packet_ClientCraftedItem *packetData = (Packet_ClientCraftedItem *)data;
 
 			serverTask.t.taskType = Task::clientCraftedItem;
-			serverTask.t.itemType = packetData->itemType;
-			serverTask.t.blockCount = packetData->counter;
+			serverTask.t.craftingRecepieIndex = packetData->recepieIndex;
 			serverTask.t.to = packetData->to;
 			serverTask.t.revisionNumber = packetData->revisionNumber;
 			serverTasks.push_back(serverTask);

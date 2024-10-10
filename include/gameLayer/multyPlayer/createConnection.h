@@ -39,6 +39,7 @@ struct Task
 	glm::ivec3 pos = {};
 	glm::vec3 vector = {};
 	int taskType = 0;
+	unsigned short craftingRecepieIndex = 0;
 	BlockType blockType = 0;
 	EventId eventId = {};
 	glm::ivec2 playerPosForChunkGeneration = {};
@@ -84,8 +85,6 @@ bool placeItem(PlayerInventory &inventory, int from, int to, int counter = 0);
 
 //0 for all
 
-//todo this should return bool and do some checks
-void cratedOneItem(PlayerInventory &inventory, Item &itemToCraft, int to);
 bool swapItems(PlayerInventory &inventory, int from, int to);
 bool grabItem(PlayerInventory &inventory, int from, int to, int counter = 0);
 bool forceOverWriteItem(PlayerInventory &inventory, int index, Item &item);

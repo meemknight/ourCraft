@@ -105,6 +105,8 @@ struct GameData
 	float dropsStrength = 0;
 	bool lastFrameInWater = 0;
 
+	int craftingSlider = 0;
+
 }gameData;
 
 void loadCurrentSkin()
@@ -2052,32 +2054,11 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma endregion
 
 
-#pragma region crafting
-
-	Item itemToCraft;
-
-	if (gameData.insideInventoryMenu)
-	{
-		if (gameData.interaction.blockInteractionType == InteractionTypes::craftingTable)
-		{
-			itemToCraft = craft9(player.inventory.crafting);
-		}
-		else
-		{
-			itemToCraft = craft4(player.inventory.crafting);
-		}
-
-	}
-
-
-#pragma endregion
-
-
-
 #pragma region ui
 
 	int cursorSelected = -2;
 	unsigned short selectedCreativeItem = 0;
+	int craftedItemIndex = -1;
 
 	if (!gameData.isInsideMapView)
 	{
@@ -2119,10 +2100,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		{
 			programData.ui.renderGameUI(deltaTime, w, h, gameData.currentItemSelected,
 				player.inventory, programData.blocksLoader, gameData.insideInventoryMenu,
-				cursorSelected, itemToCraft,
+				cursorSelected, 
 				(gameData.interaction.blockInteractionType == InteractionTypes::craftingTable),
 				gameData.currentInventoryTab, player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE,
-				selectedCreativeItem, player.life, programData, player
+				selectedCreativeItem, player.life, programData, player, gameData.craftingSlider, craftedItemIndex
 			);
 		}
 
@@ -2136,6 +2117,44 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	}
 
+#pragma endregion
+
+#pragma region crafting
+
+	if (gameData.insideInventoryMenu)
+	{
+		
+		if (craftedItemIndex >= 0)
+		{
+
+			if (platform::isLMousePressed())
+			{
+				
+				if (recepieExists(craftedItemIndex))
+				{
+
+					auto recepie = getRecepieFromIndexUnsafe(craftedItemIndex);
+
+					if (canItemBeMovedToAndMoveIt(recepie.result, 
+						*player.inventory.getItemFromIndex(PlayerInventory::CURSOR_INDEX)))
+					{
+						Packet_ClientCraftedItem packet;
+						packet.recepieIndex = craftedItemIndex;
+						packet.to = PlayerInventory::CURSOR_INDEX;
+						packet.revisionNumber = player.inventory.revisionNumber;
+
+						sendPacket(getServer(), headerClientCraftedItem, player.entityId,
+							&packet, sizeof(packet), true, channelChunksAndBlocks);
+					}
+
+				}
+
+			}
+
+		}
+
+
+	}
 
 
 #pragma endregion
@@ -2177,80 +2196,35 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			if (platform::isLMousePressed())
 			{
 				//crafting
-				if (cursorSelected == PlayerInventory::CRAFTING_RESULT_INDEX && itemToCraft.type)
+				//
+
+				//grab items
+				if (cursorSelected >= 0)
 				{
+					Item *selected = player.inventory.getItemFromIndex(cursorSelected);
 					Item *cursor = &player.inventory.heldInMouse;
 
-					if (cursor->type == 0)
+					if (selected && selected != cursor)
 					{
 
-						//craft one
-						*cursor = itemToCraft;
-						if (gameData.interaction.blockInteractionType == InteractionTypes::craftingTable)
+						if (cursor->type == 0)
 						{
-							player.inventory.craft9();
+							//grab
+							grabItem(player.inventory, cursorSelected, PlayerInventory::CURSOR_INDEX);
 						}
 						else
 						{
-							player.inventory.craft4();
-						}
-						cratedOneItem(player.inventory, itemToCraft, PlayerInventory::CURSOR_INDEX);
-
-					}
-					else if (cursor->type == itemToCraft.type)
-					{
-						//grab and craft one
-						if (cursor->counter < cursor->getStackSize())
-						{
-
-							if (cursor->counter + itemToCraft.counter <= cursor->getStackSize())
+							//place
+							if (!placeItem(player.inventory, PlayerInventory::CURSOR_INDEX, cursorSelected))
 							{
-								cursor->counter += itemToCraft.counter;
-								if (gameData.interaction.blockInteractionType == InteractionTypes::craftingTable)
-								{
-									player.inventory.craft9();
-								}
-								else
-								{
-									player.inventory.craft4();
-								}
-								cratedOneItem(player.inventory, itemToCraft, PlayerInventory::CURSOR_INDEX);
+								//swap
+								swapItems(player.inventory, cursorSelected, PlayerInventory::CURSOR_INDEX);
 							}
 
 						}
 
 					}
-
-
-
 				}
-				else
-					if (cursorSelected >= 0)
-					{
-						Item *selected = player.inventory.getItemFromIndex(cursorSelected);
-						Item *cursor = &player.inventory.heldInMouse;
-
-						if (selected && selected != cursor)
-						{
-
-							if (cursor->type == 0)
-							{
-								//grab
-								grabItem(player.inventory, cursorSelected, PlayerInventory::CURSOR_INDEX);
-							}
-							else
-							{
-								//place
-								if (!placeItem(player.inventory, PlayerInventory::CURSOR_INDEX, cursorSelected))
-								{
-									//swap
-									swapItems(player.inventory, cursorSelected, PlayerInventory::CURSOR_INDEX);
-								}
-
-							}
-
-						}
-					}
 			}
 			else if (platform::isRMousePressed())
 			{

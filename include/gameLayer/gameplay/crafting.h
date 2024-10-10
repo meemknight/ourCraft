@@ -3,33 +3,50 @@
 #include <array>
 
 
-//0 1
-//2 3
-Item craft4(Item items[4]);
 
-
-//0 1 2
-//3 4 5
-//6 7 8
-Item craft9(Item items[9]);
 
 
 
 struct CraftingRecepie
 {
 
-	//add flags and stuff
-
-	Item items[9] = {};
-
+	Item items[5] = {};
 	Item result = {};
+
 
 	CraftingRecepie() {};
 
-	bool anyWoodType = 0;
 
 };
 
-CraftingRecepie recepie(Item result, std::array<Item, 9> items, bool anyWoodType = 0,
-	bool applyItemCreator = 1);
+struct CraftingRecepieIndex
+{
+	CraftingRecepie recepie;
+	int index = 0;
+};
+
+std::vector< CraftingRecepieIndex> getAllPossibleRecepies(PlayerInventory &playerInventory);
+
+
+bool recepieExists(int recepieIndex);
+
+CraftingRecepie getRecepieFromIndexUnsafe(int recepieIndex);
+
+//struct CraftingRecepie
+//{
+//
+//	//add flags and stuff
+//
+//	Item items[9] = {};
+//
+//	Item result = {};
+//
+//	CraftingRecepie() {};
+//
+//	bool anyWoodType = 0;
+//
+//};
+//
+//CraftingRecepie recepie(Item result, std::array<Item, 9> items, bool anyWoodType = 0,
+//	bool applyItemCreator = 1);
 

@@ -50,10 +50,9 @@ struct UiENgine
 	void renderGameUI(float deltaTime, 
 		int w, int h, int itemSelected, PlayerInventory &inventory,
 		BlocksLoader &blocksLoader, bool insideInventory, int &cursorItemIndex,
-		Item &itemToCraft, 
 		bool insideCraftingTable, int &currentInventoryTab, bool isCreative,
 		unsigned short &selectedItem, Life &playerHealth, ProgramData &programData,
-		LocalPlayer &player
+		LocalPlayer &player, int &craftingSlider, int &outCraftingRecepieGlobalIndex
 		);
 
 	bool renderBaseBlockUI(float deltaTime,
