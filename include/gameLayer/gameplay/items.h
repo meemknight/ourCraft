@@ -6,7 +6,7 @@
 
 constexpr static unsigned short ItemsStartPoint = 1'024;
 
-enum ItemTypes
+enum ItemTypes : unsigned short
 {
 
 	stick = ItemsStartPoint, //keep the stick the first item!
@@ -67,6 +67,8 @@ struct Item
 	bool isPickaxe();
 
 	bool isShovel();
+
+	std::string getItemName();
 
 	std::string formatMetaDataToString();
 };

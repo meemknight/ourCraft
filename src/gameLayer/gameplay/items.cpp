@@ -2,6 +2,7 @@
 #include <serializing.h>
 #include <platformTools.h>
 #include <iostream>
+#include <magic_enum.hpp>
 
 //todo can be placed
 
@@ -197,12 +198,21 @@ bool Item::isShovel()
 
 std::string Item::formatMetaDataToString()
 {
-	if (metaData.size())
+
+	std::string rez = getItemName();
+
+	if (counter > 1)
 	{
-		return "Yes";
+		rez += " x";
+		rez += std::to_string(counter);
 	}
 
-	return "";
+	if (metaData.size())
+	{
+		rez += "\nYes";
+	}
+
+	return rez;
 }
 
 
@@ -330,7 +340,7 @@ int PlayerInventory::tryPickupItem(const Item &item)
 
 
 //for textures
-const char *itemsNames[] = 
+const char *itemsNamesTextures[] = 
 {
 	"stick.png",
 	"coal.png",
@@ -350,14 +360,36 @@ const char *itemsNames[] =
 	"", //eggs
 	"",
 	"",
+};
 
+const char *itemsNames[] =
+{
+	"stick",
+	"coal",
+	"wooden_sword",
+	"wooden_pickaxe",
+	"wooden_axe",
+	"wooden_shovel",
+
+	"trainingScythe",
+	"trainingSword",
+	"trainingWarHammer",
+	"trainingFlail",
+	"trainingSpear",
+	"trainingKnife",
+	"trainingBattleAxe",
+
+	"", //eggs
+	"",
+	"",
 };
 
 const char *getItemTextureName(int itemId)
 {
+	static_assert(sizeof(itemsNamesTextures) / sizeof(itemsNamesTextures[0]) == lastItem - ItemsStartPoint);
 	static_assert(sizeof(itemsNames) / sizeof(itemsNames[0]) == lastItem - ItemsStartPoint);
 
-	return itemsNames[itemId-ItemsStartPoint];
+	return itemsNamesTextures[itemId-ItemsStartPoint];
 }
 
 
@@ -483,3 +515,18 @@ float computeMineDurationTime(BlockType type, Item &item)
 	std::cout << timer << "\n";
 	return timer;
 }
+
+
+
+std::string Item::getItemName()
+{
+	if (isItem(type))
+	{
+		return itemsNames[type - ItemsStartPoint];
+	}
+	else
+	{
+		return std::string(magic_enum::enum_name((BlockTypes)type));
+	}
+}
+
