@@ -294,6 +294,9 @@ bool loadTexturePack(const char *basePath)
 	return true;
 }
 
+static ShadingSettings shadingSettingsCopy;
+
+
 bool initGame() //main server and title screen stuff
 {
 
@@ -309,6 +312,23 @@ bool initGame() //main server and title screen stuff
 
 	AudioEngine::init();
 	AudioEngine::loadSettingsOrSetToDefaultIfFail();
+
+	loadShadingSettings();
+	{
+		auto &s = programData.renderer.defaultShader.shadingSettings;
+		auto &loadedS = getShadingSettings();
+
+		s.exposure = loadedS.exposure;
+		s.fogGradientUnderWater = loadedS.fogGradientUnderWater;
+		s.shadows = loadedS.shadows;
+		s.tonemapper = loadedS.tonemapper;
+		s.underWaterColor = loadedS.underWaterColor;
+		s.underwaterDarkenDistance = loadedS.underwaterDarkenDistance;
+		s.underwaterDarkenStrength = loadedS.underwaterDarkenStrength;
+		s.waterColor = loadedS.waterColor;
+
+	}
+	shadingSettingsCopy = getShadingSettings();
 
 	programData.ui.init();
 
@@ -356,8 +376,6 @@ bool initGame() //main server and title screen stuff
 			getBlockBaseMineDuration(i);
 
 		}
-
-
 
 	}
 #pragma endregion
@@ -613,6 +631,14 @@ bool gameLogic(float deltaTime)
 		AudioEngine::playSound(AudioEngine::uiSlider, UI_SOUND_VOLUME);
 	}
 
+
+
+	if (shadingSettingsCopy != getShadingSettings())
+	{
+		shadingSettingsCopy = getShadingSettings();
+
+		saveShadingSettings();
+	}
 
 
 	programData.ui.renderer2d.flush();

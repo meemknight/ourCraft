@@ -18,6 +18,7 @@
 #include <rendering/model.h>
 #include <glm/gtx/quaternion.hpp>
 #include <lightSystem.h>
+#include <rendering/renderSettings.h>
 
 #include <imgui-docking/imgui/imgui.h>
 
@@ -1879,7 +1880,10 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	)
 {
 
-	defaultShader.shadingSettings.exposure = adaptiveExposure.currentExposure;
+	auto &shadingSettings = getShadingSettings();
+
+	defaultShader.shadingSettings.exposure = adaptiveExposure.currentExposure
+		+ shadingSettings.exposure;
 
 	//glPolygonMode(GL_FRONT, GL_POINT);
 	//glPolygonMode(GL_BACK, GL_FILL);
@@ -2553,7 +2557,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	int queryDataForSunFlare = 0;
 
-	if (waterRefraction)
+	if (getShadingSettings().waterType)
 	{
 
 	#pragma region depth pre pass 1

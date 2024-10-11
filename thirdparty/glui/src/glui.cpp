@@ -1754,6 +1754,11 @@ namespace glui
 							widget.returnFromUpdate = false;
 						}
 
+						if (*index > maxSize - 1)
+						{
+							*index = 0;
+						}
+
 						
 						renderFancyBox(renderer, transformDrawn,
 							widget.colors2, widget.texture, hovered, clicked);

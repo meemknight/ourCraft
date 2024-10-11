@@ -358,7 +358,6 @@ struct Renderer
 	bool frustumCulling = 1;
 	bool ssao = 1;
 	bool bloom = 1;
-	int waterRefraction = 1;
 
 	float bloomTresshold = 0.01; // 1.7
 	float bloomMultiplier = 0.00003;

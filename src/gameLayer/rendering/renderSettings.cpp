@@ -5,6 +5,7 @@
 #include <platform/platformInput.h>
 #include "multyPlayer/createConnection.h"
 #include <audioEngine.h>
+#include <safeSave.h>
 
 void displayRenderSettingsMenuButton(ProgramData &programData)
 {
@@ -21,7 +22,7 @@ void displayRenderSettingsMenu(ProgramData &programData)
 
 	programData.ui.menuRenderer.Text("Rendering Settings...", Colors_White);
 
-	programData.ui.menuRenderer.sliderInt("View Distance", &programData.otherSettings.viewDistance,
+	programData.ui.menuRenderer.sliderInt("View Distance", &getShadingSettings().viewDistance,
 		1, 40, Colors_White, programData.ui.buttonTexture, Colors_Gray,
 		programData.ui.buttonTexture, Colors_White);
 
@@ -35,31 +36,41 @@ void displayRenderSettingsMenu(ProgramData &programData)
 	programData.ui.menuRenderer.colorPicker("Water color",
 		&programData.renderer.defaultShader.shadingSettings.waterColor[0],
 		programData.ui.buttonTexture, programData.ui.buttonTexture, Colors_Gray, Colors_Gray);
+	getShadingSettings().waterColor = programData.renderer.defaultShader.shadingSettings.waterColor;
+
 
 	programData.ui.menuRenderer.colorPicker("Under water color",
 		&programData.renderer.defaultShader.shadingSettings.underWaterColor[0],
 		programData.ui.buttonTexture, programData.ui.buttonTexture, Colors_Gray, Colors_Gray);
+	getShadingSettings().underWaterColor = programData.renderer.defaultShader.shadingSettings.underWaterColor;
+
 
 	programData.ui.menuRenderer.sliderFloat("Underwater Fog strength",
 		&programData.renderer.defaultShader.shadingSettings.underwaterDarkenStrength,
 		0, 1, Colors_White, programData.ui.buttonTexture, Colors_Gray, 
 		programData.ui.buttonTexture, Colors_White
 		);
+	getShadingSettings().underwaterDarkenStrength = programData.renderer.defaultShader.shadingSettings.underwaterDarkenStrength;
+
 
 	programData.ui.menuRenderer.sliderFloat("Underwater Fog Distance",
 		&programData.renderer.defaultShader.shadingSettings.underwaterDarkenDistance,
 		0, 40, Colors_White, programData.ui.buttonTexture, Colors_Gray,
 		programData.ui.buttonTexture, Colors_White);
+	getShadingSettings().underwaterDarkenDistance = programData.renderer.defaultShader.shadingSettings.underwaterDarkenDistance;
+
 
 	programData.ui.menuRenderer.sliderFloat("Underwater Fog Gradient",
 		&programData.renderer.defaultShader.shadingSettings.fogGradientUnderWater,
 		0, 32, Colors_White, programData.ui.buttonTexture, Colors_Gray,
 		programData.ui.buttonTexture, Colors_White);
+	getShadingSettings().fogGradientUnderWater = programData.renderer.defaultShader.shadingSettings.fogGradientUnderWater;
+
 
 	static glm::vec4 colors[] = {{0.6,0.9,0.6,1}, Colors_Red};
 
 	programData.ui.menuRenderer.toggleOptions("Water type: ", "cheap|fancy",
-		&programData.renderer.waterRefraction, true, Colors_White, colors, programData.ui.buttonTexture,
+		&getShadingSettings().waterType, true, Colors_White, colors, programData.ui.buttonTexture,
 		Colors_Gray,
 		"How the water should be rendered\n-Cheap: \
 good performance.\n-Fancy: significant performance cost but looks very nice.");
@@ -68,15 +79,16 @@ good performance.\n-Fancy: significant performance cost but looks very nice.");
 }
 #pragma endregion
 
-	static glm::vec4 colorsTonemapper[] = {{0.6,0.9,0.6,1}, {0.6,0.9,0.6,1}, {0.7,0.8,0.6,1}};
+	static glm::vec4 colorsTonemapper[] = {{0.6,0.9,0.6,1}, {0.6,0.9,0.6,1}, {0.7,0.8,0.6,1} , {0.4,0.8,0.4,1}};
 	programData.ui.menuRenderer.toggleOptions("Tonemapper: ",
-		"ACES|AgX|ZCAM", &programData.renderer.defaultShader.shadingSettings.tonemapper,
+		"ACES|AgX|ZCAM|Uncharted", &getShadingSettings().tonemapper,
 		true, Colors_White, colorsTonemapper, programData.ui.buttonTexture,
 		Colors_Gray, 
 "The tonemapper is the thing that displays the final color\n\
--Aces: a filmic look.\n-AgX: a more dull neutral look.\n-ZCAM a verey neutral and vanila look\n   preserves colors, slightly more expensive.");
+-Aces: a filmic look.\n-AgX: a more dull neutral look.\n-ZCAM a verey neutral and vanila look\n   preserves colors, slightly more expensive.\n Unchrated :))");
+	programData.renderer.defaultShader.shadingSettings.tonemapper = getShadingSettings().tonemapper;
 
-	
+
 	programData.ui.menuRenderer.newColum(2);
 
 	programData.ui.menuRenderer.Text("", {});
@@ -91,12 +103,15 @@ good performance.\n-Fancy: significant performance cost but looks very nice.");
 		programData.ui.buttonTexture, Colors_White);
 	//programData.menuRenderer.EndMenu();
 
+
 	static glm::vec4 colorsShadows[] = {{0.0,1,0.0,1}, {0.8,0.6,0.6,1}, {0.9,0.3,0.3,1}};
 	programData.ui.menuRenderer.toggleOptions("Shadows: ", "Off|Hard|Soft",
 		&programData.renderer.defaultShader.shadingSettings.shadows, true,
 		Colors_White, colorsShadows, programData.ui.buttonTexture,
 		Colors_Gray, "Shadows can affect the performance significantly."
 	);
+	getShadingSettings().shadows = programData.renderer.defaultShader.shadingSettings.shadows;
+
 
 }
 
@@ -555,6 +570,93 @@ std::string getSkinName()
 {
 	return currentSkinSelected;
 }
+
+ShadingSettings shadingSettings;
+
+ShadingSettings &getShadingSettings()
+{
+	return shadingSettings;
+}
+
+#define SET_INT(x) data.setInt( #x, shadingSettings. x )
+#define SET_VEC3(x) data.setRawData( #x, &shadingSettings. x [0], sizeof(shadingSettings. x) )
+#define SET_FLOAT(x) data.setFloat( #x, shadingSettings. x )
+
+
+void saveShadingSettings()
+{
+
+	shadingSettings.normalize();
+
+	sfs::SafeSafeKeyValueData data;
+	data.setInt("Version", 1);
+
+	SET_INT(viewDistance);
+	SET_INT(tonemapper);
+	SET_INT(shadows);
+	SET_INT(waterType);
+
+	SET_VEC3(waterColor);
+	SET_VEC3(underWaterColor);
+
+	SET_FLOAT(underwaterDarkenStrength);
+	SET_FLOAT(underwaterDarkenDistance);
+	SET_FLOAT(fogGradientUnderWater);
+	SET_FLOAT(exposure);
+
+	sfs::safeSave(data, RESOURCES_PATH "../playerSettings/renderSettings", 0);
+
+}
+
+#undef SET_INT
+#undef SET_VEC3
+#undef SET_FLOAT
+
+
+
+#define GET_INT(x) data.getInt( #x, shadingSettings. x )
+#define GET_VEC3(x) data.setRawData( #x, &shadingSettings. x [0], sizeof(shadingSettings. x) )
+#define GET_FLOAT(x) data.getFloat( #x, shadingSettings. x )
+void loadShadingSettings()
+{
+
+	shadingSettings = ShadingSettings{};
+
+	sfs::SafeSafeKeyValueData data;
+
+	if (sfs::safeLoad(data, RESOURCES_PATH "../playerSettings/renderSettings", 0) == sfs::noError)
+	{
+		GET_INT(viewDistance);
+		GET_INT(tonemapper);
+		GET_INT(shadows);
+		GET_INT(waterType);
+
+		void *rawData = 0;
+		size_t dataSize = 0;
+		data.getRawDataPointer("waterColor", rawData, dataSize);
+		if (dataSize == sizeof(shadingSettings.waterColor))
+			{ memcpy(&shadingSettings.waterColor[0], rawData, dataSize); }
+
+		data.getRawDataPointer("underWaterColor", rawData, dataSize);
+		if (dataSize == sizeof(shadingSettings.underWaterColor))
+			{ memcpy(&shadingSettings.underWaterColor[0], rawData, dataSize); }
+
+		GET_FLOAT(underwaterDarkenStrength);
+		GET_FLOAT(underwaterDarkenDistance);
+		GET_FLOAT(fogGradientUnderWater);
+		GET_FLOAT(exposure);
+	}
+
+	shadingSettings.normalize();
+
+	//todo apply
+
+}
+
+#undef GET_INT
+#undef GET_VEC3
+#undef GET_FLOAT
+
 
 void displaySkinSelectorMenu(ProgramData &programData)
 {
@@ -1060,6 +1162,27 @@ void displayWorldSelectorMenu(ProgramData &programData)
 	}
 	
 	programData.ui.menuRenderer.EndMenu();
+
+
+}
+
+void ShadingSettings::normalize()
+{
+
+
+	viewDistance = glm::clamp(viewDistance, 1, 40);
+	tonemapper = glm::clamp(tonemapper, 0, 3);
+	shadows = glm::clamp(tonemapper, 0, 2);
+	waterType = glm::clamp(waterType, 0, 1);
+
+	waterColor = glm::clamp(waterColor, glm::vec3(0.f), glm::vec3(2.f, 2.f, 2.f));
+	underWaterColor = glm::clamp(underWaterColor, glm::vec3(0.f), glm::vec3(2.f, 2.f, 2.f));
+
+	underwaterDarkenStrength = glm::clamp(underwaterDarkenStrength, 0.f, 1.f);
+	underwaterDarkenDistance = glm::clamp(underwaterDarkenDistance, 0.f, 40.f);
+	fogGradientUnderWater = glm::clamp(fogGradientUnderWater, 0.f, 32.f);
+
+	exposure = glm::clamp(exposure, -2.f, 2.f);
 
 
 }

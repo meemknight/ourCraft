@@ -81,6 +81,7 @@ readonly restrict layout(std430) buffer u_textureSamplerers
 
 out vec2 v_uv;
 out float v_ambient;
+out float v_ambientMultiplier; //for face darkening or under water darkening
 out flat int v_ambientInt;
 
 out flat uvec2 v_textureSampler;
@@ -353,10 +354,12 @@ void main()
 	if(in_faceOrientation<16 && !isWater)
 	{
 		v_ambient = (vertexColor[in_faceOrientation] * (v_ambientInt/15.f));
+		v_ambientMultiplier = vertexColor[in_faceOrientation];
 		//v_ambient = (v_ambientInt/15.f);
 	}else
 	{
 		v_ambient = (v_ambientInt/15.f);
+		v_ambientMultiplier = 1.f;
 	}
 	//v_color = vertexColor[in_faceOrientation];
 

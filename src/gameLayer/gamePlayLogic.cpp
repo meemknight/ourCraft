@@ -199,7 +199,7 @@ bool initGameplay(ProgramData &programData, const char *c) //GAME STUFF!
 	//playerData.timer;
 
 
-	gameData.chunkSystem.init(programData.otherSettings.viewDistance * 2);
+	gameData.chunkSystem.init(getShadingSettings().viewDistance * 2);
 
 	//TODO, MOVE TO PROGRAM DATA!!!!!!!!!!!
 	gameData.sunShadow.init();
@@ -2422,7 +2422,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma endregion
 
-	gameData.chunkSystem.changeRenderDistance(programData.otherSettings.viewDistance * 2);
+	gameData.chunkSystem.changeRenderDistance(getShadingSettings().viewDistance * 2);
 
 
 	gameData.gameplayFrameProfiler.endFrame();

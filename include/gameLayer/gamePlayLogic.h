@@ -40,13 +40,6 @@ struct ProgramData
 	float maxFlareSize = 0;
 	int currentFps = 0;
 
-	struct OtherSettings
-	{
-
-		int viewDistance = 15;
-
-	}otherSettings;
-
 
 };
 
