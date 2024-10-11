@@ -62,6 +62,8 @@ namespace AudioEngine
 		toolBreakingStone,
 		toolBreakingIron,
 
+		crackStone,
+
 		hit,
 		fallLow,
 		fallMedium,

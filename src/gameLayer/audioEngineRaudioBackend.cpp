@@ -331,6 +331,8 @@ namespace AudioEngine
 		SoundCollection(RESOURCES_PATH "sounds/toolBreakStone"),
 		SoundCollection(RESOURCES_PATH "sounds/toolBreakMetal"),
 
+		SoundCollection(RESOURCES_PATH "sounds/cracking/rocky"),
+
 
 		SoundCollection(RESOURCES_PATH "/sounds/hit"),
 

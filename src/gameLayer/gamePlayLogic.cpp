@@ -654,7 +654,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			bool rotate = !gameData.escapePressed;
 			if (platform::isRMouseHeld()) { rotate = true; }
-			gameData.c.rotateFPS(platform::getRelMousePosition(), 0.22f * deltaTime, rotate);
+			gameData.c.rotateFPS(platform::getRelMousePosition(), 0.22f * 0.02f, rotate);
 
 			if (!gameData.escapePressed)
 			{
@@ -1194,6 +1194,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 									soundTimer = 0.2;
 									auto sound = getSoundForBlockStepping(raycastBlock->getType());
 									AudioEngine::playSound(sound, MINING_BLOCK_SOUND_VOLUME);
+									AudioEngine::playSound(AudioEngine::crackStone, 0.2);
 								}
 								soundTimer -= deltaTime;
 							}
