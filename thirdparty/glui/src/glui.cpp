@@ -1758,7 +1758,6 @@ namespace glui
 						{
 							*index = 0;
 						}
-
 						
 						renderFancyBox(renderer, transformDrawn,
 							widget.colors2, widget.texture, hovered, clicked);

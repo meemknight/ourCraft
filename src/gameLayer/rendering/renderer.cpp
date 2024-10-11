@@ -7,6 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/mat3x3.hpp>
 #include <glm/gtx/transform.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <blocksLoader.h>
 #include <chunkSystem.h>
 #include <gamePlayLogic.h>
@@ -4114,6 +4115,103 @@ glm::mat4 calculateLightProjectionMatrix(Camera &camera, glm::vec3 lightDir,
 
 };
 
+glm::quat quatFromDirection(const glm::vec3 &direction, const glm::vec3 &referenceForward = glm::vec3(0, 0, -1))
+{
+	// Normalize the direction vector
+	glm::vec3 normalizedDir = glm::normalize(direction);
+
+	// Compute the angle between the reference forward vector and the direction vector
+	float angle = acos(glm::clamp(glm::dot(referenceForward, normalizedDir), -1.0f, 1.0f));
+
+	// Compute the rotation axis using the cross product of reference forward and target direction
+	glm::vec3 rotationAxis = glm::cross(referenceForward, normalizedDir);
+
+	// If the direction is nearly the same as the forward vector, return identity quaternion
+	if (glm::length(rotationAxis) < 0.0001f)
+	{
+		return glm::quat(1, 0, 0, 0); // Identity quaternion
+	}
+
+	// Normalize the rotation axis
+	rotationAxis = glm::normalize(rotationAxis);
+
+	// Create the quaternion from the axis and angle
+	return glm::angleAxis(angle, rotationAxis);
+}
+
+//todo
+//https://github.com/maritim/LiteEngine/blob/8e165cb06e1dccf378cde0e34f17668e6d08c15b/Engine/RenderPasses/ShadowMap/DirectionalLightShadowMapRenderPass.cpp#L423
+glm::mat4x4 getLightMatrix(glm::vec3 lightAngle, Camera &c)
+{
+
+	const float LIGHT_CAMERA_OFFSET = 100.0f;
+
+	glm::quat lightRotation = glm::conjugate(quatFromDirection(lightAngle));
+
+	//glm::mat4 cameraView = glm::translate(glm::mat4_cast(viewCamera->GetRotation()), viewCamera->GetPosition() * -1.0f);
+	glm::mat4 cameraView = c.getViewMatrix();
+	glm::mat4 cameraProjection = c.getProjectionMatrix();
+	glm::mat4 invCameraProjView = glm::inverse(cameraProjection * cameraView);
+
+	//RenderLightObject::Shadow shadow = renderLightObject->GetShadow();
+
+	//for (std::size_t index = 0; index < shadow.cascadesCount; index++)
+	{
+
+		//OrthographicCamera *lightCamera = (OrthographicCamera *)_volume->GetLightCamera(index);
+
+		glm::vec3 cuboidExtendsMin = glm::vec3(std::numeric_limits<float>::max());
+		glm::vec3 cuboidExtendsMax = glm::vec3(-std::numeric_limits<float>::min());
+
+		//float zStart = index == 0 ? -1 : _volume->GetCameraLimit(index - 1);
+		//float zEnd = _volume->GetCameraLimit(index);
+
+		float zStart = -1;
+		float zEnd = -0.9;
+
+		for (int x = -1; x <= 1; x += 2)
+		{
+			for (int y = -1; y <= 1; y += 2)
+			{
+				for (int z = -1; z <= 1; z += 2)
+				{
+					glm::vec4 cuboidCorner = glm::vec4(x, y, z == -1 ? zStart : zEnd, 1.0f);
+
+					cuboidCorner = invCameraProjView * cuboidCorner;
+					cuboidCorner /= cuboidCorner.w;
+
+					cuboidCorner = glm::vec4(lightRotation * glm::vec3(cuboidCorner), 0.0f);
+
+					cuboidExtendsMin.x = std::min(cuboidExtendsMin.x, cuboidCorner.x);
+					cuboidExtendsMin.y = std::min(cuboidExtendsMin.y, cuboidCorner.y);
+					cuboidExtendsMin.z = std::min(cuboidExtendsMin.z, cuboidCorner.z);
+
+					cuboidExtendsMax.x = std::max(cuboidExtendsMax.x, cuboidCorner.x);
+					cuboidExtendsMax.y = std::max(cuboidExtendsMax.y, cuboidCorner.y);
+					cuboidExtendsMax.z = std::max(cuboidExtendsMax.z, cuboidCorner.z);
+				}
+			}
+		}
+
+		//lightCamera->SetRotation(lightRotation);
+
+		//lightCamera->SetOrthographicInfo(
+		//	cuboidExtendsMin.x, cuboidExtendsMax.x,
+		//	cuboidExtendsMin.y, cuboidExtendsMax.y,
+		//	cuboidExtendsMin.z - LIGHT_CAMERA_OFFSET, cuboidExtendsMax.z + LIGHT_CAMERA_OFFSET
+		//);
+
+		//_volume->SetLightCamera(index, lightCamera);
+
+		glm::mat4 lightProjection = glm::ortho(cuboidExtendsMin.x, cuboidExtendsMax.x,
+			cuboidExtendsMin.y, cuboidExtendsMax.y,
+			cuboidExtendsMin.z - LIGHT_CAMERA_OFFSET, cuboidExtendsMax.z + LIGHT_CAMERA_OFFSET);
+
+		return lightProjection;
+
+	}
+}
+
 
 void Renderer::renderShadow(SunShadow &sunShadow,
 	ChunkSystem &chunkSystem, Camera &c, ProgramData &programData, glm::vec3 sunPos)
@@ -4162,10 +4260,10 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 		near_plane,		far_plane);
 	//auto mvp = lightProjection * glm::lookAt({},
 	//	-skyBoxRenderer.sunPos, glm::vec3(0, 1, 0));
-
 	auto mvp = lightProjection * lookAtSafe({},
 		vectorToPlayer, glm::vec3(0, 1, 0));
 
+	//glm::mat4 mvp = getLightMatrix(sunPos, c);
 	
 
 	//auto mat = calculateLightProjectionMatrix(c, -skyBoxRenderer.sunPos, 1, 260, 25);

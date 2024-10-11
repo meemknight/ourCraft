@@ -1172,7 +1172,7 @@ void ShadingSettings::normalize()
 
 	viewDistance = glm::clamp(viewDistance, 1, 40);
 	tonemapper = glm::clamp(tonemapper, 0, 3);
-	shadows = glm::clamp(tonemapper, 0, 2);
+	shadows = glm::clamp(shadows, 0, 2);
 	waterType = glm::clamp(waterType, 0, 1);
 
 	waterColor = glm::clamp(waterColor, glm::vec3(0.f), glm::vec3(2.f, 2.f, 2.f));

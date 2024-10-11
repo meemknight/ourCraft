@@ -778,10 +778,11 @@ void main()
 	const float Shadow_Strength = 5.f;
 
 	float newSkyLight = v_skyLight;
-	if(v_skyLight > 10)
+	if(v_skyLight > 6)
 	{
 		newSkyLight -= Shadow_Strength;
-		newSkyLight += Shadow_Strength * shadow;
+		newSkyLight += Shadow_Strength * shadow 
+		* clamp(dot(u_sunDirection, v_normal), 0, 1);
 	}
 	float newAmbient =  max(newSkyLight, v_normalLight) / 15.f;
 	newAmbient *= v_ambientMultiplier;
