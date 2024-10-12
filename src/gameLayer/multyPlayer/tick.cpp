@@ -35,6 +35,46 @@ void genericBroadcastEntityUpdateFromServerToPlayer(E &e, bool reliable,
 }
 
 
+template <class E>
+void genericBroadcastEntityUpdateFromServerToPlayer2(E &e, bool reliable,
+	std::uint64_t currentTimer)
+{
+
+	Packet packet;
+	packet.header = headerUpdateGenericEntity;
+
+	static unsigned char data[sizeof(Packet_UpdateGenericEntity) + 100000];
+
+	Packet_UpdateGenericEntity firstPart;
+	firstPart.eid = e.first;
+	firstPart.timer = currentTimer;
+
+	memcpy(data, &firstPart, sizeof(firstPart));
+
+	if constexpr (hasGetDataToSend<decltype(e.second)>)
+	{
+		auto entity = e.second.getDataToSend();
+		memcpy(data + sizeof(Packet_UpdateGenericEntity), &entity, sizeof(entity));
+
+		broadCast(packet, data, sizeof(Packet_UpdateGenericEntity) + sizeof(entity),
+			nullptr, reliable, channelEntityPositions);
+	}
+	else
+	{
+		auto entity = e.second.entity;
+		memcpy(data + sizeof(Packet_UpdateGenericEntity), &entity, sizeof(entity));
+
+		broadCast(packet, data, sizeof(Packet_UpdateGenericEntity) + sizeof(entity),
+			nullptr, reliable, channelEntityPositions);
+	}
+
+
+
+}
+
+
+
+
 void entityDeleteFromServerToPlayer(std::uint64_t clientToSend,
 	std::uint64_t eid, bool reliable)
 {
@@ -131,6 +171,8 @@ void callGenericResetEntitiesInTheirNewChunk(std::integer_sequence<int, Is...>, 
 		[](auto &entityData) { return entityData.template entityGetter<Is + 1>(); },
 		chunkCache), ...);
 }
+
+#define ENTITY_UPDATES(X) genericLoopOverEntities(*entityData.entityGetter<X>(), *orphanEntities.entityGetter<X>());
 
 //todo make sure a player can only be in only one tick
 //chunkCache has only chunks that shouldn't be unloaded! And no null ptrs
@@ -466,59 +508,87 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 		auto initialChunk = c.first;
 
 		auto genericLoopOverEntities = [&](auto &container, 
-			auto &orphanContainer, auto packetType, auto packetId)
+			auto &orphanContainer
+			//,auto packetType, auto packetId
+			)
 		{
-			for (auto it = container.begin(); it != container.end(); )
+
+			if constexpr (std::is_same<std::remove_reference_t<decltype(container[0])>, PlayerServer*>::value)
 			{
-				auto &e = *it;
-
-				bool rez = genericCallUpdateForEntity(e, deltaTime, chunkGetter,
-					chunkCache, rng, othersDeleted,
-					pathFinding, playersPosition);
-				auto newChunk = determineChunkThatIsEntityIn(e.second.getPosition());
-
-				if (!rez)
+				//don't iterate over players
+				return;
+			}
+			else
+			{
+				for (auto it = container.begin(); it != container.end(); )
 				{
-					//todo only for local players!!!!!!
-					genericBroadcastEntityDeleteFromServerToPlayer(it->first, true);
+					auto &e = *it;
 
-					//remove entity
-					it = container.erase(it);
-				}
-				else
-				{
-					//todo this should take into acount if that player should recieve it
-					//todo only for local players!!!!!!
-					genericBroadcastEntityUpdateFromServerToPlayer
-						< decltype(packetType)>(e, false, currentTimer, packetId);
+					bool rez = genericCallUpdateForEntity(e, deltaTime, chunkGetter,
+						chunkCache, rng, othersDeleted,
+						pathFinding, playersPosition);
+					auto newChunk = determineChunkThatIsEntityIn(e.second.getPosition());
 
-					if (initialChunk != newChunk)
+					if (!rez)
 					{
-						orphanContainer.insert(
-							{e.first, e.second});
+						//todo only for local players!!!!!!
+						genericBroadcastEntityDeleteFromServerToPlayer(it->first, true);
 
+						//remove entity
 						it = container.erase(it);
 					}
 					else
 					{
-						++it;
+						//todo this should take into acount if that player should recieve it
+						//todo only for local players!!!!!!
+						//genericBroadcastEntityUpdateFromServerToPlayer
+						//	< decltype(packetType)>(e, false, currentTimer, packetId);
+						genericBroadcastEntityUpdateFromServerToPlayer2(e, false, currentTimer);
+
+						if (initialChunk != newChunk)
+						{
+							orphanContainer.insert(
+								{e.first, e.second});
+
+							it = container.erase(it);
+						}
+						else
+						{
+							++it;
+						}
 					}
+
 				}
-				
 			}
+
+			
 		};
 
-		genericLoopOverEntities(entityData.droppedItems, orphanEntities.droppedItems,
-			Packet_RecieveDroppedItemUpdate{}, headerClientRecieveDroppedItemUpdate);
+		
+		REPEAT_FOR_ALL_ENTITIES(ENTITY_UPDATES);
 
-		genericLoopOverEntities(entityData.zombies, orphanEntities.zombies,
-			Packet_UpdateZombie{}, headerUpdateZombie);
 
-		genericLoopOverEntities(entityData.pigs, orphanEntities.pigs,
-			Packet_UpdatePig{}, headerUpdatePig);
+		//
+		//genericLoopOverEntities(entityData.droppedItems, orphanEntities.droppedItems
+		//	//,Packet_RecieveDroppedItemUpdate{}, headerClientRecieveDroppedItemUpdate
+		//);
+		//
+		//genericLoopOverEntities(entityData.zombies, orphanEntities.zombies
+		//	//,Packet_UpdateZombie{}, headerUpdateZombie
+		//);
+		//
+		//genericLoopOverEntities(entityData.pigs, orphanEntities.pigs
+		//	//,Packet_UpdatePig{}, headerUpdatePig
+		//);
+		//
+		//genericLoopOverEntities(entityData.cats, orphanEntities.cats
+		//	//,Packet_UpdateCat{}, headerUpdateCat
+		//);
 
-		genericLoopOverEntities(entityData.cats, orphanEntities.cats,
-			Packet_UpdateCat{}, headerUpdateCat);
+		//genericLoopOverEntities(entityData.goblins, orphanEntities.goblins
+		//	,Packet_UpdateCat{}, headerUpdateCat
+		//);
+
 
 	}
 

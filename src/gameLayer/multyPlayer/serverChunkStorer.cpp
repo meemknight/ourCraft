@@ -1497,7 +1497,8 @@ bool callGenericRemoveEntity(EntityData &entityData, std::uint64_t eid)
 
 	switch (entityType)
 	{
-		REPEAT(CASE_REMOVE, 5);
+		//REPEAT(CASE_REMOVE, 5);
+		REPEAT_FOR_ALL_ENTITIES(CASE_REMOVE);
 
 		//CASE_REMOVE(0);
 
@@ -1506,7 +1507,7 @@ bool callGenericRemoveEntity(EntityData &entityData, std::uint64_t eid)
 		//case 2: { return genericRemoveEntity(*entityData.template entityGetter<2>(), eid); } break;
 		//case 3: { return genericRemoveEntity(*entityData.template entityGetter<3>(), eid); } break;
 		//case 4: { return genericRemoveEntity(*entityData.template entityGetter<4>(), eid); } break;
-		case 5: { static_assert(5 == EntitiesTypesCount); }
+		//case 5: { static_assert(5 == EntitiesTypesCount); }
 
 	default:;
 	}
@@ -1573,8 +1574,8 @@ bool callGenericHitEntityByPlayer(EntityData &entityData, std::uint64_t eid, glm
 
 	switch (entityType)
 	{
-		REPEAT(CASE_HIT, 5);
-	case 5: { static_assert(5 == EntitiesTypesCount); }
+
+	REPEAT_FOR_ALL_ENTITIES(CASE_HIT);
 
 	default:;
 	}

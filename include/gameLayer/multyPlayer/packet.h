@@ -77,6 +77,7 @@ enum : std::uint32_t
 	headerUpdateZombie,
 	headerUpdatePig,
 	headerUpdateCat,
+	headerUpdateGenericEntity,
 	headerRemoveEntity,
 	headerCompoundPacket,
 	headerSendPlayerSkin,
@@ -218,6 +219,13 @@ struct Packet_KillEntity
 struct Packet_UpdateLife
 {
 	Life life;
+};
+
+struct Packet_UpdateGenericEntity
+{
+	std::uint64_t eid = 0;
+	std::uint64_t timer = 0;
+
 };
 
 struct Packet_UpdatePig

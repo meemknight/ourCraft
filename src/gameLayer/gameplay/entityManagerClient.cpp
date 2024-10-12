@@ -212,8 +212,7 @@ void callGenericRemoveEntity(ClientEntityManager &c,
 
 	switch (entityType)
 	{
-		REPEAT(CASE_REMOVE, 5);
-	case 5: { static_assert(5 == EntitiesTypesCount); }
+		REPEAT_FOR_ALL_ENTITIES(CASE_REMOVE);
 
 
 	default:;
@@ -265,10 +264,13 @@ void callGenericKillEntity(ClientEntityManager &c,
 
 	auto entityType = getEntityTypeFromEID(entityId);
 
+	//static_assert(5 == EntitiesTypesCount);
+
 	switch (entityType)
 	{
-		REPEAT(CASE_KILL, 5);
-	case 5: { static_assert(5 == EntitiesTypesCount); }
+		REPEAT_FOR_ALL_ENTITIES(CASE_KILL);
+		//REPEAT(CASE_KILL, 5);
+		//case 5: {  }
 
 	default:;
 	}
@@ -528,6 +530,78 @@ std::uint64_t ClientEntityManager::intersectAllAttackableEntities(glm::dvec3 sta
 	return callGenericIntersectAllAttackableEntities(
 		std::make_integer_sequence<int, EntitiesTypesCount>(), *this,
 		start, dir, maxDistance);
+
+}
+
+
+template<int TYPE, class T>
+void genericRenderColliders(T &container,
+	PointDebugRenderer &pointDebugRenderer, GyzmosRenderer &gyzmosRenderer, Camera &camera)
+{
+
+	auto drawBox = [&](glm::dvec3 pos, glm::vec3 boxSize)
+	{
+		gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2),
+			pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2));
+		gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2),
+			pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2));
+		gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2),
+			pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2));
+		gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2),
+			pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2));
+
+		gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2),
+			pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2));
+		gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2),
+			pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2));
+		gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2),
+			pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2));
+		gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2),
+			pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2));
+
+		gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, boxSize.z / 2),
+			pos + glm::dvec3(boxSize.x / 2, boxSize.y, boxSize.z / 2));
+		gyzmosRenderer.drawLine(pos + glm::dvec3(boxSize.x / 2, 0, -boxSize.z / 2),
+			pos + glm::dvec3(boxSize.x / 2, boxSize.y, -boxSize.z / 2));
+		gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, -boxSize.z / 2),
+			pos + glm::dvec3(-boxSize.x / 2, boxSize.y, -boxSize.z / 2));
+		gyzmosRenderer.drawLine(pos + glm::dvec3(-boxSize.x / 2, 0, boxSize.z / 2),
+			pos + glm::dvec3(-boxSize.x / 2, boxSize.y, boxSize.z / 2));
+	};
+
+	for (auto &p : container)
+	{
+		pointDebugRenderer.
+			renderPoint(camera, p.second.getRubberBandPosition());
+
+		auto boxSize = glm::vec3(0.8, 0.8, 0.8);
+		auto pos = p.second.getRubberBandPosition();
+
+		drawBox(pos, boxSize);
+	}
+
+}
+
+
+template <int... Is>
+void callGenericRenderColliders(std::integer_sequence<int, Is...>, ClientEntityManager &c,
+	PointDebugRenderer &pointDebugRenderer, GyzmosRenderer &gyzmosRenderer, Camera &camera
+)
+{
+	(genericRenderColliders<Is>(*c.template entityGetter<Is>(), 
+		pointDebugRenderer, gyzmosRenderer, camera), ...);
+
+}
+
+
+
+void ClientEntityManager::renderColiders(PointDebugRenderer &pointDebugRenderer, GyzmosRenderer &gyzmosRenderer, Camera &c)
+{
+
+	return callGenericRenderColliders(
+		std::make_integer_sequence<int, EntitiesTypesCount>(), *this,
+		pointDebugRenderer, gyzmosRenderer, c);
+
 
 }
 

@@ -4,11 +4,18 @@
 #include <gameplay/pig.h>
 #include <gameplay/player.h>
 #include <gameplay/cat.h>
+#include <gameplay/goblin.h>
+#include "repeat.h"
 
 
 //!!!!!!!!!!! DONT FORGET TO ALSO UPDATE THIS ONE
-#define EntitiesTypesCountMACRO 5
+#define EntitiesTypesCountMACRO 6
 constexpr static unsigned int EntitiesTypesCount = EntitiesTypesCountMACRO;
+#define REPEAT_FOR_ALL_ENTITIES(FN) REPEAT_6(FN)
+//!!!!!!!!!!! ^ ALSO THIS ONE            ^^^^^
+
+
+
 namespace EntityType
 {
 	enum
@@ -18,6 +25,7 @@ namespace EntityType
 		zombies,
 		pigs,
 		cats,
+		goblins,
 	};
 };
 
@@ -60,6 +68,10 @@ struct EntityGetter
 		{
 			return &baseClass->cats;
 		}
+		else if constexpr (I == 5)
+		{
+			return &baseClass->goblins;
+		}
 
 		static_assert(I >= 0 && I <= EntitiesTypesCount);
 	}
@@ -75,6 +87,7 @@ struct EntityData: public EntityGetter<EntityData>
 	std::unordered_map<std::uint64_t, ZombieServer> zombies;
 	std::unordered_map<std::uint64_t, PigServer> pigs;
 	std::unordered_map<std::uint64_t, CatServer> cats;
+	std::unordered_map<std::uint64_t, GoblinServer> goblins;
 
 };
 
@@ -87,6 +100,7 @@ struct EntityDataClient : public EntityGetter<EntityDataClient>
 	std::unordered_map<std::uint64_t, ZombieClient> zombies;
 	std::unordered_map<std::uint64_t, PigClient> pigs;
 	std::unordered_map<std::uint64_t, CatClient> cats;
+	std::unordered_map<std::uint64_t, GoblinClient> goblins;
 
 };
 

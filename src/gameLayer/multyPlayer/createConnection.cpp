@@ -104,6 +104,12 @@ ConnectionData getConnectionData()
 	return clientData;
 }
 
+#define CASE_UPDATE(I) case I: { \
+if (size != sizeof(Packet_UpdateGenericEntity) + sizeof(decltype((*entityManager.entityGetter<I>())[0].entity))) { break; } \
+auto *p = (decltype((*entityManager.entityGetter<I>())[0].entity) *)(data + sizeof(Packet_UpdateGenericEntity)); \
+float restantTimer = computeRestantTimer(firstPart->timer, yourTimer); \
+entityManager.addOrUpdateGenericEntity< I >(firstPart->eid, *p, undoQueue, restantTimer);\
+} break;
 
 void recieveDataClient(ENetEvent &event, 
 	EventCounter &validatedEvent, 
@@ -471,6 +477,32 @@ void recieveDataClient(ENetEvent &event,
 			float restantTimer = computeRestantTimer(c->timer, yourTimer);
 
 			entityManager.addOrUpdateCat(c->eid, c->entity, restantTimer);
+
+			break;
+		}
+
+		case headerUpdateGenericEntity:
+		{
+
+			Packet_UpdateGenericEntity *firstPart = (Packet_UpdateGenericEntity *)data;
+			if (size < sizeof(Packet_UpdateGenericEntity)) { break; }
+
+			auto entityType = getEntityTypeFromEID(firstPart->eid);
+
+			if (firstPart->timer + 16 < yourTimer)
+			{
+				break; //drop too old packets
+			}
+
+			switch (entityType)
+			{
+
+				REPEAT_FOR_ALL_ENTITIES(CASE_UPDATE);
+
+			}
+
+
+
 
 			break;
 		}
