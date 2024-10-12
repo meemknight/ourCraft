@@ -28,6 +28,7 @@ enum ItemTypes : unsigned short
 	zombieSpawnEgg,
 	pigSpawnEgg,
 	catSpawnEgg,
+	goblinSpawnEgg,
 	lastItem,
 
 };

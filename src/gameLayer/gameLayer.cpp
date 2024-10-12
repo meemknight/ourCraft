@@ -540,6 +540,7 @@ bool gameLogic(float deltaTime)
 				ImGui::Checkbox("Allow validate moves", &c.second.validateStuff);
 				ImGui::Checkbox("Spawn zombie", &c.second.spawnZombie);
 				ImGui::Checkbox("Spawn pig", &c.second.spawnPig);
+				ImGui::Checkbox("Spawn goblin", &c.second.spawnGoblin);
 				ImGui::Checkbox("Resend inventory", &c.second.resendInventory);
 
 				if (ImGui::Button("Set Survival"))

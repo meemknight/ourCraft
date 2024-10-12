@@ -31,6 +31,7 @@ struct PerClientServerSettings
 	bool validateStuff = true;
 	bool spawnZombie = false;
 	bool spawnPig = false;
+	bool spawnGoblin = false;
 	bool resendInventory = false;
 	bool damage = false;
 	bool heal = false;

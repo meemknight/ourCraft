@@ -147,7 +147,8 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		loadTexture((path + "steve.png").c_str(), appendMode, index++, true);
 		loadTexture((path + "zombie.png").c_str(), appendMode, index++, true);
 		loadTexture((path + "pig.png").c_str(), appendMode, index++);
-		loadTexture((path+ "cat.png").c_str(), appendMode, index++);
+		loadTexture((path + "cat.png").c_str(), appendMode, index++);
+		loadTexture((path+ "goblin.png").c_str(), appendMode, index++);
 		
 
 	}
@@ -260,7 +261,7 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 
 			model.vertexCount = indices.size();
 
-			if (!model.vertexCount && reportErrors) { std::cout << "Error wrong model format!\n"; }
+			if (!model.vertexCount) { std::cout << "!!!!Error wrong model format!!!!!!!!!!!!!\n"; }
 
 			glBufferData(GL_ARRAY_BUFFER, vertexes.size() * sizeof(Data), vertexes.data(), GL_STATIC_DRAW);
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
@@ -300,6 +301,9 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 	if (!rightHand.vertexCount)
 		loadModel((path + "rightHand.glb").c_str(), rightHand);
 
+	if (!goblin.vertexCount)
+		loadModel((path + "goblin.glb").c_str(), goblin);
+
 	//todo check if it frees all of them
 	importer.FreeScene();
 
@@ -317,6 +321,7 @@ void ModelsManager::clearAllModels()
 
 	rightHand.cleanup();
 
+	goblin.cleanup();
 
 	if (texturesIds.size())
 	{

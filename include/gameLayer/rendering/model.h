@@ -43,13 +43,16 @@ struct ModelsManager
 
 	Model rightHand;
 
+	Model goblin;
+
 	enum TexturesLoaded
 	{
 		DefaultTexture,
 		SteveTexture,
 		ZombieTexture,
 		PigTexture,
-		CatTexture
+		CatTexture,
+		GoblinTexture
 	};
 
 	std::vector<GLuint64> gpuIds;

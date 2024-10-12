@@ -297,6 +297,31 @@ bool spawnPig(
 	return 1;
 }
 
+bool spawnGoblin(
+	ServerChunkStorer &chunkManager,
+	Goblin goblin, WorldSaver &worldSaver,
+	std::minstd_rand &rng)
+{
+	//todo also send packets
+	//todo generic spawn for any entity
+
+	auto chunkPos = determineChunkThatIsEntityIn(goblin.position);
+	auto c = chunkManager.getChunkOrGetNull(chunkPos.x, chunkPos.y);
+	if (c)
+	{
+		GoblinServer e = {};
+		e.entity = goblin;
+		//e.configureSpawnSettings(rng);
+
+		c->entityData.goblins.insert({getEntityIdAndIncrement(worldSaver, EntityType::goblins), e});
+	}
+	else
+	{
+		return 0;
+	}
+	return 1;
+}
+
 bool spawnCat(
 	ServerChunkStorer &chunkManager,
 	Cat cat, WorldSaver &worldSaver,
@@ -1344,6 +1369,14 @@ void serverWorkerUpdate(
 									c.lastPosition = position;
 									spawnCat(sd.chunkCache, c, worldSaver, rng);
 								}
+								else if (from->type == ItemTypes::goblinSpawnEgg)
+								{
+									Goblin g;
+									glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.0, -0.49, 0.0);
+									g.position = position;
+									g.lastPosition = position;
+									spawnGoblin(sd.chunkCache, g, worldSaver, rng);
+								}
 
 
 								if (from->isConsumedAfterUse() && client->playerData.otherPlayerSettings.gameMode ==
@@ -1747,6 +1780,18 @@ void serverWorkerUpdate(
 				p.position = position;
 				p.lastPosition = position;
 				spawnPig(sd.chunkCache, p, worldSaver, rng);
+			}
+
+			if (settings.perClientSettings.begin()->second.spawnGoblin)
+			{
+				settings.perClientSettings.begin()->second.spawnGoblin = false;
+				auto c = getAllClients();
+
+				Goblin p;
+				glm::dvec3 position = c.begin()->second.playerData.entity.position;
+				p.position = position;
+				p.lastPosition = position;
+				spawnGoblin(sd.chunkCache, p, worldSaver, rng);
 			}
 
 			if (settings.perClientSettings.begin()->second.resendInventory)

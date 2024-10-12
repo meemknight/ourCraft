@@ -49,7 +49,6 @@ void GoblinClient::setEntityMatrix(glm::mat4 *skinningMatrix)
 		glm::quatLookAt(glm::normalize(getRubberBandLookDirection()), glm::vec3(0, 1, 0)));
 
 
-
 }
 
 

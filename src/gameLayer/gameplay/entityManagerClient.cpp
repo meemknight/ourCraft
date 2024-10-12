@@ -574,7 +574,7 @@ void genericRenderColliders(T &container,
 		pointDebugRenderer.
 			renderPoint(camera, p.second.getRubberBandPosition());
 
-		auto boxSize = glm::vec3(0.8, 0.8, 0.8);
+		auto boxSize = p.second.entity.getColliderSize();
 		auto pos = p.second.getRubberBandPosition();
 
 		drawBox(pos, boxSize);

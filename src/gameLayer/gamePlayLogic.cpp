@@ -1554,52 +1554,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.entityManager.renderColiders(programData.pointDebugRenderer, programData.gyzmosRenderer, 
 				gameData.c);
 
-			//for (auto &p : gameData.entityManager.pigs)
-			//{
-			//	programData.pointDebugRenderer.
-			//		renderPoint(gameData.c, p.second.getRubberBandPosition());
-			//
-			//	auto boxSize = glm::vec3(0.8, 0.8, 0.8);
-			//	auto pos = p.second.getRubberBandPosition();
-			//
-			//	drawPlayerBox(pos, boxSize);
-			//}
-			//
-			//for (auto &p : gameData.entityManager.players)
-			//{
-			//	programData.pointDebugRenderer.
-			//		renderPoint(gameData.c, p.second.getRubberBandPosition());
-			//
-			//	auto boxSize = p.second.entity.getColliderSize();
-			//	auto pos = p.second.getRubberBandPosition();
-			//
-			//	drawPlayerBox(pos, boxSize);
-			//}
-			//
-			//for (auto &p : gameData.entityManager.zombies)
-			//{
-			//
-			//	programData.pointDebugRenderer.
-			//		renderPoint(gameData.c, p.second.getRubberBandPosition());
-			//
-			//	auto boxSize = p.second.entity.getColliderSize();
-			//	auto pos = p.second.getRubberBandPosition();
-			//
-			//	drawPlayerBox(pos, boxSize);
-			//}
-			//
-			//for (auto &p : gameData.entityManager.cats)
-			//{
-			//
-			//	programData.pointDebugRenderer.
-			//		renderPoint(gameData.c, p.second.getRubberBandPosition());
-			//
-			//	auto boxSize = p.second.entity.getColliderSize();
-			//	auto pos = p.second.getRubberBandPosition();
-			//
-			//	drawPlayerBox(pos, boxSize);
-			//}
-
 		}
 
 

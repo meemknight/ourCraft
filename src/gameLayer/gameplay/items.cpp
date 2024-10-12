@@ -13,7 +13,8 @@ bool Item::isBlock()
 
 bool Item::isItemThatCanBeUsed()
 {
-	if (type == pigSpawnEgg || type == zombieSpawnEgg || type == catSpawnEgg)
+	if (type == pigSpawnEgg || type == zombieSpawnEgg 
+		|| type == catSpawnEgg || type == goblinSpawnEgg)
 	{
 		return true;
 	}
@@ -23,7 +24,8 @@ bool Item::isItemThatCanBeUsed()
 
 bool Item::isConsumedAfterUse()
 {
-	if (type == pigSpawnEgg || type == zombieSpawnEgg || type == catSpawnEgg)
+	if (type == pigSpawnEgg || type == zombieSpawnEgg || type == catSpawnEgg
+		|| type == goblinSpawnEgg)
 	{
 		return true;
 	}
@@ -360,6 +362,7 @@ const char *itemsNamesTextures[] =
 	"", //eggs
 	"",
 	"",
+	"",
 };
 
 const char *itemsNames[] =
@@ -379,9 +382,10 @@ const char *itemsNames[] =
 	"trainingKnife",
 	"trainingBattleAxe",
 
-	"", //eggs
-	"",
-	"",
+	"zombie spawn egg", //eggs
+	"pig spawn egg",
+	"cat spawn egg",
+	"goblin spawn egg",
 };
 
 const char *getItemTextureName(int itemId)
