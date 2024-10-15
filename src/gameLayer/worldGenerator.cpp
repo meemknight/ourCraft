@@ -136,10 +136,12 @@ void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, f
 		}
 	}
 
-	for (y = waterLevel; y >= 20; y--)
+	for (y = waterLevel+2; y >= 20; y--)
 	{
 
-		if (startPos[y].getType() == BlockTypes::stone && 
+		if (
+			y <= waterLevel &&
+			startPos[y].getType() == BlockTypes::stone && 
 			(startPos[y+1].getType() == biome.waterType ||
 			startPos[y + 1].getType() == biome.secondaryBlock
 			))
@@ -193,9 +195,19 @@ void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, f
 		}else
 		if (startPos[y].getType() == BlockTypes::air)
 		{
-			if(road && y == waterLevel)
+			if(road && y == waterLevel+ 1 + int(1.2f * riverValue)
+				&& startPos[y-1].getType() == BlockTypes::air
+				)
 			{
-				startPos[y].setType(BlockTypes::wooden_plank);
+				if (int(1.2f * riverValue))
+				{
+					startPos[y].setType(BlockTypes::wooden_slab);
+				}
+				else
+				{
+					startPos[y].setType(BlockTypes::wooden_plank);
+				}
+
 			}
 			else
 			{
@@ -203,7 +215,7 @@ void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, f
 				{
 					startPos[y].setType(biome.waterType);
 				}
-				else
+				else if(y < waterLevel)
 				{
 					startPos[y].setType(biome.waterTypeSecond);
 				}
