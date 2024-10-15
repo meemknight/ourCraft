@@ -109,6 +109,29 @@ peaksAndValiesContributionSpline:
 	0.849034,0.162377;
 	1.000000,0.114379;
 	}
+randomHills:
+	{
+	scale: 0.270000;
+	type: SimplexFractal;
+	celularReturnType: Distance;
+	frequency: 0.015000;
+	octaves: 3;
+	perturbFractalOctaves: 0;
+	power: 1.100000;
+	spline:
+		{
+		0.000000,0.000000;
+		0.674837,0.000000;
+		0.721405,0.156863;
+		0.767565,0.215686;
+		0.789011,0.316993;
+		0.856924,0.372549;
+		0.885978,0.540849;
+		0.923381,0.634804;
+		0.969861,0.961193;
+		1.000000,1.000000;
+		}
+	}
 wierdness:
 	{
 	scale: 0.360000;

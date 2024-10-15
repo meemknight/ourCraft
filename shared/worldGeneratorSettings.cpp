@@ -10,6 +10,7 @@ void WorldGenerator::init()
 	continentalnessNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	continentalness2Noise = FastNoiseSIMD::NewFastNoiseSIMD();
 	continentalnessPickNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	randomHillsNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	peaksValiesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	wierdnessNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	stone3Dnoise = FastNoiseSIMD::NewFastNoiseSIMD();
@@ -36,6 +37,7 @@ void WorldGenerator::init()
 
 	randomStonesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
+	alternativePatchesOfBlocks = FastNoiseSIMD::NewFastNoiseSIMD();
 
 	WorldGeneratorSettings s;
 	applySettings(s);
@@ -46,6 +48,7 @@ void WorldGenerator::clear()
 	delete continentalnessNoise;
 	delete continentalness2Noise;
 	delete continentalnessPickNoise;
+	delete randomHillsNoise;
 	delete peaksValiesNoise;
 	delete wierdnessNoise;
 	delete stone3Dnoise;
@@ -57,6 +60,7 @@ void WorldGenerator::clear()
 	delete regionsHeightNoise;
 	delete regionsHeightTranzition;
 	delete randomStonesNoise;
+	delete alternativePatchesOfBlocks;
 	delete hillsDropsNoise;
 	delete regionsRandomNumber;
 	delete randomSandPatchesNoise;
@@ -110,6 +114,9 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	stone3DnoiseSplines = s.stone3Dnoise.spline;
 	stone3Dpower = s.stone3Dnoise.power;
 
+	apply(randomHillsNoise, s.seed + 45, s.randomHills);
+	randomHillsSplines = s.randomHills.spline;
+	randomHillsPower = s.randomHills.power;
 
 	apply(spagettiNoise, s.seed + 4, s.spagettiNoise);
 	spagettiNoiseSplines = s.spagettiNoise.spline;
@@ -168,8 +175,8 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	regionsHeightNoise->SetAxisScales(1, 1, 1);
 	//regionsHeightNoise->SetFrequency(0.002);
 	//regionsHeightNoise->SetFrequency(0.024); //original intended scale
-	//regionsHeightNoise->SetFrequency(0.040); //probably will use this
-	regionsHeightNoise->SetFrequency(0.1);
+	regionsHeightNoise->SetFrequency(0.04); //probably will use this
+	//regionsHeightNoise->SetFrequency(0.1);
 	//regionsHeightNoise->SetFrequency(0.4); //for testing
 
 	regionsHeightNoise->SetNoiseType(FastNoiseSIMD::NoiseType::Cellular);
@@ -189,7 +196,6 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	*regionsRandomNumber = *regionsHeightNoise;
 	regionsRandomNumber->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::CellValue);
 
-
 	*regionsX = *regionsHeightNoise;
 	regionsX->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::CellX);
 
@@ -201,6 +207,16 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	float scale = 0.05 * 16;
 	randomStonesNoise->SetAxisScales(scale, scale, scale);
 	randomStonesNoise->SetFrequency(0.015);
+
+
+	alternativePatchesOfBlocks->SetSeed(s.seed + 101);
+	alternativePatchesOfBlocks->SetAxisScales(1, 1, 1);
+	alternativePatchesOfBlocks->SetFrequency(0.016);
+	alternativePatchesOfBlocks->SetNoiseType(FastNoiseSIMD::NoiseType::Cellular);
+	alternativePatchesOfBlocks->SetCellularReturnType(FastNoiseSIMD::CellularReturnType::NoiseLookup);
+	alternativePatchesOfBlocks->SetCellularDistanceFunction(FastNoiseSIMD::CellularDistanceFunction::Natural);
+	alternativePatchesOfBlocks->SetCellularNoiseLookupFrequency(0.30);
+	alternativePatchesOfBlocks->SetCellularNoiseLookupType(FastNoiseSIMD::NoiseType::Simplex);
 
 
 }
@@ -217,7 +233,7 @@ float truncateTo4Decimals(float number)
 
 int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 	float values[16 * 16], float borderingFactor[16 * 16], float &vegetationMaster,
-	float tightBorders[16 * 16], float &xValue, float &zValue)
+	float tightBorders[16 * 16], float &xValue, float &zValue, float &biomeTypeRandomValue)
 {
 	float *rezult
 		= regionsHeightNoise->GetNoiseSet(chunkX-1, 0, chunkZ-1,
@@ -229,6 +245,11 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 	float *rezult3
 		= regionsRandomNumber->GetNoiseSet(chunkX-1, 0, chunkZ-1,
 		3, (1), 3);
+
+	biomeTypeRandomValue = rezult3[4]; //todo change !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	biomeTypeRandomValue += 1.f;
+	biomeTypeRandomValue /= 2.f;
+	
 
 	float *rezultX = regionsX->GetNoiseSet(chunkX-1, 0, chunkZ-1, 3, 1, 3);
 	for (int i = 0; i < 9; i++)
@@ -251,7 +272,6 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 	//float *test = 
 		//regionsHeightNoise->SetCellularDistanceFunction()
 	//FastNoiseSIMD::CellularDistanceFunction;
-	
 
 	vegetationMaster = rezult3[4];
 	vegetationMaster += 1.f;
@@ -279,17 +299,13 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 
 		rezult[i] *= 6;
 		rezult[i] = floor(rezult[i]);
+		if (rezult[i] == 6) { rezult[i] = 5; }
 		//rezult[i] += 0.1;
 	}
 
 	auto getRezultValues = [&](int x, int y)
 	{
 		return rezult[x + y * 3];
-	};
-
-	auto getRezult3Values = [&](int x, int y)
-	{
-		return rezult3[x + y * 3];
 	};
 
 	auto getXValues = [&](int x, int y)
@@ -442,6 +458,9 @@ std::string WorldGeneratorSettings::saveSettings()
 	rez += peaksAndValies.saveSettings(1);
 	rez += "peaksAndValiesContributionSpline:\n";
 	rez += peaksAndValiesContributionSpline.saveSettings(1);
+
+	rez += "randomHills:\n";
+	rez += randomHills.saveSettings(1);
 
 	rez += "wierdness:\n";
 	rez += wierdness.saveSettings(1);
@@ -1043,6 +1062,16 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 						return 0;
 					}
 				}
+				else if (s == "randomHills")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(randomHills))
+					{
+						return 0;
+					}
+					}
 				else if (s == "wierdness")
 				{
 					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }

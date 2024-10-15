@@ -70,6 +70,7 @@ bool initGame()
 gl2d::Texture noiseT;
 gl2d::Texture continenralness2T;
 gl2d::Texture continenralnessPickT;
+gl2d::Texture randomHillsT;
 gl2d::Texture peaksValiesT;
 gl2d::Texture finalTexture;
 gl2d::Texture sliceT;
@@ -208,7 +209,6 @@ void recreate()
 	}
 
 
-
 	float *finalNoise = new float[size.x * size.y];
 
 	float *testNoise
@@ -221,6 +221,18 @@ void recreate()
 		testNoise[i] = applySpline(testNoise[i], settings.continentalnessNoiseSettings.spline);
 	}
 	createFromGrayScale(noiseT, testNoise, size);
+
+
+	float *randomHills 
+		= wg.randomHillsNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
+	for (int i = 0; i < size.x * size.y; i++)
+	{
+		randomHills[i] += 1;
+		randomHills[i] /= 2;
+		randomHills[i] = std::pow(randomHills[i], settings.randomHills.power);
+		randomHills[i] = applySpline(randomHills[i], settings.randomHills.spline);
+	}
+	createFromGrayScale(randomHillsT, randomHills, size);
 
 
 	float *continental2Noise
@@ -618,6 +630,7 @@ void recreate()
 
 	FastNoiseSIMD::FreeNoiseSet(testNoise);
 	FastNoiseSIMD::FreeNoiseSet(continental2Noise);
+	FastNoiseSIMD::FreeNoiseSet(randomHills);
 	FastNoiseSIMD::FreeNoiseSet(continentalPickNoise);
 	FastNoiseSIMD::FreeNoiseSet(peaksNoise);
 	FastNoiseSIMD::FreeNoiseSet(treesAmountNoise);
@@ -844,6 +857,11 @@ bool gameLogic(float deltaTime)
 
 	ImGui::Separator();
 
+	noiseEditor(settings.randomHills, "randomHills");
+
+	ImGui::Separator();
+
+
 	{
 		//noiseEditor(fractalSettings, "Fractal");
 
@@ -959,6 +977,8 @@ bool gameLogic(float deltaTime)
 	drawNoise("RandomSandT", randomSandT);
 
 	drawNoise("stonePatchesT", stonePatchesT);
+
+	drawNoise("Random hills", randomHillsT);
 
 	drawNoise("Fractal", fractalT);
 

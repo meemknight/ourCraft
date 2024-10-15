@@ -1,4 +1,12 @@
 #include "biome.h"
+#include <utility>
+
+
+int BiomesManager::pickBiomeIndex(float randomNumber)
+{
+	int pick = std::min(randomNumber, 0.99f) * biomeIndexes.size();
+	return biomeIndexes[pick];
+}
 
 bool BiomesManager::loadAllBiomes()
 {
@@ -175,49 +183,7 @@ bool BiomesManager::loadAllBiomes()
 	}
 
 
-	//forest 0
-	{
-		Biome plains;
-		plains.name = "forest";
-		plains.color = {0.2,0.7,0.3};
-		plains.surfaceBlock = BlockTypes::grassBlock;
-		plains.secondaryBlock = BlockTypes::dirt;
-
-
-		{
-			VegetationNoiseSettings noiseSettings;
-			noiseSettings.entry.push_back(growRandomTreesVegetation);
-			plains.vegetationNoises.push_back(noiseSettings);
-		};
-
-		{
-			VegetationNoiseSettings noiseSettings;
-			noiseSettings.entry.push_back(ThickSpruce);
-			plains.vegetationNoises.push_back(noiseSettings);
-		};
-
-		{
-			VegetationNoiseSettings noiseSettings;
-			noiseSettings.entry.push_back(tallForestVegetation);
-			plains.vegetationNoises.push_back(noiseSettings);
-		};
-
-		{
-			VegetationNoiseSettings noiseSettings;
-			noiseSettings.entry.push_back(tallSpruceForestVegetation);
-			noiseSettings.entry.push_back(growFullGrassVegetation);
-			plains.vegetationNoises.push_back(noiseSettings);
-		};
-
-	
-
-		plains.grassType = BlockTypes::grass;
-		plains.waterType = BlockTypes::water;
-
-		biomes.push_back(plains);
-	}
-
-	//desert 1
+	//desert 0
 	{
 		Biome b;
 		b.name = "desert";
@@ -225,21 +191,37 @@ bool BiomesManager::loadAllBiomes()
 		b.surfaceBlock = BlockTypes::sand;
 		b.secondaryBlock = BlockTypes::sand_stone;
 
-		//b.forestTresshold = 0.55;
-		//b.jusGrassTresshold = 0.3;
-		//b.treeChanceRemap = {0.01, 0.1};
-		//b.grassChanceForestRemap = {0.01, 0.02};
-		//b.justGrassChanceRemap = {0.001, 0.01};
-		//b.growTreesOn = 0;
-		//b.growGrassOn = BlockTypes::sand;
+		b.blockVariations.push_back({BlockTypes::sand, BlockTypes::sand_stone});
+		b.blockVariations.push_back({BlockTypes::sand, BlockTypes::sand_stone});
+		b.blockVariations.push_back({BlockTypes::sand, BlockTypes::sand_stone});
+		b.blockVariations.push_back({BlockTypes::sand, BlockTypes::sand_stone});
+		b.blockVariations.push_back({BlockTypes::sand, BlockTypes::sand_stone});
+		b.blockVariations.push_back({BlockTypes::sand, BlockTypes::sand_stone});
+		b.blockVariations.push_back({BlockTypes::sand_stone, BlockTypes::sand_stone});
+		b.blockVariations.push_back({BlockTypes::hardSandStone, BlockTypes::hardSandStone});
+		b.blockVariations.push_back({BlockTypes::hardSandStone, BlockTypes::hardSandStone});
+		b.blockVariations.push_back({BlockTypes::sand, BlockTypes::hardSandStone});
+		b.blockVariations.push_back({BlockTypes::sand, BlockTypes::hardSandStone});
+		b.blockVariations.push_back({BlockTypes::sand, BlockTypes::hardSandStone});
+		b.blockVariations.push_back({BlockTypes::sand, BlockTypes::sand_stone});
+		b.blockVariations.push_back({BlockTypes::sand, BlockTypes::sand_stone});
+		b.blockVariations.push_back({BlockTypes::stone, BlockTypes::stone});
+		b.blockVariations.push_back({BlockTypes::sand, BlockTypes::sand_stone});
+		b.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		b.blockVariations.push_back({BlockTypes::sand, BlockTypes::sand_stone});
+		b.blockVariations.push_back({BlockTypes::sand, BlockTypes::sand_stone});
+		b.blockVariations.push_back({BlockTypes::sand, BlockTypes::sand_stone});
+		b.blockVariations.push_back({BlockTypes::sand, BlockTypes::sand_stone});
+
 
 		b.grassType = BlockTypes::dead_bush;
 		b.waterType = BlockTypes::water;
+		b.waterTypeSecond = BlockTypes::water;
 
 		biomes.push_back(b);
 	}
 
-	//plains 2
+	//plains 1
 	{
 		Biome plains;
 		plains.name = "plains";
@@ -260,126 +242,75 @@ bool BiomesManager::loadAllBiomes()
 		plains.vegetationNoises.push_back(noiseSettings2);
 
 
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::sand, BlockTypes::sand_stone});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::stone, BlockTypes::stone});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
 
-		//plains.treeType = Biome::treeNormal;
-		////plains.forestTresshold = 0.96;
-		//plains.forestTresshold = 1;
-		//plains.jusGrassTresshold = 0.05;
-		//plains.jusTreeTresshold = 0.6;
-		//plains.treeChanceRemap = {0.01, 0.05};
-		//plains.grassChanceForestRemap = {0.2, 0.22};
-		//plains.justGrassChanceRemap = {0.12, 0.2};
-		//plains.justTreeChanceRemap = {0.0, 0.001};
-		//plains.growTreesOn = BlockTypes::grassBlock;
-		//plains.growGrassOn = BlockTypes::grassBlock;
+
 
 		plains.grassType = BlockTypes::grass;
 		plains.waterType = BlockTypes::water;
+		plains.waterTypeSecond = BlockTypes::water;
 
 		biomes.push_back(plains);
 	}
-
-	//oasis 3
-	{
-		Biome b;
-		b.name = "oasis";
-		b.color = glm::vec3{222, 102, 192} / 255.f;
-		b.surfaceBlock = BlockTypes::grassBlock;
-		b.secondaryBlock = BlockTypes::dirt;
-
-
-		//b.treeType = Biome::treePalm;
-		//b.forestTresshold = 0.3;
-		//b.jusGrassTresshold = 0.1;
-		//b.treeChanceRemap = {0.001, 0.01};
-		//b.grassChanceForestRemap = {0.01, 0.03};
-		//b.justGrassChanceRemap = {0.01, 0.02};
-		//b.growTreesOn = BlockTypes::grassBlock;
-		//b.growGrassOn = BlockTypes::grassBlock;
-
-
-		b.grassType = BlockTypes::cactus_bud;
-		b.waterType = BlockTypes::water;
-
-		biomes.push_back(b);
-	}
-
-	//jungle 4
-	{
-		Biome b;
-		b.name = "jungle";
-		b.color = {0.2,0.7,0.3};
-		b.surfaceBlock = BlockTypes::grassBlock;
-		b.secondaryBlock = BlockTypes::dirt;
-
-
-		//b.treeType = Biome::treeJungle;
-		//b.forestTresshold = 0.3;
-		//b.jusGrassTresshold = 0.1;
-		//b.treeChanceRemap = {0.006, 0.07};
-		//b.grassChanceForestRemap = {0.2, 0.22};
-		//b.justGrassChanceRemap = {0.12, 0.2};
-		//b.growTreesOn = BlockTypes::grassBlock;
-		//b.growGrassOn = BlockTypes::grassBlock;
-
-
-		b.grassType = BlockTypes::grass;
-		b.waterType = BlockTypes::water;
-
-		biomes.push_back(b);
-	}
-
-	//dryLand 5
-	{
-		Biome b;
-		b.name = "dryLand";
-		b.color = glm::vec3{84, 51, 23} / 255.f;
-		b.surfaceBlock = BlockTypes::dirt;
-		b.secondaryBlock = BlockTypes::dirt;
-
-		//b.forestTresshold = 0.3;
-		//b.jusGrassTresshold = 0.1;
-		//b.treeChanceRemap = {0.01, 0.1};
-		//b.grassChanceForestRemap = {0.2, 0.22};
-		//b.justGrassChanceRemap = {0.12, 0.2};
-		//b.growTreesOn = 0;
-		//b.growGrassOn = 0;
-
-		b.grassType = 0;
-		b.waterType = BlockTypes::water;
-
-		biomes.push_back(b);
-	}
-
-	//rocks 6
-	{
-		Biome b;
-		b.name = "rocks";
-		b.color = glm::vec3{89, 89, 89} / 255.f;
-		b.surfaceBlock = BlockTypes::stone;
-		b.secondaryBlock = BlockTypes::stone;
-
-		//b.forestTresshold = 0.3;
-		//b.jusGrassTresshold = 0.1;
-		//b.treeChanceRemap = {0.01, 0.1};
-		//b.grassChanceForestRemap = {0.2, 0.22};
-		//b.justGrassChanceRemap = {0.12, 0.2};
-		//b.growTreesOn = 0;
-		//b.growGrassOn = 0;
-
-		b.grassType = 0;
-		b.waterType = BlockTypes::ice;
-
-		biomes.push_back(b);
-	}
-
-	//snow 7
+	
+	//snow 2
 	{
 		Biome b;
 		b.name = "snow";
 		b.color = glm::vec3{199, 199, 199} / 255.f;
 		b.surfaceBlock = BlockTypes::snow_dirt;
 		b.secondaryBlock = BlockTypes::dirt;
+
+		b.blockVariations.push_back({BlockTypes::snow_dirt, BlockTypes::dirt});
+		b.blockVariations.push_back({BlockTypes::snow_dirt, BlockTypes::dirt});
+		b.blockVariations.push_back({BlockTypes::snow_dirt, BlockTypes::dirt});
+		b.blockVariations.push_back({BlockTypes::snow_dirt, BlockTypes::dirt});
+		b.blockVariations.push_back({BlockTypes::snow_dirt, BlockTypes::dirt});
+		b.blockVariations.push_back({BlockTypes::snow_dirt, BlockTypes::dirt});
+		b.blockVariations.push_back({BlockTypes::snow_dirt, BlockTypes::dirt});
+		b.blockVariations.push_back({BlockTypes::snow_dirt, BlockTypes::dirt});
+		b.blockVariations.push_back({BlockTypes::stone, BlockTypes::stone});
+		b.blockVariations.push_back({BlockTypes::snow_dirt, BlockTypes::dirt});
+		b.blockVariations.push_back({BlockTypes::snow_dirt, BlockTypes::dirt});
+		b.blockVariations.push_back({BlockTypes::snow_dirt, BlockTypes::dirt});
+		b.blockVariations.push_back({BlockTypes::snow_dirt, BlockTypes::dirt});
+		b.blockVariations.push_back({BlockTypes::snow_dirt, BlockTypes::dirt});
+		b.blockVariations.push_back({BlockTypes::snow_dirt, BlockTypes::dirt});
+		b.blockVariations.push_back({BlockTypes::snow_dirt, BlockTypes::dirt});
+		b.blockVariations.push_back({BlockTypes::snow_dirt, BlockTypes::dirt});
+		b.blockVariations.push_back({BlockTypes::snow_dirt, BlockTypes::dirt});
+		b.blockVariations.push_back({BlockTypes::snow_dirt, BlockTypes::dirt});
 
 		//b.treeType = Biome::treeSpruce;
 		//b.forestTresshold = 0.9;
@@ -393,36 +324,40 @@ bool BiomesManager::loadAllBiomes()
 		b.isICy = true;
 		b.grassType = 0;
 		b.waterType = BlockTypes::ice;
+		b.waterTypeSecond = BlockTypes::water;
 
 		biomes.push_back(b);
 	}
 
-	//taiga 8
+	//wasteLand 1
 	{
 		Biome b;
-		b.name = "taiga";
-		b.color = glm::vec3{184, 201, 159} / 255.f;
-		b.surfaceBlock = BlockTypes::snow_dirt;
-		b.secondaryBlock = BlockTypes::dirt;
+		b.name = "waste land";
+		b.color = {0.3,0.2,0.2};
+		b.surfaceBlock = BlockTypes::volcanicRock;
+		b.secondaryBlock = BlockTypes::volcanicRock;
 
-		//b.treeType = Biome::treeSpruce;
-		//b.forestTresshold = 0.7;
-		//b.jusGrassTresshold = 0.3;
-		//b.treeChanceRemap = {0.02, 0.12};
-		//b.grassChanceForestRemap = {0.4, 0.6};
-		//b.justGrassChanceRemap = {0.12, 0.4};
-		//b.growTreesOn = BlockTypes::snow_dirt;
-		//b.growGrassOn = BlockTypes::snow_dirt;
+		b.blockVariations.push_back({BlockTypes::volcanicRock, BlockTypes::volcanicRock});
+		b.blockVariations.push_back({BlockTypes::volcanicRock, BlockTypes::volcanicRock});
+		b.blockVariations.push_back({BlockTypes::volcanicRock, BlockTypes::volcanicRock});
 
-		b.grassType = 0;
-		b.waterType = BlockTypes::ice;
+		//b.grassType = BlockTypes::grass;
+		b.waterType = BlockTypes::water;
 
 		biomes.push_back(b);
 	}
 
 
-
-
+	biomeIndexes.push_back(BiomesManager::plains);
+	biomeIndexes.push_back(BiomesManager::plains);
+	biomeIndexes.push_back(BiomesManager::plains);
+	biomeIndexes.push_back(BiomesManager::plains);
+	biomeIndexes.push_back(BiomesManager::desert);
+	biomeIndexes.push_back(BiomesManager::plains);
+	biomeIndexes.push_back(BiomesManager::snow);
+	biomeIndexes.push_back(BiomesManager::plains);
+	biomeIndexes.push_back(BiomesManager::wasteLand);
+	biomeIndexes.push_back(BiomesManager::plains);
 
 
 

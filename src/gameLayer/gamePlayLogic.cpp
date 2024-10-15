@@ -39,7 +39,6 @@ struct GameData
 	Camera c;
 	ChunkSystem chunkSystem;
 	bool escapePressed = 0;
-	bool showImgui = 1;
 	bool showLightLevels = 0;
 	UndoQueue undoQueue;
 	LightSystem lightSystem;
@@ -518,10 +517,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		gameData.interaction = {};
 	}
 
-
 	if (platform::isKeyReleased(platform::Button::F9))
 	{
-		gameData.showImgui = !gameData.showImgui;
+		programData.showImgui = !programData.showImgui;
 	}
 
 	if (platform::isKeyReleased(platform::Button::F10))
@@ -1600,7 +1598,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #if REMOVE_IMGUI == 0
 
-	if (gameData.showImgui)
+	if (programData.showImgui)
 	{
 		gameData.gameplayFrameProfiler.startSubProfile("imgui");
 

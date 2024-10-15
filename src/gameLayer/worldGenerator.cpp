@@ -13,11 +13,27 @@ const int waterLevel = 65;
 
 //riverValue is from 0 to 1 where 1 means river
 void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, float roadValue,
-	float randomNumber, bool sandShore, bool stonePatch, float riverValue)
+	float randomNumber, bool sandShore, bool stonePatch, float riverValue,
+	float currentInterpolatedValue, float randomBlockVariation)
 {
+
 	
 	BlockType surfaceBlock = biome.surfaceBlock;
 	BlockType secondBlock = biome.secondaryBlock;
+
+
+	if (biome.blockVariations.size())
+	{
+		
+		float f = randomBlockVariation;
+		if (f >= 0.99) { f = 0.99; }
+		auto &b = biome.blockVariations[int(f * biome.blockVariations.size())];
+		
+		surfaceBlock = b.surfaceBlock;
+		secondBlock = b.secondaryBlock;
+
+	}
+
 
 	if (sandShore)
 	{
@@ -123,7 +139,10 @@ void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, f
 	for (y = waterLevel; y >= 20; y--)
 	{
 
-		if (startPos[y].getType() == BlockTypes::stone && startPos[y+1].getType() == biome.waterType)
+		if (startPos[y].getType() == BlockTypes::stone && 
+			(startPos[y+1].getType() == biome.waterType ||
+			startPos[y + 1].getType() == biome.secondaryBlock
+			))
 		{
 			//water block
 			if (riverValue > 0.2)
@@ -143,6 +162,33 @@ void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, f
 
 				startPos[y].setType(roadShape.getRandomBLock(randomNumber));
 			}
+			else
+			{
+				//under water block
+				BlockVariation underWaterLayerBlock;
+				underWaterLayerBlock.block.push_back(BlockTypes::stone);
+				underWaterLayerBlock.block.push_back(BlockTypes::stone);
+				underWaterLayerBlock.block.push_back(BlockTypes::stone);
+				underWaterLayerBlock.block.push_back(BlockTypes::gravel);
+				underWaterLayerBlock.block.push_back(BlockTypes::gravel);
+				underWaterLayerBlock.block.push_back(BlockTypes::cobblestone);
+
+				if (currentInterpolatedValue > 1.1 && currentInterpolatedValue <= 2.f)
+				{
+					underWaterLayerBlock.block.push_back(BlockTypes::sand);
+					underWaterLayerBlock.block.push_back(BlockTypes::sand);
+					underWaterLayerBlock.block.push_back(BlockTypes::sand);
+					underWaterLayerBlock.block.push_back(BlockTypes::sand);
+					underWaterLayerBlock.block.push_back(BlockTypes::sand);
+					underWaterLayerBlock.block.push_back(BlockTypes::sand);
+					underWaterLayerBlock.block.push_back(BlockTypes::sand);
+					underWaterLayerBlock.block.push_back(BlockTypes::sand);
+					underWaterLayerBlock.block.push_back(BlockTypes::sand);
+				}
+
+				startPos[y].setType(underWaterLayerBlock.getRandomBLock(randomNumber));
+
+			}
 
 		}else
 		if (startPos[y].getType() == BlockTypes::air)
@@ -153,7 +199,14 @@ void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, f
 			}
 			else
 			{
-				startPos[y].setType(biome.waterType);
+				if (y == waterLevel)
+				{
+					startPos[y].setType(biome.waterType);
+				}
+				else
+				{
+					startPos[y].setType(biome.waterTypeSecond);
+				}
 			}
 		}
 		else
@@ -219,8 +272,10 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	float vegetationMaster = 0;
 	float xCellValue = 0;
 	float zCellValue = 0;
+	float biomeType = 0;
 	int currentBiomeHeight = wg.getRegionHeightAndBlendingsForChunk(c.x, c.z,
-		interpolateValues, borderingFactor, vegetationMaster, tightBorders, xCellValue, zCellValue);
+		interpolateValues, borderingFactor, vegetationMaster, tightBorders, xCellValue, zCellValue,
+		biomeType);
 
 	c.vegetation = vegetationMaster;
 	c.regionCenterX = xCellValue;
@@ -235,28 +290,50 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		{
 			return (float)ptr[5];
 		}
+		
+		if (currentBiomeHeight == value)
+		{
+			return (float)ptr[currentBiomeHeight];
+		}else
+		//if (currentBiomeHeight < value)
+		{
+			float rez = ptr[int(value)];
+			float rez2 = ptr[int(value) + 1];
 
-		float rez = ptr[int(value)];
-		float rez2 = ptr[int(value)+1];
+			float interp = value - int(value);
 
-		float interp = value - int(value);
-
-		//return rez;
-		return glm::mix(rez, rez2, interp);
+			//return rez;
+			return glm::mix(rez, rez2, interp);
+		}
+		//else
+		//{
+		//	float rez = ptr[int(value)];
+		//	float rez2 = ptr[int(value) + 1];
+		//
+		//	float interp = value - int(value);
+		//
+		//	//return rez;
+		//	return glm::mix(rez, rez2, interp);
+		//}
+		
 	};
-	                   //water    plains   hills
+	               
+	//water    plains   hills
 	//int startValues[] = {22, 45,  66,      72,     80, 140};
 	//int maxlevels[] =   {40, 64,  71,      120,     170, 250};
 
-	int startValues[] = {22, 45,  66,      72,     74, 100};
-	int maxlevels[] =   {40, 64,  71,      120,     170, 240};
+	int startValues[] = {22, 48,  66,      70,     74, 100};
+	int maxlevels[] =   {40, 68,  71,      120,     170, 240};
 	int biomes[] = {BiomesManager::plains, BiomesManager::plains, 
-		BiomesManager::plains, BiomesManager::forest,
+		BiomesManager::plains, BiomesManager::plains,
 		BiomesManager::snow, BiomesManager::snow};
 
 	int valuesToAddToStart[] = {5, 5, 10,  20,  20,  20};
 	int valuesToAddToMax[] = {5, 5, 5,  20,  10,  0};
 	float peaksPower[] = {1,1, 0.5, 1, 1, 1};
+
+	int hillsValuesToAddToStart[] = {5, 5, 10,  10,  10,  4};
+	int hillsValuesToAddToMax[] = {5, 20, 45,  45,  30,  4};
 
 	c.clear();
 	
@@ -264,7 +341,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	int zPadd = c.z * 16;
 
 	c.vegetation = vegetationMaster;
-
 
 #pragma region noises
 	static alignas(32) float continentalness[CHUNK_SIZE * CHUNK_SIZE] = {};
@@ -300,21 +376,18 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	static alignas(32) float continentalnessFinal[CHUNK_SIZE * CHUNK_SIZE] = {};
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
 	{
-		if (continentalnessPick[i] > 0.5)
-		{
-			continentalnessFinal[i] = continentalness2[i];
-		}
-		else
-		{
-			continentalnessFinal[i] = continentalness[i];
-		}
-	}
 
+		continentalnessFinal[i] = glm::mix(continentalness[i], continentalness2[i],
+			continentalnessPick[i]);
 
-	static alignas(32) float finalContinentalnedd[CHUNK_SIZE * CHUNK_SIZE] = {};
-	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
-	{
-		finalContinentalnedd[i] = continentalness2[i];
+		//if (continentalnessPick[i] > 0.5)
+		//{
+		//	continentalnessFinal[i] = continentalness2[i];
+		//}
+		//else
+		//{
+		//	continentalnessFinal[i] = continentalness[i];
+		//}
 	}
 
 	static alignas(32) float peaksAndValies[CHUNK_SIZE * CHUNK_SIZE] = {};
@@ -431,6 +504,14 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		lakesNoise[i] = wg.lakesSplines.applySpline(lakesNoise[i]);
 	}
 
+	static alignas(32) float alternativeBlocksNoise[CHUNK_SIZE * CHUNK_SIZE] = {};
+	wg.alternativePatchesOfBlocks->FillNoiseSet(alternativeBlocksNoise, xPadd, 0, zPadd, CHUNK_SIZE, 1, CHUNK_SIZE);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		alternativeBlocksNoise[i] += 1;
+		alternativeBlocksNoise[i] /= 2;
+	}
+
 	static alignas(32) float whiteNoise[(CHUNK_SIZE + 1) * (CHUNK_SIZE + 1)] = {};
 	wg.whiteNoise->FillNoiseSet(whiteNoise, xPadd, 0, zPadd, CHUNK_SIZE + 1, (1), CHUNK_SIZE + 1);
 	for (int i = 0; i < (CHUNK_SIZE + 1) * (CHUNK_SIZE + 1); i++)
@@ -541,6 +622,17 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		treeTypeNoise2[i] = powf(treeTypeNoise2[i], wg.treesTypePower);
 		treeTypeNoise2[i] = wg.treesTypeSpline.applySpline(treeTypeNoise2[i]);
 	}
+
+	static alignas(32) float randomHills[CHUNK_SIZE * CHUNK_SIZE] = {};
+	wg.randomHillsNoise->FillNoiseSet(randomHills, xPadd, 0, zPadd, CHUNK_SIZE, 1, CHUNK_SIZE);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		randomHills[i] += 1;
+		randomHills[i] /= 2;
+		randomHills[i] = powf(randomHills[i], wg.randomHillsPower);
+		randomHills[i] = wg.randomHillsSplines.applySpline(randomHills[i]);
+	}
+
 #pragma endregion
 
 
@@ -601,6 +693,16 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	auto getLakesNoiseVal = [](int x, int z)
 	{
 		return lakesNoise[x * (CHUNK_SIZE) + z];
+	};
+
+	auto getAlternativeNoiseVal = [](int x, int z)
+	{
+		return alternativeBlocksNoise[x * (CHUNK_SIZE)+z];
+	};
+
+	auto getRandomHillsVal = [](int x, int z)
+	{
+		return randomHills[x * (CHUNK_SIZE)+z];
 	};
 
 	auto getWhiteNoise2Val = [](int x, int z)
@@ -688,11 +790,10 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			//localWierdness = 0;
 
 			float peaks = getPeaksAndValies(x, z);
+			float hills = getRandomHillsVal(x, z);
 			float continentalness = getNoiseVal(x, 0, z);
 
 			float currentInterpolatedValue = interpolateValues[z + x * CHUNK_SIZE];
-			int startLevel = interpolator(startValues, currentInterpolatedValue);
-			int maxMountainLevel = interpolator(maxlevels, currentInterpolatedValue);
 			
 			float treeAmountVal1 = getTreeAmount1(x, z);
 			float treeAmountVal2 = getTreeAmount2(x, z);
@@ -708,68 +809,238 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				c.setBorderFlag(x, z);
 			}
 
+			constexpr int stoneNoiseStartLevel = 1;
+
+
+
+			auto getHeightForBiome = [=](int currentHeightLevel, bool &placeRoad, float 
+				&roadValue, float &outLakeNoiseVal, float &underGroundRivers, 
+				float &riverChanceValue, int &heightDiff, int &startLevel, int maxMountainLevel
+				)
+			{
+
+				float newPeaks = peaks;
+				outLakeNoiseVal = lakeNoiseVal;
+
+			#pragma region roads
+
+				//plains roads
+				if (currentHeightLevel == 2)
+				{
+					roadValue = getRoads(x, z);
+
+					if (roadValue < 0.6)
+					{
+						newPeaks = glm::mix(0.5f, newPeaks, roadValue);
+
+						if (roadValue < 0.5)
+						{
+							placeRoad = true;
+						}
+					};
+
+
+					//newMaxMountainLevel = glm::mix(newMaxMountainLevel-1, newMaxMountainLevel, roadValue);
+
+
+					//localWierdness = glm::mix(1.f, localWierdness, roadValue);
+					//wierdnessTresshold = glm::mix(0.f, wierdnessTresshold, roadValue);
+					//wierdnessTresshold = 0;
+
+					//peaks = glm::mix(0.5f, peaks, roadValue);
+				}
+				else if (currentHeightLevel == 3
+					//&& localWierdness < 0.9f
+					&& continentalness < 0.42f)
+				{
+					roadValue = getRoads(x, z);
+
+					if (roadValue < 0.6)
+					{
+						newPeaks = glm::mix(0.5f, newPeaks, roadValue);
+
+						if (roadValue < 0.5)
+						{
+							placeRoad = true;
+						}
+					};
+
+					//wierdnessTresshold = glm::mix(0.f, wierdnessTresshold, roadValue);
+					//wierdnessTresshold = 0;
+
+					//newMaxMountainLevel = glm::mix(newMaxMountainLevel - 1, newMaxMountainLevel, roadValue);
+					//startLevel = glm::mix(startLevel - 1, startLevel, roadValue);
+
+					//localWierdness = glm::mix(1.f, localWierdness, roadValue);
+					//todo investigate wierdness
+
+					//peaks = glm::mix(0.5f, peaks, roadValue);
+
+				}
+			#pragma endregion
+
+
+			#pragma region lakes
+				if (outLakeNoiseVal < 0.1)
+				{
+					outLakeNoiseVal = 0;
+				}
+
+				if (currentHeightLevel != 2)
+				{
+					outLakeNoiseVal = 0;
+				}
+				else
+				{
+					outLakeNoiseVal *= (1.f - localBorderingFactor);
+
+					//if (outLakeNoiseVal > 0.1)
+					//{
+					//	newStartLevel = glm::mix(newStartLevel, waterLevel - 5, outLakeNoiseVal);
+					//	newMaxMountainLevel = glm::mix(newMaxMountainLevel, waterLevel - 2, outLakeNoiseVal);
+					//}
+				}
+			#pragma endregion
+
+
+			#pragma region rivers
+				underGroundRivers = 0;
+				riverChanceValue = 0;
+
+				int newStartLevel = startLevel;
+				int newMaxMountainLevel = maxMountainLevel;
+
+				//plains rivers
+				if (currentHeightLevel == 2)
+				{
+					float rivers = getRivers(x, z);
+					rivers *= (1 - lakeNoiseVal);
+
+					riverChanceValue = 1 - rivers;
+
+					newStartLevel = glm::mix(waterLevel - 5, newStartLevel, rivers);
+					newMaxMountainLevel = glm::mix(waterLevel - 2, newMaxMountainLevel, rivers);
+				}
+				else if (currentHeightLevel >= 3)
+				{
+					float rivers = getRivers(x, z);
+					underGroundRivers = 1 - rivers;
+					riverChanceValue = underGroundRivers;
+
+					if (currentHeightLevel == 3)
+					{
+						newStartLevel = glm::mix(waterLevel + 4, newStartLevel, rivers);
+						newMaxMountainLevel = glm::mix(waterLevel + 18, newMaxMountainLevel, rivers);
+					}
+
+
+				}
+			#pragma endregion
+
+
+			#pragma region determine height
+
+				int hillsValueToAddToStart = hillsValuesToAddToStart[currentHeightLevel];
+				int hillsValueToAddToEnd = hillsValuesToAddToMax[currentHeightLevel];
+
+				int valueToAddToStart = valuesToAddToStart[currentHeightLevel];
+				int valueToAddToEnd = valuesToAddToMax[currentHeightLevel];
+
+				newPeaks = std::powf(newPeaks, peaksPower[currentHeightLevel]);
+				newStartLevel += (newPeaks * valueToAddToStart) - 3;
+				newMaxMountainLevel += (newPeaks * valueToAddToEnd) - 3;
+
+				newStartLevel += (hills * hillsValueToAddToStart);
+				newMaxMountainLevel += (hills * hillsValueToAddToEnd);
+
+				if (newStartLevel >= newMaxMountainLevel)
+				{
+					newStartLevel = newMaxMountainLevel;
+					newStartLevel--;
+					newMaxMountainLevel++;
+				}
+
+				if (newMaxMountainLevel <= newStartLevel) { newStartLevel = newMaxMountainLevel - 1; }
+				heightDiff = newMaxMountainLevel - newStartLevel;
+
+				//c.unsafeGetCachedBiome(x, z) = biomeIndex;
+
+
+				int height = int(newStartLevel + continentalness * heightDiff);
+
+			#pragma endregion
+
+				return height;
+
+			};
+
+			//biomesManager.biomes.size()
+
+			//int biomeIndex = biomes[currentBiomeHeight];
+			//auto biome = biomesManager.biomes[biomeIndex];
+			auto biome = biomesManager.biomes[biomesManager.pickBiomeIndex(biomeType)];
+
+
+			bool placeRoad = 0;
+			float roadValue = 0;
+			float newLakeNoiseVal = lakeNoiseVal;
+			float underGroundRivers = 0;
+			float riverChanceValue = 0;
+			int heightDiff = 0;
+
+			int startLevel = interpolator(startValues, currentInterpolatedValue);
+			int maxMountainLevel = interpolator(maxlevels, currentInterpolatedValue);
+
+			//int startLevel = startValues[currentBiomeHeight];
+			//int maxMountainLevel = maxlevels[currentBiomeHeight];
+
+			int newStartLevel = startLevel;
+
+			int height = getHeightForBiome(currentBiomeHeight, placeRoad, roadValue, newLakeNoiseVal,
+				underGroundRivers, riverChanceValue, heightDiff, newStartLevel, maxMountainLevel);
+
+			//if (currentInterpolatedValue != (float)((int)(currentInterpolatedValue))
+			//	&& currentInterpolatedValue < 5.f
+			//	)
+			//{
+			//
+			//	int newBiomeHeight = currentBiomeHeight + 1;
+			//
+			//	if (currentBiomeHeight > currentInterpolatedValue)
+			//	{
+			//		newBiomeHeight = currentBiomeHeight - 1;
+			//	}
+			//
+			//	bool placeRoad = 0;
+			//	float roadValue = 0;
+			//	float newLakeNoiseVal = lakeNoiseVal;
+			//	float underGroundRivers = 0;
+			//	float riverChanceValue = 0;
+			//	int heightDiff = 0;
+			//	int startLevel = startValues[newBiomeHeight];
+			//	int maxMountainLevel = maxlevels[newBiomeHeight];
+			//	int newStartLevel = startLevel;
+			//
+			//	int height2 = getHeightForBiome(newBiomeHeight, placeRoad, roadValue, newLakeNoiseVal,
+			//		underGroundRivers, riverChanceValue, heightDiff, newStartLevel, maxMountainLevel);
+			//
+			//	if (currentBiomeHeight > currentInterpolatedValue)
+			//	{
+			//		height = glm::mix((float)height2, (float)height, currentInterpolatedValue - (int)currentInterpolatedValue);
+			//	}
+			//	else
+			//	{
+			//		height = glm::mix((float)height, (float)height2, currentInterpolatedValue - (int)currentInterpolatedValue);
+			//	}
+			//
+			//}
+			
 			//if (localBorderingFactor > 0.95)
 			//{
 			//	c.setBorderFlag(x, z);
 			//	//std::cout << "YESSS ";
 			//}
-
-		#pragma region roads
-			bool placeRoad = 0;
-			float roadValue = 0;
-
-			//plains roads
-			if (currentBiomeHeight == 2)
-			{
-				roadValue = getRoads(x, z);
-
-				if (roadValue < 0.6)
-				{
-					peaks = glm::mix(0.5f, peaks, roadValue);
-
-					if (roadValue < 0.5)
-					{
-						placeRoad = true;
-					}
-				};
-
-
-				//maxMountainLevel = glm::mix(maxMountainLevel-1, maxMountainLevel, roadValue);
-
-
-				//localWierdness = glm::mix(1.f, localWierdness, roadValue);
-				//wierdnessTresshold = glm::mix(0.f, wierdnessTresshold, roadValue);
-				//wierdnessTresshold = 0;
-
-				//peaks = glm::mix(0.5f, peaks, roadValue);
-			}
-			else if (currentBiomeHeight == 3 && localWierdness < 0.5f && continentalness < 0.4f)
-			{
-				roadValue = getRoads(x, z);
-
-				if (roadValue < 0.6)
-				{
-					peaks = glm::mix(0.5f, peaks, roadValue);
-
-					if (roadValue < 0.5)
-					{
-						placeRoad = true;
-					}
-				};
-
-				//wierdnessTresshold = glm::mix(0.f, wierdnessTresshold, roadValue);
-				//wierdnessTresshold = 0;
-
-				//maxMountainLevel = glm::mix(maxMountainLevel - 1, maxMountainLevel, roadValue);
-				//startLevel = glm::mix(startLevel - 1, startLevel, roadValue);
-
-				//localWierdness = glm::mix(1.f, localWierdness, roadValue);
-				//todo investigate wierdness
-
-				//peaks = glm::mix(0.5f, peaks, roadValue);
-
-			}
-		#pragma endregion
+		
 
 		#pragma region borderings
 
@@ -789,55 +1060,12 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				return 1.f - (1.f - a) * (1.f - b);
 			};
 
-		#pragma region lakes
-			if (lakeNoiseVal < 0.1) 
-			{
-				lakeNoiseVal = 0;
-			}
-
-			if (currentBiomeHeight != 2)
-			{
-				lakeNoiseVal = 0;
-			}
-			else
-			{
-				lakeNoiseVal *= (1.f - localBorderingFactor);
-
-				//if (lakeNoiseVal > 0.1)
-				//{
-				//	startLevel = glm::mix(startLevel, waterLevel - 5, lakeNoiseVal);
-				//	maxMountainLevel = glm::mix(maxMountainLevel, waterLevel - 2, lakeNoiseVal);
-				//}
-			}
-		#pragma endregion
-
-
-		#pragma region rivers
-			float underGroundRivers = 0;
-			float riverChanceValue = 0;
-			//plains rivers
-			if (currentBiomeHeight == 2)
-			{
-				float rivers = getRivers(x, z);
-				rivers *= (1 - lakeNoiseVal);
-
-				riverChanceValue = 1 - rivers;
-
-				startLevel = glm::mix(waterLevel - 5, startLevel, rivers);
-				maxMountainLevel = glm::mix(waterLevel - 2, maxMountainLevel, rivers);
-			}
-			else if (currentBiomeHeight >= 3)
-			{
-				underGroundRivers = 1-getRivers(x, z);
-				riverChanceValue = underGroundRivers;
-
-			}
-		#pragma endregion
-
+		
 
 		#pragma region hills drop downs
 			//hills drop downs
-			if (currentBiomeHeight == 3)
+			/*
+			if (0 && currentBiomeHeight == 3)
 			{
 				float dropDown = getHillsDropDowns(x, z);
 
@@ -866,34 +1094,11 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 					maxMountainLevel = glm::mix(71, maxMountainLevel, dropDown);
 				}
 			}
+			*/
 		#pragma endregion
 
 
-			int valueToAddToStart = valuesToAddToStart[currentBiomeHeight];
-			int valueToAddToEnd = valuesToAddToMax[currentBiomeHeight];
-				
-			peaks = std::powf(peaks, peaksPower[currentBiomeHeight]);
-			startLevel += (peaks * valueToAddToStart) - 3;
-			maxMountainLevel += (peaks * valueToAddToEnd) - 3;
-
-			if (startLevel >= maxMountainLevel)
-			{
-				startLevel = maxMountainLevel;
-				startLevel--;
-				maxMountainLevel++;
-			}
-
-			if (maxMountainLevel <= startLevel) { startLevel = maxMountainLevel - 1; }
-			int heightDiff = maxMountainLevel - startLevel;
-
-			int biomeIndex = biomes[currentBiomeHeight];
-			auto biome = biomesManager.biomes[biomeIndex];
-
-			//c.unsafeGetCachedBiome(x, z) = biomeIndex;
-
-			constexpr int stoneNoiseStartLevel = 1;
-
-			int height = int(startLevel + continentalness * heightDiff);
+			
 
 			float firstH = 1;
 			for (int y = 0; y < 256; y++)
@@ -919,7 +1124,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 					density = getDensityNoiseVal(x, y, z);
 
-					float heightNormalized = (y - startLevel) / (float)heightDiff;
+					float heightNormalized = (y - newStartLevel) / (float)heightDiff;
+					//float heightNormalized = y / 256.f;
 					heightNormalized = glm::clamp(heightNormalized, 0.f, 1.f);
 					float heightNormalizedRemapped = linearRemap(heightNormalized, 0, 1, 0.2, 7);
 
@@ -999,7 +1205,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				
 			}
 
-			float riverValueForPlacingRocks = screenBlend(riverChanceValue, lakeNoiseVal);
+			float riverValueForPlacingRocks = screenBlend(riverChanceValue, newLakeNoiseVal);
 			if (currentBiomeHeight != 2 && currentBiomeHeight != 1)
 			{
 				riverValueForPlacingRocks = 0;
@@ -1007,7 +1213,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 			calculateBlockPass1(firstH, &c.unsafeGet(x, 0, z), biome, placeRoad, roadValue, 
 				getWhiteNoiseVal(x,z), sandShore, stonePatchesVal > 0.5, 
-				riverValueForPlacingRocks);
+				riverValueForPlacingRocks, currentInterpolatedValue, 
+				getAlternativeNoiseVal(x, z));
 
 			//all caves
 			for (int y = 2; y < firstH; y++)

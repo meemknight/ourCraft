@@ -29,6 +29,7 @@ struct WorldGeneratorSettings
 	NoiseSetting continentalness2NoiseSettings;
 	NoiseSetting continentalnessPickSettings;
 	NoiseSetting peaksAndValies;
+	NoiseSetting randomHills;
 	NoiseSetting wierdness;
 	NoiseSetting stone3Dnoise;
 	NoiseSetting riversNoise;
@@ -86,6 +87,10 @@ struct WorldGenerator
 	Spline peaksValiesContributionSplines;
 	float peaksValiesPower = 1.f;
 
+	FastNoiseSIMD *randomHillsNoise;
+	Spline randomHillsSplines;
+	float randomHillsPower = 1.f;
+
 	FastNoiseSIMD *wierdnessNoise;
 	Spline wierdnessSplines;
 	//Spline oceansAndTerasesContributionSplines;
@@ -142,6 +147,9 @@ struct WorldGenerator
 	Spline randomSandSplines;
 	float randomSandPower = 1.f;
 
+	FastNoiseSIMD *alternativePatchesOfBlocks;
+
+
 
 	void init();
 	void clear();
@@ -152,7 +160,7 @@ struct WorldGenerator
 
 	int getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ, float values[16*16],
 		float borderingFactor[16 * 16], float &vegetationMaster, float tightBorders[16 * 16],
-		float &xValuue, float &zValue
+		float &xValuue, float &zValue, float &biomeTypeRandomValue
 		);
 
 };

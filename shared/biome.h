@@ -49,6 +49,12 @@ struct VegetationNoiseSettings
 
 };
 
+struct BlockSurfaceAndSecondary
+{
+	BlockType surfaceBlock;
+	BlockType secondaryBlock;
+};
+
 
 struct Biome
 {
@@ -78,12 +84,15 @@ struct Biome
 	BlockType surfaceBlock;
 	BlockType secondaryBlock; //todo add height variation here
 
+	StaticVector< BlockSurfaceAndSecondary, 40> blockVariations;
+
 
 	StaticVector<VegetationNoiseSettings, 4> vegetationNoises;
 
-
 	BlockType grassType;
 	BlockType waterType;
+	BlockType waterTypeSecond;
+	
 
 };
 
@@ -92,10 +101,13 @@ struct BiomesManager
 
 	std::vector<Biome> biomes;
 
+	std::vector<int> biomeIndexes;
+
 	std::vector<VegetationNoiseSettings> greenBiomesTrees;
 
 	std::vector<VegetationNoiseSettings> greenBiomesGrass;
 
+	int pickBiomeIndex(float randomNumber);
 
 	bool loadAllBiomes();
 
@@ -110,15 +122,12 @@ struct BiomesManager
 
 	enum
 	{
-		forest,
+
 		desert,
 		plains,
-		oasis,
-		jungls,
-		dryLand,
-		rocks,
 		snow,
-		taiga,
+		wasteLand,
+
 
 	};
 

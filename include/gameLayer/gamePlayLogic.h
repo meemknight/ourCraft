@@ -39,6 +39,7 @@ struct ProgramData
 	std::vector<gl2d::Texture> lensFlare;
 	float maxFlareSize = 0;
 	int currentFps = 0;
+	bool showImgui = 1;
 
 
 };

@@ -522,60 +522,64 @@ bool gameLogic(float deltaTime)
 
 		#if REMOVE_IMGUI == 0
 
-			auto s = getServerSettingsCopy();
-
-			ImGui::PushStyleColor(ImGuiCol_WindowBg, {26 / 255.f,26 / 255.f,26 / 255.f,0.5f});
-			ImGui::Begin("Server window");
-
-			ImGui::Text("Server Chunk Capacity: %d", getChunkCapacity());
-			ImGui::Text("Server Ticke per seccond: %d", getServerTicksPerSeccond());
-			ImGui::Text("Server Worker tick threads: %d", getThredPoolSize());
-			
-			for (auto &c : s.perClientSettings)
+			if (programData.showImgui)
 			{
-				ImGui::PushID(c.first);
-				ImGui::Text("%d", c.first);
-				ImGui::Text("Position: %lf %lf %lf", c.second.outPlayerPos.x,
-					c.second.outPlayerPos.y, c.second.outPlayerPos.z);
-				ImGui::Checkbox("Allow validate moves", &c.second.validateStuff);
-				ImGui::Checkbox("Spawn zombie", &c.second.spawnZombie);
-				ImGui::Checkbox("Spawn pig", &c.second.spawnPig);
-				ImGui::Checkbox("Spawn goblin", &c.second.spawnGoblin);
-				ImGui::Checkbox("Resend inventory", &c.second.resendInventory);
 
-				if (ImGui::Button("Set Survival"))
+				auto s = getServerSettingsCopy();
+
+				ImGui::PushStyleColor(ImGuiCol_WindowBg, {26 / 255.f,26 / 255.f,26 / 255.f,0.5f});
+				ImGui::Begin("Server window");
+
+				ImGui::Text("Server Chunk Capacity: %d", getChunkCapacity());
+				ImGui::Text("Server Ticke per seccond: %d", getServerTicksPerSeccond());
+				ImGui::Text("Server Worker tick threads: %d", getThredPoolSize());
+
+				for (auto &c : s.perClientSettings)
 				{
-					changePlayerGameMode(c.first, OtherPlayerSettings::SURVIVAL);
-				} ImGui::SameLine();
-				if (ImGui::Button("Set Crative"))
-				{
-					changePlayerGameMode(c.first, OtherPlayerSettings::CREATIVE);
+					ImGui::PushID(c.first);
+					ImGui::Text("%d", c.first);
+					ImGui::Text("Position: %lf %lf %lf", c.second.outPlayerPos.x,
+						c.second.outPlayerPos.y, c.second.outPlayerPos.z);
+					ImGui::Checkbox("Allow validate moves", &c.second.validateStuff);
+					ImGui::Checkbox("Spawn zombie", &c.second.spawnZombie);
+					ImGui::Checkbox("Spawn pig", &c.second.spawnPig);
+					ImGui::Checkbox("Spawn goblin", &c.second.spawnGoblin);
+					ImGui::Checkbox("Resend inventory", &c.second.resendInventory);
+
+					if (ImGui::Button("Set Survival"))
+					{
+						changePlayerGameMode(c.first, OtherPlayerSettings::SURVIVAL);
+					} ImGui::SameLine();
+					if (ImGui::Button("Set Crative"))
+					{
+						changePlayerGameMode(c.first, OtherPlayerSettings::CREATIVE);
+					}
+
+					if (ImGui::Button("Damage"))
+					{
+						c.second.damage = true;
+					}
+
+					if (ImGui::Button("Heal"))
+					{
+						c.second.heal = true;
+					}
+
+					if (ImGui::Button("Kill a pig"))
+					{
+						c.second.killApig = true;
+					}
+
+					ImGui::Separator();
+					ImGui::PopID();
 				}
 
-				if (ImGui::Button("Damage"))
-				{
-					c.second.damage = true;
-				}
 
-				if (ImGui::Button("Heal"))
-				{
-					c.second.heal = true;
-				}
+				ImGui::End();
+				ImGui::PopStyleColor();
 
-				if (ImGui::Button("Kill a pig"))
-				{
-					c.second.killApig = true;
-				}
-
-				ImGui::Separator();
-				ImGui::PopID();
-			}
-
-
-			ImGui::End();
-			ImGui::PopStyleColor();
-
-			setServerSettings(s);
+				setServerSettings(s);
+			};
 
 		#endif
 
