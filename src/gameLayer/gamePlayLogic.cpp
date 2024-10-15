@@ -106,6 +106,7 @@ struct GameData
 	bool lastFrameInWater = 0;
 
 	int craftingSlider = 0;
+	bool showUI = 1;
 
 }gameData;
 
@@ -218,6 +219,8 @@ bool initGameplay(ProgramData &programData, const char *c) //GAME STUFF!
 	AudioEngine::stopAllMusicAndSounds();
 	return true;
 }
+
+//todo: bug: use the same revision for inventory and block placement and also resend block pos or something
 
 void dealDamageToLocalPlayer(int damage)
 {
@@ -516,11 +519,15 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	}
 
 
-	if (platform::isKeyReleased(platform::Button::I))
+	if (platform::isKeyReleased(platform::Button::F9))
 	{
 		gameData.showImgui = !gameData.showImgui;
 	}
 
+	if (platform::isKeyReleased(platform::Button::F10))
+	{
+		gameData.showUI = !gameData.showUI;
+	}
 
 	if(!stopMainInput || gameData.insideInventoryMenu)
 	if (platform::isKeyReleased(platform::Button::E))
@@ -933,8 +940,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			dist = raycastDist - 0.1;
 		}
 
+
+		float entityHitDistance = 0;
 		targetedEntity = gameData.entityManager.intersectAllAttackableEntities(cameraRayPos,
-			gameData.c.viewDirection, dist);
+			gameData.c.viewDirection, dist, entityHitDistance);
 
 		//std::cout << targetedEntity << "\n";
 
@@ -1124,6 +1133,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 									AudioEngine::playSound(getSoundForBlockStepping(item.type),
 										PLACED_BLOCK_SOUND_VOLUME);
+
+
 								}
 								
 							}
@@ -1211,8 +1222,14 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			if (targetedEntity && platform::isLMousePressed())
 			{
 				
-				attackEntity(targetedEntity, gameData.currentItemSelected, 
-					gameData.c.viewDirection);
+				auto weaponStats = player.inventory.getItemFromIndex(gameData.currentItemSelected)->
+					getWeaponStats();
+				
+				if (entityHitDistance <= weaponStats.range)
+				{
+					attackEntity(targetedEntity, gameData.currentItemSelected,
+						gameData.c.viewDirection);
+				};
 
 			}
 
@@ -1332,7 +1349,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.adaptiveExposure, gameData.showLightLevels,
 			gameData.point, underWater, w, h, deltaTime, dayTime, gameData.currentSkinBindlessTexture,
 			gameData.handHit, isPlayerMovingSpeed, gameData.playerFOVHandTransform,
-			gameData.currentItemSelected, finalDropStrength
+			gameData.currentItemSelected, finalDropStrength, 
+			gameData.showUI
 			);
 
 
@@ -2061,7 +2079,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				cursorSelected, 
 				(gameData.interaction.blockInteractionType == InteractionTypes::craftingTable),
 				gameData.currentInventoryTab, player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE,
-				selectedCreativeItem, player.life, programData, player, gameData.craftingSlider, craftedItemIndex
+				selectedCreativeItem, player.life, programData, player, 
+				gameData.craftingSlider, craftedItemIndex, gameData.showUI
 			);
 		}
 

@@ -8,6 +8,8 @@ void WorldGenerator::init()
 {
 	FastNoiseSIMD::SetSIMDLevel(3);
 	continentalnessNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	continentalness2Noise = FastNoiseSIMD::NewFastNoiseSIMD();
+	continentalnessPickNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	peaksValiesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	wierdnessNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	stone3Dnoise = FastNoiseSIMD::NewFastNoiseSIMD();
@@ -42,6 +44,8 @@ void WorldGenerator::init()
 void WorldGenerator::clear()
 {
 	delete continentalnessNoise;
+	delete continentalness2Noise;
+	delete continentalnessPickNoise;
 	delete peaksValiesNoise;
 	delete wierdnessNoise;
 	delete stone3Dnoise;
@@ -93,6 +97,14 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	apply(continentalnessNoise, s.seed + 2, s.continentalnessNoiseSettings);
 	continentalSplines = s.continentalnessNoiseSettings.spline;
 	continentalPower = s.continentalnessNoiseSettings.power;
+
+	apply(continentalness2Noise, s.seed + 33, s.continentalness2NoiseSettings);
+	continental2Splines = s.continentalness2NoiseSettings.spline;
+	continental2Power = s.continentalness2NoiseSettings.power;
+
+	apply(continentalnessPickNoise, s.seed + 43, s.continentalnessPickSettings);
+	continentalnessPickSplines = s.continentalnessPickSettings.spline;
+	continentalnessPickPower = s.continentalnessPickSettings.power;
 
 	apply(stone3Dnoise, s.seed + 3, s.stone3Dnoise);
 	stone3DnoiseSplines = s.stone3Dnoise.spline;
@@ -166,7 +178,8 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	regionsHeightNoise->SetCellularJitter(0.31);
 	regionsHeightNoise->SetCellularNoiseLookupType(FastNoiseSIMD::NoiseType::Perlin);
 	//regionsHeightNoise->SetCellularNoiseLookupFrequency(0.22); //original
-	regionsHeightNoise->SetCellularNoiseLookupFrequency(0.25);
+	//regionsHeightNoise->SetCellularNoiseLookupFrequency(0.25);
+	regionsHeightNoise->SetCellularNoiseLookupFrequency(0.30);
 
 
 	*regionsHeightTranzition = *regionsHeightNoise;
@@ -419,6 +432,12 @@ std::string WorldGeneratorSettings::saveSettings()
 	rez += "continentalnessNoise:\n";
 	rez += continentalnessNoiseSettings.saveSettings(1);
 
+	rez += "continentalnessNoise2:\n";
+	rez += continentalness2NoiseSettings.saveSettings(1);
+
+	rez += "continentalnessPickNoise:\n";
+	rez += continentalnessPickSettings.saveSettings(1);
+
 	rez += "peaksAndValies:\n";
 	rez += peaksAndValies.saveSettings(1);
 	rez += "peaksAndValiesContributionSpline:\n";
@@ -653,7 +672,7 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 
 				for (; data[i] != '\0'; i++)
 				{
-					if (isalpha(data[i]))
+					if (isalnum(data[i]))
 					{
 						t.s += data[i];
 					}
@@ -920,6 +939,26 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					if (isEof()) { return 0; }
 
 					if (!consumeNoise(continentalnessNoiseSettings))
+					{
+						return 0;
+					}
+				}
+				else if (s == "continentalnessNoise2")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(continentalness2NoiseSettings))
+					{
+						return 0;
+					}
+				}
+				else if (s == "continentalnessPickNoise")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(continentalnessPickSettings))
 					{
 						return 0;
 					}

@@ -338,7 +338,7 @@ bool lineIntersectBox(glm::dvec3 start, glm::dvec3 dir, glm::dvec3 box, glm::dve
 }
 
 bool lineIntersectBoxMaxDistance(glm::dvec3 start, glm::dvec3 dir, 
-	glm::dvec3 box, glm::dvec3 size, float maxDistance)
+	glm::dvec3 box, glm::dvec3 size, float maxDistance, float &outIntersectDist)
 
 {
 	float maxColliderDimension = std::max(std::max(size.x, size.y), size.z);
@@ -379,6 +379,7 @@ bool lineIntersectBoxMaxDistance(glm::dvec3 start, glm::dvec3 dir,
 				//std::cout << distance << " ";
 				if (pointInsideBox(intersectPoint, box, size, 0.2))
 				{
+					outIntersectDist = distance;
 					return 1;
 				}
 			};

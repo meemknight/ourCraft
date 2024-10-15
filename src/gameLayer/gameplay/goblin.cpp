@@ -8,6 +8,7 @@
 #include <multyPlayer/serverChunkStorer.h>
 #include <iostream>
 #include <glm/gtx/quaternion.hpp>
+#include <rendering/model.h>
 
 
 
@@ -45,10 +46,15 @@ void GoblinClient::setEntityMatrix(glm::mat4 *skinningMatrix)
 {
 	//todo a way to obtain the index with the head and stuff
 
-	skinningMatrix[1] = skinningMatrix[1] * glm::toMat4(
+	skinningMatrix[0] = skinningMatrix[0] * glm::toMat4(
 		glm::quatLookAt(glm::normalize(getRubberBandLookDirection()), glm::vec3(0, 1, 0)));
 
 
+}
+
+int GoblinClient::getTextureIndex()
+{
+	return ModelsManager::TexturesLoaded::GoblinTexture;
 }
 
 
@@ -65,7 +71,7 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 )
 {
 
-	if (0)
+	if (1)
 	{
 		float followDistance = 22;
 		float keepFollowDistance = 33;

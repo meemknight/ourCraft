@@ -198,6 +198,23 @@ bool Item::isShovel()
 	return type == wooddenShovel;
 }
 
+bool Item::canAttack()
+{
+	if (
+		type == trainingScythe ||
+		type == trainingSword ||
+		type == trainingWarHammer ||
+		type == trainingFlail ||
+		type == trainingSpear ||
+		type == trainingKnife ||
+		type == trainingBattleAxe)
+	{
+		return true;
+	}
+
+	return 0;
+}
+
 std::string Item::formatMetaDataToString()
 {
 
@@ -215,6 +232,30 @@ std::string Item::formatMetaDataToString()
 	}
 
 	return rez;
+}
+
+WeaponStats Item::getWeaponStats()
+{
+
+	WeaponStats stats;
+
+	switch (type)
+	{
+		 case trainingScythe:
+		 case trainingSword:
+		 case trainingWarHammer:
+		 case trainingFlail:
+		 case trainingSpear:
+		 case trainingKnife:
+		 case trainingBattleAxe:
+
+		 stats.damage = 2;
+
+		 break;
+	}
+
+
+	return stats;
 }
 
 

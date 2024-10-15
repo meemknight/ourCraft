@@ -8,6 +8,7 @@
 #include <multyPlayer/serverChunkStorer.h>
 #include <iostream>
 #include <glm/gtx/quaternion.hpp>
+#include <rendering/model.h>
 
 static const auto frontHands = glm::rotate(glm::radians(90.f), glm::vec3{1.f,0.f,0.f});
 
@@ -59,6 +60,12 @@ void ZombieClient::setEntityMatrix(glm::mat4 *skinningMatrix)
 		glm::quatLookAt(glm::normalize(getRubberBandLookDirection()), glm::vec3(0, 1, 0)));
 
 	animatePlayerHandsZombie(skinningMatrix, currentHandsAngle);
+}
+
+
+int ZombieClient::getTextureIndex()
+{
+	return ModelsManager::TexturesLoaded::ZombieTexture;
 }
 
 

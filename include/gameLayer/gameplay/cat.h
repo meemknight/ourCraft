@@ -21,6 +21,7 @@ struct CatClient: public ClientEntity<Cat, CatClient>
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 	void setEntityMatrix(glm::mat4 *skinningMatrix);
 
+	int getTextureIndex();
 };
 
 

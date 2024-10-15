@@ -15,6 +15,8 @@ struct Model
 	size_t vertexCount = 0;
 	std::vector<glm::mat4> transforms;
 
+	std::int8_t headIndex = -1;
+
 	void cleanup();
 };
 

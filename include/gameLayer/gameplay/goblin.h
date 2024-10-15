@@ -26,6 +26,8 @@ struct GoblinClient: public ClientEntity<Goblin, GoblinClient>
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 	void setEntityMatrix(glm::mat4 *skinningMatrix);
+
+	int getTextureIndex();
 };
 
 struct GoblinServer: public ServerEntity<Goblin>

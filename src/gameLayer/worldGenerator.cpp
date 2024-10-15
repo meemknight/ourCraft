@@ -277,6 +277,45 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		continentalness[i] = wg.continentalSplines.applySpline(continentalness[i]);
 	}
 
+	static alignas(32) float continentalness2[CHUNK_SIZE * CHUNK_SIZE] = {};
+	wg.continentalness2Noise->FillNoiseSet(continentalness2, xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		continentalness2[i] += 1;
+		continentalness2[i] /= 2;
+		continentalness2[i] = powf(continentalness2[i], wg.continental2Power);
+		continentalness2[i] = wg.continental2Splines.applySpline(continentalness2[i]);
+	}
+
+	static alignas(32) float continentalnessPick[CHUNK_SIZE * CHUNK_SIZE] = {};
+	wg.continentalness2Noise->FillNoiseSet(continentalnessPick, xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		continentalnessPick[i] += 1;
+		continentalnessPick[i] /= 2;
+		continentalnessPick[i] = powf(continentalnessPick[i], wg.continentalnessPickPower);
+		continentalnessPick[i] = wg.continentalnessPickSplines.applySpline(continentalnessPick[i]);
+	}
+
+	static alignas(32) float continentalnessFinal[CHUNK_SIZE * CHUNK_SIZE] = {};
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		if (continentalnessPick[i] > 0.5)
+		{
+			continentalnessFinal[i] = continentalness2[i];
+		}
+		else
+		{
+			continentalnessFinal[i] = continentalness[i];
+		}
+	}
+
+
+	static alignas(32) float finalContinentalnedd[CHUNK_SIZE * CHUNK_SIZE] = {};
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		finalContinentalnedd[i] = continentalness2[i];
+	}
 
 	static alignas(32) float peaksAndValies[CHUNK_SIZE * CHUNK_SIZE] = {};
 	wg.peaksValiesNoise->FillNoiseSet(peaksAndValies, xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE);
@@ -509,7 +548,9 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 	auto getNoiseVal = [](int x, int y, int z)
 	{
-		return continentalness[x * CHUNK_SIZE * (1) + y * CHUNK_SIZE + z];
+		//return continentalness[x * CHUNK_SIZE * (1) + y * CHUNK_SIZE + z];
+		//return continentalness2[x * CHUNK_SIZE * (1) + y * CHUNK_SIZE + z];
+		return continentalnessFinal[x * CHUNK_SIZE * (1) + y * CHUNK_SIZE + z];
 	};
 
 	auto getRivers = [](int x, int z)

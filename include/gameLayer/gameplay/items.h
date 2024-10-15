@@ -2,7 +2,7 @@
 #include <blocks.h>
 #include <vector>
 #include <string>
-
+#include <gameplay/weaponStats.h>
 
 constexpr static unsigned short ItemsStartPoint = 1'024;
 
@@ -69,9 +69,13 @@ struct Item
 
 	bool isShovel();
 
+	bool canAttack();
+
 	std::string getItemName();
 
 	std::string formatMetaDataToString();
+
+	WeaponStats getWeaponStats();
 };
 
 //doesn't compare size

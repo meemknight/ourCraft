@@ -26,6 +26,8 @@ struct ZombieClient: public ClientEntity<Zombie, ZombieClient>
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 	void setEntityMatrix(glm::mat4 *skinningMatrix);
+
+	int getTextureIndex();
 };
 
 struct ZombieServer: public ServerEntity<Zombie>

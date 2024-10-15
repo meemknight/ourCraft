@@ -1877,7 +1877,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	bool showLightLevels, glm::dvec3 pointPos, bool underWater, int screenX, int screenY,
 	float deltaTime, float dayTime, 
 	GLuint64 currentSkinBindlessTexture, bool &playerClicked, float playerRunning,
-	BoneTransform &playerHand, int currentHeldItemIndex, float waterDropsStrength
+	BoneTransform &playerHand, int currentHeldItemIndex, float waterDropsStrength,
+	bool showHand
 	)
 {
 
@@ -2581,7 +2582,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		renderEntities(deltaTime, c, modelsManager, blocksLoader,
 			entityManager, vp, c.getProjectionMatrix(), viewMatrix, posFloat, posInt,
 			programData.renderer.defaultShader.shadingSettings.exposure, chunkSystem, skyLightIntensity,
-			currentSkinBindlessTexture, playerClicked, playerRunning, playerHand, currentHeldItemIndex);
+			currentSkinBindlessTexture, playerClicked, playerRunning, playerHand, currentHeldItemIndex,
+			showHand);
 		programData.GPUProfiler.endSubProfile("entities");
 	#pragma endregion
 
@@ -2696,7 +2698,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		renderEntities(deltaTime, c, modelsManager, blocksLoader,
 			entityManager, vp, c.getProjectionMatrix(), viewMatrix, posFloat, posInt,
 			programData.renderer.defaultShader.shadingSettings.exposure, chunkSystem, skyLightIntensity,
-			currentSkinBindlessTexture, playerClicked, playerRunning, playerHand, currentHeldItemIndex);
+			currentSkinBindlessTexture, playerClicked, playerRunning, playerHand, currentHeldItemIndex,
+			showHand);
 		programData.GPUProfiler.endSubProfile("entities");
 	#pragma endregion
 
@@ -2732,13 +2735,13 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		static ImVec4 color = {0,0,0,1};
 
-		if (ImGui::Begin("client controll"))
-		{
-			ImGui::ColorButton("Colror", color);
-			ImGui::Text("Average Luminosity: %f", averageLuminosity);
-			ImGui::Text("Bonus ambient: %f", adaptiveExposure.bonusAmbient);
-		}
-		ImGui::End();
+		//if (ImGui::Begin("client controll"))
+		//{
+		//	ImGui::ColorButton("Colror", color);
+		//	ImGui::Text("Average Luminosity: %f", averageLuminosity);
+		//	ImGui::Text("Bonus ambient: %f", adaptiveExposure.bonusAmbient);
+		//}
+		//ImGui::End();
 
 		if (!reading)
 		{
@@ -3384,7 +3387,8 @@ void Renderer::renderEntities(
 	glm::ivec3 posInt,
 	float exposure, ChunkSystem &chunkSystem, int 
 	skyLightIntensity, GLuint64 currentSkinBindlessTexture,
-	bool &playerClicked, float playerRunning, BoneTransform &playerHand, int currentHeldItemIndex
+	bool &playerClicked, float playerRunning, BoneTransform &playerHand, int currentHeldItemIndex,
+	bool showHand
 	)
 {
 
@@ -3500,6 +3504,7 @@ void Renderer::renderEntities(
 			}
 
 
+
 			auto transform = model.transforms[0]; //loaded from glb file
 			auto poseMatrix = playerHand.getPoseMatrix();
 
@@ -3529,15 +3534,19 @@ void Renderer::renderEntities(
 			entityData.push_back(data);
 		}
 
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, skinningMatrixSSBO);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, skinningMatrix.size() * sizeof(glm::mat4),
-			&skinningMatrix[0][0][0], GL_STREAM_DRAW);
 
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, perEntityDataSSBO);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, entityData.size() * sizeof(entityData[0]),
-			entityData.data(), GL_STREAM_DRAW);
+		if (showHand)
+		{
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, skinningMatrixSSBO);
+			glBufferData(GL_SHADER_STORAGE_BUFFER, skinningMatrix.size() * sizeof(glm::mat4),
+				&skinningMatrix[0][0][0], GL_STREAM_DRAW);
 
-		glDrawElements(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, nullptr);
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, perEntityDataSSBO);
+			glBufferData(GL_SHADER_STORAGE_BUFFER, entityData.size() * sizeof(entityData[0]),
+				entityData.data(), GL_STREAM_DRAW);
+
+			glDrawElements(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, nullptr);
+		};
 
 	};
 
@@ -3546,7 +3555,7 @@ void Renderer::renderEntities(
 
 
 
-	auto renderAllEntitiesOfOneType = [&](Model &model, auto &container, int textureIndex)
+	auto renderAllEntitiesOfOneType = [&](Model &model, auto &container)
 	{
 
 		glBindVertexArray(model.vao);
@@ -3597,13 +3606,13 @@ void Renderer::renderEntities(
 				}
 				else
 				{
-					data.textureId = modelsManager.gpuIds[textureIndex];
+					data.textureId = modelsManager.gpuIds[e.second.getTextureIndex()];
 				}
 
 			}
 			else
 			{
-				data.textureId = modelsManager.gpuIds[textureIndex];
+				data.textureId = modelsManager.gpuIds[e.second.getTextureIndex()];
 			}
 
 			decomposePosition(e.second.getRubberBandPosition(), data.entityPositionFloat, data.entityPositionInt);
@@ -3628,11 +3637,11 @@ void Renderer::renderEntities(
 	//todo remove
 	entityRenderer.itemEntitiesToRender.clear();
 
-	renderAllEntitiesOfOneType(modelsManager.human, entityManager.players, ModelsManager::SteveTexture);
-	renderAllEntitiesOfOneType(modelsManager.human, entityManager.zombies, ModelsManager::ZombieTexture);
-	renderAllEntitiesOfOneType(modelsManager.pig, entityManager.pigs, ModelsManager::PigTexture);
-	renderAllEntitiesOfOneType(modelsManager.cat, entityManager.cats, ModelsManager::CatTexture);
-	renderAllEntitiesOfOneType(modelsManager.goblin, entityManager.goblins, ModelsManager::GoblinTexture);
+	renderAllEntitiesOfOneType(modelsManager.human, entityManager.players);
+	renderAllEntitiesOfOneType(modelsManager.human, entityManager.zombies);
+	renderAllEntitiesOfOneType(modelsManager.pig, entityManager.pigs);
+	renderAllEntitiesOfOneType(modelsManager.cat, entityManager.cats);
+	renderAllEntitiesOfOneType(modelsManager.goblin, entityManager.goblins);
 
 
 	glBindVertexArray(0);

@@ -2,6 +2,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include "gameplay/player.h"
 #include <iostream>
+#include <rendering/model.h>
 
 void Player::flyFPS(glm::vec3 direction, glm::vec3 lookDirection)
 {
@@ -80,4 +81,9 @@ void PlayerClient::setEntityMatrix(glm::mat4 *skinningMatrix)
 
 
 
+}
+
+int PlayerClient::getTextureIndex()
+{
+	return ModelsManager::TexturesLoaded::SteveTexture;
 }

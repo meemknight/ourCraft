@@ -26,6 +26,7 @@ struct PigClient: public ClientEntity<Pig, PigClient>
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 	void setEntityMatrix(glm::mat4 *skinningMatrix);
 
+	int getTextureIndex();
 };
 
 

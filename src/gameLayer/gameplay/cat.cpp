@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <multyPlayer/tick.h>
 #include <chunkSystem.h>
+#include <rendering/model.h>
 
 void Cat::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
 {
@@ -46,6 +47,11 @@ void CatClient::setEntityMatrix(glm::mat4 *skinningMatrix)
 
 }
 
+
+int CatClient::getTextureIndex()
+{
+	return ModelsManager::TexturesLoaded::CatTexture;
+}
 
 
 bool CatServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,

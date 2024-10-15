@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <multyPlayer/tick.h>
 #include <chunkSystem.h>
+#include <rendering/model.h>
 
 void Pig::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
 {
@@ -45,6 +46,11 @@ void PigClient::setEntityMatrix(glm::mat4 *skinningMatrix)
 
 }
 
+
+int PigClient::getTextureIndex()
+{
+	return ModelsManager::TexturesLoaded::PigTexture;
+}
 
 
 bool PigServer::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,

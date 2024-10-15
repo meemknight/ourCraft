@@ -68,7 +68,8 @@ struct ClientEntityManager : public EntityDataClient
 
 	void cleanup();
 
-	std::uint64_t intersectAllAttackableEntities(glm::dvec3 start, glm::dvec3 dir, float maxDistance);
+	std::uint64_t intersectAllAttackableEntities(glm::dvec3 start,
+		glm::dvec3 dir, float maxDistance, float &outDistance);
 
 	void renderColiders(PointDebugRenderer &pointDebugRenderer, GyzmosRenderer &gyzmosRenderer, Camera &c);
 };

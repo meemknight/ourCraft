@@ -466,7 +466,7 @@ bool gameLogic(float deltaTime)
 		loadAllDefaultTexturePacks();
 	}
 
-	if (platform::isKeyPressedOn(platform::Button::P))
+	if (platform::isKeyPressedOn(platform::Button::F11))
 	{
 		platform::setFullScreen(!platform::isFullScreen());
 	}

@@ -129,6 +129,11 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
 		if (key == GLFW_KEY_LEFT_SHIFT)
 		{
 			platform::internal::setButtonState(platform::Button::LeftShift, state);
+		}if (key >= GLFW_KEY_F1 && key <= GLFW_KEY_F12)
+		{
+			int index = key - GLFW_KEY_F1;
+			platform::internal::setButtonState(platform::Button::F1 + index, state);
+
 		}
 	}
 	

@@ -202,7 +202,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 	bool insideInventory, int &cursorItemIndex,
 	bool insideCraftingTable, int &currentInventoryTab, bool isCreative,
 	unsigned short &selectedItem, Life &playerHealth, ProgramData &programData, LocalPlayer &player
-	, int &craftingSlider, int &outCraftingRecepieGlobalIndex
+	, int &craftingSlider, int &outCraftingRecepieGlobalIndex, bool showUI
 )
 {
 
@@ -867,7 +867,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			}
 
 		}
-		else
+		else if(showUI)
 		{
 			//cross
 			renderer2d.renderRectangle(

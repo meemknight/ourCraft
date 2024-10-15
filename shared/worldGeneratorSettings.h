@@ -26,6 +26,8 @@ struct WorldGeneratorSettings
 
 	int seed = 1234;
 	NoiseSetting continentalnessNoiseSettings;
+	NoiseSetting continentalness2NoiseSettings;
+	NoiseSetting continentalnessPickSettings;
 	NoiseSetting peaksAndValies;
 	NoiseSetting wierdness;
 	NoiseSetting stone3Dnoise;
@@ -40,6 +42,7 @@ struct WorldGeneratorSettings
 	NoiseSetting treesTypeNoise;
 	NoiseSetting cavesNoise;
 
+	//todo remove
 	Spline peaksAndValiesContributionSpline;
 	Spline regionsHeightSpline;
 
@@ -66,10 +69,17 @@ struct WorldGenerator
 
 
 	//
-
 	FastNoiseSIMD *continentalnessNoise;
 	Spline continentalSplines;
 	float continentalPower = 1.f;
+
+	FastNoiseSIMD *continentalness2Noise;
+	Spline continental2Splines;
+	float continental2Power = 1.f;
+
+	FastNoiseSIMD *continentalnessPickNoise;
+	Spline continentalnessPickSplines;
+	float continentalnessPickPower = 1.f;
 
 	FastNoiseSIMD *peaksValiesNoise;
 	Spline peaksValiesSplines;

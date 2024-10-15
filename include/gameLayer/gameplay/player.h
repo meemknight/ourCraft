@@ -72,6 +72,8 @@ struct PlayerClient: public ClientEntity<Player, PlayerClient>
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 	void setEntityMatrix(glm::mat4 *skinningMatrix);
 
+	int getTextureIndex();
+
 };
 
 //todo update function

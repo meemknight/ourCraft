@@ -68,6 +68,8 @@ bool initGame()
 }
 
 gl2d::Texture noiseT;
+gl2d::Texture continenralness2T;
+gl2d::Texture continenralnessPickT;
 gl2d::Texture peaksValiesT;
 gl2d::Texture finalTexture;
 gl2d::Texture sliceT;
@@ -220,6 +222,30 @@ void recreate()
 	}
 	createFromGrayScale(noiseT, testNoise, size);
 
+
+	float *continental2Noise
+		= wg.continentalness2Noise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
+	for (int i = 0; i < size.x * size.y; i++)
+	{
+		continental2Noise[i] += 1;
+		continental2Noise[i] /= 2;
+		continental2Noise[i] = std::pow(continental2Noise[i], settings.continentalness2NoiseSettings.power);
+		continental2Noise[i] = applySpline(continental2Noise[i], settings.continentalness2NoiseSettings.spline);
+	}
+	createFromGrayScale(continenralness2T, continental2Noise, size);
+
+	float *continentalPickNoise
+		= wg.continentalnessPickNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
+	for (int i = 0; i < size.x * size.y; i++)
+	{
+		continentalPickNoise[i] += 1;
+		continentalPickNoise[i] /= 2;
+		continentalPickNoise[i] = std::pow(continentalPickNoise[i], settings.continentalnessPickSettings.power);
+		continentalPickNoise[i] = applySpline(continentalPickNoise[i], settings.continentalnessPickSettings.spline);
+	}
+	createFromGrayScale(continenralnessPickT, continentalPickNoise, size);
+
+
 	float *riversNoise
 		= wg.riversNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x, 1);
 	for (int i = 0; i < size.x * size.y; i++)
@@ -317,8 +343,8 @@ void recreate()
 			float val = peaksNoise[i];
 			peaksNoise[i] = applySpline(peaksNoise[i], settings.peaksAndValies.spline);
 
-			finalNoise[i] = lerp(testNoise[i], peaksNoise[i], settings.peaksAndValiesContributionSpline.applySpline(val));
-
+			//finalNoise[i] = lerp(testNoise[i], peaksNoise[i], settings.peaksAndValiesContributionSpline.applySpline(val));
+			finalNoise[i] = testNoise[i];
 		}
 		createFromGrayScale(peaksValiesT, peaksNoise, size);
 
@@ -591,6 +617,8 @@ void recreate()
 	}
 
 	FastNoiseSIMD::FreeNoiseSet(testNoise);
+	FastNoiseSIMD::FreeNoiseSet(continental2Noise);
+	FastNoiseSIMD::FreeNoiseSet(continentalPickNoise);
 	FastNoiseSIMD::FreeNoiseSet(peaksNoise);
 	FastNoiseSIMD::FreeNoiseSet(treesAmountNoise);
 	FastNoiseSIMD::FreeNoiseSet(treesTypeNoise);
@@ -731,6 +759,11 @@ bool gameLogic(float deltaTime)
 	if (showContinentalness)
 	{
 		noiseEditor(settings.continentalnessNoiseSettings, "Continentalness Noise");
+
+		noiseEditor(settings.continentalness2NoiseSettings, "Continentalness 2 Noise");
+
+		noiseEditor(settings.continentalnessPickSettings, "Continentalness Pick noise");
+
 	}
 
 	if (showPeaksAndValies)
@@ -888,6 +921,10 @@ bool gameLogic(float deltaTime)
 	if (showContinentalness)
 	{
 		drawNoise("Continentalness", noiseT);
+
+		drawNoise("Continentalness2", continenralness2T);
+
+		drawNoise("continentalness pick", continenralnessPickT);
 	}
 	
 	if (showPeaksAndValies)

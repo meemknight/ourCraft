@@ -203,9 +203,18 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 
 				const aiNode *node = scene->mRootNode->mChildren[i];
 
+				const char *name = node->mName.C_Str();
+
+				if (strcmp(name, "Head") == 0 || strcmp(name, "head") == 0)
+				{
+					model.headIndex = i;
+				}
+
 				for (int m = 0; m < node->mNumMeshes; m++)
 				{
 					const aiMesh *mesh = scene->mMeshes[node->mMeshes[m]];
+
+					//const char *name2 = mesh->mName.C_Str();
 
 					aiMatrix4x4 transform = node->mTransformation;
 					model.transforms.push_back(glm::transpose(aiToGlm(transform)));
