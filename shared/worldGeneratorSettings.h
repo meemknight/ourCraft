@@ -42,6 +42,8 @@ struct WorldGeneratorSettings
 	NoiseSetting lakesNoise;
 	NoiseSetting treesTypeNoise;
 	NoiseSetting cavesNoise;
+	NoiseSetting swampNoise;
+	NoiseSetting stoneSpikesNoise;
 
 	//todo remove
 	Spline peaksAndValiesContributionSpline;
@@ -90,6 +92,14 @@ struct WorldGenerator
 	FastNoiseSIMD *randomHillsNoise;
 	Spline randomHillsSplines;
 	float randomHillsPower = 1.f;
+
+	FastNoiseSIMD *swampNoise;
+	Spline swampSplines;
+	float swampPower = 1.f;
+
+	FastNoiseSIMD *stoneSpikesNoise;
+	Spline stoneSpikesSplines;
+	float stoneSpikesPower = 1.f;
 
 	FastNoiseSIMD *wierdnessNoise;
 	Spline wierdnessSplines;

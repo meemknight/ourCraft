@@ -88,6 +88,10 @@ gl2d::Texture stonePatchesT;
 gl2d::Texture roadT;
 gl2d::Texture randomSandT;
 
+gl2d::Texture swampT;
+gl2d::Texture stoneSpikesT;
+
+
 gl2d::Texture fractalT;
 
 gl2d::Texture treesAmountT;
@@ -291,6 +295,31 @@ void recreate()
 		stonePatchesNoise[i] = applySpline(stonePatchesNoise[i], settings.stonePatches.spline);
 	}
 	createFromGrayScale(stonePatchesT, stonePatchesNoise, size);
+	
+
+	float *swampNoise =
+		wg.swampNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x);
+	for (int i = 0; i < size.x * size.y; i++)
+	{
+		swampNoise[i] += 1;
+		swampNoise[i] /= 2;
+		swampNoise[i] = std::pow(swampNoise[i], settings.swampNoise.power);
+		swampNoise[i] = applySpline(swampNoise[i], settings.swampNoise.spline);
+	}
+	createFromGrayScale(swampT, swampNoise, size);
+
+
+	float *stoneSpikesNoise =
+		wg.stoneSpikesNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x);
+	for (int i = 0; i < size.x * size.y; i++)
+	{
+		stoneSpikesNoise[i] += 1;
+		stoneSpikesNoise[i] /= 2;
+		stoneSpikesNoise[i] = std::pow(stoneSpikesNoise[i], settings.stoneSpikesNoise.power);
+		stoneSpikesNoise[i] = applySpline(stoneSpikesNoise[i], settings.stoneSpikesNoise.spline);
+	}
+	createFromGrayScale(stoneSpikesT, stoneSpikesNoise, size);
+
 
 
 	float *roadNoise
@@ -644,7 +673,9 @@ void recreate()
 	FastNoiseSIMD::FreeNoiseSet(spagettiNoise);
 	FastNoiseSIMD::FreeNoiseSet(lakesNoise);
 	FastNoiseSIMD::FreeNoiseSet(cavesNoise);
-
+	FastNoiseSIMD::FreeNoiseSet(swampNoise);
+	FastNoiseSIMD::FreeNoiseSet(stoneSpikesNoise);
+		
 
 	delete[] finalNoise;
 }
@@ -861,6 +892,15 @@ bool gameLogic(float deltaTime)
 
 	ImGui::Separator();
 
+	noiseEditor(settings.swampNoise, "swamp");
+
+
+	ImGui::Separator();
+
+	noiseEditor(settings.stoneSpikesNoise, "stone spikes");
+
+	ImGui::Separator();
+
 
 	{
 		//noiseEditor(fractalSettings, "Fractal");
@@ -981,6 +1021,10 @@ bool gameLogic(float deltaTime)
 	drawNoise("Random hills", randomHillsT);
 
 	drawNoise("Fractal", fractalT);
+
+	drawNoise("random swamps", swampT);
+
+	drawNoise("stone spikes", stoneSpikesT);
 
 	ImGui::End();
 

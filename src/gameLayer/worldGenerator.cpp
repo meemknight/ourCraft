@@ -14,7 +14,7 @@ const int waterLevel = 65;
 //riverValue is from 0 to 1 where 1 means river
 void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, float roadValue,
 	float randomNumber, bool sandShore, bool stonePatch, float riverValue,
-	float currentInterpolatedValue, float randomBlockVariation)
+	float currentInterpolatedValue, float randomBlockVariation, float swampValue, int biomeHeight, float stoneSpikes)
 {
 
 	
@@ -122,13 +122,20 @@ void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, f
 		//if (startPos[y].getType() != BlockTypes::air)
 		if (startPos[y].getType() == BlockTypes::stone)
 		{
-			startPos[y].setType(surfaceBlock);
+
+			if (stoneSpikes < 0.32)
+			{
+				startPos[y].setType(surfaceBlock);
+			}
 
 			for (y--; y > height - 4; y--) //todo randomness here
 			{
 				if (startPos[y].getType() != BlockTypes::air)
 				{
-					startPos[y].setType(secondBlock);
+					if (stoneSpikes < 0.32)
+					{
+						startPos[y].setType(secondBlock);
+					}
 				}
 			}
 
@@ -147,22 +154,29 @@ void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, f
 			))
 		{
 			//water block
+
+			//add swamp blocks
+			if (swampValue >= 0.5 && biomeHeight == 2)
+			{
+
+				startPos[y].setType(biome.swampBlock.getRandomBLock(randomNumber));
+			}else
 			if (riverValue > 0.2)
 			{
-				BlockVariation roadShape;
+				BlockVariation riverShape;
 
 				if (riverValue > 0.9)
 				{
-					roadShape.block.push_back(BlockTypes::stone);
+					riverShape.block.push_back(BlockTypes::stone);
 				}
 
-				roadShape.block.push_back(BlockTypes::stone);
-				roadShape.block.push_back(BlockTypes::gravel);
-				roadShape.block.push_back(BlockTypes::gravel);
-				roadShape.block.push_back(BlockTypes::cobblestone);
-				roadShape.block.push_back(BlockTypes::cobblestone);
+				riverShape.block.push_back(BlockTypes::stone);
+				riverShape.block.push_back(BlockTypes::gravel);
+				riverShape.block.push_back(BlockTypes::gravel);
+				riverShape.block.push_back(BlockTypes::cobblestone);
+				riverShape.block.push_back(BlockTypes::cobblestone);
 
-				startPos[y].setType(roadShape.getRandomBLock(randomNumber));
+				startPos[y].setType(riverShape.getRandomBLock(randomNumber));
 			}
 			else
 			{
@@ -223,6 +237,7 @@ void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, f
 		}
 		else
 		{
+
 			break;
 		}
 	}
@@ -645,6 +660,26 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		randomHills[i] = wg.randomHillsSplines.applySpline(randomHills[i]);
 	}
 
+	static alignas(32) float swampNoise[CHUNK_SIZE * CHUNK_SIZE] = {};
+	wg.swampNoise->FillNoiseSet(swampNoise, xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		swampNoise[i] += 1;
+		swampNoise[i] /= 2;
+		swampNoise[i] = powf(swampNoise[i], wg.swampPower);
+		swampNoise[i] = wg.swampSplines.applySpline(swampNoise[i]);
+	}
+
+	static alignas(32) float stoneSpikesNoise[CHUNK_SIZE * CHUNK_SIZE] = {};
+	wg.stoneSpikesNoise->FillNoiseSet(stoneSpikesNoise, xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		stoneSpikesNoise[i] += 1;
+		stoneSpikesNoise[i] /= 2;
+		stoneSpikesNoise[i] = powf(stoneSpikesNoise[i], wg.stoneSpikesPower);
+		stoneSpikesNoise[i] = wg.stoneSpikesSplines.applySpline(stoneSpikesNoise[i]);
+	}
+
 #pragma endregion
 
 
@@ -782,6 +817,16 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return wierdness[x * CHUNK_SIZE + z];
 	};
 
+	auto getSwampNoise = [](int x, int z)
+	{
+		return swampNoise[x * CHUNK_SIZE + z];
+	};
+
+	auto getStoneSpikesNoise = [](int x, int z)
+	{
+		return stoneSpikesNoise[x * CHUNK_SIZE + z];
+	};
+
 	auto getIntFromFloat = [](float f, int maxExclusive)
 	{
 		if (f >= 0.99) { f = 0.99; }
@@ -815,6 +860,9 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 			float lakeNoiseVal = getLakesNoiseVal(x, z); //this one is 1 for lake 0 for no lake
 			float localBorderingFactor = borderingFactor[z + x * CHUNK_SIZE];
+
+			float localSwampVal = getSwampNoise(x, z);
+			float localStoneSpikes = getStoneSpikesNoise(x, z);
 
 			if (tightBorders[z + x * CHUNK_SIZE])
 			{
@@ -947,6 +995,41 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 
 				}
+			#pragma endregion
+
+
+			#pragma region swamp
+				if (currentHeightLevel == 2)
+				{
+					if (localSwampVal > 0.5)
+					{
+
+						//remap to 0 -> 1
+						//float swamp = glm::clamp((localSwampVal - 0.5f) * 2.f, 0.f, 1.f);
+						float swamp = localSwampVal;
+
+						newStartLevel = glm::mix(newStartLevel, waterLevel - 4, swamp);
+						newMaxMountainLevel = glm::mix(newMaxMountainLevel, waterLevel, swamp);
+					}
+
+				}
+			#pragma endregion
+
+			#pragma region stone spikes
+
+				//if (currentHeightLevel == 2)
+				{
+					if (localStoneSpikes > 0.2)
+					{
+						//remap to 0 -> 1
+						//float swamp = glm::clamp((localSwampVal - 0.5f) * 2.f, 0.f, 1.f);
+
+						newStartLevel = glm::mix(newStartLevel, newStartLevel + 12, localStoneSpikes);
+						newMaxMountainLevel = glm::mix(newMaxMountainLevel, newMaxMountainLevel + 20, localStoneSpikes);
+					}
+
+				}
+
 			#pragma endregion
 
 
@@ -1226,7 +1309,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			calculateBlockPass1(firstH, &c.unsafeGet(x, 0, z), biome, placeRoad, roadValue, 
 				getWhiteNoiseVal(x,z), sandShore, stonePatchesVal > 0.5, 
 				riverValueForPlacingRocks, currentInterpolatedValue, 
-				getAlternativeNoiseVal(x, z));
+				getAlternativeNoiseVal(x, z), localSwampVal, currentBiomeHeight, localStoneSpikes);
 
 			//all caves
 			for (int y = 2; y < firstH; y++)

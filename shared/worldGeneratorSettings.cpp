@@ -26,6 +26,8 @@ void WorldGenerator::init()
 	treesTypeNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	cavesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	lakesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	swampNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	stoneSpikesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 
 	riversNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	roadNoise = FastNoiseSIMD::NewFastNoiseSIMD();
@@ -71,6 +73,8 @@ void WorldGenerator::clear()
 	delete lakesNoise;
 	delete regionsX;
 	delete regionsZ;
+	delete swampNoise;
+	delete stoneSpikesNoise;
 
 	*this = {};
 }
@@ -170,6 +174,15 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	apply(lakesNoise, s.seed + 17, s.lakesNoise);
 	lakesPower = s.lakesNoise.power;
 	lakesSplines = s.lakesNoise.spline;
+
+	apply(swampNoise, s.seed + 18, s.swampNoise);
+	swampPower = s.swampNoise.power;
+	swampSplines = s.swampNoise.spline;
+
+	apply(stoneSpikesNoise, s.seed + 19, s.stoneSpikesNoise);
+	stoneSpikesPower = s.stoneSpikesNoise.power;
+	stoneSpikesSplines = s.stoneSpikesNoise.spline;
+
 
 	regionsHeightNoise->SetSeed(s.seed);
 	regionsHeightNoise->SetAxisScales(1, 1, 1);
@@ -453,6 +466,12 @@ std::string WorldGeneratorSettings::saveSettings()
 
 	rez += "continentalnessPickNoise:\n";
 	rez += continentalnessPickSettings.saveSettings(1);
+
+	rez += "swampNoise:\n";
+	rez += swampNoise.saveSettings(1);
+
+	rez += "stoneSpikesNoise:\n";
+	rez += stoneSpikesNoise.saveSettings(1);
 
 	rez += "peaksAndValies:\n";
 	rez += peaksAndValies.saveSettings(1);
@@ -978,6 +997,26 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					if (isEof()) { return 0; }
 
 					if (!consumeNoise(continentalnessPickSettings))
+					{
+						return 0;
+					}
+				}
+				else if (s == "swampNoise")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(swampNoise))
+					{
+						return 0;
+					}
+				}
+				else if (s == "stoneSpikesNoise")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(stoneSpikesNoise))
 					{
 						return 0;
 					}

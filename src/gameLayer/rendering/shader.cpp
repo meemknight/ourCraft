@@ -81,11 +81,14 @@ bool Shader::loadShaderProgramFromFile(const char* vertexShader, const char* fra
 {
 
 	auto vertexId = createShaderFromFile(vertexShader, GL_VERTEX_SHADER);
+
+	if (vertexId == 0) { return 0; }
+
 	auto fragmentId = createShaderFromFile(fragmentShader, GL_FRAGMENT_SHADER);
 
-
-	if (vertexId == 0 || fragmentId == 0)
+	if (fragmentId == 0)
 	{
+		glDeleteShader(vertexId);
 		return 0;
 	}
 

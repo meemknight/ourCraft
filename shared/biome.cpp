@@ -213,10 +213,16 @@ bool BiomesManager::loadAllBiomes()
 		b.blockVariations.push_back({BlockTypes::sand, BlockTypes::sand_stone});
 		b.blockVariations.push_back({BlockTypes::sand, BlockTypes::sand_stone});
 
-
 		b.grassType = BlockTypes::dead_bush;
 		b.waterType = BlockTypes::water;
 		b.waterTypeSecond = BlockTypes::water;
+		
+
+		b.swampBlock.block.push_back(BlockTypes::sand);
+		b.swampBlock.block.push_back(BlockTypes::stone);
+		b.swampBlock.block.push_back(BlockTypes::stone);
+		b.swampBlock.block.push_back(BlockTypes::stone);
+
 
 		biomes.push_back(b);
 	}
@@ -276,10 +282,15 @@ bool BiomesManager::loadAllBiomes()
 		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
 
 
-
 		plains.grassType = BlockTypes::grass;
 		plains.waterType = BlockTypes::water;
 		plains.waterTypeSecond = BlockTypes::water;
+
+		plains.swampBlock.block.push_back(BlockTypes::dirt);
+		plains.swampBlock.block.push_back(BlockTypes::dirt);
+		plains.swampBlock.block.push_back(BlockTypes::dirt);
+		plains.swampBlock.block.push_back(BlockTypes::dirt);
+		plains.swampBlock.block.push_back(BlockTypes::clay);
 
 		biomes.push_back(plains);
 	}
@@ -321,6 +332,13 @@ bool BiomesManager::loadAllBiomes()
 		//b.growTreesOn = BlockTypes::snow_dirt;
 		//b.growGrassOn = BlockTypes::snow_dirt;
 
+		b.swampBlock.block.push_back(BlockTypes::dirt);
+		b.swampBlock.block.push_back(BlockTypes::dirt);
+		b.swampBlock.block.push_back(BlockTypes::stone);
+		b.swampBlock.block.push_back(BlockTypes::stone);
+		b.swampBlock.block.push_back(BlockTypes::stone);
+		b.swampBlock.block.push_back(BlockTypes::cobblestone);
+
 		b.isICy = true;
 		b.grassType = 0;
 		b.waterType = BlockTypes::ice;
@@ -343,6 +361,15 @@ bool BiomesManager::loadAllBiomes()
 
 		//b.grassType = BlockTypes::grass;
 		b.waterType = BlockTypes::water;
+
+
+		b.swampBlock.block.push_back(BlockTypes::volcanicRock);
+		b.swampBlock.block.push_back(BlockTypes::volcanicRock);
+		b.swampBlock.block.push_back(BlockTypes::volcanicRock);
+		b.swampBlock.block.push_back(BlockTypes::volcanicRock);
+		b.swampBlock.block.push_back(BlockTypes::volcanicRock);
+		b.swampBlock.block.push_back(BlockTypes::volcanicHotRock);
+
 
 		biomes.push_back(b);
 	}

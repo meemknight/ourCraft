@@ -77,6 +77,46 @@ continentalnessPickNoise:
 		1.000000,1.000000;
 		}
 	}
+swampNoise:
+	{
+	scale: 0.060000;
+	type: SimplexFractal;
+	celularReturnType: Distance;
+	frequency: 0.015000;
+	octaves: 4;
+	perturbFractalOctaves: 0;
+	power: 1.050000;
+	spline:
+		{
+		0.000000,0.000000;
+		0.754902,0.000000;
+		0.771242,0.547386;
+		0.857026,1.000000;
+		1.000000,1.000000;
+		}
+	}
+stoneSpikesNoise:
+	{
+	scale: 1.820000;
+	type: SimplexFractal;
+	celularReturnType: Distance;
+	frequency: 0.015000;
+	octaves: 5;
+	perturbFractalOctaves: 0;
+	power: 1.000000;
+	spline:
+		{
+		0.000000,0.000000;
+		0.372549,0.000000;
+		0.449346,0.000000;
+		0.640523,0.513072;
+		0.738563,0.756536;
+		0.782680,0.758170;
+		0.877451,1.000000;
+		0.901144,1.000000;
+		1.000000,0.691176;
+		}
+	}
 peaksAndValies:
 	{
 	scale: 0.280000;
