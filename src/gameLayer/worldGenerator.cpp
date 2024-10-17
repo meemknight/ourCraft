@@ -1019,8 +1019,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 					if (currentHeightLevel == 3)
 					{
-						newStartLevel = glm::mix(waterLevel + 4, newStartLevel, rivers);
-						newMaxMountainLevel = glm::mix(waterLevel + 18, newMaxMountainLevel, rivers);
+						newStartLevel = glm::mix(newStartLevel, waterLevel + 4, (1.f-rivers) * localBorderingFactor);
+						newMaxMountainLevel = glm::mix(newMaxMountainLevel, waterLevel + 18, (1.f - rivers) * localBorderingFactor);
 					}
 
 
