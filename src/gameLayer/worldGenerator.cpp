@@ -670,6 +670,16 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		swampNoise[i] = wg.swampSplines.applySpline(swampNoise[i]);
 	}
 
+	static alignas(32) float swampMaskNoise[CHUNK_SIZE * CHUNK_SIZE] = {};
+	wg.swampMask->FillNoiseSet(swampMaskNoise, xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		swampMaskNoise[i] += 1;
+		swampMaskNoise[i] /= 2;
+		swampMaskNoise[i] = powf(swampMaskNoise[i], wg.swampMaskPower);
+		swampMaskNoise[i] = wg.swampMaskSplines.applySpline(swampMaskNoise[i]);
+	}
+
 	static alignas(32) float stoneSpikesNoise[CHUNK_SIZE * CHUNK_SIZE] = {};
 	wg.stoneSpikesNoise->FillNoiseSet(stoneSpikesNoise, xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
@@ -678,6 +688,16 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		stoneSpikesNoise[i] /= 2;
 		stoneSpikesNoise[i] = powf(stoneSpikesNoise[i], wg.stoneSpikesPower);
 		stoneSpikesNoise[i] = wg.stoneSpikesSplines.applySpline(stoneSpikesNoise[i]);
+	}
+
+	static alignas(32) float stoneSpikesMaskNoise[CHUNK_SIZE * CHUNK_SIZE] = {};
+	wg.stoneSpikesMask->FillNoiseSet(stoneSpikesMaskNoise, xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	{
+		stoneSpikesMaskNoise[i] += 1;
+		stoneSpikesMaskNoise[i] /= 2;
+		stoneSpikesMaskNoise[i] = powf(stoneSpikesMaskNoise[i], wg.stoneSpikesMaskPower);
+		stoneSpikesMaskNoise[i] = wg.stoneSpikesMaskSplines.applySpline(stoneSpikesMaskNoise[i]);
 	}
 
 #pragma endregion
@@ -822,9 +842,19 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return swampNoise[x * CHUNK_SIZE + z];
 	};
 
+	auto getSwampMaskNoise = [](int x, int z)
+	{
+		return swampMaskNoise[x * CHUNK_SIZE + z];
+	};
+
 	auto getStoneSpikesNoise = [](int x, int z)
 	{
 		return stoneSpikesNoise[x * CHUNK_SIZE + z];
+	};
+
+	auto getStoneSpikesMaskNoise = [](int x, int z)
+	{
+		return stoneSpikesMaskNoise[x * CHUNK_SIZE + z];
 	};
 
 	auto getIntFromFloat = [](float f, int maxExclusive)
@@ -861,8 +891,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			float lakeNoiseVal = getLakesNoiseVal(x, z); //this one is 1 for lake 0 for no lake
 			float localBorderingFactor = borderingFactor[z + x * CHUNK_SIZE];
 
-			float localSwampVal = getSwampNoise(x, z);
-			float localStoneSpikes = getStoneSpikesNoise(x, z);
+			float localSwampVal = getSwampNoise(x, z) * getSwampMaskNoise(x, z);
+			float localStoneSpikes = getStoneSpikesNoise(x, z) * getStoneSpikesMaskNoise(x, z);
 
 			if (tightBorders[z + x * CHUNK_SIZE])
 			{
@@ -1001,14 +1031,14 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			#pragma region swamp
 				if (currentHeightLevel == 2)
 				{
-					if (localSwampVal > 0.5)
+					if (localSwampVal > 0.05)
 					{
 
 						//remap to 0 -> 1
 						//float swamp = glm::clamp((localSwampVal - 0.5f) * 2.f, 0.f, 1.f);
 						float swamp = localSwampVal;
 
-						newStartLevel = glm::mix(newStartLevel, waterLevel - 4, swamp);
+						newStartLevel = glm::mix(newStartLevel, waterLevel - 2, swamp);
 						newMaxMountainLevel = glm::mix(newMaxMountainLevel, waterLevel, swamp);
 					}
 
@@ -1024,8 +1054,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 						//remap to 0 -> 1
 						//float swamp = glm::clamp((localSwampVal - 0.5f) * 2.f, 0.f, 1.f);
 
-						newStartLevel = glm::mix(newStartLevel, newStartLevel + 12, localStoneSpikes);
-						newMaxMountainLevel = glm::mix(newMaxMountainLevel, newMaxMountainLevel + 20, localStoneSpikes);
+						newStartLevel = glm::mix(newStartLevel, newStartLevel + 25, localStoneSpikes);
+						newMaxMountainLevel = glm::mix(newMaxMountainLevel, newMaxMountainLevel + 40, localStoneSpikes);
 					}
 
 				}

@@ -91,6 +91,10 @@ gl2d::Texture randomSandT;
 gl2d::Texture swampT;
 gl2d::Texture stoneSpikesT;
 
+gl2d::Texture swampMaskT;
+gl2d::Texture stoneSpikesMaskT;
+
+
 
 gl2d::Texture fractalT;
 
@@ -319,6 +323,30 @@ void recreate()
 		stoneSpikesNoise[i] = applySpline(stoneSpikesNoise[i], settings.stoneSpikesNoise.spline);
 	}
 	createFromGrayScale(stoneSpikesT, stoneSpikesNoise, size);
+
+
+	float *swampMask=
+		wg.swampMask->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x);
+	for (int i = 0; i < size.x * size.y; i++)
+	{
+		swampMask[i] += 1;
+		swampMask[i] /= 2;
+		swampMask[i] = std::pow(swampMask[i], settings.swampMask.power);
+		swampMask[i] = applySpline(swampMask[i], settings.swampMask.spline);
+	}
+	createFromGrayScale(swampMaskT, swampMask, size);
+
+
+	float *stoneSpikesMask =
+		wg.stoneSpikesMask->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x);
+	for (int i = 0; i < size.x * size.y; i++)
+	{
+		stoneSpikesMask[i] += 1;
+		stoneSpikesMask[i] /= 2;
+		stoneSpikesMask[i] = std::pow(stoneSpikesMask[i], settings.stoneSpikeMask.power);
+		stoneSpikesMask[i] = applySpline(stoneSpikesMask[i], settings.stoneSpikeMask.spline);
+	}
+	createFromGrayScale(stoneSpikesMaskT, stoneSpikesMask, size);
 
 
 
@@ -675,7 +703,9 @@ void recreate()
 	FastNoiseSIMD::FreeNoiseSet(cavesNoise);
 	FastNoiseSIMD::FreeNoiseSet(swampNoise);
 	FastNoiseSIMD::FreeNoiseSet(stoneSpikesNoise);
-		
+	FastNoiseSIMD::FreeNoiseSet(swampMask);
+	FastNoiseSIMD::FreeNoiseSet(stoneSpikesMask);
+
 
 	delete[] finalNoise;
 }
@@ -894,10 +924,17 @@ bool gameLogic(float deltaTime)
 
 	noiseEditor(settings.swampNoise, "swamp");
 
+	ImGui::Separator();
+
+	noiseEditor(settings.swampMask, "swamp mask");
 
 	ImGui::Separator();
 
 	noiseEditor(settings.stoneSpikesNoise, "stone spikes");
+
+	ImGui::Separator();
+
+	noiseEditor(settings.stoneSpikeMask, "stone spikes mask");
 
 	ImGui::Separator();
 
@@ -1023,8 +1060,10 @@ bool gameLogic(float deltaTime)
 	drawNoise("Fractal", fractalT);
 
 	drawNoise("random swamps", swampT);
+	drawNoise("swamps mask", swampMaskT);
 
 	drawNoise("stone spikes", stoneSpikesT);
+	drawNoise("stone spikes mask", stoneSpikesMaskT);
 
 	ImGui::End();
 

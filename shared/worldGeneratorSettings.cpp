@@ -27,7 +27,9 @@ void WorldGenerator::init()
 	cavesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	lakesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	swampNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	swampMask = FastNoiseSIMD::NewFastNoiseSIMD();
 	stoneSpikesNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	stoneSpikesMask = FastNoiseSIMD::NewFastNoiseSIMD();
 
 	riversNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	roadNoise = FastNoiseSIMD::NewFastNoiseSIMD();
@@ -75,6 +77,8 @@ void WorldGenerator::clear()
 	delete regionsZ;
 	delete swampNoise;
 	delete stoneSpikesNoise;
+	delete swampMask;
+	delete stoneSpikesMask;
 
 	*this = {};
 }
@@ -182,6 +186,14 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	apply(stoneSpikesNoise, s.seed + 19, s.stoneSpikesNoise);
 	stoneSpikesPower = s.stoneSpikesNoise.power;
 	stoneSpikesSplines = s.stoneSpikesNoise.spline;
+
+	apply(swampMask, s.seed + 20, s.swampMask);
+	swampMaskPower = s.swampMask.power;
+	swampMaskSplines = s.swampMask.spline;
+
+	apply(stoneSpikesMask, s.seed + 21, s.stoneSpikeMask);
+	stoneSpikesMaskPower = s.stoneSpikeMask.power;
+	stoneSpikesMaskSplines = s.stoneSpikeMask.spline;
 
 
 	regionsHeightNoise->SetSeed(s.seed);
@@ -472,6 +484,12 @@ std::string WorldGeneratorSettings::saveSettings()
 
 	rez += "stoneSpikesNoise:\n";
 	rez += stoneSpikesNoise.saveSettings(1);
+
+	rez += "stoneSpikesMask:\n";
+	rez += stoneSpikeMask.saveSettings(1);
+
+	rez += "swampMask:\n";
+	rez += swampMask.saveSettings(1);
 
 	rez += "peaksAndValies:\n";
 	rez += peaksAndValies.saveSettings(1);
@@ -1017,6 +1035,26 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					if (isEof()) { return 0; }
 
 					if (!consumeNoise(stoneSpikesNoise))
+					{
+						return 0;
+					}
+				}
+				else if (s == "stoneSpikesMask")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(stoneSpikeMask))
+					{
+						return 0;
+					}
+				}
+				else if (s == "swampMask")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(swampMask))
 					{
 						return 0;
 					}
