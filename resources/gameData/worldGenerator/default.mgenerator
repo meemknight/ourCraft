@@ -145,7 +145,7 @@ stoneSpikesMask:
 	}
 swampMask:
 	{
-	scale: 0.100000;
+	scale: 0.150000;
 	type: SimplexFractal;
 	celularReturnType: Distance;
 	frequency: 0.010000;
@@ -155,9 +155,9 @@ swampMask:
 	spline:
 		{
 		0.000000,0.000000;
-		0.745098,0.000000;
-		0.766340,0.205882;
-		0.815360,1.000000;
+		0.718954,0.000000;
+		0.740196,0.202614;
+		0.795752,1.000000;
 		1.000000,1.000000;
 		}
 	}
