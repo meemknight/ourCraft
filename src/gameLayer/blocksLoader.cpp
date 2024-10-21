@@ -955,7 +955,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 4.f);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
-		setGpuIds(desinationIndex);
+		//setGpuIds(desinationIndex);
 	};
 
 	//generate other textures

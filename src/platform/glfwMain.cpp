@@ -14,6 +14,7 @@
 #include <fstream>
 #include <chrono>
 #include <profilerLib/include/profilerLib.h>
+#include <errorReporting.h>
 
 
 #ifdef _WIN32
@@ -380,7 +381,6 @@ int main()
 #pragma region gl2d
 	gl2d::init();
 #pragma endregion
-
 
 #pragma region imgui
 	#if REMOVE_IMGUI == 0

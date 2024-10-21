@@ -1216,16 +1216,8 @@ void main()
 			//if(success)out_color.rgb = ssr;
 			
 		}
-		
 
 
-		//out_color.rgb = linear_to_srgb(out_color.rgb);
-		
-		//fog
-		//{
-		//	out_color.a *= ;	
-		//}
-		
 		//is water	
 		//if(false)
 		if(isWater())
@@ -1354,6 +1346,9 @@ void main()
 							);
 		}
 
+		//out_color = waterDepth
+		//out_color.rgb = (u_view * vec4(v_semiViewSpacePos,1)).xyz;
+		//out_color.rgb = vec3(1,1,1);
 		//out_color.r = 1-roughness;
 		//out_color.g = metallic;
 		//out_color.b = 0;

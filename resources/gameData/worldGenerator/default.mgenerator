@@ -1,7 +1,7 @@
 seed: 1234;
 continentalnessNoise:
 	{
-	scale: 0.221000;
+	scale: 0.171000;
 	type: SimplexFractal;
 	celularReturnType: Distance;
 	frequency: 0.016000;
@@ -32,7 +32,7 @@ continentalnessNoise:
 	}
 continentalnessNoise2:
 	{
-	scale: 0.120000;
+	scale: 0.100000;
 	type: SimplexFractal;
 	celularReturnType: Distance;
 	frequency: 0.015000;
@@ -66,10 +66,10 @@ continentalnessPickNoise:
 	frequency: 0.015000;
 	octaves: 4;
 	perturbFractalOctaves: 0;
-	power: 1.000000;
+	power: 0.900000;
 	spline:
 		{
-		0.000000,0.000000;
+		0.000000,0.013072;
 		0.163398,0.000000;
 		0.433006,0.053921;
 		0.589052,0.946078;
