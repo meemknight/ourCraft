@@ -6,6 +6,12 @@ This time I want to add a lot of harder-to-implement features like transparent b
 Go check out the videos on [YouTube about it](https://www.youtube.com/watch?v=StNAG_tLEoU&list=PLKUl_fMWLdH-0H-tz0S144g5xXliHOIxC&index=4)!
 
 
+![image](https://github.com/user-attachments/assets/9f97b795-8f7e-4de0-abca-2945338721ca)
+
+![image](https://github.com/user-attachments/assets/08b148c9-4c80-4cbc-83f1-c1ace1e61e0a)
+
+![image](https://github.com/user-attachments/assets/d02a6717-8b47-4923-880d-1bc8e2574943)
+
 ![image](https://github.com/meemknight/ourCraft/assets/36445656/7e57cdc4-6f6c-4cc9-bce5-c8ff9131ab55)
 
 ![image](https://github.com/meemknight/ourCraft/assets/36445656/fd5ad17e-1bee-441d-8747-d4df4fdb850c)
