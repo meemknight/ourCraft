@@ -17,6 +17,7 @@ void WorldGenerator::init()
 	whiteNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	whiteNoise2 = FastNoiseSIMD::NewFastNoiseSIMD();
 	spagettiNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	iceNoise = FastNoiseSIMD::NewFastNoiseSIMD();
 	regionsX = FastNoiseSIMD::NewFastNoiseSIMD();
 	regionsZ = FastNoiseSIMD::NewFastNoiseSIMD();
 	hillsDropsNoise = FastNoiseSIMD::NewFastNoiseSIMD();
@@ -59,6 +60,7 @@ void WorldGenerator::clear()
 	delete whiteNoise;
 	delete whiteNoise2;
 	delete spagettiNoise;
+	delete iceNoise;
 	delete roadNoise;
 	delete riversNoise;
 	delete regionsHeightNoise;
@@ -195,13 +197,16 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	stoneSpikesMaskPower = s.stoneSpikeMask.power;
 	stoneSpikesMaskSplines = s.stoneSpikeMask.spline;
 
+	apply(iceNoise, s.seed + 22, s.iceNoise);
+	iceNoisePower = s.iceNoise.power;
+	iceNoiseSplines = s.iceNoise.spline;
 
 	regionsHeightNoise->SetSeed(s.seed);
 	regionsHeightNoise->SetAxisScales(1, 1, 1);
 	//regionsHeightNoise->SetFrequency(0.002);
 	//regionsHeightNoise->SetFrequency(0.024); //original intended scale
-	regionsHeightNoise->SetFrequency(0.04); //probably will use this
-	//regionsHeightNoise->SetFrequency(0.1);
+	//regionsHeightNoise->SetFrequency(0.04); //probably will use this
+	regionsHeightNoise->SetFrequency(0.1);
 	//regionsHeightNoise->SetFrequency(0.4); //for testing
 
 	regionsHeightNoise->SetNoiseType(FastNoiseSIMD::NoiseType::Cellular);
@@ -211,7 +216,8 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	regionsHeightNoise->SetCellularNoiseLookupType(FastNoiseSIMD::NoiseType::Perlin);
 	//regionsHeightNoise->SetCellularNoiseLookupFrequency(0.22); //original
 	//regionsHeightNoise->SetCellularNoiseLookupFrequency(0.25);
-	regionsHeightNoise->SetCellularNoiseLookupFrequency(0.30);
+	//regionsHeightNoise->SetCellularNoiseLookupFrequency(0.30); //currently used
+	regionsHeightNoise->SetCellularNoiseLookupFrequency(0.35);
 
 
 	*regionsHeightTranzition = *regionsHeightNoise;
@@ -490,6 +496,9 @@ std::string WorldGeneratorSettings::saveSettings()
 
 	rez += "swampMask:\n";
 	rez += swampMask.saveSettings(1);
+	
+	rez += "iceNoise:\n";
+	rez += iceNoise.saveSettings(1);
 
 	rez += "peaksAndValies:\n";
 	rez += peaksAndValies.saveSettings(1);
@@ -1055,6 +1064,16 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 					if (isEof()) { return 0; }
 
 					if (!consumeNoise(swampMask))
+					{
+						return 0;
+					}
+				}
+				else if (s == "iceNoise")
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+
+					if (!consumeNoise(iceNoise))
 					{
 						return 0;
 					}

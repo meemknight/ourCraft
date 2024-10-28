@@ -46,6 +46,7 @@ struct WorldGeneratorSettings
 	NoiseSetting stoneSpikesNoise;
 	NoiseSetting swampMask;
 	NoiseSetting stoneSpikeMask;
+	NoiseSetting iceNoise;
 
 	//todo remove
 	Spline peaksAndValiesContributionSpline;
@@ -111,6 +112,10 @@ struct WorldGenerator
 	Spline stoneSpikesMaskSplines;
 	float stoneSpikesMaskPower = 1.f;
 
+	FastNoiseSIMD *iceNoise;
+	Spline iceNoiseSplines;
+	float iceNoisePower = 1.f;
+
 	FastNoiseSIMD *wierdnessNoise;
 	Spline wierdnessSplines;
 	//Spline oceansAndTerasesContributionSplines;
@@ -168,7 +173,6 @@ struct WorldGenerator
 	float randomSandPower = 1.f;
 
 	FastNoiseSIMD *alternativePatchesOfBlocks;
-
 
 
 	void init();

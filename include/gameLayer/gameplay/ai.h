@@ -149,12 +149,11 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 	bool fleeing = false;
 	bool carefull = false;
 
-
 	auto stopOrChangeDirectionIfFlee = [&]()
 	{
 		if (fleeing)
 		{
-			if (getRandomNumber(rng, 0, 10) % 2)
+			if (getRandomNumber(rng, 0, 1))
 			{
 				direction = {direction.y, -direction.x};
 			}
@@ -392,7 +391,7 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 				}
 				else
 				{
-					if (getRandomNumber(rng, 0, 10) % 2)
+					if (getRandomNumber(rng, 0, 1))
 					{
 						changeHeadTimer = getRandomNumberFloat(rng, 0.5, 1.5); //look up
 						baseEntity->entity.lookDirectionAnimation = getRandomUnitVector3Oriented(rng, {0,0.5,-1}, 0.2);

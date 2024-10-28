@@ -93,16 +93,12 @@ float shortestAngleDirection(float angleFrom, float angleTo)
 
 int getRandomNumber(std::minstd_rand &rng, int min, int max)
 {
-	if (min == 0 && max == 1) { return rng() % 2; }
-
-	std::uniform_int_distribution<int> dist(min, max);
-	return dist(rng);
+	return rand() % (max + 1 - min) + min;
 }
 
 float getRandomNumberFloat(std::minstd_rand &rng, float min, float max)
 {
-	std::uniform_real_distribution<float> dist(min, max);
-	return dist(rng);
+	return (getRandomNumber(rng, 0, 1000) / 1000.f) * (max-min) + min;
 }
 
 void RubberBand::computeRubberBand(float deltaTime)
