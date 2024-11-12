@@ -751,6 +751,17 @@ float getBlockAO()
 	//return clamp(pow(ao, 1.5) * 1.8f, 0.1f,1);
 }
 
+
+vec3 getViewVector(vec2 fragCoord)
+{
+	float depth     = 1;
+	vec4  unproject = inverse(u_cameraProjection * u_view) * vec4(fragCoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0); // Transform the UV and depth map sampled value into [-1,1] range
+	vec3  worldPos  = unproject.xyz / unproject.w;
+	
+	return -normalize(worldPos);
+}
+
+
 in flat int v_isSkyLightMain;
 
 void main()
@@ -952,6 +963,8 @@ void main()
 		
 		float viewLength = length(v_semiViewSpacePos);
 		vec3 V = -v_semiViewSpacePos / viewLength;
+
+		//V = getViewVector(gl_FragCoord.xy / textureSize(u_lastFramePositionViewSpace, 0).xy);
 
 		//{
 		//	vec4 worldSpaceV = inverse(u_view) * vec4(V, 0.0);
@@ -1165,11 +1178,13 @@ void main()
 		//out_color = clamp(out_color, vec4(0), vec4(1));
 		
 		//ssr
-		//if(false)
+		if(false)
 		if(!physicallyAccurateReflections)
 		if(roughness < 0.45)
 		{
 			vec2 fragCoord = gl_FragCoord.xy / textureSize(u_lastFramePositionViewSpace, 0).xy;
+
+			//V = normalize(texture(u_lastFramePositionViewSpace, fragCoord).xyz);
 
 			//float dotNVClamped = clamp(dotNV, 0.0, 0.99);
 			

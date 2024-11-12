@@ -171,17 +171,30 @@ struct Renderer
 	struct FilterBloomDataShader
 	{
 		Shader shader;
-		uniform u_exposure;
-		uniform u_tresshold;
-		uniform u_multiplier;
+		uniform u_exposure = -1;
+		uniform u_tresshold = -1;
+		uniform u_multiplier = -1;
 
 	}filterBloomDataShader;
+
+	struct SSRShader
+	{
+		Shader shader;
+
+		uniform u_lastFrameColor = -1;
+		uniform u_lastFramePositionViewSpace = -1;
+		uniform u_cameraProjection = -1;
+		uniform u_inverseView = -1;
+		uniform u_view = -1;
+		uniform u_inverseCameraViewProjection = -1;
+
+	}ssrShader;
 
 	struct FilterDownShader
 	{
 		Shader shader;
-		uniform u_texture;
-		uniform u_mip;
+		uniform u_texture = -1;
+		uniform u_mip = -1;
 	}filterDownShader;
 
 	struct AddMipsShader
