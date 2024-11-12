@@ -1710,6 +1710,25 @@ void Renderer::reloadShaders()
 	}
 #pragma endregion
 
+#pragma region ssr
+	{
+		ssrShader.shader.clear();
+
+		ssrShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
+			RESOURCES_PATH "shaders/postProcess/ssr.frag");
+		ssrShader.shader.bind();
+
+		GET_UNIFORM2(ssrShader, u_lastFrameColor);
+		GET_UNIFORM2(ssrShader, u_lastFramePositionViewSpace);
+		GET_UNIFORM2(ssrShader, u_cameraProjection);
+		GET_UNIFORM2(ssrShader, u_inverseView);
+		GET_UNIFORM2(ssrShader, u_view);
+		GET_UNIFORM2(ssrShader, u_inverseCameraViewProjection);
+		
+	}
+#pragma endregion
+
+
 #pragma region decals
 	{
 
@@ -1999,7 +2018,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	c.decomposePosition(posFloat, posInt);
 
 	auto viewMatrix = c.getViewMatrix();
-	auto vp = c.getProjectionMatrix() * viewMatrix;
+	auto projectionMatrix = c.getProjectionMatrix();
+	auto vp = projectionMatrix * viewMatrix;
 
 	//todo change, also reuse in the the decal shader
 	float timeGrass = std::clock() / 1000.f;
@@ -2197,14 +2217,14 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform1f(defaultShader.u_near, c.closePlane);
 		glUniform1f(defaultShader.u_far, c.farPlane);
 		glUniformMatrix4fv(defaultShader.u_inverseProjMat, 1, 0,
-			&glm::inverse(c.getProjectionMatrix())[0][0]);
+			&glm::inverse(projectionMatrix)[0][0]);
 		glUniformMatrix4fv(defaultShader.u_lightSpaceMatrix, 1, 0,
 			&sunShadow.lightSpaceMatrix[0][0]);
 		glUniform3iv(defaultShader.u_lightPos, 1, &sunShadow.lightSpacePosition[0]);
 		glUniform1i(defaultShader.u_writeScreenSpacePositions, 1);//todo remove
 
 		glUniformMatrix4fv(defaultShader.u_inverseViewProjMat, 1, 0,
-			&glm::inverse(c.getProjectionMatrix() * viewMatrix)[0][0]);
+			&glm::inverse(projectionMatrix * viewMatrix)[0][0]);
 
 		glUniformMatrix4fv(defaultShader.u_lastViewProj, 1, 0,
 			&(c.lastFrameViewProjMatrix)[0][0]);
@@ -2727,6 +2747,49 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	}
 
+#pragma region ssr
+
+	if(1)
+	{
+		//fboMain.color
+
+		copyToMainFboOnlyLastFrameStuff();
+		
+		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fboOnlyFirstTarget);
+
+		glDisable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		ssrShader.shader.bind();
+		glBindVertexArray(vaoQuad);
+
+		glUniformMatrix4fv(ssrShader.u_cameraProjection, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+
+		glUniformMatrix4fv(ssrShader.u_inverseView, 1, GL_FALSE,
+			glm::value_ptr(glm::inverse(viewMatrix)));
+
+		glUniformMatrix4fv(ssrShader.u_view, 1, GL_FALSE,
+			glm::value_ptr(viewMatrix));
+
+		glUniformMatrix4fv(ssrShader.u_inverseCameraViewProjection, 1, GL_FALSE,
+			glm::value_ptr(glm::inverse(projectionMatrix *viewMatrix)));
+
+
+		glActiveTexture(GL_TEXTURE0 + 5);
+		glBindTexture(GL_TEXTURE_2D, fboLastFrame.color);
+		glUniform1i(ssrShader.u_lastFrameColor, 5);
+
+		glActiveTexture(GL_TEXTURE0 + 6);
+		glBindTexture(GL_TEXTURE_2D, fboLastFramePositions.color);
+		glUniform1i(ssrShader.u_lastFramePositionViewSpace, 6);
+
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+	}
+
+#pragma endregion
 
 #pragma region get automatic exposure
 	if(1)
