@@ -5,6 +5,7 @@ noperspective in vec2 v_texCoords;
 
 uniform sampler2D u_lastFrameColor;
 uniform sampler2D u_lastFramePositionViewSpace;
+uniform isampler2D u_normals;
 uniform mat4 u_cameraProjection;
 uniform mat4 u_inverseView;
 uniform mat4 u_view;
@@ -253,6 +254,21 @@ vec3 getViewVector(vec2 fragCoord)
 	return -normalize(worldPos);
 }
 
+vec3 fromuShortToFloat(ivec3 a)
+{
+	vec3 ret = a;
+
+	//[0 65536] -> [0 1]
+	ret /= 65536;
+
+	//[0 1] -> [0 2]
+	ret *= 2.f;
+
+	//[0 2] -> [-1 1]
+	ret -= 1.f;
+
+	return normalize(ret);
+}
 
 void main()
 {
@@ -260,14 +276,16 @@ void main()
 	bool ssrSuccess = false;
 
 	float roughness = 0.01;
-	vec3 N = {0,1,0}; //todo make sure water doesn't use normal map
 
 	vec3 ssr = vec3(0,0,0);
 	vec3 V = vec3(0,0,0);
+	vec3 N = vec3(0,0,0);
 	if(roughness < 0.45)
 	{
 		vec2 fragCoord = gl_FragCoord.xy / textureSize(u_lastFramePositionViewSpace, 0).xy;
 		vec3 V = getViewVector(fragCoord);
+
+		N = fromuShortToFloat(texture(u_normals, fragCoord).xyz);
 
 		//float dotNVClamped = clamp(dotNV, 0.0, 0.99);
 		
