@@ -23,6 +23,7 @@
 
 #include <imgui-docking/imgui/imgui.h>
 
+
 #define GET_UNIFORM(s, n) n = s.getUniform(#n);
 #define GET_UNIFORM2(s, n) s. n = s.shader.getUniform(#n);
 
@@ -1724,6 +1725,7 @@ void Renderer::reloadShaders()
 		GET_UNIFORM2(ssrShader, u_inverseView);
 		GET_UNIFORM2(ssrShader, u_view);
 		GET_UNIFORM2(ssrShader, u_inverseCameraViewProjection);
+		GET_UNIFORM2(ssrShader, u_normals);
 		
 	}
 #pragma endregion
@@ -2690,6 +2692,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		
 	#pragma region render transparent geometry last phaze 7
 		programData.GPUProfiler.startSubProfile("final transparency 7");
+
 		renderTransparentGeometryPhaze(true);
 		programData.GPUProfiler.endSubProfile("final transparency 7");
 	#pragma endregion
@@ -2751,6 +2754,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	if(1)
 	{
+		programData.GPUProfiler.startSubProfile("SSR PASS");
+
 		//fboMain.color
 
 		copyToMainFboOnlyLastFrameStuff();
@@ -2785,8 +2790,13 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glBindTexture(GL_TEXTURE_2D, fboLastFramePositions.color);
 		glUniform1i(ssrShader.u_lastFramePositionViewSpace, 6);
 
+		glActiveTexture(GL_TEXTURE0 + 1);
+		glBindTexture(GL_TEXTURE_2D, fboMain.thirdColor);
+		glUniform1i(ssrShader.u_normals, 1);
+
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
+		programData.GPUProfiler.endSubProfile("SSR PASS");
 	}
 
 #pragma endregion
@@ -2794,6 +2804,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 #pragma region get automatic exposure
 	if(1)
 	{
+
 		static bool reading = 0;
 
 		static ImVec4 color = {0,0,0,1};
@@ -2869,13 +2880,14 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		//update automatic exposure
 		adaptiveExposure.update(deltaTime, averageLuminosity);
 
-
 	}
 #pragma endregion
 
 	bool lastBloomChannel = 0;
 	if (bloom)
 	{
+
+
 		programData.GPUProfiler.startSubProfile("Bloom");
 
 #pragma region get bloom filtered data
@@ -2911,6 +2923,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 		glDisable(GL_BLEND);
+
 	}
 #pragma endregion
 
@@ -3044,6 +3057,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 #pragma endregion
 
 		programData.GPUProfiler.endSubProfile("Bloom");
+
 	};
 
 
@@ -3052,6 +3066,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	//hbao
 	if (programData.renderer.ssao)
 	{
+
 		programData.GPUProfiler.startSubProfile("HBAO");
 
 		glViewport(0, 0, fboHBAO.size.x, fboHBAO.size.y);
@@ -3113,6 +3128,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	//bloom
 	if(bloom)
 	{
+
+
 		glDisable(GL_DEPTH_TEST);
 
 		applyBloomDataShader.shader.bind();
@@ -3150,6 +3167,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	if (underWater)
 	{
 
+
+
 		programData.GPUProfiler.startSubProfile("under water post process");
 
 		glBindVertexArray(vaoQuad);
@@ -3183,6 +3202,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		//copyToMainFboOnlyLastFrameStuff();
 
 		programData.GPUProfiler.endSubProfile("under water post process");
+
 	}
 	else
 	{
@@ -3193,6 +3213,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	//tone mapping
 	{
+
 		programData.GPUProfiler.startSubProfile("tone mapping");
 
 		glBindVertexArray(vaoQuad);
@@ -3216,6 +3237,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		copyToMainFboOnlyLastFrameStuff();
 
 		programData.GPUProfiler.endSubProfile("tone mapping");
+
 	}
 
 	fboMain.copyDepthToMainFbo(fboMain.size.x, fboMain.size.y);

@@ -978,8 +978,14 @@ void main()
 			out_screenSpacePositions.xyz = (u_view * vec4(v_semiViewSpacePos,1)).xyz; //this is good
 			//out_screenSpacePositions.a = 1;
 		}
-			
-		out_normals = fromFloatTouShort(N);
+		
+		if(isWater())
+		{
+			out_normals = fromFloatTouShort(v_normal);
+		}else
+		{
+			out_normals = fromFloatTouShort(N);
+		}
 
 		
 		//caustics

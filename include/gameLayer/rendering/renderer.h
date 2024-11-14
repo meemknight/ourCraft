@@ -183,6 +183,7 @@ struct Renderer
 
 		uniform u_lastFrameColor = -1;
 		uniform u_lastFramePositionViewSpace = -1;
+		uniform u_normals = -1;
 		uniform u_cameraProjection = -1;
 		uniform u_inverseView = -1;
 		uniform u_view = -1;
