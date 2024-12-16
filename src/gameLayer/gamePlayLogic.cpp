@@ -32,6 +32,7 @@
 #include <rendering/renderSettings.h>
 #include <audioEngine.h>
 #include <gameplay/mapEngine.h>
+#include <gameplay/battleUI.h>
 
 
 struct GameData
@@ -90,7 +91,7 @@ struct GameData
 	std::string currentSkinName = "";
 	gl2d::Texture currentSkinTexture = {};
 	GLuint64 currentSkinBindlessTexture = 0;
-
+	BattleUI battleUI;
 	 
 	BoneTransform playerFOVHandTransform{
 		glm::vec3{glm::radians(120.f),0.f,0.f},
@@ -107,6 +108,7 @@ struct GameData
 	int craftingSlider = 0;
 	bool showUI = 1;
 
+	std::minstd_rand rng;
 }gameData;
 
 void loadCurrentSkin()
@@ -194,6 +196,8 @@ bool initGameplay(ProgramData &programData, const char *c) //GAME STUFF!
 	gameData.entityManager.localPlayer.entity = playerData.entity;
 	gameData.entityManager.localPlayer.entityId = playerData.yourPlayerEntityId;
 	gameData.entityManager.localPlayer.otherPlayerSettings = playerData.otherSettings;
+
+	gameData.rng.seed(time(0));
 
 	//todo restant timer here ...
 	//playerData.timer;
@@ -1234,7 +1238,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 						auto f = gameData.entityManager.players.find(targetedEntity);
 						if (f != gameData.entityManager.players.end())
 						{
-
+							//todo is creative
+							//if(f->second.entity)
 						}
 
 					}
@@ -2045,6 +2050,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #endif
 #pragma endregion
 
+	gameData.battleUI.update(*player.inventory.getItemFromIndex(gameData.currentItemSelected),
+		gameData.currentItemSelected, stopMainInput, programData.ui,
+		gameData.rng, deltaTime);
 
 #pragma region ui
 

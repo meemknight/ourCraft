@@ -215,6 +215,53 @@ bool Item::canAttack()
 	return 0;
 }
 
+bool Item::isWeapon()
+{
+	return 
+		isBattleAxe() ||
+		isSword() ||
+		isHammer() ||
+		isDagger() ||
+		isScythe() ||
+		isFlail() ||
+		isSpear();
+}
+
+bool Item::isBattleAxe()
+{
+	return type == trainingBattleAxe;
+}
+
+bool Item::isSword()
+{
+	return type == trainingSword;
+}
+
+bool Item::isHammer()
+{
+	return type == trainingWarHammer;
+}
+
+bool Item::isDagger()
+{
+	return type == trainingKnife;
+}
+
+bool Item::isScythe()
+{
+	return type == trainingScythe;
+}
+
+bool Item::isFlail()
+{
+	return type == trainingFlail;
+}
+
+bool Item::isSpear()
+{
+	return type == trainingSpear;
+}
+
 std::string Item::formatMetaDataToString()
 {
 
@@ -250,6 +297,8 @@ WeaponStats Item::getWeaponStats()
 		 case trainingBattleAxe:
 
 		 stats.damage = 2;
+
+		 stats.normalize();
 
 		 break;
 	}

@@ -1,5 +1,5 @@
 #pragma once
-
+#include <glm/vec2.hpp>
 
 
 struct WeaponStats
@@ -10,7 +10,7 @@ struct WeaponStats
 	
 	float dexterity = 1; // -10 -> 20;	//X
 	float damage = 1; // 1 -> 99999;
-	float speed = 1; // todo			//X
+	float speed = 5; // 1 -> 10
 	float comboFrequency = 1; // todo	//X
 	float armourPenetration = 1; // todo
 	float accuracy = 0; // -10 -> 20;	//X
@@ -21,5 +21,7 @@ struct WeaponStats
 	
 	float getKnockBackNormalized();
 
-
+	//returns the culldown timer for the weapon
+	//based on speed
+	glm::vec2 getTimerCulldownRangeForAttacks();
 };
