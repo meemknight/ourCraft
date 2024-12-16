@@ -24,7 +24,6 @@ void doGameTick(float deltaTime,
 void sendDamagePlayerPacket(Client &client);
 void sendIncreaseLifePlayerPacket(Client &client);
 void sendUpdateLifeLifePlayerPacket(Client &client);
-void applyDamageOrLifeToPlayer(short difference, Client &client);
 
 
 

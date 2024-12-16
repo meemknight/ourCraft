@@ -79,6 +79,8 @@ struct PlayerClient: public ClientEntity<Player, PlayerClient>
 
 };
 
+#define PLAYER_DEFAULT_LIFE Life(100)
+
 //todo update function
 struct PlayerServer: public ServerEntity<Player>
 {
@@ -93,7 +95,19 @@ struct PlayerServer: public ServerEntity<Player>
 	unsigned char revisionNumberInteraction = 0;
 	glm::ivec3 currentBlockInteractWithPosition = {0, -1, 0};
 
-	Life life{100};
+	Life lifeLastFrame = PLAYER_DEFAULT_LIFE;
+	Life newLife = PLAYER_DEFAULT_LIFE;
+
+	void applyDamageOrLife(short difference)
+	{
+		int life = newLife.life;
+		life += difference;
+		newLife.life = life;
+		if (difference < 0)
+		{
+			healingDelayCounterSecconds = 0;
+		}
+	}
 
 	bool killed = 0;
 
@@ -101,9 +115,7 @@ struct PlayerServer: public ServerEntity<Player>
 	float notIncreasedLifeSinceTimeSecconds = 0;
 	float healingDelayCounterSecconds = BASE_HEALTH_DELAY_TIME;
 
-	void recieveDamage() { healingDelayCounterSecconds = 0; };
-
-	void resetStatsForWhenKilled();
+	void kill();
 
 	//todo calculate armour based on inventory
 	Armour getArmour() { return {0}; };

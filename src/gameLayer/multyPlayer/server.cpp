@@ -425,7 +425,7 @@ void killEntity(WorldSaver &worldSaver, std::uint64_t entity)
 		//it is enough to set the life of players to 0 to kill them!
 		if (found != clients.end())
 		{
-			found->second.playerData.life.life = 0;
+			found->second.playerData.kill();
 		};
 	}
 	else
@@ -570,14 +570,43 @@ void serverWorkerUpdate(
 	for (auto &c : clients)
 	{
 		//kill player
-		if (c.second.playerData.life.life <= 0 && !c.second.playerData.killed)
+		if (c.second.playerData.newLife.life <= 0 && !c.second.playerData.killed)
 		{
 			//todo a method to reset multiple things
+			c.second.playerData.kill();
 			c.second.playerData.killed = true;
-			c.second.playerData.life.life = 0;
-			c.second.playerData.resetStatsForWhenKilled();
 
 			genericBroadcastEntityKillFromServerToPlayer(c.first, true);
+		}
+		else
+		{
+			//todo move into sepparate threads stuff
+
+			c.second.playerData.newLife.sanitize();
+
+			if (c.second.playerData.newLife.life != c.second.playerData.lifeLastFrame.life
+				||
+				c.second.playerData.newLife.maxLife != c.second.playerData.lifeLastFrame.maxLife
+				)
+			{
+
+				if (c.second.playerData.newLife.life < c.second.playerData.lifeLastFrame.life)
+				{
+					sendDamagePlayerPacket(c.second);
+					c.second.playerData.healingDelayCounterSecconds = 0;
+				}
+				else if (c.second.playerData.newLife.life > c.second.playerData.lifeLastFrame.life)
+				{
+					sendIncreaseLifePlayerPacket(c.second);
+				}
+				else
+				{
+					sendUpdateLifeLifePlayerPacket(c.second);
+				}
+
+				c.second.playerData.lifeLastFrame = c.second.playerData.newLife;
+			}
+
 		}
 
 	}
@@ -1555,9 +1584,8 @@ void serverWorkerUpdate(
 										auto found = clients.find(entityId);
 										permaAssertComment(found != clients.end(), "this player should exist");
 
-										found->second.playerData.recieveDamage();
-
-										sendDamagePlayerPacket(found->second);
+										//found->second.playerData.recieveDamage();
+										//sendDamagePlayerPacket(found->second);
 									}
 
 								}
@@ -1585,7 +1613,7 @@ void serverWorkerUpdate(
 					if (client->playerData.killed)
 					{
 
-						client->playerData.life = Life(20); //todo a default player max life
+						client->playerData.newLife = PLAYER_DEFAULT_LIFE; //todo a default player max life
 						client->playerData.killed = false;
 						sendPlayerInventoryAndIncrementRevision(*client);
 						sendUpdateLifeLifePlayerPacket(*client);
@@ -1610,19 +1638,8 @@ void serverWorkerUpdate(
 
 				if (client && !client->playerData.killed)
 				{
-					client->playerData.recieveDamage();
 
-					client->playerData.life.life -= i.t.damage;
-					if (client->playerData.life.life <= 0)
-					{
-						//will notify next frame
-						client->playerData.life.life = 0;
-					}
-					else
-					{
-						sendUpdateLifeLifePlayerPacket(*client);
-					}
-
+					client->playerData.applyDamageOrLife(-i.t.damage);
 					
 				}
 
@@ -1633,10 +1650,7 @@ void serverWorkerUpdate(
 
 				if (client && !client->playerData.killed)
 				{
-					//todo duplicate code above!!!!!
-					client->playerData.killed = true;
-					client->playerData.life.life = 0;
-					client->playerData.resetStatsForWhenKilled();
+					client->playerData.kill();
 
 					genericBroadcastEntityKillFromServerToPlayer(i.cid, true, 
 						client->peer);
@@ -1835,8 +1849,7 @@ void serverWorkerUpdate(
 				settings.perClientSettings.begin()->second.damage = false;
 				auto &c = getAllClientsReff();
 
-				c.begin()->second.playerData.recieveDamage();
-				applyDamageOrLifeToPlayer(-10, c.begin()->second);
+				c.begin()->second.playerData.applyDamageOrLife(-10);
 			}
 
 			if (settings.perClientSettings.begin()->second.heal)
@@ -1844,7 +1857,7 @@ void serverWorkerUpdate(
 				settings.perClientSettings.begin()->second.heal = false;
 				auto &c = getAllClientsReff();
 
-				applyDamageOrLifeToPlayer(10, c.begin()->second);
+				c.begin()->second.playerData.applyDamageOrLife(10);
 			}
 
 			if (settings.perClientSettings.begin()->second.killApig)

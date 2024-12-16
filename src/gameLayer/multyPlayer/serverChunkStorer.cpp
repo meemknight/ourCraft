@@ -1569,7 +1569,7 @@ void doHittingThings(T &e, glm::vec3 dir, glm::dvec3 playerPosition,
 		//the players are stored differently
 		if constexpr (std::is_same_v<T, PlayerServer>)
 		{
-			life = &e.life;
+			life = &e.newLife;
 			armour = e.getArmour();
 		}
 		else

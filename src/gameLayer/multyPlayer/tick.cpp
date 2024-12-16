@@ -250,7 +250,7 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 
 		if (playerData.healingDelayCounterSecconds >= BASE_HEALTH_DELAY_TIME)
 		{
-			if (playerData.life.life < playerData.life.maxLife)
+			if (playerData.newLife.life < playerData.newLife.maxLife)
 			{
 				playerData.notIncreasedLifeSinceTimeSecconds += deltaTime;
 
@@ -258,11 +258,8 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 				{
 					playerData.notIncreasedLifeSinceTimeSecconds -= BASE_HEALTH_REGEN_TIME;
 
-					playerData.life.life++;
+					playerData.newLife.life++;
 
-					//todo a better way to do this at the end of the frame
-					//once you create the package manager
-					sendIncreaseLifePlayerPacket(*c.second);
 				}
 			}
 			else
@@ -707,14 +704,14 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 void sendDamagePlayerPacket(Client &client)
 {
 	Packet_UpdateLife p;
-	p.life = client.playerData.life;
+	p.life = client.playerData.newLife;
 	sendPacket(client.peer, headerRecieveDamage, &p, sizeof(p), true, channelChunksAndBlocks);
 }
 
 void sendIncreaseLifePlayerPacket(Client &client)
 {
 	Packet_UpdateLife p;
-	p.life = client.playerData.life;
+	p.life = client.playerData.newLife;
 	sendPacket(client.peer, headerRecieveLife, &p, sizeof(p), true, channelChunksAndBlocks);
 }
 
@@ -722,27 +719,7 @@ void sendIncreaseLifePlayerPacket(Client &client)
 void sendUpdateLifeLifePlayerPacket(Client &client)
 {
 	Packet_UpdateLife p;
-	p.life = client.playerData.life;
+	p.life = client.playerData.newLife;
 	sendPacket(client.peer, headerUpdateLife, &p, sizeof(p), true, channelChunksAndBlocks);
 }
 
-//used to send packet, todo remove
-void applyDamageOrLifeToPlayer(short difference, Client &client)
-{
-	if (difference == 0) { return; }
-
-	int life = client.playerData.life.life;
-	life += difference;
-	if (life < 0) { life = 0; }
-	if (life > client.playerData.life.maxLife) { life = client.playerData.life.maxLife; }
-	client.playerData.life.life = life;
-
-	if (difference < 0)
-	{
-		sendDamagePlayerPacket(client);
-	}
-	else
-	{
-		sendIncreaseLifePlayerPacket(client);
-	}
-}
