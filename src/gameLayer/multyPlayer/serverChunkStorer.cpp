@@ -1588,8 +1588,9 @@ void doHittingThings(T &e, glm::vec3 dir, glm::dvec3 playerPosition,
 		float knockBack = stats.knockBack;
 
 		//todo add knock back resistance
-		std::cout << "Attacked!\n";
-		std::cout << life->life << "\n";
+		//std::cout << "Attacked!\n";
+		//std::cout << life->life << "\n";
+		//std::cout << &life->life << "\n";
 
 		knockBack = std::max(knockBack, 0.f);
 		e.applyHitForce(hitDir * knockBack);

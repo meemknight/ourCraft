@@ -571,7 +571,7 @@ void serverWorkerUpdate(
 	}
 
 	//set players in their chunks, set players in chunks
-	for (auto &client : getAllClients())
+	for (auto &client : getAllClientsReff())
 	{
 
 		auto cPos = determineChunkThatIsEntityIn(client.second.playerData.entity.position);
@@ -583,6 +583,8 @@ void serverWorkerUpdate(
 		if (!client.second.playerData.killed)
 		{
 			chunk->entityData.players.insert({client.first, &client.second.playerData});
+			auto ptr = &client.second.playerData;
+			int a = 0;
 		}
 
 	}
@@ -1995,7 +1997,7 @@ void updateLoadedChunks(
 		c.second->otherData.shouldUnload = true;
 	}
 
-	auto clientsCopy = getAllClients();
+	const auto &clientsCopy = getAllClientsReff();
 
 
 	for (auto &c : clientsCopy)
