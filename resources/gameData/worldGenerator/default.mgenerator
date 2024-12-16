@@ -161,6 +161,27 @@ swampMask:
 		1.000000,1.000000;
 		}
 	}
+iceNoise:
+	{
+	scale: 0.570000;
+	type: SimplexFractal;
+	celularReturnType: Distance;
+	frequency: 0.015000;
+	octaves: 8;
+	perturbFractalOctaves: 0;
+	power: 1.000000;
+	spline:
+		{
+		0.000000,0.000000;
+		0.245098,0.000000;
+		0.253268,1.000000;
+		0.428921,1.000000;
+		0.428921,0.000000;
+		0.665441,0.000000;
+		0.665441,1.000000;
+		1.000000,1.000000;
+		}
+	}
 peaksAndValies:
 	{
 	scale: 0.280000;
@@ -370,20 +391,20 @@ hillsDrop:
 	scale: 0.080000;
 	type: SimplexFractal;
 	celularReturnType: Distance;
-	frequency: 0.019000;
-	octaves: 2;
+	frequency: 0.012000;
+	octaves: 3;
 	perturbFractalOctaves: 0;
 	power: 0.330000;
 	spline:
 		{
 		0.000000,1.000000;
-		0.767974,1.000000;
-		0.772876,0.464052;
-		0.776144,0.262255;
+		0.764706,1.000000;
+		0.771242,0.464052;
+		0.777778,0.262255;
 		0.784315,0.000000;
 		0.792485,0.261233;
 		0.803002,0.456597;
-		0.803002,1.000000;
+		0.807904,1.000000;
 		1.000000,1.000000;
 		}
 	}

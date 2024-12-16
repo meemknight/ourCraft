@@ -616,7 +616,7 @@ void updateForces(glm::dvec3 &pos, MotionState &forces, float deltaTime, bool ap
 	updateForces(pos, forces.velocity, forces.acceleration, deltaTime, applyGravity, physicalSettings);
 }
 
-//todo right implementation here...
+
 void updateForces(glm::dvec3 &pos, glm::vec3 &velocity, glm::vec3 &acceleration,
 	float deltaTime, bool applyGravity, PhysicalSettings physicalSettings)
 {
@@ -625,17 +625,8 @@ void updateForces(glm::dvec3 &pos, glm::vec3 &velocity, glm::vec3 &acceleration,
 		acceleration += glm::vec3(0, GRAVITY * physicalSettings.gravityModifier, 0);
 	}
 
-	acceleration = glm::clamp(acceleration, glm::vec3(-MAX_ACCELERATION), glm::vec3(MAX_ACCELERATION));
-
-	velocity += acceleration * deltaTime;
-	velocity = glm::clamp(velocity, glm::vec3(-MAX_VELOCITY), glm::vec3(MAX_VELOCITY));
-
-	pos += velocity * deltaTime;
-
 	glm::vec3 dragForce = AIR_DRAG_COEFICIENT * -velocity * glm::abs(velocity) / 2.f;
-
 	float length = glm::length(dragForce);
-
 	if (length)
 	{
 		if (length > MAX_AIR_DRAG)
@@ -643,11 +634,35 @@ void updateForces(glm::dvec3 &pos, glm::vec3 &velocity, glm::vec3 &acceleration,
 			dragForce /= length;
 			dragForce *= MAX_AIR_DRAG;
 		}
-
-		applyDrag(velocity, dragForce * deltaTime);
-
+	
+		acceleration += dragForce;
 	}
 
+
+	acceleration = glm::clamp(acceleration, glm::vec3(-MAX_ACCELERATION), glm::vec3(MAX_ACCELERATION));
+
+	//Symplectic Euler
+	velocity += acceleration * deltaTime * 0.5f;
+	velocity = glm::clamp(velocity, glm::vec3(-MAX_VELOCITY), glm::vec3(MAX_VELOCITY));
+
+	pos += velocity * deltaTime;
+
+	velocity += acceleration * deltaTime * 0.5f;
+	velocity = glm::clamp(velocity, glm::vec3(-MAX_VELOCITY), glm::vec3(MAX_VELOCITY));
+
+
+	//glm::vec3 dragForce = AIR_DRAG_COEFICIENT * -velocity * glm::abs(velocity) / 2.f;
+	//float length = glm::length(dragForce);
+	//if (length)
+	//{
+	//	if (length > MAX_AIR_DRAG)
+	//	{
+	//		dragForce /= length;
+	//		dragForce *= MAX_AIR_DRAG;
+	//	}
+	//
+	//	applyDrag(velocity, dragForce * deltaTime);
+	//}
 
 	acceleration = {};
 }

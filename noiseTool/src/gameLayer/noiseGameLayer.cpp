@@ -94,6 +94,7 @@ gl2d::Texture stoneSpikesT;
 gl2d::Texture swampMaskT;
 gl2d::Texture stoneSpikesMaskT;
 
+gl2d::Texture iceNoiseT;
 
 
 gl2d::Texture fractalT;
@@ -348,6 +349,17 @@ void recreate()
 	}
 	createFromGrayScale(stoneSpikesMaskT, stoneSpikesMask, size);
 
+
+	float *iceNoise =
+		wg.iceNoise->GetNoiseSet(displacement.x, 0, displacement.y, size.y, (1), size.x);
+	for (int i = 0; i < size.x * size.y; i++)
+	{
+		iceNoise[i] += 1;
+		iceNoise[i] /= 2;
+		iceNoise[i] = std::pow(iceNoise[i], settings.iceNoise.power);
+		iceNoise[i] = applySpline(iceNoise[i], settings.iceNoise.spline);
+	}
+	createFromGrayScale(iceNoiseT, iceNoise, size);
 
 
 	float *roadNoise
@@ -938,6 +950,9 @@ bool gameLogic(float deltaTime)
 
 	ImGui::Separator();
 
+	noiseEditor(settings.iceNoise, "iceNoise");
+
+	ImGui::Separator();
 
 	{
 		//noiseEditor(fractalSettings, "Fractal");
@@ -1064,6 +1079,9 @@ bool gameLogic(float deltaTime)
 
 	drawNoise("stone spikes", stoneSpikesT);
 	drawNoise("stone spikes mask", stoneSpikesMaskT);
+
+	drawNoise("iceNoise", iceNoiseT);
+	
 
 	ImGui::End();
 

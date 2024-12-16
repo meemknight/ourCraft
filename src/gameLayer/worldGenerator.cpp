@@ -10,13 +10,19 @@
 
 const int waterLevel = 65;
 
+static alignas(32) float iceNoise[CHUNK_SIZE * CHUNK_SIZE] = {};
+float getIceNoise(int x, int z)
+{
+	return iceNoise[x * CHUNK_SIZE + z];
+};
+
 
 //riverValue is from 0 to 1 where 1 means river
 void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, float roadValue,
 	float randomNumber, bool sandShore, bool stonePatch, float riverValue,
 	float currentInterpolatedValue, float randomBlockVariation, 
 	float swampValue, int biomeHeight, float stoneSpikes, float canionValue, 
-	int valueWithoutCanionDropDown)
+	int valueWithoutCanionDropDown, int x, int z, float lakeValue)
 {
 
 	
@@ -160,13 +166,31 @@ void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, f
 		}
 	}
 
+	BlockType waterType = BlockTypes::water;
+	BlockType secondaryWaterBlock = BlockTypes::water;
+
+	if (biome.isICy)
+	{
+		if ( 
+			getIceNoise(x, z) > 0.5 ||
+			(riverValue > 0.01 && riverValue < 0.95) ||
+			(lakeValue > 0.01 && lakeValue < 0.90)
+			)
+		{
+			waterType = BlockTypes::ice;
+		}
+
+	}
+
+	//if(biome.isICy && islake)
+
 	for (y = waterLevel+2; y >= 20; y--)
 	{
 
 		if (
 			y <= waterLevel &&
 			startPos[y].getType() == BlockTypes::stone && 
-			(startPos[y+1].getType() == biome.waterType ||
+			(startPos[y+1].getType() == waterType ||
 			startPos[y + 1].getType() == biome.secondaryBlock
 			))
 		{
@@ -244,11 +268,11 @@ void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, f
 			{
 				if (y == waterLevel)
 				{
-					startPos[y].setType(biome.waterType);
+					startPos[y].setType(waterType);
 				}
 				else if(y < waterLevel)
 				{
-					startPos[y].setType(biome.waterTypeSecond);
+					startPos[y].setType(secondaryWaterBlock);
 				}
 			}
 		}
@@ -320,6 +344,9 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	int currentBiomeHeight = wg.getRegionHeightAndBlendingsForChunk(c.x, c.z,
 		interpolateValues, borderingFactor, vegetationMaster, tightBorders, xCellValue, zCellValue,
 		biomeType);
+
+	auto &biome = biomesManager.biomes[biomesManager.pickBiomeIndex(biomeType)];
+	//auto &biome = biomesManager.biomes[BiomesManager::snow];
 
 	c.vegetation = vegetationMaster;
 	c.regionCenterX = xCellValue;
@@ -717,6 +744,18 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		stoneSpikesMaskNoise[i] = wg.stoneSpikesMaskSplines.applySpline(stoneSpikesMaskNoise[i]);
 	}
 
+	if (biome.isICy)
+	{
+		wg.iceNoise->FillNoiseSet(iceNoise, xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+		for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+		{
+			iceNoise[i] += 1;
+			iceNoise[i] /= 2;
+			iceNoise[i] = powf(iceNoise[i], wg.iceNoisePower);
+			iceNoise[i] = wg.iceNoiseSplines.applySpline(iceNoise[i]);
+		}
+	}
+
 #pragma endregion
 
 
@@ -848,6 +887,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	{
 		return cavesNoise[x * CHUNK_SIZE * (CHUNK_HEIGHT)+y * CHUNK_SIZE + z];
 	};
+
 
 	auto getWierdness = [](int x, int z)
 	{
@@ -1185,9 +1225,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 			//biomesManager.biomes.size()
 
-			//int biomeIndex = biomes[currentBiomeHeight];
-			//auto biome = biomesManager.biomes[biomeIndex];
-			auto biome = biomesManager.biomes[biomesManager.pickBiomeIndex(biomeType)];
 
 
 			bool placeRoad = 0;
@@ -1387,7 +1424,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				getWhiteNoiseVal(x,z), sandShore, stonePatchesVal > 0.5, 
 				riverValueForPlacingRocks, currentInterpolatedValue, 
 				getAlternativeNoiseVal(x, z), localSwampVal, currentBiomeHeight, 
-				localStoneSpikes, canionValue, valueWithoutCanionDropDown);
+				localStoneSpikes, canionValue, valueWithoutCanionDropDown, x, z, 
+				lakeNoiseVal);
 
 			//all caves
 			for (int y = 2; y < firstH; y++)

@@ -383,7 +383,10 @@ bool BiomesManager::loadAllBiomes()
 	biomeIndexes.push_back(BiomesManager::plains);
 	biomeIndexes.push_back(BiomesManager::snow);
 	biomeIndexes.push_back(BiomesManager::plains);
-	biomeIndexes.push_back(BiomesManager::wasteLand);
+	
+	//biomeIndexes.push_back(BiomesManager::wasteLand);
+	biomeIndexes.push_back(BiomesManager::plains);
+	
 	biomeIndexes.push_back(BiomesManager::plains);
 
 
