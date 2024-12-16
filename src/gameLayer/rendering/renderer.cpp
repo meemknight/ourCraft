@@ -1271,7 +1271,6 @@ constexpr float cubeEntityData[] = {
 
 };
 
-
 unsigned int cubeEntityIndices[] = {
 16, 17, 18, 16, 18, 19, // Front
 4,   5,  6,  4,  6,  7, // Back
@@ -2752,7 +2751,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 #pragma region ssr
 
-	if(1)
+	if(0)
 	{
 		programData.GPUProfiler.startSubProfile("SSR PASS");
 

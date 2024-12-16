@@ -1516,11 +1516,14 @@ bool callGenericRemoveEntity(EntityData &entityData, std::uint64_t eid)
 }
 #undef CASE_REMOVE
 
+//this function will just return 0 for players!
 bool ServerChunkStorer::removeEntity(WorldSaver &worldSaver, std::uint64_t eid)
 {
 	auto entityType = getEntityTypeFromEID(eid);
+	
+	//this function will just return 0 for players!
+	if (eid == EntityType::player) { return 0; }
 
-	permaAssertComment(eid != EntityType::player, "You can't use the removeEntity method for players");
 
 	for (auto &c :savedChunks)
 	{
@@ -1536,28 +1539,88 @@ bool ServerChunkStorer::removeEntity(WorldSaver &worldSaver, std::uint64_t eid)
 }
 
 
+//this is where we compute all hitting things!
 template<class T>
-void doHittingThings(T &e, glm::vec3 dir)
+void doHittingThings(T &e, glm::vec3 dir, glm::dvec3 playerPosition, 
+	Item &weapon, std::uint64_t &wasKilled, std::minstd_rand &rng, std::uint64_t currentId)
 {
 
-	e.applyHitForce(dir * 3.f);
+	if constexpr (hasCanBeAttacked<decltype(e.entity)>)
+	{
+		Life *life = 0;
+		Armour armour = {};
+
+	#pragma region get stuff
+		//the players are stored differently
+		if constexpr (std::is_same_v<T, PlayerServer>)
+		{
+			life = &e.life;
+			armour = e.getArmour();
+		}
+		else
+		{
+			life = &e.entity.life;
+			armour = e.entity.getArmour();
+		}
+	#pragma endregion
+
+		WeaponStats stats = weapon.getWeaponStats();
+
+		int damage = calculateDamage(armour, stats, rng);
+
+		if (damage >= life->life)
+		{
+			wasKilled = currentId;
+			life->life = 0;
+		}
+		else
+		{
+			life->life -= damage;
+		}
+
+		glm::vec3 hitDir = dir;
+		hitDir += glm::vec3(0, 0.22, 0);
+		{
+			float l = glm::length(hitDir);
+			if (l == 0) { hitDir = {0,-1,0}; } else { hitDir /= l; }
+		}
+		
+		float knockBack = stats.knockBack;
+
+		//todo add knock back resistance
+		std::cout << "Attacked!\n";
+		std::cout << life->life << "\n";
+
+		knockBack = std::max(knockBack, 0.f);
+		e.applyHitForce(hitDir * knockBack);
+
+	}
+	else
+	{
+		return;
+	}
 
 }
 
 template<class T>
-bool genericHitEntityByPlayer(T &container, std::uint64_t eid, glm::vec3 dir)
+bool genericHitEntityByPlayer(T &container, std::uint64_t eid, glm::vec3 dir,
+	glm::dvec3 playerPosition, Item &weapon, std::uint64_t &wasKilled, std::minstd_rand &rng)
 {
+
 	auto found = container.find(eid);
 
 	if (found != container.end())
 	{
+
 		if constexpr (std::is_pointer_v<decltype(found->second)>)
 		{
-			doHittingThings(*found->second, dir);
+			doHittingThings(*found->second, dir, playerPosition, weapon, wasKilled, rng, 
+				eid);
 		}
 		else
 		{
-			doHittingThings(found->second, dir);
+			doHittingThings(found->second, dir, playerPosition, weapon, wasKilled, rng,
+				eid);
 		}
 
 		return 1;
@@ -1567,8 +1630,12 @@ bool genericHitEntityByPlayer(T &container, std::uint64_t eid, glm::vec3 dir)
 };
 
 
-#define CASE_HIT(x) case x: { return genericHitEntityByPlayer(*entityData.template entityGetter<x>(), eid, dir); } break;
-bool callGenericHitEntityByPlayer(EntityData &entityData, std::uint64_t eid, glm::vec3 dir)
+#define CASE_HIT(x) case x: \
+{ return genericHitEntityByPlayer(*entityData.template entityGetter<x>(), eid, dir, playerPosition, weapon, wasKilled, rng); } break;
+
+
+bool callGenericHitEntityByPlayer(EntityData &entityData, std::uint64_t eid, glm::vec3 dir, 
+	glm::dvec3 playerPosition, Item &weapon, std::uint64_t &wasKilled, std::minstd_rand &rng)
 {
 	auto entityType = getEntityTypeFromEID(eid);
 
@@ -1586,9 +1653,10 @@ bool callGenericHitEntityByPlayer(EntityData &entityData, std::uint64_t eid, glm
 
 
 void ServerChunkStorer::hitEntityByPlayer(std::uint64_t eid,
-	glm::dvec3 playerPosition, Item &weapon, bool &wasKilled, glm::vec3 dir)
+	glm::dvec3 playerPosition, Item &weapon, std::uint64_t &wasKilled, glm::vec3 dir, std::minstd_rand &rng)
 {
 
+	wasKilled = 0;
 
 	auto entityType = getEntityTypeFromEID(eid);
 	//todo if entity type doesn't have can be hit, return
@@ -1624,8 +1692,12 @@ void ServerChunkStorer::hitEntityByPlayer(std::uint64_t eid,
 	{
 		if (chunksToCheck[i])
 		{
-			rez = callGenericHitEntityByPlayer(chunksToCheck[i]->entityData, eid, dir);
-			if (rez) { return; }
+			rez = callGenericHitEntityByPlayer(chunksToCheck[i]->entityData, eid, dir,
+				playerPosition, weapon, wasKilled, rng);
+			if (rez) 
+			{
+				return; 
+			}
 		}
 	}
 

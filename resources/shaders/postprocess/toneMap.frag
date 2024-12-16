@@ -409,7 +409,6 @@ vec3 unchartedTonemapping(vec3 color)
 
 
 
-
 vec3 tonemapFunction(vec3 c)
 {
 	if(u_tonemapper == 0)
@@ -425,7 +424,6 @@ vec3 tonemapFunction(vec3 c)
 	{
 		return unchartedTonemapping(c);
 	}
-
 }
 
 //(to screen)

@@ -254,7 +254,6 @@ WeaponStats Item::getWeaponStats()
 		 break;
 	}
 
-
 	return stats;
 }
 

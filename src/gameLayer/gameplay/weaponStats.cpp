@@ -24,3 +24,8 @@ void WeaponStats::normalize()
 
 
 }
+
+float WeaponStats::getKnockBackNormalized()
+{
+	return glm::clamp(knockBack, 0.f, 20.f) / 20.f;
+}

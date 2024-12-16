@@ -453,13 +453,32 @@ void applyDamageOrLifeToPlayer(short difference, Client &client)
 }
 
 
-//you can't call this for players!
 void killEntity(WorldSaver &worldSaver, std::uint64_t entity)
 {
-	if (sd.chunkCache.removeEntity(worldSaver, entity))
+	auto entityType = getEntityTypeFromEID(entity);
+
+	if (entityType == EntityType::player)
 	{
-		genericBroadcastEntityKillFromServerToPlayer(entity, true);
+		//genericBroadcastEntityKillFromServerToPlayer(entity, true);
+		//sd.chunkCache.e
+		auto &clients = getAllClientsReff();
+		auto found = clients.find(entity);
+		
+		//it is enough to set the life of players to 0 to kill them!
+		if (found != clients.end())
+		{
+			found->second.playerData.life.life = 0;
+		};
 	}
+	else
+	{
+		if (sd.chunkCache.removeEntity(worldSaver, entity))
+		{
+			genericBroadcastEntityKillFromServerToPlayer(entity, true);
+		}
+	}
+
+
 }
 
 ServerSettings getServerSettingsCopy()
@@ -1544,9 +1563,15 @@ void serverWorkerUpdate(
 						auto item = client->playerData.inventory.getItemFromIndex(itemInventoryIndex);
 						if (item)
 						{
-							bool wasKilled = 0;
+							std::uint64_t wasKilled = 0;
 							sd.chunkCache.hitEntityByPlayer(entityId, client->playerData.getPosition(),
-								*item, wasKilled, dir);
+								*item, wasKilled, dir, rng);
+
+							if (wasKilled)
+							{
+								killEntity(worldSaver, wasKilled);
+							}
+
 						}
 					}
 

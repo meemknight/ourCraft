@@ -170,11 +170,11 @@ struct ServerChunkStorer
 
 	std::uint64_t anyEntityIntersectsWithBlock(glm::ivec3 position);
 
-	//you can't call this for players!
+	//if you call this for a player it will just return false!
 	bool removeEntity(WorldSaver &worldSaver, std::uint64_t eid);
 
 	void hitEntityByPlayer(std::uint64_t eid, glm::dvec3 playerPosition,
-		Item &weapon, bool &wasKilled, glm::vec3 dir);
+		Item &weapon, std::uint64_t &wasKilled, glm::vec3 dir, std::minstd_rand &rng);
 
 };
 

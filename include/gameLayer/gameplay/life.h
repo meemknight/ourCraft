@@ -1,5 +1,6 @@
 #pragma once
-
+#include <gameplay/weaponStats.h>
+#include <random>
 
 struct Life
 {
@@ -11,3 +12,13 @@ struct Life
 
 	void sanitize() { if (life > maxLife) { life = maxLife; } }
 };
+
+
+struct Armour
+{
+	int armour = 0;
+};
+
+
+int calculateDamage(Armour armour, const WeaponStats &weaponStats, std::minstd_rand &rng);
+

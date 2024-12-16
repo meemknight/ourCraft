@@ -93,4 +93,8 @@ struct PlayerServer: public ServerEntity<Player>
 	Life life{20};
 
 	bool killed = 0;
+
+	//todo calculate armour based on inventory
+	Armour getArmour() { return {0}; };
+
 };
