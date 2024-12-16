@@ -153,8 +153,8 @@ struct ServerChunkStorer
 
 	Block *tryGetBlockIfChunkExistsNoChecks(glm::ivec3 pos);
 
-
-	void placeGhostBlocksForChunk(int posX, int posZ, ChunkData &c);
+	//returns true if placed
+	bool placeGhostBlocksForChunk(int posX, int posZ, ChunkData &c);
 
 	void cleanup();
 

@@ -177,6 +177,8 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 		}
 		else
 		{
+			//we loaded a chunk so no need to dirty here.
+			rez->otherData.dirty = false;
 			//std::cout << "Loaded!\n";
 		}
 
@@ -188,6 +190,7 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 		//todo this part should be moved in world generator if possible...
 
 		//generate big structures
+		//todo this shouldn't contain loaded chunks
 		std::vector<glm::ivec2> newCreatedChunks;
 		newCreatedChunks.push_back({posX, posZ});
 
@@ -756,8 +759,10 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 				if (c)
 				{
 					auto &d = c->chunk;
-					c->otherData.dirty = true;
-					placeGhostBlocksForChunk(d.x, d.z, d);
+					if (placeGhostBlocksForChunk(d.x, d.z, d))
+					{
+						c->otherData.dirty = true;
+					}
 					newCreatedChunksSet.insert({d.x, d.z});
 				}
 
@@ -1221,8 +1226,10 @@ Block *ServerChunkStorer::tryGetBlockIfChunkExistsNoChecks(glm::ivec3 pos)
 	return nullptr;
 }
 
-void ServerChunkStorer::placeGhostBlocksForChunk(int posX, int posZ, ChunkData &c)
+bool ServerChunkStorer::placeGhostBlocksForChunk(int posX, int posZ, ChunkData &c)
 {
+	bool placed = 0;
+
 	auto iter = ghostBlocks.find({posX, posZ});
 
 	if (iter != ghostBlocks.end())
@@ -1237,12 +1244,17 @@ void ServerChunkStorer::placeGhostBlocksForChunk(int posX, int posZ, ChunkData &
 
 			if (b.second.replaceAnything || block.getType() == BlockTypes::air)
 			{
+				//todo rotation and stuff like that
+				//todo placed by server stuff
 				block.setType(b.second.type);
+				placed = true;
 			}
 		}
 
 		ghostBlocks.erase(iter);
 	}
+
+	return placed;
 }
 
 
@@ -1288,7 +1300,7 @@ bool ServerChunkStorer::saveNextChunk(WorldSaver &worldSaver, int count, int ent
 	{
 		if (c.second->otherData.dirty && count > 0)
 		{
-
+			//std::cout << "Saved next chunk!\n";
 			saveChunk(worldSaver, c.second);
 			succeeded = true;
 
@@ -1327,10 +1339,12 @@ void ServerChunkStorer::saveAllChunks(WorldSaver &worldSaver)
 	{
 		if (c.second->otherData.dirty)
 		{
+			//std::cout << "Saved chunk\n";
 			saveChunk(worldSaver, c.second);
 		}
 		else
 		{
+			//std::cout << "Saved entities\n";
 			worldSaver.saveEntitiesForChunk(*c.second);
 			c.second->otherData.dirtyEntity = false;
 		}

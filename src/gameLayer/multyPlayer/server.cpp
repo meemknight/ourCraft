@@ -556,13 +556,10 @@ void serverWorkerUpdate(
 	static std::minstd_rand rng(std::random_device{}());
 	static bool generateNewChunks = 0; //this is set to true only once per tick
 
-	//std::cout << "Before\n";
 	std::vector<SendBlocksBack> sendNewBlocksToPlayers;
 	updateLoadedChunks(wg, structuresManager, biomesManager, sendNewBlocksToPlayers,
 		worldSaver, true);
 	generateNewChunks = 0;
-
-	//std::cout << "After\n";
 
 
 	for (auto &c : sd.chunkCache.savedChunks)
@@ -1693,8 +1690,6 @@ void serverWorkerUpdate(
 
 
 
-
-
 	//todo check if there are too many loaded chunks and unload them before processing
 	//generate chunk
 
@@ -1976,7 +1971,6 @@ void serverWorkerUpdate(
 
 		delete[] newBlocks;
 	}
-
 
 
 	//save one chunk on disk
