@@ -4,6 +4,7 @@
 #include <vector>
 #include "packet.h"
 #include <gameplay/physics.h>
+#include <gameplay/battleUI.h>
 
 struct ClientEntityManager;
 struct UndoQueue;
@@ -53,6 +54,7 @@ struct Task
 	unsigned char revisionNumber = 0;
 	unsigned char inventroySlot = 0;
 	short damage = 0;
+	HitResult hitResult = {};
 	std::vector<unsigned char> metaData;
 };
 
@@ -97,7 +99,8 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 	bool &killedPlayer, bool &respawn
 	);
 
-void attackEntity(std::uint64_t eid, unsigned char inventorySlot, glm::vec3 direction);
+void attackEntity(std::uint64_t eid, unsigned char inventorySlot, glm::vec3 direction,
+	HitResult hitResult);
 
 void sendBlockInteractionMessage(
 	std::uint64_t playerID,

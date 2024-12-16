@@ -20,5 +20,6 @@ struct Armour
 };
 
 
-int calculateDamage(Armour armour, const WeaponStats &weaponStats, std::minstd_rand &rng);
+int calculateDamage(Armour armour, const WeaponStats &weaponStats, std::minstd_rand &rng
+	, float hitCorectness, float critChanceBonus);
 

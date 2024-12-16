@@ -41,8 +41,7 @@ struct BattleUI
 			{
 				glm::vec2 position = {};
 				glm::vec2 velocity = {};
-				glm::vec2 initialVelocity = {};
-				char specialBall;
+				char specialBall = 0;
 				float dieTimer = 0;
 				bool passedCenter = 0;
 			};
@@ -50,6 +49,9 @@ struct BattleUI
 			static constexpr int MAX_POSITIONS = 6;
 			Ball balls[MAX_POSITIONS];
 			int currentBallsCount = 0;
+
+			int comboCount = 0;
+			int comboSeed = 0;
 		}spearData = {};
 
 

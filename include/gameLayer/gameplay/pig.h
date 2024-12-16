@@ -17,7 +17,7 @@ struct Pig: public PhysicalEntity, public HasOrientationAndHeadTurnDirection,
 
 	//todo frustum culling size
 
-	Life life{10};
+	Life life{100};
 	
 	Armour getArmour() { return {0}; };
 };

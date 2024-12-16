@@ -338,9 +338,14 @@ bool lineIntersectBox(glm::dvec3 start, glm::dvec3 dir, glm::dvec3 box, glm::dve
 }
 
 bool lineIntersectBoxMaxDistance(glm::dvec3 start, glm::dvec3 dir, 
-	glm::dvec3 box, glm::dvec3 size, float maxDistance, float &outIntersectDist)
-
+	glm::dvec3 box, glm::dvec3 size, float maxDistance, float &outIntersectDist, float delta)
 {
+	size += glm::vec3(delta);
+
+	if (size.x < 0) { size.x = 0; }
+	if (size.y < 0) { size.y = 0; }
+	if (size.z < 0) { size.z = 0; }
+
 	float maxColliderDimension = std::max(std::max(size.x, size.y), size.z);
 
 	//early reject.

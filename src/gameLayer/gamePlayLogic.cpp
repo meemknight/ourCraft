@@ -849,6 +849,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 						OtherPlayerSettings::SURVIVAL && rez > 13.2)
 					{
 						int fallDamage = (rez - 12.2);
+						fallDamage *= 10;
 						//std::cout << "fallDamage: " << fallDamage << "\n";
 
 						dealDamageToLocalPlayer(fallDamage);
@@ -882,6 +883,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	glm::dvec3 cameraRayPos = gameData.c.position;
 	Block *raycastBlock = 0;
 	glm::uint64 targetedEntity = 0;
+	float entityHitDistance = 0;
 	float raycastDist = 0;
 	bool topPartForSlabs = 0;
 
@@ -942,10 +944,14 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			dist = raycastDist - 0.1;
 		}
 
+		//current selected item
+		auto &item = player.inventory.items[gameData.currentItemSelected];
+		auto weaponStats = item.getWeaponStats();
 
-		float entityHitDistance = 0;
+
 		targetedEntity = gameData.entityManager.intersectAllAttackableEntities(cameraRayPos,
-			gameData.c.viewDirection, dist, entityHitDistance);
+			gameData.c.viewDirection, dist, entityHitDistance,
+			weaponStats.getAccuracyAdjusted());
 
 		//std::cout << targetedEntity << "\n";
 
@@ -972,11 +978,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.currentBlockBreaking = {};
 		}
 
-		//place blocks and hit entities
+		//place blocks
 		if (!gameData.escapePressed)
 		{
 
-			auto &item = player.inventory.items[gameData.currentItemSelected];
 
 			if (item.isBlock())
 			{
@@ -1223,38 +1228,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					}
 				}
 
-			if (targetedEntity && platform::isLMousePressed())
-			{
-				
-				auto weaponStats = player.inventory.getItemFromIndex(gameData.currentItemSelected)->
-					getWeaponStats();
-				
-				if (entityHitDistance <= weaponStats.range)
-				{
-
-					//check if not creative player
-					bool isCreativePlayer = 0;
-
-					if (getEntityTypeFromEID(targetedEntity) == EntityType::player)
-					{
-						auto f = gameData.entityManager.players.find(targetedEntity);
-						if (f != gameData.entityManager.players.end())
-						{
-							//todo is creative
-							//if(f->second.entity)
-						}
-
-					}
-
-					if (!isCreativePlayer)
-					{
-						attackEntity(targetedEntity, gameData.currentItemSelected,
-							gameData.c.viewDirection);
-					}
-
-				};
-
-			}
+			
 
 		};
 
@@ -2060,6 +2034,39 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	{
 		std::cout << "Corectness: " << hitStatus.hitCorectness << "\n";
 		std::cout << "Bonus Crit: " << hitStatus.bonusCritChance << "\n";
+
+		if (targetedEntity && !stopMainInput && hitStatus.hitCorectness > 0)
+		{
+
+			auto weaponStats = player.inventory.getItemFromIndex(gameData.currentItemSelected)->
+				getWeaponStats();
+
+			if (entityHitDistance <= weaponStats.range)
+			{
+				//check if not creative player
+				bool isCreativePlayer = 0;
+
+				if (getEntityTypeFromEID(targetedEntity) == EntityType::player)
+				{
+					auto f = gameData.entityManager.players.find(targetedEntity);
+					if (f != gameData.entityManager.players.end())
+					{
+						//todo is creative
+						//if(f->second.entity)
+					}
+
+				}
+
+				if (!isCreativePlayer)
+				{
+					attackEntity(targetedEntity, gameData.currentItemSelected,
+						gameData.c.viewDirection, hitStatus);
+				}
+
+			};
+
+		}
+
 	}
 
 #pragma region ui

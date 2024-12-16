@@ -17,9 +17,11 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 
 	static float debugSpeed = 1;
 	static float debugDexterity = 0;
+	static float debugCombo = 0;
 	ImGui::Begin("Test speed");
 	ImGui::SliderFloat("Speed: ", &debugSpeed, -10, 20);
 	ImGui::SliderFloat("Dexterity: ", &debugDexterity, -10, 20);
+	ImGui::SliderFloat("Combo Frequency: ", &debugCombo, -10, 20);
 	ImGui::End();
 
 	HitResult result;
@@ -31,7 +33,7 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 
 	if (notDieCount <= 0)
 	{
-		reset();
+		//reset();
 	}
 	notDieCount = std::min(notDieCount, 2);
 
@@ -60,6 +62,9 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 		auto stats = item.getWeaponStats();
 		stats.speed = debugSpeed;
 		stats.dexterity = debugDexterity;
+		stats.comboFrequency = debugCombo;
+
+		float minHitDamage = stats.getAccuracyNormalized() * 0.2;
 
 		if (item.isSpear())
 		{
@@ -85,22 +90,51 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 				timer -= deltaTime;
 				float speed = stats.getUIMoveSpeed();
 				float dexterity = stats.getDexterityNormalized();
+				float comboChance = stats.getComboFrequencyChance();
 
 				if (timer <= 0)
 				{
 					auto range = stats.getTimerCulldownRangeForAttacks();
 					timer = getRandomNumberFloat(rng, range.x, range.y);
-					
+					if (spearData.comboCount > 0) 
+					{
+						timer /= 2.f; 
+						rng.seed(spearData.comboSeed);
+					}
+
 					if (spearData.currentBallsCount < spearData.MAX_POSITIONS)
 					{
 						glm::vec2 vector = {1,0};
 						vector = glm::rotate(vector, getRandomNumberFloat(rng, 0, 3.1415926*2.f));
 						spearData.balls[spearData.currentBallsCount] = {};
 						spearData.balls[spearData.currentBallsCount].position = vector;
-						spearData.balls[spearData.currentBallsCount].velocity = 
-							glm::normalize((glm::vec2(vector.y, -vector.x) - vector)/2.f);
+
+						if (getRandomChance(rng, 0.5))
+						{
+							spearData.balls[spearData.currentBallsCount].velocity =
+								glm::normalize((glm::vec2(vector.y, -vector.x) - vector) / 2.f);
+						}
+						else
+						{
+							spearData.balls[spearData.currentBallsCount].velocity =
+								glm::normalize((glm::vec2(-vector.y, vector.x) - vector) / 2.f);
+						}
+						
 						//spearData.balls[spearData.currentBallsCount].initialVelocity = -vector;
 						spearData.currentBallsCount++;
+					}
+
+					if (spearData.comboCount > 0)
+					{
+						spearData.comboCount--;
+					}
+					else
+					{
+						if (getRandomChance(rng, comboChance))
+						{
+							spearData.comboSeed = rng();
+							spearData.comboCount = getRandomNumber(rng, 2, 4);
+						}
 					}
 
 				}
@@ -207,10 +241,9 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 							hitCorectness = 1 - hitCorectness;
 							hitCorectness = glm::clamp(hitCorectness, 0.f, 1.f);
 
-							//todo flatten here but on the server
 							result.bonusCritChance = (hitCorectness * 2.f) - 1;
 							result.hitCorectness = hitCorectness;
-							result.hitCorectness = std::max(result.hitCorectness, 0.1f);
+							result.hitCorectness = std::max(result.hitCorectness, minHitDamage);
 						}
 					}
 
@@ -240,14 +273,22 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 				renderer.renderRectangle(fullBox,
 					ui.battleTextures[UiENgine::BattleTextures::rightButtonSwipeAttack]);
 
-				renderer.renderCircleOutline(glm::vec2{glm::vec2(fullBox) 
-					+ glm::vec2(fullBox.z/ 2.f,fullBox.w / 2.)}
-				, Colors_White, fullBox.z * hitRelativeSize, 6);
+				//renderer.renderCircleOutline(glm::vec2{glm::vec2(fullBox) 
+				//	+ glm::vec2(fullBox.z/ 2.f,fullBox.w / 2.)}
+				//, Colors_White, fullBox.z * hitRelativeSize, 6);
+
+				renderer.renderRectangle(glm::vec4{glm::vec2(fullBox)
+					+ glm::vec2(fullBox.z / 2.f,fullBox.w / 2.) - 
+					glm::vec2(fullBox.z * hitRelativeSize)
+					,
+					glm::vec2(fullBox.z * hitRelativeSize * 2)
+					}, ui.battleTextures[UiENgine::BattleTextures::circleSmall], {1,1,1,0.8});
+
 
 				for (int i = 0; i < spearData.currentBallsCount; i++)
 				{
 					auto &b = spearData.balls[i];
-					auto color = Colors_White;
+					auto color = glm::vec4{1,1,1,0.8};
 
 					if (b.passedCenter) { color = Colors_Green; }
 
@@ -257,8 +298,11 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 					position.x = fullBox.x + fullBox.z * position.x;
 					position.y = fullBox.y + fullBox.w * position.y;
 
-					renderer.renderCircleOutline(glm::vec2{position}
-						, color, size, 6);
+					renderer.renderRectangle(glm::vec4{glm::vec2{position} - glm::vec2(size), size*2, size*2},
+						ui.battleTextures[UiENgine::BattleTextures::circleSmall], color);
+
+					//renderer.renderCircleOutline(glm::vec2{position}
+					//, color, size, 6);
 				}
 
 			}
@@ -269,6 +313,7 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 		if (stats.dexterity < 0)
 		{
 			result.bonusCritChance = std::min(result.bonusCritChance, 0.f);
+			result.bonusCritChance = powf(result.bonusCritChance, 3.f);
 		}
 
 

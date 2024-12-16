@@ -1552,6 +1552,7 @@ void serverWorkerUpdate(
 				unsigned char itemInventoryIndex = i.t.inventroySlot;
 				std::uint64_t entityId = i.t.entityId;
 				glm::vec3 dir = i.t.vector;
+				HitResult hitResult = i.t.hitResult;
 
 				auto client = getClientNotLocked(i.cid);
 
@@ -1585,7 +1586,7 @@ void serverWorkerUpdate(
 							{
 								std::uint64_t wasKilled = 0;
 								bool rez = sd.chunkCache.hitEntityByPlayer(entityId, client->playerData.getPosition(),
-									*item, wasKilled, dir, rng);
+									*item, wasKilled, dir, rng, hitResult.hitCorectness, hitResult.bonusCritChance);
 
 								if (rez)
 								{

@@ -289,14 +289,46 @@ WeaponStats Item::getWeaponStats()
 	switch (type)
 	{
 		 case trainingScythe:
-		 case trainingSword:
-		 case trainingWarHammer:
-		 case trainingFlail:
-		 case trainingSpear:
-		 case trainingKnife:
-		 case trainingBattleAxe:
+		 {
+			 stats.damage = 20;
+		 }
+		 break;
 
-		 stats.damage = 2;
+		 case trainingKnife:
+		 {
+			 stats.damage = 20;
+		 }
+		 break;
+
+		 case trainingSword:
+		 {
+			 stats.damage = 20;
+		 }
+		 break;
+
+		 case trainingWarHammer:
+		 {
+			 stats.damage = 20;
+		 }
+		 break;
+
+		 case trainingFlail:
+		 {
+			 stats.damage = 20;
+		 }
+		 break;
+
+		 case trainingSpear:
+		 {
+			 stats.damage = 20;
+		 }
+		 break;
+
+		 case trainingBattleAxe:
+		 {
+			 stats.damage = 20;
+		 }
+		 break;
 
 		 stats.normalize();
 

@@ -15,7 +15,7 @@ struct Cat: public PhysicalEntity, public HasOrientationAndHeadTurnDirection,
 
 	static glm::vec3 getMaxColliderSize();
 
-	Life life{10};
+	Life life{100};
 	
 	Armour getArmour() { return {0}; };
 };

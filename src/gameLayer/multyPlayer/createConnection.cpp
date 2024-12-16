@@ -773,12 +773,14 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 
 }
 
-void attackEntity(std::uint64_t eid, unsigned char inventorySlot, glm::vec3 direction)
+void attackEntity(std::uint64_t eid, unsigned char inventorySlot, glm::vec3 direction,
+	HitResult hitResult)
 {
 	Packet_AttackEntity packet;
 	packet.entityID = eid;
 	packet.inventorySlot = inventorySlot;
 	packet.direction = direction;
+	packet.hitResult = hitResult;
 
 	sendPacket(getServer(), headerAttackEntity,
 		clientData.cid,

@@ -961,10 +961,14 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 					lifeFlash.reset();
 				}
 
+				int maxLife = playerHealth.maxLife / 10;
+				int life = playerHealth.life / 10;
+				int lastLife = player.lastLife.life / 10;
+				
 
 				{
 					auto heartBoxCopy = heartBox;
-					for (int i = 0; i < playerHealth.maxLife; i += 2)
+					for (int i = 0; i < maxLife; i += 2)
 					{
 						renderer2d.renderRectangle(heartBoxCopy, programData.heartsTexture, Colors_White, {}, 0,
 							programData.heartsAtlas.get(background, 0));
@@ -975,11 +979,11 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 				if (tookDamage)
 				{
 					auto heartBoxCopy = heartBox;
-					for (int i = 0; i < playerHealth.maxLife; i += 2)
+					for (int i = 0; i < maxLife; i += 2)
 					{
-						if (i < player.lastLife.life)
+						if (i < lastLife)
 						{
-							if (i + 1 >= player.lastLife.life)
+							if (i + 1 >= lastLife)
 							{
 								renderer2d.renderRectangle(heartBoxCopy, programData.heartsTexture, {1,1,1,0.3}, {}, 0,
 									programData.heartsAtlas.get(4, 0));
@@ -998,13 +1002,13 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 					player.lastLife = player.life;
 				}
 
-				for (int i = 0; i < playerHealth.maxLife; i += 2)
+				for (int i = 0; i < maxLife; i += 2)
 				{
 					
 
-					if (i < playerHealth.life)
+					if (i < life)
 					{
-						if (i + 1 >= playerHealth.life)
+						if (i + 1 >= life)
 						{
 							renderer2d.renderRectangle(heartBox, programData.heartsTexture, Colors_White, {}, 0,
 								programData.heartsAtlas.get(4, 0));

@@ -1556,7 +1556,8 @@ bool ServerChunkStorer::removeEntity(WorldSaver &worldSaver, std::uint64_t eid)
 //this is where we compute all hitting things!
 template<class T>
 void doHittingThings(T &e, glm::vec3 dir, glm::dvec3 playerPosition, 
-	Item &weapon, std::uint64_t &wasKilled, std::minstd_rand &rng, std::uint64_t currentId)
+	Item &weapon, std::uint64_t &wasKilled, std::minstd_rand &rng, std::uint64_t currentId
+	, float hitCorectness, float critChanceBonus)
 {
 
 	if constexpr (hasCanBeAttacked<decltype(e.entity)>)
@@ -1580,7 +1581,10 @@ void doHittingThings(T &e, glm::vec3 dir, glm::dvec3 playerPosition,
 
 		WeaponStats stats = weapon.getWeaponStats();
 
-		int damage = calculateDamage(armour, stats, rng);
+		int damage = calculateDamage(armour, stats, rng,
+			hitCorectness, critChanceBonus);
+
+		std::cout << "Damage: " << damage << "\n";
 
 		if (damage >= life->life)
 		{
@@ -1619,7 +1623,8 @@ void doHittingThings(T &e, glm::vec3 dir, glm::dvec3 playerPosition,
 
 template<class T>
 bool genericHitEntityByPlayer(T &container, std::uint64_t eid, glm::vec3 dir,
-	glm::dvec3 playerPosition, Item &weapon, std::uint64_t &wasKilled, std::minstd_rand &rng)
+	glm::dvec3 playerPosition, Item &weapon, std::uint64_t &wasKilled, std::minstd_rand &rng
+	, float hitCorectness, float critChanceBonus)
 {
 
 	auto found = container.find(eid);
@@ -1630,12 +1635,12 @@ bool genericHitEntityByPlayer(T &container, std::uint64_t eid, glm::vec3 dir,
 		if constexpr (std::is_pointer_v<decltype(found->second)>)
 		{
 			doHittingThings(*found->second, dir, playerPosition, weapon, wasKilled, rng, 
-				eid);
+				eid, hitCorectness, critChanceBonus);
 		}
 		else
 		{
 			doHittingThings(found->second, dir, playerPosition, weapon, wasKilled, rng,
-				eid);
+				eid, hitCorectness, critChanceBonus);
 		}
 
 		return 1;
@@ -1646,11 +1651,13 @@ bool genericHitEntityByPlayer(T &container, std::uint64_t eid, glm::vec3 dir,
 
 
 #define CASE_HIT(x) case x: \
-{ return genericHitEntityByPlayer(*entityData.template entityGetter<x>(), eid, dir, playerPosition, weapon, wasKilled, rng); } break;
+{ return genericHitEntityByPlayer(*entityData.template entityGetter<x>(), \
+eid, dir, playerPosition, weapon, wasKilled, rng, hitCorectness, critChanceBonus); } break;
 
 
 bool callGenericHitEntityByPlayer(EntityData &entityData, std::uint64_t eid, glm::vec3 dir, 
-	glm::dvec3 playerPosition, Item &weapon, std::uint64_t &wasKilled, std::minstd_rand &rng)
+	glm::dvec3 playerPosition, Item &weapon, std::uint64_t &wasKilled, std::minstd_rand &rng
+	, float hitCorectness, float critChanceBonus)
 {
 	auto entityType = getEntityTypeFromEID(eid);
 
@@ -1666,9 +1673,11 @@ bool callGenericHitEntityByPlayer(EntityData &entityData, std::uint64_t eid, glm
 }
 #undef CASE_HIT
 
-
+//todo the hit packet should contain a timer and if the timer is in the future
+//or the player spamned hits in a single tick ignore it
 bool ServerChunkStorer::hitEntityByPlayer(std::uint64_t eid,
-	glm::dvec3 playerPosition, Item &weapon, std::uint64_t &wasKilled, glm::vec3 dir, std::minstd_rand &rng)
+	glm::dvec3 playerPosition, Item &weapon, std::uint64_t &wasKilled,
+	glm::vec3 dir, std::minstd_rand &rng, float hitCorectness, float critChanceBonus)
 {
 
 	wasKilled = 0;
@@ -1708,7 +1717,7 @@ bool ServerChunkStorer::hitEntityByPlayer(std::uint64_t eid,
 		if (chunksToCheck[i])
 		{
 			rez = callGenericHitEntityByPlayer(chunksToCheck[i]->entityData, eid, dir,
-				playerPosition, weapon, wasKilled, rng);
+				playerPosition, weapon, wasKilled, rng, hitCorectness, critChanceBonus);
 			if (rez) 
 			{
 				return true; 

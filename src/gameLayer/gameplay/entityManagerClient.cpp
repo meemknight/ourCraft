@@ -478,7 +478,7 @@ void ClientEntityManager::cleanup()
 
 template<class T>
 std::uint64_t genericIntersectAllAttackableEntities(T &container, glm::dvec3 start,
-	glm::dvec3 dir, float maxDistance, float &outIntersectDist)
+	glm::dvec3 dir, float maxDistance, float &outIntersectDist, float delta)
 {
 	if constexpr (!hasCanBeAttacked<decltype(container.begin()->second.entity)>)
 	{
@@ -490,7 +490,7 @@ std::uint64_t genericIntersectAllAttackableEntities(T &container, glm::dvec3 sta
 		auto collider = e.second.entity.getColliderSize();
 
 		bool rez = lineIntersectBoxMaxDistance(start, dir, e.second.getRubberBandPosition(), collider,
-			maxDistance, outIntersectDist);
+			maxDistance, outIntersectDist, delta);
 
 		if (rez) { return e.first; }
 	}
@@ -501,7 +501,8 @@ std::uint64_t genericIntersectAllAttackableEntities(T &container, glm::dvec3 sta
 
 template <int... Is>
 std::uint64_t callGenericIntersectAllAttackableEntities(std::integer_sequence<int, Is...>, ClientEntityManager &c,
-	glm::dvec3 start, glm::dvec3 dir, float maxDistance, float &outIntersectDist
+	glm::dvec3 start, glm::dvec3 dir, float maxDistance, float &outIntersectDist,
+	float delta
 )
 {
 	std::uint64_t result = 0;
@@ -509,7 +510,8 @@ std::uint64_t callGenericIntersectAllAttackableEntities(std::integer_sequence<in
 	// Lambda function to evaluate and capture the result
 	auto evaluate = [&](auto &entity) -> bool
 	{
-		result = genericIntersectAllAttackableEntities(entity, start, dir, maxDistance, outIntersectDist);
+		result = genericIntersectAllAttackableEntities(entity, start, dir, maxDistance,
+			outIntersectDist, delta);
 		return result != 0;
 	};
 
@@ -525,11 +527,11 @@ std::uint64_t callGenericIntersectAllAttackableEntities(std::integer_sequence<in
 
 
 std::uint64_t ClientEntityManager::intersectAllAttackableEntities(glm::dvec3 start, 
-	glm::dvec3 dir, float maxDistance, float &outDistance)
+	glm::dvec3 dir, float maxDistance, float &outDistance, float delta)
 {
 	return callGenericIntersectAllAttackableEntities(
 		std::make_integer_sequence<int, EntitiesTypesCount>(), *this,
-		start, dir, maxDistance, outDistance);
+		start, dir, maxDistance, outDistance, delta);
 
 }
 

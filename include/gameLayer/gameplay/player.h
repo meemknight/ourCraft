@@ -51,8 +51,8 @@ struct LocalPlayer
 	glm::ivec3 currentBlockInteractWith = {0,-1,0};
 	unsigned char isInteractingWithBlock = 0;
 
-	Life life{20};
-	Life lastLife{20};
+	Life life{200};
+	Life lastLife{200};
 	float justHealedTimer = 0;
 	float justRecievedDamageTimer = 0;
 
@@ -92,7 +92,7 @@ struct PlayerServer: public ServerEntity<Player>
 	unsigned char revisionNumberInteraction = 0;
 	glm::ivec3 currentBlockInteractWithPosition = {0, -1, 0};
 
-	Life life{20};
+	Life life{200};
 
 	bool killed = 0;
 

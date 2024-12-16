@@ -1,11 +1,16 @@
 #include <gameplay/life.h>
 #include <gameplay/entity.h>
 
-int calculateDamage(Armour armour_, const WeaponStats &weaponStats, std::minstd_rand &rng)
+int calculateDamage(Armour armour_, const WeaponStats &weaponStats, std::minstd_rand &rng
+	, float hitCorectness, float critChanceBonus)
 {
 	float totalDamage = 0;
 
-	bool crit = getRandomChance(rng, weaponStats.critChance);
+	float critChance = weaponStats.critChance;
+	critChance += critChanceBonus * 0.2f;
+	critChance = glm::clamp(critChance, 0.f, 0.9f);
+
+	bool crit = getRandomChance(rng, critChance);
 
 	if (crit)
 	{
@@ -26,5 +31,5 @@ int calculateDamage(Armour armour_, const WeaponStats &weaponStats, std::minstd_
 
 	totalDamage = std::max(totalDamage, 0.f);
 
-	return totalDamage;
+	return totalDamage * hitCorectness;
 }

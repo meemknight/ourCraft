@@ -51,6 +51,7 @@ struct UiENgine
 		rightButton,
 		leftButtonFrontAttack,
 		rightButtonSwipeAttack,
+		circleSmall,
 
 		battleTexturesCount
 	};

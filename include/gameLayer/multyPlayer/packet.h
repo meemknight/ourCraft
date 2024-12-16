@@ -14,6 +14,7 @@
 #include <gameplay/cat.h>
 #include <gl2d/gl2d.h>
 #include <gameplay/life.h>
+#include <gameplay/battleUI.h>
 
 using EventCounter = unsigned int;
 using RevisionNumber = unsigned int;
@@ -345,6 +346,7 @@ struct Packet_PlaceBlocks
 
 struct Packet_AttackEntity
 {
+	HitResult hitResult;
 	std::uint64_t entityID = 0;
 	glm::vec3 direction = {};
 	unsigned char inventorySlot = 0;

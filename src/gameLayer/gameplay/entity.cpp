@@ -93,7 +93,7 @@ float shortestAngleDirection(float angleFrom, float angleTo)
 
 int getRandomNumber(std::minstd_rand &rng, int min, int max)
 {
-	return rand() % (max + 1 - min) + min;
+	return rng() % (max + 1 - min) + min;
 }
 
 float getRandomNumberFloat(std::minstd_rand &rng, float min, float max)

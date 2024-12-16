@@ -15,7 +15,7 @@ struct Zombie: public PhysicalEntity, public CanPushOthers
 
 	glm::vec3 getMaxColliderSize();
 
-	Life life{20};
+	Life life{200};
 	
 	Armour getArmour() { return {1}; };
 };

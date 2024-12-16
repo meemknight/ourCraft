@@ -695,6 +695,18 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.entityId = packetData->entityID;
 			serverTask.t.inventroySlot = packetData->inventorySlot;
 			serverTask.t.vector = packetData->direction;
+			serverTask.t.hitResult = packetData->hitResult;
+
+			//early ignore useless packets
+			if (serverTask.t.hitResult.hitCorectness > 1 ||
+				serverTask.t.hitResult.hitCorectness < 0 ||
+				serverTask.t.hitResult.bonusCritChance > 1 ||
+				serverTask.t.hitResult.bonusCritChance < 0 ||
+				serverTask.t.hitResult.hit == 0
+				)
+			{
+				break;
+			}
 
 			serverTasks.push_back(serverTask);
 			break;
