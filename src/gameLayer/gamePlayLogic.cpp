@@ -1225,8 +1225,26 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				
 				if (entityHitDistance <= weaponStats.range)
 				{
-					attackEntity(targetedEntity, gameData.currentItemSelected,
-						gameData.c.viewDirection);
+
+					//check if not creative player
+					bool isCreativePlayer = 0;
+
+					if (getEntityTypeFromEID(targetedEntity) == EntityType::player)
+					{
+						auto f = gameData.entityManager.players.find(targetedEntity);
+						if (f != gameData.entityManager.players.end())
+						{
+
+						}
+
+					}
+
+					if (!isCreativePlayer)
+					{
+						attackEntity(targetedEntity, gameData.currentItemSelected,
+							gameData.c.viewDirection);
+					}
+
 				};
 
 			}

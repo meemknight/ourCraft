@@ -64,6 +64,8 @@ struct LocalPlayer
 struct PlayerClient: public ClientEntity<Player, PlayerClient>
 {
 
+	//todo other player settings here!
+
 	void cleanup();
 
 	gl2d::Texture skin = {};

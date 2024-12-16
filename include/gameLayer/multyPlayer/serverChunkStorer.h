@@ -173,7 +173,8 @@ struct ServerChunkStorer
 	//if you call this for a player it will just return false!
 	bool removeEntity(WorldSaver &worldSaver, std::uint64_t eid);
 
-	void hitEntityByPlayer(std::uint64_t eid, glm::dvec3 playerPosition,
+	//returns true if succeed
+	bool hitEntityByPlayer(std::uint64_t eid, glm::dvec3 playerPosition,
 		Item &weapon, std::uint64_t &wasKilled, glm::vec3 dir, std::minstd_rand &rng);
 
 };

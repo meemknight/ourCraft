@@ -1565,14 +1565,51 @@ void serverWorkerUpdate(
 						auto item = client->playerData.inventory.getItemFromIndex(itemInventoryIndex);
 						if (item)
 						{
-							std::uint64_t wasKilled = 0;
-							sd.chunkCache.hitEntityByPlayer(entityId, client->playerData.getPosition(),
-								*item, wasKilled, dir, rng);
+							int type = getEntityTypeFromEID(entityId);
+							bool doNotHit = 0;
 
-							if (wasKilled)
+							//we don't want to hit creative players
+							if (type == EntityType::player)
 							{
-								killEntity(worldSaver, wasKilled);
+								auto found = clients.find(entityId);
+
+								if (found == clients.end()) { doNotHit = true; }
+								else
+								{
+									if (found->second.playerData.otherPlayerSettings.gameMode
+										== OtherPlayerSettings::CREATIVE)
+									{
+										doNotHit = true;
+									}
+								}
 							}
+
+							if (!doNotHit)
+							{
+								std::uint64_t wasKilled = 0;
+								bool rez = sd.chunkCache.hitEntityByPlayer(entityId, client->playerData.getPosition(),
+									*item, wasKilled, dir, rng);
+
+								if (rez)
+								{
+
+									//hit other player, notify with sound
+									if (type == EntityType::player)
+									{
+										auto found = clients.find(entityId);
+										permaAssertComment(found != clients.end(), "this player should exist");
+
+										sendDamagePlayerPacket(found->second);
+									}
+
+								}
+
+								if (wasKilled)
+								{
+									killEntity(worldSaver, wasKilled);
+								}
+							}
+							
 
 						}
 					}

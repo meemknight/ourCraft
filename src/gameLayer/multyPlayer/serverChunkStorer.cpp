@@ -1653,7 +1653,7 @@ bool callGenericHitEntityByPlayer(EntityData &entityData, std::uint64_t eid, glm
 #undef CASE_HIT
 
 
-void ServerChunkStorer::hitEntityByPlayer(std::uint64_t eid,
+bool ServerChunkStorer::hitEntityByPlayer(std::uint64_t eid,
 	glm::dvec3 playerPosition, Item &weapon, std::uint64_t &wasKilled, glm::vec3 dir, std::minstd_rand &rng)
 {
 
@@ -1697,11 +1697,12 @@ void ServerChunkStorer::hitEntityByPlayer(std::uint64_t eid,
 				playerPosition, weapon, wasKilled, rng);
 			if (rez) 
 			{
-				return; 
+				return true; 
 			}
 		}
 	}
 
+	return 0;
 }
 
 void SavedChunk::removeBlockWithData(glm::ivec3 pos,
