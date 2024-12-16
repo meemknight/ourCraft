@@ -87,3 +87,11 @@ int PlayerClient::getTextureIndex()
 {
 	return ModelsManager::TexturesLoaded::SteveTexture;
 }
+
+void PlayerServer::resetStatsForWhenKilled()
+{
+	notIncreasedLifeSinceTimeSecconds = 0;
+	interactingWithBlock = 0;
+	revisionNumberInteraction = 0;
+
+}

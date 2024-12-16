@@ -935,6 +935,10 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 				static Oscilator lifeFlash(0.1, 2);
 				bool tookDamage = 0;
 
+				int maxLife = playerHealth.maxLife / 10;
+				int life = playerHealth.life / 10;
+				int lastLife = player.lastLife.life / 10;
+
 				if (player.justRecievedDamageTimer > 0)
 				{
 					player.justRecievedDamageTimer -= deltaTime;
@@ -961,10 +965,6 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 					lifeFlash.reset();
 				}
 
-				int maxLife = playerHealth.maxLife / 10;
-				int life = playerHealth.life / 10;
-				int lastLife = player.lastLife.life / 10;
-				
 
 				{
 					auto heartBoxCopy = heartBox;

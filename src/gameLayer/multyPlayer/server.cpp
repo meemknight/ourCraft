@@ -410,48 +410,6 @@ void changePlayerGameMode(std::uint64_t cid, unsigned char gameMode)
 }
 
 
-void sendDamagePlayerPacket(Client &client)
-{
-	Packet_UpdateLife p;
-	p.life = client.playerData.life;
-	sendPacket(client.peer, headerRecieveDamage, &p, sizeof(p), true, channelChunksAndBlocks);
-}
-
-void sendIncreaseLifePlayerPacket(Client &client)
-{
-	Packet_UpdateLife p;
-	p.life = client.playerData.life;
-	sendPacket(client.peer, headerRecieveLife, &p, sizeof(p), true, channelChunksAndBlocks);
-}
-
-//sets the life of the player with no animations
-void sendUpdateLifeLifePlayerPacket(Client &client)
-{
-	Packet_UpdateLife p;
-	p.life = client.playerData.life;
-	sendPacket(client.peer, headerUpdateLife, &p, sizeof(p), true, channelChunksAndBlocks);
-}
-
-void applyDamageOrLifeToPlayer(short difference, Client &client)
-{
-	if (difference == 0) { return; }
-
-	int life = client.playerData.life.life;
-	life += difference;
-	if (life < 0) { life = 0; }
-	if (life > client.playerData.life.maxLife) { life = client.playerData.life.maxLife; }
-	client.playerData.life.life = life;
-
-	if (difference < 0)
-	{
-		sendDamagePlayerPacket(client);
-	}
-	else
-	{
-		sendIncreaseLifePlayerPacket(client);
-	}
-}
-
 
 void killEntity(WorldSaver &worldSaver, std::uint64_t entity)
 {
@@ -616,8 +574,8 @@ void serverWorkerUpdate(
 		{
 			//todo a method to reset multiple things
 			c.second.playerData.killed = true;
-			c.second.playerData.interactingWithBlock = 0;
-			c.second.playerData.currentBlockInteractWithPosition = {0,-1,0};
+			c.second.playerData.life.life = 0;
+			c.second.playerData.resetStatsForWhenKilled();
 
 			genericBroadcastEntityKillFromServerToPlayer(c.first, true);
 		}
@@ -1597,6 +1555,8 @@ void serverWorkerUpdate(
 										auto found = clients.find(entityId);
 										permaAssertComment(found != clients.end(), "this player should exist");
 
+										found->second.playerData.recieveDamage();
+
 										sendDamagePlayerPacket(found->second);
 									}
 
@@ -1650,11 +1610,20 @@ void serverWorkerUpdate(
 
 				if (client && !client->playerData.killed)
 				{
+					client->playerData.recieveDamage();
+
 					client->playerData.life.life -= i.t.damage;
-					if (client->playerData.life.life < 0)
+					if (client->playerData.life.life <= 0)
 					{
+						//will notify next frame
 						client->playerData.life.life = 0;
 					}
+					else
+					{
+						sendUpdateLifeLifePlayerPacket(*client);
+					}
+
+					
 				}
 
 			}
@@ -1667,8 +1636,7 @@ void serverWorkerUpdate(
 					//todo duplicate code above!!!!!
 					client->playerData.killed = true;
 					client->playerData.life.life = 0;
-					client->playerData.interactingWithBlock = 0;
-					client->playerData.currentBlockInteractWithPosition = {0,-1,0};
+					client->playerData.resetStatsForWhenKilled();
 
 					genericBroadcastEntityKillFromServerToPlayer(i.cid, true, 
 						client->peer);
@@ -1867,7 +1835,8 @@ void serverWorkerUpdate(
 				settings.perClientSettings.begin()->second.damage = false;
 				auto &c = getAllClientsReff();
 
-				applyDamageOrLifeToPlayer(-3, c.begin()->second);
+				c.begin()->second.playerData.recieveDamage();
+				applyDamageOrLifeToPlayer(-10, c.begin()->second);
 			}
 
 			if (settings.perClientSettings.begin()->second.heal)
@@ -1875,7 +1844,7 @@ void serverWorkerUpdate(
 				settings.perClientSettings.begin()->second.heal = false;
 				auto &c = getAllClientsReff();
 
-				applyDamageOrLifeToPlayer(3, c.begin()->second);
+				applyDamageOrLifeToPlayer(10, c.begin()->second);
 			}
 
 			if (settings.perClientSettings.begin()->second.killApig)
@@ -1925,8 +1894,8 @@ void serverWorkerUpdate(
 	if (sd.seccondsTimer >= 1)
 	{
 		sd.seccondsTimer -= 1;
-		//std::cout << "Server ticks per seccond: " << ticksPerSeccond << "\n";
-		//std::cout << "Server runs per seccond: " << runsPerSeccond << "\n";
+		//std::cout << "Server ticks per seccond: " << sd.ticksPerSeccond << "\n";
+		//std::cout << "Server runs per seccond: " << sd.runsPerSeccond << "\n";
 		outTicksPerSeccond = sd.ticksPerSeccond;
 		sd.ticksPerSeccond = 0;
 		sd.runsPerSeccond = 0;

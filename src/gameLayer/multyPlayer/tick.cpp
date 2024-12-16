@@ -7,7 +7,7 @@
 #include <multyPlayer/enetServerFunction.h>
 #include <deque>
 #include <platformTools.h>
-
+#include <gameplay/gameplayRules.h>
 
 template <class T, class E>
 void genericBroadcastEntityUpdateFromServerToPlayer(E &e, bool reliable,
@@ -71,7 +71,6 @@ void genericBroadcastEntityUpdateFromServerToPlayer2(E &e, bool reliable,
 
 
 }
-
 
 
 
@@ -175,11 +174,13 @@ void callGenericResetEntitiesInTheirNewChunk(std::integer_sequence<int, Is...>, 
 #define ENTITY_UPDATES(X) genericLoopOverEntities(*entityData.entityGetter<X>(), *orphanEntities.entityGetter<X>());
 
 //todo make sure a player can only be in only one tick
-//chunkCache has only chunks that shouldn't be unloaded! And no null ptrs
+//chunkCache has only chunks that shouldn't be unloaded! And no null ptrs!
 void doGameTick(float deltaTime, std::uint64_t currentTimer,
 	ServerChunkStorer &chunkCache, EntityData &orphanEntities,
 	unsigned int seed)
 {
+	//std::cout << "Tick deltaTime: " << deltaTime << "\n";
+
 	std::minstd_rand rng(seed);
 
 	std::unordered_map<glm::ivec3, BlockType> modifiedBlocks;
@@ -203,7 +204,8 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 
 	//todo also send to entity update, and use there
 	std::unordered_map <std::uint64_t, PlayerServer *> allPlayers;
-	std::unordered_map < std::uint64_t, Client> allClients;
+	std::unordered_map < std::uint64_t, Client *> allClients;
+	std::unordered_map < std::uint64_t, Client *> allSurvivalClients;
 
 #pragma region calculate all players
 
@@ -220,14 +222,63 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 	}
 
 	{
-		const auto &reff = getAllClientsReff();
-		for (auto p : allPlayers)
+		auto &reff = getAllClientsReff();
+		for (auto &p : allPlayers)
 		{
 			auto found = reff.find(p.first);
 			permaAssert(found != reff.end());
-			allClients.insert(*found);
+			allClients.insert({found->first, &found->second});
+
+			if (found->second.playerData.otherPlayerSettings.gameMode ==
+				OtherPlayerSettings::SURVIVAL)
+			{
+				allSurvivalClients.insert({found->first, &found->second});
+			}
+
 		}
 	}
+
+#pragma endregion
+
+#pragma region calculate player healing
+
+	//TODO do a last frame life kinda stuff for players to make things easier
+
+	for (auto &c : allSurvivalClients)
+	{
+		auto &playerData = c.second->playerData;
+
+		if (playerData.healingDelayCounterSecconds >= BASE_HEALTH_DELAY_TIME)
+		{
+			if (playerData.life.life < playerData.life.maxLife)
+			{
+				playerData.notIncreasedLifeSinceTimeSecconds += deltaTime;
+
+				if (playerData.notIncreasedLifeSinceTimeSecconds > BASE_HEALTH_REGEN_TIME)
+				{
+					playerData.notIncreasedLifeSinceTimeSecconds -= BASE_HEALTH_REGEN_TIME;
+
+					playerData.life.life++;
+
+					//todo a better way to do this at the end of the frame
+					//once you create the package manager
+					sendIncreaseLifePlayerPacket(*c.second);
+				}
+			}
+			else
+			{
+				playerData.notIncreasedLifeSinceTimeSecconds = 0;
+			}
+		}
+		else
+		{
+			playerData.healingDelayCounterSecconds += deltaTime;
+			playerData.notIncreasedLifeSinceTimeSecconds = 0;
+		}
+
+
+	}
+
 
 #pragma endregion
 
@@ -631,7 +682,7 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 		for (auto it = allClients.begin(); it != allClients.end(); it++)
 		{
 			{
-				sendPacket(it->second.peer, packet, (const char *)newBlocks, 
+				sendPacket(it->second->peer, packet, (const char *)newBlocks, 
 					sizeof(Packet_PlaceBlocks) *modifiedBlocks.size(), true, channelChunksAndBlocks);
 			}
 		}
@@ -649,3 +700,49 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 	chunkCacheGlobal = 0;
 }
 
+
+
+
+
+void sendDamagePlayerPacket(Client &client)
+{
+	Packet_UpdateLife p;
+	p.life = client.playerData.life;
+	sendPacket(client.peer, headerRecieveDamage, &p, sizeof(p), true, channelChunksAndBlocks);
+}
+
+void sendIncreaseLifePlayerPacket(Client &client)
+{
+	Packet_UpdateLife p;
+	p.life = client.playerData.life;
+	sendPacket(client.peer, headerRecieveLife, &p, sizeof(p), true, channelChunksAndBlocks);
+}
+
+//sets the life of the player with no animations
+void sendUpdateLifeLifePlayerPacket(Client &client)
+{
+	Packet_UpdateLife p;
+	p.life = client.playerData.life;
+	sendPacket(client.peer, headerUpdateLife, &p, sizeof(p), true, channelChunksAndBlocks);
+}
+
+//used to send packet, todo remove
+void applyDamageOrLifeToPlayer(short difference, Client &client)
+{
+	if (difference == 0) { return; }
+
+	int life = client.playerData.life.life;
+	life += difference;
+	if (life < 0) { life = 0; }
+	if (life > client.playerData.life.maxLife) { life = client.playerData.life.maxLife; }
+	client.playerData.life.life = life;
+
+	if (difference < 0)
+	{
+		sendDamagePlayerPacket(client);
+	}
+	else
+	{
+		sendIncreaseLifePlayerPacket(client);
+	}
+}

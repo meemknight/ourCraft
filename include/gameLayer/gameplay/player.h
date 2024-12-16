@@ -4,6 +4,7 @@
 #include <gameplay/items.h>
 #include <gl2d/gl2d.h>
 #include <gameplay/life.h>
+#include <gameplay/gameplayRules.h>
 
 //this is the shared data
 struct Player : public PhysicalEntity, public CollidesWithPlacedBlocks,
@@ -51,8 +52,8 @@ struct LocalPlayer
 	glm::ivec3 currentBlockInteractWith = {0,-1,0};
 	unsigned char isInteractingWithBlock = 0;
 
-	Life life{200};
-	Life lastLife{200};
+	Life life{100};
+	Life lastLife{100};
 	float justHealedTimer = 0;
 	float justRecievedDamageTimer = 0;
 
@@ -92,9 +93,17 @@ struct PlayerServer: public ServerEntity<Player>
 	unsigned char revisionNumberInteraction = 0;
 	glm::ivec3 currentBlockInteractWithPosition = {0, -1, 0};
 
-	Life life{200};
+	Life life{100};
 
 	bool killed = 0;
+
+	//used for life regeneration
+	float notIncreasedLifeSinceTimeSecconds = 0;
+	float healingDelayCounterSecconds = BASE_HEALTH_DELAY_TIME;
+
+	void recieveDamage() { healingDelayCounterSecconds = 0; };
+
+	void resetStatsForWhenKilled();
 
 	//todo calculate armour based on inventory
 	Armour getArmour() { return {0}; };
