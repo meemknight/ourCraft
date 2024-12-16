@@ -155,7 +155,6 @@ bool DroppedItemServer::update(float deltaTime, decltype(chunkGetterSignature) *
 	entity.updateForces(deltaTime, true, ps);
 	entity.resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime, getMaxColliderSize(), ps);
 
-
 	return true;
 }
 

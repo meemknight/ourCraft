@@ -201,6 +201,7 @@ void Profiler::startSubProfile(char *c)
 	if (gpuProfilingEnabeled)
 	{
 		gpuProfiler[currentGpuProfilerIndex].start(c);
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, c);
 	}
 	else
 	{
@@ -217,6 +218,8 @@ void Profiler::endSubProfile(char *c)
 		permaAssertComment(c == gpuProfiler[currentGpuProfilerIndex].queryNames[gpuProfiler[currentGpuProfilerIndex].currentQuery], 
 			"Inconsistent start end sub profiler for GPU profiling");
 		gpuProfiler[currentGpuProfilerIndex].end();
+
+		glPopDebugGroup();
 	}
 	else
 	{

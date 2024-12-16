@@ -71,6 +71,16 @@ struct Item
 
 	bool canAttack();
 
+	bool isWeapon();
+
+	bool isBattleAxe();
+	bool isSword();
+	bool isHammer();
+	bool isDagger();
+	bool isScythe();
+	bool isFlail();
+	bool isSpear();
+
 	std::string getItemName();
 
 	std::string formatMetaDataToString();

@@ -17,6 +17,7 @@ struct Goblin: public PhysicalEntity, public CanPushOthers
 
 	Life life{20};
 
+	Armour getArmour() { return {1}; };
 };
 
 

@@ -9,6 +9,7 @@
 #include <gameplay/crafting.h>
 #include <audioEngine.h>
 #include <iostream>
+#include <magic_enum.hpp>
 
 float determineTextSize(gl2d::Renderer2D &renderer, const std::string &str,
 	gl2d::Font &f, glm::vec4 transform, bool minimize = true)
@@ -168,6 +169,18 @@ void UiENgine::loadTextures(std::string path)
 		playerCellSize = playerCell.GetSize();
 	}
 
+	std::string newPath = path + "battle/";
+	for (int i = 0; i < battleTexturesCount; i++)
+	{
+
+		std::string n(magic_enum::enum_name((BattleTextures)i).substr());
+
+		if (!battleTextures[i].id)
+		{
+			battleTextures[i].loadFromFile((newPath + n + ".png").c_str(), true, true);
+		}
+	}
+
 }
 
 void UiENgine::clearOnlyTextures()
@@ -190,6 +203,12 @@ void UiENgine::clearOnlyTextures()
 
 	playerCell.cleanup();
 	playerCellSize = {};
+
+	for (int i = 0; i < battleTexturesCount; i++)
+	{
+		battleTextures[i].cleanup();
+	}
+
 }
 
 const int INVENTORY_TAB_DEFAULT = 0;

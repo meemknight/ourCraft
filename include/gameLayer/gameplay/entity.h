@@ -395,6 +395,7 @@ template <typename T>
 constexpr bool hasCollidesWithPlacedBlocks<T, std::void_t<decltype(T::collidesWithPlacedBlocks)>> = true;
 
 
+//todo probably remove this one and just use life or something
 struct CanBeKilled
 {
 	constexpr static bool canBeKilled = true;
@@ -435,6 +436,7 @@ struct ServerEntity
 		return entity.position;
 	}
 
+	//knock back, this does not does any calculations.
 	void applyHitForce(glm::vec3 force)
 	{
 		if constexpr(hasForces<T>)
@@ -568,9 +570,9 @@ struct ClientEntity
 
 };
 
+
 template <typename T, typename = void>
 constexpr bool hasRestantTimer = false;
-
 template <typename T>
 constexpr bool hasRestantTimer<T, std::void_t<decltype(std::declval<T>().restantTime)>> = true;
 

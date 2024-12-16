@@ -453,13 +453,32 @@ void applyDamageOrLifeToPlayer(short difference, Client &client)
 }
 
 
-//you can't call this for players!
 void killEntity(WorldSaver &worldSaver, std::uint64_t entity)
 {
-	if (sd.chunkCache.removeEntity(worldSaver, entity))
+	auto entityType = getEntityTypeFromEID(entity);
+
+	if (entityType == EntityType::player)
 	{
-		genericBroadcastEntityKillFromServerToPlayer(entity, true);
+		//genericBroadcastEntityKillFromServerToPlayer(entity, true);
+		//sd.chunkCache.e
+		auto &clients = getAllClientsReff();
+		auto found = clients.find(entity);
+		
+		//it is enough to set the life of players to 0 to kill them!
+		if (found != clients.end())
+		{
+			found->second.playerData.life.life = 0;
+		};
 	}
+	else
+	{
+		if (sd.chunkCache.removeEntity(worldSaver, entity))
+		{
+			genericBroadcastEntityKillFromServerToPlayer(entity, true);
+		}
+	}
+
+
 }
 
 ServerSettings getServerSettingsCopy()
@@ -537,13 +556,10 @@ void serverWorkerUpdate(
 	static std::minstd_rand rng(std::random_device{}());
 	static bool generateNewChunks = 0; //this is set to true only once per tick
 
-	//std::cout << "Before\n";
 	std::vector<SendBlocksBack> sendNewBlocksToPlayers;
 	updateLoadedChunks(wg, structuresManager, biomesManager, sendNewBlocksToPlayers,
 		worldSaver, true);
 	generateNewChunks = 0;
-
-	//std::cout << "After\n";
 
 
 	for (auto &c : sd.chunkCache.savedChunks)
@@ -552,7 +568,7 @@ void serverWorkerUpdate(
 	}
 
 	//set players in their chunks, set players in chunks
-	for (auto &client : getAllClients())
+	for (auto &client : getAllClientsReff())
 	{
 
 		auto cPos = determineChunkThatIsEntityIn(client.second.playerData.entity.position);
@@ -564,6 +580,8 @@ void serverWorkerUpdate(
 		if (!client.second.playerData.killed)
 		{
 			chunk->entityData.players.insert({client.first, &client.second.playerData});
+			auto ptr = &client.second.playerData;
+			int a = 0;
 		}
 
 	}
@@ -1544,9 +1562,52 @@ void serverWorkerUpdate(
 						auto item = client->playerData.inventory.getItemFromIndex(itemInventoryIndex);
 						if (item)
 						{
-							bool wasKilled = 0;
-							sd.chunkCache.hitEntityByPlayer(entityId, client->playerData.getPosition(),
-								*item, wasKilled, dir);
+							int type = getEntityTypeFromEID(entityId);
+							bool doNotHit = 0;
+
+							//we don't want to hit creative players
+							if (type == EntityType::player)
+							{
+								auto found = clients.find(entityId);
+
+								if (found == clients.end()) { doNotHit = true; }
+								else
+								{
+									if (found->second.playerData.otherPlayerSettings.gameMode
+										== OtherPlayerSettings::CREATIVE)
+									{
+										doNotHit = true;
+									}
+								}
+							}
+
+							if (!doNotHit)
+							{
+								std::uint64_t wasKilled = 0;
+								bool rez = sd.chunkCache.hitEntityByPlayer(entityId, client->playerData.getPosition(),
+									*item, wasKilled, dir, rng);
+
+								if (rez)
+								{
+
+									//hit other player, notify with sound
+									if (type == EntityType::player)
+									{
+										auto found = clients.find(entityId);
+										permaAssertComment(found != clients.end(), "this player should exist");
+
+										sendDamagePlayerPacket(found->second);
+									}
+
+								}
+
+								if (wasKilled)
+								{
+									killEntity(worldSaver, wasKilled);
+								}
+							}
+							
+
 						}
 					}
 
@@ -1623,8 +1684,6 @@ void serverWorkerUpdate(
 			break;
 		}
 	}
-
-
 
 
 
@@ -1914,7 +1973,6 @@ void serverWorkerUpdate(
 	}
 
 
-
 	//save one chunk on disk
 	sd.chunkCache.saveNextChunk(worldSaver);
 
@@ -1970,7 +2028,7 @@ void updateLoadedChunks(
 		c.second->otherData.shouldUnload = true;
 	}
 
-	auto clientsCopy = getAllClients();
+	const auto &clientsCopy = getAllClientsReff();
 
 
 	for (auto &c : clientsCopy)

@@ -44,6 +44,21 @@ struct UiENgine
 	glm::vec2 playerCellSize;
 
 
+	enum BattleTextures
+	{
+		circle,
+		leftButton,
+		rightButton,
+		leftButtonFrontAttack,
+		rightButtonSwipeAttack,
+
+		battleTexturesCount
+	};
+
+	gl2d::Texture battleTextures[battleTexturesCount];
+
+
+
 	//todo simplify
 	//cursorItemIndex returns -1 if outside the menu to throw items, and -2 if it is nowhere 
 	//if inside crafting, supply craftingTableInventory

@@ -6,13 +6,18 @@
 
 
 struct Cat: public PhysicalEntity, public HasOrientationAndHeadTurnDirection,
-	public MovementSpeedForLegsAnimations, public CanPushOthers, public CollidesWithPlacedBlocks
+	public MovementSpeedForLegsAnimations, 
+	public CanPushOthers, public CollidesWithPlacedBlocks, public CanBeAttacked
 {
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 
 	glm::vec3 getColliderSize();
 
 	static glm::vec3 getMaxColliderSize();
+
+	Life life{10};
+	
+	Armour getArmour() { return {0}; };
 };
 
 

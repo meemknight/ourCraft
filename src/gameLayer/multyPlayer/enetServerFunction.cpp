@@ -205,6 +205,7 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 
 		c.playerData.otherPlayerSettings.gameMode = OtherPlayerSettings::CREATIVE;
 
+		c.playerData.inventory.items[0] = itemCreator(ItemTypes::trainingSpear);
 		c.playerData.inventory.items[10] = Item(BlockTypes::yellow_stained_glass);
 		c.playerData.inventory.items[11] = Item(BlockTypes::lime_stained_glass);
 		c.playerData.inventory.items[12] = Item(BlockTypes::green_stained_glass);
