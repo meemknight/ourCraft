@@ -1144,7 +1144,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 							
 					}
-					else if (platform::isLMouseHeld() && raycastBlock)
+					else if (platform::isLMouseHeld() && raycastBlock
+						&& !item.isWeapon()
+						)
 					{
 						if (gameData.currentBlockBreaking.breaking &&
 							gameData.currentBlockBreaking.tool != gameData.currentItemSelected)
@@ -2058,7 +2060,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	{
 		std::cout << "Corectness: " << hitStatus.hitCorectness << "\n";
 		std::cout << "Bonus Crit: " << hitStatus.bonusCritChance << "\n";
-
 	}
 
 #pragma region ui

@@ -16,8 +16,10 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 {
 
 	static float debugSpeed = 1;
+	static float debugDexterity = 0;
 	ImGui::Begin("Test speed");
-	ImGui::SliderFloat("Speed: ", &debugSpeed, 1, 10);
+	ImGui::SliderFloat("Speed: ", &debugSpeed, -10, 20);
+	ImGui::SliderFloat("Dexterity: ", &debugDexterity, -10, 20);
 	ImGui::End();
 
 	HitResult result;
@@ -26,6 +28,12 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 	{
 		reset();
 	}
+
+	if (notDieCount <= 0)
+	{
+		reset();
+	}
+	notDieCount = std::min(notDieCount, 2);
 
 	if (dontRun) { return result; }
 
@@ -37,6 +45,7 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 
 	auto &renderer = ui.renderer2d;
 	
+
 	glui::Frame f({0, 0, renderer.windowW, renderer.windowH});
 
 	{
@@ -48,11 +57,12 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 		auto fullBox = glui::Box().xLeft(0).yTop(0).xDimensionPercentage(1).yDimensionPercentage(1)();
 	#pragma endregion
 
+		auto stats = item.getWeaponStats();
+		stats.speed = debugSpeed;
+		stats.dexterity = debugDexterity;
+
 		if (item.isSpear())
 		{
-
-			auto stats = item.getWeaponStats();
-			stats.speed = debugSpeed;
 
 			if (!started)
 			{
@@ -65,7 +75,6 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 					result.isSwipeAttack = rightPressed;
 					result.hitCorectness = 1;
 
-					
 					timer = 0;
 					
 				}
@@ -74,12 +83,13 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 			else
 			{
 				timer -= deltaTime;
+				float speed = stats.getUIMoveSpeed();
+				float dexterity = stats.getDexterityNormalized();
 
 				if (timer <= 0)
 				{
 					auto range = stats.getTimerCulldownRangeForAttacks();
 					timer = getRandomNumberFloat(rng, range.x, range.y);
-					float speed = stats.getUIMoveSpeed();
 					
 					if (spearData.currentBallsCount < spearData.MAX_POSITIONS)
 					{
@@ -87,14 +97,16 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 						vector = glm::rotate(vector, getRandomNumberFloat(rng, 0, 3.1415926*2.f));
 						spearData.balls[spearData.currentBallsCount] = {};
 						spearData.balls[spearData.currentBallsCount].position = vector;
-						spearData.balls[spearData.currentBallsCount].velocity = -vector * speed;
+						spearData.balls[spearData.currentBallsCount].velocity = 
+							glm::normalize((glm::vec2(vector.y, -vector.x) - vector)/2.f);
+						//spearData.balls[spearData.currentBallsCount].initialVelocity = -vector;
 						spearData.currentBallsCount++;
 					}
 
 				}
 
 				float ballRelativeSize = 0.05;
-				float hitRelativeSize = 0.1;
+				float hitRelativeSize = dexterity * 0.08 + 0.04;
 
 				for (int i = 0; i < spearData.currentBallsCount; i++)
 				{
@@ -110,23 +122,69 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 								spearData.balls[j - 1] = spearData.balls[j];
 							}
 							spearData.currentBallsCount--;
+							notDieCount--;
 							continue;
 						}
 					}
 					else
 					{
-						if (glm::length(b.position) < (ballRelativeSize+hitRelativeSize)/2.f)
+						if (glm::length(b.position) < (ballRelativeSize+hitRelativeSize)*2.f)
 						{
 							b.passedCenter = true;
-							b.dieTimer = 1;
+							b.dieTimer = 0.5;
 						}
 					}
 
-					b.position += b.velocity * deltaTime;
+					glm::vec2 vectorTowardsCenter = -b.position;
+
+					float length = glm::length(vectorTowardsCenter);
+					if (length > 0.000001)
+					{
+						vectorTowardsCenter = glm::normalize(vectorTowardsCenter);
+
+						if (length < 0.1f)
+						{
+							//b.velocity = vectorTowardsCenter;
+							b.velocity += vectorTowardsCenter * speed * deltaTime * 10.f;
+							b.velocity = glm::normalize(b.velocity);
+						}
+						else
+						if (length < 0.2f)
+						{
+							//b.velocity = vectorTowardsCenter;
+							b.velocity += vectorTowardsCenter * speed * deltaTime * 6.f;
+							b.velocity = glm::normalize(b.velocity);
+						}
+						else
+						if (length < 0.3f)
+						{
+							//b.velocity = vectorTowardsCenter;
+							b.velocity += vectorTowardsCenter * speed * deltaTime * 4.f;
+							b.velocity = glm::normalize(b.velocity);
+						}else
+						if (length < 0.4f)
+						{
+							//b.velocity = vectorTowardsCenter;
+							b.velocity += vectorTowardsCenter * speed * deltaTime * 3.5f;
+							b.velocity = glm::normalize(b.velocity);
+						}
+						else
+						{
+							b.velocity += vectorTowardsCenter * speed * deltaTime * 3.f;
+							b.velocity = glm::normalize(b.velocity);
+						}
+
+
+					}
+
+					b.position += b.velocity * deltaTime * speed;
+						
 				}
+				
 				
 				if ((leftPressed || rightPressed) && spearData.currentBallsCount)
 				{
+					notDieCount++;
 					result.hit = true;
 
 					float length = glm::length(spearData.balls[0].position);
@@ -154,11 +212,14 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 							result.hitCorectness = hitCorectness;
 							result.hitCorectness = std::max(result.hitCorectness, 0.1f);
 						}
-
-						
-
 					}
 
+
+					for (int j = 1; j < spearData.currentBallsCount; j++)
+					{
+						spearData.balls[j - 1] = spearData.balls[j];
+					}
+					spearData.currentBallsCount--;
 				}
 
 				//renderer.renderRectangle(fullBox, {1,1,1,0.2});
@@ -168,10 +229,10 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 					ui.battleTextures[UiENgine::BattleTextures::circle]);
 
 				renderer.renderRectangle(fullBox,
-					ui.battleTextures[UiENgine::BattleTextures::leftButton], Colors_Red);
+					ui.battleTextures[UiENgine::BattleTextures::leftButton], Colors_Blue);
 
 				renderer.renderRectangle(fullBox,
-					ui.battleTextures[UiENgine::BattleTextures::rightButton], Colors_Blue);
+					ui.battleTextures[UiENgine::BattleTextures::rightButton], Colors_Yellow);
 
 				renderer.renderRectangle(fullBox,
 					ui.battleTextures[UiENgine::BattleTextures::leftButtonFrontAttack]);
@@ -205,7 +266,14 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 
 		}
 
+		if (stats.dexterity < 0)
+		{
+			result.bonusCritChance = std::min(result.bonusCritChance, 0.f);
+		}
+
+
 	}
+
 
 	return result;
 }

@@ -24,6 +24,9 @@ struct BattleUI
 	char lastInventorySlot = -1;
 	bool started = 0;
 
+	//if the player lets moves die we close the ui
+	int notDieCount = 1;
+
 	HitResult update(Item &item, int inventorySlot, bool dontRun, 
 		UiENgine &uiEngine, std::minstd_rand &rng, float deltaTime);
 
@@ -38,6 +41,7 @@ struct BattleUI
 			{
 				glm::vec2 position = {};
 				glm::vec2 velocity = {};
+				glm::vec2 initialVelocity = {};
 				char specialBall;
 				float dieTimer = 0;
 				bool passedCenter = 0;

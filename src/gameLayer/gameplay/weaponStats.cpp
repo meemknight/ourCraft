@@ -10,11 +10,11 @@ void WeaponStats::normalize()
 	critChance = glm::clamp(critChance, 0.f, 0.8f); // 0 -> 0.8;
 	critDamage = glm::clamp(critDamage, 0.5f, 3.f); // 0.5 -> 3
 	dexterity = glm::clamp(dexterity, -10.f, 20.f); // -10 -> 20;
-	damage = glm::clamp(damage, 1.f, 999.f); // 1 -> 99999;
+	damage = glm::clamp(damage, 1.f, 999.f); // 1 -> 999;
 	accuracy = glm::clamp(accuracy, -10.f, 20.f); // -10 -> 20;
 	range = glm::clamp(range, 1.f, 6.f); // 1 -> 6
 	knockBack = glm::clamp(knockBack, 0.f, 20.f);
-	speed = glm::clamp(speed, 1.f, 10.f);
+	speed = glm::clamp(speed, -10.f, 20.f);
 
 	//speed = 1; // todo
 	//comboFrequency = 1; // todo
@@ -36,7 +36,7 @@ glm::vec2 WeaponStats
 {
 	glm::vec2 ret = {0.8, 2.0};
 
-	float normalizedSpeed = speed / 10.f;
+	float normalizedSpeed = (speed + 10) / 30.f;
 	normalizedSpeed = powf(normalizedSpeed, 2.f);
 	normalizedSpeed = 1.2 + normalizedSpeed * 3;
 
@@ -51,8 +51,13 @@ glm::vec2 WeaponStats
 
 float WeaponStats::getUIMoveSpeed()
 {
-	float s = speed / 10;
+	float s = (speed + 10) / 30.f;
 	s = powf(speed, 0.5f);
 	s *= 0.7f;
 	return s + 0.6f;
+}
+
+float WeaponStats::getDexterityNormalized()
+{
+	return (dexterity + 10.f) / 30.f;
 }
