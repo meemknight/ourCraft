@@ -34,12 +34,25 @@ float WeaponStats::getKnockBackNormalized()
 glm::vec2 WeaponStats
 ::getTimerCulldownRangeForAttacks()
 {
-	glm::vec2 ret = {2, 15};
+	glm::vec2 ret = {0.8, 2.0};
 
-	ret.x /= speed;
-	ret.y /= speed;
+	float normalizedSpeed = speed / 10.f;
+	normalizedSpeed = powf(normalizedSpeed, 2.f);
+	normalizedSpeed = 1.2 + normalizedSpeed * 3;
 
-	ret.y = std::min(ret.y, 5.f);
+	ret.x /= normalizedSpeed;
+	ret.y /= normalizedSpeed;
+
+
+	//ret.y = std::min(ret.y, 3.f);
 
 	return ret;
+}
+
+float WeaponStats::getUIMoveSpeed()
+{
+	float s = speed / 10;
+	s = powf(speed, 0.5f);
+	s *= 0.7f;
+	return s + 0.6f;
 }

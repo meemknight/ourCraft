@@ -2,6 +2,7 @@
 #include <platform/platformInput.h>
 #include <glui/glui.h>
 #include <gameplay/entity.h>
+#include <imgui.h>
 
 void BattleUI::reset()
 {
@@ -13,6 +14,11 @@ void BattleUI::reset()
 HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 	UiENgine &ui, std::minstd_rand &rng, float deltaTime)
 {
+
+	static float debugSpeed = 1;
+	ImGui::Begin("Test speed");
+	ImGui::SliderFloat("Speed: ", &debugSpeed, 1, 10);
+	ImGui::End();
 
 	HitResult result;
 
@@ -46,6 +52,7 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 		{
 
 			auto stats = item.getWeaponStats();
+			stats.speed = debugSpeed;
 
 			if (!started)
 			{
@@ -72,18 +79,22 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 				{
 					auto range = stats.getTimerCulldownRangeForAttacks();
 					timer = getRandomNumberFloat(rng, range.x, range.y);
-
+					float speed = stats.getUIMoveSpeed();
 					
 					if (spearData.currentBallsCount < spearData.MAX_POSITIONS)
 					{
 						glm::vec2 vector = {1,0};
 						vector = glm::rotate(vector, getRandomNumberFloat(rng, 0, 3.1415926*2.f));
+						spearData.balls[spearData.currentBallsCount] = {};
 						spearData.balls[spearData.currentBallsCount].position = vector;
-						spearData.balls[spearData.currentBallsCount].velocity = -vector;
+						spearData.balls[spearData.currentBallsCount].velocity = -vector * speed;
 						spearData.currentBallsCount++;
 					}
 
 				}
+
+				float ballRelativeSize = 0.05;
+				float hitRelativeSize = 0.1;
 
 				for (int i = 0; i < spearData.currentBallsCount; i++)
 				{
@@ -104,7 +115,7 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 					}
 					else
 					{
-						if (glm::length(b.position) < 0.1)
+						if (glm::length(b.position) < (ballRelativeSize+hitRelativeSize)/2.f)
 						{
 							b.passedCenter = true;
 							b.dieTimer = 1;
@@ -114,6 +125,42 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 					b.position += b.velocity * deltaTime;
 				}
 				
+				if ((leftPressed || rightPressed) && spearData.currentBallsCount)
+				{
+					result.hit = true;
+
+					float length = glm::length(spearData.balls[0].position);
+
+					if (length > (ballRelativeSize + hitRelativeSize) * 2.f)
+					{
+						result.hitCorectness = 0;
+					}
+					else
+					{
+						if (length <= (ballRelativeSize + hitRelativeSize) / 2.f)
+						{
+							result.hitCorectness = 1;
+							result.bonusCritChance = 1;
+						}
+						else
+						{
+							float hitCorectness = length - ((ballRelativeSize + hitRelativeSize) / 2.f);
+							hitCorectness /= ((ballRelativeSize + hitRelativeSize) * 1.5f);
+							hitCorectness = 1 - hitCorectness;
+							hitCorectness = glm::clamp(hitCorectness, 0.f, 1.f);
+
+							//todo flatten here but on the server
+							result.bonusCritChance = (hitCorectness * 2.f) - 1;
+							result.hitCorectness = hitCorectness;
+							result.hitCorectness = std::max(result.hitCorectness, 0.1f);
+						}
+
+						
+
+					}
+
+				}
+
 				//renderer.renderRectangle(fullBox, {1,1,1,0.2});
 
 
@@ -132,6 +179,9 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 				renderer.renderRectangle(fullBox,
 					ui.battleTextures[UiENgine::BattleTextures::rightButtonSwipeAttack]);
 
+				renderer.renderCircleOutline(glm::vec2{glm::vec2(fullBox) 
+					+ glm::vec2(fullBox.z/ 2.f,fullBox.w / 2.)}
+				, Colors_White, fullBox.z * hitRelativeSize, 6);
 
 				for (int i = 0; i < spearData.currentBallsCount; i++)
 				{
@@ -140,14 +190,14 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 
 					if (b.passedCenter) { color = Colors_Green; }
 
-					float size = fullBox.z;
+					float size = fullBox.z * ballRelativeSize;
 
 					glm::vec2 position = (b.position + glm::vec2(1.f))/2.f;
 					position.x = fullBox.x + fullBox.z * position.x;
 					position.y = fullBox.y + fullBox.w * position.y;
 
-					renderer.renderCircleOutline(glm::vec4{position - glm::vec2(size / 2.f),
-						size, size}, color, 6);
+					renderer.renderCircleOutline(glm::vec2{position}
+						, color, size, 6);
 				}
 
 			}

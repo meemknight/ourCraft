@@ -24,4 +24,7 @@ struct WeaponStats
 	//returns the culldown timer for the weapon
 	//based on speed
 	glm::vec2 getTimerCulldownRangeForAttacks();
+
+	//the spped that the game moves
+	float getUIMoveSpeed();
 };

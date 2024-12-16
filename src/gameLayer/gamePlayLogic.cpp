@@ -2050,9 +2050,16 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #endif
 #pragma endregion
 
-	gameData.battleUI.update(*player.inventory.getItemFromIndex(gameData.currentItemSelected),
+	auto hitStatus = gameData.battleUI.update(*player.inventory.getItemFromIndex(gameData.currentItemSelected),
 		gameData.currentItemSelected, stopMainInput, programData.ui,
 		gameData.rng, deltaTime);
+
+	if (hitStatus.hit)
+	{
+		std::cout << "Corectness: " << hitStatus.hitCorectness << "\n";
+		std::cout << "Bonus Crit: " << hitStatus.bonusCritChance << "\n";
+
+	}
 
 #pragma region ui
 
