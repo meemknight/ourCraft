@@ -1324,6 +1324,7 @@ void Renderer::recreateBlocksTexturesBuffer(BlocksLoader &blocksLoader)
 void Renderer::create()
 {
 
+
 	for (int i = 0; i < sizeof(sunFlareQueries) / sizeof(sunFlareQueries[0]); i++)
 	{
 		sunFlareQueries[i].create();
@@ -1332,10 +1333,17 @@ void Renderer::create()
 	fboCoppy.create(GL_R11F_G11F_B10F, true);
 	//filteredBloomColor.create(GL_R11F_G11F_B10F, false);
 
-	fboMain.create(GL_R11F_G11F_B10F, true, GL_RGB16F, GL_RGB16UI, GL_R11F_G11F_B10F);
+
+
+	fboMain.create(GL_R11F_G11F_B10F, true, GL_RGB16F, GL_RGB16UI, GL_R11F_G11F_B10F,
+		GL_RED);
 	glBindTexture(GL_TEXTURE_2D, fboMain.secondaryColor);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	//glBindTexture(GL_TEXTURE_2D, fboMain.fifthColor);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	fboLastFrame.create(true, false);
 	fboLastFramePositions.create(GL_RGB16F, false);
@@ -1718,14 +1726,16 @@ void Renderer::reloadShaders()
 			RESOURCES_PATH "shaders/postProcess/ssr.frag");
 		ssrShader.shader.bind();
 
-		GET_UNIFORM2(ssrShader, u_lastFrameColor);
-		GET_UNIFORM2(ssrShader, u_lastFramePositionViewSpace);
+		GET_UNIFORM2(ssrShader, u_color);
+		GET_UNIFORM2(ssrShader, u_positionViewSpace);
 		GET_UNIFORM2(ssrShader, u_cameraProjection);
 		GET_UNIFORM2(ssrShader, u_inverseView);
 		GET_UNIFORM2(ssrShader, u_view);
 		GET_UNIFORM2(ssrShader, u_inverseCameraViewProjection);
 		GET_UNIFORM2(ssrShader, u_normals);
+		GET_UNIFORM2(ssrShader, u_materials);
 		
+
 	}
 #pragma endregion
 
@@ -1942,7 +1952,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	glViewport(0, 0, screenX, screenY);
 
 
-
 	fboCoppy.updateSize(screenX, screenY);
 	fboCoppy.clearFBO();
 
@@ -2004,7 +2013,10 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 
 	fboMain.updateSize(screenX, screenY);
+
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "CLEAR THE FBO");
 	fboMain.clearFBO();
+	glPopDebugGroup();
 
 	fboLastFrame.updateSize(screenX, screenY);
 	fboLastFramePositions.updateSize(screenX, screenY);
@@ -2012,6 +2024,18 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	fboSkyBox.updateSize(screenX, screenY);
 	fboSkyBox.clearFBO();
+
+	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
+	{
+		unsigned int attachments[5] = {
+	   GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
+	   GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3,
+	   GL_COLOR_ATTACHMENT4
+		};
+		glDrawBuffers(5, attachments);
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 
 	glm::vec3 posFloat = {};
 	glm::ivec3 posInt = {};
@@ -2166,6 +2190,12 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 #pragma region render sky box 0
 
 	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
+	unsigned int attachments[5] = {
+	GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
+	GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3,
+	GL_COLOR_ATTACHMENT4
+	};
+	glDrawBuffers(5, attachments);
 
 	programData.skyBoxLoaderAndDrawer.drawBefore(c.getProjectionMatrix() * c.getViewMatrix(),
 		mainLightPosition, dayTime);
@@ -2751,7 +2781,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 #pragma region ssr
 
-	if(0)
+	if(1)
 	{
 		programData.GPUProfiler.startSubProfile("SSR PASS");
 
@@ -2783,15 +2813,19 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		glActiveTexture(GL_TEXTURE0 + 5);
 		glBindTexture(GL_TEXTURE_2D, fboLastFrame.color);
-		glUniform1i(ssrShader.u_lastFrameColor, 5);
+		glUniform1i(ssrShader.u_color, 5);
 
 		glActiveTexture(GL_TEXTURE0 + 6);
 		glBindTexture(GL_TEXTURE_2D, fboLastFramePositions.color);
-		glUniform1i(ssrShader.u_lastFramePositionViewSpace, 6);
+		glUniform1i(ssrShader.u_positionViewSpace, 6);
 
 		glActiveTexture(GL_TEXTURE0 + 1);
 		glBindTexture(GL_TEXTURE_2D, fboMain.thirdColor);
 		glUniform1i(ssrShader.u_normals, 1);
+
+		glActiveTexture(GL_TEXTURE0 + 12);
+		glBindTexture(GL_TEXTURE_2D, fboMain.fifthColor);
+		glUniform1i(ssrShader.u_materials, 12);
 
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -4618,17 +4652,20 @@ void PointDebugRenderer::renderCubePoint(Camera &c, glm::dvec3 point)
 #undef GET_UNIFORM
 
 void Renderer::FBO::create(GLint addColor, bool addDepth,
-	GLint addSecondaryRenderTarget, GLint addThirdRenderTarget, GLint addFourthRenderTarget)
+	GLint addSecondaryRenderTarget, GLint addThirdRenderTarget, GLint addFourthRenderTarget,
+	GLint addFifthRenderTarget)
 {
 	if (addColor == 1) { addColor = GL_RGBA8; }
 	if (addSecondaryRenderTarget == 1) { addSecondaryRenderTarget = GL_RGBA8; }
 	if (addThirdRenderTarget == 1) { addThirdRenderTarget = GL_RGBA8; }
 	if (addFourthRenderTarget == 1) { addFourthRenderTarget = GL_RGBA8; }
+	if (addFifthRenderTarget == 1) { addFifthRenderTarget = GL_RGBA8; }
 
 	colorFormat = addColor;
 	secondaryColorFormat = addSecondaryRenderTarget;
 	thirdColorFormat = addThirdRenderTarget;
 	fourthColorFormat = addFourthRenderTarget;
+	fifthColorFormat = addFifthRenderTarget;
 
 	permaAssert(!(addColor == 0 && addSecondaryRenderTarget != 0));
 	permaAssert(!(addSecondaryRenderTarget == 0 && addThirdRenderTarget != 0));
@@ -4715,6 +4752,31 @@ void Renderer::FBO::create(GLint addColor, bool addDepth,
 		unsigned int attachments[4] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
 			GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
 		glDrawBuffers(4, attachments);
+	}
+
+	if (addFifthRenderTarget)
+	{
+		glGenTextures(1, &fifthColor);
+		glBindTexture(GL_TEXTURE_2D, fifthColor);
+
+		GLenum internalFormat = GL_RGB;
+		if (fifthColorFormat == GL_RGB16UI) { internalFormat = GL_RGB_INTEGER; }
+
+		glTexImage2D(GL_TEXTURE_2D, 0, fifthColorFormat, 1, 1, 0, internalFormat, GL_UNSIGNED_BYTE, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, secondaryColor, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, thirdColor, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, fourthColor, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, fifthColor, 0);
+
+		unsigned int attachments[5] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
+			GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3,GL_COLOR_ATTACHMENT4};
+		glDrawBuffers(5, attachments);
 
 	}
 
@@ -4865,6 +4927,35 @@ void Renderer::FBO::create(GLint addColor, bool addDepth,
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
+	if (addFifthRenderTarget)
+	{
+		glGenFramebuffers(1, &fboOnlyFifthTarget);
+		glBindFramebuffer(GL_FRAMEBUFFER, fboOnlyFifthTarget);
+
+		if (addColor)
+		{
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, \
+				fifthColor, 0);
+		}
+
+		if (addDepth)
+		{
+			if (!addColor)
+			{
+				glDrawBuffer(GL_NONE);
+				glReadBuffer(GL_NONE);
+			}
+
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth, 0);
+		}
+
+		// Check for framebuffer completeness
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		{
+			std::cout << "Framebuffer Error!!!\n";
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
 
 
 }
@@ -4904,6 +4995,16 @@ void Renderer::FBO::updateSize(int x, int y)
 
 			glBindTexture(GL_TEXTURE_2D, fourthColor);
 			glTexImage2D(GL_TEXTURE_2D, 0, fourthColorFormat, x, y,
+				0, internalFormat, GL_UNSIGNED_BYTE, NULL);
+		}
+
+		if (fifthColor)
+		{
+			GLenum internalFormat = GL_RGB;
+			if (fifthColorFormat == GL_RGB16UI) { internalFormat = GL_RGB_INTEGER; }
+
+			glBindTexture(GL_TEXTURE_2D, fifthColor);
+			glTexImage2D(GL_TEXTURE_2D, 0, fifthColorFormat, x, y,
 				0, internalFormat, GL_UNSIGNED_BYTE, NULL);
 		}
 
@@ -5036,6 +5137,12 @@ void Renderer::FBO::clearFBO()
 	{
 		const float clearColor3[] = {0.0f, 0.0f, 0.0f, 0.0f};
 		glClearBufferfv(GL_COLOR, 3, clearColor3);
+	}
+
+	if (fifthColor)
+	{
+		const float clearColor3[] = {0.0f, 0.0f, 0.0f, 0.0f};
+		glClearBufferfv(GL_COLOR, 4, clearColor3);
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

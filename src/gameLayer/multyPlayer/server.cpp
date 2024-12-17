@@ -569,7 +569,7 @@ void serverWorkerUpdate(
 	auto &clients = getAllClientsReff();
 	for (auto &c : clients)
 	{
-		//kill player
+		//kill players
 		if (c.second.playerData.newLife.life <= 0 && !c.second.playerData.killed)
 		{
 			//todo a method to reset multiple things
@@ -580,33 +580,7 @@ void serverWorkerUpdate(
 		}
 		else
 		{
-			//todo move into sepparate threads stuff
-
-			c.second.playerData.newLife.sanitize();
-
-			if (c.second.playerData.newLife.life != c.second.playerData.lifeLastFrame.life
-				||
-				c.second.playerData.newLife.maxLife != c.second.playerData.lifeLastFrame.maxLife
-				)
-			{
-
-				if (c.second.playerData.newLife.life < c.second.playerData.lifeLastFrame.life)
-				{
-					sendDamagePlayerPacket(c.second);
-					c.second.playerData.healingDelayCounterSecconds = 0;
-				}
-				else if (c.second.playerData.newLife.life > c.second.playerData.lifeLastFrame.life)
-				{
-					sendIncreaseLifePlayerPacket(c.second);
-				}
-				else
-				{
-					sendUpdateLifeLifePlayerPacket(c.second);
-				}
-
-				c.second.playerData.lifeLastFrame = c.second.playerData.newLife;
-			}
-
+			//per client life updates happen multi threaded
 		}
 
 	}
@@ -1613,7 +1587,8 @@ void serverWorkerUpdate(
 					if (client->playerData.killed)
 					{
 
-						client->playerData.newLife = PLAYER_DEFAULT_LIFE; //todo a default player max life
+						client->playerData.newLife = PLAYER_DEFAULT_LIFE;
+						client->playerData.lifeLastFrame = PLAYER_DEFAULT_LIFE;
 						client->playerData.killed = false;
 						sendPlayerInventoryAndIncrementRevision(*client);
 						sendUpdateLifeLifePlayerPacket(*client);
@@ -1623,7 +1598,7 @@ void serverWorkerUpdate(
 						packet.header = headerRespawnPlayer;
 
 						Packet_RespawnPlayer packetData;
-						packetData.pos = worldSaver.spawnPosition; //todo propper spawn position
+						packetData.pos = worldSaver.spawnPosition;
 
 						broadCastNotLocked(packet, &packetData, sizeof(packetData), 
 							false, true, channelChunksAndBlocks);	
@@ -1667,7 +1642,6 @@ void serverWorkerUpdate(
 			break;
 		}
 	}
-
 
 
 

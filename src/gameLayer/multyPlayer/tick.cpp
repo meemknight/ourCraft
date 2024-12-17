@@ -693,6 +693,50 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 #pragma endregion
 
 
+#pragma region send health packets
+
+	for (auto &c : allClients)
+	{
+		
+		if (c.second->playerData.newLife.life <= 0 || c.second->playerData.killed)
+		{
+			//the kill message will be send outside this thread	
+		}
+		else
+		{
+
+			c.second->playerData.newLife.sanitize();
+
+			if (c.second->playerData.newLife.life != c.second->playerData.lifeLastFrame.life
+				||
+				c.second->playerData.newLife.maxLife != c.second->playerData.lifeLastFrame.maxLife
+				)
+			{
+
+				if (c.second->playerData.newLife.life < c.second->playerData.lifeLastFrame.life)
+				{
+					sendDamagePlayerPacket(*c.second);
+					c.second->playerData.healingDelayCounterSecconds = 0;
+				}
+				else if (c.second->playerData.newLife.life > c.second->playerData.lifeLastFrame.life)
+				{
+					sendIncreaseLifePlayerPacket(*c.second);
+				}
+				else
+				{
+					sendUpdateLifeLifePlayerPacket(*c.second);
+				}
+
+				c.second->playerData.lifeLastFrame = c.second->playerData.newLife;
+			}
+
+		}
+
+	}
+
+#pragma endregion
+
+
 
 	chunkCacheGlobal = 0;
 }

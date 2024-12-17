@@ -6,6 +6,7 @@ layout (location = 0) out vec4 out_color;
 layout (location = 1) out vec4 out_screenSpacePositions;
 layout (location = 2) out ivec3 out_normals;
 layout (location = 3) out vec3 out_bloom;
+layout (location = 4) out float out_materials; //just roughness for now
 
 
 layout(binding = 0) uniform sampler2D u_numbers;
@@ -906,7 +907,8 @@ void main()
 		//out_color.rgb = toGammaSpace(out_color.rgb);
 		//
 		//out_color = clamp(out_color, vec4(0), vec4(1));
-	
+		
+		out_materials.r = 0.9;
 	}else
 	{
 
@@ -949,6 +951,9 @@ void main()
 				metallic = 0.0;
 			}
 		}
+
+		out_materials.r = roughness;
+
 		
 		out_bloom += emissive * 0.12 * textureColor.rgb;
 
@@ -979,6 +984,10 @@ void main()
 			//out_screenSpacePositions.a = 1;
 		}
 		
+		out_normals = fromFloatTouShort(N);
+
+		//remove normal mapping for water
+		/*
 		if(isWater())
 		{
 			out_normals = fromFloatTouShort(v_normal);
@@ -986,7 +995,7 @@ void main()
 		{
 			out_normals = fromFloatTouShort(N);
 		}
-
+		*/
 		
 		//caustics
 		vec3 causticsColor = vec3(1);

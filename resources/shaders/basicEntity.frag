@@ -5,6 +5,7 @@ layout (location = 0) out vec4 color;
 layout (location = 1) out vec4 out_screenSpacePositions;
 layout (location = 2) out ivec3 out_normals;
 layout (location = 3) out vec3 out_bloom;
+layout (location = 4) out float out_materials; //just roughness for now
 
 in vec2 v_uv;
 in vec3 v_normals;
@@ -58,6 +59,7 @@ void main()
 	out_normals = fromFloatTouShort(v_normals);
 
 	out_bloom = vec3(0,0,0);
+	out_materials.r = 0.9;
 
 	//color.rgb = vec3(1.f/float(test));
 }

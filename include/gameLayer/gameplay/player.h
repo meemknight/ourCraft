@@ -100,6 +100,8 @@ struct PlayerServer: public ServerEntity<Player>
 
 	void applyDamageOrLife(short difference)
 	{
+		if (otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE) { return; }
+
 		int life = newLife.life;
 		life += difference;
 		newLife.life = life;

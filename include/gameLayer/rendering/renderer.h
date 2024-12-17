@@ -58,7 +58,8 @@ struct Renderer
 	struct FBO
 	{
 		void create(GLint addColor, bool addDepth, GLint addSecondaryRenderTarget = 0,
-			GLint addThirdRenderTarget = 0, GLint addFourthRenderTarget = 0);
+			GLint addThirdRenderTarget = 0, GLint addFourthRenderTarget = 0,
+			GLint addFifthRenderTarget = 0);
 
 		void updateSize(int x, int y);
 
@@ -68,17 +69,20 @@ struct Renderer
 		GLuint fboOnlySecondTarget = 0;
 		GLuint fboOnlyThirdTarget = 0;
 		GLuint fboOnlyFourthTarget = 0;
+		GLuint fboOnlyFifthTarget = 0;
 
 		GLuint color = 0;
 		GLuint secondaryColor = 0;
 		GLuint thirdColor = 0;
 		GLuint fourthColor = 0;
+		GLuint fifthColor = 0;
 		GLuint depth = 0;
 
 		GLint colorFormat = 0;
 		GLint secondaryColorFormat = 0;
 		GLint thirdColorFormat = 0;
 		GLint fourthColorFormat = 0;
+		GLint fifthColorFormat = 0;
 
 		void copyDepthFromMainFBO(int w, int h);
 		void copyColorFromMainFBO(int w, int h);
@@ -181,13 +185,14 @@ struct Renderer
 	{
 		Shader shader;
 
-		uniform u_lastFrameColor = -1;
-		uniform u_lastFramePositionViewSpace = -1;
+		uniform u_color = -1;
+		uniform u_positionViewSpace = -1;
 		uniform u_normals = -1;
 		uniform u_cameraProjection = -1;
 		uniform u_inverseView = -1;
 		uniform u_view = -1;
 		uniform u_inverseCameraViewProjection = -1;
+		uniform u_materials = -1;
 
 	}ssrShader;
 
@@ -380,6 +385,7 @@ struct Renderer
 	FBO fboMain;
 	FBO fboSkyBox;
 	FBO fboCoppy;
+	FBO fboCoppyForSSR;
 	FBO fboLastFrame;
 	FBO fboLastFramePositions;
 

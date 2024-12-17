@@ -5,6 +5,7 @@ layout(location = 0) out vec4 color;
 layout(location = 1) out vec4 position;
 layout (location = 2) out ivec3 out_normals;
 layout (location = 3) out vec3 out_bloom;
+layout (location = 4) out float out_materials; //just roughness for now
 
 
 in vec2 v_uv;
@@ -48,5 +49,6 @@ void main()
 	position.xyz = (u_view * vec4(v_vertexPosition,1)).xyz;
 	out_normals = fromFloatTouShort(v_normals);
 	out_bloom = vec3(0,0,0);
+	out_materials.r = 0.9;
 
 }

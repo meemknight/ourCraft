@@ -3,8 +3,9 @@
 layout (location = 0) out vec4 out_color;
 noperspective in vec2 v_texCoords;
 
-uniform sampler2D u_lastFrameColor;
-uniform sampler2D u_lastFramePositionViewSpace;
+uniform sampler2D u_color;
+uniform sampler2D u_positionViewSpace;
+uniform sampler2D u_materials;
 uniform isampler2D u_normals;
 uniform mat4 u_cameraProjection;
 uniform mat4 u_inverseView;
@@ -60,8 +61,8 @@ inout float dDepth, vec2 oldValue)
 		projectedCoord.xy /= projectedCoord.w;
 		projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;
  
-		depth = textureLod(u_lastFramePositionViewSpace, projectedCoord.xy, 2).z;
-		//depth = texture(u_lastFramePositionViewSpace, projectedCoord.xy).z;
+		depth = textureLod(u_positionViewSpace, projectedCoord.xy, 2).z;
+		//depth = texture(u_positionViewSpace, projectedCoord.xy).z;
  
 		if(depth < -1000) //-INFINITY
 			continue;
@@ -81,7 +82,7 @@ inout float dDepth, vec2 oldValue)
 		projectedCoord.xy /= projectedCoord.w;
 		projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;
 		
-		depth = texture(u_lastFramePositionViewSpace, projectedCoord.xy).z;
+		depth = texture(u_positionViewSpace, projectedCoord.xy).z;
 	
 	if(!(depth < -1000))
 	{
@@ -113,9 +114,9 @@ vec2 RayMarch(vec3 dir, inout vec3 hitCoord, out float dDepth, vec3 worldNormal,
 			break;
 		}
 
-		depth = textureLod(u_lastFramePositionViewSpace,
+		depth = textureLod(u_positionViewSpace,
 			reprojectViewSpace(projectedCoord.xy),2).z;
-		//depth = texture(u_lastFramePositionViewSpace, projectedCoord.xy).z;
+		//depth = texture(u_positionViewSpace, projectedCoord.xy).z;
 
 		if(depth > 1000.0)
 			continue;
@@ -136,7 +137,7 @@ vec2 RayMarch(vec3 dir, inout vec3 hitCoord, out float dDepth, vec3 worldNormal,
 				break; //fail //project to infinity :(((
 			}
 			
-			depth = texture(u_lastFramePositionViewSpace, reprojectViewSpace(Result.xy)).z;
+			depth = texture(u_positionViewSpace, reprojectViewSpace(Result.xy)).z;
 			if(depth < -10000)
 				{break;}//fail
 
@@ -226,7 +227,7 @@ vec3 SSR(out bool success, vec3 viewPos, vec3 N,
 	}
 
 	// Get color
-	vec3 lastFrameColor = textureLod(u_lastFrameColor, reprojectViewSpace(coords.xy), 0).rgb;
+	vec3 lastFrameColor = textureLod(u_color, reprojectViewSpace(coords.xy), 0).rgb;
 	//vec3 SSR = lastFrameColor * clamp(ReflectionMultiplier, 0.0, 0.9) * F;  
 	vec3 SSR = lastFrameColor;
 
@@ -274,22 +275,22 @@ void main()
 {
 
 	bool ssrSuccess = false;
+	vec2 fragCoord = gl_FragCoord.xy / textureSize(u_positionViewSpace, 0).xy;
 
-	float roughness = 0.01;
+	float roughness = texture(u_materials, fragCoord).r;
 
 	vec3 ssr = vec3(0,0,0);
 	vec3 V = vec3(0,0,0);
 	vec3 N = vec3(0,0,0);
 	if(roughness < 0.45)
 	{
-		vec2 fragCoord = gl_FragCoord.xy / textureSize(u_lastFramePositionViewSpace, 0).xy;
 		vec3 V = getViewVector(fragCoord);
 
 		N = fromuShortToFloat(texture(u_normals, fragCoord).xyz);
 
 		//float dotNVClamped = clamp(dotNV, 0.0, 0.99);
 		
-		vec3 posViewSpace = texture(u_lastFramePositionViewSpace, 
+		vec3 posViewSpace = texture(u_positionViewSpace, 
 			(fragCoord)).xyz;
 		vec3 pos = vec3(u_inverseView * vec4(posViewSpace,1));
 
@@ -300,9 +301,9 @@ void main()
 
 		float mixFactor = 0;
 		//vec3 ssr = SSR(posViewSpace, N, metallic, F, mixFactor, roughness, pos, V, viewSpaceNormal, 
-		//	textureSize(u_lastFramePositionViewSpace, 0).xy);
+		//	textureSize(u_positionViewSpace, 0).xy);
 		ssr = SSR(ssrSuccess, posViewSpace, ssrNormal, mixFactor, pow(roughness,2), pos, V, viewSpaceNormal, 
-			textureSize(u_lastFramePositionViewSpace, 0).xy);
+			textureSize(u_positionViewSpace, 0).xy);
 		
 		//if is water just reflect 100% because we deal with it later
 		//if(isWater())
