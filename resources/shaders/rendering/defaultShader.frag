@@ -1009,13 +1009,14 @@ void main()
 			//dudv *= texture(u_dudv, getDudvCoords2(1)).rg;
 
 			vec2 coords = getDudvCoords(5.f) * causticsTextureScale + dudv / 10;
+			//coords += getDudvCoords3(coords.x);
 			//vec2 coords = dudv * ;
 			
 
 			causticsColor.r = pow(texture(u_caustics, coords + vec2(0,0)).r, causticsLightPower) * causticsLightStrength;
 			causticsColor.g = pow(texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)).g, causticsLightPower) * causticsLightStrength;
 			causticsColor.b = pow(texture(u_caustics, coords + vec2(causticsChromaticAberationStrength,causticsChromaticAberationStrength)*2.0).b, causticsLightPower) * causticsLightStrength;
-			localCausticsPower = dot(causticsColor, vec3(0.6, 0.3, 0.1));
+			localCausticsPower = dot(causticsColor, vec3(0.6, 0.3, 0.1)) * shadow;
 
 			//causticsColor = max(causticsColor, vec3(0,0,0));
 			//out_color.rgb = texture(u_caustics, coords).rgb;
@@ -1111,7 +1112,7 @@ void main()
 		//ambient
 		//todo light sub scatter
 		bool ssrSuccess = false;
-
+		 
 		if(physicallyAccurateReflections) //phisically accurate ambient
 		{
 			vec3 ssrNormal = N;
@@ -1193,7 +1194,7 @@ void main()
 		//out_color = clamp(out_color, vec4(0), vec4(1));
 		
 		//ssr
-		if(false)
+		if(true)
 		if(!physicallyAccurateReflections)
 		if(roughness < 0.45)
 		{

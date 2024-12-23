@@ -2771,17 +2771,20 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		programData.GPUProfiler.endSubProfile("final transparency 7");
 
 		{
+			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "RECONFIGURED ATACHEMENTS");
 			glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
 			unsigned int attachments[4] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
 			GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
 			glDrawBuffers(4, attachments);
+			glPopDebugGroup();
+
 		}
 
 	}
 
 #pragma region ssr
 
-	if(1)
+	if(0)
 	{
 		programData.GPUProfiler.startSubProfile("SSR PASS");
 
