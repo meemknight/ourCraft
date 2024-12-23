@@ -14,7 +14,9 @@ bool Item::isBlock()
 bool Item::isItemThatCanBeUsed()
 {
 	if (type == pigSpawnEgg || type == zombieSpawnEgg 
-		|| type == catSpawnEgg || type == goblinSpawnEgg)
+		|| type == catSpawnEgg || type == goblinSpawnEgg
+		|| isEatable()
+		)
 	{
 		return true;
 	}
@@ -25,12 +27,19 @@ bool Item::isItemThatCanBeUsed()
 bool Item::isConsumedAfterUse()
 {
 	if (type == pigSpawnEgg || type == zombieSpawnEgg || type == catSpawnEgg
-		|| type == goblinSpawnEgg)
+		|| type == goblinSpawnEgg
+		|| isEatable()
+		)
 	{
 		return true;
 	}
 
 	return false;
+}
+
+bool Item::isEatable()
+{
+	return type == apple;
 }
 
 
@@ -484,6 +493,9 @@ const char *itemsNamesTextures[] =
 	"",
 	"",
 	"",
+
+	"food/apple.png",
+
 };
 
 const char *itemsNames[] =
@@ -507,6 +519,8 @@ const char *itemsNames[] =
 	"pig spawn egg",
 	"cat spawn egg",
 	"goblin spawn egg",
+
+	"apple",
 };
 
 const char *getItemTextureName(int itemId)

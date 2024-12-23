@@ -1088,6 +1088,27 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 						if (!didAction)
 						{
+
+							if (item.isEatable())
+							{
+								Packet_ClientUsedItem data;
+								data.from = gameData.currentItemSelected;
+								data.itemType = item.type;
+								data.revisionNumber = player.inventory.revisionNumber;
+
+								sendPacket(getServer(), headerClientUsedItem, player.entityId,
+									&data, sizeof(data), true, channelChunksAndBlocks);
+
+								if (item.isConsumedAfterUse() && player.otherPlayerSettings.gameMode ==
+									OtherPlayerSettings::SURVIVAL)
+								{
+									item.counter--;
+									if (item.counter <= 0)
+									{
+										item = {};
+									}
+								}
+							}else
 							if (item.isItemThatCanBeUsed() && blockToPlace)
 							{
 

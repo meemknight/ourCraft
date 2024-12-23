@@ -29,6 +29,9 @@ enum ItemTypes : unsigned short
 	pigSpawnEgg,
 	catSpawnEgg,
 	goblinSpawnEgg,
+
+	apple, 
+
 	lastItem,
 
 };
@@ -50,6 +53,8 @@ struct Item
 	bool isItemThatCanBeUsed();
 
 	bool isConsumedAfterUse();
+
+	bool isEatable();
 
 	//this is used for pakcet sending and saving
 	void formatIntoData(std::vector<unsigned char> &data);

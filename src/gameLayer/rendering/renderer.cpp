@@ -2668,9 +2668,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		//disable bloom for transparent geometry
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
-			unsigned int attachments[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
-			GL_COLOR_ATTACHMENT2};
-			glDrawBuffers(3, attachments);
+			unsigned int attachments[5] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
+			GL_COLOR_ATTACHMENT2, GL_NONE, GL_COLOR_ATTACHMENT4};
+			glDrawBuffers(5, attachments);
 		}
 
 	#pragma region render only water geometry to depth 4
@@ -2728,9 +2728,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
-			unsigned int attachments[4] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
-			GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
-			glDrawBuffers(4, attachments);
+			unsigned int attachments[5] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
+			GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4};
+			glDrawBuffers(5, attachments);
 		}
 
 	}
@@ -2761,9 +2761,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		//disable bloom for transparent geometry
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
-			unsigned int attachments[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
-			GL_COLOR_ATTACHMENT2};
-			glDrawBuffers(3, attachments);
+			unsigned int attachments[5] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
+			GL_COLOR_ATTACHMENT2, GL_NONE, GL_COLOR_ATTACHMENT4};
+			glDrawBuffers(5, attachments);
 		}
 
 		programData.GPUProfiler.startSubProfile("final transparency 7");
@@ -2773,9 +2773,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		{
 			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "RECONFIGURED ATACHEMENTS");
 			glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
-			unsigned int attachments[4] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
-			GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
-			glDrawBuffers(4, attachments);
+			unsigned int attachments[5] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
+			GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4};
+			glDrawBuffers(5, attachments);
 			glPopDebugGroup();
 
 		}

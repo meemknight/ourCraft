@@ -349,7 +349,7 @@ void main()
 
 		//out_color.rgba = vec4(ssr, pow(roughness, 0.5));
 
-		out_color.rgba = vec4(ssr, freshnel);
+		out_color.rgba = vec4(ssr, freshnel * pow(roughness, 0.5));
 		//out_color.rgba = vec4(1,0,0,1);
 
 	

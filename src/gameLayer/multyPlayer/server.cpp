@@ -1322,6 +1322,7 @@ void serverWorkerUpdate(
 							if (from->type == i.t.itemType)
 							{
 
+								bool allowed = true;
 
 								if (from->type == ItemTypes::pigSpawnEgg)
 								{
@@ -1356,9 +1357,14 @@ void serverWorkerUpdate(
 									g.lastPosition = position;
 									spawnGoblin(sd.chunkCache, g, worldSaver, rng);
 								}
-
-
-								if (from->isConsumedAfterUse() && client->playerData.otherPlayerSettings.gameMode ==
+								else if (from->isEatable())
+								{
+									client->playerData.applyDamageOrLife(20);
+								}
+								
+								if (
+									allowed &&
+									from->isConsumedAfterUse() && client->playerData.otherPlayerSettings.gameMode ==
 									OtherPlayerSettings::SURVIVAL)
 								{
 									from->counter--;
@@ -1366,6 +1372,11 @@ void serverWorkerUpdate(
 									{
 										*from = {};
 									}
+								}
+
+								if (!allowed)
+								{
+									sendPlayerInventoryAndIncrementRevision(*client);
 								}
 							}
 							else

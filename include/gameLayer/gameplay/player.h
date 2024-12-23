@@ -104,6 +104,9 @@ struct PlayerServer: public ServerEntity<Player>
 
 		int life = newLife.life;
 		life += difference;
+
+		if (life > newLife.maxLife) { life = newLife.maxLife; }
+
 		newLife.life = life;
 		if (difference < 0)
 		{
