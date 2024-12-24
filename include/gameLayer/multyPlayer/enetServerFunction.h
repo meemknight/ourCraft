@@ -59,6 +59,9 @@ void sendPlayerInventoryNotIncrementRevision(Client &client,
 
 void sendPlayerExitInteraction(Client &client, unsigned char revisionNumber);
 
+//this updates the player's effects
+void updatePlayerEffects(Client &client);
+
 
 void broadCast(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel);
 void broadCastNotLocked(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool reliable, int channel);

@@ -693,11 +693,21 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 #pragma endregion
 
 
-#pragma region send health packets
+#pragma region send health packets and effects packets
 
 	for (auto &c : allClients)
 	{
 		
+		c.second->playerData.updateEffectsTicksTimer--;
+
+		//we re-update the effects every 20 tick, to make sure things stay in sync
+		if (c.second->playerData.updateEffectsTicksTimer <= 0)
+		{
+			c.second->playerData.updateEffectsTicksTimer = 20;
+
+			updatePlayerEffects(*c.second);
+		}
+
 		if (c.second->playerData.newLife.life <= 0 || c.second->playerData.killed)
 		{
 			//the kill message will be send outside this thread	
@@ -710,8 +720,10 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 			if (c.second->playerData.newLife.life != c.second->playerData.lifeLastFrame.life
 				||
 				c.second->playerData.newLife.maxLife != c.second->playerData.lifeLastFrame.maxLife
+				|| c.second->playerData.forceUpdateLife
 				)
 			{
+				c.second->playerData.forceUpdateLife = 0;
 
 				if (c.second->playerData.newLife.life < c.second->playerData.lifeLastFrame.life)
 				{

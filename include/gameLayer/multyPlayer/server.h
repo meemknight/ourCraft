@@ -7,6 +7,7 @@
 #include <multyPlayer/chunkSaver.h>
 #include <worldGenerator.h>
 #include <enet/enet.h>
+#include <tickTimer.h>
 
 constexpr std::uint64_t RESERVED_CLIENTS_ID = 100'000;
 
@@ -42,7 +43,6 @@ struct PerClientServerSettings
 
 
 
-constexpr static int targetTicksPerSeccond = 20;
 
 struct ServerSettings
 {

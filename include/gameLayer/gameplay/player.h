@@ -5,10 +5,13 @@
 #include <gl2d/gl2d.h>
 #include <gameplay/life.h>
 #include <gameplay/gameplayRules.h>
+#include <gameplay/effects.h>
+
 
 //this is the shared data
 struct Player : public PhysicalEntity, public CollidesWithPlacedBlocks,
-	public CanPushOthers, public CanBeKilled, public CanBeAttacked
+	public CanPushOthers, public CanBeKilled, public CanBeAttacked,
+	public CanHaveEffects
 {
 
 	glm::vec3 lookDirectionAnimation = {0,0,-1};
@@ -57,11 +60,11 @@ struct LocalPlayer
 	float justHealedTimer = 0;
 	float justRecievedDamageTimer = 0;
 
-
+	Effects effects;
 };
 
 
-
+//the other players locally
 struct PlayerClient: public ClientEntity<Player, PlayerClient>
 {
 
@@ -97,6 +100,11 @@ struct PlayerServer: public ServerEntity<Player>
 
 	Life lifeLastFrame = PLAYER_DEFAULT_LIFE;
 	Life newLife = PLAYER_DEFAULT_LIFE;
+	bool forceUpdateLife = 0;
+
+	//we update the effects every 20 ticks or if we set it
+	// as dirty by setting this to 0
+	short updateEffectsTicksTimer = 20;
 
 	void applyDamageOrLife(short difference)
 	{

@@ -93,14 +93,16 @@ enum : std::uint32_t
 	headerClientDamageLocallyAndDied,
 	headerUpdateSimpleBlockWithData,
 	headerClientUpdatedBlockData,
+	headerUpdateEffects,
 };
 
 enum 
 {
-	channelChunksAndBlocks,	  //this also handles items, maybe rename player actions or something
-	channelPlayerPositions,
+	channelChunksAndBlocks,		//this also handles items, maybe rename player actions or something
+	channelPlayerPositions,		
 	channelEntityPositions,
-	channelHandleConnections, //this will also send Entity cids and timers
+	channelHandleConnections,	//this will also send Entity cids and timers
+	channelEffects,
 	//channelRequestChunks, todo maybe try this in the future
 	SERVER_CHANNELS
 
@@ -359,6 +361,11 @@ struct Packet_ClientUpdatedBlockData
 	unsigned char revisionNumber;
 };
 
+struct Packet_UpdateEffects
+{
+	std::uint64_t timer = 0; //tick timer
+	Effects effects = {};
+};
 
 void *unCompressData(const char *data, size_t compressedSize, size_t &originalSize);
 

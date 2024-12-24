@@ -699,6 +699,28 @@ void recieveDataClient(ENetEvent &event,
 			break;
 		}
 
+		case headerUpdateEffects:
+		{
+			if (sizeof(Packet_UpdateEffects) != size) { break; }
+			Packet_UpdateEffects *packetData = (Packet_UpdateEffects *)data;
+
+			int timer = yourTimer - packetData->timer;
+
+			if (timer > 15'000) { break; } //probably coruption or the packet is somehow too old
+
+			if (timer > 0)
+			{
+				packetData->effects.passTimeMs(timer);
+			}
+			
+			entityManager.localPlayer.effects = packetData->effects;
+
+			
+		}
+		break;
+
+
+
 		default:
 		break;
 

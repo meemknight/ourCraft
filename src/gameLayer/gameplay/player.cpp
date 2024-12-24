@@ -90,9 +90,11 @@ int PlayerClient::getTextureIndex()
 
 void PlayerServer::kill()
 {
+	effects = {};
 	newLife.life = 0;
 	lifeLastFrame.life = 0;
 	notIncreasedLifeSinceTimeSecconds = 0;
 	interactingWithBlock = 0;
 	revisionNumberInteraction = 0;
+	
 }

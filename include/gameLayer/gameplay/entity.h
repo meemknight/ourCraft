@@ -8,6 +8,7 @@
 #include <fstream>
 #include <unordered_set>
 #include <rendering/camera.h>
+#include <gameplay/effects.h>
 
 //basic entity structure
 //
@@ -412,12 +413,23 @@ struct CanBeAttacked
 {
 	constexpr static bool canBeAttacked = true;
 };
-
 template <typename T, typename = void>
 constexpr bool hasCanBeAttacked = false;
-
 template <typename T>
 constexpr bool hasCanBeAttacked <T, std::void_t<decltype(T::canBeAttacked)>> = true;
+
+
+struct CanHaveEffects
+{
+	constexpr static bool canHaveEffects = true;
+};
+template <typename T, typename = void>
+constexpr bool hasCanHaveEffects = false;
+template <typename T>
+constexpr bool hasCanHaveEffects <T, std::void_t<decltype(T::canHaveEffects)>> = true;
+
+
+
 
 
 template<bool B, typename T>
@@ -444,6 +456,14 @@ struct ServerEntity
 			entity.forces.velocity += force;
 		}
 	}
+
+	constexpr static bool hasCanHaveEffects()
+	{
+		return ::hasCanHaveEffects<T>;
+	}
+
+	ConditionalMember<hasCanHaveEffects(), Effects> effects = {};
+
 
 };
 

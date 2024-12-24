@@ -33,6 +33,7 @@
 #include <audioEngine.h>
 #include <gameplay/mapEngine.h>
 #include <gameplay/battleUI.h>
+#include <gameplay/food.h>
 
 
 struct GameData
@@ -1091,23 +1092,48 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 							if (item.isEatable())
 							{
-								Packet_ClientUsedItem data;
-								data.from = gameData.currentItemSelected;
-								data.itemType = item.type;
-								data.revisionNumber = player.inventory.revisionNumber;
 
-								sendPacket(getServer(), headerClientUsedItem, player.entityId,
-									&data, sizeof(data), true, channelChunksAndBlocks);
-
-								if (item.isConsumedAfterUse() && player.otherPlayerSettings.gameMode ==
-									OtherPlayerSettings::SURVIVAL)
+								bool allowed = true;
 								{
-									item.counter--;
-									if (item.counter <= 0)
+									auto effects = getItemEffects(item);
+									int healing = getItemHealing(item);
+
+									//can't eat if satiety doesn't allow it
+									if (effects.allEffects[Effects::Satiety].timerMs > 0 &&
+										player.effects.allEffects[Effects::Satiety].timerMs > 0
+										)
 									{
-										item = {};
+										allowed = 0;
+									}
+									else
+									{
+										player.life.life += healing;
+										player.effects.applyEffects(effects);
+										player.life.sanitize();
 									}
 								}
+
+								if (allowed)
+								{
+									Packet_ClientUsedItem data;
+									data.from = gameData.currentItemSelected;
+									data.itemType = item.type;
+									data.revisionNumber = player.inventory.revisionNumber;
+
+									sendPacket(getServer(), headerClientUsedItem, player.entityId,
+										&data, sizeof(data), true, channelChunksAndBlocks);
+
+									if (item.isConsumedAfterUse() && player.otherPlayerSettings.gameMode ==
+										OtherPlayerSettings::SURVIVAL)
+									{
+										item.counter--;
+										if (item.counter <= 0)
+										{
+											item = {};
+										}
+									}
+								};
+
 							}else
 							if (item.isItemThatCanBeUsed() && blockToPlace)
 							{
@@ -1639,6 +1665,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			int l = player.life.life;
 			ImGui::SliderInt("Player Life", &l, 0, 20);
 			player.life.life = l;
+
+
+			int timerMsSatiety = player.effects.allEffects[Effects::Satiety].timerMs;
+
+			ImGui::Text("Satiety Ms: %d", timerMsSatiety);
+			ImGui::Text("Satiety s : %d", timerMsSatiety/1000);
 
 			if (ImGui::CollapsingHeader("Camera stuff",
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))

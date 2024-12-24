@@ -28,7 +28,7 @@
 #include <gameplay/crafting.h>
 #include <gameplay/cat.h>
 #include <gameplay/gameplayRules.h>
-
+#include <gameplay/food.h>
 
 static std::atomic<bool> serverRunning = false;
 
@@ -83,6 +83,7 @@ struct ServerData
 	float seccondsTimer = 0;
 
 	float saveEntitiesTimer = 5;
+	std::uint64_t lastTimer = 0;
 
 
 }sd;
@@ -238,6 +239,8 @@ bool serverStartupStuff(const std::string &path)
 		sd.server = 0;
 		return 0;
 	}
+
+	sd.lastTimer = getTimer();
 
 	return true;
 }
@@ -501,6 +504,7 @@ void serverWorkerUpdate(
 	sd.seccondsTimer += deltaTime;
 	sd.tickDeltaTime += deltaTime;
 	sd.saveEntitiesTimer -= deltaTime;
+	auto deltaTimeMS = currentTimer - sd.lastTimer;
 #pragma endregion
 
 	auto &settings = sd.settings;
@@ -1359,7 +1363,24 @@ void serverWorkerUpdate(
 								}
 								else if (from->isEatable())
 								{
-									client->playerData.applyDamageOrLife(20);
+
+									auto effects = getItemEffects(*from);
+									int healing = getItemHealing(*from);
+
+									//can't eat if satiety doesn't allow it
+									if (effects.allEffects[Effects::Satiety].timerMs > 0 &&
+										client->playerData.effects.allEffects[Effects::Satiety].timerMs > 0
+										)
+									{
+										allowed = 0;
+									}
+									else
+									{
+										client->playerData.applyDamageOrLife(healing);
+										client->playerData.effects.applyEffects(effects);
+									}
+
+
 								}
 								
 								if (
@@ -1391,6 +1412,11 @@ void serverWorkerUpdate(
 						}
 
 					};
+					
+					//the client might have eaten something so we update life anyway,
+					// the same for the effects
+					client->playerData.forceUpdateLife = true;
+					client->playerData.updateEffectsTicksTimer = 0;
 
 				}
 
@@ -1598,6 +1624,7 @@ void serverWorkerUpdate(
 					if (client->playerData.killed)
 					{
 
+						client->playerData.effects = {};
 						client->playerData.newLife = PLAYER_DEFAULT_LIFE;
 						client->playerData.lifeLastFrame = PLAYER_DEFAULT_LIFE;
 						client->playerData.killed = false;
@@ -1657,6 +1684,25 @@ void serverWorkerUpdate(
 
 
 
+#pragma region count down timers
+
+	for (auto &c : clients)
+	{
+
+		if (!c.second.playerData.killed)
+		{
+
+			c.second.playerData.effects.passTimeMs(deltaTimeMS);
+
+		}
+
+
+
+	}
+
+#pragma endregion
+
+
 
 	//todo check if there are too many loaded chunks and unload them before processing
 	//generate chunk
@@ -1667,6 +1713,11 @@ void serverWorkerUpdate(
 
 	if (sd.tickTimer > 1.f / targetTicksPerSeccond)
 	{
+		for (auto &c : clients)
+		{
+			std::cout << c.second.playerData.effects.allEffects[Effects::Satiety].timerMs << "\n";
+		}
+
 		//for (auto &c : sd.chunkCache.savedChunks)
 		//{
 		//	c.second->entityData.players.clear();
@@ -1940,7 +1991,7 @@ void serverWorkerUpdate(
 		delete[] newBlocks;
 	}
 
-
+#pragma region save stuff
 	//save one chunk on disk
 	sd.chunkCache.saveNextChunk(worldSaver);
 
@@ -1954,6 +2005,9 @@ void serverWorkerUpdate(
 		}
 
 	}
+#pragma endregion
+
+	sd.lastTimer = currentTimer;
 
 }
 

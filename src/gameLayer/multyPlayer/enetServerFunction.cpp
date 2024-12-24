@@ -192,6 +192,20 @@ void sendPlayerExitInteraction(Client &client, unsigned char revisionNumber)
 		true, channelChunksAndBlocks);
 }
 
+void updatePlayerEffects(Client &client)
+{
+	Packet packet;
+	packet.header = headerUpdateEffects;
+
+	Packet_UpdateEffects packetData;
+	packetData.timer = getTimer();
+	packetData.effects = client.playerData.effects;
+
+	sendPacket(client.peer, packet,
+		(char *)&packetData, sizeof(packetData),
+		true, channelEffects);
+}
+
 //create connection
 void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 {
@@ -206,6 +220,7 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 		c.playerData.otherPlayerSettings.gameMode = OtherPlayerSettings::CREATIVE;
 
 		c.playerData.inventory.items[0] = itemCreator(ItemTypes::trainingSpear);
+		c.playerData.inventory.items[1] = itemCreator(ItemTypes::apple, 20);
 		c.playerData.inventory.items[10] = Item(BlockTypes::yellow_stained_glass);
 		c.playerData.inventory.items[11] = Item(BlockTypes::lime_stained_glass);
 		c.playerData.inventory.items[12] = Item(BlockTypes::green_stained_glass);
