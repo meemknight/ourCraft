@@ -1090,6 +1090,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 						if (!didAction)
 						{
 
+							//TODO
+							//also send the time so the server can know from when to simulate that.
 							if (item.isEatable())
 							{
 

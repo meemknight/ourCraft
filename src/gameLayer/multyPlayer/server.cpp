@@ -78,6 +78,7 @@ struct ServerData
 
 	float tickTimer = 0;
 	float tickDeltaTime = 0;
+	int tickDeltaTimeMs = 0;
 	int ticksPerSeccond = 0;
 	int runsPerSeccond = 0;
 	float seccondsTimer = 0;
@@ -361,9 +362,10 @@ bool spawnDroppedItemEntity(
 
 	if (newId == 0) { newId = getEntityIdAndIncrement(worldSaver, EntityType::droppedItems);  }
 
+	
+
 	DroppedItemServer newEntity = {};
-	newEntity.item.counter = counter;
-	newEntity.item.type = type;
+	newEntity.item = itemCreator(type, counter);
 	if (metaData)
 	{
 		newEntity.item.metaData = *metaData;
@@ -505,6 +507,7 @@ void serverWorkerUpdate(
 	sd.tickDeltaTime += deltaTime;
 	sd.saveEntitiesTimer -= deltaTime;
 	auto deltaTimeMS = currentTimer - sd.lastTimer;
+	sd.tickDeltaTimeMs += deltaTimeMS;
 #pragma endregion
 
 	auto &settings = sd.settings;
@@ -1603,6 +1606,13 @@ void serverWorkerUpdate(
 
 								if (wasKilled)
 								{
+
+									//sd.chunkCache
+
+									spawnDroppedItemEntity(sd.chunkCache,
+										worldSaver, 1, ItemTypes::apple, 0, {});
+
+
 									killEntity(worldSaver, wasKilled);
 								}
 							}
@@ -1683,27 +1693,6 @@ void serverWorkerUpdate(
 
 
 
-
-#pragma region count down timers
-
-	for (auto &c : clients)
-	{
-
-		if (!c.second.playerData.killed)
-		{
-
-			c.second.playerData.effects.passTimeMs(deltaTimeMS);
-
-		}
-
-
-
-	}
-
-#pragma endregion
-
-
-
 	//todo check if there are too many loaded chunks and unload them before processing
 	//generate chunk
 
@@ -1713,10 +1702,6 @@ void serverWorkerUpdate(
 
 	if (sd.tickTimer > 1.f / targetTicksPerSeccond)
 	{
-		for (auto &c : clients)
-		{
-			std::cout << c.second.playerData.effects.allEffects[Effects::Satiety].timerMs << "\n";
-		}
 
 		//for (auto &c : sd.chunkCache.savedChunks)
 		//{
@@ -1929,9 +1914,11 @@ void serverWorkerUpdate(
 			c.second.playerData.inventory.sanitize();
 		}
 
-		splitUpdatesLogic(sd.tickDeltaTime, currentTimer, sd.chunkCache, rng(), clients, worldSaver);
+		splitUpdatesLogic(sd.tickDeltaTime, sd.tickDeltaTimeMs,
+			currentTimer, sd.chunkCache, rng(), clients, worldSaver);
 
 		sd.tickDeltaTime = 0;
+		sd.tickDeltaTimeMs = 0;
 	}
 
 	//std::cout << deltaTime << " <- dt / 1/dt-> " << (1.f / (deltaTime)) << "\n";

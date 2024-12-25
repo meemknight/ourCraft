@@ -175,7 +175,7 @@ void callGenericResetEntitiesInTheirNewChunk(std::integer_sequence<int, Is...>, 
 
 //todo make sure a player can only be in only one tick
 //chunkCache has only chunks that shouldn't be unloaded! And no null ptrs!
-void doGameTick(float deltaTime, std::uint64_t currentTimer,
+void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 	ServerChunkStorer &chunkCache, EntityData &orphanEntities,
 	unsigned int seed)
 {
@@ -239,6 +239,25 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 	}
 
 #pragma endregion
+
+#pragma region player effects
+
+	for (auto &c : allPlayers)
+	{
+		if (!c.second->killed)
+		{
+			c.second->effects.passTimeMs(deltaTimeMs);
+
+
+			//regen and others come here
+
+
+		}
+	}
+
+
+#pragma endregion
+
 
 #pragma region calculate player healing
 
@@ -557,7 +576,6 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 
 		auto genericLoopOverEntities = [&](auto &container, 
 			auto &orphanContainer
-			//,auto packetType, auto packetId
 			)
 		{
 
@@ -616,26 +634,7 @@ void doGameTick(float deltaTime, std::uint64_t currentTimer,
 		REPEAT_FOR_ALL_ENTITIES(ENTITY_UPDATES);
 
 
-		//
-		//genericLoopOverEntities(entityData.droppedItems, orphanEntities.droppedItems
-		//	//,Packet_RecieveDroppedItemUpdate{}, headerClientRecieveDroppedItemUpdate
-		//);
-		//
-		//genericLoopOverEntities(entityData.zombies, orphanEntities.zombies
-		//	//,Packet_UpdateZombie{}, headerUpdateZombie
-		//);
-		//
-		//genericLoopOverEntities(entityData.pigs, orphanEntities.pigs
-		//	//,Packet_UpdatePig{}, headerUpdatePig
-		//);
-		//
-		//genericLoopOverEntities(entityData.cats, orphanEntities.cats
-		//	//,Packet_UpdateCat{}, headerUpdateCat
-		//);
-
-		//genericLoopOverEntities(entityData.goblins, orphanEntities.goblins
-		//	,Packet_UpdateCat{}, headerUpdateCat
-		//);
+	
 
 
 	}

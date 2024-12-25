@@ -9,7 +9,7 @@
 #include <gameplay/allentities.h>
 #include <gameplay/physics.h>
 #include <gameplay/blocks/blocksWithData.h>
-
+#include <optional>
 
 //https://www.geeksforgeeks.org/how-to-create-an-unordered_map-of-user-defined-class-in-cpp/
 struct Ivec2Hash
@@ -178,6 +178,7 @@ struct ServerChunkStorer
 		Item &weapon, std::uint64_t &wasKilled, glm::vec3 dir, std::minstd_rand &rng
 		, float hitCorectness, float critChanceBonus);
 
+	std::optional<glm::dvec3> getEntityPosition(std::uint64_t entity);
 };
 
 

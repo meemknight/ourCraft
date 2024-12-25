@@ -14,6 +14,7 @@ void entityDeleteFromServerToPlayer(Client &client, std::uint64_t eid,
 	bool reliable);
 
 void doGameTick(float deltaTime,
+	int deltaTimeMs,
 	std::uint64_t currentTimer,
 	ServerChunkStorer &chunkCache,
 	EntityData &orphanEntities,

@@ -243,6 +243,7 @@ struct BlockCollider
 	glm::vec3 offset = {};
 };
 
+
 struct Block
 {
 	BlockType typeAndFlags = 0;

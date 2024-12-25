@@ -1728,6 +1728,14 @@ bool ServerChunkStorer::hitEntityByPlayer(std::uint64_t eid,
 	return 0;
 }
 
+std::optional<glm::dvec3> ServerChunkStorer::getEntityPosition(std::uint64_t entity)
+{
+
+
+
+	return std::nullopt;
+}
+
 void SavedChunk::removeBlockWithData(glm::ivec3 pos,
 	std::uint16_t blockType)
 {

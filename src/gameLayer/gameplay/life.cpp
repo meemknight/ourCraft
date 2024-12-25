@@ -1,6 +1,7 @@
 #include <gameplay/life.h>
 #include <gameplay/entity.h>
 
+//hit
 int calculateDamage(Armour armour_, const WeaponStats &weaponStats, std::minstd_rand &rng
 	, float hitCorectness, float critChanceBonus)
 {
@@ -24,10 +25,10 @@ int calculateDamage(Armour armour_, const WeaponStats &weaponStats, std::minstd_
 	float armour = armour_.armour;
 	armour -= weaponStats.armourPenetration;
 	armour = std::max(armour, 0.f);
-	
-	armour *= 2;
 
 	totalDamage -= armour;
+
+	totalDamage *= 100.f/(100.f+armour);
 
 	totalDamage = std::max(totalDamage, 0.f);
 

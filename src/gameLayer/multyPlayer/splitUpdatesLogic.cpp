@@ -21,6 +21,7 @@ static ThreadPool threadPool;
 static std::vector<PerTickData> chunkRegionsData;
 static std::deque<std::atomic<bool>> taskTaken;
 static float tickDeltaTime = 0;
+static int tickDeltaTimeMs = 0;
 static std::uint64_t currentTimer = 0;
 
 int regionsAverageCounter[50] = {};
@@ -56,7 +57,7 @@ int getThredPoolSize()
 	return threadPool.currentCounter;
 }
 
-void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
+void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t currentTimer,
 	ServerChunkStorer &chunkCache, unsigned int seed, std::unordered_map<std::uint64_t, Client> &clients,
 	WorldSaver &worldSaver)
 {
@@ -69,6 +70,7 @@ void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
 
 		::tickDeltaTime = tickDeltaTime;
 		::currentTimer = currentTimer;
+		::tickDeltaTimeMs = tickDeltaTimeMs;
 
 		PL::Profiler pl;
 
@@ -217,7 +219,7 @@ void splitUpdatesLogic(float tickDeltaTime, std::uint64_t currentTimer,
 			//std::cout << "main took task " << taskIndex << '\n';
 
 			//tick
-			doGameTick(tickDeltaTime, currentTimer,
+			doGameTick(tickDeltaTime, tickDeltaTimeMs, currentTimer,
 				chunkRegionsData[taskIndex].chunkCache,
 				chunkRegionsData[taskIndex].orphanEntities,
 				chunkRegionsData[taskIndex].seed
@@ -334,7 +336,7 @@ void workerThread(int index)
 				//std::cout << index << " took task " << taskIndex << '\n';
 
 				//tick
-				doGameTick(tickDeltaTime, currentTimer,
+				doGameTick(tickDeltaTime, tickDeltaTimeMs, currentTimer,
 					chunkRegionsData[taskIndex].chunkCache,
 					chunkRegionsData[taskIndex].orphanEntities,
 					chunkRegionsData[taskIndex].seed);
