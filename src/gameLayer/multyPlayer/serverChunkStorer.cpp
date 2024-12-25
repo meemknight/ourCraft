@@ -1764,9 +1764,54 @@ bool ServerChunkStorer::hitEntityByPlayer(std::uint64_t eid,
 	return 0;
 }
 
+#define CASE_SEARCH_POSITION(X) case X: return genericSearch(*entityData.entityGetter<X>());
 std::optional<glm::dvec3> ServerChunkStorer::getEntityPosition(std::uint64_t entity)
 {
 
+	auto found = entityChunkPositions.find(entity);
+
+	if (found != entityChunkPositions.end())
+	{
+
+		auto foundChunk = savedChunks.find(found->second);
+
+		if (foundChunk != savedChunks.end() && foundChunk->second != nullptr)
+		{
+
+			auto type = getEntityTypeFromEID(entity);
+			auto &entityData = foundChunk->second->entityData;
+			
+			if (type == 0)
+			{
+				auto foundEntity = entityData.players.find(entity);
+				if (foundEntity != entityData.players.end()) { return foundEntity->second->getPosition(); }
+			}
+			else
+			{
+
+				auto genericSearch = [&](auto &container)
+				{
+					auto foundEntity = container.find(entity);
+					if (foundEntity != container.end()) { return foundEntity->second.getPosition(); }
+				};
+				
+				switch (type)
+				{
+
+					REPEAT_FOR_ALL_ENTITIES_NO_PLAYERS(CASE_SEARCH_POSITION)
+
+				default:
+				break;
+				}
+					
+
+			}
+		
+
+		}
+
+
+	}
 
 
 	return std::nullopt;

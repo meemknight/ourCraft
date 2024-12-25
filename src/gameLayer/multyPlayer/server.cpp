@@ -1618,9 +1618,19 @@ void serverWorkerUpdate(
 
 									//sd.chunkCache
 
-									spawnDroppedItemEntity(sd.chunkCache,
-										worldSaver, 1, ItemTypes::apple, 0, {});
+									auto pos = sd.chunkCache.getEntityPosition(wasKilled);
 
+									if (pos)
+									{
+										glm::vec3 p = *pos;
+										p.y += 0.5;
+										spawnDroppedItemEntity(sd.chunkCache,
+											worldSaver, 1, ItemTypes::apple, 0, p);
+									}
+									else
+									{
+										std::cout << "ERROR gettint entity position!\n";
+									}
 
 									killEntity(worldSaver, wasKilled);
 								}
