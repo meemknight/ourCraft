@@ -173,79 +173,6 @@ void callGenericResetEntitiesInTheirNewChunk(std::integer_sequence<int, Is...>, 
 }
 
 
-template<class T, class U>
-void genericLoopOverEntities(T &container,
-	U &orphanContainer
-	)
-{
-
-	if constexpr (std::is_same<std::remove_reference_t<decltype(container[0])>, PlayerServer *>::value)
-	{
-		//don't iterate over players
-		return;
-	}
-	else
-	{
-		for (auto it = container.begin(); it != container.end(); )
-		{
-			auto &e = *it;
-
-			if (e.second.hasUpdatedThisTick) { continue; }
-
-			bool rez = genericCallUpdateForEntity(e, deltaTime, chunkGetter,
-				chunkCache, rng, othersDeleted,
-				pathFinding, playersPosition);
-			glm::ivec2 newChunk = determineChunkThatIsEntityIn(e.second.getPosition());
-
-			if (!rez)
-			{
-				//todo only for local players!!!!!!
-				genericBroadcastEntityDeleteFromServerToPlayer(it->first, true);
-
-				//remove entity
-				it = container.erase(it);
-			}
-			else
-			{
-				//todo this should take into acount if that player should recieve it
-				//todo only for local players!!!!!!
-				//genericBroadcastEntityUpdateFromServerToPlayer
-				//	< decltype(packetType)>(e, false, currentTimer, packetId);
-				genericBroadcastEntityUpdateFromServerToPlayer2(e, false, currentTimer);
-
-				if (initialChunk != newChunk)
-				{
-
-					auto chunk = chunkCache.getChunkOrGetNull(newChunk.x, newChunk.y);
-
-					if (chunk)
-					{
-						//auto member = memberSelector(chunk->entityData);
-						//member->insert({e.first, e.second});
-					}
-					else
-					{
-						//the entity left the region, we move it out,
-						// so we save it to disk or to other chunks
-						orphanContainer.insert(
-							{e.first, e.second});
-					}
-
-
-					it = container.erase(it);
-				}
-				else
-				{
-					++it;
-				}
-			}
-
-		}
-	}
-
-
-}
-
 
 
 #define ENTITY_UPDATES(X) genericLoopOverEntities(*entityData.entityGetter<X>(), *orphanEntities.entityGetter<X>(), [](auto &entityData) { return entityData.template entityGetter<X>(); });
@@ -656,10 +583,8 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 			}
 			else
 			{
-				for (auto it = container.begin(); it != container.end(); )
+				for (auto &e :container )
 				{
-					auto &e = *it;
-
 					e.second.hasUpdatedThisTick = 0;
 				}
 			}
@@ -698,7 +623,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 				{
 					auto &e = *it;
 
-					if (e.second.hasUpdatedThisTick) { continue; }
+					if (e.second.hasUpdatedThisTick) { ++it; continue; }
 					e.second.hasUpdatedThisTick = true;
 
 					bool rez = genericCallUpdateForEntity(e, deltaTime, chunkGetter,
@@ -725,16 +650,15 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 						if (initialChunk != newChunk)
 						{
 
-							//auto chunk = chunkCache.getChunkOrGetNull(newChunk.x, newChunk.y);
-							//
-							//if (chunk)
-							//{
-							//	
-							//	auto member = memberSelector(chunk->entityData);
-							//	member->insert({e.first, e.second});
-							//	std::cout << "Moved Entity!\n";
-							//}
-							//else
+							auto chunk = chunkCache.getChunkOrGetNull(newChunk.x, newChunk.y);
+							
+							if (chunk)
+							{
+								//move entity in another chunk
+								auto member = memberSelector(chunk->entityData);
+								member->insert({e.first, e.second});
+							}
+							else
 							{
 								//the entity left the region, we move it out,
 								// so we save it to disk or to other chunks

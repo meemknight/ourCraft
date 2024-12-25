@@ -13,6 +13,8 @@
 constexpr static unsigned int EntitiesTypesCount = EntitiesTypesCountMACRO;
 #define REPEAT_FOR_ALL_ENTITIES(FN) REPEAT_6(FN)
 //!!!!!!!!!!! ^ ALSO THIS ONE            ^^^^^
+#define REPEAT_FOR_ALL_ENTITIES_NO_PLAYERS(FN) REPEAT_NO_0_6(FN)
+//!!!!!!!!!!! ^ ALSO THIS ONE!							^^^^^
 
 
 

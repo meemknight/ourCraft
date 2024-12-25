@@ -449,6 +449,8 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 		auto move = 2.f * deltaTime * direction;
 		getPosition().x += move.x;
 		getPosition().z += move.y;
+
+
 	};
 
 

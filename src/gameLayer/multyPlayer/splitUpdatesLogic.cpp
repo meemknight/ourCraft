@@ -57,6 +57,9 @@ int getThredPoolSize()
 	return threadPool.currentCounter;
 }
 
+#define ENTITY_SET_IN_CHUNKS(X) resetEntitiesInTheirNewChunk(*c.orphanEntities.entityGetter<X>(), [](auto &entityData) { return entityData.entityGetter<X>(); });
+
+
 void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t currentTimer,
 	ServerChunkStorer &chunkCache, unsigned int seed, std::unordered_map<std::uint64_t, Client> &clients,
 	WorldSaver &worldSaver)
@@ -249,7 +252,7 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 				}
 				else
 				{
-
+					std::cout << "Saved entity!\n";
 					//todo change and make in 2 steps
 					worldSaver.appendEntitiesForChunk(pos);
 					//todo save entity to disk here!.
@@ -261,25 +264,14 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 		};
 
 
-		//todo generalize
 		for (auto &c : chunkRegionsData)
 		{
 			//save this entities to disk or other chunks...
 
-			resetEntitiesInTheirNewChunk(c.orphanEntities.droppedItems,
-				[](auto &entityData) { return &entityData.droppedItems; });
+			//resetEntitiesInTheirNewChunk(*c.orphanEntities.entityGetter<1>(),
+			//	[](auto &entityData) { return entityData.entityGetter<1>(); });
 
-			resetEntitiesInTheirNewChunk(c.orphanEntities.zombies,
-				[](auto &entityData) { return &entityData.zombies; });
-
-			resetEntitiesInTheirNewChunk(c.orphanEntities.pigs,
-				[](auto &entityData) { return &entityData.pigs; });
-
-			resetEntitiesInTheirNewChunk(c.orphanEntities.cats,
-				[](auto &entityData) { return &entityData.cats; });
-
-			resetEntitiesInTheirNewChunk(c.orphanEntities.goblins,
-				[](auto &entityData) { return &entityData.goblins; });
+			REPEAT_FOR_ALL_ENTITIES_NO_PLAYERS(ENTITY_SET_IN_CHUNKS);
 		}
 
 		chunkRegionsData.clear();
