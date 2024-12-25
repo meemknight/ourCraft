@@ -265,6 +265,7 @@ bool spawnZombie(
 		serverZombie.entity = zombie;
 
 		c->entityData.zombies.insert({newId, serverZombie});
+		chunkManager.entityChunkPositions[newId] = determineChunkThatIsEntityIn(serverZombie.getPosition());
 
 	}
 	else
@@ -291,8 +292,10 @@ bool spawnPig(
 		PigServer e = {};
 		e.entity = pig;
 		e.configureSpawnSettings(rng);
+		auto newId = getEntityIdAndIncrement(worldSaver, EntityType::pigs);
+		c->entityData.pigs.insert({newId, e});
+		chunkManager.entityChunkPositions[newId] = determineChunkThatIsEntityIn(e.getPosition());
 
-		c->entityData.pigs.insert({getEntityIdAndIncrement(worldSaver, EntityType::pigs), e});
 	}
 	else
 	{
@@ -316,8 +319,10 @@ bool spawnGoblin(
 		GoblinServer e = {};
 		e.entity = goblin;
 		//e.configureSpawnSettings(rng);
+		auto newId = getEntityIdAndIncrement(worldSaver, EntityType::goblins);
+		c->entityData.goblins.insert({newId, e});
+		chunkManager.entityChunkPositions[newId] = determineChunkThatIsEntityIn(e.getPosition());
 
-		c->entityData.goblins.insert({getEntityIdAndIncrement(worldSaver, EntityType::goblins), e});
 	}
 	else
 	{
@@ -342,7 +347,10 @@ bool spawnCat(
 		e.entity = cat;
 		e.configureSpawnSettings(rng);
 
-		c->entityData.cats.insert({getEntityIdAndIncrement(worldSaver, EntityType::cats), e});
+		auto newId = getEntityIdAndIncrement(worldSaver, EntityType::cats);
+		c->entityData.cats.insert({newId, e});
+		chunkManager.entityChunkPositions[newId] = determineChunkThatIsEntityIn(e.getPosition());
+
 	}
 	else
 	{
@@ -382,6 +390,7 @@ bool spawnDroppedItemEntity(
 	if (chunk)
 	{
 		chunk->entityData.droppedItems.insert({newId, newEntity});
+		chunkManager.entityChunkPositions[newId] = chunkPosition;
 	}
 	else
 	{
@@ -1900,8 +1909,9 @@ void serverWorkerUpdate(
 			}
 		}
 
-
+	#pragma region unload chunks
 		sd.chunkCache.unloadChunksThatNeedUnloading(worldSaver, 10);
+	#pragma endregion
 
 		//todo error and warning logs for server.
 

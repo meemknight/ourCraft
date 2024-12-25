@@ -120,6 +120,28 @@ std::vector<ColidableEntry> ServerChunkStorer::getCollisionsListThatCanPush(glm:
 	return ret;
 }
 
+#define ENTITY_ITERATE(X) genericIterate(*chunk.entityData.entityGetter<X>());
+void ServerChunkStorer::removeEntityChunkPositionsForChunk(SavedChunk &chunk)
+{
+
+	auto genericIterate = [&](auto &container)
+	{
+		for (auto &p : container)
+		{
+			auto found = entityChunkPositions.find(p.first);
+
+			if (found != entityChunkPositions.end())
+			{
+				entityChunkPositions.erase(found);
+			}
+		}
+	};
+	
+	REPEAT_FOR_ALL_ENTITIES(ENTITY_ITERATE);
+
+}
+#undef ENTITY_ITERATE
+
 SavedChunk *ServerChunkStorer::getChunkOrGetNull(int posX, int posZ)
 {
 	glm::ivec2 pos = {posX, posZ};
@@ -1361,6 +1383,8 @@ int ServerChunkStorer::unloadChunksThatNeedUnloading(WorldSaver &worldSaver, int
 		{
 			count++;
 
+			removeEntityChunkPositionsForChunk(*c.second);
+
 			if (c.second->otherData.dirty)
 			{
 				saveChunk(worldSaver, c.second);
@@ -1491,21 +1515,33 @@ std::uint64_t ServerChunkStorer::anyEntityIntersectsWithBlock(glm::ivec3 positio
 
 
 template<class T>
-bool genericRemoveEntity(T &container, std::uint64_t eid)
+bool genericRemoveEntity(T &container, std::uint64_t eid, std::unordered_map<std::uint64_t, glm::ivec2> &entityChunkPositions)
 {
 	auto found = container.find(eid);
 
 	if (found != container.end())
 	{
 		container.erase(found);
+
+
+		auto found2 = entityChunkPositions.find(eid);
+
+		permaAssertComment(found2 != entityChunkPositions.end(), "Error, desync in entityChunkPositions");
+
+		if (found2 != entityChunkPositions.end())
+		{
+			entityChunkPositions.erase(found2);
+		}
+
 		return 1;
 	}
 
 	return 0;
 };
 
-#define CASE_REMOVE(x) case x: { return genericRemoveEntity(*entityData.template entityGetter<x>(), eid); } break;
-bool callGenericRemoveEntity(EntityData &entityData, std::uint64_t eid)
+#define CASE_REMOVE(x) case x: { return genericRemoveEntity(*entityData.template entityGetter<x>(), eid, entityChunkPositions); } break;
+bool callGenericRemoveEntity(EntityData &entityData, std::uint64_t eid, 
+	std::unordered_map<std::uint64_t, glm::ivec2> &entityChunkPositions)
 {
 	auto entityType = getEntityTypeFromEID(eid);
 
@@ -1544,7 +1580,7 @@ bool ServerChunkStorer::removeEntity(WorldSaver &worldSaver, std::uint64_t eid)
 		if (c.second)
 		{
 
-			bool rez = callGenericRemoveEntity(c.second->entityData, eid);
+			bool rez = callGenericRemoveEntity(c.second->entityData, eid, entityChunkPositions);
 			if (rez) { return 1; }
 		}
 	}

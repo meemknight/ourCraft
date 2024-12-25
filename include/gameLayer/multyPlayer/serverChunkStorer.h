@@ -98,7 +98,9 @@ struct SavedChunk
 		//dirty means we should resave it to the disk
 		bool dirty = 0;
 		bool dirtyEntity = 0;
-		bool shouldUnload = 0;
+		bool shouldUnload = 0; 
+		//TODO, when checking what chunks should be keps, if we recommision an shouldUnloadChunk, make sure we
+		//readd all the entities in the entities chunk position cache!
 
 
 	}otherData;
@@ -129,7 +131,10 @@ struct ServerChunkStorer
 		ghostBlocks;
 
 	std::unordered_map<glm::ivec2, SavedChunk *, Ivec2Hash> savedChunks = {};
+	std::unordered_map<std::uint64_t, glm::ivec2> entityChunkPositions;
 
+	void removeEntityChunkPositionsForChunk(SavedChunk &chunk);
+		
 	//uses chunk coorodonates
 	SavedChunk *getChunkOrGetNull(int posX, int posZ);
 

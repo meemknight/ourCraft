@@ -58,13 +58,13 @@ int getThredPoolSize()
 }
 
 #define ENTITY_SET_IN_CHUNKS(X) resetEntitiesInTheirNewChunk(*c.orphanEntities.entityGetter<X>(), [](auto &entityData) { return entityData.entityGetter<X>(); });
+#define ITERATE_TEST(X) iterateTest(*chunk.second->entityData.entityGetter<X>());
 
 
 void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t currentTimer,
 	ServerChunkStorer &chunkCache, unsigned int seed, std::unordered_map<std::uint64_t, Client> &clients,
 	WorldSaver &worldSaver)
 {
-
 
 
 	if (1)
@@ -179,6 +179,8 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 		//	std::cout << chunkRegionsData.size() << "!!!\n";
 		//}
 
+
+
 	#pragma region set threads count
 		{
 
@@ -232,7 +234,13 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 
 		threadPool.waitForEveryoneToFinish();
 
-		//todo save orphan entities to disk...
+
+		chunkCache.entityChunkPositions.clear();
+
+		for (auto &region : chunkRegionsData)
+		{
+			chunkCache.entityChunkPositions.merge(region.chunkCache.entityChunkPositions);
+		}
 
 		auto resetEntitiesInTheirNewChunk = [&](auto &container, auto memberSelector)
 		{
@@ -249,10 +257,10 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 				{
 					auto member = memberSelector(chunk->entityData);
 					member->insert({e.first, e.second});
+					chunkCache.entityChunkPositions[e.first] = pos;
 				}
 				else
 				{
-					std::cout << "Saved entity!\n";
 					//todo change and make in 2 steps
 					worldSaver.appendEntitiesForChunk(pos);
 					//todo save entity to disk here!.
@@ -309,6 +317,65 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 	//		clients[p.first].playerData = p.second;
 	//	}
 	//}
+
+#pragma region cache chunk positions checks debugging
+
+	if(INTERNAL_BUILD == 1)
+	for (auto &chunk : chunkCache.savedChunks)
+	{
+
+		auto &entityData = chunk.second->entityData;
+		for (auto &e : entityData.players)
+		{
+			auto found = chunkCache.entityChunkPositions.find(e.first);
+
+			if (found == chunkCache.entityChunkPositions.end())
+			{
+				permaAssertComment(0, "entityChunkPositions problem, player entity missing!");
+			}
+			else
+			{
+				auto pos = determineChunkThatIsEntityIn(e.second->getPosition());
+				
+				if (pos != found->second)
+				{
+					permaAssertComment(0, "entityChunkPositions problem, player desynk position!");
+				}
+			}
+		}
+
+		auto iterateTest = [&](auto &container)
+		{
+			for (auto &e : container)
+			{
+				auto found = chunkCache.entityChunkPositions.find(e.first);
+
+				if (found == chunkCache.entityChunkPositions.end())
+				{
+					permaAssertComment(0, "entityChunkPositions problem, entity missing!");
+				}
+				else
+				{
+					auto pos = determineChunkThatIsEntityIn(e.second.getPosition());
+
+					if (pos != found->second)
+					{
+						permaAssertComment(0, "entityChunkPositions problem, entity desynk position!");
+					}
+				}
+			}
+
+		};
+
+		REPEAT_FOR_ALL_ENTITIES_NO_PLAYERS(ITERATE_TEST);
+
+
+
+	}
+
+
+#pragma endregion
+
 	
 
 

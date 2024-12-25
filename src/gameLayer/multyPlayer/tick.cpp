@@ -174,9 +174,10 @@ void callGenericResetEntitiesInTheirNewChunk(std::integer_sequence<int, Is...>, 
 
 
 
-
 #define ENTITY_UPDATES(X) genericLoopOverEntities(*entityData.entityGetter<X>(), *orphanEntities.entityGetter<X>(), [](auto &entityData) { return entityData.template entityGetter<X>(); });
 #define ENTITY_MARK_NOTPDATED(X) genericMarkEntitiesNotUpdated(*entityData.entityGetter<X>());
+#define ENTITY_ADD_TO_CACHE(X) genericAdd(*entityData.entityGetter<X>());
+
 
 //todo make sure a player can only be in only one tick
 //chunkCache has only chunks that shouldn't be unloaded! And no null ptrs!
@@ -211,6 +212,29 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 	std::unordered_map <std::uint64_t, PlayerServer *> allPlayers;
 	std::unordered_map < std::uint64_t, Client *> allClients;
 	std::unordered_map < std::uint64_t, Client *> allSurvivalClients;
+
+#pragma region calculate all entities chunk positions cache
+
+	chunkCache.entityChunkPositions.clear();
+
+	for (auto &c : chunkCache.savedChunks)
+	{
+		auto &entityData = c.second->entityData;
+		
+		auto genericAdd = [&](auto &container)
+		{
+			for (auto &p : container)
+			{
+				chunkCache.entityChunkPositions.insert({p.first, c.first});
+			}
+		};
+
+		//genericAdd(*entityData.entityGetter<0>());
+		REPEAT_FOR_ALL_ENTITIES(ENTITY_ADD_TO_CACHE)
+	}
+
+#pragma endregion
+
 
 #pragma region calculate all players
 
@@ -657,6 +681,8 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 								//move entity in another chunk
 								auto member = memberSelector(chunk->entityData);
 								member->insert({e.first, e.second});
+								chunkCache.entityChunkPositions[e.first] = newChunk;
+
 							}
 							else
 							{
