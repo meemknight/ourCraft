@@ -55,5 +55,8 @@ struct DroppedItemServer
 	void appendDataToDisk(std::ofstream &f, std::uint64_t eId);
 
 	bool loadFromDisk(std::ifstream &f);
+
+	bool hasUpdatedThisTick = 0;
+
 };
 

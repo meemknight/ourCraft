@@ -464,7 +464,7 @@ struct ServerEntity
 
 	ConditionalMember<hasCanHaveEffects(), Effects> effects = {};
 
-
+	bool hasUpdatedThisTick = 0;
 };
 
 template <class T, class BASE_CLIENT>

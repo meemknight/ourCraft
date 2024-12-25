@@ -277,6 +277,9 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 
 			resetEntitiesInTheirNewChunk(c.orphanEntities.cats,
 				[](auto &entityData) { return &entityData.cats; });
+
+			resetEntitiesInTheirNewChunk(c.orphanEntities.goblins,
+				[](auto &entityData) { return &entityData.goblins; });
 		}
 
 		chunkRegionsData.clear();
