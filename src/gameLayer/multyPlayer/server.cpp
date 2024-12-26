@@ -247,159 +247,7 @@ bool serverStartupStuff(const std::string &path)
 }
 
 
-bool spawnZombie(
-	ServerChunkStorer &chunkManager,
-	Zombie zombie, std::uint64_t newId)
-{
 
-	//todo also send packets
-
-	auto chunkPos = determineChunkThatIsEntityIn(zombie.position);
-
-	auto c = chunkManager.getChunkOrGetNull(chunkPos.x, chunkPos.y);
-
-	if (c)
-	{
-
-		ZombieServer serverZombie = {};
-		serverZombie.entity = zombie;
-
-		c->entityData.zombies.insert({newId, serverZombie});
-		chunkManager.entityChunkPositions[newId] = determineChunkThatIsEntityIn(serverZombie.getPosition());
-
-	}
-	else
-	{
-		return 0;
-	}
-
-	return 1;
-}
-
-
-bool spawnPig(
-	ServerChunkStorer &chunkManager,
-	Pig pig, WorldSaver &worldSaver,
-	std::minstd_rand &rng)
-{
-	//todo also send packets
-	//todo generic spawn for any entity
-
-	auto chunkPos = determineChunkThatIsEntityIn(pig.position);
-	auto c = chunkManager.getChunkOrGetNull(chunkPos.x, chunkPos.y);
-	if (c)
-	{
-		PigServer e = {};
-		e.entity = pig;
-		e.configureSpawnSettings(rng);
-		auto newId = getEntityIdAndIncrement(worldSaver, EntityType::pigs);
-		c->entityData.pigs.insert({newId, e});
-		chunkManager.entityChunkPositions[newId] = determineChunkThatIsEntityIn(e.getPosition());
-
-	}
-	else
-	{
-		return 0;
-	}
-	return 1;
-}
-
-bool spawnGoblin(
-	ServerChunkStorer &chunkManager,
-	Goblin goblin, WorldSaver &worldSaver,
-	std::minstd_rand &rng)
-{
-	//todo also send packets
-	//todo generic spawn for any entity
-
-	auto chunkPos = determineChunkThatIsEntityIn(goblin.position);
-	auto c = chunkManager.getChunkOrGetNull(chunkPos.x, chunkPos.y);
-	if (c)
-	{
-		GoblinServer e = {};
-		e.entity = goblin;
-		//e.configureSpawnSettings(rng);
-		auto newId = getEntityIdAndIncrement(worldSaver, EntityType::goblins);
-		c->entityData.goblins.insert({newId, e});
-		chunkManager.entityChunkPositions[newId] = determineChunkThatIsEntityIn(e.getPosition());
-
-	}
-	else
-	{
-		return 0;
-	}
-	return 1;
-}
-
-bool spawnCat(
-	ServerChunkStorer &chunkManager,
-	Cat cat, WorldSaver &worldSaver,
-	std::minstd_rand &rng)
-{
-	//todo also send packets
-	//todo generic spawn for any entity
-
-	auto chunkPos = determineChunkThatIsEntityIn(cat.position);
-	auto c = chunkManager.getChunkOrGetNull(chunkPos.x, chunkPos.y);
-	if (c)
-	{
-		CatServer e = {};
-		e.entity = cat;
-		e.configureSpawnSettings(rng);
-
-		auto newId = getEntityIdAndIncrement(worldSaver, EntityType::cats);
-		c->entityData.cats.insert({newId, e});
-		chunkManager.entityChunkPositions[newId] = determineChunkThatIsEntityIn(e.getPosition());
-
-	}
-	else
-	{
-		return 0;
-	}
-	return 1;
-}
-
-bool spawnDroppedItemEntity(
-	ServerChunkStorer &chunkManager, WorldSaver &worldSaver,
-	unsigned char counter, unsigned short type,
-	std::vector<unsigned char> *metaData, glm::dvec3 pos, MotionState motionState = {},
-	std::uint64_t newId = 0,
-	float restantTimer = 0
-	)
-{
-
-	if (newId == 0) { newId = getEntityIdAndIncrement(worldSaver, EntityType::droppedItems);  }
-
-	
-
-	DroppedItemServer newEntity = {};
-	newEntity.item = itemCreator(type, counter);
-	if (metaData)
-	{
-		newEntity.item.metaData = *metaData;
-	}
-
-	newEntity.entity.position = pos;
-	newEntity.entity.lastPosition = pos;
-	newEntity.entity.forces = motionState;
-	newEntity.restantTime = restantTimer;
-
-	auto chunkPosition = determineChunkThatIsEntityIn(pos);
-	auto chunk = chunkManager.getChunkOrGetNull(chunkPosition.x, chunkPosition.y);
-
-	if (chunk)
-	{
-		chunk->entityData.droppedItems.insert({newId, newEntity});
-		chunkManager.entityChunkPositions[newId] = chunkPosition;
-	}
-	else
-	{
-		return 0;
-	}
-
-	return 1;
-
-}
 
 void changePlayerGameMode(std::uint64_t cid, unsigned char gameMode)
 {
@@ -424,36 +272,12 @@ void changePlayerGameMode(std::uint64_t cid, unsigned char gameMode)
 }
 
 
-
-void killEntity(WorldSaver &worldSaver, std::uint64_t entity)
+ServerSettings getServerSettingsCopy()
 {
-	auto entityType = getEntityTypeFromEID(entity);
-
-	if (entityType == EntityType::player)
-	{
-		//genericBroadcastEntityKillFromServerToPlayer(entity, true);
-		//sd.chunkCache.e
-		auto &clients = getAllClientsReff();
-		auto found = clients.find(entity);
-		
-		//it is enough to set the life of players to 0 to kill them!
-		if (found != clients.end())
-		{
-			found->second.playerData.kill();
-		};
-	}
-	else
-	{
-		if (sd.chunkCache.removeEntity(worldSaver, entity))
-		{
-			genericBroadcastEntityKillFromServerToPlayer(entity, true);
-		}
-	}
-
-
+	return sd.settings;
 }
 
-ServerSettings getServerSettingsCopy()
+ServerSettings &getServerSettingsReff()
 {
 	return sd.settings;
 }
@@ -541,6 +365,7 @@ void serverWorkerUpdate(
 		c.second->entityData.players.clear();
 	}
 
+	//todo move in tick probably
 	//set players in their chunks, set players in chunks
 	for (auto &client : getAllClientsReff())
 	{
@@ -551,11 +376,11 @@ void serverWorkerUpdate(
 
 		permaAssertComment(chunk, "Error, A chunk that a player is in unloaded...");
 
-		if (!client.second.playerData.killed)
+		//if (!client.second.playerData.killed)
 		{
 			chunk->entityData.players.insert({client.first, &client.second.playerData});
+			sd.chunkCache.entityChunkPositions[client.first] = cPos;
 			auto ptr = &client.second.playerData;
-			int a = 0;
 		}
 
 	}
@@ -579,6 +404,7 @@ void serverWorkerUpdate(
 	//	}
 	//);
 
+	//todo this will be moved in the tick after refactoring
 #pragma region check players killed
 
 
@@ -605,1110 +431,107 @@ void serverWorkerUpdate(
 #pragma endregion
 
 
-	int chunksGenerated = 0;
-	int chunksLoaded = 0;
 
-	int count = sd.waitingTasks.size();
-	for (int taskIndex = 0; taskIndex < std::min(count, 25); taskIndex++)
+
+	//send chunks
 	{
-		auto &i = sd.waitingTasks.front();
+		int chunksGenerated = 0;
+		int chunksLoaded = 0;
 
-		if (i.t.taskType == Task::generateChunk)
+		for(auto it = sd.waitingTasks.begin(); it != sd.waitingTasks.end();)
 		{
-			auto client = getClient(i.cid); //todo this could fail when players leave so return pointer and check
-			bool wasGenerated = 0;
-
-			if (checkIfPlayerShouldGetChunk(client.positionForChunkGeneration,
-				{i.t.pos.x, i.t.pos.z}, client.playerData.entity.chunkDistance))
+			auto &i = *it;
+		
+			if (i.t.taskType == Task::generateChunk)
 			{
-				PL::Profiler profiler;
+				auto client = getClient(i.cid); //todo this could fail when players leave so return pointer and check
+				bool wasGenerated = 0;
 
-				profiler.start();
-				auto rez = sd.chunkCache.getOrCreateChunk(i.t.pos.x, i.t.pos.z, wg, structuresManager, biomesManager,
-					sendNewBlocksToPlayers, true, nullptr, worldSaver, &wasGenerated);
-				profiler.end();
-
-				chunksLoaded++;
-
-				//if (wasGenerated)
-				//{
-				//	std::cout << "Generated ChunK: " << profiler.rezult.timeSeconds * 1000.f << "ms  per 100: " <<
-				//		profiler.rezult.timeSeconds * 100'000.f << "\n";
-				//}
-
-				Packet packet;
-				packet.header = headerRecieveChunk;
-
-
-				//if you have modified Packet_RecieveChunk make sure you didn't break this!
-				static_assert(sizeof(Packet_RecieveChunk) == sizeof(ChunkData));
-
+				if (checkIfPlayerShouldGetChunk(client.positionForChunkGeneration,
+					{i.t.pos.x, i.t.pos.z}, client.playerData.entity.chunkDistance))
 				{
-					auto client = getClientNotLocked(i.cid);
-					if (client)
+					PL::Profiler profiler;
+
+					profiler.start();
+					auto rez = sd.chunkCache.getOrCreateChunk(i.t.pos.x, i.t.pos.z, wg, structuresManager, biomesManager,
+						sendNewBlocksToPlayers, true, nullptr, worldSaver, &wasGenerated);
+					profiler.end();
+
+					chunksLoaded++;
+
+					//if (wasGenerated)
+					//{
+					//	std::cout << "Generated ChunK: " << profiler.rezult.timeSeconds * 1000.f << "ms  per 100: " <<
+					//		profiler.rezult.timeSeconds * 100'000.f << "\n";
+					//}
+
+					Packet packet;
+					packet.header = headerRecieveChunk;
+
+
+					//if you have modified Packet_RecieveChunk make sure you didn't break this!
+					static_assert(sizeof(Packet_RecieveChunk) == sizeof(ChunkData));
+
 					{
-						sendPacketAndCompress(client->peer, packet, (char *)(&rez->chunk),
-							sizeof(Packet_RecieveChunk), true, channelChunksAndBlocks);
-					}
-
-					std::vector<unsigned char> blockData;
-					rez->blockData.formatBlockData(blockData, rez->chunk.x, rez->chunk.z);
-
-					if (blockData.size())
-					{
-						Packet packet;
-						packet.header = headerRecieveBlockData;
-
-						if (blockData.size() > 1000)
+						auto client = getClientNotLocked(i.cid);
+						if (client)
 						{
-							sendPacketAndCompress(client->peer, packet, (char*)blockData.data(),
-								blockData.size(), true, channelChunksAndBlocks);
+							sendPacketAndCompress(client->peer, packet, (char *)(&rez->chunk),
+								sizeof(Packet_RecieveChunk), true, channelChunksAndBlocks);
 						}
-						else
+
+						std::vector<unsigned char> blockData;
+						rez->blockData.formatBlockData(blockData, rez->chunk.x, rez->chunk.z);
+
+						if (blockData.size())
 						{
-							sendPacket(client->peer, packet, (char *)blockData.data(),
-								blockData.size(), true, channelChunksAndBlocks);
-						};
+							Packet packet;
+							packet.header = headerRecieveBlockData;
+
+							if (blockData.size() > 1000)
+							{
+								sendPacketAndCompress(client->peer, packet, (char *)blockData.data(),
+									blockData.size(), true, channelChunksAndBlocks);
+							}
+							else
+							{
+								sendPacket(client->peer, packet, (char *)blockData.data(),
+									blockData.size(), true, channelChunksAndBlocks);
+							};
+
+						}
 
 					}
 
 				}
+				else
+				{
+					std::cout << "Chunk rejected because player too far: " <<
+						i.t.pos.x << " " << i.t.pos.z << " dist: " << client.playerData.entity.chunkDistance << "\n";
+				}
 
+				if (wasGenerated) { chunksGenerated++; }
+
+				it = sd.waitingTasks.erase(it);
 			}
 			else
 			{
-				std::cout << "Chunk rejected because player too far: " <<
-					i.t.pos.x << " " << i.t.pos.z << " dist: " << client.playerData.entity.chunkDistance << "\n";
+				++it;
 			}
 
-			if (wasGenerated) { chunksGenerated++; }
+
+			//we generate only one chunk per loop
+			//if (chunksGenerated >= 1 || chunksLoaded >= 5)
+			//{
+			//	break;
+			//}
 		}
-		else
-			if (i.t.taskType == Task::placeBlockForce)
-			{
 
-				bool wasGenerated = 0;
-				//std::cout << "server recieved place block\n";
-				//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
-				auto chunk = sd.chunkCache.getOrCreateChunk(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z), wg, structuresManager
-					, biomesManager, sendNewBlocksToPlayers, true, nullptr, worldSaver, &wasGenerated);
-				int convertedX = modBlockToChunk(i.t.pos.x);
-				int convertedZ = modBlockToChunk(i.t.pos.z);
 
-				//todo check if place is legal
-				bool noNeedToNotifyUndo = 0;
-
-				auto client = getClientNotLocked(i.cid);
-
-				if (client)
-				{
-
-					auto b = chunk->chunk.safeGet(convertedX, i.t.pos.y, convertedZ);
-					bool good = 0;
-
-					if (b)
-					{
-						auto block = i.t.blockType;
-
-						if (isBlock(block) || block == 0)
-						{
-							good = true;
-						}
-
-						bool legal = computeRevisionStuff(*client, good, i.t.eventId);
-
-						if (legal)
-						{
-							auto lastBlock = b->getType();
-							chunk->removeBlockWithData({convertedX,
-								i.t.pos.y, convertedZ}, lastBlock);
-							b->setType(i.t.blockType);
-							chunk->otherData.dirty = true;
-
-							{
-								Packet packet;
-								packet.cid = i.cid;
-								packet.header = headerPlaceBlocks;
-
-								Packet_PlaceBlocks packetData;
-								packetData.blockPos = i.t.pos;
-								packetData.blockType = i.t.blockType;
-
-								broadCastNotLocked(packet, &packetData, sizeof(Packet_PlaceBlocks),
-									client->peer, true, channelChunksAndBlocks);
-							}
-							
-						}
-
-					}
-
-
-				}
-
-
-
-			}else
-			if (i.t.taskType == Task::placeBlock
-				|| i.t.taskType == Task::breakBlock
-				)
-			{
-
-				bool wasGenerated = 0;
-				//std::cout << "server recieved place block\n";
-				//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
-				auto chunk = sd.chunkCache.getOrCreateChunk(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z), wg, structuresManager
-					, biomesManager, sendNewBlocksToPlayers, true, nullptr, worldSaver, &wasGenerated);
-				int convertedX = modBlockToChunk(i.t.pos.x);
-				int convertedZ = modBlockToChunk(i.t.pos.z);
-
-				//todo check if place is legal
-				bool noNeedToNotifyUndo = 0;
-
-				auto client = getClientNotLocked(i.cid);
-
-				if (client)
-				{
-
-					//if revision number for the inventory is good we can continue,
-					//	if else we need to undo that move
-					if (
-						i.t.taskType == Task::breakBlock ||
-						(
-						client->playerData.inventory.revisionNumber
-						== i.t.revisionNumber)
-						)
-					{
-						if (i.t.taskType == Task::breakBlock)
-						{
-							i.t.blockType = 0;
-						}
-
-						bool legal = 1;
-						bool rensendInventory = 0;
-
-						if (client->playerData.killed)
-						{
-							legal = 0;
-						}
-
-						{
-							auto f = settings.perClientSettings.find(i.cid);
-							if (f != settings.perClientSettings.end())
-							{
-								if (!f->second.validateStuff)
-								{
-									legal = false;
-								}
-							}
-						}
-
-						auto b = chunk->chunk.safeGet(convertedX, i.t.pos.y, convertedZ);
-						Item *item = 0;
-
-						Block actualPlacedBLock;
-						actualPlacedBLock.typeAndFlags = i.t.blockType;
-
-						if (!b)
-						{
-							legal = false;
-						}
-						else
-						{
-
-							if (i.t.taskType == Task::placeBlock)
-							{
-								item = client->playerData.inventory.getItemFromIndex(i.t.inventroySlot);
-
-
-
-								if(item && item->isBlock() && 
-									actualPlacedBLock.getType() == item->type
-									&& item->counter
-									)
-								{
-									//good
-								}
-								else
-								{
-									legal = false;
-									rensendInventory = true;
-								}
-							}
-
-							if (i.t.taskType == Task::placeBlock)
-							{
-								if (!canBlockBePlaced(actualPlacedBLock.getType(), b->getType()))
-								{
-									legal = false;
-								}
-							}
-							else
-							{
-								if (!canBlockBeBreaked(b->getType(), client->playerData.otherPlayerSettings.gameMode
-									== OtherPlayerSettings::CREATIVE))
-								{
-									legal = false;
-								}
-							}
-							
-
-							if (i.t.taskType == Task::placeBlock && isColidable(actualPlacedBLock.getType()))
-							{
-								//don't place blocks over entities
-
-								if (sd.chunkCache.anyEntityIntersectsWithBlock(i.t.pos))
-								{
-									legal = false;
-								}
-
-							}
-
-						}
-
-						legal = computeRevisionStuff(*client, legal, i.t.eventId);
-
-						if (legal)
-						{
-							auto lastBlock = b->getType();
-							chunk->removeBlockWithData({convertedX,
-								i.t.pos.y, convertedZ}, lastBlock);
-							*b = actualPlacedBLock;
-							chunk->otherData.dirty = true;
-
-							{
-								Packet packet;
-								packet.cid = i.cid;
-								packet.header = headerPlaceBlocks;
-
-								Packet_PlaceBlocks packetData;
-								packetData.blockPos = i.t.pos;
-								packetData.blockType = i.t.blockType;
-
-								broadCastNotLocked(packet, &packetData, sizeof(Packet_PlaceBlocks),
-									client->peer, true, channelChunksAndBlocks);
-							}
-
-							if (i.t.taskType == Task::placeBlock)
-							{
-								if (client->playerData.otherPlayerSettings.gameMode ==
-									OtherPlayerSettings::SURVIVAL)
-								{
-									item->counter--;
-									item->sanitize();
-								};
-							}
-
-							if (i.t.taskType == Task::breakBlock)
-							{
-
-								if (client->playerData.otherPlayerSettings.gameMode ==
-									OtherPlayerSettings::SURVIVAL)
-								{
-									//todo other checks here like tools
-
-									MotionState ms;
-									ms.velocity.y = 2;
-
-									spawnDroppedItemEntity(sd.chunkCache,
-										worldSaver, 1, lastBlock, nullptr,
-										glm::dvec3(i.t.pos), ms);
-
-
-								}
-
-
-							}
-						}
-
-						if (rensendInventory)
-						{
-							sendPlayerInventoryAndIncrementRevision(*client);
-						}
-
-						if (legal)
-						{
-
-							for (auto &c : getAllClientsReff())
-							{
-
-								if (c.second.playerData.interactingWithBlock &&
-									c.second.playerData.currentBlockInteractWithPosition ==
-									i.t.pos
-									)
-								{
-									//close interaction with block.
-									//todo close chests here.
-									c.second.playerData.interactingWithBlock = 0;
-									c.second.playerData.currentBlockInteractWithPosition = {0,-1,0};
-								}
-							}
-
-
-						}
-
-					}
-					else
-					{
-						//undo that move
-						computeRevisionStuff(*client, false, i.t.eventId);
-					}
-					
-
-				}
-
-
-			}
-
-		
-			//todo this and also item usages need to use the current inventory's revision state!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			//	for validation
-			else if (i.t.taskType == Task::droppedItemEntity)
-			{
-
-				auto client = getClientNotLocked(i.cid);
-
-
-				if (client)
-				{
-
-					//if the revision number isn't good
-					//we tell the player to kill that item.
-					bool killItem = 0;
-
-					if (client->playerData.inventory.revisionNumber
-						== i.t.revisionNumber
-						)
-					{
-
-						auto serverAllows = settings.perClientSettings[i.cid].validateStuff;
-
-						if (client->playerData.killed)
-						{
-							serverAllows = 0;
-						}
-
-					
-						if (
-							getEntityTypeFromEID(i.t.entityId) != EntityType::droppedItems ||
-							getOnlyIdFromEID(i.t.entityId)  >= RESERVED_CLIENTS_ID)
-						{
-							//todo well this can cause problems
-							//so we should better do a hard reset here
-							serverAllows = false;
-						}
-
-						auto from = client->playerData.inventory.getItemFromIndex(i.t.from);
-
-						if (!from) { serverAllows = false; }
-						else
-						{
-							if (from->type != i.t.blockType)
-							{
-								serverAllows = false;
-							}
-							else if (from->counter < i.t.blockCount)
-							{
-								serverAllows = false;
-							}
-						}
-
-						auto newId = getEntityIdAndIncrement(worldSaver, EntityType::droppedItems);
-
-						if (computeRevisionStuff(*client, true && serverAllows, i.t.eventId,
-							&i.t.entityId, &newId))
-						{
-
-							//todo get or create chunk here, so we create a function that cant fail.
-							spawnDroppedItemEntity(sd.chunkCache,
-								worldSaver, i.t.blockCount, i.t.blockType, &from->metaData,
-								i.t.doublePos, i.t.motionState, newId,
-								computeRestantTimer(i.t.timer, currentTimer));
-
-							//std::cout << "restant: " << newEntity.restantTime << "\n";
-
-							//substract item from inventory
-							from->counter -= i.t.blockCount;
-							if (!from->counter) { *from = {}; }
-
-						}
-
-						if (!serverAllows)
-						{
-							sendPlayerInventoryAndIncrementRevision(*client);
-							killItem = true;
-						}
-
-					}
-					else
-					{
-						std::cout << "Server revision : "
-							<< (int)client->playerData.inventory.revisionNumber << "\n";
-
-						std::cout << "Recieved revision : "
-							<< (int)i.t.revisionNumber << "\n";
-
-						killItem = true;
-					}
-
-					if (killItem)
-					{
-						entityDeleteFromServerToPlayer(*client, i.t.entityId, true);
-					}
-
-				}
-				
-
-
-			}
-			else if (i.t.taskType == Task::clientMovedItem)
-			{
-				
-				auto client = getClientNotLocked(i.cid);
-
-				if (client)
-				{
-
-					//if the revision number isn't good we don't do anything
-					if (client->playerData.inventory.revisionNumber
-						== i.t.revisionNumber
-						)
-					{
-
-						Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
-						Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
-
-						if (client->playerData.killed)
-						{
-							sendPlayerInventoryAndIncrementRevision(*client); //dissalow
-						}else
-						if (from && to)
-						{
-							//todo they should always be sanitized so we should check during task creation if they are
-
-
-							if (from->type != i.t.itemType
-								|| (i.t.blockCount > from->counter)
-								)
-							{
-								//this is a desync, resend inventory.
-								sendPlayerInventoryAndIncrementRevision(*client);
-							}
-							else
-							{
-
-								if (to->type == 0)
-								{
-									*to = *from;
-									to->counter = i.t.blockCount;
-									from->counter -= i.t.blockCount;
-
-									if (!from->counter) { *from = {}; }
-								}
-								else if (areItemsTheSame(*to, *from))
-								{
-
-									if (to->counter >= to->getStackSize())
-									{
-										sendPlayerInventoryAndIncrementRevision(*client);
-									}
-
-									int total = (int)to->counter + (int)i.t.blockCount;
-									if (total <= to->getStackSize())
-									{
-										to->counter += i.t.blockCount;
-										from->counter -= i.t.blockCount;
-
-										if (!from->counter) { *from = {}; }
-									}
-									else
-									{
-										//this is a desync, resend inventory.
-										sendPlayerInventoryAndIncrementRevision(*client);
-									}
-
-								}
-								else
-								{
-									//this is a desync, resend inventory.
-									sendPlayerInventoryAndIncrementRevision(*client);
-								}
-
-							}
-
-						}
-						else
-						{
-							sendPlayerInventoryAndIncrementRevision(*client);
-						}
-
-					};
-
-				};
-
-			}
-			else if (i.t.taskType == Task::clientOverwriteItem)
-			{
-
-
-				auto client = getClientNotLocked(i.cid);
-
-				if (client)
-				{
-
-
-					//if the revision number isn't good we don't do anything
-					if (client->playerData.inventory.revisionNumber
-						== i.t.revisionNumber
-						)
-					{
-
-						if (client->playerData.killed)
-						{
-							sendPlayerInventoryAndIncrementRevision(*client); //dissalow
-						}
-						else
-						if (client->playerData.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE)
-						{
-
-							Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
-
-							if (to)
-							{
-								*to = {};
-								to->counter = i.t.blockCount;
-								to->type = i.t.itemType;
-								to->metaData = std::move(i.t.metaData);
-							}
-							else
-							{
-
-								sendPlayerInventoryAndIncrementRevision(*client);
-							}
-
-						}
-						else
-						{
-							sendPlayerInventoryAndIncrementRevision(*client);
-							//todo send other player data
-						}
-
-					}
-
-				}
-
-			}
-			else if (i.t.taskType == Task::clientSwapItems)
-			{
-
-				auto client = getClientNotLocked(i.cid);
-
-				if (client)
-				{
-
-					//if the revision number isn't good we don't do anything
-					if (client->playerData.inventory.revisionNumber
-						== i.t.revisionNumber
-						)
-					{
-
-
-						if (client->playerData.killed)
-						{
-							sendPlayerInventoryAndIncrementRevision(*client); //dissalow
-						}
-						else
-						{
-							Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
-							Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
-
-							if (from && to)
-							{
-								Item copy;
-								copy = std::move(*from);
-								*from = std::move(*to);
-								*to = std::move(copy);
-							}
-							else
-							{
-								sendPlayerInventoryAndIncrementRevision(*client);
-							}
-						}
-
-						
-					}
-
-				}
-
-			}
-			else if (i.t.taskType == Task::clientCraftedItem)
-			{
-
-				auto client = getClientNotLocked(i.cid);
-
-				if (client)
-				{
-						
-
-
-					//if the revision number isn't good we don't do anything
-					if (client->playerData.inventory.revisionNumber
-						== i.t.revisionNumber
-						)
-					{
-						if (client->playerData.killed)
-						{
-							sendPlayerInventoryAndIncrementRevision(*client); //dissalow
-						}
-						else
-						{ 
-							int craftingIndex = i.t.craftingRecepieIndex;
-							auto to = i.t.to;
-
-							if (!recepieExists(craftingIndex))
-							{
-								sendPlayerInventoryAndIncrementRevision(*client); //dissalow
-							}
-							else
-							{
-								
-								auto resultCrafting = getRecepieFromIndexUnsafe(craftingIndex);
-
-								auto toslot = client->playerData.inventory.getItemFromIndex(to);
-
-								if (!toslot)
-								{
-									sendPlayerInventoryAndIncrementRevision(*client); //dissalow
-								}
-								else
-								{
-
-									if (!canItemBeCrafted(resultCrafting, client->playerData.inventory))
-									{
-										sendPlayerInventoryAndIncrementRevision(*client);
-
-									}
-									else
-									{
-										if (!canItemBeMovedToAndMoveIt(resultCrafting.result, *toslot))
-										{
-											sendPlayerInventoryAndIncrementRevision(*client);
-										}
-										else
-										{
-											craftItemUnsafe(resultCrafting, client->playerData.inventory);
-										}
-									}
-
-								}
-
-
-							}
-
-						}
-
-						
-
-					}
-				}
-
-			}
-			else if (i.t.taskType == Task::clientUsedItem)
-			{
-
-				auto client = getClientNotLocked(i.cid);
-				
-				if (client)
-				{
-
-					//if the revision number isn't good we don't do anything
-					if (client->playerData.inventory.revisionNumber
-						== i.t.revisionNumber
-						)
-					{
-
-						//serverTask.t.pos = packetData->position;
-
-						Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
-
-						if (from && !client->playerData.killed)
-						{
-
-							if (from->counter <= 0) { from = {}; }
-
-							if (from->type == i.t.itemType)
-							{
-
-								bool allowed = true;
-
-								if (from->type == ItemTypes::pigSpawnEgg)
-								{
-									Pig p;
-									glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.0, -0.49, 0.0);
-									p.position = position;
-									p.lastPosition = position;
-									spawnPig(sd.chunkCache, p, worldSaver, rng);
-								}
-								else if (from->type == ItemTypes::zombieSpawnEgg)
-								{
-									Zombie z;
-									glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.0, -0.49, 0.0);
-									z.position = position;
-									z.lastPosition = position;
-									spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement(worldSaver, 
-										EntityType::zombies));
-								}
-								else if (from->type == ItemTypes::catSpawnEgg)
-								{
-									Cat c;
-									glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.0, -0.49, 0.0);
-									c.position = position;
-									c.lastPosition = position;
-									spawnCat(sd.chunkCache, c, worldSaver, rng);
-								}
-								else if (from->type == ItemTypes::goblinSpawnEgg)
-								{
-									Goblin g;
-									glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.0, -0.49, 0.0);
-									g.position = position;
-									g.lastPosition = position;
-									spawnGoblin(sd.chunkCache, g, worldSaver, rng);
-								}
-								else if (from->isEatable())
-								{
-
-									auto effects = getItemEffects(*from);
-									int healing = getItemHealing(*from);
-
-									//can't eat if satiety doesn't allow it
-									if (effects.allEffects[Effects::Satiety].timerMs > 0 &&
-										client->playerData.effects.allEffects[Effects::Satiety].timerMs > 0
-										)
-									{
-										allowed = 0;
-									}
-									else
-									{
-										client->playerData.applyDamageOrLife(healing);
-										client->playerData.effects.applyEffects(effects);
-									}
-
-
-								}
-								
-								if (
-									allowed &&
-									from->isConsumedAfterUse() && client->playerData.otherPlayerSettings.gameMode ==
-									OtherPlayerSettings::SURVIVAL)
-								{
-									from->counter--;
-									if (from->counter <= 0)
-									{
-										*from = {};
-									}
-								}
-
-								if (!allowed)
-								{
-									sendPlayerInventoryAndIncrementRevision(*client);
-								}
-							}
-							else
-							{
-								sendPlayerInventoryAndIncrementRevision(*client);
-							}
-
-						}
-						else
-						{
-							sendPlayerInventoryAndIncrementRevision(*client);
-						}
-
-					};
-					
-					//the client might have eaten something so we update life anyway,
-					// the same for the effects
-					client->playerData.forceUpdateLife = true;
-					client->playerData.updateEffectsTicksTimer = 0;
-
-				}
-
-			}
-			else if (i.t.taskType == Task::clientInteractedWithBlock)
-			{
-
-				auto pos = i.t.pos;
-				auto blockType = i.t.blockType;
-				unsigned char revisionNumberInteraction = i.t.revisionNumber;
-
-
-				auto client = getClientNotLocked(i.cid);
-				
-				if (client)
-				{
-
-					bool allows = 0;
-
-					auto client = getClientNotLocked(i.cid);
-
-					if (client)
-					{
-
-						allows = true;
-						{
-							auto f = settings.perClientSettings.find(i.cid);
-							if (f != settings.perClientSettings.end())
-							{
-								if (!f->second.validateStuff)
-								{
-									allows = false;
-								}
-							}
-						}
-
-						if (client->playerData.killed)
-						{
-							allows = false;
-						}
-
-						if (allows)
-						{
-							bool wasGenerated = 0;
-							//std::cout << "server recieved place block\n";
-							//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
-							auto chunk = sd.chunkCache.getOrCreateChunk(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z), wg, structuresManager
-								, biomesManager, sendNewBlocksToPlayers, true, nullptr, worldSaver, &wasGenerated);
-							int convertedX = modBlockToChunk(i.t.pos.x);
-							int convertedZ = modBlockToChunk(i.t.pos.z);
-
-							allows = false;
-
-							if (chunk)
-							{
-								auto b = chunk->chunk.safeGet(convertedX, i.t.pos.y, convertedZ);
-
-								if (b && b->getType() == blockType
-									&& isInteractable(blockType)
-									)
-								{
-									//todo check distance.
-									allows = true;
-								}
-							}
-						}
-						
-						if (allows)
-						{
-
-							client->playerData.interactingWithBlock =
-								isInteractable(blockType);
-							client->playerData.revisionNumberInteraction = revisionNumberInteraction;
-							client->playerData.currentBlockInteractWithPosition = pos;
-
-
-						}
-						else
-						{
-							sendPlayerExitInteraction(*client, revisionNumberInteraction);
-						}
-					
-
-					}
-					
-
-				}
-
-			}
-			else if (i.t.taskType == Task::clientExitedInteractionWithBlock)
-			{
-				unsigned char revisionNumberInteraction = i.t.revisionNumber;
-
-				auto client = getClientNotLocked(i.cid);
-
-				if (client)
-				{
-					if (client->playerData.revisionNumberInteraction == revisionNumberInteraction)
-					{
-						client->playerData.interactingWithBlock = 0;
-						client->playerData.currentBlockInteractWithPosition = {0,-1,0};
-						//std::cout << "Server, exit interaction!\n";
-					}
-
-				}
-
-
-			}
-			else if (i.t.taskType == Task::clientUpdatedSkin)
-			{
-
-				Packet p;
-				p.header = headerSendPlayerSkin;
-				p.cid = i.cid;
-				
-				auto client = getClientNotLocked(i.cid);
-				
-				if(client)
-				{
-					if (client->skinDataCompressed)
-					{
-						p.setCompressed();
-					}
-
-					broadCastNotLocked(p, client->skinData.data(),
-						client->skinData.size(), client->peer, true, channelHandleConnections);
-				}
-			}
-			else if (i.t.taskType == Task::clientAttackedEntity)
-			{
-				unsigned char itemInventoryIndex = i.t.inventroySlot;
-				std::uint64_t entityId = i.t.entityId;
-				glm::vec3 dir = i.t.vector;
-				HitResult hitResult = i.t.hitResult;
-
-				auto client = getClientNotLocked(i.cid);
-
-				if (client)
-				{
-					if (!client->playerData.killed)
-					{
-						auto item = client->playerData.inventory.getItemFromIndex(itemInventoryIndex);
-						if (item)
-						{
-							int type = getEntityTypeFromEID(entityId);
-							bool doNotHit = 0;
-
-							//we don't want to hit creative players
-							if (type == EntityType::player)
-							{
-								auto found = clients.find(entityId);
-
-								if (found == clients.end()) { doNotHit = true; }
-								else
-								{
-									if (found->second.playerData.otherPlayerSettings.gameMode
-										== OtherPlayerSettings::CREATIVE)
-									{
-										doNotHit = true;
-									}
-								}
-							}
-
-							if (!doNotHit)
-							{
-								std::uint64_t wasKilled = 0;
-								bool rez = sd.chunkCache.hitEntityByPlayer(entityId, client->playerData.getPosition(),
-									*item, wasKilled, dir, rng, hitResult.hitCorectness, hitResult.bonusCritChance);
-
-								if (rez)
-								{
-
-									//hit other player, notify with sound
-									if (type == EntityType::player)
-									{
-										auto found = clients.find(entityId);
-										permaAssertComment(found != clients.end(), "this player should exist");
-
-										//found->second.playerData.recieveDamage();
-										//sendDamagePlayerPacket(found->second);
-									}
-
-								}
-
-								if (wasKilled)
-								{
-
-									//sd.chunkCache
-
-									auto pos = sd.chunkCache.getEntityPosition(wasKilled);
-
-									if (pos)
-									{
-										glm::vec3 p = *pos;
-										p.y += 0.5;
-										spawnDroppedItemEntity(sd.chunkCache,
-											worldSaver, 1, ItemTypes::apple, 0, p);
-									}
-									else
-									{
-										std::cout << "ERROR gettint entity position!\n";
-									}
-
-									killEntity(worldSaver, wasKilled);
-								}
-							}
-							
-
-						}
-					}
-
-				}
-
-			}
-			else if (i.t.taskType == Task::clientWantsToRespawn)
-			{
-				auto client = getClientNotLocked(i.cid);
-
-				if (client)
-				{
-			
-					if (client->playerData.killed)
-					{
-
-						client->playerData.effects = {};
-						client->playerData.newLife = PLAYER_DEFAULT_LIFE;
-						client->playerData.lifeLastFrame = PLAYER_DEFAULT_LIFE;
-						client->playerData.killed = false;
-						sendPlayerInventoryAndIncrementRevision(*client);
-						sendUpdateLifeLifePlayerPacket(*client);
-
-						Packet packet;
-						packet.cid = i.cid;
-						packet.header = headerRespawnPlayer;
-
-						Packet_RespawnPlayer packetData;
-						packetData.pos = worldSaver.spawnPosition;
-
-						broadCastNotLocked(packet, &packetData, sizeof(packetData), 
-							false, true, channelChunksAndBlocks);	
-					}
-
-				}
-
-			}
-			else if (i.t.taskType == Task::clientRecievedDamageLocally)
-			{
-				auto client = getClientNotLocked(i.cid);
-
-				if (client && !client->playerData.killed)
-				{
-
-					client->playerData.applyDamageOrLife(-i.t.damage);
-					
-				}
-
-			}
-			else if (i.t.taskType == Task::clientRecievedDamageLocallyAndDied)
-			{
-				auto client = getClientNotLocked(i.cid);
-
-				if (client && !client->playerData.killed)
-				{
-					client->playerData.kill();
-
-					genericBroadcastEntityKillFromServerToPlayer(i.cid, true, 
-						client->peer);
-				}
-				
-			}
-
-
-		sd.waitingTasks.erase(sd.waitingTasks.begin());
-
-		//we generate only one chunk per loop
-		if (chunksGenerated >= 1 || chunksLoaded >= 5)
-		{
-			break;
-		}
 	}
+
+
+	//here used to be the tasks
 
 
 
@@ -1837,44 +660,44 @@ void serverWorkerUpdate(
 
 		if(settings.perClientSettings.size())
 		{
-			if (settings.perClientSettings.begin()->second.spawnZombie)
-			{
-				settings.perClientSettings.begin()->second.spawnZombie = false;
-
-
-				auto c = getAllClients();
-
-				Zombie z;
-				glm::dvec3 position = c.begin()->second.playerData.entity.position;
-				z.position = position;
-				z.lastPosition = position;
-				spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement(worldSaver, 
-					EntityType::zombies));
-			}
-
-			if (settings.perClientSettings.begin()->second.spawnPig)
-			{
-				settings.perClientSettings.begin()->second.spawnPig = false;
-				auto c = getAllClients();
-
-				Pig p;
-				glm::dvec3 position = c.begin()->second.playerData.entity.position;
-				p.position = position;
-				p.lastPosition = position;
-				spawnPig(sd.chunkCache, p, worldSaver, rng);
-			}
-
-			if (settings.perClientSettings.begin()->second.spawnGoblin)
-			{
-				settings.perClientSettings.begin()->second.spawnGoblin = false;
-				auto c = getAllClients();
-
-				Goblin p;
-				glm::dvec3 position = c.begin()->second.playerData.entity.position;
-				p.position = position;
-				p.lastPosition = position;
-				spawnGoblin(sd.chunkCache, p, worldSaver, rng);
-			}
+			//if (settings.perClientSettings.begin()->second.spawnZombie)
+			//{
+			//	settings.perClientSettings.begin()->second.spawnZombie = false;
+			//
+			//
+			//	auto c = getAllClients();
+			//
+			//	Zombie z;
+			//	glm::dvec3 position = c.begin()->second.playerData.entity.position;
+			//	z.position = position;
+			//	z.lastPosition = position;
+			//	spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement(worldSaver, 
+			//		EntityType::zombies));
+			//}
+			//
+			//if (settings.perClientSettings.begin()->second.spawnPig)
+			//{
+			//	settings.perClientSettings.begin()->second.spawnPig = false;
+			//	auto c = getAllClients();
+			//
+			//	Pig p;
+			//	glm::dvec3 position = c.begin()->second.playerData.entity.position;
+			//	p.position = position;
+			//	p.lastPosition = position;
+			//	spawnPig(sd.chunkCache, p, worldSaver, rng);
+			//}
+			//
+			//if (settings.perClientSettings.begin()->second.spawnGoblin)
+			//{
+			//	settings.perClientSettings.begin()->second.spawnGoblin = false;
+			//	auto c = getAllClients();
+			//
+			//	Goblin p;
+			//	glm::dvec3 position = c.begin()->second.playerData.entity.position;
+			//	p.position = position;
+			//	p.lastPosition = position;
+			//	spawnGoblin(sd.chunkCache, p, worldSaver, rng);
+			//}
 
 			if (settings.perClientSettings.begin()->second.resendInventory)
 			{
@@ -1900,23 +723,25 @@ void serverWorkerUpdate(
 				c.begin()->second.playerData.applyDamageOrLife(10);
 			}
 
-			if (settings.perClientSettings.begin()->second.killApig)
-			{
-				settings.perClientSettings.begin()->second.killApig = false;
+			//TODO chunks shouldn't be nullptrs so why check them?
+			//	// so maybe just perma assert comment at the beginning
 
-				//TODO chunks shouldn't be nullptrs so why check them?
-				// so maybe just perma assert comment at the beginning
-
-				for (auto &c : sd.chunkCache.savedChunks)
-				{
-					if (c.second && c.second->entityData.pigs.size())
-					{
-						killEntity(worldSaver, c.second->entityData.pigs.begin()->first);
-						break;
-					}
-				}
-
-			}
+			//if (settings.perClientSettings.begin()->second.killApig)
+			//{
+			//	settings.perClientSettings.begin()->second.killApig = false;
+			//
+			//	
+			//
+			//	for (auto &c : sd.chunkCache.savedChunks)
+			//	{
+			//		if (c.second && c.second->entityData.pigs.size())
+			//		{
+			//			killEntity(worldSaver, c.second->entityData.pigs.begin()->first);
+			//			break;
+			//		}
+			//	}
+			//
+			//}
 		}
 
 	#pragma region unload chunks
@@ -1935,7 +760,7 @@ void serverWorkerUpdate(
 		}
 
 		splitUpdatesLogic(sd.tickDeltaTime, sd.tickDeltaTimeMs,
-			currentTimer, sd.chunkCache, rng(), clients, worldSaver);
+			currentTimer, sd.chunkCache, rng(), clients, worldSaver, sd.waitingTasks);
 
 		sd.tickDeltaTime = 0;
 		sd.tickDeltaTimeMs = 0;

@@ -18,7 +18,8 @@ void doGameTick(float deltaTime,
 	std::uint64_t currentTimer,
 	ServerChunkStorer &chunkCache,
 	EntityData &orphanEntities,
-	unsigned int seed
+	unsigned int seed,
+	std::vector<ServerTask> waitingTasks, WorldSaver &worldSaver
 );
 
 

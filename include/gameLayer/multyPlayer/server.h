@@ -74,6 +74,8 @@ void removeCidFromServerSettings(std::uint64_t cid);
 void changePlayerGameMode(std::uint64_t cid, unsigned char gameMode);
 
 ServerSettings getServerSettingsCopy();
+ServerSettings &getServerSettingsReff();
+
 
 unsigned int getRandomTickSpeed();
 

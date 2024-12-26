@@ -373,7 +373,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 	}
 
 	//validate data
-	//no need for mutex here fortunatelly because this thread is the one that modifies the connections?
+	//no need for mutex here fortunatelly because this thread is the one that modifies the connections
 	//connectionsMutex.lock();
 	if (connection->second.peer != event.peer)
 	{
@@ -387,7 +387,6 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 	ServerTask serverTask = {};
 	serverTask.cid = p.cid;
 
-	//todo check invalid cids here instead of every time later
 
 	switch (p.header)
 	{
@@ -419,7 +418,6 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			break;
 		}
 
-		//todo inventory revision here and consume blocks if not creative
 		case headerPlaceBlock:
 		{
 			Packet_ClientPlaceBlock packetData = *(Packet_ClientPlaceBlock *)data;
@@ -489,7 +487,8 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 
 			}
 
-
+			//todo broadcast with the other entities maybe?
+			// or at least make sure only players that need to recieve this recieve updates.
 			if (packetData.timer + 16 * 4 > getTimer())
 			{
 
@@ -632,6 +631,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 
 		}
 
+		//todo tick timer here
 		case headerClientUsedItem:
 		{
 
@@ -938,6 +938,7 @@ void enetServerFunction(std::string path)
 		
 		if (!enetServerRunning) { break; }
 
+		//todo this will be moved into tick
 	#pragma region server send entity position data
 
 		{

@@ -12,6 +12,7 @@ struct Client;
 
 struct PerTickData
 {
+	std::vector<ServerTask> waitingTasks;
 	ServerChunkStorer chunkCache;
 	EntityData orphanEntities;
 	unsigned int seed = 1;
@@ -23,6 +24,7 @@ static std::deque<std::atomic<bool>> taskTaken;
 static float tickDeltaTime = 0;
 static int tickDeltaTimeMs = 0;
 static std::uint64_t currentTimer = 0;
+static WorldSaver *worldSaver = 0;
 
 int regionsAverageCounter[50] = {};
 int counterPosition = 0;
@@ -63,7 +65,7 @@ int getThredPoolSize()
 
 void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t currentTimer,
 	ServerChunkStorer &chunkCache, unsigned int seed, std::unordered_map<std::uint64_t, Client> &clients,
-	WorldSaver &worldSaver)
+	WorldSaver &worldSaver, std::vector<ServerTask> &waitingTasks)
 {
 
 
@@ -74,6 +76,7 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 		::tickDeltaTime = tickDeltaTime;
 		::currentTimer = currentTimer;
 		::tickDeltaTimeMs = tickDeltaTimeMs;
+		::worldSaver = &worldSaver;
 
 		PL::Profiler pl;
 
@@ -168,19 +171,13 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 		taskTaken.resize(chunkRegionsData.size());
 		for (auto &i : taskTaken) { i = 0; }
 
-		for (auto &c : chunkRegionsData)
-		{
-			c.seed = rng();
-		}
-
 		//todo fix lol
 		//if (chunkRegionsData.size() > 1)
 		//{
 		//	std::cout << chunkRegionsData.size() << "!!!\n";
 		//}
 
-
-
+		//weak threads up
 	#pragma region set threads count
 		{
 
@@ -209,6 +206,56 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 	#pragma endregion
 
 
+		for (auto &c : chunkRegionsData)
+		{
+			c.seed = rng();
+		}
+
+		
+	#pragma region set waiting tasks for each region
+
+		std::unordered_map<std::uint64_t, int> playersRegions;
+
+		//todo optimize this thing
+		for (int i = 0; i < chunkRegionsData.size(); i++)
+		{
+			auto &cache = chunkRegionsData[i].chunkCache;
+
+			for (auto &c : cache.savedChunks)
+			{
+				if (!c.second->entityData.players.empty())
+				{
+					for (auto &p : c.second->entityData.players)
+					{
+						playersRegions[p.first] = i;
+					}
+				}
+			}
+		}
+			
+		if (playersRegions.empty() && !waitingTasks.empty())
+		{
+			permaAssertComment(0, "No players in split update logic.cpp");
+		}
+
+		for (auto &t : waitingTasks)
+		{
+				
+			auto cid = t.cid;
+			permaAssertComment(cid != 0, "Cid can't be 0 in split update logic.cpp");
+
+			auto found = playersRegions.find(cid);
+
+			permaAssertComment(found != playersRegions.end(), "invalid cid in split update logic.cpp");
+
+			chunkRegionsData[found->second].waitingTasks.push_back(t);
+		}
+		waitingTasks.clear();
+
+	#pragma endregion
+
+
+
 		//start race
 		threadPool.setThrerIsWork();
 
@@ -227,7 +274,9 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 			doGameTick(tickDeltaTime, tickDeltaTimeMs, currentTimer,
 				chunkRegionsData[taskIndex].chunkCache,
 				chunkRegionsData[taskIndex].orphanEntities,
-				chunkRegionsData[taskIndex].seed
+				chunkRegionsData[taskIndex].seed,
+				chunkRegionsData[taskIndex].waitingTasks,
+				worldSaver
 				);
 		}
 
@@ -376,8 +425,6 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 
 #pragma endregion
 
-	
-
 
 }
 
@@ -401,7 +448,10 @@ void workerThread(int index)
 				doGameTick(tickDeltaTime, tickDeltaTimeMs, currentTimer,
 					chunkRegionsData[taskIndex].chunkCache,
 					chunkRegionsData[taskIndex].orphanEntities,
-					chunkRegionsData[taskIndex].seed);
+					chunkRegionsData[taskIndex].seed,
+					chunkRegionsData[taskIndex].waitingTasks,
+					*worldSaver
+					);
 			}
 
 			//done work

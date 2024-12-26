@@ -35,7 +35,7 @@ void splitUpdatesLogic(float tickDeltaTime,
 	std::uint64_t currentTimer,
 	ServerChunkStorer &chunkCache, unsigned int seed,
 	std::unordered_map<std::uint64_t, Client> &clients,
-	WorldSaver &worldSaver
+	WorldSaver &worldSaver, std::vector<ServerTask> &waitingTasks
 );
 
 

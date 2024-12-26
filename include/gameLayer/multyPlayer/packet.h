@@ -102,8 +102,8 @@ enum
 	channelPlayerPositions,		
 	channelEntityPositions,
 	channelHandleConnections,	//this will also send Entity cids and timers
-	channelEffects,
-	//channelRequestChunks, todo maybe try this in the future
+	channelEffects,				
+
 	SERVER_CHANNELS
 
 };
