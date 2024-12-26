@@ -309,6 +309,19 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 
 
 		}
+		else if (item.isSword())
+		{
+			if (leftPressed || rightPressed)
+			{
+
+				result.bonusCritChance = 0;
+				result.hit = 1;
+				result.hitCorectness = 1;
+
+			}
+
+
+		}
 
 		if (stats.dexterity < 0)
 		{

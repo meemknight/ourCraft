@@ -1620,7 +1620,7 @@ void doHittingThings(T &e, glm::vec3 dir, glm::dvec3 playerPosition,
 		int damage = calculateDamage(armour, stats, rng,
 			hitCorectness, critChanceBonus);
 
-		std::cout << "Damage: " << damage << "\n";
+		//std::cout << "Damage: " << damage << "\n";
 
 		if (damage >= life->life)
 		{
@@ -1789,10 +1789,11 @@ std::optional<glm::dvec3> ServerChunkStorer::getEntityPosition(std::uint64_t ent
 			else
 			{
 
-				auto genericSearch = [&](auto &container)
+				auto genericSearch = [&](auto &container) ->std::optional<glm::dvec3>
 				{
 					auto foundEntity = container.find(entity);
 					if (foundEntity != container.end()) { return foundEntity->second.getPosition(); }
+					return std::nullopt;
 				};
 				
 				switch (type)
