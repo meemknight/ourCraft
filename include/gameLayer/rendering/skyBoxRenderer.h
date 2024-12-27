@@ -23,6 +23,7 @@ struct SkyBoxLoaderAndDrawer
 
 	void createGpuData();
 
+
 	struct
 	{
 		Shader shader;
@@ -32,6 +33,19 @@ struct SkyBoxLoaderAndDrawer
 		GLuint u_rotation1;
 		GLuint u_rotation2;
 	}normalSkyBox;
+
+	struct
+	{
+		Shader shader;
+		GLuint u_lightPos;
+		GLuint u_color1;
+		GLuint u_color2;
+		GLuint u_groundColor;
+		GLuint u_g;
+		GLuint u_useGround;
+		GLuint u_viewProjection;
+		GLuint u_noSun;
+	}atmosphericScatteringShader;
 
 	struct
 	{
@@ -93,6 +107,12 @@ struct SkyBoxLoaderAndDrawer
 
 
 	void clearOnlyGPUdata();
+
+	void atmosphericScattering(glm::vec3 sunPos, glm::vec3 color1, glm::vec3 color2,
+		glm::vec3 groundColor, bool useGroundColor, float g,
+		SkyBox &skyBox, bool noSun);
+
+	void createSkyTextures();
 };
 
 

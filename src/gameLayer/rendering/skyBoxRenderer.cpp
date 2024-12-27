@@ -68,6 +68,19 @@ static glm::mat4 captureViews[] =
 void SkyBoxLoaderAndDrawer::createGpuData()
 {
 
+
+	atmosphericScatteringShader.shader.loadShaderProgramFromFile(RESOURCES_PATH  "shaders/skyBox/hdrToCubeMap.vert",
+		RESOURCES_PATH  "shaders/skyBox/atmosphericScattering.frag");
+	atmosphericScatteringShader.u_lightPos = getUniform(atmosphericScatteringShader.shader.id, "u_lightPos");
+	atmosphericScatteringShader.u_color1 = getUniform(atmosphericScatteringShader.shader.id, "u_color1");
+	atmosphericScatteringShader.u_color2 = getUniform(atmosphericScatteringShader.shader.id, "u_color2");
+	atmosphericScatteringShader.u_groundColor = getUniform(atmosphericScatteringShader.shader.id, "u_groundColor");
+	atmosphericScatteringShader.u_g = getUniform(atmosphericScatteringShader.shader.id, "u_g");
+	atmosphericScatteringShader.u_useGround = getUniform(atmosphericScatteringShader.shader.id, "u_useGround");
+	atmosphericScatteringShader.u_viewProjection = getUniform(atmosphericScatteringShader.shader.id, "u_viewProjection");
+	atmosphericScatteringShader.u_noSun = getUniform(atmosphericScatteringShader.shader.id, "u_noSun");
+	
+
 	normalSkyBox.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/skyBox/skyBox.vert", RESOURCES_PATH "shaders/skyBox/skyBox.frag");
 	normalSkyBox.modelViewUniformLocation = getUniform(normalSkyBox.shader.id, "u_viewProjection");
 	normalSkyBox.u_sunPos = getUniform(normalSkyBox.shader.id, "u_sunPos");
@@ -111,25 +124,118 @@ void SkyBoxLoaderAndDrawer::createGpuData()
 	glBindFramebuffer(GL_FRAMEBUFFER, captureFBO); //also allocate gpu resources
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	//render out the sky textures
+	//createSkyTextures();
+
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void SkyBoxLoaderAndDrawer::createSkyTextures()
+{
+
+	daySky.clearTextures();
+	atmosphericScattering({0, -1, 0}, glm::vec3{9, 47, 116} / 255.f,
+		glm::vec3{33,38,44} / 255.f, {1,1,1}, false, 0.4, daySky, true);
+
+	twilightSky.clearTextures();
+	atmosphericScattering(glm::normalize(glm::vec3{0, 0.1, 1}), glm::vec3{22, 49, 111} / 255.f,
+		glm::vec3{35,22,36} / 255.f, {1,1,1}, false, 0.995, twilightSky, false);
+
+	nightSky.clearTextures();
+	atmosphericScattering({0, -1, 0}, glm::vec3{9, 15, 23} / 255.f * 0.5f,
+		glm::vec3{4,8,10} / 255.f * 0.5f, {1,1,1}, false, 0.850, nightSky, true);
+
+}
+
+void SkyBoxLoaderAndDrawer::atmosphericScattering(glm::vec3 sunPos,
+	glm::vec3 color1, glm::vec3 color2,
+	glm::vec3 groundColor, bool useGroundColor, float g,
+	SkyBox &skyBox, bool noSun)
+{
+	skyBox = {};
+	constexpr int skyBoxSize = 128;
+
+	//render into the cubemap
+	{
+		GLuint captureFBO;
+		glGenFramebuffers(1, &captureFBO);
+		glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+
+		glGenTextures(1, &skyBox.texture);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, skyBox.texture);
+		for (unsigned int i = 0; i < 6; ++i)
+		{
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_R11F_G11F_B10F,
+				skyBoxSize, skyBoxSize, 0, GL_RGB, GL_FLOAT, nullptr);
+		}
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		//rendering
+		{
+
+			atmosphericScatteringShader.shader.bind();
+			glUniform3fv(atmosphericScatteringShader.u_lightPos, 1, &sunPos[0]);
+			glUniform1f(atmosphericScatteringShader.u_g, g);
+			glUniform3fv(atmosphericScatteringShader.u_color1, 1, &color1[0]);
+			glUniform3fv(atmosphericScatteringShader.u_color2, 1, &color2[0]);
+			glUniform3fv(atmosphericScatteringShader.u_groundColor, 1, &groundColor[0]);
+			glUniform1i(atmosphericScatteringShader.u_useGround, (int)useGroundColor);
+			glUniform1i(atmosphericScatteringShader.u_noSun, (int)noSun);
+
+			glViewport(0, 0, skyBoxSize, skyBoxSize);
+
+			glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+			glBindVertexArray(vertexArray);
+
+			for (unsigned int i = 0; i < 6; ++i)
+			{
+				glm::mat4 viewProjMat = captureProjection * captureViews[i];
+				glUniformMatrix4fv(atmosphericScatteringShader.u_viewProjection, 1, GL_FALSE, &viewProjMat[0][0]);
+				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+					GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, skyBox.texture, 0);
+				glClear(GL_COLOR_BUFFER_BIT);
+
+				glDrawArrays(GL_TRIANGLES, 0, 6 * 6); // renders a 1x1 cube
+			}
+
+			glBindVertexArray(0);
+
+		}
+
+		glDeleteFramebuffers(1, &captureFBO);
+
+	}
+
+	createConvolutedAndPrefilteredTextureData(skyBox, 0.02, 64u);
+
 }
 
 
 void SkyBoxLoaderAndDrawer::loadAllTextures(std::string path)
 {
-	if (!daySky.texture)
-	{
-		loadTexture((path + "skybox.png").c_str(), daySky);
-	}
-	
-	if (!nightSky.texture)
-	{
-		loadTexture((path + "nightsky.png").c_str(), nightSky);
-	}
 
-	if (!twilightSky.texture)
-	{
-		loadTexture((path + "twilightsky.png").c_str(), twilightSky);
-	}
+	createSkyTextures();
+	//if (!daySky.texture)
+	//{
+	//	loadTexture((path + "skybox.png").c_str(), daySky);
+	//
+	//}
+
+	
+	//if (!nightSky.texture)
+	//{
+	//	loadTexture((path + "nightsky.png").c_str(), nightSky);
+	//}
+
+	//if (!twilightSky.texture)
+	//{
+	//	loadTexture((path + "twilightsky.png").c_str(), twilightSky);
+	//}
 
 	if (!sunTexture.id)
 	{
@@ -144,9 +250,9 @@ void SkyBoxLoaderAndDrawer::loadAllTextures(std::string path)
 
 void SkyBoxLoaderAndDrawer::clearOnlyTextures()
 {
-	daySky.clearTextures(); daySky = {};
-	nightSky.clearTextures(); nightSky = {};
-	twilightSky.clearTextures(); twilightSky = {};
+	//daySky.clearTextures(); daySky = {};
+	//nightSky.clearTextures(); nightSky = {};
+	//twilightSky.clearTextures(); twilightSky = {};
 	sunTexture.cleanup(); sunTexture = {};
 	moonTexture.cleanup(); moonTexture = {};
 }
@@ -664,6 +770,7 @@ void SkyBoxLoaderAndDrawer::drawBefore(const glm::mat4 &viewProjMat,
 
 void SkyBoxLoaderAndDrawer::clearOnlyGPUdata()
 {
+	atmosphericScatteringShader.shader.clear();
 	normalSkyBox.shader.clear();
 	hdrtoCubeMap.shader.clear();
 	convolute.shader.clear();

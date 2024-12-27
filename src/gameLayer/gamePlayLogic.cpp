@@ -555,6 +555,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			programData.renderer.reloadShaders();
 			programData.skyBoxLoaderAndDrawer.clearOnlyGPUdata();
 			programData.skyBoxLoaderAndDrawer.createGpuData();
+			programData.skyBoxLoaderAndDrawer.createSkyTextures();
 
 			programData.sunRenderer.clear();
 			programData.sunRenderer.create();

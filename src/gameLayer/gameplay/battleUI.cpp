@@ -18,11 +18,11 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 	static float debugSpeed = 1;
 	static float debugDexterity = 0;
 	static float debugCombo = 0;
-	ImGui::Begin("Test speed");
-	ImGui::SliderFloat("Speed: ", &debugSpeed, -10, 20);
-	ImGui::SliderFloat("Dexterity: ", &debugDexterity, -10, 20);
-	ImGui::SliderFloat("Combo Frequency: ", &debugCombo, -10, 20);
-	ImGui::End();
+	//ImGui::Begin("Test speed");
+	//ImGui::SliderFloat("Speed: ", &debugSpeed, -10, 20);
+	//ImGui::SliderFloat("Dexterity: ", &debugDexterity, -10, 20);
+	//ImGui::SliderFloat("Combo Frequency: ", &debugCombo, -10, 20);
+	//ImGui::End();
 
 	HitResult result;
 

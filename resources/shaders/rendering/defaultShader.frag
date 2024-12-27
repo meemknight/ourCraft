@@ -122,22 +122,61 @@ bool isWater()
 }
 
 
-float computeFog(float dist)
+float computeFog(float dist, float fragmentHeight)
 {
-	float rezClose = 1;
+	//float rezClose = 1;
+	//
+	//if(u_fogCloseGradient!=0)
+	//{
+	//	rezClose = exp(-pow(dist*(1.f/64), u_fogCloseGradient));
+	//	if(rezClose > 0.95){rezClose = 1;}
+	//	rezClose = rezClose / 4.f;
+	//	rezClose = rezClose + 0.75f;
+	//}
+	//
+	//
+	//float rez = exp(-pow(dist*(1.f/u_fogDistance), 64));
+	//if(rez > 0.8){rez = pow(rez,0.5f);}
+	//return pow(rez,2) * rezClose;
 
-	if(u_fogCloseGradient!=0)
-	{
-		rezClose = exp(-pow(dist*(1.f/64), u_fogCloseGradient));
-		if(rezClose > 0.95){rezClose = 1;}
-		rezClose = rezClose / 4.f;
-		rezClose = rezClose + 0.75f;
-	}
+	//float rez = 0;
+	//
+	//float density = 0.1;
+	//float gradient = 4;
+	//
+	//rez = exp(-pow(dist*(1/16.f)*density, gradient));
+	//
+	//return rez;
 
 
-	float rez = exp(-pow(dist*(1.f/u_fogDistance), 64));
-	if(rez > 0.8){rez = pow(rez,0.5f);}
-	return pow(rez,2) * rezClose;
+	//Sildur's shaders vibrant
+
+	float rainStrength = 0.0; // 0 -> 1
+	float wFogDensity = 8;
+
+	float density = wFogDensity*(1.0-rainStrength*0.115);
+	float airDensity = 	max(fragmentHeight/10.,6.0);
+	float eyeBrightnessSmooth = 120;
+	float distMultiplier = 0.8;
+	dist *= distMultiplier;
+	dist = pow(dist, 0.9);
+
+//#ifdef morningFog
+//	float morning = clamp((worldTime-0.1)/300.0,0.0,1.0)-clamp((worldTime-23150.0)/200.0,0.0,1.0);
+//	density *= (0.1+0.9*morning);
+//#endif
+	
+	//float tmult = mix(min(abs(worldTime-6000.0)/6000.0,1.0),1.0,rainStrength);
+	float tmult = 0;
+
+	float height = mix(airDensity,6.,rainStrength);
+	float d = dist;
+
+	return 1-pow(clamp((2.625+rainStrength*3.4)/exp(-60/10./density)*exp(-airDensity/density) 
+	* (1.0-exp( -pow(d,2.712)*height/density/(6000.-tmult*tmult*2000.)/13))/height,0.0,1.),1.0-rainStrength*0.63)*clamp((eyeBrightnessSmooth/255.-2/16.)*4.,0.0,1.0);
+
+
+
 }
 
 float computeFogUnderWater(float dist)
@@ -1373,7 +1412,7 @@ void main()
 		{
 
 			out_color.rgb = mix(skyBoxColor, out_color.rgb, 
-								computeFog(viewLength)
+								computeFog(viewLength, fragmentPositionI.y + fragmentPositionF.y)
 							);
 		}
 
