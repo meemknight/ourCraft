@@ -129,4 +129,4 @@ struct ChunkSystem
 	std::unordered_map<glm::ivec2, float> recentlyRequestedChunks;
 };
 
-
+bool isChunkInRadius(glm::ivec2 playerPos, glm::ivec2 chunkPos, int squareSize);

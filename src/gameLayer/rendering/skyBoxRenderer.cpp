@@ -837,6 +837,7 @@ void SunRenderer::create()
 		RESOURCES_PATH "shaders/skyBox/sun.frag");
 	
 	u_modelViewProjectionMatrix = getUniform(shader.id, "u_modelViewProjectionMatrix");
+	u_sunset = getUniform(shader.id, "u_sunset");
 
 	glBindVertexArray(0);
 }
@@ -862,7 +863,7 @@ glm::mat4 createTBNMatrix(const glm::vec3 &direction, const glm::vec3 &up = glm:
 }
 
 void SunRenderer::render(Camera camera, 
-	glm::vec3 sunPos, gl2d::Texture sunTexture)
+	glm::vec3 sunPos, gl2d::Texture sunTexture, float twilight)
 {
 	glBindVertexArray(vao);
 	shader.bind();
@@ -871,6 +872,7 @@ void SunRenderer::render(Camera camera,
 
 	auto finalMatrix = camera.getProjectionMatrix() * camera.getViewMatrix() * createTBNMatrix(sunPos);
 	glUniformMatrix4fv(u_modelViewProjectionMatrix, 1, GL_FALSE, &finalMatrix[0][0]);
+	glUniform1f(u_sunset, twilight);
 
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }

@@ -283,29 +283,33 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	}
 
 	//request new chunks from the server
-	std::vector<Task> chunkTasks;
-	for (int x = 0; x < squareSize; x++)
-		for (int z = 0; z < squareSize; z++)
-		{
-			if (loadedChunks[x * squareSize + z] == nullptr
-				&& checkChunkInRadius({x, z})
-				)
-			{
-				Task t;
-
-				t.taskType = Task::generateChunk;
-				t.pos = glm::ivec3(x + minPos.x, 0, z + minPos.y);
-				t.playerPosForChunkGeneration.x = playerBlockPosition.x;
-				t.playerPosForChunkGeneration.y = playerBlockPosition.z;
-
-				chunkTasks.push_back(t);
-			}
-		}
-	
-	if (!chunkTasks.empty())
+#pragma region request new chunks
+	//todo remove and also remove recently requested chunks and stuff
+	if (0)
 	{
-		std::sort(chunkTasks.begin(), chunkTasks.end(),
-			[x, z](Task &a, Task &b)
+		std::vector<Task> chunkTasks;
+		for (int x = 0; x < squareSize; x++)
+			for (int z = 0; z < squareSize; z++)
+			{
+				if (loadedChunks[x * squareSize + z] == nullptr
+					&& checkChunkInRadius({x, z})
+					)
+				{
+					Task t;
+
+					t.taskType = Task::generateChunk;
+					t.pos = glm::ivec3(x + minPos.x, 0, z + minPos.y);
+					t.playerPosForChunkGeneration.x = playerBlockPosition.x;
+					t.playerPosForChunkGeneration.y = playerBlockPosition.z;
+
+					chunkTasks.push_back(t);
+				}
+			}
+
+		if (!chunkTasks.empty())
+		{
+			std::sort(chunkTasks.begin(), chunkTasks.end(),
+				[x, z](Task &a, Task &b)
 			{
 
 				int ax = a.pos.x - x;
@@ -319,28 +323,28 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 
 				return reza < rezb;
 			}
-		);
+			);
 
+			std::vector<Task> finalTask;
+			finalTask.reserve(chunkSystemSettings.maxWaitingSubmisions);
 
-
-		std::vector<Task> finalTask;
-		finalTask.reserve(chunkSystemSettings.maxWaitingSubmisions);
-
-		for (int i = 0; i < chunkSystemSettings.maxWaitingSubmisions; i++)
-		{
-			if (chunkTasks.size() <= i) { break; /*we managed to request all needed chunls*/ }
-
-			auto &t = chunkTasks[i];
-
-			if (recentlyRequestedChunks.find({t.pos.x, t.pos.z}) == recentlyRequestedChunks.end())
+			for (int i = 0; i < chunkSystemSettings.maxWaitingSubmisions; i++)
 			{
-				recentlyRequestedChunks[{t.pos.x, t.pos.z}] = 10.f; //time not request again, it can be big since packets are reliable
-				finalTask.push_back(t);
-			}
-		}
+				if (chunkTasks.size() <= i) { break; /*we managed to request all needed chunls*/ }
 
-		submitTaskClient(finalTask);
+				auto &t = chunkTasks[i];
+
+				if (recentlyRequestedChunks.find({t.pos.x, t.pos.z}) == recentlyRequestedChunks.end())
+				{
+					recentlyRequestedChunks[{t.pos.x, t.pos.z}] = 10.f; //time not request again, it can be big since packets are reliable
+					finalTask.push_back(t);
+				}
+			}
+
+			submitTaskClient(finalTask);
+		}
 	}
+#pragma endregion
 
 
 	created = 1;
@@ -502,7 +506,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	
 }
 
-bool ChunkSystem::isChunkInRadius(glm::ivec2 playerPos, glm::ivec2 chunkPos)
+bool isChunkInRadius(glm::ivec2 playerPos, glm::ivec2 chunkPos, int squareSize)
 {
 
 	playerPos.x = divideChunk(playerPos.x);
@@ -512,6 +516,11 @@ bool ChunkSystem::isChunkInRadius(glm::ivec2 playerPos, glm::ivec2 chunkPos)
 
 	return std::sqrt(glm::dot(diff, diff)) <= (squareSize / 2);
 
+}
+
+bool ChunkSystem::isChunkInRadius(glm::ivec2 playerPos, glm::ivec2 chunkPos)
+{
+	return ::isChunkInRadius(playerPos, chunkPos, squareSize);
 }
 
 bool ChunkSystem::isChunkInRadiusAndBounds(glm::ivec2 playerPos, 

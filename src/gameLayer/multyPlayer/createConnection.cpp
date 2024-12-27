@@ -195,7 +195,7 @@ void recieveDataClient(ENetEvent &event,
 						if (chunkSystem.loadedChunks[x * chunkSystem.squareSize + z] 
 							!= nullptr)
 						{
-							//delete i; //double request, ignore
+									//double request, ignore
 						}
 						else
 						{

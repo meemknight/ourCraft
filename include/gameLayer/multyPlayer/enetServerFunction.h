@@ -1,10 +1,14 @@
 #pragma once
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
 #include <enet/enet.h>
 #include "threadStuff.h"
 #include "packet.h"
 #include "createConnection.h"
 #include "gamePlayLogic.h"
 #include <gameplay/allentities.h>
+#include <unordered_set>
+#include "serverChunkStorer.h"
 
 bool startEnetListener(ENetHost *_server, const std::string &path);
 void closeEnetListener();
@@ -28,6 +32,8 @@ struct Client
 
 	std::vector<unsigned char> skinData;
 	bool skinDataCompressed = false;
+
+	std::unordered_set<glm::ivec2, Ivec2Hash> loadedChunks;
 };
 
 struct EntityIdHolder

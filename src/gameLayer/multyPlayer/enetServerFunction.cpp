@@ -75,6 +75,7 @@ void broadCast(Packet p, void *data, size_t size, ENetPeer *peerToIgnore, bool r
 	broadCastNotLocked(p, data, size, peerToIgnore, reliable, channel);
 }
 
+//TODO REMOVE
 bool checkIfPlayerShouldGetChunk(glm::ivec2 playerPos2D,
 	glm::ivec2 chunkPos, int playerSquareDistance)
 {

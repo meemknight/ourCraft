@@ -2049,6 +2049,29 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	//todo change, also reuse in the the decal shader
 	float timeGrass = std::clock() / 1000.f;
 
+	float sunTwilight = 0;
+	{
+		if (dayTime <= 0.25)
+		{
+			sunTwilight = std::powf(1 - (dayTime / 0.25f), 3.f);
+		}
+		else if (dayTime <= 0.50)
+		{
+			sunTwilight = std::powf(((dayTime-0.25f) / 0.25f), 3.f);
+
+		}
+		else if (dayTime <= 0.75)
+		{
+			sunTwilight = 1;
+		}
+		else if (dayTime <= 1.f)
+		{
+			sunTwilight = 1;
+		}
+
+
+	}
+
 	auto doDayLightCalculations = [dayTime](auto dayValue, auto nightValue, auto twilightValue)
 	{
 
@@ -2654,13 +2677,13 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		queryDataForSunFlare = sunFlareQueries[sunFlareQueryPos].getQueryResult();
 
 		sunFlareQueries[sunFlareQueryPos].begin();
-		programData.sunRenderer.render(c, sunPos, programData.skyBoxLoaderAndDrawer.sunTexture);
+		programData.sunRenderer.render(c, sunPos, programData.skyBoxLoaderAndDrawer.sunTexture, sunTwilight);
 		sunFlareQueries[sunFlareQueryPos].end();
 		sunFlareQueryPos++;
 		sunFlareQueryPos %= (sizeof(sunFlareQueries) / sizeof(sunFlareQueries[0]));
 
 
-		programData.sunRenderer.render(c, -sunPos * 0.9f, programData.skyBoxLoaderAndDrawer.moonTexture);
+		programData.sunRenderer.render(c, -sunPos, programData.skyBoxLoaderAndDrawer.moonTexture, 0);
 		glDisable(GL_BLEND);
 		glDepthFunc(GL_LESS);
 

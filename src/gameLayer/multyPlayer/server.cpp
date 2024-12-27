@@ -354,12 +354,22 @@ void serverWorkerUpdate(
 	static std::minstd_rand rng(std::random_device{}());
 	static bool generateNewChunks = 0; //this is set to true only once per tick
 
+
+
+#pragma region send chunks to players
+
 	std::vector<SendBlocksBack> sendNewBlocksToPlayers;
 	updateLoadedChunks(wg, structuresManager, biomesManager, sendNewBlocksToPlayers,
 		worldSaver, true);
 	generateNewChunks = 0;
 
 
+
+#pragma endregion
+
+
+
+#pragma region set players in their chunks
 	for (auto &c : sd.chunkCache.savedChunks)
 	{
 		c.second->entityData.players.clear();
@@ -384,25 +394,10 @@ void serverWorkerUpdate(
 		}
 
 	}
+#pragma endregion
 
 
-	//todo rather than a sort use buckets, so the clients can't DDOS the server with
-	//place blocks tasks, making generating chunks impossible. 
-	// 
-	// actually be very carefull how you cange the order, you can easily break stuff
-	// so I'll leave this commented for now
-	// 
-	//std::stable_sort(sd.waitingTasks.begin(), sd.waitingTasks.end(),
-	//	[](const ServerTask &a, const ServerTask &b) 
-	//	{ 
-	//		if((a.t.type == Task::placeBlock && b.t.type == Task::droppedItemEntity) ||
-	//			(a.t.type == Task::droppedItemEntity && b.t.type == Task::placeBlock))
-	//		{
-	//			return false;
-	//		}
-	//		return a.t.type < b.t.type; 
-	//	}
-	//);
+
 
 	//todo this will be moved in the tick after refactoring
 #pragma region check players killed
@@ -442,11 +437,13 @@ void serverWorkerUpdate(
 		{
 			auto &i = *it;
 		
+			//todo remove this task completely
 			if (i.t.taskType == Task::generateChunk)
 			{
 				auto client = getClient(i.cid); //todo this could fail when players leave so return pointer and check
 				bool wasGenerated = 0;
 
+				if(0)
 				if (checkIfPlayerShouldGetChunk(client.positionForChunkGeneration,
 					{i.t.pos.x, i.t.pos.z}, client.playerData.entity.chunkDistance))
 				{
@@ -882,10 +879,14 @@ void updateLoadedChunks(
 		c.second->otherData.shouldUnload = true;
 	}
 
-	const auto &clientsCopy = getAllClientsReff();
+	auto &clients = getAllClientsReff();
 
 
-	for (auto &c : clientsCopy)
+	//todo a better way to prioritize ordering and stuff
+	std::vector<glm::ivec2> positions;
+	positions.reserve(200);
+
+	for (auto &c : clients)
 	{
 
 		//if (c.second.playerData.killed) { continue; }
@@ -895,53 +896,157 @@ void updateLoadedChunks(
 		glm::ivec2 pos(divideChunk(c.second.playerData.entity.position.x),
 			divideChunk(c.second.playerData.entity.position.z));
 		
+		glm::ivec2 playerPos(c.second.playerData.entity.position.x, c.second.playerData.entity.position.z);
+
 		int distance = (c.second.playerData.entity.chunkDistance/2) + 1;
 
+		auto &client = c.second;
+
+		//drop chunks that are too far
+		{
+			for (auto it = client.loadedChunks.begin(); it != client.loadedChunks.end();)
+			{
+
+				if (!isChunkInRadius(playerPos, *it, c.second.playerData.entity.chunkDistance))
+				{
+					it = client.loadedChunks.erase(it);
+				}
+				else
+				{
+					++it;
+				}
+			}
+		}
+		positions.clear();
 
 		for (int i = -distance; i <= distance; i++)
 			for (int j = -distance; j <= distance; j++)
 			{
 				glm::vec2 vect(i, j);
+				auto chunkPos = pos + glm::ivec2(i, j);
 
-				float dist = std::sqrt(glm::dot(vect, vect));
 
-				if (dist <= distance)
+				if (isChunkInRadius(playerPos, chunkPos, c.second.playerData.entity.chunkDistance))
 				{
-
-					auto finalPos = pos + glm::ivec2(i, j);
-					SavedChunk *c = 0;
-
-					//always generate the chunk that the player is in
-					if ((generateNewChunks && (geenratedThisFrame < MAX_GENERATE)) || (i == 0 && j == 0))
-					{
-						bool generated = 0;
-
-						c = sd.chunkCache.getOrCreateChunk(finalPos.x, finalPos.y,
-							wg, structureManager, biomesManager, sendNewBlocksToPlayers, true,
-							nullptr, worldSaver, &generated
-						);
-
-						if (generated)
-						{
-							geenratedThisFrame++;
-						}
-					}
-					else
-					{
-						c = sd.chunkCache.getChunkOrGetNull(finalPos.x, finalPos.y);
-					}
-					
-					if (c)
-					{
-						c->otherData.shouldUnload = false;
-					}
-					
+					positions.push_back({chunkPos});
 				}
 			}
+
+		std::sort(positions.begin(), positions.end(),
+			[&](auto &a, auto &b)
+		{
+			
+			glm::vec2 diff1 = a - pos;
+			float distance1 = glm::dot(diff1, diff1);
+
+			glm::vec2 diff2 = b - pos;
+			float distance2 = glm::dot(diff2, diff2);
+
+			return distance1 < distance2;
+		});
+
+		bool generatedChunkPlayerIsIn = 0;
+		for (auto chunkPos : positions)
+		{
+			SavedChunk *c = 0;
+
+			if ((generateNewChunks && (geenratedThisFrame < MAX_GENERATE)) 
+				
+				//always generate the chunk that the player is in
+				|| (chunkPos == pos))
+			{
+
+				if (chunkPos == pos) { generatedChunkPlayerIsIn = true; }
+
+				bool generated = 0;
+
+				c = sd.chunkCache.getOrCreateChunk(chunkPos.x, chunkPos.y,
+					wg, structureManager, biomesManager, sendNewBlocksToPlayers, true,
+					nullptr, worldSaver, &generated
+				);
+
+				if (generated)
+				{
+					geenratedThisFrame++;
+				}
+			}
+			else
+			{
+				c = sd.chunkCache.getChunkOrGetNull(chunkPos.x, chunkPos.y);
+			}
+
+			//optional
+			//stop sending chunks, so we don't send far chunks to the player, instead we should
+			//focus on loading close chunks
+			if (geenratedThisFrame >= MAX_GENERATE && generatedChunkPlayerIsIn)
+			{
+				break;
+			}
+
+			if (c)
+			{
+				c->otherData.shouldUnload = false;
+
+				//send chunk to player
+			#pragma region send chunk to player
+
+				if (client.loadedChunks.find(chunkPos) ==
+					client.loadedChunks.end())
+				{
+
+					client.loadedChunks.insert(chunkPos);
+
+					Packet packet;
+					packet.header = headerRecieveChunk;
+
+					//if you have modified Packet_RecieveChunk make sure you didn't break this!
+					static_assert(sizeof(Packet_RecieveChunk) == sizeof(ChunkData));
+
+					{
+						sendPacketAndCompress(client.peer, packet, (char *)(&c->chunk),
+							sizeof(Packet_RecieveChunk), true, channelChunksAndBlocks);
+
+
+						std::vector<unsigned char> blockData;
+						c->blockData.formatBlockData(blockData, c->chunk.x, c->chunk.z);
+
+						if (blockData.size())
+						{
+							Packet packet;
+							packet.header = headerRecieveBlockData;
+
+							if (blockData.size() > 1000)
+							{
+								sendPacketAndCompress(client.peer, packet, (char *)blockData.data(),
+									blockData.size(), true, channelChunksAndBlocks);
+							}
+							else
+							{
+								sendPacket(client.peer, packet, (char *)blockData.data(),
+									blockData.size(), true, channelChunksAndBlocks);
+							};
+
+						}
+
+					}
+				}
+			#pragma endregion
+
+
+
+
+			}
+
+		};
+
+
 	}
+
+
+};
 	
 
 
-}
+
 
  
