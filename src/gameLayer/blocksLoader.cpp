@@ -1040,7 +1040,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 				data.clear();
 				data.resize(dataGrayScale.size() * 4 * magnify * magnify);
 
-				float pixelSize = (1.f / size.x) * 2.8f;
+				float pixelSize = (1.f / size.x) * 4.8f;
 				//the last constant represents the height of the normal map result, hence the strength, smaller constant stronger normal
 
 				auto sample = [&](float u, float v)
