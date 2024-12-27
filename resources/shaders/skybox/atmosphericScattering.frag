@@ -52,12 +52,13 @@ float fScaleOverScaleDepth;	// fScale / fScaleDepth
 	float fCosSunEarth = 1-abs(dot(lightPos, upVector));
 
 	float g2 = u_g * u_g;
+	float gSun = 0.9;
 	
 	float fCosSun = dot(lightPos, localPos);
 	if(u_noSun != 0){fCosSun = 0;}
-	fCosSun = 0;
+	//fCosSun = 0;
 	//fCosSun *= 1-dot(localPos,vec3(0,1,0));
-	float fMiePhase = 1.5 * ((1.0 - g2) / (2.0 + g2)) * (1.0 + fCosSun*fCosSun) / pow(1.0 + g2 - 2.0*u_g*fCosSun, 1.5);
+	float fMiePhase = 1.5 * ((1.0 - gSun) / (2.0 + gSun)) * (1.0 + fCosSun*fCosSun) / pow(1.0 + gSun - 2.0*gSun*fCosSun, 1.5);
 	float horizonIntensity = 1.5 * ((1.0 - g2) / (2.0 + g2)) * (1.0 + fCosSunEarth*fCosSunEarth) / pow(1.0 + g2 - 2.0*u_g*fCosSunEarth, 1.5);
 	 
 	vec3 computedSkyColor = skyColor
