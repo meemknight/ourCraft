@@ -21,6 +21,16 @@ struct SkyBoxLoaderAndDrawer
 	GLuint vertexBuffer = 0;
 	GLuint captureFBO;
 
+	struct SkyConfigs
+	{
+		glm::vec3 a1 = glm::vec3{9, 47, 116} / 255.f;
+		glm::vec3 a2 = glm::vec3{33,38,44} / 255.f;
+		float g = 0.4;
+	};
+
+	SkyConfigs skyConfig;
+
+
 	void createGpuData();
 
 

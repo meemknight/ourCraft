@@ -133,10 +133,11 @@ void SkyBoxLoaderAndDrawer::createGpuData()
 
 void SkyBoxLoaderAndDrawer::createSkyTextures()
 {
+	
 
 	daySky.clearTextures();
-	atmosphericScattering({0, -1, 0}, glm::vec3{9, 47, 116} / 255.f,
-		glm::vec3{33,38,44} / 255.f, {1,1,1}, false, 0.4, daySky, true);
+	atmosphericScattering({0, -1, 0}, skyConfig.a1,
+		skyConfig.a2, {1,1,1}, false, skyConfig.g, daySky, true);
 
 	twilightSky.clearTextures();
 	atmosphericScattering(glm::normalize(glm::vec3{0, -0.1, 1}), glm::vec3{22, 49, 111} / 255.f,
@@ -145,6 +146,7 @@ void SkyBoxLoaderAndDrawer::createSkyTextures()
 	nightSky.clearTextures();
 	atmosphericScattering({0, -1, 0}, glm::vec3{9, 15, 23} / 255.f * 0.4f,
 		glm::vec3{4,8,10} / 255.f * 0.4f, {1,1,1}, false, 0.850, nightSky, true);
+
 
 }
 

@@ -1765,6 +1765,23 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			ImGui::NewLine();
 
 			
+			if (ImGui::CollapsingHeader("Sky stuff",
+				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+			{
+
+				programData.skyBoxLoaderAndDrawer.skyConfig.a1;
+
+				ImGui::ColorEdit3("Sky", &programData.skyBoxLoaderAndDrawer.skyConfig.a1[0]);
+				ImGui::ColorEdit3("Ground", &programData.skyBoxLoaderAndDrawer.skyConfig.a2[0]);
+				ImGui::SliderFloat("Density", &programData.skyBoxLoaderAndDrawer.skyConfig.g, 0, 1);
+					
+				if(ImGui::Button("Refresh"))
+				{
+					programData.skyBoxLoaderAndDrawer.createSkyTextures();
+				}
+
+			}
+
 			if (ImGui::CollapsingHeader("Load Save Stuff",
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
 			{
