@@ -94,6 +94,8 @@ enum : std::uint32_t
 	headerUpdateSimpleBlockWithData,
 	headerClientUpdatedBlockData,
 	headerUpdateEffects,
+	headerClientDroppedChunk,
+	headerClientDroppedAllChunks,
 };
 
 enum 
@@ -365,6 +367,11 @@ struct Packet_UpdateEffects
 {
 	std::uint64_t timer = 0; //tick timer
 	Effects effects = {};
+};
+
+struct Packet_ClientDroppedChunk
+{
+	glm::ivec2 chunkPos = {};
 };
 
 void *unCompressData(const char *data, size_t compressedSize, size_t &originalSize);

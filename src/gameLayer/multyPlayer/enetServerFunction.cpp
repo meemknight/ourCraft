@@ -391,6 +391,31 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 
 	switch (p.header)
 	{
+
+		//todo hard reset on fail
+		case headerClientDroppedChunk:
+		{
+			Packet_ClientDroppedChunk packetData = *(Packet_ClientDroppedChunk *)data;
+
+			if (sizeof(Packet_ClientDroppedChunk) != size)
+			{
+				reportError("corrupted packet or something Packet_ClientDroppedChunk");
+				break;
+			}
+
+			connection->second.loadedChunks.erase(packetData.chunkPos);
+
+			break;
+		}
+
+		case headerClientDroppedAllChunks:
+		{
+		
+			connection->second.loadedChunks.clear();
+
+			break;
+		}
+
 		case headerRequestChunk:
 		{
 			Packet_RequestChunk packetData = *(Packet_RequestChunk *)data;
@@ -459,8 +484,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 
 		case headerSendPlayerData:
 		{
-			Packer_SendPlayerData packetData = *(Packer_SendPlayerData *)data;
-
+			Packer_SendPlayerData &packetData = *(Packer_SendPlayerData *)data;
 
 			Client clientCopy = {};
 			std::uint64_t clientCopyCid = 0;
@@ -817,7 +841,7 @@ void enetServerFunction(std::string path)
 			exit(0); 
 		}
 	}
-
+	
 	if (!structuresManager.loadAllStructures())
 	{
 		exit(0); //todo error out

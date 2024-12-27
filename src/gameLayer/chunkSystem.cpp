@@ -140,6 +140,20 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 			}
 			else
 			{	
+
+				Packet p = {};
+				p.cid = getConnectionData().cid;
+				p.header = headerClientDroppedChunk;
+
+				Packet_ClientDroppedChunk packetData = {};
+				packetData.chunkPos.x = loadedChunks[i]->data.x;
+				packetData.chunkPos.y = loadedChunks[i]->data.z;
+
+				sendPacket(getConnectionData().server,
+					p, (char *)&packetData, sizeof(packetData), 1,
+					channelPlayerPositions);
+
+
 				//chunk no longer needed delete it
 				dropChunkAtIndexUnsafe(i, &gpuBuffer);
 			}
@@ -1043,6 +1057,13 @@ void ChunkSystem::changeBlockLightStuff(glm::ivec3 pos, int currentSkyLightLevel
 
 void ChunkSystem::dropAllChunks(BigGpuBuffer *gpuBuffer)
 {
+	Packet p = {};
+	p.cid = getConnectionData().cid;
+	p.header = headerClientDroppedAllChunks;
+
+	sendPacket(getConnectionData().server,
+		p, 0, 0, 1, channelPlayerPositions);
+
 	for (int i = 0; i < loadedChunks.size(); i++)
 	{
 		dropChunkAtIndexSafe(i, gpuBuffer);
