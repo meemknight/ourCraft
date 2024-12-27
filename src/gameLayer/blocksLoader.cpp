@@ -1036,11 +1036,11 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 					dataGrayScale[i] = luminosity;
 				}
 
-				constexpr int magnify = 1;
+				constexpr int magnify = 8;
 				data.clear();
 				data.resize(dataGrayScale.size() * 4 * magnify * magnify);
 
-				float pixelSize = (1.f / size.x) * 4.8f;
+				float pixelSize = (1.f / size.x) * 3.8f;
 				//the last constant represents the height of the normal map result, hence the strength, smaller constant stronger normal
 
 				auto sample = [&](float u, float v)

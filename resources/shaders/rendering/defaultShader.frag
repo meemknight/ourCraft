@@ -148,18 +148,20 @@ float computeFog(float dist, float fragmentHeight)
 	//
 	//return rez;
 
-
+	float distOriginal = dist;
 	//Sildur's shaders vibrant
 
 	float rainStrength = 0.0; // 0 -> 1
-	float wFogDensity = 8;
+	float wFogDensity = u_fogCloseGradient;
 
 	float density = wFogDensity*(1.0-rainStrength*0.115);
 	float airDensity = 	max(fragmentHeight/10.,6.0);
 	float eyeBrightnessSmooth = 120;
+	
+	
 	float distMultiplier = 0.8;
 	dist *= distMultiplier;
-	dist = pow(dist, 0.9);
+	dist = pow(dist, 0.85);
 
 //#ifdef morningFog
 //	float morning = clamp((worldTime-0.1)/300.0,0.0,1.0)-clamp((worldTime-23150.0)/200.0,0.0,1.0);
@@ -172,9 +174,13 @@ float computeFog(float dist, float fragmentHeight)
 	float height = mix(airDensity,6.,rainStrength);
 	float d = dist;
 
-	return 1-pow(clamp((2.625+rainStrength*3.4)/exp(-60/10./density)*exp(-airDensity/density) 
+	float rezClose = 1-pow(clamp((2.625+rainStrength*3.4)/exp(-60/10./density)*exp(-airDensity/density) 
 	* (1.0-exp( -pow(d,2.712)*height/density/(6000.-tmult*tmult*2000.)/13))/height,0.0,1.),1.0-rainStrength*0.63)*clamp((eyeBrightnessSmooth/255.-2/16.)*4.,0.0,1.0);
 
+	float rezFar = exp(-pow(distOriginal*(1.f/u_fogDistance), 32));
+	rezFar = pow(rezFar, 0.10);
+	//if(rezFar > 0.8){rezFar = pow(rezFar,0.5f);}
+	return pow(rezFar,2) * rezClose;
 
 
 }

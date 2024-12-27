@@ -2660,7 +2660,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		sunFlareQueryPos %= (sizeof(sunFlareQueries) / sizeof(sunFlareQueries[0]));
 
 
-		programData.sunRenderer.render(c, -sunPos, programData.skyBoxLoaderAndDrawer.moonTexture);
+		programData.sunRenderer.render(c, -sunPos * 0.9f, programData.skyBoxLoaderAndDrawer.moonTexture);
 		glDisable(GL_BLEND);
 		glDepthFunc(GL_LESS);
 
@@ -3325,7 +3325,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 				sunEdgeProjectedCoords2.x += 1;
 				sunEdgeProjectedCoords2.x /= 2;
 
-				sunSize = std::abs(sunEdgeProjectedCoords.x - sunEdgeProjectedCoords2.x) * 1.6;
+				sunSize = std::abs(sunEdgeProjectedCoords.x - sunEdgeProjectedCoords2.x) * 1.7;
 				maxSize = std::abs(sunEdgeProjectedCoords.x - sunEdgeProjectedCoords2.x);
 
 				//std::cout << queryDataForSunFlare << "\n";
@@ -3356,13 +3356,13 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 					float distanceToCenter = glm::distance(flarePos, center);
 					float alpha = 1.f - (distanceToCenter / glm::length(vectorTwardsCenter));
-					alpha = glm::clamp(alpha, 0.3f, 1.f) * 0.35;
+					alpha = glm::clamp(alpha, 0.3f, 1.f) * 0.65;
 					alpha *= globalBrightness;
 
 					renderer2d.renderRectangle({
 						flarePos.x * screenX - size / 2.f, flarePos.y * screenY - size / 2.f,
 						size,size}, programData.lensFlare[i],
-						{1,1,1,alpha});
+						{1.3,1.3,1.3,alpha});
 
 				}
 
