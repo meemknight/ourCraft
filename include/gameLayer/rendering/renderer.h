@@ -222,6 +222,7 @@ struct Renderer
 	{
 		Shader shader;
 		uniform u_waterDropsPower;
+		uniform u_SSGR;
 	}applyBloomDataShader;
 
 	struct HBAOShader
@@ -241,6 +242,21 @@ struct Renderer
 		GLuint u_shadingSettings = 0;
 
 	}applyHBAOShader;
+
+	struct MaskDepth
+	{
+		Shader shader;
+		uniform u_depthTexture;
+
+	}maskDepthShader;
+
+	struct RadialBlur
+	{
+		Shader shader;
+		uniform u_texture;
+		uniform u_center;
+
+	}radialBlurShader;
 
 	struct WarpShader
 	{
@@ -383,9 +399,10 @@ struct Renderer
 
 	FBO fboHBAO;
 	FBO fboMain;
+	FBO fboSunForGodRays;
+	FBO fboSunForGodRaysSecond;
 	FBO fboSkyBox;
 	FBO fboCoppy;
-	FBO fboCoppyForSSR;
 	FBO fboLastFrame;
 	FBO fboLastFramePositions;
 

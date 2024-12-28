@@ -195,7 +195,7 @@ void recieveDataClient(ENetEvent &event,
 						if (chunkSystem.loadedChunks[x * chunkSystem.squareSize + z] 
 							!= nullptr)
 						{
-									//double request, ignore
+									//we already have the chunk, ignore it
 						}
 						else
 						{
@@ -257,7 +257,19 @@ void recieveDataClient(ENetEvent &event,
 			}
 			else
 			{
-				
+				//we reject the chunk but we have to notify the server
+
+				Packet p = {};
+				p.cid = getConnectionData().cid;
+				p.header = headerClientDroppedChunk; 
+
+				Packet_ClientDroppedChunk packetData = {};
+				packetData.chunkPos.x = chunkPacket->chunk.x;
+				packetData.chunkPos.y = chunkPacket->chunk.z;
+
+				sendPacket(getConnectionData().server,
+					p, (char *)&packetData, sizeof(packetData), 1,
+					channelPlayerPositions);
 			}
 			
 

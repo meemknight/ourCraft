@@ -1333,7 +1333,8 @@ void Renderer::create()
 	fboCoppy.create(GL_R11F_G11F_B10F, true);
 	//filteredBloomColor.create(GL_R11F_G11F_B10F, false);
 
-
+	fboSunForGodRays.create(GL_R11F_G11F_B10F, false);
+	fboSunForGodRaysSecond.create(GL_R11F_G11F_B10F, false);
 
 	fboMain.create(GL_R11F_G11F_B10F, true, GL_RGB16F, GL_RGB16UI, GL_R11F_G11F_B10F,
 		GL_RED);
@@ -1663,8 +1664,8 @@ void Renderer::reloadShaders()
 		RESOURCES_PATH "shaders/postProcess/applyBloomData.frag");
 	applyBloomDataShader.shader.bind();
 	GET_UNIFORM2(applyBloomDataShader, u_waterDropsPower);
-
-
+	GET_UNIFORM2(applyBloomDataShader, u_SSGR);
+	
 
 
 	filterDownShader.shader.clear();
@@ -1849,11 +1850,26 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(hbaoShader, u_view);
 	GET_UNIFORM2(hbaoShader, u_projection);
 
+
+	radialBlurShader.shader.clear();
+	radialBlurShader.shader.loadShaderProgramFromFile(
+		RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
+		RESOURCES_PATH "shaders/postProcess/radialBlur.frag");
+	GET_UNIFORM2(radialBlurShader, u_texture);
+	GET_UNIFORM2(radialBlurShader, u_center);
+
+
+	maskDepthShader.shader.clear();
+	maskDepthShader.shader.loadShaderProgramFromFile(
+		RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
+		RESOURCES_PATH "shaders/postProcess/maskDepth.frag");
+	GET_UNIFORM2(maskDepthShader, u_depthTexture);
+
+
 	applyHBAOShader.shader.clear();
 	applyHBAOShader.shader.loadShaderProgramFromFile(
 		RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
 		RESOURCES_PATH "shaders/postProcess/applyHBAO.frag");
-
 	GET_UNIFORM2(applyHBAOShader, u_hbao);
 	GET_UNIFORM2(applyHBAOShader, u_currentViewSpace);
 
@@ -2011,6 +2027,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	}
 
+
+	fboSunForGodRays.updateSize(screenX / 2, screenY / 2);
+	fboSunForGodRaysSecond.updateSize(screenX / 2, screenY / 2);
 
 	fboMain.updateSize(screenX, screenY);
 
@@ -2688,6 +2707,22 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glDepthFunc(GL_LESS);
 
 
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SSGR");
+		//SS God rays
+		fboSunForGodRaysSecond.clearFBO();
+		fboSunForGodRays.clearFBO();
+		glBindFramebuffer(GL_FRAMEBUFFER, fboSunForGodRays.fbo);
+		glDisable(GL_DEPTH_TEST);
+		glViewport(0, 0, screenX/2, screenY/2);
+		programData.sunRenderer.render(c, sunPos, programData.skyBoxLoaderAndDrawer.sunTexture, std::max(sunTwilight, 0.5f));
+		
+		//todo multiplier to drastically reduce the strength
+		//programData.sunRenderer.render(c, -sunPos, programData.skyBoxLoaderAndDrawer.moonTexture, 0);
+		glViewport(0, 0, screenX, screenY);
+		glEnable(GL_DEPTH_TEST);
+		glPopDebugGroup();
+
+
 		//disable bloom for transparent geometry
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
@@ -3184,6 +3219,52 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	GLuint currentTexture = 0;
 
+
+#pragma region SSGR
+	{
+		glm::vec4 sunPositionCameraSpace = viewMatrix * glm::vec4(sunPos, 1.0f);
+		glm::vec4 sunPositionClipSpace = projectionMatrix * sunPositionCameraSpace;
+		glm::vec3 sunPositionNDC = glm::vec3(sunPositionClipSpace) / sunPositionClipSpace.w;
+		glm::vec2 sunPositionScreenSpaceUV = glm::vec2(
+			(sunPositionNDC.x + 1.0f) * 0.5f,
+			(sunPositionNDC.y + 1.0f) * 0.5f
+		);
+
+		//std::cout << sunPositionScreenSpaceUV.x << " " << sunPositionScreenSpaceUV.y << "\n";
+
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SSGR last step");
+		//SS God rays
+
+		//isolate the parts ocluded by geometry
+		glBindFramebuffer(GL_FRAMEBUFFER, fboSunForGodRays.fbo);
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_BLEND);
+		glViewport(0, 0, screenX / 2, screenY / 2);
+
+		maskDepthShader.shader.bind();
+		glUniform1i(maskDepthShader.u_depthTexture, 0);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, fboMain.depth);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+		//radial blur
+		glBindFramebuffer(GL_FRAMEBUFFER, fboSunForGodRaysSecond.fbo);
+		radialBlurShader.shader.bind();
+		glUniform2f(radialBlurShader.u_center, sunPositionScreenSpaceUV.x, sunPositionScreenSpaceUV.y);
+		glUniform1i(radialBlurShader.u_texture, 0);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, fboSunForGodRays.color);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+
+		glViewport(0, 0, screenX, screenY);
+		glEnable(GL_DEPTH_TEST);
+		glPopDebugGroup();
+
+	}
+#pragma endregion
+
+	
 	//bloom
 	if(bloom)
 	{
@@ -3209,6 +3290,12 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glBindTexture(GL_TEXTURE_2D, programData.waterDirtTexture.id);
 
 		glUniform1f(applyBloomDataShader.u_waterDropsPower, waterDropsStrength);
+
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, fboSunForGodRaysSecond.color);
+
+		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_2D, fboMain.depth);
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE);
@@ -3307,7 +3394,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 #pragma region lens flare
 
 
-
 	{
 		auto &renderer2d = programData.ui.renderer2d;
 		renderer2d.pushCamera();
@@ -3374,17 +3460,19 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 					//float size = 800;
 					flarePos += vectorTwardsCenter / (float)programData.lensFlare.size();
 
-					float textureSize = programData.lensFlare[i].GetSize().x;
-					size *= textureSize / programData.maxFlareSize;
+					float textureSizeX = programData.lensFlare[i].GetSize().x;
+					float textureSizeY = programData.lensFlare[i].GetSize().y;
+					float sizeX = size * textureSizeX / programData.maxFlareSize;
+					float sizeY = size * textureSizeY / programData.maxFlareSize;
 
 					float distanceToCenter = glm::distance(flarePos, center);
 					float alpha = 1.f - (distanceToCenter / glm::length(vectorTwardsCenter));
-					alpha = glm::clamp(alpha, 0.3f, 1.f) * 0.65;
+					alpha = glm::clamp(alpha, 0.3f, 1.f) * 0.70;
 					alpha *= globalBrightness;
-
+					
 					renderer2d.renderRectangle({
-						flarePos.x * screenX - size / 2.f, flarePos.y * screenY - size / 2.f,
-						size,size}, programData.lensFlare[i],
+						flarePos.x * screenX - sizeX / 2.f, flarePos.y * screenY - sizeY / 2.f,
+						sizeX,sizeY}, programData.lensFlare[i],
 						{1.3,1.3,1.3,alpha});
 
 				}
@@ -3407,10 +3495,12 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 
 
+
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
 	glBindVertexArray(0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 }
 

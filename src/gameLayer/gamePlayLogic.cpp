@@ -1901,6 +1901,16 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					{0, 1}, {1, 0});
 			}
 
+			if (ImGui::CollapsingHeader("Sun for SSGR",
+				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
+			{
+				ImGui::Image((void *)programData.renderer.fboSunForGodRays.color, {256, 256},
+					{0, 1}, {1, 0});
+
+				ImGui::Image((void *)programData.renderer.fboSunForGodRaysSecond.color, {256, 256},
+					{0, 1}, {1, 0});
+			}
+
 			if (ImGui::CollapsingHeader("Filtered bloom color",
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
 			{
