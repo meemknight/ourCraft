@@ -11,8 +11,15 @@
 #pragma warning (disable: 4244) // 64bit to 32bit int
 #pragma warning (disable: 4018) // signed/unsigned mismatch
 #pragma warning (disable: 4146) // unary minus operator applied to unsigned type
+#define _CRT_SECURE_NO_DEPRECATE
+#define _CRT_SECURE_NO_WARNINGS
 #endif
 #endif
+
+#pragma comment(lib, "Ws2_32.lib") // Winsock library for networking
+#pragma comment(lib, "Winmm.lib")  // Multimedia library for timing functions
+
+#define NO_MIN_MAX
 
 #include <stdlib.h>
 #include <winsock2.h>
@@ -55,3 +62,5 @@ typedef fd_set ENetSocketSet;
 #endif /* __ENET_WIN32_H__ */
 
 
+#undef min
+#undef max

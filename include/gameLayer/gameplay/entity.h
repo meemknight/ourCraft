@@ -1,4 +1,5 @@
 #pragma once 
+#define NO_MIN_MAX
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 #include <gameplay/physics.h>

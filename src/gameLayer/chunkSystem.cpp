@@ -1,3 +1,4 @@
+#define NO_MIN_MAX
 #include "chunkSystem.h"
 #include <glm/vec2.hpp>
 #include "threadStuff.h"
