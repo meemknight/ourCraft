@@ -2706,8 +2706,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glDisable(GL_BLEND);
 		glDepthFunc(GL_LESS);
 
-
-		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SSGR");
+	#pragma region render sun for SSGR
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "render sun for SSGR");
 		//SS God rays
 		fboSunForGodRaysSecond.clearFBO();
 		fboSunForGodRays.clearFBO();
@@ -2721,6 +2721,56 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glViewport(0, 0, screenX, screenY);
 		glEnable(GL_DEPTH_TEST);
 		glPopDebugGroup();
+	#pragma endregion
+
+
+	#pragma region SSGR
+		{
+			glBindVertexArray(vaoQuad);
+
+			glm::vec4 sunPositionCameraSpace = viewMatrix * glm::vec4(sunPos, 1.0f);
+			glm::vec4 sunPositionClipSpace = projectionMatrix * sunPositionCameraSpace;
+			glm::vec3 sunPositionNDC = glm::vec3(sunPositionClipSpace) / sunPositionClipSpace.w;
+			glm::vec2 sunPositionScreenSpaceUV = glm::vec2(
+				(sunPositionNDC.x + 1.0f) * 0.5f,
+				(sunPositionNDC.y + 1.0f) * 0.5f
+			);
+
+			//std::cout << sunPositionScreenSpaceUV.x << " " << sunPositionScreenSpaceUV.y << "\n";
+
+			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SSGR last step");
+			//SS God rays
+
+			//isolate the parts ocluded by geometry
+			glBindFramebuffer(GL_FRAMEBUFFER, fboSunForGodRays.fbo);
+			glDisable(GL_DEPTH_TEST);
+			glDisable(GL_BLEND);
+			glViewport(0, 0, screenX / 2, screenY / 2);
+
+			maskDepthShader.shader.bind();
+			glUniform1i(maskDepthShader.u_depthTexture, 0);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, fboMain.depth);
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+			//radial blur
+			glBindFramebuffer(GL_FRAMEBUFFER, fboSunForGodRaysSecond.fbo);
+			radialBlurShader.shader.bind();
+			glUniform2f(radialBlurShader.u_center, sunPositionScreenSpaceUV.x, sunPositionScreenSpaceUV.y);
+			glUniform1i(radialBlurShader.u_texture, 0);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, fboSunForGodRays.color);
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+
+			glViewport(0, 0, screenX, screenY);
+			glEnable(GL_DEPTH_TEST);
+			glPopDebugGroup();
+
+		}
+	#pragma endregion
+
+
 
 
 		//disable bloom for transparent geometry
@@ -3220,51 +3270,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	GLuint currentTexture = 0;
 
 
-#pragma region SSGR
-	{
-		glm::vec4 sunPositionCameraSpace = viewMatrix * glm::vec4(sunPos, 1.0f);
-		glm::vec4 sunPositionClipSpace = projectionMatrix * sunPositionCameraSpace;
-		glm::vec3 sunPositionNDC = glm::vec3(sunPositionClipSpace) / sunPositionClipSpace.w;
-		glm::vec2 sunPositionScreenSpaceUV = glm::vec2(
-			(sunPositionNDC.x + 1.0f) * 0.5f,
-			(sunPositionNDC.y + 1.0f) * 0.5f
-		);
-
-		//std::cout << sunPositionScreenSpaceUV.x << " " << sunPositionScreenSpaceUV.y << "\n";
-
-		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SSGR last step");
-		//SS God rays
-
-		//isolate the parts ocluded by geometry
-		glBindFramebuffer(GL_FRAMEBUFFER, fboSunForGodRays.fbo);
-		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_BLEND);
-		glViewport(0, 0, screenX / 2, screenY / 2);
-
-		maskDepthShader.shader.bind();
-		glUniform1i(maskDepthShader.u_depthTexture, 0);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, fboMain.depth);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-		//radial blur
-		glBindFramebuffer(GL_FRAMEBUFFER, fboSunForGodRaysSecond.fbo);
-		radialBlurShader.shader.bind();
-		glUniform2f(radialBlurShader.u_center, sunPositionScreenSpaceUV.x, sunPositionScreenSpaceUV.y);
-		glUniform1i(radialBlurShader.u_texture, 0);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, fboSunForGodRays.color);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-
-		glViewport(0, 0, screenX, screenY);
-		glEnable(GL_DEPTH_TEST);
-		glPopDebugGroup();
-
-	}
-#pragma endregion
-
-	
 	//bloom
 	if(bloom)
 	{
