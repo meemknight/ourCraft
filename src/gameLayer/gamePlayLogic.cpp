@@ -1947,16 +1947,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 				if (ImGui::Button("Drop all chunks"))
 				{
-					gameData.chunkSystem.dropAllChunks(&gameData.chunkSystem.gpuBuffer);
+					gameData.chunkSystem.dropAllChunks(&gameData.chunkSystem.gpuBuffer, true);
 				}
 				
 				ImGui::ColorButton("##1", colNotLoaded, ImGuiColorEditFlags_NoInputs, ImVec2(25, 25));
 				ImGui::SameLine();
 				ImGui::Text("Not loaded."); 
-
-				ImGui::ColorButton("##2", colrequested, ImGuiColorEditFlags_NoInputs, ImVec2(25, 25));
-				ImGui::SameLine();
-				ImGui::Text("Requested.");
 
 				ImGui::ColorButton("##3", colLoadedButNotBaked, ImGuiColorEditFlags_NoInputs, ImVec2(25, 25));
 				ImGui::SameLine();
@@ -2003,18 +1999,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 								currentColor = colLoaded;
 							}
 
-						}
-						else
-						{
-							auto pos = gameData.chunkSystem.
-								fromMatrixSpaceToChunkSpace(x, z);
-
-							if (gameData.chunkSystem.recentlyRequestedChunks.find(pos)
-								!= gameData.chunkSystem.recentlyRequestedChunks.end()
-								)
-							{
-								currentColor = colrequested;
-							}
 						}
 
 						if (x > 0)
@@ -2521,7 +2505,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma endregion
 
-	gameData.chunkSystem.changeRenderDistance(getShadingSettings().viewDistance * 2);
+	gameData.chunkSystem.changeRenderDistance(getShadingSettings().viewDistance * 2, true);
 
 
 	gameData.gameplayFrameProfiler.endFrame();
@@ -2542,7 +2526,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 void closeGameLogic()
 {
-	gameData.chunkSystem.cleanup();
+	gameData.chunkSystem.cleanup(false);
 	gameData.currentSkinTexture.cleanup();
 	gameData.entityManager.cleanup();
 	

@@ -9,6 +9,7 @@ layout (location = 2) out ivec3 out_normals;
 layout (location = 3) out vec3 out_bloom;
 
 uniform float u_sunset;
+uniform float u_colorMultiplier;
 
 vec3 rgbTohsv(vec3 c)
 {
@@ -45,6 +46,8 @@ void main()
 
 	color.rgba = c;
 	color.rgb *= 1.5;
+
+	color.rgb *= u_colorMultiplier;
 
 	out_bloom.rgb = color.rgb * 0.014;
 }

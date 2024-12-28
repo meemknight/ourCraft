@@ -32,7 +32,6 @@ struct Task
 		clientWantsToRespawn,
 		clientRecievedDamageLocally,
 		clientRecievedDamageLocallyAndDied,
-		generateChunk
 	};
 	
 	

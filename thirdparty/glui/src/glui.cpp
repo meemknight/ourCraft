@@ -679,7 +679,6 @@ namespace glui
 			if (*value != (T)mouseVal)
 			{
 				returnVal = true;
-				std::cout << "Yes ";
 			}
 			*value = (T)mouseVal;
 		}

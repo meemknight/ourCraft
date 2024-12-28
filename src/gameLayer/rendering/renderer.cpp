@@ -2146,8 +2146,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	{
 
 		glm::vec3 daySkyLight(1.5f);
-		glm::vec3 nightSkyLight = (glm::vec3(47, 135, 244) / 255.f) * 0.50f;
-		glm::vec3 twilightLight = (glm::vec3(255, 159, 107) / 255.f) * 0.2f;
+		glm::vec3 nightSkyLight = (glm::vec3(47, 135, 244) / 255.f) * 0.2f;
+		glm::vec3 twilightLight = (glm::vec3(255, 159, 107) / 255.f) * 0.3f;
 		
 		sunLightColor = doDayLightCalculations(daySkyLight, nightSkyLight, twilightLight);
 	}
@@ -2155,8 +2155,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	glm::vec3 ambientColor = {1,1,1};
 	{
 		glm::vec3 daySkyLight(1.0f);
-		glm::vec3 nightSkyLight = (glm::vec3(47, 135, 244) / 255.f) * 0.9f;
-		glm::vec3 twilightLight = (glm::vec3(255, 159, 107) / 255.f) * 0.6f;
+		glm::vec3 nightSkyLight = (glm::vec3(47, 135, 244) / 255.f) * 0.6f;
+		glm::vec3 twilightLight = (glm::vec3(255, 159, 107) / 255.f) * 0.7f;
 
 		ambientColor = doDayLightCalculations(daySkyLight, nightSkyLight, twilightLight);
 	}
@@ -2684,6 +2684,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	//copy depth 3
 		fboCoppy.copyDepthFromOtherFBO(fboMain.fbo, screenX, screenY);
 	
+		constexpr static float sunScale = 0.9;
+		constexpr static float moonScale = 0.6;
 
 
 		//render sun moon
@@ -2696,13 +2698,13 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		queryDataForSunFlare = sunFlareQueries[sunFlareQueryPos].getQueryResult();
 
 		sunFlareQueries[sunFlareQueryPos].begin();
-		programData.sunRenderer.render(c, sunPos, programData.skyBoxLoaderAndDrawer.sunTexture, sunTwilight);
+		programData.sunRenderer.render(c, sunPos, programData.skyBoxLoaderAndDrawer.sunTexture, sunTwilight, 1, sunScale);
 		sunFlareQueries[sunFlareQueryPos].end();
 		sunFlareQueryPos++;
 		sunFlareQueryPos %= (sizeof(sunFlareQueries) / sizeof(sunFlareQueries[0]));
 
 
-		programData.sunRenderer.render(c, -sunPos, programData.skyBoxLoaderAndDrawer.moonTexture, 0);
+		programData.sunRenderer.render(c, -sunPos, programData.skyBoxLoaderAndDrawer.moonTexture, 0, 1, moonScale);
 		glDisable(GL_BLEND);
 		glDepthFunc(GL_LESS);
 
@@ -2714,8 +2716,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glBindFramebuffer(GL_FRAMEBUFFER, fboSunForGodRays.fbo);
 		glDisable(GL_DEPTH_TEST);
 		glViewport(0, 0, screenX/2, screenY/2);
-		programData.sunRenderer.render(c, sunPos, programData.skyBoxLoaderAndDrawer.sunTexture, std::max(sunTwilight, 0.5f));
-		
+		programData.sunRenderer.render(c, sunPos, programData.skyBoxLoaderAndDrawer.sunTexture, std::max(sunTwilight, 0.5f), 1, sunScale);
+		programData.sunRenderer.render(c, -sunPos, programData.skyBoxLoaderAndDrawer.moonTexture, 0, 0.35, moonScale);
+
 		//todo multiplier to drastically reduce the strength
 		//programData.sunRenderer.render(c, -sunPos, programData.skyBoxLoaderAndDrawer.moonTexture, 0);
 		glViewport(0, 0, screenX, screenY);

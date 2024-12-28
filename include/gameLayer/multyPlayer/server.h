@@ -29,10 +29,7 @@ bool computeRevisionStuff(Client &client, bool allowed,
 struct PerClientServerSettings
 {
 
-	bool validateStuff = true;
-	bool spawnZombie = false;
-	bool spawnPig = false;
-	bool spawnGoblin = false;
+	bool validateStuff = 1;
 	bool resendInventory = false;
 	bool damage = false;
 	bool heal = false;
@@ -55,11 +52,12 @@ struct ServerSettings
 };
 
 struct ServerTask;
+struct Profiler;
 
 void serverWorkerUpdate(WorldGenerator &wg, StructuresManager &structuresManager, 
 	BiomesManager &biomesManager, WorldSaver &worldSaver, 
 	std::vector<ServerTask> &serverTask,
-	float deltaTime);
+	float deltaTime, Profiler &profiler);
 
 
 //returns the timer since the start of the program
@@ -75,6 +73,8 @@ void changePlayerGameMode(std::uint64_t cid, unsigned char gameMode);
 
 ServerSettings getServerSettingsCopy();
 ServerSettings &getServerSettingsReff();
+Profiler getServerProfilerCopy();
+Profiler getServerTickProfilerCopy();
 
 
 unsigned int getRandomTickSpeed();

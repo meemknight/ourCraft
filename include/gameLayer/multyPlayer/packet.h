@@ -49,7 +49,6 @@ enum : std::uint32_t
 {
 	headerNone = 0,
 	headerReceiveCIDAndData,
-	headerRequestChunk,
 	headerPlaceBlock,
 	headerPlaceBlockForce,
 	headerBreakBlock,

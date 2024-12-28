@@ -29,6 +29,7 @@
 #include <gameplay/cat.h>
 #include <gameplay/gameplayRules.h>
 #include <gameplay/food.h>
+#include <profiler.h>
 
 static std::atomic<bool> serverRunning = false;
 
@@ -72,7 +73,6 @@ struct ServerData
 
 	//todo probably move this just locally
 	ServerChunkStorer chunkCache = {};
-	std::vector<ServerTask> waitingTasks = {};
 	ENetHost *server = nullptr;
 	ServerSettings settings = {};
 
@@ -329,7 +329,7 @@ void serverWorkerUpdate(
 	BiomesManager &biomesManager,
 	WorldSaver &worldSaver,
 	std::vector<ServerTask> &serverTask,
-	float deltaTime
+	float deltaTime, Profiler &serverProfiler
 	)
 {
 
@@ -345,12 +345,6 @@ void serverWorkerUpdate(
 
 	auto &settings = sd.settings;
 
-	for (auto i : serverTask)
-	{
-		sd.waitingTasks.push_back(i);
-	}
-	serverTask.clear();
-
 	static std::minstd_rand rng(std::random_device{}());
 	static bool generateNewChunks = 0; //this is set to true only once per tick
 
@@ -358,16 +352,26 @@ void serverWorkerUpdate(
 
 #pragma region send chunks to players
 
+	serverProfiler.startSubProfile("Send Chunks To players");
+
 	std::vector<SendBlocksBack> sendNewBlocksToPlayers;
 	updateLoadedChunks(wg, structuresManager, biomesManager, sendNewBlocksToPlayers,
 		worldSaver, true);
 	generateNewChunks = 0;
 
+	serverProfiler.endSubProfile("Send Chunks To players");
 
 
 #pragma endregion
 
+#pragma region unload chunks
+	serverProfiler.startSubProfile("Unload chunks");
+	sd.chunkCache.unloadChunksThatNeedUnloading(worldSaver, 2);
+	serverProfiler.startSubProfile("Unload chunks");
+#pragma endregion
 
+
+	serverProfiler.startSubProfile("Set players in chunks and check if they are killed");
 
 #pragma region set players in their chunks
 	for (auto &c : sd.chunkCache.savedChunks)
@@ -398,7 +402,6 @@ void serverWorkerUpdate(
 
 
 
-
 	//todo this will be moved in the tick after refactoring
 #pragma region check players killed
 
@@ -425,107 +428,7 @@ void serverWorkerUpdate(
 
 #pragma endregion
 
-
-
-
-	//send chunks
-	{
-		int chunksGenerated = 0;
-		int chunksLoaded = 0;
-
-		for(auto it = sd.waitingTasks.begin(); it != sd.waitingTasks.end();)
-		{
-			auto &i = *it;
-		
-			//todo remove this task completely
-			if (i.t.taskType == Task::generateChunk)
-			{
-				auto client = getClient(i.cid); //todo this could fail when players leave so return pointer and check
-				bool wasGenerated = 0;
-
-				if(0)
-				if (checkIfPlayerShouldGetChunk(client.positionForChunkGeneration,
-					{i.t.pos.x, i.t.pos.z}, client.playerData.entity.chunkDistance))
-				{
-					PL::Profiler profiler;
-
-					profiler.start();
-					auto rez = sd.chunkCache.getOrCreateChunk(i.t.pos.x, i.t.pos.z, wg, structuresManager, biomesManager,
-						sendNewBlocksToPlayers, true, nullptr, worldSaver, &wasGenerated);
-					profiler.end();
-
-					chunksLoaded++;
-
-					//if (wasGenerated)
-					//{
-					//	std::cout << "Generated ChunK: " << profiler.rezult.timeSeconds * 1000.f << "ms  per 100: " <<
-					//		profiler.rezult.timeSeconds * 100'000.f << "\n";
-					//}
-
-					Packet packet;
-					packet.header = headerRecieveChunk;
-
-
-					//if you have modified Packet_RecieveChunk make sure you didn't break this!
-					static_assert(sizeof(Packet_RecieveChunk) == sizeof(ChunkData));
-
-					{
-						auto client = getClientNotLocked(i.cid);
-						if (client)
-						{
-							sendPacketAndCompress(client->peer, packet, (char *)(&rez->chunk),
-								sizeof(Packet_RecieveChunk), true, channelChunksAndBlocks);
-						}
-
-						std::vector<unsigned char> blockData;
-						rez->blockData.formatBlockData(blockData, rez->chunk.x, rez->chunk.z);
-
-						if (blockData.size())
-						{
-							Packet packet;
-							packet.header = headerRecieveBlockData;
-
-							if (blockData.size() > 1000)
-							{
-								sendPacketAndCompress(client->peer, packet, (char *)blockData.data(),
-									blockData.size(), true, channelChunksAndBlocks);
-							}
-							else
-							{
-								sendPacket(client->peer, packet, (char *)blockData.data(),
-									blockData.size(), true, channelChunksAndBlocks);
-							};
-
-						}
-
-					}
-
-				}
-				else
-				{
-					std::cout << "Chunk rejected because player too far: " <<
-						i.t.pos.x << " " << i.t.pos.z << " dist: " << client.playerData.entity.chunkDistance << "\n";
-				}
-
-				if (wasGenerated) { chunksGenerated++; }
-
-				it = sd.waitingTasks.erase(it);
-			}
-			else
-			{
-				++it;
-			}
-
-
-			//we generate only one chunk per loop
-			//if (chunksGenerated >= 1 || chunksLoaded >= 5)
-			//{
-			//	break;
-			//}
-		}
-
-
-	}
+	serverProfiler.endSubProfile("Set players in chunks and check if they are killed");
 
 
 	//here used to be the tasks
@@ -536,7 +439,6 @@ void serverWorkerUpdate(
 	//generate chunk
 
 #pragma region gameplay tick
-
 
 
 	if (sd.tickTimer > 1.f / targetTicksPerSeccond)
@@ -651,50 +553,12 @@ void serverWorkerUpdate(
 	#pragma endregion
 
 
-
 		sd.tickTimer -= (1.f / targetTicksPerSeccond);
 		sd.ticksPerSeccond++;
 
 		if(settings.perClientSettings.size())
 		{
-			//if (settings.perClientSettings.begin()->second.spawnZombie)
-			//{
-			//	settings.perClientSettings.begin()->second.spawnZombie = false;
-			//
-			//
-			//	auto c = getAllClients();
-			//
-			//	Zombie z;
-			//	glm::dvec3 position = c.begin()->second.playerData.entity.position;
-			//	z.position = position;
-			//	z.lastPosition = position;
-			//	spawnZombie(sd.chunkCache, z, getEntityIdAndIncrement(worldSaver, 
-			//		EntityType::zombies));
-			//}
-			//
-			//if (settings.perClientSettings.begin()->second.spawnPig)
-			//{
-			//	settings.perClientSettings.begin()->second.spawnPig = false;
-			//	auto c = getAllClients();
-			//
-			//	Pig p;
-			//	glm::dvec3 position = c.begin()->second.playerData.entity.position;
-			//	p.position = position;
-			//	p.lastPosition = position;
-			//	spawnPig(sd.chunkCache, p, worldSaver, rng);
-			//}
-			//
-			//if (settings.perClientSettings.begin()->second.spawnGoblin)
-			//{
-			//	settings.perClientSettings.begin()->second.spawnGoblin = false;
-			//	auto c = getAllClients();
-			//
-			//	Goblin p;
-			//	glm::dvec3 position = c.begin()->second.playerData.entity.position;
-			//	p.position = position;
-			//	p.lastPosition = position;
-			//	spawnGoblin(sd.chunkCache, p, worldSaver, rng);
-			//}
+
 
 			if (settings.perClientSettings.begin()->second.resendInventory)
 			{
@@ -741,9 +605,7 @@ void serverWorkerUpdate(
 			//}
 		}
 
-	#pragma region unload chunks
-		sd.chunkCache.unloadChunksThatNeedUnloading(worldSaver, 10);
-	#pragma endregion
+
 
 		//todo error and warning logs for server.
 
@@ -757,7 +619,8 @@ void serverWorkerUpdate(
 		}
 
 		splitUpdatesLogic(sd.tickDeltaTime, sd.tickDeltaTimeMs,
-			currentTimer, sd.chunkCache, rng(), clients, worldSaver, sd.waitingTasks);
+			currentTimer, sd.chunkCache, rng(), clients, worldSaver, serverTask,
+			serverProfiler);
 
 		sd.tickDeltaTime = 0;
 		sd.tickDeltaTimeMs = 0;
@@ -822,8 +685,11 @@ void serverWorkerUpdate(
 
 #pragma region save stuff
 	//save one chunk on disk
+	serverProfiler.startSubProfile("Save chunk on disk");
 	sd.chunkCache.saveNextChunk(worldSaver);
+	serverProfiler.endSubProfile("Save chunk on disk");
 
+	//mark all entities as dirty every 5 secconds, so we save them
 	if (sd.saveEntitiesTimer <= 0)
 	{
 		sd.saveEntitiesTimer = 5;

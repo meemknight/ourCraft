@@ -22,6 +22,7 @@
 #include <multyPlayer/splitUpdatesLogic.h>
 #include <filesystem>
 #include <platformTools.h>
+#include <profiler.h>
 
 //todo add to a struct
 ENetHost *server = 0;
@@ -416,34 +417,6 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			break;
 		}
 
-		case headerRequestChunk:
-		{
-			Packet_RequestChunk packetData = *(Packet_RequestChunk *)data;
-			
-			int squareDistance = 0;
-			bool error = 0;
-
-			{
-
-				connection->second.positionForChunkGeneration = packetData.playersPositionAtRequest;
-				//std::cout << packetData.playersPositionAtRequest.x << "\n";
-				squareDistance = connection->second.playerData.entity.chunkDistance;
-
-			}
-
-			if (!error)
-			{
-				serverTask.t.taskType = Task::generateChunk;
-				serverTask.t.pos = {packetData.chunkPosition.x, 0, packetData.chunkPosition.y};
-
-				serverTasks.push_back(serverTask);
-			}
-			
-			
-			
-			break;
-		}
-
 		case headerPlaceBlock:
 		{
 			Packet_ClientPlaceBlock packetData = *(Packet_ClientPlaceBlock *)data;
@@ -806,6 +779,14 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 
 static std::atomic<bool> enetServerRunning = false;
 
+
+Profiler serverProfiler;
+Profiler getServerProfilerCopy()
+{
+	return serverProfiler;
+}
+
+
 void enetServerFunction(std::string path)
 {
 	std::cout << "Successfully started server!\n";
@@ -826,6 +807,7 @@ void enetServerFunction(std::string path)
 	StructuresManager structuresManager;
 	BiomesManager biomesManager;
 	WorldSaver worldSaver;
+	serverProfiler = {};
 
 	worldSaver.savePath = RESOURCES_PATH "worlds/"; //"saves/";
 	worldSaver.savePath += path + "/world";
@@ -907,7 +889,7 @@ void enetServerFunction(std::string path)
 
 	//run the server for one tick
 	serverWorkerUpdate(wg, structuresManager, biomesManager,
-		worldSaver, serverTasks, (1.f/targetTicksPerSeccond) + 0.01);
+		worldSaver, serverTasks, (1.f/targetTicksPerSeccond) + 0.01, serverProfiler);
 
 	while (enetServerRunning)
 	{
@@ -916,12 +898,16 @@ void enetServerFunction(std::string path)
 		float deltaTime = (std::chrono::duration_cast<std::chrono::microseconds>(stop - start)).count() / 1000000.0f;
 		start = std::chrono::high_resolution_clock::now();
 		tickTimer += deltaTime;
+
+		serverProfiler.startFrame();
+
 		auto settings = getServerSettingsCopy();
 
 		//int waitTimer = ((1.f/settings.targetTicksPerSeccond)-tickTimer) * 1000;
 		//waitTimer = std::max(std::min(waitTimer-1, 10), 0);
 		
-		int waitTime = 3;
+		serverProfiler.startSubProfile("Recieve Network Updates");
+		int waitTime = 1;
 		int tries = 10;
 		while (((enet_host_service(server, &event, waitTime) > 0) || (waitTime=0, tries-- > 0) ) 
 			&& enetServerRunning)
@@ -960,7 +946,9 @@ void enetServerFunction(std::string path)
 
 			}
 		}
-		
+		serverProfiler.endSubProfile("Recieve Network Updates");
+
+
 		if (!enetServerRunning) { break; }
 
 		//todo this will be moved into tick
@@ -1017,6 +1005,8 @@ void enetServerFunction(std::string path)
 
 			}
 
+
+
 		}
 
 	#pragma endregion
@@ -1047,9 +1037,10 @@ void enetServerFunction(std::string path)
 	#pragma endregion
 
 	serverWorkerUpdate(wg, structuresManager, biomesManager,
-		worldSaver, serverTasks, deltaTime);
+		worldSaver, serverTasks, deltaTime, serverProfiler);
 
-	
+		serverProfiler.endFrame();
+
 	}
 
 	clearSD(worldSaver);

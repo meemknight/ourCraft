@@ -370,8 +370,10 @@ void killEntity(WorldSaver &worldSaver, std::uint64_t entity, ServerChunkStorer 
 void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 	ServerChunkStorer &chunkCache, EntityData &orphanEntities,
 	unsigned int seed, std::vector<ServerTask> waitingTasks,
-	WorldSaver &worldSaver)
+	WorldSaver &worldSaver, Profiler *profiler)
 {
+	if (profiler) { profiler->startFrame(); }
+
 	//std::cout << "Tick deltaTime: " << deltaTime << "\n";
 
 	std::minstd_rand rng(seed);
@@ -404,6 +406,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 	std::unordered_map < std::uint64_t, Client *> allClients;
 	std::unordered_map < std::uint64_t, Client *> allSurvivalClients;
 
+	if (profiler) { profiler->startSubProfile("Calculate entities chunk position cache"); }
 #pragma region calculate all entities chunk positions cache
 
 	chunkCache.entityChunkPositions.clear();
@@ -425,8 +428,10 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 	}
 
 #pragma endregion
+	if (profiler) { profiler->endSubProfile("Calculate entities chunk position cache"); }
 
 
+	if (profiler) { profiler->startSubProfile("Tasks"); }
 #pragma region tasks
 	{
 		int count = waitingTasks.size();
@@ -1452,8 +1457,10 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 		}
 	}
 #pragma endregion
+	if (profiler) { profiler->endSubProfile("Tasks"); }
 
 
+	if (profiler) { profiler->startSubProfile("Player stuff"); }
 #pragma region calculate all players
 
 	for (auto &c : chunkCache.savedChunks)
@@ -1544,8 +1551,9 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 
 #pragma endregion
+	if (profiler) { profiler->endSubProfile("Player stuff"); }
 
-
+	if (profiler) { profiler->startSubProfile("Random Tick Update"); }
 #pragma region to random tick update
 
 	unsigned int randomTickSpeed = getRandomTickSpeed();
@@ -1556,15 +1564,16 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 		{
 			for (int i = 0; i < randomTickSpeed; i++)
 			{
-				int x = rng() % 16;
+				int x = rng() % 16; //todo better rng here
 				int y = rng() % 16;
 				int z = rng() % 16;
 				y += h * 16;
 
 				//if the code crashes here, that means that we wrongly got a nullptr chunk!
 				auto &b = c.second->chunk.unsafeGet(x,y,z);
+				auto type = b.getType();
 
-				if (b.getType() == BlockTypes::dirt)
+				if (type == BlockTypes::dirt)
 				{
 
 					auto top = c.second->chunk.safeGet(x, y + 1, z);
@@ -1624,7 +1633,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 					}
 
 				}
-				else if (b.getType() == BlockTypes::grassBlock)
+				else if (type == BlockTypes::grassBlock)
 				{
 					auto top = c.second->chunk.safeGet(x, y + 1, z);
 					if (top && top->stopsGrassFromGrowingIfOnTop())
@@ -1644,8 +1653,10 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 
 #pragma endregion
+	if (profiler) { profiler->endSubProfile("Random Tick Update"); }
 
 
+	if (profiler) { profiler->startSubProfile("Path Finding"); }
 #pragma region calculate player positions
 	std::unordered_map<std::uint64_t, glm::dvec3> playersPosition;
 
@@ -1676,7 +1687,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 			positions.emplace(node.returnPos + displacement, newEntry);
 
-			if (node.level < 80)
+			if (node.level < 10)
 			{
 				newEntry.returnPos = node.returnPos + displacement;
 				queue.push_back(newEntry);
@@ -1807,7 +1818,10 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 
 #pragma endregion
+	if (profiler) { profiler->endSubProfile("Path Finding"); }
 
+
+	if (profiler) { profiler->startSubProfile("Entity Updates"); }
 #pragma region mark entities as not updated
 
 	for (auto &c : chunkCache.savedChunks)
@@ -1944,8 +1958,9 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 
 #pragma endregion
+	if (profiler) { profiler->endSubProfile("Entity Updates"); }
 
-
+	if (profiler) { profiler->startSubProfile("Send Block and health Packets"); }
 #pragma region send packets
 
 
@@ -1983,7 +1998,6 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 
 #pragma endregion
-
 
 #pragma region send health packets and effects packets
 
@@ -2039,7 +2053,10 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 	}
 
 #pragma endregion
+	if (profiler) { profiler->startSubProfile("Send Block and health Packets"); }
 
+
+	if (profiler) { profiler->endFrame(); }
 
 
 	chunkCacheGlobal = 0;

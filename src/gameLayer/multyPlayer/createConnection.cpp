@@ -24,44 +24,17 @@ void submitTaskClient(Task &t)
 
 	switch (t.taskType)
 	{
-	case Task::generateChunk:
-	{
-		p.header = headerRequestChunk;
-		Packet_RequestChunk packetData = {};
-		packetData.chunkPosition = {t.pos.x, t.pos.z};
-		packetData.playersPositionAtRequest = t.playerPosForChunkGeneration;
+		
+		case Task::placeBlock:
+		{
+			//todo remove
+			permaAssert(0);
+			break;
+		}
+		default:
 
-		sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1, 
-			channelChunksAndBlocks);
+			permaAssert(0);
 		break;
-	}
-	case Task::placeBlock:
-	{
-		//todo remove
-		permaAssert(0);
-		break;
-	}
-	default:
-
-	//todo remove
-	case Task::droppedItemEntity:
-	{
-		permaAssert(0);
-		//p.header = headerClientDroppedItem;
-		//Packet_ClientDroppedItem packetData = {};
-		//packetData.position = t.doublePos;
-		//packetData.blockType = t.blockType;
-		//packetData.count = t.blockCount;
-		//packetData.eventId = t.eventId;
-		//packetData.entityID = t.entityId;
-		//packetData.motionState = t.motionState;
-		//packetData.timer = t.timer;
-		//
-		//sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1,
-		//	channelChunksAndBlocks);
-	}
-
-	break;
 	}
 
 
@@ -169,16 +142,7 @@ void recieveDataClient(ENetEvent &event,
 				
 
 				{
-					//remove from recently requested chunks so we can request again
-					//if needed for some reason
-					{
-						auto f = chunkSystem.recentlyRequestedChunks.find({chunkPacket->chunk.x, chunkPacket->chunk.z});
-						if (f != chunkSystem.recentlyRequestedChunks.end())
-						{
-							chunkSystem.recentlyRequestedChunks.erase(f);
-
-						}
-					}
+		
 
 					int x = chunkPacket->chunk.x - chunkSystem.cornerPos.x;
 					int z = chunkPacket->chunk.z - chunkSystem.cornerPos.y;

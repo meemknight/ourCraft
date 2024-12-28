@@ -28,7 +28,6 @@ struct Client
 	RevisionNumber revisionNumber = 1;
 
 	PlayerServer playerData;
-	glm::ivec2 positionForChunkGeneration = {};
 
 	std::vector<unsigned char> skinData;
 	bool skinDataCompressed = false;
