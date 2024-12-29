@@ -209,6 +209,7 @@ void updatePlayerEffects(Client &client)
 }
 
 //create connection
+//todo anounce it to all players, both as a connection and as an entity
 void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 {
 
@@ -218,6 +219,8 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 		Client c{event.peer}; 
 		c.playerData.entity.position = worldSaver.spawnPosition;
 		c.playerData.entity.lastPosition = worldSaver.spawnPosition;
+		c.playerData.lastChunkPositionWhenAnUpdateWasSent.x = divideChunk(c.playerData.entity.position.x);
+		c.playerData.lastChunkPositionWhenAnUpdateWasSent.y = divideChunk(c.playerData.entity.position.z);
 
 		c.playerData.otherPlayerSettings.gameMode = OtherPlayerSettings::CREATIVE;
 
@@ -951,65 +954,6 @@ void enetServerFunction(std::string path)
 
 		if (!enetServerRunning) { break; }
 
-		//todo this will be moved into tick
-	#pragma region server send entity position data
-
-		{
-			sendEntityTimer -= deltaTime;
-
-			if (sendEntityTimer < 0)
-			{
-				sendEntityTimer = 0.4;
-			
-				//todo make a different timer for each player			
-				//todo maybe merge things into one packet
-
-				//no need for mutex because this thread modifies the clients data
-				auto connections = getAllClients();
-
-				for (auto &c : connections)
-				{
-
-					// send players
-
-					for (auto &other : connections)
-					{
-						if (other.first != c.first)
-						{
-
-							if (checkIfPlayerShouldGetEntity(
-								{c.second.playerData.entity.position.x, c.second.playerData.entity.position.z},
-								other.second.playerData.entity.position, c.second.playerData.entity.chunkDistance, 0)
-								)
-							{
-								Packet_ClientRecieveOtherPlayerPosition sendData;
-								sendData.eid = other.first;
-								sendData.timer = getTimer();
-								sendData.entity = other.second.playerData.entity;
-
-								Packet p;
-								p.cid = 0;
-								p.header = headerClientRecieveOtherPlayerPosition;
-
-								sendPacket(c.second.peer, p, (const char *)&sendData, sizeof(sendData),
-									false, channelPlayerPositions);
-							}
-
-
-
-						}
-					}
-
-
-				}
-
-			}
-
-
-
-		}
-
-	#pragma endregion
 
 	#pragma region server sends timer updates
 		{

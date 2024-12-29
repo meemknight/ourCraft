@@ -69,7 +69,7 @@ struct Profiler
 
 	std::unordered_map<std::string, PL::Profiler> subProfiles;
 
-	void displayPlot(const char *mainPlotName);
+	void displayPlot(const char *mainPlotName, float scale = 32);
 
 	std::deque<SavedData> history;
 

@@ -133,4 +133,5 @@ struct PlayerServer: public ServerEntity<Player>
 	//todo calculate armour based on inventory
 	Armour getArmour() { return {0}; };
 
+	glm::ivec2 lastChunkPositionWhenAnUpdateWasSent = {};
 };

@@ -263,7 +263,7 @@ float plotGetterReal(const void *data, int index, int tableIndex)
 	return ((*history)[index]).dataMsReal[tableIndex];
 }
 
-void Profiler::displayPlot(const char *mainPlotName)
+void Profiler::displayPlot(const char *mainPlotName, float scale)
 {
 	if (history.empty()) { return; }
 
@@ -313,7 +313,7 @@ void Profiler::displayPlot(const char *mainPlotName)
 		&history,		// datas,
 		history.size(),           // values_count,
 		0.f,      // scale_min,
-		32.f,      // scale_max,
+		scale,      // scale_max,
 		ImVec2(512.0, 117.0f)  // graph_size
 	);
 	

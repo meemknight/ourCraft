@@ -81,6 +81,9 @@ unsigned int getRandomTickSpeed();
 
 void setServerSettings(ServerSettings settings);
 
-void genericBroadcastEntityDeleteFromServerToPlayer(std::uint64_t eid, bool reliable);
+void genericBroadcastEntityDeleteFromServerToPlayer(std::uint64_t eid, bool reliable,
+	std::unordered_map < std::uint64_t, Client *> &allClients,
+	glm::ivec2 lastChunkClientsGotUpdates);
+
 
 void genericBroadcastEntityKillFromServerToPlayer(std::uint64_t eid, bool reliable, ENetPeer* peerToIgnore = 0);

@@ -33,7 +33,8 @@ struct ChunkSystem
 	std::vector<Chunk*> loadedChunks;
 	int squareSize = 4;
 	std::vector<glm::ivec2> chunksToAddLight;
-
+	
+	glm::ivec2 lastPlayerPos = {};
 
 	//[0 -> squareSize)
 	Chunk *getChunksInMatrixSpaceUnsafe(int x, int z);
@@ -61,6 +62,9 @@ struct ChunkSystem
 	bool isChunkInRadius(glm::ivec2 playerPos, glm::ivec2 chunkPos);
 
 	bool isChunkInRadiusAndBounds(glm::ivec2 playerPos, glm::ivec2 chunkPos);
+
+	bool shouldRecieveEntity(glm::dvec3 entityPos);
+
 
 	int lastX = 0, lastZ = 0, created = 0;
 

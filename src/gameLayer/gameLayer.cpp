@@ -541,9 +541,9 @@ bool gameLogic(float deltaTime)
 				ImGui::Text("Server Ticke per seccond: %d", getServerTicksPerSeccond());
 				ImGui::Text("Server Worker tick threads: %d", getThredPoolSize());
 
-				profilerCopy.displayPlot("Server Profiler");
+				profilerCopy.displayPlot("Server Profiler", 52);
 				ImGui::Separator();
-				tickProfilerCopy.displayPlot("Tick Profiler for region 0");
+				tickProfilerCopy.displayPlot("Tick Profiler for region 0", 52);
 
 				for (auto &c : s.perClientSettings)
 				{

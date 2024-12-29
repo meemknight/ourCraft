@@ -351,8 +351,7 @@ void recieveDataClient(ENetEvent &event,
 			}
 			else
 			{
-				if (checkIfPlayerShouldGetEntity({playerPosition.x, playerPosition.z},
-					entity->entity.position, squareDistance, 0))
+				if (chunkSystem.shouldRecieveEntity(entity->entity.position))
 				{
 
 					auto found = entityManager.players.find(entity->eid);

@@ -299,7 +299,9 @@ void setServerSettings(ServerSettings settings)
 	}
 }
 
-void genericBroadcastEntityDeleteFromServerToPlayer(std::uint64_t eid, bool reliable)
+void genericBroadcastEntityDeleteFromServerToPlayer(std::uint64_t eid, bool reliable, 
+	std::unordered_map<std::uint64_t, Client *> &allClients, 
+	glm::ivec2 lastChunkClientsGotUpdates)
 {
 	Packet packet;
 	packet.header = headerRemoveEntity;
@@ -310,6 +312,7 @@ void genericBroadcastEntityDeleteFromServerToPlayer(std::uint64_t eid, bool reli
 	broadCast(packet, &data, sizeof(data),
 		nullptr, reliable, channelEntityPositions);
 }
+
 
 void genericBroadcastEntityKillFromServerToPlayer(std::uint64_t eid, bool reliable, ENetPeer *peerToIgnore)
 {
@@ -392,7 +395,7 @@ void serverWorkerUpdate(
 
 		//if (!client.second.playerData.killed)
 		{
-			chunk->entityData.players.insert({client.first, &client.second.playerData});
+			chunk->entityData.players[client.first] = &client.second.playerData;
 			sd.chunkCache.entityChunkPositions[client.first] = cPos;
 			auto ptr = &client.second.playerData;
 		}
@@ -434,7 +437,6 @@ void serverWorkerUpdate(
 	//here used to be the tasks
 
 
-
 	//todo check if there are too many loaded chunks and unload them before processing
 	//generate chunk
 
@@ -466,12 +468,15 @@ void serverWorkerUpdate(
 	#pragma region replace spawn position
 		//worldSaver.spawnPosition.y = 170;
 		//if(0)
+		//TODO this should run once at server startup, and also create this chunk,
+		//just at start
 		{
-			glm::ivec3 spawnPos = worldSaver.spawnPosition;
-			auto spawnChunk = sd.chunkCache.getOrCreateChunk(divideChunk(spawnPos.x),
-				divideChunk(spawnPos.z), wg, structuresManager, biomesManager,
-				sendNewBlocksToPlayers, true, nullptr, worldSaver);
 
+			glm::ivec3 spawnPos = worldSaver.spawnPosition;
+			auto spawnChunk = sd.chunkCache.getChunkOrGetNull(divideChunk(spawnPos.x),
+				divideChunk(spawnPos.z));
+
+			//only if the chunk is loaded for now
 			if (spawnChunk)
 			{
 				glm::ivec3 blockPos = spawnPos;
@@ -737,6 +742,7 @@ void updateLoadedChunks(
 	std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
 	WorldSaver &worldSaver, bool generateNewChunks)
 {
+
 
 	constexpr const int MAX_GENERATE = 1;
 

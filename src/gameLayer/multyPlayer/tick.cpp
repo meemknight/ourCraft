@@ -1651,7 +1651,6 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 
 
-
 #pragma endregion
 	if (profiler) { profiler->endSubProfile("Random Tick Update"); }
 
@@ -1881,7 +1880,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 					if (e.second.hasUpdatedThisTick) { ++it; continue; }
 					e.second.hasUpdatedThisTick = true;
-
+					
 					bool rez = genericCallUpdateForEntity(e, deltaTime, chunkGetter,
 						chunkCache, rng, othersDeleted,
 						pathFinding, playersPosition);
@@ -1890,7 +1889,8 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 					if (!rez)
 					{
 						//todo only for local players!!!!!!
-						genericBroadcastEntityDeleteFromServerToPlayer(it->first, true);
+						genericBroadcastEntityDeleteFromServerToPlayer(it->first,
+							true, allClients, e.second.lastChunkPositionWhenAnUpdateWasSent);
 
 						//remove entity
 						it = container.erase(it);
@@ -1948,7 +1948,8 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 	for (auto eid : othersDeleted)
 	{
-		genericBroadcastEntityDeleteFromServerToPlayer(eid, true);
+		//TODO!! set the position and last chunk position corectly
+		genericBroadcastEntityDeleteFromServerToPlayer(eid, true, allClients, {});
 
 	}
 	
@@ -1960,7 +1961,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 #pragma endregion
 	if (profiler) { profiler->endSubProfile("Entity Updates"); }
 
-	if (profiler) { profiler->startSubProfile("Send Block and health Packets"); }
+	if (profiler) { profiler->startSubProfile("Send Block health and entity Packets"); }
 #pragma region send packets
 
 
@@ -2053,7 +2054,80 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 	}
 
 #pragma endregion
-	if (profiler) { profiler->startSubProfile("Send Block and health Packets"); }
+
+	//todo this will be moved into tick
+#pragma region server send entity position data
+	{
+		static float sendEntityTimer = 0;
+		sendEntityTimer -= deltaTime;
+
+		if (sendEntityTimer < 0)
+		{
+			sendEntityTimer = 0.4;
+
+			//todo make a different timer for each player			
+			//todo maybe merge things into one packet
+
+			//no need for mutex because this thread modifies the clients data
+
+			for (auto &c : allClients)
+			{
+
+				// send players
+
+				for (auto &other : allClients)
+				{
+					if (other.first != c.first)
+					{
+
+						auto &loadedChunks = c.second->loadedChunks;
+						
+						glm::ivec2 lastChunkPos = other.second->playerData.lastChunkPositionWhenAnUpdateWasSent;
+						glm::ivec2 currentChunkPos = {};
+						currentChunkPos.x = divideChunk(other.second->playerData.getPosition().x);
+						currentChunkPos.y = divideChunk(other.second->playerData.getPosition().z);
+
+						if(loadedChunks.find(lastChunkPos) != loadedChunks.end()
+							||
+							loadedChunks.find(currentChunkPos) != loadedChunks.end()
+							)
+						//if (checkIfPlayerShouldGetEntity(
+						//	{c.second.playerData.entity.position.x, c.second.playerData.entity.position.z},
+						//	other.second.playerData.entity.position, c.second.playerData.entity.chunkDistance, 0)
+						//	)
+						{
+							Packet_ClientRecieveOtherPlayerPosition sendData;
+							sendData.eid = other.first;
+							sendData.timer = getTimer();
+							sendData.entity = other.second->playerData.entity;
+
+							Packet p;
+							p.cid = 0;
+							p.header = headerClientRecieveOtherPlayerPosition;
+
+							sendPacket(c.second->peer, p, (const char *)&sendData, sizeof(sendData),
+								false, channelPlayerPositions);
+						}
+
+						other.second->playerData.lastChunkPositionWhenAnUpdateWasSent = currentChunkPos;
+
+
+					}
+				}
+
+
+			}
+
+		}
+
+
+
+	}
+
+#pragma endregion
+
+
+	if (profiler) { profiler->startSubProfile("Send Block health end entity Packets"); }
 
 
 	if (profiler) { profiler->endFrame(); }

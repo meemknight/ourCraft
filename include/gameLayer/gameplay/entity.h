@@ -466,6 +466,7 @@ struct ServerEntity
 	ConditionalMember<hasCanHaveEffects(), Effects> effects = {};
 
 	bool hasUpdatedThisTick = 0;
+	glm::ivec2 lastChunkPositionWhenAnUpdateWasSent = {};
 };
 
 template <class T, class BASE_CLIENT>

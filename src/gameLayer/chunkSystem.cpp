@@ -62,7 +62,8 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 {
 
 
-
+	lastPlayerPos.x = playerBlockPosition.x;
+	lastPlayerPos.y = playerBlockPosition.z;
 
 	//index of the chunk
 	int x = divideChunk(playerBlockPosition.x);
@@ -466,6 +467,12 @@ bool ChunkSystem::isChunkInRadiusAndBounds(glm::ivec2 playerPos,
 
 	return isChunkInRadius(playerPos, chunkPos);
 
+}
+
+bool ChunkSystem::shouldRecieveEntity(glm::dvec3 entityPos)
+{	
+	return isChunkInRadiusAndBounds(lastPlayerPos, 
+		{divideChunk(entityPos.x), divideChunk(entityPos.z)});
 }
 
 Chunk *ChunkSystem::getChunkSafeFromBlockPos(int x, int z)
