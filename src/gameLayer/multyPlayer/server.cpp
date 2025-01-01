@@ -799,7 +799,7 @@ void updateLoadedChunks(
 		glm::ivec2 pos(divideChunk(cl.second.playerData.entity.position.x),
 			divideChunk(cl.second.playerData.entity.position.z));
 		
-		glm::ivec2 playerPos(cl.second.playerData.entity.position.x, cl.second.playerData.entity.position.z);
+		auto playerBlockPos = from3DPointToBlock(cl.second.playerData.entity.position);
 
 		int distance = (cl.second.playerData.entity.chunkDistance/2) + 1;
 
@@ -811,7 +811,7 @@ void updateLoadedChunks(
 			for (auto it = client.loadedChunks.begin(); it != client.loadedChunks.end();)
 			{
 
-				if (!isChunkInRadius(playerPos, *it, cl.second.playerData.entity.chunkDistance))
+				if (!isChunkInRadius({playerBlockPos.x, playerBlockPos.z}, *it, cl.second.playerData.entity.chunkDistance))
 				{
 					it = client.loadedChunks.erase(it);
 				}
@@ -829,10 +829,14 @@ void updateLoadedChunks(
 				glm::vec2 vect(i, j);
 				auto chunkPos = pos + glm::ivec2(i, j);
 
-
-				if (isChunkInRadius(playerPos, chunkPos, cl.second.playerData.entity.chunkDistance))
+				if (isChunkInRadius({playerBlockPos.x, playerBlockPos.z}, 
+					chunkPos, cl.second.playerData.entity.chunkDistance))
 				{
-					positions.push_back({chunkPos});
+					//if (client.loadedChunks.find(chunkPos) ==
+					//	client.loadedChunks.end())
+					{
+						positions.push_back({chunkPos});
+					}
 				}
 			}
 

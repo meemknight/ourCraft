@@ -136,6 +136,7 @@ void recieveDataClient(ENetEvent &event,
 				break;
 			}
 
+
 			if (chunkSystem.isChunkInRadiusAndBounds({playerPosition.x, playerPosition.z},
 				{chunkPacket->chunk.x, chunkPacket->chunk.z}))
 			{

@@ -45,7 +45,7 @@ void genericBroadcastEntityUpdateFromServerToPlayer2(E &e, bool reliable,
 	Packet packet;
 	packet.header = headerUpdateGenericEntity;
 
-	static unsigned char data[sizeof(Packet_UpdateGenericEntity) + 100000];
+	static thread_local unsigned char data[sizeof(Packet_UpdateGenericEntity) + 100000];
 
 	Packet_UpdateGenericEntity firstPart;
 	firstPart.eid = e.first;
@@ -1901,6 +1901,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 						//todo only for local players!!!!!!
 						//genericBroadcastEntityUpdateFromServerToPlayer
 						//	< decltype(packetType)>(e, false, currentTimer, packetId);
+						//std::cout << "Sent update ";
 						genericBroadcastEntityUpdateFromServerToPlayer2(e, false, currentTimer);
 
 						if (initialChunk != newChunk)
@@ -2055,10 +2056,9 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 #pragma endregion
 
-	//todo this will be moved into tick
 #pragma region server send entity position data
 	{
-		static float sendEntityTimer = 0;
+		static thread_local float sendEntityTimer = 0;
 		sendEntityTimer -= deltaTime;
 
 		if (sendEntityTimer < 0)

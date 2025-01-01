@@ -74,7 +74,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	glm::ivec2 maxPos = glm::ivec2(x, z) + glm::ivec2(squareSize / 2 + squareSize % 2, squareSize / 2 + squareSize % 2);
 	//exclusive max
 
-	//todo check why sometimes the server and the player dissagree on position
+	//todo check why sometimes the server and the player dissagree on chunks
 	auto checkChunkInRadius = [&](glm::ivec2 pos)
 	{
 		//glm::vec2 center{squareSize / 2,squareSize / 2};
@@ -448,7 +448,7 @@ bool isChunkInRadius(glm::ivec2 playerPos, glm::ivec2 chunkPos, int squareSize)
 
 	glm::vec2 diff = playerPos - chunkPos;
 
-	return std::sqrt(glm::dot(diff, diff)) <= (squareSize / 2);
+	return std::sqrt(glm::dot(diff, diff)) <= (squareSize / 2) - 0.1;
 
 }
 
