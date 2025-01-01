@@ -152,8 +152,9 @@ void genericResetEntitiesInTheirNewChunk(T &container, U memberSelector, ServerC
 
 		if (chunk)
 		{
+			std::cout << "Found after orhpaned\n";
 			auto member = memberSelector(chunk->entityData);
-			member->insert({e.first, e.second});
+			(*member)[e.first] = e.second;
 			it = container.erase(it);
 		}
 		else
@@ -205,7 +206,7 @@ bool spawnDroppedItemEntity(
 
 	if (chunk)
 	{
-		chunk->entityData.droppedItems.insert({newId, newEntity});
+		chunk->entityData.droppedItems[newId] = newEntity;
 		chunkManager.entityChunkPositions[newId] = chunkPosition;
 	}
 	else
@@ -790,7 +791,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 								spawnDroppedItemEntity(chunkCache,
 									worldSaver, i.t.blockCount, i.t.blockType, &from->metaData,
 									i.t.doublePos, i.t.motionState, newId,
-									computeRestantTimer(i.t.timer, currentTimer));
+									computeRestantTimer(i.t.timer, getTimer()));
 
 								//std::cout << "restant: " << newEntity.restantTime << "\n";
 
@@ -1892,6 +1893,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 						genericBroadcastEntityDeleteFromServerToPlayer(it->first,
 							true, allClients, e.second.lastChunkPositionWhenAnUpdateWasSent);
 
+						std::cout << "remove!!!!!!!\n";
 						//remove entity
 						it = container.erase(it);
 					}
@@ -1902,15 +1904,17 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 						//genericBroadcastEntityUpdateFromServerToPlayer
 						//	< decltype(packetType)>(e, false, currentTimer, packetId);
 						//std::cout << "Sent update ";
-						genericBroadcastEntityUpdateFromServerToPlayer2(e, false, currentTimer);
+						genericBroadcastEntityUpdateFromServerToPlayer2(e, false, getTimer());
 
 						if (initialChunk != newChunk)
 						{
-
+							std::cout << "Prepare to move\n";
 							auto chunk = chunkCache.getChunkOrGetNull(newChunk.x, newChunk.y);
 							
 							if (chunk)
 							{
+								std::cout << "Found!\n";
+
 								//move entity in another chunk
 								auto member = memberSelector(chunk->entityData);
 								member->insert({e.first, e.second});
@@ -1919,6 +1923,8 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 							}
 							else
 							{
+								std::cout << "Not Found!\n";
+
 								//the entity left the region, we move it out,
 								// so we save it to disk or to other chunks
 								orphanContainer.insert(
@@ -1954,7 +1960,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 	}
 	
-	
+	//todo this is probably not usefull anymore but investigate.
 	callGenericResetEntitiesInTheirNewChunk(std::make_integer_sequence<int, EntitiesTypesCount - 1>(),
 		orphanEntities, chunkCache);
 

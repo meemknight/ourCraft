@@ -321,13 +321,15 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 
 				if (chunk)
 				{
+					std::cout << "Moved!\n";
 					auto member = memberSelector(chunk->entityData);
-					member->insert({e.first, e.second});
+					(*member)[e.first] = e.second;
 					chunkCache.entityChunkPositions[e.first] = pos;
 				}
 				else
 				{
 					//todo change and make in 2 steps
+					std::cout << "OUT!\n";
 					worldSaver.appendEntitiesForChunk(pos);
 					//todo save entity to disk here!.
 				}

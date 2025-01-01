@@ -547,14 +547,43 @@ struct ClientEntity
 
 	void clientEntityUpdate(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2))
 	{
-		float timer = deltaTime + restantTime;
+		BASE_CLIENT *baseClient = (BASE_CLIENT *)this;
+		baseClient->rubberBand = {};
 
-		BASE_CLIENT *baseClient = (BASE_CLIENT*)this;
-
-		if (timer > 0)
+		if (restantTime < 0)
 		{
-			baseClient->update(timer, chunkGetter);
+			float timer = deltaTime + restantTime;
+			if (timer > 0)
+			{
+				auto oldPosition = baseClient->getPosition();
+				baseClient->update(timer, chunkGetter);
+				auto newPosition = baseClient->getPosition();
+
+				//baseClient->rubberBand.addToRubberBand(oldPosition - newPosition);
+			}
 		}
+		else
+		{
+			if (restantTime > 0)
+			{
+				baseClient->update(restantTime, chunkGetter);
+				auto oldPosition = baseClient->getPosition();
+
+				baseClient->update(deltaTime, chunkGetter);
+				auto newPosition = baseClient->getPosition();
+
+				//todo make rubber band corect, start from the last position end on this new one
+				//old position - new position
+				//baseClient->rubberBand.addToRubberBand(oldPosition - newPosition);
+			}
+			else
+			{
+				baseClient->update(deltaTime, chunkGetter);
+			}
+
+
+		}
+
 
 		rubberBand.computeRubberBand(deltaTime);
 

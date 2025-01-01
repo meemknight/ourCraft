@@ -858,7 +858,13 @@ void updateLoadedChunks(
 		{
 			SavedChunk *c = 0;
 
-			if ((generateNewChunks && (geenratedThisFrame < MAX_GENERATE)) 
+			bool generateMoreChunks = true;
+			if (geenratedThisFrame >= MAX_GENERATE)generateMoreChunks = false;
+
+			bool canSendMoreChunks = true;
+
+
+			if ((generateNewChunks && (generateMoreChunks))
 				
 				//always generate the chunk that the player is in
 				|| (chunkPos == pos))
@@ -883,9 +889,10 @@ void updateLoadedChunks(
 			//number of chunks that are being sent rn
 			//stop sending more chunks than the pending number
 			int currentPendingChunks = cl.second.chunksPacketPendingConfirmation.size();
+			if (currentPendingChunks > MAX_CHUNKS_PENDING) { canSendMoreChunks = false; }
+
 
 			//always generate the chunk player is in,
-			if (currentPendingChunks <= MAX_CHUNKS_PENDING || (chunkPos == pos))
 			{
 
 				if (!c)
@@ -901,7 +908,7 @@ void updateLoadedChunks(
 				#pragma region send chunk to player
 
 					if (client.loadedChunks.find(chunkPos) ==
-						client.loadedChunks.end())
+						client.loadedChunks.end() && (canSendMoreChunks || chunkPos == pos))
 					{
 
 						client.loadedChunks.insert(chunkPos);
@@ -954,15 +961,7 @@ void updateLoadedChunks(
 
 			};
 
-			//optional
-			//stop sending chunks, so we don't send far chunks to the player, instead we should
-			//focus on loading close chunks
-			if (geenratedThisFrame >= MAX_GENERATE && generatedChunkPlayerIsIn)
-			{
-				break;
-			}
-
-			if (currentPendingChunks > MAX_CHUNKS_PENDING && generatedChunkPlayerIsIn) { break; }
+			
 
 		};
 
