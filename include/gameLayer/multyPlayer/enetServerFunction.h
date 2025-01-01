@@ -33,6 +33,8 @@ struct Client
 	bool skinDataCompressed = false;
 
 	std::unordered_set<glm::ivec2, Ivec2Hash> loadedChunks;
+
+	std::unordered_set<unsigned int> chunksPacketPendingConfirmation;
 };
 
 struct EntityIdHolder

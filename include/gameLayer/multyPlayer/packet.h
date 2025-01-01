@@ -375,9 +375,12 @@ struct Packet_ClientDroppedChunk
 
 void *unCompressData(const char *data, size_t compressedSize, size_t &originalSize);
 
-void sendPacketAndCompress(ENetPeer *to, Packet p, const char *data, size_t size, bool reliable, int channel);
+void sendPacketAndCompress(ENetPeer *to, Packet p,
+	const char *data, size_t size, bool reliable, int channel,
+	ENetPacketFreeCallback freeCallback = nullptr, unsigned int packetId = 0);
 
-void sendPacket(ENetPeer *to, Packet p, const char *data, size_t size, bool reliable, int channel);
+void sendPacket(ENetPeer *to, Packet p, const char *data, size_t size, 
+	bool reliable, int channel, ENetPacketFreeCallback freeCallback = 0, unsigned int packetId = 0);
 
 //ton't use in client code!!
 void sendPacket(ENetPeer *to, uint32_t header, void *data, size_t size, bool reliable, int channel);
@@ -386,6 +389,9 @@ void sendPacket(ENetPeer *to, uint32_t header, std::uint64_t cid, void *data, si
 
 
 char *parsePacket(ENetEvent &event, Packet &p, size_t &dataSize);
+
+char *parsePacket(ENetPacket &packet, Packet &p, size_t &dataSize);
+
 
 float computeRestantTimer(std::uint64_t older, std::uint64_t newer);
 

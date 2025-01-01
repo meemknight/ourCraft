@@ -213,6 +213,14 @@ void updatePlayerEffects(Client &client)
 void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 {
 
+	//std::cout << "min" << event.peer->timeoutMinimum << "\n";
+	//std::cout << "max" << event.peer->timeoutMaximum << "\n";
+	//std::cout << "limit" << event.peer->timeoutLimit << "\n";
+
+	event.peer->timeoutMinimum = 10'000;
+	event.peer->timeoutMaximum = 30'000;
+	event.peer->timeoutLimit = 64;
+
 	std::uint64_t id = getEntityIdAndIncrement(worldSaver, EntityType::player);
 
 	{
@@ -353,6 +361,8 @@ void removeConnection(ENetHost *server, ENetEvent &event)
 
 void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &serverTasks)
 {
+
+
 	Packet p;
 	size_t size = 0;
 	auto data = parsePacket(event, p, size);
@@ -790,6 +800,54 @@ Profiler getServerProfilerCopy()
 }
 
 
+int pendingReliableCount = 0;
+size_t totalSize = 0;
+
+int getServerPendingReliableCount()
+{
+	return pendingReliableCount;
+}
+
+size_t getServerTotalPendingSize()
+{
+	return totalSize;
+}
+
+void calculatePendingPacketsMetrics()
+{
+	pendingReliableCount = 0;
+	totalSize = 0;
+
+	for (auto &c : connections)
+	{
+		if (!c.second.peer)continue;
+
+		auto peer = c.second.peer;
+
+		enet_uint16 lastSent = peer->outgoingReliableSequenceNumber;
+		ENetListNode *current = peer->sentReliableCommands.sentinel.next;
+		// Iterate over the list until the sentinel node is reached
+			while (current != &peer->sentReliableCommands.sentinel)
+			{
+				ENetOutgoingCommand *command = (ENetOutgoingCommand *)current;
+
+				// Count reliable commands (reliableSequenceNumber > 0 indicates a reliable command)
+				if (command->reliableSequenceNumber > 0)
+				{
+					++pendingReliableCount;
+				}
+
+				// Move to the next node in the list
+				current = current->next;
+			}
+
+		totalSize += peer->totalWaitingData;
+	}
+
+
+
+}
+
 void enetServerFunction(std::string path)
 {
 	std::cout << "Successfully started server!\n";
@@ -939,9 +997,9 @@ void enetServerFunction(std::string path)
 				case ENET_EVENT_TYPE_DISCONNECT:
 				{
 
-					//std::cout << "disconnect: "
-					//	<< event.peer->address.host << " "
-					//	<< event.peer->address.port << "\n\n";
+					std::cout << "disconnect from server: "
+						<< event.peer->address.host << " "
+						<< event.peer->address.port << "\n\n";
 					removeConnection(server, event);
 					break;
 				}
@@ -983,8 +1041,9 @@ void enetServerFunction(std::string path)
 	serverWorkerUpdate(wg, structuresManager, biomesManager,
 		worldSaver, serverTasks, deltaTime, serverProfiler);
 
-		serverProfiler.endFrame();
+	calculatePendingPacketsMetrics();
 
+		serverProfiler.endFrame();
 	}
 
 	clearSD(worldSaver);

@@ -305,7 +305,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			auto time = gameData.undoQueue.events[0].createTime;
 
 			//todo Request the server for a hard reset rather than a timeout?
-			if ((getTimer() - time) > 10'000)
+			//todo set networking problem effect when this happens
+			if ((getTimer() - time) > 20'000)
 			{
 				std::cout << "Client timeouted because of validate events!\n";
 				return 0;
@@ -549,6 +550,16 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	//inventory and menu stuff
 	if (!stopMainInput)
 	{
+
+		if (platform::isKeyHeld(platform::Button::C))
+		{
+			gameData.c.fovRadians = glm::radians(30.f);
+		}
+		else
+		{
+			gameData.c.fovRadians = glm::radians(70.f);
+		}
+
 
 		if (platform::isKeyPressedOn(platform::Button::R))
 		{

@@ -541,6 +541,9 @@ bool gameLogic(float deltaTime)
 				ImGui::Text("Server Ticke per seccond: %d", getServerTicksPerSeccond());
 				ImGui::Text("Server Worker tick threads: %d", getThredPoolSize());
 
+				ImGui::Text("Server Pending count: %d", getServerPendingReliableCount());
+				ImGui::Text("Server Pending size bytes: %d", (int)getServerTotalPendingSize());
+
 				profilerCopy.displayPlot("Server Profiler", 52);
 				ImGui::Separator();
 				tickProfilerCopy.displayPlot("Tick Profiler for region 0", 52);

@@ -86,6 +86,8 @@ struct ServerData
 	float saveEntitiesTimer = 5;
 	std::uint64_t lastTimer = 0;
 
+	//this is used as an unique id for chunk packets
+	unsigned int chunkPacketId = 0;
 
 }sd;
 
@@ -352,7 +354,6 @@ void serverWorkerUpdate(
 	static bool generateNewChunks = 0; //this is set to true only once per tick
 
 
-
 #pragma region send chunks to players
 
 	serverProfiler.startSubProfile("Send Chunks To players");
@@ -366,6 +367,7 @@ void serverWorkerUpdate(
 
 
 #pragma endregion
+
 
 #pragma region unload chunks
 	serverProfiler.startSubProfile("Unload chunks");
@@ -455,7 +457,7 @@ void serverWorkerUpdate(
 		//{
 		//
 		//	auto cPos = determineChunkThatIsEntityIn(client.second.playerData.entity.position);
-		//
+		//	
 		//	auto chunk = sd.chunkCache.getChunkOrGetNull(cPos.x, cPos.y);
 		//
 		//	permaAssertComment(chunk, "Error, A chunk that a player is in unloaded...");
@@ -469,8 +471,12 @@ void serverWorkerUpdate(
 		//worldSaver.spawnPosition.y = 170;
 		//if(0)
 		//TODO this should run once at server startup, and also create this chunk,
+		// also this should run when someone wants to respawn.
 		//just at start
 		{
+
+			//wg, structuresManager, biomesManager,
+			//sendNewBlocksToPlayers, true, nullptr, worldSaver
 
 			glm::ivec3 spawnPos = worldSaver.spawnPosition;
 			auto spawnChunk = sd.chunkCache.getChunkOrGetNull(divideChunk(spawnPos.x),
@@ -733,6 +739,30 @@ void removeCidFromServerSettings(std::uint64_t cid)
 }
 
 
+void onPacketDestroyForChunkSending(ENetPacket *packet)
+{
+	unsigned int userData = (unsigned int)packet->userData;
+	
+	Packet p = {};
+	size_t dataSize = 0;
+	parsePacket(*packet, p, dataSize);
+
+	auto cid = p.cid;
+
+
+	auto &clients = getAllClientsReff();
+
+	auto found = clients.find(cid);
+	if (found != clients.end())
+	{
+		auto rez = found->second.chunksPacketPendingConfirmation.erase(userData);
+		int a = 0;
+	}
+
+	// Custom logic for when the packet is destroyed
+	//std::cout << "Packet of size " << packet->dataLength << " was destroyed (acknowledged or dropped)." << std::endl;
+}
+
 
 //adds loaded chunks.
 void updateLoadedChunks(
@@ -745,6 +775,7 @@ void updateLoadedChunks(
 
 
 	constexpr const int MAX_GENERATE = 1;
+	constexpr const int MAX_CHUNKS_PENDING = 5; //how many packets can be waiting to be sent at one time
 
 	for (auto &c : sd.chunkCache.savedChunks)
 	{
@@ -758,28 +789,29 @@ void updateLoadedChunks(
 	std::vector<glm::ivec2> positions;
 	positions.reserve(200);
 
-	for (auto &c : clients)
+	for (auto &cl : clients)
 	{
 
 		//if (c.second.playerData.killed) { continue; }
 
 		int geenratedThisFrame = 0;
 
-		glm::ivec2 pos(divideChunk(c.second.playerData.entity.position.x),
-			divideChunk(c.second.playerData.entity.position.z));
+		glm::ivec2 pos(divideChunk(cl.second.playerData.entity.position.x),
+			divideChunk(cl.second.playerData.entity.position.z));
 		
-		glm::ivec2 playerPos(c.second.playerData.entity.position.x, c.second.playerData.entity.position.z);
+		glm::ivec2 playerPos(cl.second.playerData.entity.position.x, cl.second.playerData.entity.position.z);
 
-		int distance = (c.second.playerData.entity.chunkDistance/2) + 1;
+		int distance = (cl.second.playerData.entity.chunkDistance/2) + 1;
 
-		auto &client = c.second;
+		auto &client = cl.second;
+		auto clientCid = cl.first;
 
 		//drop chunks that are too far
 		{
 			for (auto it = client.loadedChunks.begin(); it != client.loadedChunks.end();)
 			{
 
-				if (!isChunkInRadius(playerPos, *it, c.second.playerData.entity.chunkDistance))
+				if (!isChunkInRadius(playerPos, *it, cl.second.playerData.entity.chunkDistance))
 				{
 					it = client.loadedChunks.erase(it);
 				}
@@ -798,7 +830,7 @@ void updateLoadedChunks(
 				auto chunkPos = pos + glm::ivec2(i, j);
 
 
-				if (isChunkInRadius(playerPos, chunkPos, c.second.playerData.entity.chunkDistance))
+				if (isChunkInRadius(playerPos, chunkPos, cl.second.playerData.entity.chunkDistance))
 				{
 					positions.push_back({chunkPos});
 				}
@@ -842,10 +874,81 @@ void updateLoadedChunks(
 					geenratedThisFrame++;
 				}
 			}
-			else
+		
+
+			//number of chunks that are being sent rn
+			//stop sending more chunks than the pending number
+			int currentPendingChunks = cl.second.chunksPacketPendingConfirmation.size();
+
+			//always generate the chunk player is in,
+			if (currentPendingChunks <= MAX_CHUNKS_PENDING || (chunkPos == pos))
 			{
-				c = sd.chunkCache.getChunkOrGetNull(chunkPos.x, chunkPos.y);
-			}
+
+				if (!c)
+				{
+					c = sd.chunkCache.getChunkOrGetNull(chunkPos.x, chunkPos.y);
+				}
+
+				if (c)
+				{
+					c->otherData.shouldUnload = false;
+
+					//send chunk to player
+				#pragma region send chunk to player
+
+					if (client.loadedChunks.find(chunkPos) ==
+						client.loadedChunks.end())
+					{
+
+						client.loadedChunks.insert(chunkPos);
+
+						Packet packet;
+						packet.header = headerRecieveChunk;
+						packet.cid = clientCid;
+
+						//if you have modified Packet_RecieveChunk make sure you didn't break this!
+						static_assert(sizeof(Packet_RecieveChunk) == sizeof(ChunkData));
+
+						{
+
+							client.chunksPacketPendingConfirmation.insert(sd.chunkPacketId);
+
+							sendPacketAndCompress(client.peer, packet, (char *)(&c->chunk),
+								sizeof(Packet_RecieveChunk), true, channelChunksAndBlocks,
+								onPacketDestroyForChunkSending, sd.chunkPacketId++);
+
+
+							std::vector<unsigned char> blockData;
+							c->blockData.formatBlockData(blockData, c->chunk.x, c->chunk.z);
+
+							if (blockData.size())
+							{
+								Packet packet;
+								packet.header = headerRecieveBlockData;
+
+								if (blockData.size() > 1000)
+								{
+									sendPacketAndCompress(client.peer, packet, (char *)blockData.data(),
+										blockData.size(), true, channelChunksAndBlocks);
+								}
+								else
+								{
+									sendPacket(client.peer, packet, (char *)blockData.data(),
+										blockData.size(), true, channelChunksAndBlocks);
+								};
+
+							}
+
+						}
+					}
+				#pragma endregion
+
+
+
+
+				}
+
+			};
 
 			//optional
 			//stop sending chunks, so we don't send far chunks to the player, instead we should
@@ -855,59 +958,7 @@ void updateLoadedChunks(
 				break;
 			}
 
-			if (c)
-			{
-				c->otherData.shouldUnload = false;
-
-				//send chunk to player
-			#pragma region send chunk to player
-
-				if (client.loadedChunks.find(chunkPos) ==
-					client.loadedChunks.end())
-				{
-
-					client.loadedChunks.insert(chunkPos);
-
-					Packet packet;
-					packet.header = headerRecieveChunk;
-
-					//if you have modified Packet_RecieveChunk make sure you didn't break this!
-					static_assert(sizeof(Packet_RecieveChunk) == sizeof(ChunkData));
-
-					{
-						sendPacketAndCompress(client.peer, packet, (char *)(&c->chunk),
-							sizeof(Packet_RecieveChunk), true, channelChunksAndBlocks);
-
-
-						std::vector<unsigned char> blockData;
-						c->blockData.formatBlockData(blockData, c->chunk.x, c->chunk.z);
-
-						if (blockData.size())
-						{
-							Packet packet;
-							packet.header = headerRecieveBlockData;
-
-							if (blockData.size() > 1000)
-							{
-								sendPacketAndCompress(client.peer, packet, (char *)blockData.data(),
-									blockData.size(), true, channelChunksAndBlocks);
-							}
-							else
-							{
-								sendPacket(client.peer, packet, (char *)blockData.data(),
-									blockData.size(), true, channelChunksAndBlocks);
-							};
-
-						}
-
-					}
-				}
-			#pragma endregion
-
-
-
-
-			}
+			if (currentPendingChunks > MAX_CHUNKS_PENDING && generatedChunkPlayerIsIn) { break; }
 
 		};
 

@@ -718,6 +718,7 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 	)
 {
 	ENetEvent event;
+	int packetCount = 0;
 
 	//ENetPacket *nextPacket = clientData.server->incomingDataTotal;
 	for (int i = 0; i < 50; i++)
@@ -742,17 +743,21 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 
 				case ENET_EVENT_TYPE_DISCONNECT:
 				{
+					std::cout << "Disconect from client\n";
 					disconnect = 1;
 					break;
 				}
 
 			}
+			packetCount++;
 		}
 		else
 		{
 			break;
 		}
 	}
+
+	//if (packetCount) { std::cout << "Recieved: " << packetCount << "  "; }
 
 	//int counter = 0;
 	//auto nextPacket = clientData.client->dispatchQueue.sentinel.next;
@@ -864,7 +869,9 @@ bool createConnection(Packet_ReceiveCIDAndData &playerData, const char *c)
 		return false;
 	}
 
-	auto test = clientData.server;
+	clientData.server->timeoutMinimum = 10'000;
+	clientData.server->timeoutMaximum = 30'000;
+	clientData.server->timeoutLimit = 64;
 
 	{
 

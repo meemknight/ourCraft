@@ -75,6 +75,8 @@ ServerSettings getServerSettingsCopy();
 ServerSettings &getServerSettingsReff();
 Profiler getServerProfilerCopy();
 Profiler getServerTickProfilerCopy();
+int getServerPendingReliableCount();
+size_t getServerTotalPendingSize();
 
 
 unsigned int getRandomTickSpeed();
