@@ -300,6 +300,7 @@ static ShadingSettings shadingSettingsCopy;
 bool initGame() //main server and title screen stuff
 {
 
+
 	srand(time(0));
 	createErrorFile();
 

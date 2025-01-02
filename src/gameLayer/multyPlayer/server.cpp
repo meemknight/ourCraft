@@ -42,6 +42,7 @@ bool isServerRunning()
 
 bool startServer(const std::string &path)
 {
+
 	bool expected = 0;
 	if (serverRunning.compare_exchange_strong(expected, 1))
 	{
@@ -973,6 +974,114 @@ void updateLoadedChunks(
 	
 
 
+enum TokenType : int
+{
+	None,
+	Identifier,
+	Number,
+	Symbol
+};
 
+struct Token
+{
+	int type = 0;
+	std::string value = "";
+	double number = 0;
+	
+};
+
+bool isValidNumber(const std::string &str, double &outValue)
+{
+	char *end = nullptr;
+	outValue = std::strtod(str.c_str(), &end);
+	return end != str.c_str() && *end == '\0'; // Ensure full string was parsed
+}
+
+std::vector<Token> parse(const char *input, std::string &errOut)
+{
+	std::vector<Token> tokens;
+	std::istringstream stream(input);
+	std::string token;
+	errOut = "";
+
+	while (stream >> token)
+	{
+		size_t i = 0;
+
+		while (i < token.size())
+		{
+			// Handle symbols
+			if (std::ispunct(token[i]) && token[i] != '_')
+			{
+				tokens.push_back({TokenType::Symbol, std::string(1, token[i])});
+				++i;
+			}
+			// Handle numbers
+			else if (std::isdigit(token[i]) || (token[i] == '.' && i + 1 < token.size() && std::isdigit(token[i + 1])))
+			{
+				size_t start = i;
+				while (i < token.size() && (std::isdigit(token[i]) || token[i] == '.')) ++i;
+				std::string numStr = token.substr(start, i - start);
+
+				double numValue = 0.0;
+				if (isValidNumber(numStr, numValue))
+				{
+					tokens.push_back({TokenType::Number, numStr, numValue});
+				}
+				else
+				{
+					errOut = "Error parsing number";
+					return {};
+					tokens.push_back({TokenType::Number, numStr, 0}); // Invalid number
+				}
+			}
+			// Handle identifiers
+			else if (std::isalpha(token[i]) || token[i] == '_')
+			{
+				size_t start = i;
+				while (i < token.size() && (std::isalnum(token[i]) || token[i] == '_')) ++i;
+				tokens.push_back({TokenType::Identifier, token.substr(start, i - start)});
+			}
+			// Skip unknown characters (e.g., spaces handled by `stream >> token`)
+			else
+			{
+				++i;
+			}
+		}
+	}
+
+	return tokens;
+}
+
+
+std::string executeServerCommand(const char *command)
+{
+
+	std::string err;
+
+	auto tokens = parse(command, err);
+
+	if (err != "") { return err; }
+
+	for (const auto &token : tokens)
+	{
+		std::string type;
+		switch (token.type)
+		{
+		case TokenType::Identifier: type = "Identifier"; break;
+		case TokenType::Number:     type = "Number"; break;
+		case TokenType::Symbol:     type = "Symbol"; break;
+		}
+
+		std::cout << type << ": " << token.value;
+		if (token.type == TokenType::Number)
+		{
+			std::cout << " (double: " << token.number << ")";
+		}
+		std::cout << '\n';
+	}
+
+	return "Success!";
+}
 
  

@@ -51,7 +51,10 @@ struct GameData
 	Profiler gameplayFrameProfiler;
 
 	MapEngine mapEngine;
-	bool isInsideMapView;
+	bool isInsideMapView = 0;
+	bool isInsideChat = 0;
+	char chatBuffer[250] = {};
+	int chatBufferPosition = 0;
 
 	//debug stuff
 	glm::ivec3 point = {};
@@ -506,7 +509,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma region input
 
 	bool stopMainInput = gameData.escapePressed || gameData.killed || gameData.insideInventoryMenu ||
-		gameData.isInsideMapView;
+		gameData.isInsideMapView || gameData.isInsideChat;
 
 	static float moveSpeed = 7.f;
 	float isPlayerMovingSpeed = 0;
@@ -992,7 +995,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 
 		//place blocks
-		if (!gameData.escapePressed)
+		//if (!gameData.escapePressed)
 		{
 
 
@@ -1338,6 +1341,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			}
 		}
 	}
+
 
 
 #pragma region update lights
@@ -2213,6 +2217,90 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma endregion
 
+#pragma region chat
+
+	if (!stopMainInput || gameData.isInsideChat)
+	{
+		if (platform::isKeyReleased(platform::Button::Enter) && !gameData.isInsideChat)
+		{
+			gameData.isInsideChat = true;
+		}
+
+		if (gameData.isInsideChat)
+		{
+
+			auto typedInput = platform::getTypedInput();
+			for (auto c : typedInput)
+			{
+
+				if (c == '\b')
+				{
+					if (gameData.chatBufferPosition > 0)
+					{
+						gameData.chatBufferPosition--;
+						gameData.chatBuffer[gameData.chatBufferPosition] = 0;
+					}
+
+				}else
+				if (gameData.chatBufferPosition < sizeof(gameData.chatBuffer))
+				{
+					if (c != '\n')
+					{
+						gameData.chatBuffer[gameData.chatBufferPosition] = c;
+						gameData.chatBufferPosition++;
+					}
+				}
+				else
+				{
+					
+				}
+			}
+
+
+			auto &renderer = programData.ui.renderer2d;
+			glui::Frame f({0, 0, renderer.windowW, renderer.windowH});
+			
+			auto box = glui::Box().xLeft().yBottom(-20).xDimensionPercentage(1.f).yDimensionPixels(65)();
+
+			int startPos = gameData.chatBufferPosition;
+			{
+				float advance = 10; //adding the padding
+				for (int i = gameData.chatBufferPosition - 1; i >= 0; i--)
+				{
+					advance = renderer.getTextSize(gameData.chatBuffer + i, 
+						programData.ui.font, 1).x + 10;
+
+					if (advance <= box.z)
+					{
+						startPos = i;
+					}
+					else
+					{
+						break;
+					}
+				}
+			}
+
+			{
+
+				renderer.renderRectangle(box, {0.1,0.1,0.1,0.6});
+
+				if (startPos < gameData.chatBufferPosition)
+				{
+					renderer.renderText({10, box.y + box.w - 10}, gameData.chatBuffer + startPos,
+						programData.ui.font, Colors_White, 1.0, 4, 3, false);
+				}
+
+			}
+
+
+		}
+	}
+
+
+#pragma endregion
+
+
 #pragma region crafting
 
 	if (gameData.insideInventoryMenu)
@@ -2439,6 +2527,15 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		{
 			gameData.isInsideMapView = false;
 			gameData.mapEngine.close();
+		}
+	}
+	else if (gameData.isInsideChat)
+	{
+		if (platform::isKeyReleased(platform::Button::Escape))
+		{
+			gameData.isInsideChat = false;
+			gameData.chatBufferPosition = 0;
+			memset(gameData.chatBuffer, 0, sizeof(gameData.chatBuffer));
 		}
 	}
 	else

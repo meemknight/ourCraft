@@ -77,6 +77,7 @@ Profiler getServerProfilerCopy();
 Profiler getServerTickProfilerCopy();
 int getServerPendingReliableCount();
 size_t getServerTotalPendingSize();
+std::string executeServerCommand(const char *command);
 
 
 unsigned int getRandomTickSpeed();
