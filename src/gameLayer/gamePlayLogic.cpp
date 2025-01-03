@@ -2224,6 +2224,16 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		if (platform::isKeyReleased(platform::Button::Enter) && !gameData.isInsideChat)
 		{
 			gameData.isInsideChat = true;
+			gameData.chatBufferPosition = 0;
+			memset(gameData.chatBuffer, 0, sizeof(gameData.chatBuffer));
+		}
+
+		if (platform::isKeyReleased(platform::Button::SlashQuestionMark) && !gameData.isInsideChat)
+		{
+			gameData.isInsideChat = true;
+			gameData.chatBufferPosition = 1;
+			memset(gameData.chatBuffer, 0, sizeof(gameData.chatBuffer));
+			gameData.chatBuffer[0] = '/';
 		}
 
 		if (gameData.isInsideChat)
@@ -2241,8 +2251,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 						gameData.chatBuffer[gameData.chatBufferPosition] = 0;
 					}
 
-				}else
-				if (gameData.chatBufferPosition < sizeof(gameData.chatBuffer))
+				}
+				else
+				if (gameData.chatBufferPosition < sizeof(gameData.chatBuffer) - 1)
 				{
 					if (c != '\n')
 					{
@@ -2255,6 +2266,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					
 				}
 			}
+			gameData.chatBuffer[gameData.chatBufferPosition] = 0;
 
 
 			auto &renderer = programData.ui.renderer2d;
@@ -2291,6 +2303,16 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 						programData.ui.font, Colors_White, 1.0, 4, 3, false);
 				}
 
+			}
+
+			if (platform::isKeyReleased(platform::Button::Enter) && 
+				gameData.chatBufferPosition)
+			{
+
+				sendPacket(getServer(), headerSendChat, player.entityId,
+					gameData.chatBuffer, gameData.chatBufferPosition+1, true, channelHandleConnections);
+				gameData.chatBufferPosition = 0;
+				memset(gameData.chatBuffer, 0, sizeof(gameData.chatBuffer));
 			}
 
 

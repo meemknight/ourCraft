@@ -250,7 +250,14 @@ bool serverStartupStuff(const std::string &path)
 }
 
 
+void updateOtherPlayerSettings(Client &client)
+{
+	Packet_UpdateOwnOtherPlayerSettings packet;
+	packet.otherPlayerSettings = client.playerData.otherPlayerSettings;
 
+	sendPacket(client.peer, headerUpdateOwnOtherPlayerSettings,
+		&packet, sizeof(packet), true, channelChunksAndBlocks);
+}
 
 void changePlayerGameMode(std::uint64_t cid, unsigned char gameMode)
 {
@@ -263,12 +270,7 @@ void changePlayerGameMode(std::uint64_t cid, unsigned char gameMode)
 		{
 			client->playerData.otherPlayerSettings.gameMode = gameMode;
 
-			Packet_UpdateOwnOtherPlayerSettings packet;
-			packet.otherPlayerSettings = client->playerData.otherPlayerSettings;
-
-			sendPacket(client->peer, headerUpdateOwnOtherPlayerSettings,
-				&packet, sizeof(packet), true, channelChunksAndBlocks);
-
+			updateOtherPlayerSettings(*client);
 		}
 
 	}
@@ -1054,8 +1056,22 @@ std::vector<Token> parse(const char *input, std::string &errOut)
 }
 
 
-std::string executeServerCommand(const char *command)
+std::string executeServerCommand(std::uint64_t cid, const char *command)
 {
+	Client *client = nullptr;
+	int commandPermisionLevel = 0;
+
+	if (cid)
+	{
+		client = getClientSafe(cid);
+		if (!client) { return "Error, client not existing, " + std::to_string(cid); }
+		commandPermisionLevel = client->playerData.otherPlayerSettings.commandPermisionLevel;
+	}
+	else
+	{
+		//command from the server console
+		commandPermisionLevel = 3;
+	}
 
 	std::string err;
 
@@ -1063,25 +1079,83 @@ std::string executeServerCommand(const char *command)
 
 	if (err != "") { return err; }
 
-	for (const auto &token : tokens)
+	//for (const auto &token : tokens)
+	//{
+	//	std::string type;
+	//	switch (token.type)
+	//	{
+	//	case TokenType::Identifier: type = "Identifier"; break;
+	//	case TokenType::Number:     type = "Number"; break;
+	//	case TokenType::Symbol:     type = "Symbol"; break;
+	//	}
+	//
+	//	std::cout << type << ": " << token.value;
+	//	if (token.type == TokenType::Number)
+	//	{
+	//		std::cout << " (double: " << token.number << ")";
+	//	}
+	//	std::cout << '\n';
+	//}
+
+	//parse commands
 	{
-		std::string type;
-		switch (token.type)
+		int position = 0;
+
+		auto isEof = [&]()
 		{
-		case TokenType::Identifier: type = "Identifier"; break;
-		case TokenType::Number:     type = "Number"; break;
-		case TokenType::Symbol:     type = "Symbol"; break;
+			return position >= tokens.size();
+		};
+
+		auto consumeStringToken = [&](std::string s)
+		{
+			if (isEof()) { return false; }
+
+			if (tokens[position].type == Identifier &&
+				tokens[position].value == s)
+			{
+				position++;
+				return true;
+			}
+
+			return false;
+		};
+
+
+		if(isEof()) return "";
+
+		if (consumeStringToken("gamemode"))
+		{
+
+			if (!client)
+			{
+				return "No client was given for the command";
+			}
+
+			if (consumeStringToken("survival"))
+			{
+				client->playerData.otherPlayerSettings.gameMode = OtherPlayerSettings::SURVIVAL;
+				updateOtherPlayerSettings(*client);
+
+				return "Gamemode set to survival";
+			}
+
+			if (consumeStringToken("creative"))
+			{
+				client->playerData.otherPlayerSettings.gameMode = OtherPlayerSettings::CREATIVE;
+				updateOtherPlayerSettings(*client);
+
+				return "Gamemode set to creative";
+			}
+
+			return "Invalid command!";
 		}
 
-		std::cout << type << ": " << token.value;
-		if (token.type == TokenType::Number)
-		{
-			std::cout << " (double: " << token.number << ")";
-		}
-		std::cout << '\n';
+
+
 	}
 
-	return "Success!";
+	return "Invalid command!";
+
 }
 
  

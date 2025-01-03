@@ -777,6 +777,22 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			break;
 		}
 
+		case headerSendChat:
+		{
+
+			if (size == 0) { break; }
+			data[size - 1] = 0; //making sure the packet is null terminated!
+
+			std::cout << "Chat: " << (char *)data << "\n";
+
+			if (size > 1 && data[0] == '/')
+			{
+				std::cout << executeServerCommand(p.cid, data + 1) << "\n";
+			}
+
+			break;
+		}
+
 		default:
 
 		break;

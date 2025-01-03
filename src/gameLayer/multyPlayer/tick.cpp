@@ -1908,12 +1908,12 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 						if (initialChunk != newChunk)
 						{
-							std::cout << "Prepare to move\n";
+							//std::cout << "Prepare to move\n";
 							auto chunk = chunkCache.getChunkOrGetNull(newChunk.x, newChunk.y);
 							
 							if (chunk)
 							{
-								std::cout << "Found!\n";
+								//std::cout << "Found!\n";
 
 								//move entity in another chunk
 								auto member = memberSelector(chunk->entityData);
@@ -1923,7 +1923,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 							}
 							else
 							{
-								std::cout << "Not Found!\n";
+								//std::cout << "Not Found!\n";
 
 								//the entity left the region, we move it out,
 								// so we save it to disk or to other chunks

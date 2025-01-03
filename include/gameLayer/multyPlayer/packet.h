@@ -95,6 +95,7 @@ enum : std::uint32_t
 	headerUpdateEffects,
 	headerClientDroppedChunk,
 	headerClientDroppedAllChunks,
+	headerSendChat, //just the letters for now
 };
 
 enum 
@@ -172,7 +173,6 @@ struct Packet_ClientCraftedItem
 	unsigned char to;
 	unsigned char revisionNumber;
 };
-
 
 struct Packet_ClientOverWriteItem
 {

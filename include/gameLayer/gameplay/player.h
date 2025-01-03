@@ -37,7 +37,7 @@ struct OtherPlayerSettings
 	constexpr static int CREATIVE = 1;
 
 	unsigned char gameMode = 0;
-
+	char commandPermisionLevel = 2; //0 means nothing, 1 is basic stuff, 2 is admin, 3 is main admin.
 };
 
 //this is the player struct when playing locally

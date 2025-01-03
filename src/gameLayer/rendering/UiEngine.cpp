@@ -923,7 +923,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			selectedBox.x += itemBoxAdvance * itemSelected;
 			renderer2d.renderRectangle(selectedBox, itemsHighlighter, Colors_White, {}, 0);
 
-			//if (!isCreative)
+			if (!isCreative)
 			{
 				auto heartBox = itemsBarBox;
 				heartBox.z = itemsBarBox.w / 2.5;
