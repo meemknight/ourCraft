@@ -30,6 +30,7 @@
 #include <gameplay/gameplayRules.h>
 #include <gameplay/food.h>
 #include <profiler.h>
+#include <magic_enum.hpp>
 
 static std::atomic<bool> serverRunning = false;
 
@@ -1120,12 +1121,25 @@ std::string executeServerCommand(std::uint64_t cid, const char *command)
 			return false;
 		};
 
+		auto consumeNumber = [&](double *number = 0)
+		{
+			if (isEof()) { return false; }
+
+			if (tokens[position].type == Number)
+			{
+				if (number) { *number = tokens[position].number; }
+				position++;
+				return true;
+			}
+
+			return false;
+		};
+
 
 		if(isEof()) return "";
 
 		if (consumeStringToken("gamemode"))
 		{
-
 			if (!client)
 			{
 				return "No client was given for the command";
@@ -1145,6 +1159,49 @@ std::string executeServerCommand(std::uint64_t cid, const char *command)
 				updateOtherPlayerSettings(*client);
 
 				return "Gamemode set to creative";
+			}
+
+			return "Invalid command!";
+		}
+
+		if (consumeStringToken("give"))
+		{
+			if (consumeStringToken("effect"))
+			{
+
+				for (int i = 0; i < Effects::Effects_Count; i++)
+				{
+					std::string n(magic_enum::enum_name((Effects::EffectsNames)i).substr());
+
+					if (consumeStringToken(n))
+					{
+						double number = 0;
+						
+
+						if (consumeNumber(&number))
+						{
+
+							client->playerData.effects.allEffects[i].timerMs = number * 1000;
+
+							updatePlayerEffects(*client);
+
+							return std::string("Applied effect: ") + n + " for " 
+								+ std::to_string(number) + " secconds!";
+						}
+						else
+						{
+							return "Invalid command!";
+						}
+
+
+					}
+
+					
+
+
+				}
+
+				
 			}
 
 			return "Invalid command!";

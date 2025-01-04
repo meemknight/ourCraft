@@ -11,10 +11,11 @@ struct Effect
 
 struct Effects
 {
-	enum
+	enum EffectsNames
 	{
-		Satiety,
-
+		Saturated,
+		Regeneration,
+		Poisoned,
 
 
 		Effects_Count

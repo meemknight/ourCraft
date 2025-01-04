@@ -1116,8 +1116,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 									int healing = getItemHealing(item);
 
 									//can't eat if satiety doesn't allow it
-									if (effects.allEffects[Effects::Satiety].timerMs > 0 &&
-										player.effects.allEffects[Effects::Satiety].timerMs > 0
+									if (effects.allEffects[Effects::Saturated].timerMs > 0 &&
+										player.effects.allEffects[Effects::Saturated].timerMs > 0
 										)
 									{
 										allowed = 0;
@@ -1685,7 +1685,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			player.life.life = l;
 
 
-			int timerMsSatiety = player.effects.allEffects[Effects::Satiety].timerMs;
+			int timerMsSatiety = player.effects.allEffects[Effects::Saturated].timerMs;
 
 			ImGui::Text("Satiety Ms: %d", timerMsSatiety);
 			ImGui::Text("Satiety s : %d", timerMsSatiety/1000);
@@ -2333,6 +2333,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					gameData.chatBuffer, gameData.chatBufferPosition+1, true, channelHandleConnections);
 				gameData.chatBufferPosition = 0;
 				memset(gameData.chatBuffer, 0, sizeof(gameData.chatBuffer));
+
+				gameData.isInsideChat = false;
 			}
 
 

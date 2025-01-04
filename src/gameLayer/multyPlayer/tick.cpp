@@ -1150,8 +1150,8 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 										int healing = getItemHealing(*from);
 
 										//can't eat if satiety doesn't allow it
-										if (effects.allEffects[Effects::Satiety].timerMs > 0 &&
-											client->playerData.effects.allEffects[Effects::Satiety].timerMs > 0
+										if (effects.allEffects[Effects::Saturated].timerMs > 0 &&
+											client->playerData.effects.allEffects[Effects::Saturated].timerMs > 0
 											)
 										{
 											allowed = 0;
@@ -1602,14 +1602,30 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 #pragma region player effects
 
+	//todo this should be for all entities
 	for (auto &c : allPlayers)
 	{
 		if (!c.second->killed)
 		{
 			c.second->effects.passTimeMs(deltaTimeMs);
 
+			auto &effectsTimers = c.second->effectsTimers;
+
 
 			//regen and others come here
+			if (c.second->effects.allEffects[Effects::Regeneration].timerMs > 0)
+			{
+
+				effectsTimers.regen -= deltaTime;
+
+				if (effectsTimers.regen < 0)
+				{
+					effectsTimers.regen += 1; //heal once every seccond;
+					c.second->newLife.life += 5;
+					c.second->newLife.sanitize();
+				}
+
+			}
 
 
 		}
@@ -1627,17 +1643,18 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 	{
 		auto &playerData = c.second->playerData;
 
-		if (playerData.healingDelayCounterSecconds >= BASE_HEALTH_DELAY_TIME)
+		if (playerData.healingDelayCounterSecconds >= playerData.calculateHealingDelayTime())
 		{
 			if (playerData.newLife.life < playerData.newLife.maxLife)
 			{
 				playerData.notIncreasedLifeSinceTimeSecconds += deltaTime;
 
-				if (playerData.notIncreasedLifeSinceTimeSecconds > BASE_HEALTH_REGEN_TIME)
+				if (playerData.notIncreasedLifeSinceTimeSecconds > playerData.calculateHealingRegenTime())
 				{
-					playerData.notIncreasedLifeSinceTimeSecconds -= BASE_HEALTH_REGEN_TIME;
+					playerData.notIncreasedLifeSinceTimeSecconds -= playerData.calculateHealingRegenTime();
 
 					playerData.newLife.life++;
+					playerData.newLife.sanitize();
 
 				}
 			}

@@ -122,6 +122,13 @@ struct PlayerServer: public ServerEntity<Player>
 		}
 	}
 
+	struct 
+	{
+		float regen = 0;
+
+
+	}effectsTimers;
+
 	bool killed = 0;
 
 	//used for life regeneration
@@ -134,4 +141,7 @@ struct PlayerServer: public ServerEntity<Player>
 	Armour getArmour() { return {0}; };
 
 	glm::ivec2 lastChunkPositionWhenAnUpdateWasSent = {};
+
+	float calculateHealingDelayTime();
+	float calculateHealingRegenTime();
 };

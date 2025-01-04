@@ -2,6 +2,7 @@
 #include "glm/vec4.hpp"
 #include "glm/vec2.hpp"
 #include <glui/glui.h>
+#include <gameplay/effects.h>
 
 struct PlayerInventory;
 struct BlocksLoader;
@@ -45,6 +46,8 @@ struct UiENgine
 	glm::vec2 itemsBarInventorySize;
 	glm::vec2 oneInventorySlotSize;
 	glm::vec2 playerCellSize;
+
+	gl2d::Texture effectsTexture[Effects::EffectsNames::Effects_Count] = {};
 
 
 	enum BattleTextures

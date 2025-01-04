@@ -266,6 +266,8 @@ void recieveDataClient(ENetEvent &event,
 					Chunk *chunk = 0;
 					auto b = chunkSystem.getBlockSafeAndChunk(blockHeader.pos.x, blockHeader.pos.y, blockHeader.pos.z, chunk);
 
+					if (!b) { break; }
+
 					if (b->getType() != BlockTypes::structureBase)
 					{
 						//todo request hard reset
