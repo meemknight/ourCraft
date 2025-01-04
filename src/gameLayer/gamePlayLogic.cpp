@@ -1092,7 +1092,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 								sendBlockInteractionMessage(player.entityId, rayCastPos,
 									b->getType(), gameData.currentBlockInteractionRevisionNumber);
 								
-								gameData.insideInventoryMenu = true;
+								gameData.insideInventoryMenu = false;
 								gameData.currentInventoryTab = 0;
 
 								//reset crafting table
@@ -2163,7 +2163,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		if (gameData.interaction.blockInteractionType == InteractionTypes::structureBaseBlock)
 		{
 			if (programData.ui.renderBaseBlockUI(deltaTime, w, h, programData,
-				gameData.interaction.baseBlockHolder))
+				gameData.interaction.baseBlockHolder, gameData.interaction.blockInteractionPosition,
+				gameData.chunkSystem, gameData.undoQueue, gameData.lightSystem))
 			{
 
 				auto block = gameData.chunkSystem.getBlockSafe(gameData.interaction.blockInteractionPosition.x, gameData.interaction.blockInteractionPosition.y,
@@ -2579,6 +2580,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			memset(gameData.chatBuffer, 0, sizeof(gameData.chatBuffer));
 		}
 	}
+	else if (gameData.interaction.blockInteractionType)
+	{
+		if (platform::isKeyReleased(platform::Button::Escape))
+		{
+			exitInventoryMenu();
+		}
+	}
 	else
 	{
 		if (platform::isKeyReleased(platform::Button::Escape) && !gameData.escapePressed)
@@ -2649,7 +2657,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	}
 
 	platform::showMouse(gameData.escapePressed || gameData.insideInventoryMenu ||
-		gameData.killed || gameData.isInsideMapView);
+		gameData.killed || gameData.isInsideMapView || gameData.interaction.blockInteractionType);
 
 
 #pragma endregion

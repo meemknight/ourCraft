@@ -10,6 +10,8 @@
 #include <audioEngine.h>
 #include <iostream>
 #include <magic_enum.hpp>
+#include <safeSave.h>
+#include <chunkSystem.h>
 
 float determineTextSize(gl2d::Renderer2D &renderer, const std::string &str,
 	gl2d::Font &f, glm::vec4 transform, bool minimize = true)
@@ -1034,7 +1036,8 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 }
 
 bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
-	ProgramData &programData, BaseBlock &baseBlock)
+	ProgramData &programData, BaseBlock &baseBlock, glm::ivec3 blockPos
+	, ChunkSystem &chunkSystem, UndoQueue &undoQueue, LightSystem &lightSystem)
 {
 
 	if (w != 0 && h != 0)
@@ -1056,22 +1059,96 @@ bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
 		menuRenderer.Begin(5391);
 		menuRenderer.SetAlignModeFixedSizeWidgets({0,150});
 
-		menuRenderer.InputText("##123", baseBlock.name, sizeof(baseBlock.name), Colors_Gray,
+		menuRenderer.InputText("Name:", baseBlock.name, sizeof(baseBlock.name), Colors_Gray,
 			buttonTexture);
 
 
-		menuRenderer.sliderint8("Offset X", &baseBlock.offsetX, -16, 16, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
-		menuRenderer.sliderint8("Offset Y", &baseBlock.offsetY, -16, 16, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
-		menuRenderer.sliderint8("Offset Z", &baseBlock.offsetZ, -16, 16, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
+		menuRenderer.sliderint8("Offset X", &baseBlock.offsetX, -120, 120, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
+		menuRenderer.sliderint8("Offset Y", &baseBlock.offsetY, -120, 120, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
+		menuRenderer.sliderint8("Offset Z", &baseBlock.offsetZ, -120, 120, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
 
 		menuRenderer.sliderUint8("Size X", &baseBlock.sizeX, 0, 120, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
 		menuRenderer.sliderUint8("Size Y", &baseBlock.sizeY, 0, 120, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
 		menuRenderer.sliderUint8("Size Z", &baseBlock.sizeZ, 0, 120, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
 
-
-		bool rez = menuRenderer.Button("Save", Colors_Gray, buttonTexture);
+		bool rez = menuRenderer.Button("Update Settongs", Colors_Gray, buttonTexture);
+		
+		bool save = menuRenderer.Button("Save Structure To Disk", Colors_Gray, buttonTexture);
+		bool load = menuRenderer.Button("Load Structure from disk", Colors_Gray, buttonTexture);
 
 		menuRenderer.End();
+
+		glm::ivec3 startPos = blockPos + glm::ivec3(1,0,1) + glm::ivec3(baseBlock.offsetX, baseBlock.offsetY, baseBlock.offsetZ);
+		glm::ivec3 size = glm::ivec3(baseBlock.sizeX, baseBlock.sizeY, baseBlock.sizeZ);
+
+		std::string filePath = RESOURCES_PATH;
+		filePath += "/gameData/structures/";
+		filePath += baseBlock.name;
+		filePath += ".structure";
+
+		if (save)
+		{
+			std::vector<unsigned char> data;
+			data.resize(sizeof(StructureData) + sizeof(BlockType) * size.x * size.y * size.z);
+		
+			StructureData *s = (StructureData *)data.data();
+		
+			s->size = size;
+			s->unused = 0;
+		
+			for (int x = 0; x < size.x; x++)
+				for (int z = 0; z < size.z; z++)
+					for (int y = 0; y < size.y; y++)
+					{
+						glm::ivec3 pos = startPos + glm::ivec3(x, y, z);
+		
+						auto rez = chunkSystem.getBlockSafe(pos.x, pos.y, pos.z);
+		
+						if (rez)
+						{
+							s->unsafeGet(x, y, z) = rez->getType();
+						}
+						else
+						{
+							s->unsafeGet(x, y, z) = BlockTypes::air;
+						}
+		
+					}
+
+			sfs::writeEntireFile(s, data.size(), filePath.c_str());
+		}
+
+		if (load)
+		{
+			std::vector<char> data;
+			if (sfs::readEntireFile(data, filePath.c_str()) ==
+				sfs::noError)
+			{
+				StructureData *s = (StructureData *)data.data();
+				baseBlock.sizeX = s->size.x;
+				baseBlock.sizeY = s->size.y;
+				baseBlock.sizeZ = s->size.z;
+
+				for (int x = 0; x < s->size.x; x++)
+					for (int z = 0; z < s->size.z; z++)
+						for (int y = 0; y < s->size.y; y++)
+						{
+							glm::ivec3 pos = startPos + glm::ivec3(x, y, z);
+		
+							Block block;
+							block.setType(s->unsafeGet(x, y, z));
+		
+							//todo implement the bulk version...
+							chunkSystem.placeBlockByClientForce(pos,
+								block, undoQueue,lightSystem);
+		
+						}
+		
+			}
+		
+		}
+
+
 
 		return rez;
 	}

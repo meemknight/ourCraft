@@ -4,6 +4,7 @@
 #include <iostream>
 #include <multyPlayer/serverChunkStorer.h>
 #include <cmath>
+#include <safeSave.h>
 
 constexpr unsigned int CHUNK_PACK = 4;
 
@@ -217,6 +218,44 @@ void WorldSaver::saveChunk(ChunkData &c)
 
 }
 
+void WorldSaver::saveChunkBlockData(SavedChunk &c)
+{
+	const glm::ivec2 pos = {c.chunk.x, c.chunk.z};
+	const glm::ivec2 filePos = (pos);
+
+	std::string fileName;
+	fileName.reserve(256);
+	fileName = savePath;
+	fileName += "/c";
+	fileName += std::to_string(filePos.x);
+	fileName += '_';
+	fileName += std::to_string(filePos.y);
+	fileName += ".block";
+
+	std::vector<unsigned char> data;
+	c.blockData.formatBlockData(data, pos.x, pos.y);
+	
+	if (data.empty())
+	{
+		std::filesystem::remove(fileName);
+	}
+	else
+	{
+		std::ofstream f;
+		f.open(fileName, std::ios::binary | std::ios::trunc);
+
+		if (f.is_open())
+		{
+
+			f.write((char *)data.data(), data.size());
+
+			f.close();
+		}
+	}
+	
+
+}
+
 bool fileIsEmpty(std::ifstream &f)
 {
 	return f.peek() == std::ifstream::traits_type::eof();
@@ -299,6 +338,27 @@ void WorldSaver::loadEntityData(EntityData &entityData,
 	}
 	
 
+
+}
+
+void WorldSaver::loadBlockData(SavedChunk &c)
+{
+	const glm::ivec2 pos = {c.chunk.x, c.chunk.z};
+	const glm::ivec2 filePos = (pos);
+
+	std::string fileName;
+	fileName.reserve(256);
+	fileName = savePath;
+	fileName += "/c";
+	fileName += std::to_string(filePos.x);
+	fileName += '_';
+	fileName += std::to_string(filePos.y);
+	fileName += ".block";
+
+	std::vector<unsigned char> data;
+	sfs::readEntireFile(data, fileName.c_str());
+	
+	c.blockData.loadBlockData(data, pos.x, pos.y);
 
 }
 

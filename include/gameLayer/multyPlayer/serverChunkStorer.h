@@ -169,6 +169,8 @@ struct ServerChunkStorer
 
 	void saveChunk(WorldSaver &worldSaver, SavedChunk *savedChunks);
 
+	void saveChunkBlockData(WorldSaver &worldSaver, SavedChunk *savedChunks);
+
 	void saveAllChunks(WorldSaver &worldSaver);
 
 	int unloadChunksThatNeedUnloading(WorldSaver &worldSaver, int count = 1);

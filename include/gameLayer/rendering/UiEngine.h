@@ -11,6 +11,9 @@ struct Life;
 struct ProgramData;
 struct LocalPlayer;
 struct BaseBlock;
+struct ChunkSystem;
+struct UndoQueue;
+struct LightSystem;
 
 struct UiENgine
 {
@@ -74,7 +77,8 @@ struct UiENgine
 
 	bool renderBaseBlockUI(float deltaTime,
 		int w, int h, ProgramData &programData, 
-		BaseBlock &baseBlock
+		BaseBlock &baseBlock, glm::ivec3 blockPos, ChunkSystem &chunkSystem,
+		UndoQueue &undoQueue, LightSystem &lightSystem
 		);
 
 };

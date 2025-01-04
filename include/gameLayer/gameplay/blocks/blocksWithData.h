@@ -27,6 +27,9 @@ struct BlocksWithDataHolder
 	BaseBlock *getOrCreateBaseBlock(unsigned char x, unsigned char y, unsigned char z);
 
 	void formatBlockData(std::vector<unsigned char> &dataToAppend, int chunkXChunkSpace, int chunkZChunkSpace);
+
+	void loadBlockData(std::vector<unsigned char> &data, int chunkXChunkSpace, int chunkZChunkSpace);
+
 };
 
 

@@ -1,5 +1,6 @@
 #include <gameplay/blocks/blocksWithData.h>
 #include <chunk.h>
+#include <iostream>
 
 BaseBlock *BlocksWithDataHolder::getBaseBlock
 (unsigned char x, unsigned char y, unsigned char z)
@@ -77,6 +78,85 @@ void BlocksWithDataHolder::formatBlockData
 		}
 
 	}
+
+}
+
+void BlocksWithDataHolder::loadBlockData(std::vector<unsigned char> &data,
+	int chunkXChunkSpace, int chunkZChunkSpace)
+{
+	baseBlocks = {};
+
+	int pointer = 0;
+
+	while (data.size() - pointer >= sizeof(BlockDataHeader))
+	{
+
+		BlockDataHeader header;
+		memcpy(&header, data.data() + pointer, sizeof(BlockDataHeader));
+		pointer += sizeof(BlockDataHeader);
+		
+
+		if (header.blockType == BlockTypes::structureBase)
+		{
+
+			auto pos = header.pos;
+			auto size = header.dataSize;
+
+			glm::ivec3 posInChunk = pos;
+			posInChunk.x = modBlockToChunk(posInChunk.x);
+			posInChunk.z = modBlockToChunk(posInChunk.z);
+
+			auto chunkPosX = divideChunk(pos.x);
+			auto chunkPosZ = divideChunk(pos.z);
+
+			if (chunkXChunkSpace != chunkPosX && chunkZChunkSpace != chunkPosZ)
+			{
+				std::cout << "Error chunk index size in loadBlockData!\n";
+				break;
+			}
+
+			if (size < data.size() - pointer)
+			{
+				std::cout << "Error size in loadBlockData!\n";
+				break;
+			}
+			else
+			{
+				BaseBlock b;
+				size_t _ = 0;
+
+				if (!b.readFromBuffer(data.data() + pointer, size, _))
+				{
+					std::cout << "Error read from buffer in loadBlockData!\n";
+					break;
+				}
+				
+				pointer += size;
+
+				if (!b.isDataValid())
+				{
+					std::cout << "Error is data valid in loadBlockData!\n";
+					break;
+				}
+
+				baseBlocks[fromBlockPosInChunkToHashValue(posInChunk.x, posInChunk.y, posInChunk.z)] =
+					b;
+
+			}
+
+
+		}
+		else
+		{
+			std::cout << "Error in loadBlockData!\n";
+			break;
+		}
+
+
+
+	}
+
+
 
 }
 
