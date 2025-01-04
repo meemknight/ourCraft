@@ -793,6 +793,26 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			break;
 		}
 
+		case headerClientChangeBlockData:
+		{
+			int a = 0;
+			//todo a hard reset if this fails because it has to do with block syncs
+			if (size < sizeof(Packet_ClientChangeBlockData)) { break; }
+
+			Packet_ClientChangeBlockData *blockData = (Packet_ClientChangeBlockData*)data;
+			if (blockData->blockDataHeader.dataSize != size - sizeof(Packet_ClientChangeBlockData)) { break; }
+
+			serverTask.t.taskType = Task::clientChangedBlockData;
+			serverTask.t.eventId = blockData->eventId;
+			serverTask.t.blockType = blockData->blockDataHeader.blockType;
+			serverTask.t.pos = blockData->blockDataHeader.pos;
+			serverTask.t.metaData.resize(blockData->blockDataHeader.dataSize);
+			memcpy(serverTask.t.metaData.data(), data + sizeof(Packet_ClientChangeBlockData), blockData->blockDataHeader.dataSize);
+			serverTasks.push_back(serverTask);
+
+			break;
+		}
+
 		default:
 
 		break;

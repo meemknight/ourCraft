@@ -65,6 +65,7 @@ bool isWallMesh(BlockType type)
 		type == smoothLimeStone_wall ||
 		type == marbleBlock_wall ||
 		type == marbleBricks_wall ||
+		type == logWall ||
 		type == tiledStoneBricks_wall;
 
 }
@@ -149,7 +150,9 @@ bool isAnyWoddenBlock(BlockType type)
 		type == wooden_stairs ||
 		type == wooden_wall ||
 		type == wooden_slab ||
-		type == spruce_log;
+		type == spruce_log ||
+		type == logWall;
+		
 }
 
 bool isBricksSound(BlockType type)

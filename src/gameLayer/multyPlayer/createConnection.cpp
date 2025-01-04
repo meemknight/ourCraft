@@ -241,15 +241,17 @@ void recieveDataClient(ENetEvent &event,
 			break;
 		}
 
-		case headerRecieveBlockData:
+		case headerRecieveEntireBlockDataForChunk:
 		{
+			//todo request hard reset
 			if (size == 0) { break; }
 			
+			bool firstTime = 1;
 				
 			size_t pointer = 0;
 			while (size - pointer > 0)
 			{
-				if (size < sizeof(BlockDataHeader)) { break; } //todo request hard reset here
+				if (size - pointer < sizeof(BlockDataHeader)) { break; } //todo request hard reset here
 
 				BlockDataHeader blockHeader = {};
 				memcpy(&blockHeader, data + pointer, sizeof(BlockDataHeader));
@@ -261,14 +263,59 @@ void recieveDataClient(ENetEvent &event,
 				if (blockHeader.blockType == BlockTypes::structureBase)
 				{
 
-					if (blockHeader.dataSize)
-					{
+					Chunk *chunk = 0;
+					auto b = chunkSystem.getBlockSafeAndChunk(blockHeader.pos.x, blockHeader.pos.y, blockHeader.pos.z, chunk);
 
+					if (b->getType() != BlockTypes::structureBase)
+					{
+						//todo request hard reset
 					}
 					else
 					{
+						if (firstTime)
+						{
+							firstTime = 0;
+							chunk->blockData = {}; //clear the block data for this chunk
+						}
 
+						glm::ivec3 posInChunk = blockHeader.pos;
+						posInChunk.x = modBlockToChunk(posInChunk.x);
+						posInChunk.z = modBlockToChunk(posInChunk.z);
+
+						auto blockHash = fromBlockPosInChunkToHashValue(posInChunk.x, posInChunk.y, posInChunk.z);
+
+
+						if (blockHeader.dataSize)
+						{
+							BaseBlock baseBlock;
+							size_t outSize = 0;
+							if (!baseBlock.readFromBuffer((unsigned char*)data + pointer, blockHeader.dataSize, outSize))
+							{
+								//hard reset
+							}
+							else
+							{
+								pointer += outSize;
+
+								if (baseBlock.isDataValid())
+								{
+									chunk->blockData.baseBlocks[blockHash] = baseBlock;
+								}
+								else
+								{
+									//todo hardReset
+								}
+
+							}
+
+						}
+						else
+						{
+							chunk->blockData.baseBlocks[blockHash] = {};
+						}
 					}
+
+					
 
 				}
 				else
@@ -283,6 +330,66 @@ void recieveDataClient(ENetEvent &event,
 			break;
 		}
 
+		case headerChangeBlockData:
+		{
+			//todo request hard reset
+			if (size < sizeof(Packet_ChangeBlockData)) { break; }
+
+			Packet_ChangeBlockData *changeBlockData = (Packet_ChangeBlockData *)data;
+
+			//check if corupted data
+			if (changeBlockData->blockDataHeader.pos.y < 0 || changeBlockData->blockDataHeader.pos.y >= CHUNK_HEIGHT) { break; } //todo request hard reset here
+
+			if (changeBlockData->blockDataHeader.blockType == BlockTypes::structureBase)
+			{
+
+				Chunk *chunk = 0;
+				auto b = chunkSystem.getBlockSafeAndChunk(changeBlockData->blockDataHeader.pos.x, changeBlockData->blockDataHeader.pos.y, changeBlockData->blockDataHeader.pos.z, chunk);
+			
+				if (b)
+				{
+
+					BaseBlock baseBlock;
+					size_t _ = 0;
+					if (!baseBlock.readFromBuffer((unsigned char *)data + sizeof(Packet_ChangeBlockData),
+						size - sizeof(Packet_ChangeBlockData), _))
+					{
+						//todo hard reset
+					}
+					else
+					{
+						if(!baseBlock.isDataValid())
+						{
+							//todo hard reset
+						}
+						else
+						{
+							glm::ivec3 posInChunk = changeBlockData->blockDataHeader.pos;
+							posInChunk.x = modBlockToChunk(posInChunk.x);
+							posInChunk.z = modBlockToChunk(posInChunk.z);
+
+							auto blockHash = fromBlockPosInChunkToHashValue(posInChunk.x, posInChunk.y, posInChunk.z);
+
+							chunk->blockData.baseBlocks[blockHash] = baseBlock;
+						}
+					}
+
+				}
+				else
+				{
+					//todo request hard reset
+				}
+
+			}
+			else
+			{
+				//todo request hard reset
+			}
+
+			break;
+		}
+
+		//todo place immediately!!!!!!!!!!!!!!!!!!!
 		case headerPlaceBlock:
 		{
 			Packet_PlaceBlocks b;
@@ -292,6 +399,7 @@ void recieveDataClient(ENetEvent &event,
 			break;
 		}
 
+		//todo place immediately!!!!!!!!!!!!!!!!!!!
 		case headerPlaceBlocks:
 		{
 			for (int i = 0; i < size / sizeof(Packet_PlaceBlocks); i++)

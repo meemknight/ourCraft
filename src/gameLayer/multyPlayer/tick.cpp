@@ -440,7 +440,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 		{
 			auto &i = waitingTasks[taskIndex];
 
-
+			//todo make sure only tasks for existing clients come to here and if so remove any check here
 			if (i.t.taskType == Task::placeBlockForce)
 			{
 
@@ -517,7 +517,6 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 					)
 				{
 
-					bool wasGenerated = 0;
 					//std::cout << "server recieved place block\n";
 					//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
 					auto chunk = chunkCache.getChunkOrGetNull(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z));
@@ -653,6 +652,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 										packetData.blockPos = i.t.pos;
 										packetData.blockType = i.t.blockType;
 
+										//todo only for local players
 										broadCastNotLocked(packet, &packetData, sizeof(Packet_PlaceBlocks),
 											client->peer, true, channelChunksAndBlocks);
 									}
@@ -1450,6 +1450,111 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 						genericBroadcastEntityKillFromServerToPlayer(i.cid, true,
 							client->peer);
+					}
+
+				}
+				else if (i.t.taskType == Task::clientChangedBlockData)
+				{
+					auto client = getClientNotLocked(i.cid);
+
+					auto chunk = chunkCache.getChunkOrGetNull(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z));
+					int convertedX = modBlockToChunk(i.t.pos.x);
+					int convertedZ = modBlockToChunk(i.t.pos.z);
+
+
+					if (client)
+					{
+
+						if (!chunk)
+						{
+							//this chunk isn't in this region so undo
+							computeRevisionStuff(*client, false, i.t.eventId);
+						}
+						else
+						{
+
+							auto b = chunk->chunk.safeGet(convertedX, i.t.pos.y, convertedZ);
+
+							if (b && b->getType() == i.t.blockType)
+							{
+
+								if (i.t.blockType == BlockTypes::structureBase)
+								{
+
+									BaseBlock baseBlock;
+									size_t _ = 0;
+									if (!baseBlock.readFromBuffer(i.t.metaData.data(),
+										i.t.metaData.size(), _))
+									{
+										//notify undo revision
+										computeRevisionStuff(*client, false, i.t.eventId);
+									}
+									else
+									{
+										if (!baseBlock.isDataValid())
+										{
+											//notify undo revision
+											computeRevisionStuff(*client, false, i.t.eventId);
+										}
+										else
+										{
+											
+											if (computeRevisionStuff(*client, true, i.t.eventId))
+											{
+
+												//update the data
+												auto pos = i.t.pos;
+												pos.x = modBlockToChunk(pos.x);
+												pos.z = modBlockToChunk(pos.z);
+												auto hashPos = fromBlockPosInChunkToHashValue(pos.x, pos.y, pos.z);
+
+												chunk->blockData.baseBlocks[hashPos] = baseBlock;
+
+												chunk->otherData.dirtyBlockData = true;
+
+												//todo notify other players
+
+												std::vector<unsigned char> packetData;
+												Packet_ChangeBlockData packetChangeBlockData;
+												packetChangeBlockData.blockDataHeader.blockType = BlockTypes::structureBase;
+												packetChangeBlockData.blockDataHeader.pos = i.t.pos;
+
+												packetData.resize(sizeof(packetChangeBlockData));
+
+												packetChangeBlockData.blockDataHeader.dataSize = baseBlock.formatIntoData(packetData);
+
+												memcpy(packetData.data(), &packetChangeBlockData, sizeof(packetChangeBlockData));
+
+												Packet p;
+												p.header = headerChangeBlockData;
+												p.cid = i.cid;
+												broadCastNotLocked(p, packetData.data(), packetData.size(),
+													client->peer, true, channelChunksAndBlocks);
+
+											}
+
+										}
+
+									}
+
+
+								}
+								else
+								{
+									//notify undo revision
+									computeRevisionStuff(*client, false, i.t.eventId);
+								}
+
+
+							}
+							else
+							{
+								//notify undo revision
+								computeRevisionStuff(*client, false, i.t.eventId);
+							}
+
+						}
+
 					}
 
 				}

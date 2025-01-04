@@ -24,7 +24,7 @@ struct EventId
 	EventId() {};
 	EventId(EventCounter counter, RevisionNumber revision):counter(counter), revision(revision) {};
 
-	EventCounter counter = 0;
+	EventCounter counter = 0; //todo just remove the counter or use the same revision for the items and everything
 	RevisionNumber revision = 0;
 };
 
@@ -55,7 +55,7 @@ enum : std::uint32_t
 	headerPlaceBlocks,
 	headerClientDroppedItem,
 	headerRecieveChunk,
-	headerRecieveBlockData,
+	headerRecieveEntireBlockDataForChunk,
 	headerValidateEvent,
 	headerValidateEventAndChangeID,
 	headerInValidateEvent,
@@ -90,12 +90,13 @@ enum : std::uint32_t
 	headerRespawnPlayer,
 	headerClientDamageLocally,
 	headerClientDamageLocallyAndDied,
-	headerUpdateSimpleBlockWithData,
-	headerClientUpdatedBlockData,
 	headerUpdateEffects,
 	headerClientDroppedChunk,
 	headerClientDroppedAllChunks,
 	headerSendChat, //just the letters for now
+	headerClientChangeBlockData,
+	headerChangeBlockData,
+
 };
 
 enum 
@@ -110,11 +111,18 @@ enum
 
 };
 
-struct Packet_UpdateSimpleBlockWithData
+struct Packet_ClientChangeBlockData
 {
-	std::uint16_t blockType = 0;
+	BlockDataHeader blockDataHeader = {};
+	EventId eventId = {};
+	//+ data
 };
 
+struct Packet_ChangeBlockData
+{
+	BlockDataHeader blockDataHeader = {};
+	//+ data
+};
 
 struct Packet_DisconectOtherPlayer
 {
@@ -353,13 +361,6 @@ struct Packet_AttackEntity
 	std::uint64_t entityID = 0;
 	glm::vec3 direction = {};
 	unsigned char inventorySlot = 0;
-};
-
-struct Packet_ClientUpdatedBlockData
-{
-	glm::ivec3 blockPos = {};
-	BlockType blockType = {};
-	unsigned char revisionNumber;
 };
 
 struct Packet_UpdateEffects

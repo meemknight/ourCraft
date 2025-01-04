@@ -32,6 +32,7 @@ struct Task
 		clientWantsToRespawn,
 		clientRecievedDamageLocally,
 		clientRecievedDamageLocallyAndDied,
+		clientChangedBlockData,
 	};
 	
 	

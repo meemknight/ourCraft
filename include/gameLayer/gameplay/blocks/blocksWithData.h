@@ -6,7 +6,7 @@
 
 
 
-std::uint16_t 
+std::uint16_t
 fromBlockPosInChunkToHashValue(unsigned char x, unsigned char y, unsigned char z);
 glm::ivec3 fromHashValueToBlockPosinChunk(std::uint16_t hashValue);
 

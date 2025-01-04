@@ -938,7 +938,7 @@ void updateLoadedChunks(
 							if (blockData.size())
 							{
 								Packet packet;
-								packet.header = headerRecieveBlockData;
+								packet.header = headerRecieveEntireBlockDataForChunk;
 
 								if (blockData.size() > 1000)
 								{

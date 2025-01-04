@@ -509,7 +509,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma region input
 
 	bool stopMainInput = gameData.escapePressed || gameData.killed || gameData.insideInventoryMenu ||
-		gameData.isInsideMapView || gameData.isInsideChat;
+		gameData.isInsideMapView || gameData.isInsideChat || gameData.interaction.blockInteractionType != 0;
 
 	static float moveSpeed = 7.f;
 	float isPlayerMovingSpeed = 0;
@@ -2180,15 +2180,34 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 						gameData.interaction.blockInteractionPosition.y,
 						modBlockToChunk(gameData.interaction.blockInteractionPosition.z));
 
-					*blockData = gameData.interaction.baseBlockHolder;
 
+					std::vector<unsigned char> vectorDataOriginal;
+					blockData->formatIntoData(vectorDataOriginal);
+
+					gameData.undoQueue.changedBlockDataEvent(gameData.interaction.blockInteractionPosition,
+						*block, vectorDataOriginal);
+
+					*blockData = gameData.interaction.baseBlockHolder;
 					std::vector<unsigned char> vectorData;
 					blockData->formatIntoData(vectorData);
 
-					gameData.undoQueue.changedBlockDataEvent(gameData.interaction.blockInteractionPosition,
-						*block, vectorData);
+					Packet_ClientChangeBlockData changeBlockData;
+					changeBlockData.eventId = gameData.undoQueue.currentEventId;
+					changeBlockData.blockDataHeader.blockType = BlockTypes::structureBase;
+					changeBlockData.blockDataHeader.pos = gameData.interaction.blockInteractionPosition;
+					changeBlockData.blockDataHeader.dataSize = vectorData.size();
 
-					//todo send packet
+
+					std::vector<unsigned char> finalPacet;
+					finalPacet.resize(vectorData.size() + sizeof(changeBlockData));
+
+					memcpy(finalPacet.data(), &changeBlockData, sizeof(changeBlockData));
+					memcpy(finalPacet.data() + sizeof(changeBlockData),
+						vectorData.data(), vectorData.size());
+
+					sendPacket(getServer(), headerClientChangeBlockData, player.entityId,
+						finalPacet.data(), finalPacet.size(), true, channelChunksAndBlocks);
+
 				}
 
 			}

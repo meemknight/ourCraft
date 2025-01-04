@@ -415,6 +415,8 @@ uint16_t blocksLookupTable[] = {
 	93, 93, 94, 94, 93, 93,
 
 
+	//log wall
+	6, 6, 5, 5, 6, 6,
 
 };
 

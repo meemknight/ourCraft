@@ -36,10 +36,33 @@ BaseBlock *BlocksWithDataHolder::getOrCreateBaseBlock(unsigned char x, unsigned 
 	}
 }
 
+
+void appendBaseBlock(std::vector<unsigned char> &dataToAppend, 
+	glm::ivec3 position, BaseBlock &baseBlock)
+{
+
+	size_t headerStart = dataToAppend.size();
+	dataToAppend.resize(dataToAppend.size() + sizeof(BlockDataHeader));
+
+	//write the data
+	size_t wroteData = baseBlock.formatIntoData(dataToAppend);
+
+	BlockDataHeader header = {};
+
+	header.pos = position;
+	header.blockType = BlockTypes::structureBase;
+	header.dataSize = wroteData;
+
+	std::memcpy(dataToAppend.data() + headerStart, &header, sizeof(header));
+
+}
+
+
 void BlocksWithDataHolder::formatBlockData
 	(std::vector<unsigned char> &dataToAppend, int chunkXChunkSpace, int chunkZChunkSpace)
 {
 
+	
 	size_t extraSize = baseBlocks.size() * (sizeof(BaseBlock) + sizeof(BlockDataHeader));
 	glm::ivec3 chunkBlockPos = glm::ivec3(chunkXChunkSpace * CHUNK_SIZE, 0, chunkZChunkSpace * CHUNK_SIZE);
 
@@ -49,20 +72,8 @@ void BlocksWithDataHolder::formatBlockData
 
 		for (auto &b : baseBlocks)
 		{
-
-			size_t headerStart = dataToAppend.size();
-			dataToAppend.resize(dataToAppend.size() + sizeof(BlockDataHeader));
-
-			//write the data
-			size_t wroteData = b.second.formatIntoData(dataToAppend);
-
-			BlockDataHeader header = {};
-
-			header.pos = chunkBlockPos + fromHashValueToBlockPosinChunk(b.first);
-			header.blockType = BlockTypes::structureBase;
-			header.dataSize = wroteData;
-
-			std::memcpy(dataToAppend.data() + headerStart, &header, sizeof(header));
+			glm::ivec3 pos = chunkBlockPos + fromHashValueToBlockPosinChunk(b.first);
+			appendBaseBlock(dataToAppend, pos, b.second);
 		}
 
 	}

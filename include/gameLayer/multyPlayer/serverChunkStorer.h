@@ -99,6 +99,7 @@ struct SavedChunk
 		bool dirty = 0;
 		bool dirtyEntity = 0;
 		bool shouldUnload = 0; 
+		bool dirtyBlockData = 0;
 		//TODO, when checking what chunks should be keps, if we recommision an shouldUnloadChunk, make sure we
 		//readd all the entities in the entities chunk position cache!
 
