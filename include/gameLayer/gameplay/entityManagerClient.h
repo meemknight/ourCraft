@@ -107,9 +107,20 @@ inline void ClientEntityManager::addOrUpdateGenericEntity(std::uint64_t eid, T e
 	}
 	else
 	{
-		//todo the rubber band should start after the restant timer
-		//found->second.rubberBand
-		//	.addToRubberBand(found->second.entity.position - entity.position);
+
+		found->second.rubberBand
+			.addToRubberBand(found->second.entity.position - entity.position);
+
+		//if (restantTimer > 0)
+		//{
+		//	found->second.oldPositionForRubberBand = found->second.entity.position;
+		//}
+		//else
+		//{
+		//	found->second.rubberBand
+		//		.addToRubberBand(found->second.entity.position - entity.position);
+		//}
+
 
 		found->second.entity = entity;
 		found->second.restantTime = restantTimer;

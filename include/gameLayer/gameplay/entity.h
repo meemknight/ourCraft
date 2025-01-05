@@ -475,6 +475,8 @@ struct ClientEntity
 
 	T entity = {};
 	RubberBand rubberBand = {};
+	glm::dvec3 oldPositionForRubberBand = {};
+
 	float restantTime = 0;
 
 	RubberBandOrientation<T> rubberBandOrientation = {};
@@ -548,33 +550,35 @@ struct ClientEntity
 	void clientEntityUpdate(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2))
 	{
 		BASE_CLIENT *baseClient = (BASE_CLIENT *)this;
-		baseClient->rubberBand = {};
+		//baseClient->rubberBand = {};
 
 		if (restantTime < 0)
 		{
 			float timer = deltaTime + restantTime;
 			if (timer > 0)
 			{
-				auto oldPosition = baseClient->getPosition();
+				auto oldPosition = baseClient->oldPositionForRubberBand;
+				//baseClient->rubberBand.addToRubberBand(oldPosition - baseClient->getPosition());
+				
+				//auto oldPosition = baseClient->getPosition();
 				baseClient->update(timer, chunkGetter);
-				auto newPosition = baseClient->getPosition();
+				//auto newPosition = baseClient->getPosition();
 
-				//baseClient->rubberBand.addToRubberBand(oldPosition - newPosition);
 			}
 		}
 		else
 		{
 			if (restantTime > 0)
 			{
-				baseClient->update(restantTime, chunkGetter);
-				auto oldPosition = baseClient->getPosition();
+				//baseClient->update(restantTime, chunkGetter);
+				//auto oldPosition = baseClient->oldPositionForRubberBand;
+				//
+				////baseClient->rubberBand.addToRubberBand(oldPosition - baseClient->getPosition());
+				//
+				//baseClient->update(deltaTime, chunkGetter);
 
-				baseClient->update(deltaTime, chunkGetter);
-				auto newPosition = baseClient->getPosition();
+				baseClient->update(deltaTime + restantTime, chunkGetter);
 
-				//todo make rubber band corect, start from the last position end on this new one
-				//old position - new position
-				//baseClient->rubberBand.addToRubberBand(oldPosition - newPosition);
 			}
 			else
 			{
@@ -584,8 +588,10 @@ struct ClientEntity
 
 		}
 
-
-		rubberBand.computeRubberBand(deltaTime);
+		if (rubberBand.initialSize)
+		{
+			rubberBand.computeRubberBand(deltaTime * 1);
+		}
 
 		if constexpr (hasBodyOrientation<T>)
 		{

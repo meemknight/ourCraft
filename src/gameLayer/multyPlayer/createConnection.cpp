@@ -473,13 +473,22 @@ void recieveDataClient(ENetEvent &event,
 						entityManager.players[entity->eid] = {};
 						found = entityManager.players.find(entity->eid);
 					}
-					
+					float restantTimer = computeRestantTimer(entity->timer, yourTimer);
+
+					//if (restantTimer > 0)
+					//{
+					//	found->second.oldPositionForRubberBand = found->second.entity.position;
+					//}
+					//else
+					//{
+					//	found->second.rubberBand
+					//	.addToRubberBand(found->second.entity.position - entity->entity.position);
+					//}
 					found->second.rubberBand
 						.addToRubberBand(found->second.entity.position - entity->entity.position);
 
 					found->second.entity = entity->entity;
 
-					float restantTimer = computeRestantTimer(entity->timer, yourTimer);
 					
 					found->second.restantTime = restantTimer;
 
