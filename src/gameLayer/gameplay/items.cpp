@@ -495,7 +495,11 @@ const char *itemsNamesTextures[] =
 	"",
 
 	"food/apple.png",
+	"food/appleJuice.png",
 
+	"armour/leatherBoots.png",
+	"armour/leatherTunic.png",
+	"armour/leatherCap.png",
 };
 
 const char *itemsNames[] =
@@ -521,6 +525,13 @@ const char *itemsNames[] =
 	"goblin spawn egg",
 
 	"apple",
+	"apple juice",
+
+	"leather boots",
+	"leather tunic",
+	"leather cap",
+
+
 };
 
 const char *getItemTextureName(int itemId)

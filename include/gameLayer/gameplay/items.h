@@ -30,7 +30,12 @@ enum ItemTypes : unsigned short
 	catSpawnEgg,
 	goblinSpawnEgg,
 
-	apple, 
+	apple,
+	appleJuice,
+
+	leatherBoots,
+	leatherTunic,
+	leatherCap,
 
 	lastItem,
 

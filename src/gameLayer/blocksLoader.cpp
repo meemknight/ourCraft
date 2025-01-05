@@ -1116,6 +1116,69 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 	}
 
 
+	auto loadFromFileAndAddPadding = [&](gl2d::Texture &t, const char *path)
+	{
+		std::ifstream file(path, std::ios::binary);
+
+		if (!file.is_open())
+		{
+			return false;
+		}
+
+		int fileSize = 0;
+		file.seekg(0, std::ios::end);
+		fileSize = (int)file.tellg();
+		file.seekg(0, std::ios::beg);
+		unsigned char *fileData = new unsigned char[fileSize];
+		file.read((char *)fileData, fileSize);
+		file.close();
+
+
+		stbi_set_flip_vertically_on_load(true);
+
+		int width = 0;
+		int height = 0;
+		int channels = 0;
+
+		const unsigned char *decodedImage = stbi_load_from_memory(fileData, (int)fileSize, &width, &height, &channels, 4);
+
+		if (width < 32 || height < 32)
+		{
+			int newWidth = std::max(width, 32);
+			int newHeight = std::max(height, 32);
+
+			std::vector<unsigned char> newData;
+			newData.resize(4 * newWidth * newHeight, 0);
+
+			int index = 0;
+			for (int y = 0; y < height; y++)
+				for (int x = 0; x < width; x++)
+				{
+
+					int xx = x + std::max((32 - width) / 2, 0);
+					int yy = y + std::max((32 - height) / 2, 0);
+
+					newData[(xx + yy * newHeight) * 4 + 0] = decodedImage[index++];
+					newData[(xx + yy * newHeight) * 4 + 1] = decodedImage[index++];
+					newData[(xx + yy * newHeight) * 4 + 2] = decodedImage[index++];
+					newData[(xx + yy * newHeight) * 4 + 3] = decodedImage[index++];
+
+				}
+
+			t.createFromBuffer((const char *)newData.data(), newWidth, newHeight, true, true);
+		}
+		else
+		{
+			t.createFromBuffer((const char *)decodedImage, width, height, true, true);
+		}
+
+
+		delete[] fileData;
+		STBI_FREE(decodedImage);
+
+		return true;
+	};
+
 
 	//load items
 	for (int i = ItemsStartPoint; i < lastItem; i++)
@@ -1142,7 +1205,8 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 
 			gl2d::Texture t;
 
-			if (!loadFromFileWithAplhaFixing(t, path.c_str(), true, false, false))
+
+			if (!loadFromFileAndAddPadding(t, path.c_str()))
 			{
 				if (appendMode)
 				{
@@ -1179,11 +1243,12 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 	}
 
 
+
 	if (!spawnEgg.id)
-		spawnEgg.loadFromFile((filePath + "items/spawn_egg.png").c_str(), true, false);
+		loadFromFileAndAddPadding(spawnEgg, (filePath + "items/spawn_egg.png").c_str());
 
 	if (!spawnEggOverlay.id)
-		spawnEggOverlay.loadFromFile((filePath + "items/spawn_egg_overlay.png").c_str(), true, false);
+		loadFromFileAndAddPadding(spawnEggOverlay, (filePath + "items/spawn_egg_overlay.png").c_str());
 
 	glm::ivec2 spawnEggSize = {};
 	auto spawnEggData = spawnEgg.readTextureData(0, &spawnEggSize);

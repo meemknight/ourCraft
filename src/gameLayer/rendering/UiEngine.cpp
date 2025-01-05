@@ -260,7 +260,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 	Item *currentItem = {};
 	auto mousePos = platform::getRelMousePosition();
 
-	auto renderOneItem = [&](glm::vec4 itemBox, Item & item, float in = 8.f / 22.f, float color = 1)
+	auto renderOneItem = [&](glm::vec4 itemBox, Item & item, float in = 0, float color = 1)
 	{
 		if (item.type == 0)return;
 
@@ -271,7 +271,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			t.id = blocksLoader.texturesIds[getGpuIdIndexForBlock(item.type, 0)];
 
 			//we have a block
-			renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, in), t, {color, color, color, 1});
+			renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, in + 0.01), t, {color, color, color, 1});
 
 
 		}
@@ -281,8 +281,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			gl2d::Texture t;
 			t.id = blocksLoader.texturesIdsItems[item.type - ItemsStartPoint];
 
-			//we have a block
-			renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, in), t, {color, color, color, 1});
+			renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, in - 0.25), t, {color, color, color, 1});
 		}
 
 		if (item.counter != 1)
