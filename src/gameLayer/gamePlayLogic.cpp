@@ -55,6 +55,8 @@ struct GameData
 	bool isInsideChat = 0;
 	char chatBuffer[250] = {};
 	int chatBufferPosition = 0;
+	std::deque<std::string> chat;
+	float chatStayOnTimer = 0;
 
 	//debug stuff
 	glm::ivec3 point = {};
@@ -325,7 +327,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.chunkSystem, gameData.lightSystem,
 			gameData.serverTimer, disconnect, 
 			gameData.currentBlockInteractionRevisionNumber, shouldExitBlockInteraction,
-			gameData.killed, respawned);
+			gameData.killed, respawned, gameData.chat, gameData.chatStayOnTimer);
 
 		if (disconnect) { return 0; }
 
@@ -2339,6 +2341,75 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 		}
+
+
+		//other chat messages
+		if(gameData.chatStayOnTimer || gameData.isInsideChat)
+		{
+
+			while (gameData.chat.size() > 10)
+			{
+				gameData.chat.pop_back();
+			}
+
+			auto &renderer = programData.ui.renderer2d;
+			glui::Frame f({0, 0, renderer.windowW, renderer.windowH});
+
+			auto box = glui::Box().xLeft().yTop().xDimensionPercentage(0.75f).yDimensionPixels(renderer.windowH - 100)();
+			
+
+			//determine how many lines we can fit
+			float textSize = 65;
+			float textPos = box.y + box.w;
+			float textPosCopy = textPos;
+			float boxDimension = 0;
+			for (auto &c : gameData.chat)
+			{
+				if (textPos < 0)
+				{
+					break;
+				}
+				
+				//renderer.renderText({0, textPos}, c.c_str(), programData.ui.font,
+				//	Colors_White, 1, 4, 3, false);
+
+				textPos -= textSize;
+				boxDimension += textSize;
+			}
+
+			if (boxDimension)
+			{
+				box.y = std::max(textPos, 0.f);
+				box.w = std::min((float)box.y, boxDimension) + 10; //we add just a little padding
+				renderer.renderRectangle(box, {0.1,0.1,0.1,0.6});
+
+				for (auto &c : gameData.chat)
+				{
+					if (textPosCopy < 0)
+					{
+						break;
+					}
+
+					renderer.renderText({0, textPosCopy}, c.c_str(), programData.ui.font,
+						Colors_White, 1, 4, 3, false);
+
+					textPosCopy -= textSize;
+				}
+
+			};
+
+
+			if (gameData.isInsideChat)
+			{
+				gameData.chatStayOnTimer = 0;
+			}
+			else
+			{
+				gameData.chatStayOnTimer -= deltaTime;
+				if (gameData.chatStayOnTimer < 0) { gameData.chatStayOnTimer = 0; }
+			}
+		}
+
 	}
 
 

@@ -93,7 +93,8 @@ void recieveDataClient(ENetEvent &event,
 	LightSystem &lightSystem,
 	std::uint64_t &yourTimer,
 	unsigned char revisionNumberBlockInteraction,
-	bool &shouldExitBlockInteraction, bool &killedPlayer, bool &respawn
+	bool &shouldExitBlockInteraction, bool &killedPlayer, bool &respawn,
+	std::deque<std::string> &chat, float &chatTimer
 	)
 {
 	Packet p;
@@ -793,6 +794,7 @@ void recieveDataClient(ENetEvent &event,
 			int timer = yourTimer - packetData->timer;
 
 			if (timer > 15'000) { break; } //probably coruption or the packet is somehow too old
+			if (timer < -4'000) { break; } //probably coruption
 
 			if (timer > 0)
 			{
@@ -805,6 +807,17 @@ void recieveDataClient(ENetEvent &event,
 		}
 		break;
 
+		case headerSendChat:
+		{
+
+			if (size <= 1) { break; }
+			data[size - 1] = 0;
+
+			chat.push_front(std::string(data));
+			chatTimer = 5;
+
+		}
+		break;
 
 
 		default:
@@ -825,7 +838,8 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 	LightSystem &lightSystem,
 	std::uint64_t &serverTimer, bool &disconnect
 	, unsigned char revisionNumberBlockInteraction, bool &shouldExitBlockInteraction,
-	bool &killedPlayer, bool &respawn
+	bool &killedPlayer, bool &respawn,
+	std::deque<std::string> &chat, float &chatTimer
 	)
 {
 	ENetEvent event;
@@ -845,7 +859,7 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 						playerPosition, squareDistance, entityManager, undoQueue,
 						chunkSystem, lightSystem, serverTimer,
 						revisionNumberBlockInteraction, shouldExitBlockInteraction, killedPlayer,
-						respawn);
+						respawn, chat, chatTimer);
 					
 					enet_packet_destroy(event.packet);
 

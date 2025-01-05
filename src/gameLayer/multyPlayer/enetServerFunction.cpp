@@ -781,13 +781,30 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 		{
 
 			if (size == 0) { break; }
+			if (size > 260) { break; } //we ignore messages that are too big.
 			data[size - 1] = 0; //making sure the packet is null terminated!
 
-			std::cout << "Chat: " << (char *)data << "\n";
+			//std::cout << "Chat: " << (char *)data << "\n";
 
 			if (size > 1 && data[0] == '/')
 			{
-				std::cout << executeServerCommand(p.cid, data + 1) << "\n";
+				auto rez = executeServerCommand(p.cid, data + 1);
+
+				Packet newPacket;
+				newPacket.cid = 0;
+				newPacket.header = headerSendChat;
+
+				sendPacket(connection->second.peer, newPacket, rez.c_str(),
+					rez.size() + 1, true, channelHandleConnections);
+			}
+			else
+			{
+				Packet newPacket;
+				newPacket.cid = p.cid;
+				newPacket.header = headerSendChat;
+
+				broadCast(newPacket, data, size, nullptr, true,
+					channelHandleConnections);
 			}
 
 			break;

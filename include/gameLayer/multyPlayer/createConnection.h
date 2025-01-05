@@ -96,7 +96,8 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 	LightSystem &lightSystem,
 	std::uint64_t &serverTimer, bool &disconnect,
 	unsigned char revisionNumberBlockInteraction, bool &shouldExitBlockInteraction,
-	bool &killedPlayer, bool &respawn
+	bool &killedPlayer, bool &respawn,
+	std::deque<std::string> &chat, float &chatTimer
 	);
 
 void attackEntity(std::uint64_t eid, unsigned char inventorySlot, glm::vec3 direction,
