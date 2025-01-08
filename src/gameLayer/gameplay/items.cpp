@@ -358,6 +358,18 @@ Item *PlayerInventory::getItemFromIndex(int index)
 	{
 		return &heldInMouse;
 	}
+	else if (index == PlayerInventory::ARMOUR_START_INDEX)
+	{
+		return &headArmour;
+	}
+	else if (index == PlayerInventory::ARMOUR_START_INDEX + 1)
+	{
+		return &chestArmour;
+	}
+	else if (index == PlayerInventory::ARMOUR_START_INDEX + 2)
+	{
+		return &bootsArmour;
+	}
 
 	return nullptr;
 }

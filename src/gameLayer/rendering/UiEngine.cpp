@@ -271,7 +271,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			t.id = blocksLoader.texturesIds[getGpuIdIndexForBlock(item.type, 0)];
 
 			//we have a block
-			renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, in + 0.01), t, {color, color, color, 1});
+			renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, in + 0.20), t, {color, color, color, 1});
 
 
 		}
@@ -281,7 +281,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			gl2d::Texture t;
 			t.id = blocksLoader.texturesIdsItems[item.type - ItemsStartPoint];
 
-			renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, in - 0.25), t, {color, color, color, 1});
+			renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, in - 0.45), t, {color, color, color, 1});
 		}
 
 		if (item.counter != 1)
@@ -358,6 +358,18 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 					glui::Frame insideInventoryLeft(glui::Box().xLeft().yTop().
 						yDimensionPercentage(1.f).xAspectRatio(1.f)());
 
+					auto checkInsideOneElement = [&](glm::vec4 box, int i)
+					{
+						if (glui::aabb(box, mousePos))
+						{
+							cursorItemIndex = i;
+							currentItem = inventory.getItemFromIndex(cursorItemIndex);
+							cursorItemIndexBox = box;
+							renderer2d.renderRectangle(shrinkRectanglePercentage(box, (2.f / 22.f)),
+								{0.7,0.7,0.7,0.5});
+						}
+					};
+
 					auto checkInside = [&](int start, glm::vec4 box)
 					{
 						auto itemBox = box;
@@ -365,14 +377,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						for (int i = start; i < start + 9; i++)
 						{
 							itemBox.x = box.x + itemBox.z * (i - start);
-							if (glui::aabb(itemBox, mousePos))
-							{
-								cursorItemIndex = i;
-								currentItem = inventory.getItemFromIndex(cursorItemIndex);
-								cursorItemIndexBox = itemBox;
-								renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, (2.f / 22.f)),
-									{0.7,0.7,0.7,0.5});
-							}
+							checkInsideOneElement(itemBox, i);
 						}
 					};
 
@@ -683,12 +688,18 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 							armourBox = start;
 							armourBox.x = playerBox.x + playerBox.z;
 							renderer2d.renderRectangle(armourBox, oneInventorySlot);
+							checkInsideOneElement(armourBox, inventory.ARMOUR_START_INDEX);
+							renderOneItem(armourBox, inventory.headArmour);
 
 							armourBox.y += armourBox.w;
 							renderer2d.renderRectangle(armourBox, oneInventorySlot);
+							checkInsideOneElement(armourBox, inventory.ARMOUR_START_INDEX + 1);
+							renderOneItem(armourBox, inventory.chestArmour);
 
 							armourBox.y += armourBox.w;
 							renderer2d.renderRectangle(armourBox, oneInventorySlot);
+							checkInsideOneElement(armourBox, inventory.ARMOUR_START_INDEX + 2);
+							renderOneItem(armourBox, inventory.bootsArmour);
 
 
 						}

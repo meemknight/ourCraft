@@ -122,10 +122,14 @@ struct PlayerInventory
 	
 	constexpr static int INVENTORY_CAPACITY = 36;
 	constexpr static int CURSOR_INDEX = 36;
+	constexpr static int ARMOUR_START_INDEX = 37;
 	Item items[INVENTORY_CAPACITY] = {};
 	
 	Item heldInMouse = {};
-
+	
+	Item headArmour = {}; //ARMOUR_START_INDEX 
+	Item chestArmour = {}; //ARMOUR_START_INDEX + 1
+	Item bootsArmour = {}; //ARMOUR_START_INDEX + 2
 
 	Item *getItemFromIndex(int index);
 
