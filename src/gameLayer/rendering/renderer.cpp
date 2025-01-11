@@ -20,6 +20,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <lightSystem.h>
 #include <rendering/renderSettings.h>
+#include <vector>
 
 #include <imgui-docking/imgui/imgui.h>
 
@@ -2513,6 +2514,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	auto renderStaticGeometry = [&]()
 	{
 
+
 		if (unifiedGeometry)
 		{
 			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCommandsOpaqueBuffer);
@@ -2556,10 +2558,12 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		}
 
+
 	};
 
 	auto renderTransparentGeometry = [&]()
 	{
+
 		if (!renderTransparent) { return; }
 
 		for (auto &chunk : chunkVectorCopy)
@@ -2571,6 +2575,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 				glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
 			}
 		}
+
+
 	};
 
 	auto depthPrePass = [&]()

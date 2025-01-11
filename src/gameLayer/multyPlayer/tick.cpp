@@ -432,6 +432,29 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 	if (profiler) { profiler->endSubProfile("Calculate entities chunk position cache"); }
 
 
+#pragma region check players killed
+	auto &clients = allClients;
+	for (auto &c : clients)
+	{
+		//kill players
+		if (c.second->playerData.newLife.life <= 0 && !c.second->playerData.killed)
+		{
+			c.second->playerData.kill();
+			c.second->playerData.killed = true;
+
+			//todo only for local players!
+			genericBroadcastEntityKillFromServerToPlayer(c.first, true);
+		}
+		else
+		{
+			//per client life updates happens later
+		}
+
+	}
+#pragma endregion
+
+
+
 	if (profiler) { profiler->startSubProfile("Tasks"); }
 #pragma region tasks
 	{
@@ -1642,6 +1665,8 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 	for (auto &c : allSurvivalClients)
 	{
 		auto &playerData = c.second->playerData;
+
+		if (playerData.killed) { continue; }
 
 		if (playerData.healingDelayCounterSecconds >= playerData.calculateHealingDelayTime())
 		{

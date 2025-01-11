@@ -99,7 +99,8 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 
 		for (auto i : chunkCache.savedChunks)
 		{
-			if (!i.second->otherData.shouldUnload)
+			if (!i.second->otherData.shouldUnload
+				&& i.second->otherData.withinSimulationDistance)
 			{
 
 				auto find = visited.find(i.first);
@@ -142,7 +143,8 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 							auto foundChunk = chunkCache.savedChunks.find(el);
 							if (foundChunk != chunkCache.savedChunks.end())
 							{
-								if (!foundChunk->second->otherData.shouldUnload)
+								if (!foundChunk->second->otherData.shouldUnload
+									&& foundChunk->second->otherData.withinSimulationDistance)
 								{
 									visited.insert({el, currentIndex});
 
@@ -248,6 +250,8 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 			permaAssertComment(0, "No players in split update logic.cpp");
 		}
 
+		//TODO, some older tasks might happen outside chunk regions for the players, so we should check for that, 
+		// and not allow them.
 		for (auto &t : waitingTasks)
 		{
 				

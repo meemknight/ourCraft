@@ -90,6 +90,7 @@ int PlayerClient::getTextureIndex()
 
 void PlayerServer::kill()
 {
+	killed = true;
 	effects = {};
 	newLife.life = 0;
 	lifeLastFrame.life = 0;

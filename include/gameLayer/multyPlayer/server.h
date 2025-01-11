@@ -47,6 +47,7 @@ struct ServerSettings
 
 	bool busyWait = 1;
 	unsigned int randomTickSpeed = 3;
+	int simulationDistanceRadius = 8;
 
 
 };

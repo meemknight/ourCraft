@@ -67,7 +67,7 @@ void updateLoadedChunks(
 	StructuresManager &structureManager,
 	BiomesManager &biomesManager,
 	std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
-	WorldSaver &worldSaver, bool generateNewChunks);
+	WorldSaver &worldSaver, bool generateNewChunks, std::minstd_rand &rng);
 
 
 struct ServerData
@@ -364,7 +364,7 @@ void serverWorkerUpdate(
 
 	std::vector<SendBlocksBack> sendNewBlocksToPlayers;
 	updateLoadedChunks(wg, structuresManager, biomesManager, sendNewBlocksToPlayers,
-		worldSaver, true);
+		worldSaver, true, rng);
 	generateNewChunks = 0;
 
 	serverProfiler.endSubProfile("Send Chunks To players");
@@ -380,65 +380,6 @@ void serverWorkerUpdate(
 #pragma endregion
 
 
-	serverProfiler.startSubProfile("Set players in chunks and check if they are killed");
-
-#pragma region set players in their chunks
-	for (auto &c : sd.chunkCache.savedChunks)
-	{
-		c.second->entityData.players.clear();
-	}
-
-	//todo move in tick probably
-	//set players in their chunks, set players in chunks
-	for (auto &client : getAllClientsReff())
-	{
-
-		auto cPos = determineChunkThatIsEntityIn(client.second.playerData.entity.position);
-
-		auto chunk = sd.chunkCache.getChunkOrGetNull(cPos.x, cPos.y);
-
-		permaAssertComment(chunk, "Error, A chunk that a player is in unloaded...");
-
-		//if (!client.second.playerData.killed)
-		{
-			chunk->entityData.players[client.first] = &client.second.playerData;
-			sd.chunkCache.entityChunkPositions[client.first] = cPos;
-			auto ptr = &client.second.playerData;
-		}
-
-	}
-#pragma endregion
-
-
-
-	//todo this will be moved in the tick after refactoring
-#pragma region check players killed
-
-
-	auto &clients = getAllClientsReff();
-	for (auto &c : clients)
-	{
-		//kill players
-		if (c.second.playerData.newLife.life <= 0 && !c.second.playerData.killed)
-		{
-			//todo a method to reset multiple things
-			c.second.playerData.kill();
-			c.second.playerData.killed = true;
-
-			genericBroadcastEntityKillFromServerToPlayer(c.first, true);
-		}
-		else
-		{
-			//per client life updates happen multi threaded
-		}
-
-	}
-
-
-#pragma endregion
-
-	serverProfiler.endSubProfile("Set players in chunks and check if they are killed");
-
 
 	//here used to be the tasks
 
@@ -451,6 +392,37 @@ void serverWorkerUpdate(
 
 	if (sd.tickTimer > 1.f / targetTicksPerSeccond)
 	{
+
+	#pragma region set players in their chunks
+		for (auto &c : sd.chunkCache.savedChunks)
+		{
+			c.second->entityData.players.clear();
+		}
+
+		//todo move in tick probably
+		//set players in their chunks, set players in chunks
+		for (auto &client : getAllClientsReff())
+		{
+
+			auto cPos = determineChunkThatIsEntityIn(client.second.playerData.entity.position);
+
+			auto chunk = sd.chunkCache.getChunkOrGetNull(cPos.x, cPos.y);
+
+			permaAssertComment(chunk, "Error, A chunk that a player is in unloaded...");
+
+			//if (!client.second.playerData.killed)
+			{
+				chunk->entityData.players[client.first] = &client.second.playerData;
+				sd.chunkCache.entityChunkPositions[client.first] = cPos;
+				auto ptr = &client.second.playerData;
+			}
+
+		}
+	#pragma endregion
+
+
+
+
 
 		//for (auto &c : sd.chunkCache.savedChunks)
 		//{
@@ -774,7 +746,7 @@ void updateLoadedChunks(
 	StructuresManager &structureManager,
 	BiomesManager &biomesManager,
 	std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
-	WorldSaver &worldSaver, bool generateNewChunks)
+	WorldSaver &worldSaver, bool generateNewChunks, std::minstd_rand &rng)
 {
 
 
@@ -784,6 +756,7 @@ void updateLoadedChunks(
 	for (auto &c : sd.chunkCache.savedChunks)
 	{
 		c.second->otherData.shouldUnload = true;
+		c.second->otherData.withinSimulationDistance = false;
 	}
 
 	auto &clients = getAllClientsReff();
@@ -793,29 +766,40 @@ void updateLoadedChunks(
 	std::vector<glm::ivec2> positions;
 	positions.reserve(200);
 
+	std::vector<uint64_t> cids;
+	cids.reserve(clients.size());
+
 	for (auto &cl : clients)
 	{
+		cids.push_back(cl.first);
+	}
 
+	std::shuffle(cids.begin(), cids.end(), rng);
+
+
+	for (auto cid : cids)
+	{
+
+		auto &client = clients[cid];
 		//if (c.second.playerData.killed) { continue; }
 
 		int geenratedThisFrame = 0;
 
-		glm::ivec2 pos(divideChunk(cl.second.playerData.entity.position.x),
-			divideChunk(cl.second.playerData.entity.position.z));
+		glm::ivec2 pos(divideChunk(client.playerData.entity.position.x),
+			divideChunk(client.playerData.entity.position.z));
 		
-		auto playerBlockPos = from3DPointToBlock(cl.second.playerData.entity.position);
+		auto playerBlockPos = from3DPointToBlock(client.playerData.entity.position);
 
-		int distance = (cl.second.playerData.entity.chunkDistance/2) + 1;
+		int distance = (client.playerData.entity.chunkDistance/2) + 1;
 
-		auto &client = cl.second;
-		auto clientCid = cl.first;
+		auto clientCid = cid;
 
 		//drop chunks that are too far
 		{
 			for (auto it = client.loadedChunks.begin(); it != client.loadedChunks.end();)
 			{
 
-				if (!isChunkInRadius({playerBlockPos.x, playerBlockPos.z}, *it, cl.second.playerData.entity.chunkDistance))
+				if (!isChunkInRadius({playerBlockPos.x, playerBlockPos.z}, *it, client.playerData.entity.chunkDistance))
 				{
 					it = client.loadedChunks.erase(it);
 				}
@@ -834,7 +818,7 @@ void updateLoadedChunks(
 				auto chunkPos = pos + glm::ivec2(i, j);
 
 				if (isChunkInRadius({playerBlockPos.x, playerBlockPos.z}, 
-					chunkPos, cl.second.playerData.entity.chunkDistance))
+					chunkPos, client.playerData.entity.chunkDistance))
 				{
 					//if (client.loadedChunks.find(chunkPos) ==
 					//	client.loadedChunks.end())
@@ -843,15 +827,17 @@ void updateLoadedChunks(
 					}
 				}
 			}
-
+		
+		//make sure we send the right chunks if the player is right at the border corner between 4 chunks
+		auto posAugmentedForSort = glm::ivec2(divideChunk(playerBlockPos.x-1), divideChunk(playerBlockPos.z-1));
 		std::sort(positions.begin(), positions.end(),
 			[&](auto &a, auto &b)
 		{
 			
-			glm::vec2 diff1 = a - pos;
+			glm::vec2 diff1 = a - posAugmentedForSort;
 			float distance1 = glm::dot(diff1, diff1);
 
-			glm::vec2 diff2 = b - pos;
+			glm::vec2 diff2 = b - posAugmentedForSort;
 			float distance2 = glm::dot(diff2, diff2);
 
 			return distance1 < distance2;
@@ -892,7 +878,7 @@ void updateLoadedChunks(
 
 			//number of chunks that are being sent rn
 			//stop sending more chunks than the pending number
-			int currentPendingChunks = cl.second.chunksPacketPendingConfirmation.size();
+			int currentPendingChunks = client.chunksPacketPendingConfirmation.size();
 			if (currentPendingChunks > MAX_CHUNKS_PENDING) { canSendMoreChunks = false; }
 
 
@@ -907,6 +893,13 @@ void updateLoadedChunks(
 				if (c)
 				{
 					c->otherData.shouldUnload = false;
+
+					if (isChunkInRadius({playerBlockPos.x, playerBlockPos.z},
+						chunkPos, getServerSettingsReff().simulationDistanceRadius*2))
+					{
+						c->otherData.withinSimulationDistance = true;
+					}
+
 
 					//send chunk to player
 				#pragma region send chunk to player
