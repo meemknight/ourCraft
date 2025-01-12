@@ -58,5 +58,7 @@ struct DroppedItemServer
 
 	bool hasUpdatedThisTick = 0;
 
+	glm::ivec2 lastChunkPositionWhenAnUpdateWasSent = {};
+
 };
 

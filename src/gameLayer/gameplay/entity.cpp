@@ -7,6 +7,8 @@
 #include <glm/gtx/vector_angle.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <multyPlayer/serverChunkStorer.h>
+#undef max
+#undef min
 
 //todo entities should freeze their state completely when chunks are missing
 

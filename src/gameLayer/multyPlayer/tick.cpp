@@ -45,7 +45,7 @@ void genericBroadcastEntityUpdateFromServerToPlayer2(E &e, bool reliable,
 	Packet packet;
 	packet.header = headerUpdateGenericEntity;
 
-	static unsigned char data[sizeof(Packet_UpdateGenericEntity) + 100000];
+	static thread_local unsigned char data[sizeof(Packet_UpdateGenericEntity) + 100000];
 
 	Packet_UpdateGenericEntity firstPart;
 	firstPart.eid = e.first;
@@ -152,8 +152,9 @@ void genericResetEntitiesInTheirNewChunk(T &container, U memberSelector, ServerC
 
 		if (chunk)
 		{
+			std::cout << "Found after orhpaned\n";
 			auto member = memberSelector(chunk->entityData);
-			member->insert({e.first, e.second});
+			(*member)[e.first] = e.second;
 			it = container.erase(it);
 		}
 		else
@@ -205,7 +206,7 @@ bool spawnDroppedItemEntity(
 
 	if (chunk)
 	{
-		chunk->entityData.droppedItems.insert({newId, newEntity});
+		chunk->entityData.droppedItems[newId] = newEntity;
 		chunkManager.entityChunkPositions[newId] = chunkPosition;
 	}
 	else
@@ -370,8 +371,10 @@ void killEntity(WorldSaver &worldSaver, std::uint64_t entity, ServerChunkStorer 
 void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 	ServerChunkStorer &chunkCache, EntityData &orphanEntities,
 	unsigned int seed, std::vector<ServerTask> waitingTasks,
-	WorldSaver &worldSaver)
+	WorldSaver &worldSaver, Profiler *profiler)
 {
+	if (profiler) { profiler->startFrame(); }
+
 	//std::cout << "Tick deltaTime: " << deltaTime << "\n";
 
 	std::minstd_rand rng(seed);
@@ -404,6 +407,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 	std::unordered_map < std::uint64_t, Client *> allClients;
 	std::unordered_map < std::uint64_t, Client *> allSurvivalClients;
 
+	if (profiler) { profiler->startSubProfile("Calculate entities chunk position cache"); }
 #pragma region calculate all entities chunk positions cache
 
 	chunkCache.entityChunkPositions.clear();
@@ -425,8 +429,33 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 	}
 
 #pragma endregion
+	if (profiler) { profiler->endSubProfile("Calculate entities chunk position cache"); }
 
 
+#pragma region check players killed
+	auto &clients = allClients;
+	for (auto &c : clients)
+	{
+		//kill players
+		if (c.second->playerData.newLife.life <= 0 && !c.second->playerData.killed)
+		{
+			c.second->playerData.kill();
+			c.second->playerData.killed = true;
+
+			//todo only for local players!
+			genericBroadcastEntityKillFromServerToPlayer(c.first, true);
+		}
+		else
+		{
+			//per client life updates happens later
+		}
+
+	}
+#pragma endregion
+
+
+
+	if (profiler) { profiler->startSubProfile("Tasks"); }
 #pragma region tasks
 	{
 		int count = waitingTasks.size();
@@ -434,7 +463,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 		{
 			auto &i = waitingTasks[taskIndex];
 
-
+			//todo make sure only tasks for existing clients come to here and if so remove any check here
 			if (i.t.taskType == Task::placeBlockForce)
 			{
 
@@ -511,7 +540,6 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 					)
 				{
 
-					bool wasGenerated = 0;
 					//std::cout << "server recieved place block\n";
 					//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
 					auto chunk = chunkCache.getChunkOrGetNull(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z));
@@ -647,6 +675,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 										packetData.blockPos = i.t.pos;
 										packetData.blockType = i.t.blockType;
 
+										//todo only for local players
 										broadCastNotLocked(packet, &packetData, sizeof(Packet_PlaceBlocks),
 											client->peer, true, channelChunksAndBlocks);
 									}
@@ -785,7 +814,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 								spawnDroppedItemEntity(chunkCache,
 									worldSaver, i.t.blockCount, i.t.blockType, &from->metaData,
 									i.t.doublePos, i.t.motionState, newId,
-									computeRestantTimer(i.t.timer, currentTimer));
+									computeRestantTimer(i.t.timer, getTimer()));
 
 								//std::cout << "restant: " << newEntity.restantTime << "\n";
 
@@ -1144,8 +1173,8 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 										int healing = getItemHealing(*from);
 
 										//can't eat if satiety doesn't allow it
-										if (effects.allEffects[Effects::Satiety].timerMs > 0 &&
-											client->playerData.effects.allEffects[Effects::Satiety].timerMs > 0
+										if (effects.allEffects[Effects::Saturated].timerMs > 0 &&
+											client->playerData.effects.allEffects[Effects::Saturated].timerMs > 0
 											)
 										{
 											allowed = 0;
@@ -1447,13 +1476,120 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 					}
 
 				}
+				else if (i.t.taskType == Task::clientChangedBlockData)
+				{
+					auto client = getClientNotLocked(i.cid);
+
+					auto chunk = chunkCache.getChunkOrGetNull(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z));
+					int convertedX = modBlockToChunk(i.t.pos.x);
+					int convertedZ = modBlockToChunk(i.t.pos.z);
+
+
+					if (client)
+					{
+
+						if (!chunk)
+						{
+							//this chunk isn't in this region so undo
+							computeRevisionStuff(*client, false, i.t.eventId);
+						}
+						else
+						{
+
+							auto b = chunk->chunk.safeGet(convertedX, i.t.pos.y, convertedZ);
+
+							if (b && b->getType() == i.t.blockType)
+							{
+
+								if (i.t.blockType == BlockTypes::structureBase)
+								{
+
+									BaseBlock baseBlock;
+									size_t _ = 0;
+									if (!baseBlock.readFromBuffer(i.t.metaData.data(),
+										i.t.metaData.size(), _))
+									{
+										//notify undo revision
+										computeRevisionStuff(*client, false, i.t.eventId);
+									}
+									else
+									{
+										if (!baseBlock.isDataValid())
+										{
+											//notify undo revision
+											computeRevisionStuff(*client, false, i.t.eventId);
+										}
+										else
+										{
+											
+											if (computeRevisionStuff(*client, true, i.t.eventId))
+											{
+
+												//update the data
+												auto pos = i.t.pos;
+												pos.x = modBlockToChunk(pos.x);
+												pos.z = modBlockToChunk(pos.z);
+												auto hashPos = fromBlockPosInChunkToHashValue(pos.x, pos.y, pos.z);
+
+												chunk->blockData.baseBlocks[hashPos] = baseBlock;
+
+												chunk->otherData.dirtyBlockData = true;
+
+												//todo notify other players
+
+												std::vector<unsigned char> packetData;
+												Packet_ChangeBlockData packetChangeBlockData;
+												packetChangeBlockData.blockDataHeader.blockType = BlockTypes::structureBase;
+												packetChangeBlockData.blockDataHeader.pos = i.t.pos;
+
+												packetData.resize(sizeof(packetChangeBlockData));
+
+												packetChangeBlockData.blockDataHeader.dataSize = baseBlock.formatIntoData(packetData);
+
+												memcpy(packetData.data(), &packetChangeBlockData, sizeof(packetChangeBlockData));
+
+												Packet p;
+												p.header = headerChangeBlockData;
+												p.cid = i.cid;
+												broadCastNotLocked(p, packetData.data(), packetData.size(),
+													client->peer, true, channelChunksAndBlocks);
+
+											}
+
+										}
+
+									}
+
+
+								}
+								else
+								{
+									//notify undo revision
+									computeRevisionStuff(*client, false, i.t.eventId);
+								}
+
+
+							}
+							else
+							{
+								//notify undo revision
+								computeRevisionStuff(*client, false, i.t.eventId);
+							}
+
+						}
+
+					}
+
+				}
 
 
 		}
 	}
 #pragma endregion
+	if (profiler) { profiler->endSubProfile("Tasks"); }
 
 
+	if (profiler) { profiler->startSubProfile("Player stuff"); }
 #pragma region calculate all players
 
 	for (auto &c : chunkCache.savedChunks)
@@ -1489,14 +1625,30 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 #pragma region player effects
 
+	//todo this should be for all entities
 	for (auto &c : allPlayers)
 	{
 		if (!c.second->killed)
 		{
 			c.second->effects.passTimeMs(deltaTimeMs);
 
+			auto &effectsTimers = c.second->effectsTimers;
+
 
 			//regen and others come here
+			if (c.second->effects.allEffects[Effects::Regeneration].timerMs > 0)
+			{
+
+				effectsTimers.regen -= deltaTime;
+
+				if (effectsTimers.regen < 0)
+				{
+					effectsTimers.regen += 1; //heal once every seccond;
+					c.second->newLife.life += 5;
+					c.second->newLife.sanitize();
+				}
+
+			}
 
 
 		}
@@ -1514,17 +1666,20 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 	{
 		auto &playerData = c.second->playerData;
 
-		if (playerData.healingDelayCounterSecconds >= BASE_HEALTH_DELAY_TIME)
+		if (playerData.killed) { continue; }
+
+		if (playerData.healingDelayCounterSecconds >= playerData.calculateHealingDelayTime())
 		{
 			if (playerData.newLife.life < playerData.newLife.maxLife)
 			{
 				playerData.notIncreasedLifeSinceTimeSecconds += deltaTime;
 
-				if (playerData.notIncreasedLifeSinceTimeSecconds > BASE_HEALTH_REGEN_TIME)
+				if (playerData.notIncreasedLifeSinceTimeSecconds > playerData.calculateHealingRegenTime())
 				{
-					playerData.notIncreasedLifeSinceTimeSecconds -= BASE_HEALTH_REGEN_TIME;
+					playerData.notIncreasedLifeSinceTimeSecconds -= playerData.calculateHealingRegenTime();
 
 					playerData.newLife.life++;
+					playerData.newLife.sanitize();
 
 				}
 			}
@@ -1544,8 +1699,9 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 
 #pragma endregion
+	if (profiler) { profiler->endSubProfile("Player stuff"); }
 
-
+	if (profiler) { profiler->startSubProfile("Random Tick Update"); }
 #pragma region to random tick update
 
 	unsigned int randomTickSpeed = getRandomTickSpeed();
@@ -1556,15 +1712,16 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 		{
 			for (int i = 0; i < randomTickSpeed; i++)
 			{
-				int x = rng() % 16;
+				int x = rng() % 16; //todo better rng here
 				int y = rng() % 16;
 				int z = rng() % 16;
 				y += h * 16;
 
 				//if the code crashes here, that means that we wrongly got a nullptr chunk!
 				auto &b = c.second->chunk.unsafeGet(x,y,z);
+				auto type = b.getType();
 
-				if (b.getType() == BlockTypes::dirt)
+				if (type == BlockTypes::dirt)
 				{
 
 					auto top = c.second->chunk.safeGet(x, y + 1, z);
@@ -1624,7 +1781,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 					}
 
 				}
-				else if (b.getType() == BlockTypes::grassBlock)
+				else if (type == BlockTypes::grassBlock)
 				{
 					auto top = c.second->chunk.safeGet(x, y + 1, z);
 					if (top && top->stopsGrassFromGrowingIfOnTop())
@@ -1642,10 +1799,11 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 
 
-
 #pragma endregion
+	if (profiler) { profiler->endSubProfile("Random Tick Update"); }
 
 
+	if (profiler) { profiler->startSubProfile("Path Finding"); }
 #pragma region calculate player positions
 	std::unordered_map<std::uint64_t, glm::dvec3> playersPosition;
 
@@ -1676,7 +1834,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 			positions.emplace(node.returnPos + displacement, newEntry);
 
-			if (node.level < 80)
+			if (node.level < 10)
 			{
 				newEntry.returnPos = node.returnPos + displacement;
 				queue.push_back(newEntry);
@@ -1807,7 +1965,10 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 
 #pragma endregion
+	if (profiler) { profiler->endSubProfile("Path Finding"); }
 
+
+	if (profiler) { profiler->startSubProfile("Entity Updates"); }
 #pragma region mark entities as not updated
 
 	for (auto &c : chunkCache.savedChunks)
@@ -1867,7 +2028,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 					if (e.second.hasUpdatedThisTick) { ++it; continue; }
 					e.second.hasUpdatedThisTick = true;
-
+					
 					bool rez = genericCallUpdateForEntity(e, deltaTime, chunkGetter,
 						chunkCache, rng, othersDeleted,
 						pathFinding, playersPosition);
@@ -1876,8 +2037,10 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 					if (!rez)
 					{
 						//todo only for local players!!!!!!
-						genericBroadcastEntityDeleteFromServerToPlayer(it->first, true);
+						genericBroadcastEntityDeleteFromServerToPlayer(it->first,
+							true, allClients, e.second.lastChunkPositionWhenAnUpdateWasSent);
 
+						std::cout << "remove!!!!!!!\n";
 						//remove entity
 						it = container.erase(it);
 					}
@@ -1887,15 +2050,18 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 						//todo only for local players!!!!!!
 						//genericBroadcastEntityUpdateFromServerToPlayer
 						//	< decltype(packetType)>(e, false, currentTimer, packetId);
-						genericBroadcastEntityUpdateFromServerToPlayer2(e, false, currentTimer);
+						//std::cout << "Sent update ";
+						genericBroadcastEntityUpdateFromServerToPlayer2(e, false, getTimer());
 
 						if (initialChunk != newChunk)
 						{
-
+							//std::cout << "Prepare to move\n";
 							auto chunk = chunkCache.getChunkOrGetNull(newChunk.x, newChunk.y);
 							
 							if (chunk)
 							{
+								//std::cout << "Found!\n";
+
 								//move entity in another chunk
 								auto member = memberSelector(chunk->entityData);
 								member->insert({e.first, e.second});
@@ -1904,6 +2070,8 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 							}
 							else
 							{
+								//std::cout << "Not Found!\n";
+
 								//the entity left the region, we move it out,
 								// so we save it to disk or to other chunks
 								orphanContainer.insert(
@@ -1934,18 +2102,20 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 	for (auto eid : othersDeleted)
 	{
-		genericBroadcastEntityDeleteFromServerToPlayer(eid, true);
+		//TODO!! set the position and last chunk position corectly
+		genericBroadcastEntityDeleteFromServerToPlayer(eid, true, allClients, {});
 
 	}
 	
-	
+	//todo this is probably not usefull anymore but investigate.
 	callGenericResetEntitiesInTheirNewChunk(std::make_integer_sequence<int, EntitiesTypesCount - 1>(),
 		orphanEntities, chunkCache);
 
 
 #pragma endregion
+	if (profiler) { profiler->endSubProfile("Entity Updates"); }
 
-
+	if (profiler) { profiler->startSubProfile("Send Block health and entity Packets"); }
 #pragma region send packets
 
 
@@ -1983,7 +2153,6 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 
 #pragma endregion
-
 
 #pragma region send health packets and effects packets
 
@@ -2040,6 +2209,81 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 #pragma endregion
 
+#pragma region server send entity position data
+	{
+		static thread_local float sendEntityTimer = 0;
+		sendEntityTimer -= deltaTime;
+
+		if (sendEntityTimer < 0)
+		{
+			sendEntityTimer = 0.4;
+
+			//todo make a different timer for each player			
+			//todo maybe merge things into one packet
+
+			//no need for mutex because this thread modifies the clients data
+
+			for (auto &c : allClients)
+			{
+
+				// send players
+
+				for (auto &other : allClients)
+				{
+					if (other.first != c.first)
+					{
+
+						auto &loadedChunks = c.second->loadedChunks;
+						
+						glm::ivec2 lastChunkPos = other.second->playerData.lastChunkPositionWhenAnUpdateWasSent;
+						glm::ivec2 currentChunkPos = {};
+						currentChunkPos.x = divideChunk(other.second->playerData.getPosition().x);
+						currentChunkPos.y = divideChunk(other.second->playerData.getPosition().z);
+
+						if(loadedChunks.find(lastChunkPos) != loadedChunks.end()
+							||
+							loadedChunks.find(currentChunkPos) != loadedChunks.end()
+							)
+						//if (checkIfPlayerShouldGetEntity(
+						//	{c.second.playerData.entity.position.x, c.second.playerData.entity.position.z},
+						//	other.second.playerData.entity.position, c.second.playerData.entity.chunkDistance, 0)
+						//	)
+						{
+							Packet_ClientRecieveOtherPlayerPosition sendData;
+							sendData.eid = other.first;
+							sendData.timer = getTimer();
+							sendData.entity = other.second->playerData.entity;
+
+							Packet p;
+							p.cid = 0;
+							p.header = headerClientRecieveOtherPlayerPosition;
+
+							sendPacket(c.second->peer, p, (const char *)&sendData, sizeof(sendData),
+								false, channelPlayerPositions);
+						}
+
+						other.second->playerData.lastChunkPositionWhenAnUpdateWasSent = currentChunkPos;
+
+
+					}
+				}
+
+
+			}
+
+		}
+
+
+
+	}
+
+#pragma endregion
+
+
+	if (profiler) { profiler->startSubProfile("Send Block health end entity Packets"); }
+
+
+	if (profiler) { profiler->endFrame(); }
 
 
 	chunkCacheGlobal = 0;

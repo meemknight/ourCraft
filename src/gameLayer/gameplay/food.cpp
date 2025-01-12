@@ -11,7 +11,7 @@ Effects getItemEffects(Item &item)
 	if (type == apple)
 	{
 
-		ret.allEffects[Effects::Satiety].timerMs = 60 * 1000;
+		ret.allEffects[Effects::Saturated].timerMs = 60 * 1000;
 			
 
 	}

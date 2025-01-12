@@ -7,7 +7,7 @@ size_t BaseBlock::formatIntoData
 	appendTo.resize(appendTo.size() + sizeof(BaseBlock));
 
 	memcpy(appendTo.data() + startPos, this, sizeof(BaseBlock));
-	return sizeof(size_t);
+	return sizeof(BaseBlock);
 }
 
 bool BaseBlock::readFromBuffer(unsigned char *data, size_t s, size_t &outReadSize)
@@ -20,6 +20,12 @@ bool BaseBlock::readFromBuffer(unsigned char *data, size_t s, size_t &outReadSiz
 
 	outReadSize = sizeof(BaseBlock);
 
+	return true;
+}
+
+//todo implement
+bool BaseBlock::isDataValid()
+{
 	return true;
 }
 

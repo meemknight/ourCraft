@@ -33,7 +33,8 @@ struct ChunkSystem
 	std::vector<Chunk*> loadedChunks;
 	int squareSize = 4;
 	std::vector<glm::ivec2> chunksToAddLight;
-
+	
+	glm::ivec2 lastPlayerPos = {};
 
 	//[0 -> squareSize)
 	Chunk *getChunksInMatrixSpaceUnsafe(int x, int z);
@@ -51,9 +52,9 @@ struct ChunkSystem
 
 	void init(int squareDistance);
 
-	void changeRenderDistance(int squareDistance);
+	void changeRenderDistance(int squareDistance, bool notifyServer);
 
-	void cleanup();
+	void cleanup(bool notifyServer);
 
 	void update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQueue &undoQueue, LightSystem &lightSystem,
 		InteractionData &interaction);
@@ -61,6 +62,9 @@ struct ChunkSystem
 	bool isChunkInRadius(glm::ivec2 playerPos, glm::ivec2 chunkPos);
 
 	bool isChunkInRadiusAndBounds(glm::ivec2 playerPos, glm::ivec2 chunkPos);
+
+	bool shouldRecieveEntity(glm::dvec3 entityPos);
+
 
 	int lastX = 0, lastZ = 0, created = 0;
 
@@ -99,7 +103,6 @@ struct ChunkSystem
 	);
 
 
-
 	//a client breaks a block and sends a task to the server for it to be blocked
 	//returns true if succeeded
 	bool breakBlockByClient(glm::ivec3 pos,
@@ -118,7 +121,7 @@ struct ChunkSystem
 		BlockType newType, LightSystem &lightSystem);
 
 	//unloads all loaded chunks
-	void dropAllChunks(BigGpuBuffer *gpuBuffer);
+	void dropAllChunks(BigGpuBuffer *gpuBuffer, bool notifyServer);
 	
 	//unloads a chunk atn the specified index in the matrix vector,
 	//ASSUMES THE CHUNK IS LOADED AND HAS GPU DATA
@@ -126,7 +129,6 @@ struct ChunkSystem
 
 	void dropChunkAtIndexSafe(int index, BigGpuBuffer *gpuBuffer);
 
-	std::unordered_map<glm::ivec2, float> recentlyRequestedChunks;
 };
 
 bool isChunkInRadius(glm::ivec2 playerPos, glm::ivec2 chunkPos, int squareSize);

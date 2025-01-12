@@ -24,7 +24,7 @@ struct EventId
 	EventId() {};
 	EventId(EventCounter counter, RevisionNumber revision):counter(counter), revision(revision) {};
 
-	EventCounter counter = 0;
+	EventCounter counter = 0; //todo just remove the counter or use the same revision for the items and everything
 	RevisionNumber revision = 0;
 };
 
@@ -49,14 +49,13 @@ enum : std::uint32_t
 {
 	headerNone = 0,
 	headerReceiveCIDAndData,
-	headerRequestChunk,
 	headerPlaceBlock,
 	headerPlaceBlockForce,
 	headerBreakBlock,
 	headerPlaceBlocks,
 	headerClientDroppedItem,
 	headerRecieveChunk,
-	headerRecieveBlockData,
+	headerRecieveEntireBlockDataForChunk,
 	headerValidateEvent,
 	headerValidateEventAndChangeID,
 	headerInValidateEvent,
@@ -91,11 +90,13 @@ enum : std::uint32_t
 	headerRespawnPlayer,
 	headerClientDamageLocally,
 	headerClientDamageLocallyAndDied,
-	headerUpdateSimpleBlockWithData,
-	headerClientUpdatedBlockData,
 	headerUpdateEffects,
 	headerClientDroppedChunk,
 	headerClientDroppedAllChunks,
+	headerSendChat, //just the letters for now
+	headerClientChangeBlockData,
+	headerChangeBlockData,
+
 };
 
 enum 
@@ -110,11 +111,18 @@ enum
 
 };
 
-struct Packet_UpdateSimpleBlockWithData
+struct Packet_ClientChangeBlockData
 {
-	std::uint16_t blockType = 0;
+	BlockDataHeader blockDataHeader = {};
+	EventId eventId = {};
+	//+ data
 };
 
+struct Packet_ChangeBlockData
+{
+	BlockDataHeader blockDataHeader = {};
+	//+ data
+};
 
 struct Packet_DisconectOtherPlayer
 {
@@ -173,7 +181,6 @@ struct Packet_ClientCraftedItem
 	unsigned char to;
 	unsigned char revisionNumber;
 };
-
 
 struct Packet_ClientOverWriteItem
 {
@@ -356,13 +363,6 @@ struct Packet_AttackEntity
 	unsigned char inventorySlot = 0;
 };
 
-struct Packet_ClientUpdatedBlockData
-{
-	glm::ivec3 blockPos = {};
-	BlockType blockType = {};
-	unsigned char revisionNumber;
-};
-
 struct Packet_UpdateEffects
 {
 	std::uint64_t timer = 0; //tick timer
@@ -376,9 +376,12 @@ struct Packet_ClientDroppedChunk
 
 void *unCompressData(const char *data, size_t compressedSize, size_t &originalSize);
 
-void sendPacketAndCompress(ENetPeer *to, Packet p, const char *data, size_t size, bool reliable, int channel);
+void sendPacketAndCompress(ENetPeer *to, Packet p,
+	const char *data, size_t size, bool reliable, int channel,
+	ENetPacketFreeCallback freeCallback = nullptr, unsigned int packetId = 0);
 
-void sendPacket(ENetPeer *to, Packet p, const char *data, size_t size, bool reliable, int channel);
+void sendPacket(ENetPeer *to, Packet p, const char *data, size_t size, 
+	bool reliable, int channel, ENetPacketFreeCallback freeCallback = 0, unsigned int packetId = 0);
 
 //ton't use in client code!!
 void sendPacket(ENetPeer *to, uint32_t header, void *data, size_t size, bool reliable, int channel);
@@ -387,6 +390,9 @@ void sendPacket(ENetPeer *to, uint32_t header, std::uint64_t cid, void *data, si
 
 
 char *parsePacket(ENetEvent &event, Packet &p, size_t &dataSize);
+
+char *parsePacket(ENetPacket &packet, Packet &p, size_t &dataSize);
+
 
 float computeRestantTimer(std::uint64_t older, std::uint64_t newer);
 

@@ -1,7 +1,7 @@
 #include <metrics.h>
 #include <cmath>
 #include <math.h>
-
+#include <rendering/camera.h>
 
 int divideChunk(int x)
 {
@@ -31,6 +31,7 @@ int divideMetaChunk(int chunkPos)
 //todo move into a new header file
 glm::ivec2 determineChunkThatIsEntityIn(glm::dvec3 position)
 {
+	//glm::ivec3 positionBlock = from3DPointToBlock(position);
 	return {divideChunk(position.x), divideChunk(position.z)};
 }
 

@@ -2,6 +2,7 @@
 #include "glm/vec4.hpp"
 #include "glm/vec2.hpp"
 #include <glui/glui.h>
+#include <gameplay/effects.h>
 
 struct PlayerInventory;
 struct BlocksLoader;
@@ -11,6 +12,9 @@ struct Life;
 struct ProgramData;
 struct LocalPlayer;
 struct BaseBlock;
+struct ChunkSystem;
+struct UndoQueue;
+struct LightSystem;
 
 struct UiENgine
 {
@@ -43,6 +47,8 @@ struct UiENgine
 	glm::vec2 oneInventorySlotSize;
 	glm::vec2 playerCellSize;
 
+	gl2d::Texture effectsTexture[Effects::EffectsNames::Effects_Count] = {};
+
 
 	enum BattleTextures
 	{
@@ -74,7 +80,8 @@ struct UiENgine
 
 	bool renderBaseBlockUI(float deltaTime,
 		int w, int h, ProgramData &programData, 
-		BaseBlock &baseBlock
+		BaseBlock &baseBlock, glm::ivec3 blockPos, ChunkSystem &chunkSystem,
+		UndoQueue &undoQueue, LightSystem &lightSystem
 		);
 
 };

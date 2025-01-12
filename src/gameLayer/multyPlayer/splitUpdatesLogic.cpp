@@ -25,6 +25,13 @@ static float tickDeltaTime = 0;
 static int tickDeltaTimeMs = 0;
 static std::uint64_t currentTimer = 0;
 static WorldSaver *worldSaver = 0;
+static Profiler gameTickProfiler;
+
+Profiler getServerTickProfilerCopy()
+{
+	return gameTickProfiler;
+}
+
 
 int regionsAverageCounter[50] = {};
 int counterPosition = 0;
@@ -65,7 +72,7 @@ int getThredPoolSize()
 
 void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t currentTimer,
 	ServerChunkStorer &chunkCache, unsigned int seed, std::unordered_map<std::uint64_t, Client> &clients,
-	WorldSaver &worldSaver, std::vector<ServerTask> &waitingTasks)
+	WorldSaver &worldSaver, std::vector<ServerTask> &waitingTasks, Profiler &serverProfiler)
 {
 
 
@@ -85,13 +92,15 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 		chunkRegionsData.clear();
 		chunkRegionsData.reserve(10);
 
+		serverProfiler.startSubProfile("Bfs for split update logic");
 	#pragma region start bfs
 
 		std::unordered_map<glm::ivec2, int> visited;
 
 		for (auto i : chunkCache.savedChunks)
 		{
-			if (!i.second->otherData.shouldUnload)
+			if (!i.second->otherData.shouldUnload
+				&& i.second->otherData.withinSimulationDistance)
 			{
 
 				auto find = visited.find(i.first);
@@ -134,7 +143,8 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 							auto foundChunk = chunkCache.savedChunks.find(el);
 							if (foundChunk != chunkCache.savedChunks.end())
 							{
-								if (!foundChunk->second->otherData.shouldUnload)
+								if (!foundChunk->second->otherData.shouldUnload
+									&& foundChunk->second->otherData.withinSimulationDistance)
 								{
 									visited.insert({el, currentIndex});
 
@@ -166,7 +176,9 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 		}
 
 	#pragma endregion
+		serverProfiler.endSubProfile("Bfs for split update logic");
 
+		serverProfiler.startSubProfile("Prepare tasks");
 
 		taskTaken.resize(chunkRegionsData.size());
 		for (auto &i : taskTaken) { i = 0; }
@@ -238,6 +250,8 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 			permaAssertComment(0, "No players in split update logic.cpp");
 		}
 
+		//TODO, some older tasks might happen outside chunk regions for the players, so we should check for that, 
+		// and not allow them.
 		for (auto &t : waitingTasks)
 		{
 				
@@ -255,6 +269,8 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 	#pragma endregion
 
 
+		serverProfiler.endSubProfile("Prepare tasks");
+
 
 		//start race
 		threadPool.setThrerIsWork();
@@ -263,6 +279,7 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 		//std::cout << threadPool.currentCounter << std::fixed
 		//	<< " Duration ms: " << (rez.timeSeconds/1000.f) << '\n';
 
+		serverProfiler.startSubProfile("Multi Threaded tick update");
 		while (true)
 		{
 			int taskIndex = tryTakeTask();
@@ -270,18 +287,22 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 
 			//std::cout << "main took task " << taskIndex << '\n';
 
+			Profiler *p = 0;
+			if (taskIndex == 0) { p = &gameTickProfiler; }
+
 			//tick
 			doGameTick(tickDeltaTime, tickDeltaTimeMs, currentTimer,
 				chunkRegionsData[taskIndex].chunkCache,
 				chunkRegionsData[taskIndex].orphanEntities,
 				chunkRegionsData[taskIndex].seed,
 				chunkRegionsData[taskIndex].waitingTasks,
-				worldSaver
+				worldSaver, p
 				);
 		}
 
 
 		threadPool.waitForEveryoneToFinish();
+		serverProfiler.endSubProfile("Multi Threaded tick update");
 
 
 		chunkCache.entityChunkPositions.clear();
@@ -304,13 +325,15 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 
 				if (chunk)
 				{
+					std::cout << "Moved!\n";
 					auto member = memberSelector(chunk->entityData);
-					member->insert({e.first, e.second});
+					(*member)[e.first] = e.second;
 					chunkCache.entityChunkPositions[e.first] = pos;
 				}
 				else
 				{
 					//todo change and make in 2 steps
+					std::cout << "OUT!\n";
 					worldSaver.appendEntitiesForChunk(pos);
 					//todo save entity to disk here!.
 				}
@@ -335,7 +358,7 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 	}
 	else
 	{
-		//deprecated
+		//deprecated single threaded version
 		// 
 		//ServerChunkStorer copy;
 		//EntityData orphans;
@@ -443,6 +466,8 @@ void workerThread(int index)
 				if (taskIndex < 0) { break; }
 				
 				//std::cout << index << " took task " << taskIndex << '\n';
+				Profiler *p = 0;
+				if (taskIndex == 0) { p = &gameTickProfiler; }
 
 				//tick
 				doGameTick(tickDeltaTime, tickDeltaTimeMs, currentTimer,
@@ -450,7 +475,7 @@ void workerThread(int index)
 					chunkRegionsData[taskIndex].orphanEntities,
 					chunkRegionsData[taskIndex].seed,
 					chunkRegionsData[taskIndex].waitingTasks,
-					*worldSaver
+					*worldSaver, p
 					);
 			}
 

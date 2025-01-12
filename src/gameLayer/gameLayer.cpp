@@ -300,6 +300,7 @@ static ShadingSettings shadingSettingsCopy;
 bool initGame() //main server and title screen stuff
 {
 
+
 	srand(time(0));
 	createErrorFile();
 
@@ -526,6 +527,13 @@ bool gameLogic(float deltaTime)
 			{
 
 				auto s = getServerSettingsCopy();
+				auto p = getServerProfilerCopy();
+				auto tickProfiler = getServerTickProfilerCopy();
+				static Profiler profilerCopy;
+				static Profiler tickProfilerCopy;
+				if (!profilerCopy.pause) { profilerCopy = p; }
+				if (!tickProfilerCopy.pause) { tickProfilerCopy = tickProfiler; }
+
 
 				ImGui::PushStyleColor(ImGuiCol_WindowBg, {26 / 255.f,26 / 255.f,26 / 255.f,0.5f});
 				ImGui::Begin("Server window");
@@ -534,16 +542,20 @@ bool gameLogic(float deltaTime)
 				ImGui::Text("Server Ticke per seccond: %d", getServerTicksPerSeccond());
 				ImGui::Text("Server Worker tick threads: %d", getThredPoolSize());
 
+				ImGui::Text("Server Pending count: %d", getServerPendingReliableCount());
+				ImGui::Text("Server Pending size bytes: %d", (int)getServerTotalPendingSize());
+
+				profilerCopy.displayPlot("Server Profiler", 52);
+				ImGui::Separator();
+				tickProfilerCopy.displayPlot("Tick Profiler for region 0", 52);
+
 				for (auto &c : s.perClientSettings)
 				{
 					ImGui::PushID(c.first);
 					ImGui::Text("%d", c.first);
 					ImGui::Text("Position: %lf %lf %lf", c.second.outPlayerPos.x,
 						c.second.outPlayerPos.y, c.second.outPlayerPos.z);
-					ImGui::Checkbox("Allow validate moves", &c.second.validateStuff);
-					ImGui::Checkbox("Spawn zombie", &c.second.spawnZombie);
-					ImGui::Checkbox("Spawn pig", &c.second.spawnPig);
-					ImGui::Checkbox("Spawn goblin", &c.second.spawnGoblin);
+
 					ImGui::Checkbox("Resend inventory", &c.second.resendInventory);
 
 					if (ImGui::Button("Set Survival"))

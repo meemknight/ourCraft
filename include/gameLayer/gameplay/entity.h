@@ -1,4 +1,5 @@
 #pragma once 
+#define NO_MIN_MAX
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 #include <gameplay/physics.h>
@@ -465,6 +466,7 @@ struct ServerEntity
 	ConditionalMember<hasCanHaveEffects(), Effects> effects = {};
 
 	bool hasUpdatedThisTick = 0;
+	glm::ivec2 lastChunkPositionWhenAnUpdateWasSent = {};
 };
 
 template <class T, class BASE_CLIENT>
@@ -473,6 +475,8 @@ struct ClientEntity
 
 	T entity = {};
 	RubberBand rubberBand = {};
+	glm::dvec3 oldPositionForRubberBand = {};
+
 	float restantTime = 0;
 
 	RubberBandOrientation<T> rubberBandOrientation = {};
@@ -545,16 +549,49 @@ struct ClientEntity
 
 	void clientEntityUpdate(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2))
 	{
-		float timer = deltaTime + restantTime;
+		BASE_CLIENT *baseClient = (BASE_CLIENT *)this;
+		//baseClient->rubberBand = {};
 
-		BASE_CLIENT *baseClient = (BASE_CLIENT*)this;
-
-		if (timer > 0)
+		if (restantTime < 0)
 		{
-			baseClient->update(timer, chunkGetter);
+			float timer = deltaTime + restantTime;
+			if (timer > 0)
+			{
+				auto oldPosition = baseClient->oldPositionForRubberBand;
+				//baseClient->rubberBand.addToRubberBand(oldPosition - baseClient->getPosition());
+				
+				//auto oldPosition = baseClient->getPosition();
+				baseClient->update(timer, chunkGetter);
+				//auto newPosition = baseClient->getPosition();
+
+			}
+		}
+		else
+		{
+			if (restantTime > 0)
+			{
+				//baseClient->update(restantTime, chunkGetter);
+				//auto oldPosition = baseClient->oldPositionForRubberBand;
+				//
+				////baseClient->rubberBand.addToRubberBand(oldPosition - baseClient->getPosition());
+				//
+				//baseClient->update(deltaTime, chunkGetter);
+
+				baseClient->update(deltaTime + restantTime, chunkGetter);
+
+			}
+			else
+			{
+				baseClient->update(deltaTime, chunkGetter);
+			}
+
+
 		}
 
-		rubberBand.computeRubberBand(deltaTime);
+		if (rubberBand.initialSize)
+		{
+			rubberBand.computeRubberBand(deltaTime * 1);
+		}
 
 		if constexpr (hasBodyOrientation<T>)
 		{

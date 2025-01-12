@@ -90,6 +90,7 @@ int PlayerClient::getTextureIndex()
 
 void PlayerServer::kill()
 {
+	killed = true;
 	effects = {};
 	newLife.life = 0;
 	lifeLastFrame.life = 0;
@@ -97,4 +98,15 @@ void PlayerServer::kill()
 	interactingWithBlock = 0;
 	revisionNumberInteraction = 0;
 	
+	effectsTimers = {};
+}
+
+float PlayerServer::calculateHealingDelayTime()
+{
+	return BASE_HEALTH_DELAY_TIME;
+}
+
+float PlayerServer::calculateHealingRegenTime()
+{
+    return BASE_HEALTH_REGEN_TIME;
 }

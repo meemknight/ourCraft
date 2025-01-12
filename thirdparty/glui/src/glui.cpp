@@ -679,7 +679,6 @@ namespace glui
 			if (*value != (T)mouseVal)
 			{
 				returnVal = true;
-				std::cout << "Yes ";
 			}
 			*value = (T)mouseVal;
 		}
@@ -939,7 +938,8 @@ namespace glui
 
 			if (internal.alignSettings.widgetSize.y != 0)
 			{
-				sizeWithPaddY = internal.alignSettings.widgetSize.y;
+				sizeWithPaddY = std::min(internal.alignSettings.widgetSize.y,
+					((float)renderer.windowH / elementsHeight));
 			}
 			else
 			{

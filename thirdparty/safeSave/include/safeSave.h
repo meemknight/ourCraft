@@ -39,6 +39,9 @@ namespace sfs
 	//can return error: couldNotOpenFinle
 	Errors readEntireFile(std::vector<char>& data, const char* name);
 	
+	//can return error: couldNotOpenFinle
+	Errors readEntireFile(std::vector<unsigned char> &data, const char *name);
+
 	//reades the content of a file (size bytes), if shouldMatchSize is false will read the entire fill untill size bytes are read or the entire file was read
 	//can return error: couldNotOpenFinle, fileSizeDitNotMatch
 	Errors readEntireFile(void* data, size_t size, const char* name, bool shouldMatchSize, int *bytesRead = nullptr);

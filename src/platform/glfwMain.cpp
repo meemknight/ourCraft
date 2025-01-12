@@ -87,7 +87,7 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
 			platform::internal::setButtonState(platform::Button::Space, state);
 		}
 		else
-		if (key == GLFW_KEY_ENTER)
+		if (key == GLFW_KEY_ENTER || key == GLFW_KEY_KP_ENTER)
 		{
 			platform::internal::setButtonState(platform::Button::Enter, state);
 		}
@@ -130,7 +130,13 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
 		if (key == GLFW_KEY_LEFT_SHIFT)
 		{
 			platform::internal::setButtonState(platform::Button::LeftShift, state);
-		}if (key >= GLFW_KEY_F1 && key <= GLFW_KEY_F12)
+
+		}else 
+		if (key == GLFW_KEY_SLASH)
+		{
+			platform::internal::setButtonState(platform::Button::SlashQuestionMark, state);
+		}else
+		if (key >= GLFW_KEY_F1 && key <= GLFW_KEY_F12)
 		{
 			int index = key - GLFW_KEY_F1;
 			platform::internal::setButtonState(platform::Button::F1 + index, state);

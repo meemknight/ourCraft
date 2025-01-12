@@ -20,6 +20,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <lightSystem.h>
 #include <rendering/renderSettings.h>
+#include <vector>
 
 #include <imgui-docking/imgui/imgui.h>
 
@@ -2146,8 +2147,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	{
 
 		glm::vec3 daySkyLight(1.5f);
-		glm::vec3 nightSkyLight = (glm::vec3(47, 135, 244) / 255.f) * 0.50f;
-		glm::vec3 twilightLight = (glm::vec3(255, 159, 107) / 255.f) * 0.2f;
+		glm::vec3 nightSkyLight = (glm::vec3(47, 135, 244) / 255.f) * 0.2f;
+		glm::vec3 twilightLight = (glm::vec3(255, 159, 107) / 255.f) * 0.3f;
 		
 		sunLightColor = doDayLightCalculations(daySkyLight, nightSkyLight, twilightLight);
 	}
@@ -2155,8 +2156,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	glm::vec3 ambientColor = {1,1,1};
 	{
 		glm::vec3 daySkyLight(1.0f);
-		glm::vec3 nightSkyLight = (glm::vec3(47, 135, 244) / 255.f) * 0.9f;
-		glm::vec3 twilightLight = (glm::vec3(255, 159, 107) / 255.f) * 0.6f;
+		glm::vec3 nightSkyLight = (glm::vec3(47, 135, 244) / 255.f) * 0.6f;
+		glm::vec3 twilightLight = (glm::vec3(255, 159, 107) / 255.f) * 0.7f;
 
 		ambientColor = doDayLightCalculations(daySkyLight, nightSkyLight, twilightLight);
 	}
@@ -2513,6 +2514,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	auto renderStaticGeometry = [&]()
 	{
 
+
 		if (unifiedGeometry)
 		{
 			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCommandsOpaqueBuffer);
@@ -2556,10 +2558,12 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		}
 
+
 	};
 
 	auto renderTransparentGeometry = [&]()
 	{
+
 		if (!renderTransparent) { return; }
 
 		for (auto &chunk : chunkVectorCopy)
@@ -2571,6 +2575,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 				glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
 			}
 		}
+
+
 	};
 
 	auto depthPrePass = [&]()
@@ -2684,6 +2690,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	//copy depth 3
 		fboCoppy.copyDepthFromOtherFBO(fboMain.fbo, screenX, screenY);
 	
+		constexpr static float sunScale = 0.9;
+		constexpr static float moonScale = 0.6;
 
 
 		//render sun moon
@@ -2696,31 +2704,82 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		queryDataForSunFlare = sunFlareQueries[sunFlareQueryPos].getQueryResult();
 
 		sunFlareQueries[sunFlareQueryPos].begin();
-		programData.sunRenderer.render(c, sunPos, programData.skyBoxLoaderAndDrawer.sunTexture, sunTwilight);
+		programData.sunRenderer.render(c, sunPos, programData.skyBoxLoaderAndDrawer.sunTexture, sunTwilight, 1, sunScale);
 		sunFlareQueries[sunFlareQueryPos].end();
 		sunFlareQueryPos++;
 		sunFlareQueryPos %= (sizeof(sunFlareQueries) / sizeof(sunFlareQueries[0]));
 
 
-		programData.sunRenderer.render(c, -sunPos, programData.skyBoxLoaderAndDrawer.moonTexture, 0);
+		programData.sunRenderer.render(c, -sunPos, programData.skyBoxLoaderAndDrawer.moonTexture, 0, 1, moonScale);
 		glDisable(GL_BLEND);
 		glDepthFunc(GL_LESS);
 
-
-		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SSGR");
+	#pragma region render sun for SSGR
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "render sun for SSGR");
 		//SS God rays
 		fboSunForGodRaysSecond.clearFBO();
 		fboSunForGodRays.clearFBO();
 		glBindFramebuffer(GL_FRAMEBUFFER, fboSunForGodRays.fbo);
 		glDisable(GL_DEPTH_TEST);
 		glViewport(0, 0, screenX/2, screenY/2);
-		programData.sunRenderer.render(c, sunPos, programData.skyBoxLoaderAndDrawer.sunTexture, std::max(sunTwilight, 0.5f));
-		
+		programData.sunRenderer.render(c, sunPos, programData.skyBoxLoaderAndDrawer.sunTexture, std::max(sunTwilight, 0.5f), 1, sunScale);
+		programData.sunRenderer.render(c, -sunPos, programData.skyBoxLoaderAndDrawer.moonTexture, 0, 0.35, moonScale);
+
 		//todo multiplier to drastically reduce the strength
 		//programData.sunRenderer.render(c, -sunPos, programData.skyBoxLoaderAndDrawer.moonTexture, 0);
 		glViewport(0, 0, screenX, screenY);
 		glEnable(GL_DEPTH_TEST);
 		glPopDebugGroup();
+	#pragma endregion
+
+
+	#pragma region SSGR
+		{
+			glBindVertexArray(vaoQuad);
+
+			glm::vec4 sunPositionCameraSpace = viewMatrix * glm::vec4(sunPos, 1.0f);
+			glm::vec4 sunPositionClipSpace = projectionMatrix * sunPositionCameraSpace;
+			glm::vec3 sunPositionNDC = glm::vec3(sunPositionClipSpace) / sunPositionClipSpace.w;
+			glm::vec2 sunPositionScreenSpaceUV = glm::vec2(
+				(sunPositionNDC.x + 1.0f) * 0.5f,
+				(sunPositionNDC.y + 1.0f) * 0.5f
+			);
+
+			//std::cout << sunPositionScreenSpaceUV.x << " " << sunPositionScreenSpaceUV.y << "\n";
+
+			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SSGR last step");
+			//SS God rays
+
+			//isolate the parts ocluded by geometry
+			glBindFramebuffer(GL_FRAMEBUFFER, fboSunForGodRays.fbo);
+			glDisable(GL_DEPTH_TEST);
+			glDisable(GL_BLEND);
+			glViewport(0, 0, screenX / 2, screenY / 2);
+
+			maskDepthShader.shader.bind();
+			glUniform1i(maskDepthShader.u_depthTexture, 0);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, fboMain.depth);
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+			//radial blur
+			glBindFramebuffer(GL_FRAMEBUFFER, fboSunForGodRaysSecond.fbo);
+			radialBlurShader.shader.bind();
+			glUniform2f(radialBlurShader.u_center, sunPositionScreenSpaceUV.x, sunPositionScreenSpaceUV.y);
+			glUniform1i(radialBlurShader.u_texture, 0);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, fboSunForGodRays.color);
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+
+			glViewport(0, 0, screenX, screenY);
+			glEnable(GL_DEPTH_TEST);
+			glPopDebugGroup();
+
+		}
+	#pragma endregion
+
+
 
 
 		//disable bloom for transparent geometry
@@ -3220,51 +3279,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	GLuint currentTexture = 0;
 
 
-#pragma region SSGR
-	{
-		glm::vec4 sunPositionCameraSpace = viewMatrix * glm::vec4(sunPos, 1.0f);
-		glm::vec4 sunPositionClipSpace = projectionMatrix * sunPositionCameraSpace;
-		glm::vec3 sunPositionNDC = glm::vec3(sunPositionClipSpace) / sunPositionClipSpace.w;
-		glm::vec2 sunPositionScreenSpaceUV = glm::vec2(
-			(sunPositionNDC.x + 1.0f) * 0.5f,
-			(sunPositionNDC.y + 1.0f) * 0.5f
-		);
-
-		//std::cout << sunPositionScreenSpaceUV.x << " " << sunPositionScreenSpaceUV.y << "\n";
-
-		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SSGR last step");
-		//SS God rays
-
-		//isolate the parts ocluded by geometry
-		glBindFramebuffer(GL_FRAMEBUFFER, fboSunForGodRays.fbo);
-		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_BLEND);
-		glViewport(0, 0, screenX / 2, screenY / 2);
-
-		maskDepthShader.shader.bind();
-		glUniform1i(maskDepthShader.u_depthTexture, 0);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, fboMain.depth);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-		//radial blur
-		glBindFramebuffer(GL_FRAMEBUFFER, fboSunForGodRaysSecond.fbo);
-		radialBlurShader.shader.bind();
-		glUniform2f(radialBlurShader.u_center, sunPositionScreenSpaceUV.x, sunPositionScreenSpaceUV.y);
-		glUniform1i(radialBlurShader.u_texture, 0);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, fboSunForGodRays.color);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-
-		glViewport(0, 0, screenX, screenY);
-		glEnable(GL_DEPTH_TEST);
-		glPopDebugGroup();
-
-	}
-#pragma endregion
-
-	
 	//bloom
 	if(bloom)
 	{

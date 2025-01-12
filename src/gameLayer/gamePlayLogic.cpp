@@ -51,7 +51,12 @@ struct GameData
 	Profiler gameplayFrameProfiler;
 
 	MapEngine mapEngine;
-	bool isInsideMapView;
+	bool isInsideMapView = 0;
+	bool isInsideChat = 0;
+	char chatBuffer[250] = {};
+	int chatBufferPosition = 0;
+	std::deque<std::string> chat;
+	float chatStayOnTimer = 0;
 
 	//debug stuff
 	glm::ivec3 point = {};
@@ -305,7 +310,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			auto time = gameData.undoQueue.events[0].createTime;
 
 			//todo Request the server for a hard reset rather than a timeout?
-			if ((getTimer() - time) > 10'000)
+			//todo set networking problem effect when this happens
+			if ((getTimer() - time) > 20'000)
 			{
 				std::cout << "Client timeouted because of validate events!\n";
 				return 0;
@@ -321,7 +327,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.chunkSystem, gameData.lightSystem,
 			gameData.serverTimer, disconnect, 
 			gameData.currentBlockInteractionRevisionNumber, shouldExitBlockInteraction,
-			gameData.killed, respawned);
+			gameData.killed, respawned, gameData.chat, gameData.chatStayOnTimer);
 
 		if (disconnect) { return 0; }
 
@@ -505,7 +511,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma region input
 
 	bool stopMainInput = gameData.escapePressed || gameData.killed || gameData.insideInventoryMenu ||
-		gameData.isInsideMapView;
+		gameData.isInsideMapView || gameData.isInsideChat || gameData.interaction.blockInteractionType != 0;
 
 	static float moveSpeed = 7.f;
 	float isPlayerMovingSpeed = 0;
@@ -549,6 +555,16 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	//inventory and menu stuff
 	if (!stopMainInput)
 	{
+
+		if (platform::isKeyHeld(platform::Button::C))
+		{
+			gameData.c.fovRadians = glm::radians(30.f);
+		}
+		else
+		{
+			gameData.c.fovRadians = glm::radians(70.f);
+		}
+
 
 		if (platform::isKeyPressedOn(platform::Button::R))
 		{
@@ -981,7 +997,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 
 		//place blocks
-		if (!gameData.escapePressed)
+		//if (!gameData.escapePressed)
 		{
 
 
@@ -1078,7 +1094,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 								sendBlockInteractionMessage(player.entityId, rayCastPos,
 									b->getType(), gameData.currentBlockInteractionRevisionNumber);
 								
-								gameData.insideInventoryMenu = true;
+								gameData.insideInventoryMenu = false;
 								gameData.currentInventoryTab = 0;
 
 								//reset crafting table
@@ -1102,8 +1118,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 									int healing = getItemHealing(item);
 
 									//can't eat if satiety doesn't allow it
-									if (effects.allEffects[Effects::Satiety].timerMs > 0 &&
-										player.effects.allEffects[Effects::Satiety].timerMs > 0
+									if (effects.allEffects[Effects::Saturated].timerMs > 0 &&
+										player.effects.allEffects[Effects::Saturated].timerMs > 0
 										)
 									{
 										allowed = 0;
@@ -1327,6 +1343,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			}
 		}
 	}
+
 
 
 #pragma region update lights
@@ -1670,7 +1687,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			player.life.life = l;
 
 
-			int timerMsSatiety = player.effects.allEffects[Effects::Satiety].timerMs;
+			int timerMsSatiety = player.effects.allEffects[Effects::Saturated].timerMs;
 
 			ImGui::Text("Satiety Ms: %d", timerMsSatiety);
 			ImGui::Text("Satiety s : %d", timerMsSatiety/1000);
@@ -1947,16 +1964,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 				if (ImGui::Button("Drop all chunks"))
 				{
-					gameData.chunkSystem.dropAllChunks(&gameData.chunkSystem.gpuBuffer);
+					gameData.chunkSystem.dropAllChunks(&gameData.chunkSystem.gpuBuffer, true);
 				}
 				
 				ImGui::ColorButton("##1", colNotLoaded, ImGuiColorEditFlags_NoInputs, ImVec2(25, 25));
 				ImGui::SameLine();
 				ImGui::Text("Not loaded."); 
-
-				ImGui::ColorButton("##2", colrequested, ImGuiColorEditFlags_NoInputs, ImVec2(25, 25));
-				ImGui::SameLine();
-				ImGui::Text("Requested.");
 
 				ImGui::ColorButton("##3", colLoadedButNotBaked, ImGuiColorEditFlags_NoInputs, ImVec2(25, 25));
 				ImGui::SameLine();
@@ -2003,18 +2016,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 								currentColor = colLoaded;
 							}
 
-						}
-						else
-						{
-							auto pos = gameData.chunkSystem.
-								fromMatrixSpaceToChunkSpace(x, z);
-
-							if (gameData.chunkSystem.recentlyRequestedChunks.find(pos)
-								!= gameData.chunkSystem.recentlyRequestedChunks.end()
-								)
-							{
-								currentColor = colrequested;
-							}
 						}
 
 						if (x > 0)
@@ -2164,7 +2165,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		if (gameData.interaction.blockInteractionType == InteractionTypes::structureBaseBlock)
 		{
 			if (programData.ui.renderBaseBlockUI(deltaTime, w, h, programData,
-				gameData.interaction.baseBlockHolder))
+				gameData.interaction.baseBlockHolder, gameData.interaction.blockInteractionPosition,
+				gameData.chunkSystem, gameData.undoQueue, gameData.lightSystem))
 			{
 
 				auto block = gameData.chunkSystem.getBlockSafe(gameData.interaction.blockInteractionPosition.x, gameData.interaction.blockInteractionPosition.y,
@@ -2181,15 +2183,34 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 						gameData.interaction.blockInteractionPosition.y,
 						modBlockToChunk(gameData.interaction.blockInteractionPosition.z));
 
-					*blockData = gameData.interaction.baseBlockHolder;
 
+					std::vector<unsigned char> vectorDataOriginal;
+					blockData->formatIntoData(vectorDataOriginal);
+
+					gameData.undoQueue.changedBlockDataEvent(gameData.interaction.blockInteractionPosition,
+						*block, vectorDataOriginal);
+
+					*blockData = gameData.interaction.baseBlockHolder;
 					std::vector<unsigned char> vectorData;
 					blockData->formatIntoData(vectorData);
 
-					gameData.undoQueue.changedBlockDataEvent(gameData.interaction.blockInteractionPosition,
-						*block, vectorData);
+					Packet_ClientChangeBlockData changeBlockData;
+					changeBlockData.eventId = gameData.undoQueue.currentEventId;
+					changeBlockData.blockDataHeader.blockType = BlockTypes::structureBase;
+					changeBlockData.blockDataHeader.pos = gameData.interaction.blockInteractionPosition;
+					changeBlockData.blockDataHeader.dataSize = vectorData.size();
 
-					//todo send packet
+
+					std::vector<unsigned char> finalPacet;
+					finalPacet.resize(vectorData.size() + sizeof(changeBlockData));
+
+					memcpy(finalPacet.data(), &changeBlockData, sizeof(changeBlockData));
+					memcpy(finalPacet.data() + sizeof(changeBlockData),
+						vectorData.data(), vectorData.size());
+
+					sendPacket(getServer(), headerClientChangeBlockData, player.entityId,
+						finalPacet.data(), finalPacet.size(), true, channelChunksAndBlocks);
+
 				}
 
 			}
@@ -2217,6 +2238,183 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	}
 
 #pragma endregion
+
+#pragma region chat
+
+	if (!stopMainInput || gameData.isInsideChat)
+	{
+		if (platform::isKeyReleased(platform::Button::Enter) && !gameData.isInsideChat)
+		{
+			gameData.isInsideChat = true;
+			gameData.chatBufferPosition = 0;
+			memset(gameData.chatBuffer, 0, sizeof(gameData.chatBuffer));
+		}
+
+		if (platform::isKeyReleased(platform::Button::SlashQuestionMark) && !gameData.isInsideChat)
+		{
+			gameData.isInsideChat = true;
+			gameData.chatBufferPosition = 1;
+			memset(gameData.chatBuffer, 0, sizeof(gameData.chatBuffer));
+			gameData.chatBuffer[0] = '/';
+		}
+
+		if (gameData.isInsideChat)
+		{
+
+			auto typedInput = platform::getTypedInput();
+			for (auto c : typedInput)
+			{
+
+				if (c == '\b')
+				{
+					if (gameData.chatBufferPosition > 0)
+					{
+						gameData.chatBufferPosition--;
+						gameData.chatBuffer[gameData.chatBufferPosition] = 0;
+					}
+
+				}
+				else
+				if (gameData.chatBufferPosition < sizeof(gameData.chatBuffer) - 1)
+				{
+					if (c != '\n')
+					{
+						gameData.chatBuffer[gameData.chatBufferPosition] = c;
+						gameData.chatBufferPosition++;
+					}
+				}
+				else
+				{
+					
+				}
+			}
+			gameData.chatBuffer[gameData.chatBufferPosition] = 0;
+
+
+			auto &renderer = programData.ui.renderer2d;
+			glui::Frame f({0, 0, renderer.windowW, renderer.windowH});
+			
+			auto box = glui::Box().xLeft().yBottom(-20).xDimensionPercentage(1.f).yDimensionPixels(65)();
+
+			int startPos = gameData.chatBufferPosition;
+			{
+				float advance = 10; //adding the padding
+				for (int i = gameData.chatBufferPosition - 1; i >= 0; i--)
+				{
+					advance = renderer.getTextSize(gameData.chatBuffer + i, 
+						programData.ui.font, 1).x + 10;
+
+					if (advance <= box.z)
+					{
+						startPos = i;
+					}
+					else
+					{
+						break;
+					}
+				}
+			}
+
+			{
+
+				renderer.renderRectangle(box, {0.1,0.1,0.1,0.6});
+
+				if (startPos < gameData.chatBufferPosition)
+				{
+					renderer.renderText({10, box.y + box.w - 10}, gameData.chatBuffer + startPos,
+						programData.ui.font, Colors_White, 1.0, 4, 3, false);
+				}
+
+			}
+
+			if (platform::isKeyReleased(platform::Button::Enter) && 
+				gameData.chatBufferPosition)
+			{
+
+				sendPacket(getServer(), headerSendChat, player.entityId,
+					gameData.chatBuffer, gameData.chatBufferPosition+1, true, channelHandleConnections);
+				gameData.chatBufferPosition = 0;
+				memset(gameData.chatBuffer, 0, sizeof(gameData.chatBuffer));
+
+				gameData.isInsideChat = false;
+			}
+
+
+		}
+
+
+		//other chat messages
+		if(gameData.chatStayOnTimer || gameData.isInsideChat)
+		{
+
+			while (gameData.chat.size() > 10)
+			{
+				gameData.chat.pop_back();
+			}
+
+			auto &renderer = programData.ui.renderer2d;
+			glui::Frame f({0, 0, renderer.windowW, renderer.windowH});
+
+			auto box = glui::Box().xLeft().yTop().xDimensionPercentage(0.75f).yDimensionPixels(renderer.windowH - 100)();
+			
+
+			//determine how many lines we can fit
+			float textSize = 65;
+			float textPos = box.y + box.w;
+			float textPosCopy = textPos;
+			float boxDimension = 0;
+			for (auto &c : gameData.chat)
+			{
+				if (textPos < 0)
+				{
+					break;
+				}
+				
+				//renderer.renderText({0, textPos}, c.c_str(), programData.ui.font,
+				//	Colors_White, 1, 4, 3, false);
+
+				textPos -= textSize;
+				boxDimension += textSize;
+			}
+
+			if (boxDimension)
+			{
+				box.y = std::max(textPos, 0.f);
+				box.w = std::min((float)box.y, boxDimension) + 10; //we add just a little padding
+				renderer.renderRectangle(box, {0.1,0.1,0.1,0.6});
+
+				for (auto &c : gameData.chat)
+				{
+					if (textPosCopy < 0)
+					{
+						break;
+					}
+
+					renderer.renderText({0, textPosCopy}, c.c_str(), programData.ui.font,
+						Colors_White, 1, 4, 3, false);
+
+					textPosCopy -= textSize;
+				}
+
+			};
+
+
+			if (gameData.isInsideChat)
+			{
+				gameData.chatStayOnTimer = 0;
+			}
+			else
+			{
+				gameData.chatStayOnTimer -= deltaTime;
+				if (gameData.chatStayOnTimer < 0) { gameData.chatStayOnTimer = 0; }
+			}
+		}
+
+	}
+
+
+#pragma endregion
+
 
 #pragma region crafting
 
@@ -2446,6 +2644,22 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.mapEngine.close();
 		}
 	}
+	else if (gameData.isInsideChat)
+	{
+		if (platform::isKeyReleased(platform::Button::Escape))
+		{
+			gameData.isInsideChat = false;
+			gameData.chatBufferPosition = 0;
+			memset(gameData.chatBuffer, 0, sizeof(gameData.chatBuffer));
+		}
+	}
+	else if (gameData.interaction.blockInteractionType)
+	{
+		if (platform::isKeyReleased(platform::Button::Escape))
+		{
+			exitInventoryMenu();
+		}
+	}
 	else
 	{
 		if (platform::isKeyReleased(platform::Button::Escape) && !gameData.escapePressed)
@@ -2516,12 +2730,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	}
 
 	platform::showMouse(gameData.escapePressed || gameData.insideInventoryMenu ||
-		gameData.killed || gameData.isInsideMapView);
+		gameData.killed || gameData.isInsideMapView || gameData.interaction.blockInteractionType);
 
 
 #pragma endregion
 
-	gameData.chunkSystem.changeRenderDistance(getShadingSettings().viewDistance * 2);
+	gameData.chunkSystem.changeRenderDistance(getShadingSettings().viewDistance * 2, true);
 
 
 	gameData.gameplayFrameProfiler.endFrame();
@@ -2542,7 +2756,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 void closeGameLogic()
 {
-	gameData.chunkSystem.cleanup();
+	gameData.chunkSystem.cleanup(false);
 	gameData.currentSkinTexture.cleanup();
 	gameData.entityManager.cleanup();
 	

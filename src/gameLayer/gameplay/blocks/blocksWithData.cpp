@@ -1,5 +1,6 @@
 #include <gameplay/blocks/blocksWithData.h>
 #include <chunk.h>
+#include <iostream>
 
 BaseBlock *BlocksWithDataHolder::getBaseBlock
 (unsigned char x, unsigned char y, unsigned char z)
@@ -36,10 +37,33 @@ BaseBlock *BlocksWithDataHolder::getOrCreateBaseBlock(unsigned char x, unsigned 
 	}
 }
 
+
+void appendBaseBlock(std::vector<unsigned char> &dataToAppend, 
+	glm::ivec3 position, BaseBlock &baseBlock)
+{
+
+	size_t headerStart = dataToAppend.size();
+	dataToAppend.resize(dataToAppend.size() + sizeof(BlockDataHeader));
+
+	//write the data
+	size_t wroteData = baseBlock.formatIntoData(dataToAppend);
+
+	BlockDataHeader header = {};
+
+	header.pos = position;
+	header.blockType = BlockTypes::structureBase;
+	header.dataSize = wroteData;
+
+	std::memcpy(dataToAppend.data() + headerStart, &header, sizeof(header));
+
+}
+
+
 void BlocksWithDataHolder::formatBlockData
 	(std::vector<unsigned char> &dataToAppend, int chunkXChunkSpace, int chunkZChunkSpace)
 {
 
+	
 	size_t extraSize = baseBlocks.size() * (sizeof(BaseBlock) + sizeof(BlockDataHeader));
 	glm::ivec3 chunkBlockPos = glm::ivec3(chunkXChunkSpace * CHUNK_SIZE, 0, chunkZChunkSpace * CHUNK_SIZE);
 
@@ -49,23 +73,90 @@ void BlocksWithDataHolder::formatBlockData
 
 		for (auto &b : baseBlocks)
 		{
-
-			size_t headerStart = dataToAppend.size();
-			dataToAppend.resize(dataToAppend.size() + sizeof(BlockDataHeader));
-
-			//write the data
-			size_t wroteData = b.second.formatIntoData(dataToAppend);
-
-			BlockDataHeader header = {};
-
-			header.pos = chunkBlockPos + fromHashValueToBlockPosinChunk(b.first);
-			header.blockType = BlockTypes::structureBase;
-			header.dataSize = wroteData;
-
-			std::memcpy(dataToAppend.data() + headerStart, &header, sizeof(header));
+			glm::ivec3 pos = chunkBlockPos + fromHashValueToBlockPosinChunk(b.first);
+			appendBaseBlock(dataToAppend, pos, b.second);
 		}
 
 	}
+
+}
+
+void BlocksWithDataHolder::loadBlockData(std::vector<unsigned char> &data,
+	int chunkXChunkSpace, int chunkZChunkSpace)
+{
+	baseBlocks = {};
+
+	int pointer = 0;
+
+	while (data.size() - pointer >= sizeof(BlockDataHeader))
+	{
+
+		BlockDataHeader header;
+		memcpy(&header, data.data() + pointer, sizeof(BlockDataHeader));
+		pointer += sizeof(BlockDataHeader);
+		
+
+		if (header.blockType == BlockTypes::structureBase)
+		{
+
+			auto pos = header.pos;
+			auto size = header.dataSize;
+
+			glm::ivec3 posInChunk = pos;
+			posInChunk.x = modBlockToChunk(posInChunk.x);
+			posInChunk.z = modBlockToChunk(posInChunk.z);
+
+			auto chunkPosX = divideChunk(pos.x);
+			auto chunkPosZ = divideChunk(pos.z);
+
+			if (chunkXChunkSpace != chunkPosX && chunkZChunkSpace != chunkPosZ)
+			{
+				std::cout << "Error chunk index size in loadBlockData!\n";
+				break;
+			}
+
+			if (size < data.size() - pointer)
+			{
+				std::cout << "Error size in loadBlockData!\n";
+				break;
+			}
+			else
+			{
+				BaseBlock b;
+				size_t _ = 0;
+
+				if (!b.readFromBuffer(data.data() + pointer, size, _))
+				{
+					std::cout << "Error read from buffer in loadBlockData!\n";
+					break;
+				}
+				
+				pointer += size;
+
+				if (!b.isDataValid())
+				{
+					std::cout << "Error is data valid in loadBlockData!\n";
+					break;
+				}
+
+				baseBlocks[fromBlockPosInChunkToHashValue(posInChunk.x, posInChunk.y, posInChunk.z)] =
+					b;
+
+			}
+
+
+		}
+		else
+		{
+			std::cout << "Error in loadBlockData!\n";
+			break;
+		}
+
+
+
+	}
+
+
 
 }
 

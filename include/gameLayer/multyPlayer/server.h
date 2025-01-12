@@ -29,10 +29,7 @@ bool computeRevisionStuff(Client &client, bool allowed,
 struct PerClientServerSettings
 {
 
-	bool validateStuff = true;
-	bool spawnZombie = false;
-	bool spawnPig = false;
-	bool spawnGoblin = false;
+	bool validateStuff = 1;
 	bool resendInventory = false;
 	bool damage = false;
 	bool heal = false;
@@ -50,16 +47,18 @@ struct ServerSettings
 
 	bool busyWait = 1;
 	unsigned int randomTickSpeed = 3;
+	int simulationDistanceRadius = 8;
 
 
 };
 
 struct ServerTask;
+struct Profiler;
 
 void serverWorkerUpdate(WorldGenerator &wg, StructuresManager &structuresManager, 
 	BiomesManager &biomesManager, WorldSaver &worldSaver, 
 	std::vector<ServerTask> &serverTask,
-	float deltaTime);
+	float deltaTime, Profiler &profiler);
 
 
 //returns the timer since the start of the program
@@ -75,12 +74,20 @@ void changePlayerGameMode(std::uint64_t cid, unsigned char gameMode);
 
 ServerSettings getServerSettingsCopy();
 ServerSettings &getServerSettingsReff();
+Profiler getServerProfilerCopy();
+Profiler getServerTickProfilerCopy();
+int getServerPendingReliableCount();
+size_t getServerTotalPendingSize();
+std::string executeServerCommand(std::uint64_t cid, const char *command);
 
 
 unsigned int getRandomTickSpeed();
 
 void setServerSettings(ServerSettings settings);
 
-void genericBroadcastEntityDeleteFromServerToPlayer(std::uint64_t eid, bool reliable);
+void genericBroadcastEntityDeleteFromServerToPlayer(std::uint64_t eid, bool reliable,
+	std::unordered_map < std::uint64_t, Client *> &allClients,
+	glm::ivec2 lastChunkClientsGotUpdates);
+
 
 void genericBroadcastEntityKillFromServerToPlayer(std::uint64_t eid, bool reliable, ENetPeer* peerToIgnore = 0);

@@ -19,7 +19,8 @@ void doGameTick(float deltaTime,
 	ServerChunkStorer &chunkCache,
 	EntityData &orphanEntities,
 	unsigned int seed,
-	std::vector<ServerTask> waitingTasks, WorldSaver &worldSaver
+	std::vector<ServerTask> waitingTasks, WorldSaver &worldSaver,
+	Profiler *profiler
 );
 
 

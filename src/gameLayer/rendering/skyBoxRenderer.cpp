@@ -838,6 +838,7 @@ void SunRenderer::create()
 	
 	u_modelViewProjectionMatrix = getUniform(shader.id, "u_modelViewProjectionMatrix");
 	u_sunset = getUniform(shader.id, "u_sunset");
+	u_colorMultiplier = getUniform(shader.id, "u_colorMultiplier");
 
 	glBindVertexArray(0);
 }
@@ -863,16 +864,24 @@ glm::mat4 createTBNMatrix(const glm::vec3 &direction, const glm::vec3 &up = glm:
 }
 
 void SunRenderer::render(Camera camera, 
-	glm::vec3 sunPos, gl2d::Texture sunTexture, float twilight)
+	glm::vec3 sunPos, gl2d::Texture sunTexture, float twilight, float colorMultiplier, float scale)
 {
 	glBindVertexArray(vao);
 	shader.bind();
 
 	sunTexture.bind(0);
 
-	auto finalMatrix = camera.getProjectionMatrix() * camera.getViewMatrix() * createTBNMatrix(sunPos);
+	auto tbnMatrix = createTBNMatrix(sunPos);
+	//auto scaledMatrix = glm::scale(tbnMatrix, glm::vec3(scale, scale, scale));
+
+	// Final matrix with scaling applied
+	auto finalMatrix = camera.getProjectionMatrix() * camera.getViewMatrix() * tbnMatrix;
+	finalMatrix[0][0] *= scale;
+	finalMatrix[1][1] *= scale;
+
 	glUniformMatrix4fv(u_modelViewProjectionMatrix, 1, GL_FALSE, &finalMatrix[0][0]);
 	glUniform1f(u_sunset, twilight);
+	glUniform1f(u_colorMultiplier, colorMultiplier);
 
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }

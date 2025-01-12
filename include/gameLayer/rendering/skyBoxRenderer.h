@@ -138,9 +138,10 @@ struct SunRenderer
 	Shader shader = {};
 	GLuint u_modelViewProjectionMatrix = 0;
 	GLuint u_sunset = 0;
+	GLuint u_colorMultiplier = 0;
 
 	void render(Camera camera, glm::vec3 sunPos,
-		gl2d::Texture sunTexture, float twilight);
+		gl2d::Texture sunTexture, float twilight, float colorMultiplier, float scale);
 
 	void clear();
 

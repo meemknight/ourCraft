@@ -22,6 +22,7 @@
 #include <multyPlayer/splitUpdatesLogic.h>
 #include <filesystem>
 #include <platformTools.h>
+#include <profiler.h>
 
 //todo add to a struct
 ENetHost *server = 0;
@@ -208,8 +209,17 @@ void updatePlayerEffects(Client &client)
 }
 
 //create connection
+//todo anounce it to all players, both as a connection and as an entity
 void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 {
+
+	//std::cout << "min" << event.peer->timeoutMinimum << "\n";
+	//std::cout << "max" << event.peer->timeoutMaximum << "\n";
+	//std::cout << "limit" << event.peer->timeoutLimit << "\n";
+
+	event.peer->timeoutMinimum = 10'000;
+	event.peer->timeoutMaximum = 30'000;
+	event.peer->timeoutLimit = 64;
 
 	std::uint64_t id = getEntityIdAndIncrement(worldSaver, EntityType::player);
 
@@ -217,6 +227,8 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 		Client c{event.peer}; 
 		c.playerData.entity.position = worldSaver.spawnPosition;
 		c.playerData.entity.lastPosition = worldSaver.spawnPosition;
+		c.playerData.lastChunkPositionWhenAnUpdateWasSent.x = divideChunk(c.playerData.entity.position.x);
+		c.playerData.lastChunkPositionWhenAnUpdateWasSent.y = divideChunk(c.playerData.entity.position.z);
 
 		c.playerData.otherPlayerSettings.gameMode = OtherPlayerSettings::CREATIVE;
 
@@ -349,6 +361,8 @@ void removeConnection(ENetHost *server, ENetEvent &event)
 
 void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &serverTasks)
 {
+
+
 	Packet p;
 	size_t size = 0;
 	auto data = parsePacket(event, p, size);
@@ -413,34 +427,6 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 		
 			connection->second.loadedChunks.clear();
 
-			break;
-		}
-
-		case headerRequestChunk:
-		{
-			Packet_RequestChunk packetData = *(Packet_RequestChunk *)data;
-			
-			int squareDistance = 0;
-			bool error = 0;
-
-			{
-
-				connection->second.positionForChunkGeneration = packetData.playersPositionAtRequest;
-				//std::cout << packetData.playersPositionAtRequest.x << "\n";
-				squareDistance = connection->second.playerData.entity.chunkDistance;
-
-			}
-
-			if (!error)
-			{
-				serverTask.t.taskType = Task::generateChunk;
-				serverTask.t.pos = {packetData.chunkPosition.x, 0, packetData.chunkPosition.y};
-
-				serverTasks.push_back(serverTask);
-			}
-			
-			
-			
 			break;
 		}
 
@@ -791,6 +777,59 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			break;
 		}
 
+		case headerSendChat:
+		{
+
+			if (size == 0) { break; }
+			if (size > 260) { break; } //we ignore messages that are too big.
+			data[size - 1] = 0; //making sure the packet is null terminated!
+
+			//std::cout << "Chat: " << (char *)data << "\n";
+
+			if (size > 1 && data[0] == '/')
+			{
+				auto rez = executeServerCommand(p.cid, data + 1);
+
+				Packet newPacket;
+				newPacket.cid = 0;
+				newPacket.header = headerSendChat;
+
+				sendPacket(connection->second.peer, newPacket, rez.c_str(),
+					rez.size() + 1, true, channelHandleConnections);
+			}
+			else
+			{
+				Packet newPacket;
+				newPacket.cid = p.cid;
+				newPacket.header = headerSendChat;
+
+				broadCast(newPacket, data, size, nullptr, true,
+					channelHandleConnections);
+			}
+
+			break;
+		}
+
+		case headerClientChangeBlockData:
+		{
+			int a = 0;
+			//todo a hard reset if this fails because it has to do with block syncs
+			if (size < sizeof(Packet_ClientChangeBlockData)) { break; }
+
+			Packet_ClientChangeBlockData *blockData = (Packet_ClientChangeBlockData*)data;
+			if (blockData->blockDataHeader.dataSize != size - sizeof(Packet_ClientChangeBlockData)) { break; }
+
+			serverTask.t.taskType = Task::clientChangedBlockData;
+			serverTask.t.eventId = blockData->eventId;
+			serverTask.t.blockType = blockData->blockDataHeader.blockType;
+			serverTask.t.pos = blockData->blockDataHeader.pos;
+			serverTask.t.metaData.resize(blockData->blockDataHeader.dataSize);
+			memcpy(serverTask.t.metaData.data(), data + sizeof(Packet_ClientChangeBlockData), blockData->blockDataHeader.dataSize);
+			serverTasks.push_back(serverTask);
+
+			break;
+		}
+
 		default:
 
 		break;
@@ -805,6 +844,63 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 
 
 static std::atomic<bool> enetServerRunning = false;
+
+
+Profiler serverProfiler;
+Profiler getServerProfilerCopy()
+{
+	return serverProfiler;
+}
+
+
+int pendingReliableCount = 0;
+size_t totalSize = 0;
+
+int getServerPendingReliableCount()
+{
+	return pendingReliableCount;
+}
+
+size_t getServerTotalPendingSize()
+{
+	return totalSize;
+}
+
+void calculatePendingPacketsMetrics()
+{
+	pendingReliableCount = 0;
+	totalSize = 0;
+
+	for (auto &c : connections)
+	{
+		if (!c.second.peer)continue;
+
+		auto peer = c.second.peer;
+
+		enet_uint16 lastSent = peer->outgoingReliableSequenceNumber;
+		ENetListNode *current = peer->sentReliableCommands.sentinel.next;
+		// Iterate over the list until the sentinel node is reached
+			while (current != &peer->sentReliableCommands.sentinel)
+			{
+				ENetOutgoingCommand *command = (ENetOutgoingCommand *)current;
+
+				// Count reliable commands (reliableSequenceNumber > 0 indicates a reliable command)
+				if (command->reliableSequenceNumber > 0)
+				{
+					++pendingReliableCount;
+				}
+
+				// Move to the next node in the list
+				current = current->next;
+			}
+
+		totalSize += peer->totalWaitingData;
+	}
+
+}
+
+
+
 
 void enetServerFunction(std::string path)
 {
@@ -826,6 +922,7 @@ void enetServerFunction(std::string path)
 	StructuresManager structuresManager;
 	BiomesManager biomesManager;
 	WorldSaver worldSaver;
+	serverProfiler = {};
 
 	worldSaver.savePath = RESOURCES_PATH "worlds/"; //"saves/";
 	worldSaver.savePath += path + "/world";
@@ -907,7 +1004,7 @@ void enetServerFunction(std::string path)
 
 	//run the server for one tick
 	serverWorkerUpdate(wg, structuresManager, biomesManager,
-		worldSaver, serverTasks, (1.f/targetTicksPerSeccond) + 0.01);
+		worldSaver, serverTasks, (1.f/targetTicksPerSeccond) + 0.01, serverProfiler);
 
 	while (enetServerRunning)
 	{
@@ -916,12 +1013,16 @@ void enetServerFunction(std::string path)
 		float deltaTime = (std::chrono::duration_cast<std::chrono::microseconds>(stop - start)).count() / 1000000.0f;
 		start = std::chrono::high_resolution_clock::now();
 		tickTimer += deltaTime;
+
+		serverProfiler.startFrame();
+
 		auto settings = getServerSettingsCopy();
 
 		//int waitTimer = ((1.f/settings.targetTicksPerSeccond)-tickTimer) * 1000;
 		//waitTimer = std::max(std::min(waitTimer-1, 10), 0);
 		
-		int waitTime = 3;
+		serverProfiler.startSubProfile("Recieve Network Updates");
+		int waitTime = 1;
 		int tries = 10;
 		while (((enet_host_service(server, &event, waitTime) > 0) || (waitTime=0, tries-- > 0) ) 
 			&& enetServerRunning)
@@ -950,9 +1051,9 @@ void enetServerFunction(std::string path)
 				case ENET_EVENT_TYPE_DISCONNECT:
 				{
 
-					//std::cout << "disconnect: "
-					//	<< event.peer->address.host << " "
-					//	<< event.peer->address.port << "\n\n";
+					std::cout << "disconnect from server: "
+						<< event.peer->address.host << " "
+						<< event.peer->address.port << "\n\n";
 					removeConnection(server, event);
 					break;
 				}
@@ -960,66 +1061,11 @@ void enetServerFunction(std::string path)
 
 			}
 		}
-		
+		serverProfiler.endSubProfile("Recieve Network Updates");
+
+
 		if (!enetServerRunning) { break; }
 
-		//todo this will be moved into tick
-	#pragma region server send entity position data
-
-		{
-			sendEntityTimer -= deltaTime;
-
-			if (sendEntityTimer < 0)
-			{
-				sendEntityTimer = 0.4;
-			
-				//todo make a different timer for each player			
-				//todo maybe merge things into one packet
-
-				//no need for mutex because this thread modifies the clients data
-				auto connections = getAllClients();
-
-				for (auto &c : connections)
-				{
-
-					// send players
-
-					for (auto &other : connections)
-					{
-						if (other.first != c.first)
-						{
-
-							if (checkIfPlayerShouldGetEntity(
-								{c.second.playerData.entity.position.x, c.second.playerData.entity.position.z},
-								other.second.playerData.entity.position, c.second.playerData.entity.chunkDistance, 0)
-								)
-							{
-								Packet_ClientRecieveOtherPlayerPosition sendData;
-								sendData.eid = other.first;
-								sendData.timer = getTimer();
-								sendData.entity = other.second.playerData.entity;
-
-								Packet p;
-								p.cid = 0;
-								p.header = headerClientRecieveOtherPlayerPosition;
-
-								sendPacket(c.second.peer, p, (const char *)&sendData, sizeof(sendData),
-									false, channelPlayerPositions);
-							}
-
-
-
-						}
-					}
-
-
-				}
-
-			}
-
-		}
-
-	#pragma endregion
 
 	#pragma region server sends timer updates
 		{
@@ -1047,9 +1093,11 @@ void enetServerFunction(std::string path)
 	#pragma endregion
 
 	serverWorkerUpdate(wg, structuresManager, biomesManager,
-		worldSaver, serverTasks, deltaTime);
+		worldSaver, serverTasks, deltaTime, serverProfiler);
 
-	
+	calculatePendingPacketsMetrics();
+
+		serverProfiler.endFrame();
 	}
 
 	clearSD(worldSaver);

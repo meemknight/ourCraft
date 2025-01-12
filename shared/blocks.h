@@ -144,6 +144,8 @@ enum BlockTypes : unsigned short
 	marbleBricks_wall,
 	marblePillar,
 
+	logWall,
+
 
 	BlocksCount
 };

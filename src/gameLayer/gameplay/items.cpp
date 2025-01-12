@@ -358,6 +358,18 @@ Item *PlayerInventory::getItemFromIndex(int index)
 	{
 		return &heldInMouse;
 	}
+	else if (index == PlayerInventory::ARMOUR_START_INDEX)
+	{
+		return &headArmour;
+	}
+	else if (index == PlayerInventory::ARMOUR_START_INDEX + 1)
+	{
+		return &chestArmour;
+	}
+	else if (index == PlayerInventory::ARMOUR_START_INDEX + 2)
+	{
+		return &bootsArmour;
+	}
 
 	return nullptr;
 }
@@ -495,7 +507,11 @@ const char *itemsNamesTextures[] =
 	"",
 
 	"food/apple.png",
+	"food/appleJuice.png",
 
+	"armour/leatherBoots.png",
+	"armour/leatherTunic.png",
+	"armour/leatherCap.png",
 };
 
 const char *itemsNames[] =
@@ -521,6 +537,13 @@ const char *itemsNames[] =
 	"goblin spawn egg",
 
 	"apple",
+	"apple juice",
+
+	"leather boots",
+	"leather tunic",
+	"leather cap",
+
+
 };
 
 const char *getItemTextureName(int itemId)

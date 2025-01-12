@@ -201,7 +201,11 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 		{
 			//we loaded a chunk so no need to dirty here.
 			rez->otherData.dirty = false;
+			rez->otherData.dirtyBlockData = false;
 			//std::cout << "Loaded!\n";
+
+			worldSaver.loadBlockData(*rez);
+
 		}
 
 		worldSaver.loadEntityData(rez->entityData, {posX, posZ});
@@ -1317,6 +1321,8 @@ void ServerChunkStorer::cleanup()
 
 bool ServerChunkStorer::saveNextChunk(WorldSaver &worldSaver, int count, int entitySaver)
 {
+	int blockDataCounter = count + 1; //we can afford to save a little more blockData stuff
+
 	bool succeeded = 0;
 	for (auto &c : savedChunks)
 	{
@@ -1324,6 +1330,13 @@ bool ServerChunkStorer::saveNextChunk(WorldSaver &worldSaver, int count, int ent
 		{
 			//std::cout << "Saved next chunk!\n";
 			saveChunk(worldSaver, c.second);
+
+			if (c.second->otherData.dirtyBlockData)
+			{
+				saveChunkBlockData(worldSaver, c.second);
+				blockDataCounter--;
+			}
+
 			succeeded = true;
 
 			count--;
@@ -1336,7 +1349,13 @@ bool ServerChunkStorer::saveNextChunk(WorldSaver &worldSaver, int count, int ent
 
 			entitySaver--;
 		}
-		else if(count <= 0 && entitySaver <= 0) 
+		else if (c.second->otherData.dirtyBlockData && blockDataCounter > 0)
+		{
+			saveChunkBlockData(worldSaver, c.second);
+			blockDataCounter--;
+			succeeded = true;
+		}
+		else if(count <= 0 && entitySaver <= 0 && blockDataCounter <= 0)
 		{ break; }
 	}
 
@@ -1351,6 +1370,12 @@ void ServerChunkStorer::saveChunk(WorldSaver &worldSaver, SavedChunk *savedChunk
 	worldSaver.saveEntitiesForChunk(*savedChunks);
 	savedChunks->otherData.dirty = false;
 	savedChunks->otherData.dirtyEntity = false;
+}
+
+void ServerChunkStorer::saveChunkBlockData(WorldSaver &worldSaver, SavedChunk *savedChunks)
+{
+	worldSaver.saveChunkBlockData(*savedChunks);
+	savedChunks->otherData.dirtyBlockData = false;
 }
 
 

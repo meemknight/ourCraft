@@ -65,26 +65,32 @@ void *unCompressData(const char *data, size_t compressedSize, size_t &originalSi
 
 
 
-void sendPacketAndCompress(ENetPeer *to, Packet p, const char *data, size_t size, bool reliable, int channel)
+void sendPacketAndCompress(ENetPeer *to, 
+	Packet p, const char *data, size_t size, 
+	bool reliable, int channel, 
+	ENetPacketFreeCallback freeCallback, unsigned int packetId)
 {
 	size_t compressedSize = 0;
 	char* compressedData = (char*)compressData(data, size, compressedSize);
 
 	if (!compressedData)
 	{
-		sendPacket(to, p, data, size, reliable, channel);
+		sendPacket(to, p, data, size, reliable, channel,
+			freeCallback, packetId);
 	}
 	else
 	{
 		if (compressedSize >= size)
 		{
-			sendPacket(to, p, data, size, reliable, channel);
+			sendPacket(to, p, data, size, reliable, channel,
+				freeCallback, packetId);
 		}
 		else
 		{
 			//std::cout << "compressed\n";
 			p.setCompressed();
-			sendPacket(to, p, compressedData, compressedSize, reliable, channel);
+			sendPacket(to, p, compressedData, compressedSize, reliable, channel,
+				freeCallback, packetId);
 			delete[] compressedData;
 		}
 
@@ -93,7 +99,8 @@ void sendPacketAndCompress(ENetPeer *to, Packet p, const char *data, size_t size
 }
 
 void sendPacket(ENetPeer *to, Packet p,
-	const char *data, size_t size, bool reliable, int channel)
+	const char *data, size_t size, bool reliable, int channel,
+	ENetPacketFreeCallback freeCallback, unsigned int packetId)
 {
 
 	permaAssertComment((data && size) || (!data && !size), "Assert failed in sendPacket");
@@ -112,6 +119,12 @@ void sendPacket(ENetPeer *to, Packet p,
 	}
 
 	ENetPacket *packet = enet_packet_create(nullptr, size + sizeof(Packet), flag);
+
+	if (freeCallback)
+	{
+		packet->freeCallback = freeCallback;
+		packet->userData = (void*)packetId;
+	}
 
 	memcpy(packet->data, &p, sizeof(Packet));
 	memcpy(packet->data + sizeof(Packet), data, size);
@@ -139,8 +152,13 @@ void sendPacket(ENetPeer *to, uint32_t header, std::uint64_t cid, void *data, si
 
 char *parsePacket(ENetEvent &event, Packet &p, size_t &dataSize)
 {
-	size_t size = event.packet->dataLength;
-	void *data = event.packet->data;
+	return parsePacket(*event.packet, p, dataSize);
+}
+
+char *parsePacket(ENetPacket &packet, Packet &p, size_t &dataSize)
+{
+	size_t size = packet.dataLength;
+	void *data = packet.data;
 	dataSize = std::max(size_t(0), size - sizeof(Packet));
 
 	memcpy(&p, data, sizeof(Packet));
@@ -153,7 +171,6 @@ char *parsePacket(ENetEvent &event, Packet &p, size_t &dataSize)
 	{
 		return (char *)data + sizeof(Packet);
 	}
-
 }
 
 float computeRestantTimer(std::uint64_t older, std::uint64_t newer)
@@ -180,5 +197,6 @@ void sendPlayerSkinPacket(ENetPeer *to, std::uint64_t cid, std::vector<unsigned 
 	p.cid = cid;
 	p.header = headerSendPlayerSkin;
 
-	sendPacketAndCompress(to, p, (const char *)data.data(), data.size(), true, channelHandleConnections);
+	sendPacketAndCompress(to, p, (const char *)data.data(), data.size(), true,
+		channelHandleConnections);
 }

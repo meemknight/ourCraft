@@ -68,6 +68,29 @@ namespace sfs
 		}
 	}
 
+	Errors readEntireFile(std::vector<unsigned char> &data, const char *name)
+	{
+		data.clear();
+		std::ifstream f(name, std::ios::binary);
+
+		if (f.is_open())
+		{
+			f.seekg(0, std::ios_base::end);
+			size_t size = f.tellg();
+			f.seekg(0, std::ios_base::beg);
+
+			data.resize(size);
+
+			f.read((char*) & data[0], size);
+
+			return noError;
+		}
+		else
+		{
+			return couldNotOpenFinle;
+		}
+	}
+
 	Errors readEntireFile(void* data, size_t size, const char* name, bool shouldMatchSize, int* bytesRead)
 	{
 		if (bytesRead)

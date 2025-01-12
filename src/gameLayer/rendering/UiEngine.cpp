@@ -10,6 +10,10 @@
 #include <audioEngine.h>
 #include <iostream>
 #include <magic_enum.hpp>
+#include <safeSave.h>
+#include <chunkSystem.h>
+#include <sstream>
+#include <iomanip>
 
 float determineTextSize(gl2d::Renderer2D &renderer, const std::string &str,
 	gl2d::Font &f, glm::vec4 transform, bool minimize = true)
@@ -181,6 +185,17 @@ void UiENgine::loadTextures(std::string path)
 		}
 	}
 
+	newPath = path + "effects/";
+	for (int i = 0; i < Effects::Effects_Count; i++)
+	{
+
+		std::string n(magic_enum::enum_name((Effects::EffectsNames)i).substr());
+
+		if (!effectsTexture[i].id)
+		{
+			effectsTexture[i].loadFromFile((newPath + n + ".png").c_str(), true, true);
+		}
+	}
 }
 
 void UiENgine::clearOnlyTextures()
@@ -207,6 +222,11 @@ void UiENgine::clearOnlyTextures()
 	for (int i = 0; i < battleTexturesCount; i++)
 	{
 		battleTextures[i].cleanup();
+	}
+
+	for (int i = 0; i < Effects::Effects_Count; i++)
+	{
+		effectsTexture[i].cleanup();
 	}
 
 }
@@ -240,7 +260,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 	Item *currentItem = {};
 	auto mousePos = platform::getRelMousePosition();
 
-	auto renderOneItem = [&](glm::vec4 itemBox, Item & item, float in = 8.f / 22.f, float color = 1)
+	auto renderOneItem = [&](glm::vec4 itemBox, Item & item, float in = 0, float color = 1)
 	{
 		if (item.type == 0)return;
 
@@ -251,7 +271,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			t.id = blocksLoader.texturesIds[getGpuIdIndexForBlock(item.type, 0)];
 
 			//we have a block
-			renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, in), t, {color, color, color, 1});
+			renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, in + 0.20), t, {color, color, color, 1});
 
 
 		}
@@ -261,8 +281,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			gl2d::Texture t;
 			t.id = blocksLoader.texturesIdsItems[item.type - ItemsStartPoint];
 
-			//we have a block
-			renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, in), t, {color, color, color, 1});
+			renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, in - 0.45), t, {color, color, color, 1});
 		}
 
 		if (item.counter != 1)
@@ -294,7 +313,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 			renderer2d.renderRectangle({0,0,w,h}, {0.1,0.1,0.1,0.05});
 
-			float minDimenstion = std::min(w, h);
+			float minDimenstion = std::min(w * 0.65f, h * 0.85f);
 
 			float aspectIncrease = 0;
 
@@ -304,7 +323,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			}
 
 
-			auto inventoryBox = glui::Box().xCenter().yCenter().yDimensionPixels(minDimenstion * 0.85f).
+			auto inventoryBox = glui::Box().xCenter().yCenter().yDimensionPixels(minDimenstion).
 				xAspectRatio(1.f + aspectIncrease)();
 			//{
 			//	auto inventoryBox2 = glui::Box().xCenter().yCenter().xDimensionPixels(minDimenstion * 0.9f).
@@ -328,566 +347,699 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			}
 
 
-
-
 			int oneItemSize = 0;
 
-			glui::Frame insideUiCell(inventoryBox);
-
 			{
+				glui::Frame insideUiCell(inventoryBox);
 
-				glui::Frame insideInventoryLeft(glui::Box().xLeft().yTop().
-					yDimensionPercentage(1.f).xAspectRatio(1.f)());
 
-				auto checkInside = [&](int start, glm::vec4 box)
 				{
-					auto itemBox = box;
-					itemBox.z = itemBox.w;
-					for (int i = start; i < start + 9; i++)
+
+					glui::Frame insideInventoryLeft(glui::Box().xLeft().yTop().
+						yDimensionPercentage(1.f).xAspectRatio(1.f)());
+
+					auto checkInsideOneElement = [&](glm::vec4 box, int i)
 					{
-						itemBox.x = box.x + itemBox.z * (i - start);
-						if (glui::aabb(itemBox, mousePos))
+						if (glui::aabb(box, mousePos))
 						{
 							cursorItemIndex = i;
 							currentItem = inventory.getItemFromIndex(cursorItemIndex);
-							cursorItemIndexBox = itemBox;
-							renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, (2.f / 22.f)),
+							cursorItemIndexBox = box;
+							renderer2d.renderRectangle(shrinkRectanglePercentage(box, (2.f / 22.f)),
 								{0.7,0.7,0.7,0.5});
 						}
-					}
-				};
+					};
 
-				auto checkInsideCreativeMenu = [&](int start, glm::vec4 box)
-				{
-					auto itemBox = box;
-					itemBox.z = itemBox.w;
-					for (int i = start; i < start + 9; i++)
+					auto checkInside = [&](int start, glm::vec4 box)
 					{
-						if (!isItem(i) && !isBlock(i)) { continue; }
+						auto itemBox = box;
+						itemBox.z = itemBox.w;
+						for (int i = start; i < start + 9; i++)
+						{
+							itemBox.x = box.x + itemBox.z * (i - start);
+							checkInsideOneElement(itemBox, i);
+						}
+					};
 
-						itemBox.x = box.x + itemBox.z * (i - start);
+					auto checkInsideCreativeMenu = [&](int start, glm::vec4 box)
+					{
+						auto itemBox = box;
+						itemBox.z = itemBox.w;
+						for (int i = start; i < start + 9; i++)
+						{
+							if (!isItem(i) && !isBlock(i)) { continue; }
+
+							itemBox.x = box.x + itemBox.z * (i - start);
+							if (glui::aabb(itemBox, mousePos))
+							{
+								selectedItem = i;
+								currentItem = inventory.getItemFromIndex(cursorItemIndex);
+								cursorItemIndexBox = itemBox;
+								renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, (2.f / 22.f)),
+									{0.7,0.7,0.7,0.5});
+							}
+						}
+					};
+
+					auto checkInsideOneCell = [&](int start, glm::vec4 box)
+					{
+						auto itemBox = box;
+						itemBox.z = itemBox.w;
+
 						if (glui::aabb(itemBox, mousePos))
 						{
-							selectedItem = i;
+							cursorItemIndex = start;
 							currentItem = inventory.getItemFromIndex(cursorItemIndex);
 							cursorItemIndexBox = itemBox;
 							renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, (2.f / 22.f)),
 								{0.7,0.7,0.7,0.5});
 						}
-					}
-				};
+					};
 
-				auto checkInsideOneCell = [&](int start, glm::vec4 box)
-				{
-					auto itemBox = box;
-					itemBox.z = itemBox.w;
-
-					if (glui::aabb(itemBox, mousePos))
-					{
-						cursorItemIndex = start;
-						currentItem = inventory.getItemFromIndex(cursorItemIndex);
-						cursorItemIndexBox = itemBox;
-						renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, (2.f / 22.f)),
-							{0.7,0.7,0.7,0.5});
-					}
-				};
-
-				auto hotBarBox = glui::Box().xCenter().yBottomPerc(-0.05).xDimensionPercentage(0.9).
-					yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
-
-				renderer2d.renderRectangle(hotBarBox, itemsBarInventory);
-
-				oneItemSize = hotBarBox.w;
-
-
-				//render items
-				auto renderItems = [&](int start, glm::ivec4 box)
-				{
-					auto itemBox = box;
-					itemBox.z = itemBox.w;
-					for (int i = start; i < start + 9; i++)
-					{
-						if (inventory.items[i].type)
-						{
-							itemBox.x = box.x + itemBox.z * (i - start);
-							renderOneItem(itemBox, inventory.items[i], 4.f / 22.f);
-						}
-					}
-				};
-
-
-				glm::vec4 tabBox = inventoryBox;
-				tabBox.z = oneItemSize;
-				tabBox.w = oneItemSize / 2;
-				tabBox.x += oneItemSize / 4.f;
-				tabBox.y -= oneItemSize / 2.f;
-
-				const int BARS_COUNT = 7;
-
-				//render side bar
-				auto renderSideSlider = [&](glm::ivec4 box)
-				{
-					glm::vec4 barBox = box;
-					barBox.y -= box.w * (BARS_COUNT - 1);
-					barBox.x += box.z;
-					barBox.z = barBox.w;
-					barBox.w = box.w * (BARS_COUNT);
-
-					//renderer2d.renderRectangle(barBox, Colors_Red);
-
-					glm::ivec4 topBox = barBox;
-					topBox.w = topBox.z;
-
-					glm::ivec4 bottomBox = barBox;
-					bottomBox.y += barBox.w - barBox.z;
-					bottomBox.w = bottomBox.z;
-
-					int slider = 0;
-
-					if (glui::drawButton(renderer2d, topBox, Colors_White, "",
-						font, buttonTexture, platform::getRelMousePosition(),
-						platform::isLMouseHeld(), platform::isLMouseReleased()))
-					{
-						slider--;
-					}
-
-					if (glui::drawButton(renderer2d, bottomBox, Colors_White, "",
-						font, buttonTexture, platform::getRelMousePosition(),
-						platform::isLMouseHeld(), platform::isLMouseReleased()))
-					{
-						slider++;
-					}
-
-					slider -= platform::getScroll();
-
-					return slider;
-				};
-
-				if(currentInventoryTab == INVENTORY_TAB_DEFAULT || 
-					currentInventoryTab == INVENTORY_TAB_CRAFTING
-					)
-				{
-
-					//bottom part
-					auto inventoryBars = glui::Box().xCenter().yBottomPerc(-0.17).xDimensionPercentage(0.9).
+					auto hotBarBox = glui::Box().xCenter().yBottomPerc(-0.05).xDimensionPercentage(0.9).
 						yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
-					renderer2d.renderRectangle(inventoryBars, itemsBarInventory);
 
-					auto inventoryBars2 = inventoryBars;
-					inventoryBars2.y -= inventoryBars2.w;
-					renderer2d.renderRectangle(inventoryBars2, itemsBarInventory);
+					renderer2d.renderRectangle(hotBarBox, itemsBarInventory);
 
-					auto inventoryBars3 = inventoryBars2;
-					inventoryBars3.y -= inventoryBars3.w;
-					renderer2d.renderRectangle(inventoryBars3, itemsBarInventory);
-
-					checkInside(9, inventoryBars);
-					checkInside(18, inventoryBars2);
-					checkInside(27, inventoryBars3);
+					oneItemSize = hotBarBox.w;
 
 
-					//upper part
-					
-
-					//crafting box
-					if(currentInventoryTab == INVENTORY_TAB_CRAFTING)
+					//render items
+					auto renderItems = [&](int start, glm::ivec4 box)
 					{
-						glui::Frame insideUpperPart(glui::Box().xCenter().yTopPerc(0.1).
-							xDimensionPercentage(0.9).yDimensionPercentage(0.45)());
+						auto itemBox = box;
+						itemBox.z = itemBox.w;
+						for (int i = start; i < start + 9; i++)
+						{
+							if (inventory.items[i].type)
+							{
+								itemBox.x = box.x + itemBox.z * (i - start);
+								renderOneItem(itemBox, inventory.items[i], 4.f / 22.f);
+							}
+						}
+					};
+
+
+					glm::vec4 tabBox = inventoryBox;
+					tabBox.z = oneItemSize;
+					tabBox.w = oneItemSize / 2;
+					tabBox.x += oneItemSize / 4.f;
+					tabBox.y -= oneItemSize / 2.f;
+
+					const int BARS_COUNT = 7;
+
+					//render side bar
+					auto renderSideSlider = [&](glm::ivec4 box)
+					{
+						glm::vec4 barBox = box;
+						barBox.y -= box.w * (BARS_COUNT - 1);
+						barBox.x += box.z;
+						barBox.z = barBox.w;
+						barBox.w = box.w * (BARS_COUNT);
+
+						//renderer2d.renderRectangle(barBox, Colors_Red);
+
+						glm::ivec4 topBox = barBox;
+						topBox.w = topBox.z;
+
+						glm::ivec4 bottomBox = barBox;
+						bottomBox.y += barBox.w - barBox.z;
+						bottomBox.w = bottomBox.z;
+
+						int slider = 0;
+
+						if (glui::drawButton(renderer2d, topBox, Colors_White, "",
+							font, buttonTexture, platform::getRelMousePosition(),
+							platform::isLMouseHeld(), platform::isLMouseReleased()))
+						{
+							slider--;
+						}
+
+						if (glui::drawButton(renderer2d, bottomBox, Colors_White, "",
+							font, buttonTexture, platform::getRelMousePosition(),
+							platform::isLMouseHeld(), platform::isLMouseReleased()))
+						{
+							slider++;
+						}
+
+						slider -= platform::getScroll();
+
+						return slider;
+					};
+
+					if (currentInventoryTab == INVENTORY_TAB_DEFAULT ||
+						currentInventoryTab == INVENTORY_TAB_CRAFTING
+						)
+					{
+
+						//bottom part
+						auto inventoryBars = glui::Box().xCenter().yBottomPerc(-0.17).xDimensionPercentage(0.9).
+							yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
+						renderer2d.renderRectangle(inventoryBars, itemsBarInventory);
+
+						auto inventoryBars2 = inventoryBars;
+						inventoryBars2.y -= inventoryBars2.w;
+						renderer2d.renderRectangle(inventoryBars2, itemsBarInventory);
+
+						auto inventoryBars3 = inventoryBars2;
+						inventoryBars3.y -= inventoryBars3.w;
+						renderer2d.renderRectangle(inventoryBars3, itemsBarInventory);
+
+						checkInside(9, inventoryBars);
+						checkInside(18, inventoryBars2);
+						checkInside(27, inventoryBars3);
+
+
+						//upper part
+
+
+						//crafting box
+						if (currentInventoryTab == INVENTORY_TAB_CRAFTING)
+						{
+							glui::Frame insideUpperPart(glui::Box().xCenter().yTopPerc(0.1).
+								xDimensionPercentage(0.9).yDimensionPercentage(0.45)());
+
+							//highlight
+							//renderer2d.renderRectangle(glui::Box().xLeft().yTop().xDimensionPercentage(1.f).
+							//yDimensionPercentage(1.f)(), {1,0,0,0.5});
+
+
+							auto craftingItems = glui::Box().xCenter().yTopPerc(0).xDimensionPercentage(1.f).
+								yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
+							//renderer2d.renderRectangle(craftingItems, itemsBarInventory);
+
+
+							if (allItems.size())
+							{
+								int currentPos = craftingSlider;
+								craftingSlider -= platform::getScroll();
+								int minVal = 0;
+								if (allItems.size() <= 7)
+								{
+									minVal = -(allItems.size() - 2);
+								}
+
+								craftingSlider = glm::clamp(craftingSlider, -1, std::max((int)allItems.size() + 7 - 9, minVal));
+
+								if (currentPos != craftingSlider && platform::getScroll())
+								{
+									AudioEngine::playSound(AudioEngine::uiSlider, UI_SOUND_VOLUME);
+								}
+							}
+
+							if (allItems.size())
+							{
+								auto itemBox = craftingItems;
+								itemBox.z = itemBox.w;
+								int start = craftingSlider;
+
+								auto doOneRender = [&](int i)
+								{
+									if (allItems.size() > i)
+									{
+										itemBox.x = craftingItems.x + itemBox.z * (i - start);
+
+										int distance = glm::abs(1 - (i - start));
+
+										renderOneItem(itemBox, allItems[i].recepie.result, (float)distance / 22.f, 1.f - distance / 12.f);
+									}
+								};
+
+								for (int i = start; i < start + 9; i++)
+								{
+									if (i != start + 1)
+									{
+										doOneRender(i);
+									}
+								}
+
+								{
+									auto box = itemBox; box.x = craftingItems.x + itemBox.z * (1);
+									auto itemBox = box;
+									itemBox.z = itemBox.w;
+
+									renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, -0.3), oneInventorySlot);
+
+									if (glui::aabb(itemBox, mousePos))
+									{
+										//cursorItemIndex = i;
+										cursorItemIndexBox = itemBox;
+										currentItem = &allItems[start + 1].recepie.result;
+										renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, -0.3 + (0.3f / 4.f)),
+											{0.7,0.7,0.7,0.5});
+
+										//crafting selected
+										if (allItems.size() > start + 1)
+										{
+											outCraftingRecepieGlobalIndex = allItems[start + 1].index;
+										}
+									}
+
+								}
+
+								doOneRender(start + 1);
+
+							}
+
+
+							{
+
+								auto craftingWindowBox = glui::Box().xCenter().yTopPerc(0.05).
+									xDimensionPercentage(1).yDimensionPercentage(1)();
+								craftingWindowBox.y += craftingItems.w;
+								craftingWindowBox.w -= craftingItems.w;
+
+								craftingWindowBox = shrinkRectanglePercentage(craftingWindowBox, 0.05);
+
+								glui::Frame craftingWindow(craftingWindowBox);
+
+								{
+									//renderer2d.render9Patch(glui::Box().xLeft().yTop().xDimensionPercentage(1.f).yDimensionPercentage(1.f)(),
+									//	24, {0.3,0.3,0.6,1}, {}, 0.f, buttonTexture, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
+
+									//render recepie requests
+
+									int index = craftingSlider + 1;
+
+									if (allItems.size() > index)
+									{
+										auto craftingItems = glui::Box().xCenter().yTopPerc(0).xDimensionPercentage(1.f).
+											yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
+										//renderer2d.renderRectangle(craftingItems, itemsBarInventory);
+										auto &recepie = allItems[index];
+
+										auto box = craftingItems;
+										box.z = oneItemSize;
+										box.w = oneItemSize;
+										box.x += box.z * 0.6;
+
+										for (int i = 0; i < sizeof(recepie.recepie.items) / sizeof(recepie.recepie.items[0]); i++)
+										{
+
+											if (recepie.recepie.items[i].type == 0)
+											{
+												break;
+											}
+
+											if (glui::aabb(box, mousePos))
+											{
+												//cursorItemIndex = i;
+												cursorItemIndexBox = box;
+												currentItem = &recepie.recepie.items[i];
+											}
+
+											renderOneItem(box, recepie.recepie.items[i]);
+											box.y += box.z * 0.8;
+
+										}
+
+									}
+
+
+								}
+							}
+
+
+
+						}
+
 
 						//highlight
 						//renderer2d.renderRectangle(glui::Box().xLeft().yTop().xDimensionPercentage(1.f).
-						//yDimensionPercentage(1.f)(), {1,0,0,0.5});
+						//	yDimensionPercentage(1.f)(), {1,0,0,0.5});
 
-
-						auto craftingItems = glui::Box().xCenter().yTopPerc(0).xDimensionPercentage(1.f).
-							yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
-						//renderer2d.renderRectangle(craftingItems, itemsBarInventory);
-
-
-						if (allItems.size())
+						//player stuff
+						if (currentInventoryTab == INVENTORY_TAB_DEFAULT)
 						{
-							int currentPos = craftingSlider;
-							craftingSlider -= platform::getScroll();
-							int minVal = 0;
-							if (allItems.size() <= 7)
-							{
-								minVal = -(allItems.size() - 2);
-							}
+							glui::Frame insideUpperPart(glui::Box().xCenter().yTopPerc(0.05).
+								xDimensionPercentage(0.9).yDimensionPercentage(0.45)());
 
-							craftingSlider = glm::clamp(craftingSlider, -1, std::max((int)allItems.size() + 7 - 9, minVal));
+							auto armourBox = glui::Box().xLeft().yTopPerc(0.1).xDimensionPercentage(1.f / 9.f).
+								yAspectRatio(1.f)();
+							auto start = armourBox;
+							glm::vec4 playerBox = armourBox;
+							playerBox.w *= 3;
+							playerBox.z = (playerBox.w / playerCellSize.y) * playerCellSize.x;
 
-							if (currentPos != craftingSlider && platform::getScroll())
-							{
-								AudioEngine::playSound(AudioEngine::uiSlider, UI_SOUND_VOLUME);
-							}
+							//render player
+							renderer2d.renderRectangle(playerBox, playerCell);
+
+							//render armour stuff to the right
+							armourBox = start;
+							armourBox.x = playerBox.x + playerBox.z;
+							renderer2d.renderRectangle(armourBox, oneInventorySlot);
+							checkInsideOneElement(armourBox, inventory.ARMOUR_START_INDEX);
+							renderOneItem(armourBox, inventory.headArmour);
+
+							armourBox.y += armourBox.w;
+							renderer2d.renderRectangle(armourBox, oneInventorySlot);
+							checkInsideOneElement(armourBox, inventory.ARMOUR_START_INDEX + 1);
+							renderOneItem(armourBox, inventory.chestArmour);
+
+							armourBox.y += armourBox.w;
+							renderer2d.renderRectangle(armourBox, oneInventorySlot);
+							checkInsideOneElement(armourBox, inventory.ARMOUR_START_INDEX + 2);
+							renderOneItem(armourBox, inventory.bootsArmour);
+
+
 						}
 
-						if (allItems.size())
+
+						renderItems(9, inventoryBars);
+						renderItems(18, inventoryBars2);
+						renderItems(27, inventoryBars3);
+
+
+					}
+					else if (currentInventoryTab == INVENTORY_TAB_BLOCKS)
+					{
+
+						auto inventoryBars = glui::Box().xCenter().yBottomPerc(-0.17).xDimensionPercentage(0.9).
+							yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
+
+						static int currentStartRow = 0;
+						currentStartRow += renderSideSlider(inventoryBars);
+						currentStartRow = glm::clamp(currentStartRow, 0,
+							(((int)BlocksCount / 9) - BARS_COUNT) + 1);
+						if (currentStartRow < 0) { currentStartRow = 0; }
+
+						//render items
+						auto renderCreativeBlocks = [&](int start, glm::ivec4 box)
 						{
-							auto itemBox = craftingItems;
+							auto itemBox = box;
 							itemBox.z = itemBox.w;
-							int start = craftingSlider;
-
-							auto doOneRender = [&](int i)
-							{
-								if (allItems.size() > i)
-								{
-									itemBox.x = craftingItems.x + itemBox.z * (i - start);
-
-									int distance = glm::abs(1 - (i - start));
-
-									renderOneItem(itemBox, allItems[i].recepie.result, (float)distance / 22.f, 1.f - distance / 12.f);
-								}
-							};
-
 							for (int i = start; i < start + 9; i++)
 							{
-								if (i != start + 1)
+								if (i < BlocksCount)
 								{
-									doOneRender(i);
+									itemBox.x = box.x + itemBox.z * (i - start);
+									renderOneItem(itemBox, Item(i), 4.f / 22.f);
 								}
 							}
+						};
 
+						for (int i = 0; i < BARS_COUNT; i++)
+						{
+							renderer2d.renderRectangle(inventoryBars, itemsBarInventory);
+
+							checkInsideCreativeMenu((6 - i) * 9 + 1 + currentStartRow * 9, inventoryBars);
+							renderCreativeBlocks((6 - i) * 9 + 1 + currentStartRow * 9, inventoryBars);
+
+							inventoryBars.y -= inventoryBars.w;
+						}
+
+					}
+					else if (currentInventoryTab == INVENTORY_TAB_ITEMS)
+					{
+
+						//render items
+						auto renderCreativeItems = [&](int start, glm::ivec4 box)
+						{
+							auto itemBox = box;
+							itemBox.z = itemBox.w;
+							for (int i = start; i < start + 9; i++)
 							{
-								auto box = itemBox; box.x = craftingItems.x + itemBox.z * (1);
-								auto itemBox = box;
-								itemBox.z = itemBox.w;
-
-								renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, -0.3), oneInventorySlot);
-
-								if (glui::aabb(itemBox, mousePos))
+								if (i < lastItem)
 								{
-									//cursorItemIndex = i;
-									cursorItemIndexBox = itemBox;
-									currentItem = &allItems[start + 1].recepie.result;
-									renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, -0.3 + (0.3f/4.f)),
-										{0.7,0.7,0.7,0.5});
-
-									//crafting selected
-									if (allItems.size() > start + 1)
-									{
-										outCraftingRecepieGlobalIndex = allItems[start+1].index;
-									}
+									itemBox.x = box.x + itemBox.z * (i - start);
+									renderOneItem(itemBox, Item(i), 4.f / 22.f);
 								}
-
 							}
+						};
 
-							doOneRender(start + 1);
-							
-						}
+						auto inventoryBars = glui::Box().xCenter().yBottomPerc(-0.17).xDimensionPercentage(0.9).
+							yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
 
+						static int currentStartRow = 0;
+						currentStartRow += renderSideSlider(inventoryBars);
+						currentStartRow = glm::clamp(currentStartRow, 0,
+							(((int)(lastItem - ItemsStartPoint) / 9) - BARS_COUNT) + 1);
+						if (currentStartRow < 0) { currentStartRow = 0; }
 
+						for (int i = 0; i < BARS_COUNT; i++)
 						{
+							renderer2d.renderRectangle(inventoryBars, itemsBarInventory);
 
-							auto craftingWindowBox = glui::Box().xCenter().yTopPerc(0.05).
-								xDimensionPercentage(1).yDimensionPercentage(1)();
-							craftingWindowBox.y += craftingItems.w;
-							craftingWindowBox.w -= craftingItems.w;
+							checkInsideCreativeMenu((6 - i) * 9 + ItemsStartPoint + currentStartRow * 9, inventoryBars);
+							renderCreativeItems((6 - i) * 9 + ItemsStartPoint + currentStartRow * 9, inventoryBars);
 
-							craftingWindowBox = shrinkRectanglePercentage(craftingWindowBox, 0.05);
-
-							glui::Frame craftingWindow(craftingWindowBox);
-
-							{
-								//renderer2d.render9Patch(glui::Box().xLeft().yTop().xDimensionPercentage(1.f).yDimensionPercentage(1.f)(),
-								//	24, {0.3,0.3,0.6,1}, {}, 0.f, buttonTexture, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
-
-								//render recepie requests
-
-								int index = craftingSlider + 1;
-
-								if (allItems.size() > index)
-								{
-									auto craftingItems = glui::Box().xCenter().yTopPerc(0).xDimensionPercentage(1.f).
-										yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
-									//renderer2d.renderRectangle(craftingItems, itemsBarInventory);
-									auto &recepie = allItems[index];
-
-									auto box = craftingItems;
-									box.z = oneItemSize;
-									box.w = oneItemSize;
-									box.x += box.z * 0.6;
-
-									for (int i = 0; i < sizeof(recepie.recepie.items) / sizeof(recepie.recepie.items[0]); i++)
-									{
-
-										if (recepie.recepie.items[i].type == 0)
-										{
-											break;
-										}
-
-										if (glui::aabb(box, mousePos))
-										{
-											//cursorItemIndex = i;
-											cursorItemIndexBox = box;
-											currentItem = &recepie.recepie.items[i];
-										}
-
-										renderOneItem(box, recepie.recepie.items[i]);
-										box.y += box.z * 0.8;
-
-									}
-
-								}
-
-
-							}
+							inventoryBars.y -= inventoryBars.w;
 						}
 
 
 
 					}
-			
 
-					//highlight
-					//renderer2d.renderRectangle(glui::Box().xLeft().yTop().xDimensionPercentage(1.f).
-					//	yDimensionPercentage(1.f)(), {1,0,0,0.5});
+					checkInside(0, hotBarBox);
+					renderItems(0, hotBarBox);
 
-					//player stuff
-					if (currentInventoryTab == INVENTORY_TAB_DEFAULT)
+
+					//if (isCreative)
 					{
-						glui::Frame insideUpperPart(glui::Box().xCenter().yTopPerc(0.05).
-							xDimensionPercentage(0.9).yDimensionPercentage(0.45)());
 
-						auto armourBox = glui::Box().xLeft().yTopPerc(0.1).xDimensionPercentage(1.f / 9.f).
-							yAspectRatio(1.f)();
-						auto start = armourBox;
-						glm::vec4 playerBox = armourBox;
-						playerBox.w *= 3;
-						playerBox.z = (playerBox.w / playerCellSize.y) * playerCellSize.x;
-					
-						//render player
-						renderer2d.renderRectangle(playerBox, playerCell);
-					
-						//render armour stuff to the right
-						armourBox = start;
-						armourBox.x = playerBox.x + playerBox.z;
-						renderer2d.renderRectangle(armourBox, oneInventorySlot);
-					
-						armourBox.y += armourBox.w;
-						renderer2d.renderRectangle(armourBox, oneInventorySlot);
-					
-						armourBox.y += armourBox.w;
-						renderer2d.renderRectangle(armourBox, oneInventorySlot);
-					
-					
-					}
-					
+						int slotsCounter = 2;
+						if (isCreative) { slotsCounter = 4; }
 
-					renderItems(9, inventoryBars);
-					renderItems(18, inventoryBars2);
-					renderItems(27, inventoryBars3);
+						GLuint textures[4] = {
+							blocksLoader.texturesIdsItems[wooddenSword - ItemsStartPoint],
+							blocksLoader.texturesIds[getGpuIdIndexForBlock(craftingTable, 0)],
+							blocksLoader.texturesIds[getGpuIdIndexForBlock(grassBlock, 0)],
+							blocksLoader.texturesIdsItems[stick - ItemsStartPoint],
+						};
 
-
-				}
-				else if (currentInventoryTab == INVENTORY_TAB_BLOCKS)
-				{
-
-					auto inventoryBars = glui::Box().xCenter().yBottomPerc(-0.17).xDimensionPercentage(0.9).
-						yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
-
-					static int currentStartRow = 0;
-					currentStartRow += renderSideSlider(inventoryBars);
-					currentStartRow = glm::clamp(currentStartRow, 0,
-						(((int)BlocksCount / 9) - BARS_COUNT) + 1);
-					if (currentStartRow < 0) { currentStartRow = 0; }
-
-					//render items
-					auto renderCreativeBlocks = [&](int start, glm::ivec4 box)
-					{
-						auto itemBox = box;
-						itemBox.z = itemBox.w;
-						for (int i = start; i < start + 9; i++)
+						for (int i = 0; i < slotsCounter; i++)
 						{
-							if (i < BlocksCount)
-							{
-								itemBox.x = box.x + itemBox.z * (i - start);
-								renderOneItem(itemBox, Item(i), 4.f / 22.f);
-							}
-						}
-					};
-
-					for (int i = 0; i < BARS_COUNT; i++)
-					{
-						renderer2d.renderRectangle(inventoryBars, itemsBarInventory);
-
-						checkInsideCreativeMenu((6 - i) * 9 + 1 + currentStartRow * 9, inventoryBars);
-						renderCreativeBlocks((6 - i) * 9 + 1 + currentStartRow * 9, inventoryBars);
-
-						inventoryBars.y -= inventoryBars.w;
-					}
-
-				}
-				else if (currentInventoryTab == INVENTORY_TAB_ITEMS)
-				{
-
-					//render items
-					auto renderCreativeItems = [&](int start, glm::ivec4 box)
-					{
-						auto itemBox = box;
-						itemBox.z = itemBox.w;
-						for (int i = start; i < start + 9; i++)
-						{
-							if (i < lastItem)
-							{
-								itemBox.x = box.x + itemBox.z * (i - start);
-								renderOneItem(itemBox, Item(i), 4.f / 22.f);
-							}
-						}
-					};
-
-					auto inventoryBars = glui::Box().xCenter().yBottomPerc(-0.17).xDimensionPercentage(0.9).
-						yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
-						
-					static int currentStartRow = 0;
-					currentStartRow += renderSideSlider(inventoryBars);
-					currentStartRow = glm::clamp(currentStartRow, 0,
-						(((int)(lastItem - ItemsStartPoint) / 9) - BARS_COUNT) + 1);
-					if (currentStartRow < 0) { currentStartRow = 0; }
-
-					for (int i = 0; i < BARS_COUNT; i++)
-					{
-						renderer2d.renderRectangle(inventoryBars, itemsBarInventory);
-
-						checkInsideCreativeMenu((6 - i) * 9 + ItemsStartPoint + currentStartRow*9, inventoryBars);
-						renderCreativeItems((6-i) * 9 + ItemsStartPoint + currentStartRow * 9, inventoryBars);
-
-						inventoryBars.y -= inventoryBars.w;
-					}
-
-
-
-				}
-
-				checkInside(0, hotBarBox);
-				renderItems(0, hotBarBox);
-
-
-				//if (isCreative)
-				{
-
-					int slotsCounter = 2;
-					if (isCreative) { slotsCounter = 4; }
-
-					GLuint textures[4] = {
-						blocksLoader.texturesIdsItems[wooddenSword - ItemsStartPoint],
-						blocksLoader.texturesIds[getGpuIdIndexForBlock(craftingTable, 0)],
-						blocksLoader.texturesIds[getGpuIdIndexForBlock(grassBlock, 0)],
-						blocksLoader.texturesIdsItems[stick - ItemsStartPoint],
-					};
-
-					for (int i = 0; i < slotsCounter; i++)
-					{
-						glm::vec4 selected = {};
-						if (i == currentInventoryTab)
-						{
-							selected = glm::vec4(0, 0, 0, 12);
-						}
-
-						glm::vec4 color = {0.8,0.8,0.8,1};
-
-						if (i != currentInventoryTab && glui::aabb(tabBox, platform::getRelMousePosition()))
-						{
-							color = {1.2,1.2,1.2,1};
-						}
-						else if (i == currentInventoryTab)
-						{
-							color = {1,1,1,1};
-						}
-
-
-						renderer2d.render9Patch(tabBox + selected,
-							24, color, {}, 0.f, buttonTexture,
-							{0,1,1,0.5}, {0.2,0.8,0.8,0.5});
-
-
-						if (glui::aabb(tabBox, platform::getRelMousePosition()) &&
-							platform::isLMousePressed()
-							)
-						{
-							currentInventoryTab = i;
-						}
-
-						{
-							auto newBox = tabBox;
-
-							gl2d::Texture t; t.id = textures[i];
+							glm::vec4 selected = {};
 							if (i == currentInventoryTab)
 							{
-								newBox.w *= 2;
-								newBox = shrinkRectanglePercentage(newBox, 0.3);
-								renderer2d.renderRectangle(newBox, t, Colors_White,
-									{}, 0);
+								selected = glm::vec4(0, 0, 0, 12);
 							}
-							else
+
+							glm::vec4 color = {0.8,0.8,0.8,1};
+
+							if (i != currentInventoryTab && glui::aabb(tabBox, platform::getRelMousePosition()))
 							{
-								newBox = shrinkRectanglePercentageMoveDown(newBox, 0.3);
-								renderer2d.renderRectangle(newBox, t, Colors_White,
-									{}, 0, {0,1,1,0.5});
+								color = {1.2,1.2,1.2,1};
 							}
+							else if (i == currentInventoryTab)
+							{
+								color = {1,1,1,1};
+							}
+
+
+							renderer2d.render9Patch(tabBox + selected,
+								24, color, {}, 0.f, buttonTexture,
+								{0,1,1,0.5}, {0.2,0.8,0.8,0.5});
+
+
+							if (glui::aabb(tabBox, platform::getRelMousePosition()) &&
+								platform::isLMousePressed()
+								)
+							{
+								currentInventoryTab = i;
+							}
+
+							{
+								auto newBox = tabBox;
+
+								gl2d::Texture t; t.id = textures[i];
+								if (i == currentInventoryTab)
+								{
+									newBox.w *= 2;
+									newBox = shrinkRectanglePercentage(newBox, 0.3);
+									renderer2d.renderRectangle(newBox, t, Colors_White,
+										{}, 0);
+								}
+								else
+								{
+									newBox = shrinkRectanglePercentageMoveDown(newBox, 0.3);
+									renderer2d.renderRectangle(newBox, t, Colors_White,
+										{}, 0, {0,1,1,0.5});
+								}
+							}
+
+
+							tabBox.x += oneItemSize + oneItemSize * (0.1f);
 						}
 
+					}
 
-						tabBox.x += oneItemSize + oneItemSize * (0.1f);
+
+
+
+
+
+				}
+
+				if (aspectIncrease)
+				{
+
+					glui::Frame insideInventoryRight(glui::Box().xRight().yTop().
+						yDimensionPercentage(1.f).xDimensionPercentage(aspectIncrease)());
+
+					//renderer2d.renderRectangle(glui::Box().xLeft().yTop().yDimensionPercentage(1.f).
+					//	xDimensionPercentage(1.f)(), {1,0,0,0.2});
+
+				}
+
+
+				//render held item
+				glm::vec4 itemPos(mousePos.x - oneItemSize / 2.f, mousePos.y - oneItemSize / 2.f,
+					oneItemSize, oneItemSize);
+				renderOneItem(itemPos, inventory.heldInMouse, 0);
+
+				//render hovered item stuff
+				if (currentItem && !inventory.heldInMouse.type)
+				{
+
+					auto item = currentItem;
+
+					if (item->type)
+					{
+
+						auto box = cursorItemIndexBox;
+
+						box.x += box.z * 0.5;
+						box.y += box.w * 0.8;
+						box.w *= 1;
+						box.z *= 1.8;
+
+						renderer2d.render9Patch(box,
+							24, {0.3,0.2,0.2,0.8}, {}, 0.f, buttonTexture, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
+
+						std::string text = item->formatMetaDataToString();
+
+						renderTextIntoBox(renderer2d, text, font, box, Colors_White, true, true);
+
 					}
 
 				}
 
-
-			
-
-				
-
 			}
 
-			if(aspectIncrease)
+		#pragma region render effects
 			{
+				auto effectsBox = glui::Box().xLeftPerc(0.04).yCenter().yDimensionPixels(minDimenstion).
+					xDimensionPercentage(0.18)();
 
-				glui::Frame insideInventoryRight(glui::Box().xRight().yTop().
-					yDimensionPercentage(1.f).xDimensionPercentage(aspectIncrease)());
-				
-				//renderer2d.renderRectangle(glui::Box().xLeft().yTop().yDimensionPercentage(1.f).
-				//	xDimensionPercentage(1.f)(), {1,0,0,0.2});
+				glui::Frame insideUiCell(effectsBox);
 
-			}
+				//renderer2d.renderRectangle(effectsBox, {1,0,0,0.8});
 
+				auto &effects = player.effects;
 
-			//render held item
-			glm::vec4 itemPos(mousePos.x - oneItemSize/2.f, mousePos.y - oneItemSize/2.f,
-				oneItemSize, oneItemSize);
-			renderOneItem(itemPos, inventory.heldInMouse, 0);
-
-			//render hovered item stuff
-			if (currentItem && !inventory.heldInMouse.type)
-			{
-
-				auto item = currentItem;
-
-				if (item->type)
+				int effectsCount = 0;
+				for (int i = 0; i < Effects::Effects_Count; i++)
 				{
-
-					auto box = cursorItemIndexBox;
-
-					box.x += box.z * 0.5;
-					box.y += box.w * 0.8;
-					box.w *= 1;
-					box.z *= 1.8;
-
-					renderer2d.render9Patch(box,
-						24, {0.3,0.2,0.2,0.8}, {}, 0.f, buttonTexture, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
-
-					std::string text = item->formatMetaDataToString();
-
-					renderTextIntoBox(renderer2d, text, font, box, Colors_White, true, true);
-
+					if (effects.allEffects[i].timerMs > 0)
+					{
+						effectsCount++;
+					}
 				}
 
+				if (effectsCount)
+				{
+					float height = oneItemSize;
+
+					height = std::min(height, effectsBox.w / (float)effectsCount);
+
+					float currentPos = effectsBox.y;
+
+					for (int i = 0; i < Effects::Effects_Count; i++)
+					{
+						if (effects.allEffects[i].timerMs > 0)
+						{
+
+							glm::vec4 box = glm::vec4(effectsBox.x, currentPos,
+								effectsBox.z, oneItemSize);
+
+							box = shrinkRectanglePercentage(box, 0.1);
+
+							//renderer2d.render9Patch(box,
+							//	24, {0.9,0.9,0.9,0.5}, {}, 0.f, buttonTexture,
+							//	GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
+
+							//render effect image
+							glm::vec4 effectBox = box;
+							effectBox.z = box.w;
+							effectBox.x = box.x + box.z - effectBox.z;
+							effectBox = shrinkRectanglePercentage(effectBox, 0.1);
+
+							renderer2d.renderRectangle(effectBox, effectsTexture[i]);
+
+
+							//render time
+							int secconds = effects.allEffects[i].timerMs / 1000;
+							int minutes = secconds / 60;
+							secconds -= minutes * 60;
+
+							glm::vec2 textPos;
+							textPos.y = box.y + box.w / 2.f;
+							textPos.x = box.x + (box.z) / 2.f;
+
+							std::stringstream ss;
+							ss << std::setw(2) << std::setfill('0') << minutes << ":"
+								<< std::setw(2) << std::setfill('0') << secconds;
+
+							renderer2d.renderText(textPos, ss.str().c_str(), font, Colors_White, 
+								box.x /(64*2.f));
+
+
+							currentPos += oneItemSize;
+						}
+					}
+
+				}
+				
+				
+
 			}
+		#pragma endregion
 
 		}
 		else if(showUI)
 		{
+
+			//effects
+			{
+
+				float size = std::min(w * 0.05, h * 0.05);
+
+				glm::vec4 box = glm::vec4(size * 0.1, size * 0.1, size, size);
+				auto &effects = player.effects;
+
+				for (int i = 0; i < Effects::Effects_Count; i++)
+				{
+					if (effects.allEffects[i].timerMs > 0)
+					{
+
+						renderer2d.renderRectangle(box, effectsTexture[i]);
+
+						//render time
+						//int secconds = effects.allEffects[i].timerMs / 1000;
+						//int minutes = secconds / 60;
+						//secconds -= minutes * 60;
+						//
+						//glm::vec2 textPos;
+						//textPos.y = box.y + box.w / 2.f;
+						//textPos.x = box.x + (box.z) / 2.f;
+						//
+						//std::stringstream ss;
+						//ss << std::setw(2) << std::setfill('0') << minutes << ":"
+						//	<< std::setw(2) << std::setfill('0') << secconds;
+						//
+						//renderer2d.renderText(textPos, ss.str().c_str(), font, Colors_White,
+						//	box.x / (64 * 2.f));
+
+						box.x += size * 1.1f;
+					}
+				}
+
+			}
+
+
+
+
 			//cross
 			renderer2d.renderRectangle(
 				glui::Box().xCenter().yCenter().xDimensionPixels(30).yAspectRatio(1.f),
@@ -923,7 +1075,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			selectedBox.x += itemBoxAdvance * itemSelected;
 			renderer2d.renderRectangle(selectedBox, itemsHighlighter, Colors_White, {}, 0);
 
-			//if (!isCreative)
+			if (!isCreative)
 			{
 				auto heartBox = itemsBarBox;
 				heartBox.z = itemsBarBox.w / 2.5;
@@ -1034,7 +1186,8 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 }
 
 bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
-	ProgramData &programData, BaseBlock &baseBlock)
+	ProgramData &programData, BaseBlock &baseBlock, glm::ivec3 blockPos
+	, ChunkSystem &chunkSystem, UndoQueue &undoQueue, LightSystem &lightSystem)
 {
 
 	if (w != 0 && h != 0)
@@ -1056,22 +1209,96 @@ bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
 		menuRenderer.Begin(5391);
 		menuRenderer.SetAlignModeFixedSizeWidgets({0,150});
 
-		menuRenderer.InputText("##123", baseBlock.name, sizeof(baseBlock.name), Colors_Gray,
+		menuRenderer.InputText("Name:", baseBlock.name, sizeof(baseBlock.name), Colors_Gray,
 			buttonTexture);
 
 
-		menuRenderer.sliderint8("Offset X", &baseBlock.offsetX, -16, 16, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
-		menuRenderer.sliderint8("Offset Y", &baseBlock.offsetY, -16, 16, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
-		menuRenderer.sliderint8("Offset Z", &baseBlock.offsetZ, -16, 16, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
+		menuRenderer.sliderint8("Offset X", &baseBlock.offsetX, -120, 120, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
+		menuRenderer.sliderint8("Offset Y", &baseBlock.offsetY, -120, 120, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
+		menuRenderer.sliderint8("Offset Z", &baseBlock.offsetZ, -120, 120, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
 
 		menuRenderer.sliderUint8("Size X", &baseBlock.sizeX, 0, 120, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
 		menuRenderer.sliderUint8("Size Y", &baseBlock.sizeY, 0, 120, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
 		menuRenderer.sliderUint8("Size Z", &baseBlock.sizeZ, 0, 120, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
 
-
-		bool rez = menuRenderer.Button("Save", Colors_Gray, buttonTexture);
+		bool rez = menuRenderer.Button("Update Settongs", Colors_Gray, buttonTexture);
+		
+		bool save = menuRenderer.Button("Save Structure To Disk", Colors_Gray, buttonTexture);
+		bool load = menuRenderer.Button("Load Structure from disk", Colors_Gray, buttonTexture);
 
 		menuRenderer.End();
+
+		glm::ivec3 startPos = blockPos + glm::ivec3(1,0,1) + glm::ivec3(baseBlock.offsetX, baseBlock.offsetY, baseBlock.offsetZ);
+		glm::ivec3 size = glm::ivec3(baseBlock.sizeX, baseBlock.sizeY, baseBlock.sizeZ);
+
+		std::string filePath = RESOURCES_PATH;
+		filePath += "/gameData/structures/";
+		filePath += baseBlock.name;
+		filePath += ".structure";
+
+		if (save)
+		{
+			std::vector<unsigned char> data;
+			data.resize(sizeof(StructureData) + sizeof(BlockType) * size.x * size.y * size.z);
+		
+			StructureData *s = (StructureData *)data.data();
+		
+			s->size = size;
+			s->unused = 0;
+		
+			for (int x = 0; x < size.x; x++)
+				for (int z = 0; z < size.z; z++)
+					for (int y = 0; y < size.y; y++)
+					{
+						glm::ivec3 pos = startPos + glm::ivec3(x, y, z);
+		
+						auto rez = chunkSystem.getBlockSafe(pos.x, pos.y, pos.z);
+		
+						if (rez)
+						{
+							s->unsafeGet(x, y, z) = rez->getType();
+						}
+						else
+						{
+							s->unsafeGet(x, y, z) = BlockTypes::air;
+						}
+		
+					}
+
+			sfs::writeEntireFile(s, data.size(), filePath.c_str());
+		}
+
+		if (load)
+		{
+			std::vector<char> data;
+			if (sfs::readEntireFile(data, filePath.c_str()) ==
+				sfs::noError)
+			{
+				StructureData *s = (StructureData *)data.data();
+				baseBlock.sizeX = s->size.x;
+				baseBlock.sizeY = s->size.y;
+				baseBlock.sizeZ = s->size.z;
+
+				for (int x = 0; x < s->size.x; x++)
+					for (int z = 0; z < s->size.z; z++)
+						for (int y = 0; y < s->size.y; y++)
+						{
+							glm::ivec3 pos = startPos + glm::ivec3(x, y, z);
+		
+							Block block;
+							block.setType(s->unsafeGet(x, y, z));
+		
+							//todo implement the bulk version...
+							chunkSystem.placeBlockByClientForce(pos,
+								block, undoQueue,lightSystem);
+		
+						}
+		
+			}
+		
+		}
+
+
 
 		return rez;
 	}

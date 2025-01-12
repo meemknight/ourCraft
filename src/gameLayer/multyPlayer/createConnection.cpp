@@ -24,44 +24,17 @@ void submitTaskClient(Task &t)
 
 	switch (t.taskType)
 	{
-	case Task::generateChunk:
-	{
-		p.header = headerRequestChunk;
-		Packet_RequestChunk packetData = {};
-		packetData.chunkPosition = {t.pos.x, t.pos.z};
-		packetData.playersPositionAtRequest = t.playerPosForChunkGeneration;
+		
+		case Task::placeBlock:
+		{
+			//todo remove
+			permaAssert(0);
+			break;
+		}
+		default:
 
-		sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1, 
-			channelChunksAndBlocks);
+			permaAssert(0);
 		break;
-	}
-	case Task::placeBlock:
-	{
-		//todo remove
-		permaAssert(0);
-		break;
-	}
-	default:
-
-	//todo remove
-	case Task::droppedItemEntity:
-	{
-		permaAssert(0);
-		//p.header = headerClientDroppedItem;
-		//Packet_ClientDroppedItem packetData = {};
-		//packetData.position = t.doublePos;
-		//packetData.blockType = t.blockType;
-		//packetData.count = t.blockCount;
-		//packetData.eventId = t.eventId;
-		//packetData.entityID = t.entityId;
-		//packetData.motionState = t.motionState;
-		//packetData.timer = t.timer;
-		//
-		//sendPacket(data.server, p, (char *)&packetData, sizeof(packetData), 1,
-		//	channelChunksAndBlocks);
-	}
-
-	break;
 	}
 
 
@@ -120,7 +93,8 @@ void recieveDataClient(ENetEvent &event,
 	LightSystem &lightSystem,
 	std::uint64_t &yourTimer,
 	unsigned char revisionNumberBlockInteraction,
-	bool &shouldExitBlockInteraction, bool &killedPlayer, bool &respawn
+	bool &shouldExitBlockInteraction, bool &killedPlayer, bool &respawn,
+	std::deque<std::string> &chat, float &chatTimer
 	)
 {
 	Packet p;
@@ -163,22 +137,14 @@ void recieveDataClient(ENetEvent &event,
 				break;
 			}
 
+
 			if (chunkSystem.isChunkInRadiusAndBounds({playerPosition.x, playerPosition.z},
 				{chunkPacket->chunk.x, chunkPacket->chunk.z}))
 			{
 				
 
 				{
-					//remove from recently requested chunks so we can request again
-					//if needed for some reason
-					{
-						auto f = chunkSystem.recentlyRequestedChunks.find({chunkPacket->chunk.x, chunkPacket->chunk.z});
-						if (f != chunkSystem.recentlyRequestedChunks.end())
-						{
-							chunkSystem.recentlyRequestedChunks.erase(f);
-
-						}
-					}
+		
 
 					int x = chunkPacket->chunk.x - chunkSystem.cornerPos.x;
 					int z = chunkPacket->chunk.z - chunkSystem.cornerPos.y;
@@ -276,15 +242,17 @@ void recieveDataClient(ENetEvent &event,
 			break;
 		}
 
-		case headerRecieveBlockData:
+		case headerRecieveEntireBlockDataForChunk:
 		{
+			//todo request hard reset
 			if (size == 0) { break; }
 			
+			bool firstTime = 1;
 				
 			size_t pointer = 0;
 			while (size - pointer > 0)
 			{
-				if (size < sizeof(BlockDataHeader)) { break; } //todo request hard reset here
+				if (size - pointer < sizeof(BlockDataHeader)) { break; } //todo request hard reset here
 
 				BlockDataHeader blockHeader = {};
 				memcpy(&blockHeader, data + pointer, sizeof(BlockDataHeader));
@@ -296,14 +264,61 @@ void recieveDataClient(ENetEvent &event,
 				if (blockHeader.blockType == BlockTypes::structureBase)
 				{
 
-					if (blockHeader.dataSize)
-					{
+					Chunk *chunk = 0;
+					auto b = chunkSystem.getBlockSafeAndChunk(blockHeader.pos.x, blockHeader.pos.y, blockHeader.pos.z, chunk);
 
+					if (!b) { break; }
+
+					if (b->getType() != BlockTypes::structureBase)
+					{
+						//todo request hard reset
 					}
 					else
 					{
+						if (firstTime)
+						{
+							firstTime = 0;
+							chunk->blockData = {}; //clear the block data for this chunk
+						}
 
+						glm::ivec3 posInChunk = blockHeader.pos;
+						posInChunk.x = modBlockToChunk(posInChunk.x);
+						posInChunk.z = modBlockToChunk(posInChunk.z);
+
+						auto blockHash = fromBlockPosInChunkToHashValue(posInChunk.x, posInChunk.y, posInChunk.z);
+
+
+						if (blockHeader.dataSize)
+						{
+							BaseBlock baseBlock;
+							size_t outSize = 0;
+							if (!baseBlock.readFromBuffer((unsigned char*)data + pointer, blockHeader.dataSize, outSize))
+							{
+								//hard reset
+							}
+							else
+							{
+								pointer += outSize;
+
+								if (baseBlock.isDataValid())
+								{
+									chunk->blockData.baseBlocks[blockHash] = baseBlock;
+								}
+								else
+								{
+									//todo hardReset
+								}
+
+							}
+
+						}
+						else
+						{
+							chunk->blockData.baseBlocks[blockHash] = {};
+						}
 					}
+
+					
 
 				}
 				else
@@ -318,6 +333,66 @@ void recieveDataClient(ENetEvent &event,
 			break;
 		}
 
+		case headerChangeBlockData:
+		{
+			//todo request hard reset
+			if (size < sizeof(Packet_ChangeBlockData)) { break; }
+
+			Packet_ChangeBlockData *changeBlockData = (Packet_ChangeBlockData *)data;
+
+			//check if corupted data
+			if (changeBlockData->blockDataHeader.pos.y < 0 || changeBlockData->blockDataHeader.pos.y >= CHUNK_HEIGHT) { break; } //todo request hard reset here
+
+			if (changeBlockData->blockDataHeader.blockType == BlockTypes::structureBase)
+			{
+
+				Chunk *chunk = 0;
+				auto b = chunkSystem.getBlockSafeAndChunk(changeBlockData->blockDataHeader.pos.x, changeBlockData->blockDataHeader.pos.y, changeBlockData->blockDataHeader.pos.z, chunk);
+			
+				if (b)
+				{
+
+					BaseBlock baseBlock;
+					size_t _ = 0;
+					if (!baseBlock.readFromBuffer((unsigned char *)data + sizeof(Packet_ChangeBlockData),
+						size - sizeof(Packet_ChangeBlockData), _))
+					{
+						//todo hard reset
+					}
+					else
+					{
+						if(!baseBlock.isDataValid())
+						{
+							//todo hard reset
+						}
+						else
+						{
+							glm::ivec3 posInChunk = changeBlockData->blockDataHeader.pos;
+							posInChunk.x = modBlockToChunk(posInChunk.x);
+							posInChunk.z = modBlockToChunk(posInChunk.z);
+
+							auto blockHash = fromBlockPosInChunkToHashValue(posInChunk.x, posInChunk.y, posInChunk.z);
+
+							chunk->blockData.baseBlocks[blockHash] = baseBlock;
+						}
+					}
+
+				}
+				else
+				{
+					//todo request hard reset
+				}
+
+			}
+			else
+			{
+				//todo request hard reset
+			}
+
+			break;
+		}
+
+		//todo place immediately!!!!!!!!!!!!!!!!!!!
 		case headerPlaceBlock:
 		{
 			Packet_PlaceBlocks b;
@@ -327,6 +402,7 @@ void recieveDataClient(ENetEvent &event,
 			break;
 		}
 
+		//todo place immediately!!!!!!!!!!!!!!!!!!!
 		case headerPlaceBlocks:
 		{
 			for (int i = 0; i < size / sizeof(Packet_PlaceBlocks); i++)
@@ -387,8 +463,7 @@ void recieveDataClient(ENetEvent &event,
 			}
 			else
 			{
-				if (checkIfPlayerShouldGetEntity({playerPosition.x, playerPosition.z},
-					entity->entity.position, squareDistance, 0))
+				if (chunkSystem.shouldRecieveEntity(entity->entity.position))
 				{
 
 					auto found = entityManager.players.find(entity->eid);
@@ -398,13 +473,22 @@ void recieveDataClient(ENetEvent &event,
 						entityManager.players[entity->eid] = {};
 						found = entityManager.players.find(entity->eid);
 					}
-					
+					float restantTimer = computeRestantTimer(entity->timer, yourTimer);
+
+					//if (restantTimer > 0)
+					//{
+					//	found->second.oldPositionForRubberBand = found->second.entity.position;
+					//}
+					//else
+					//{
+					//	found->second.rubberBand
+					//	.addToRubberBand(found->second.entity.position - entity->entity.position);
+					//}
 					found->second.rubberBand
 						.addToRubberBand(found->second.entity.position - entity->entity.position);
 
 					found->second.entity = entity->entity;
 
-					float restantTimer = computeRestantTimer(entity->timer, yourTimer);
 					
 					found->second.restantTime = restantTimer;
 
@@ -719,6 +803,7 @@ void recieveDataClient(ENetEvent &event,
 			int timer = yourTimer - packetData->timer;
 
 			if (timer > 15'000) { break; } //probably coruption or the packet is somehow too old
+			if (timer < -4'000) { break; } //probably coruption
 
 			if (timer > 0)
 			{
@@ -731,6 +816,17 @@ void recieveDataClient(ENetEvent &event,
 		}
 		break;
 
+		case headerSendChat:
+		{
+
+			if (size <= 1) { break; }
+			data[size - 1] = 0;
+
+			chat.push_front(std::string(data));
+			chatTimer = 5;
+
+		}
+		break;
 
 
 		default:
@@ -751,10 +847,12 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 	LightSystem &lightSystem,
 	std::uint64_t &serverTimer, bool &disconnect
 	, unsigned char revisionNumberBlockInteraction, bool &shouldExitBlockInteraction,
-	bool &killedPlayer, bool &respawn
+	bool &killedPlayer, bool &respawn,
+	std::deque<std::string> &chat, float &chatTimer
 	)
 {
 	ENetEvent event;
+	int packetCount = 0;
 
 	//ENetPacket *nextPacket = clientData.server->incomingDataTotal;
 	for (int i = 0; i < 50; i++)
@@ -770,7 +868,7 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 						playerPosition, squareDistance, entityManager, undoQueue,
 						chunkSystem, lightSystem, serverTimer,
 						revisionNumberBlockInteraction, shouldExitBlockInteraction, killedPlayer,
-						respawn);
+						respawn, chat, chatTimer);
 					
 					enet_packet_destroy(event.packet);
 
@@ -779,17 +877,21 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 
 				case ENET_EVENT_TYPE_DISCONNECT:
 				{
+					std::cout << "Disconect from client\n";
 					disconnect = 1;
 					break;
 				}
 
 			}
+			packetCount++;
 		}
 		else
 		{
 			break;
 		}
 	}
+
+	//if (packetCount) { std::cout << "Recieved: " << packetCount << "  "; }
 
 	//int counter = 0;
 	//auto nextPacket = clientData.client->dispatchQueue.sentinel.next;
@@ -901,7 +1003,9 @@ bool createConnection(Packet_ReceiveCIDAndData &playerData, const char *c)
 		return false;
 	}
 
-	auto test = clientData.server;
+	clientData.server->timeoutMinimum = 10'000;
+	clientData.server->timeoutMaximum = 30'000;
+	clientData.server->timeoutLimit = 64;
 
 	{
 

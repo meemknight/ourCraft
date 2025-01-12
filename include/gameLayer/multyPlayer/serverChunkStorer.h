@@ -99,7 +99,9 @@ struct SavedChunk
 		bool dirty = 0;
 		bool dirtyEntity = 0;
 		bool shouldUnload = 0; 
-		//TODO, when checking what chunks should be keps, if we recommision an shouldUnloadChunk, make sure we
+		bool dirtyBlockData = 0;
+		bool withinSimulationDistance = 0;
+		//TODO, when checking what chunks should be kept, if we recommision an shouldUnloadChunk, make sure we
 		//readd all the entities in the entities chunk position cache!
 
 
@@ -167,6 +169,8 @@ struct ServerChunkStorer
 	bool saveNextChunk(WorldSaver &worldSaver, int count = 1, int entitySaver = 1);
 
 	void saveChunk(WorldSaver &worldSaver, SavedChunk *savedChunks);
+
+	void saveChunkBlockData(WorldSaver &worldSaver, SavedChunk *savedChunks);
 
 	void saveAllChunks(WorldSaver &worldSaver);
 
