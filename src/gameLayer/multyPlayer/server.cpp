@@ -677,6 +677,8 @@ void serverWorkerUpdate(
 	serverProfiler.endSubProfile("Save chunk on disk");
 
 	//mark all entities as dirty every 5 secconds, so we save them
+	//TODO some chunks aren't in the simulation distance so ther's no need to mark them as dirty.
+	//so find a way to check if a chunk was inactive since the last update.
 	if (sd.saveEntitiesTimer <= 0)
 	{
 		sd.saveEntitiesTimer = 5;
@@ -1069,7 +1071,7 @@ std::string executeServerCommand(std::uint64_t cid, const char *command)
 
 	std::string err;
 
-	auto tokens = parse(command, err);
+	std::vector<Token> tokens = parse(command, err);
 
 	if (err != "") { return err; }
 

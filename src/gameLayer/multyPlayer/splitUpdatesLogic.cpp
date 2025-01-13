@@ -100,7 +100,8 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 		for (auto i : chunkCache.savedChunks)
 		{
 			if (!i.second->otherData.shouldUnload
-				&& i.second->otherData.withinSimulationDistance)
+				//&& i.second->otherData.withinSimulationDistance
+				)
 			{
 
 				auto find = visited.find(i.first);
@@ -144,7 +145,8 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 							if (foundChunk != chunkCache.savedChunks.end())
 							{
 								if (!foundChunk->second->otherData.shouldUnload
-									&& foundChunk->second->otherData.withinSimulationDistance)
+									//&& foundChunk->second->otherData.withinSimulationDistance
+									)
 								{
 									visited.insert({el, currentIndex});
 

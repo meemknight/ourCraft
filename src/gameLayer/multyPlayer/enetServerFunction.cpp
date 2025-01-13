@@ -847,6 +847,8 @@ static std::atomic<bool> enetServerRunning = false;
 
 
 Profiler serverProfiler;
+
+//used for accessing the profiler from another thread
 Profiler getServerProfilerCopy()
 {
 	return serverProfiler;

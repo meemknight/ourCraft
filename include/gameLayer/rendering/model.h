@@ -16,6 +16,14 @@ struct Model
 	std::vector<glm::mat4> transforms;
 
 	std::int8_t headIndex = -1;
+	std::int8_t bodyIndex = -1;
+	std::int8_t rLegIndex = -1;
+	std::int8_t lLefIndex = -1;
+	std::int8_t rArmIndex = -1;
+	std::int8_t lArmIndex = -1;
+	std::int8_t pupilsIndex = -1;
+	std::int8_t lEyeIndex = -1;
+	std::int8_t rEyeIndex = -1;
 
 	void cleanup();
 };

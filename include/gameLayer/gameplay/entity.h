@@ -10,6 +10,7 @@
 #include <unordered_set>
 #include <rendering/camera.h>
 #include <gameplay/effects.h>
+#include <rendering/model.h>
 
 //basic entity structure
 //
@@ -107,6 +108,19 @@ struct RubberBand
 
 void computeRubberBand(
 	RubberBand &rubberBand, float deltaTime);
+
+
+//the pupils are actually optinal
+struct HasEyesAndPupils
+{
+	constexpr static bool eyesAndPupils = true;
+};
+
+template <typename T, typename = void>
+constexpr bool hasEyesAndPupils = false;
+
+template <typename T>
+constexpr bool hasEyesAndPupils<T, std::void_t<decltype(std::declval<T>().eyesAndPupils)>> = true;
 
 
 struct HasOrientationAndHeadTurnDirection
@@ -335,6 +349,22 @@ struct LegsAnimator <T, std::enable_if_t< hasMovementSpeedForLegsAnimations<T>>>
 };
 
 
+template <typename T, typename Enable = void>
+struct EyesAndPupilsAnimator
+{
+};
+
+
+template <typename T>
+struct EyesAndPupilsAnimator <T, std::enable_if_t< hasEyesAndPupils<T>>>
+{
+
+	
+
+};
+
+
+
 struct PhysicalEntity
 {
 	glm::dvec3 position = {};
@@ -482,7 +512,7 @@ struct ClientEntity
 	RubberBandOrientation<T> rubberBandOrientation = {};
 
 	LegsAnimator<T> legAnimator = {};
-
+	EyesAndPupilsAnimator<T> eyesAndPupilsAnimator = {};
 
 	ConditionalMember<hasCanBeKilled<T>, bool> wasKilled = 0;
 	ConditionalMember<hasCanBeKilled<T>, float> wasKilledTimer = 0;
@@ -520,6 +550,32 @@ struct ClientEntity
 		{
 			return {0,0,-1};
 		}
+	}
+
+	void setEntityMatrixFull(glm::mat4 *skinningMatrix, Model &model)
+	{
+		if constexpr (hasEyesAndPupils<T>)
+		{
+			int stuff = 0;
+		
+			if (model.pupilsIndex > -1)
+			{
+				float displacement = -(1.f/16.f * (sinf(clock() / 100.f) + 1)/2.f);
+
+				displacement *= 4;
+
+				skinningMatrix[model.pupilsIndex] =
+					skinningMatrix[model.pupilsIndex] *
+					glm::translate(glm::vec3(0, displacement, 0));
+					;
+			}
+
+
+
+		}
+
+		BASE_CLIENT *baseClient = (BASE_CLIENT *)this;
+		baseClient->setEntityMatrix(skinningMatrix);
 	}
 
 

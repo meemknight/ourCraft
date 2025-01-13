@@ -3843,7 +3843,8 @@ void Renderer::renderEntities(
 
 			//todo set kill animation or something
 
-			e.second.setEntityMatrix(skinningMatrix.data() + (skinningMatrix.size() - model.transforms.size()));
+			e.second.setEntityMatrixFull(skinningMatrix.data() +
+				(skinningMatrix.size() - model.transforms.size()), model);
 
 
 			if constexpr (hasSkinBindlessTexture<decltype(e.second)>)

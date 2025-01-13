@@ -206,10 +206,17 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 
 				const char *name = node->mName.C_Str();
 
-				if (strcmp(name, "Head") == 0 || strcmp(name, "head") == 0)
-				{
-					model.headIndex = i;
-				}
+				if (strcmp(name, "Head") == 0 || strcmp(name, "head") == 0) { model.headIndex = i; }
+				if (strcmp(name, "Body") == 0 || strcmp(name, "body") == 0) { model.bodyIndex = i; }
+				if (strcmp(name, "RLeg") == 0 || strcmp(name, "rLeg") == 0) { model.rLegIndex = i; }
+				if (strcmp(name, "LLeg") == 0 || strcmp(name, "lLeg") == 0) { model.lLefIndex = i; }
+				if (strcmp(name, "RArm") == 0 || strcmp(name, "rArm") == 0) { model.rArmIndex = i; }
+				if (strcmp(name, "LArm") == 0 || strcmp(name, "lArm") == 0) { model.lArmIndex = i; }
+				if (strcmp(name, "Pupils") == 0 || strcmp(name, "pupils") == 0) { model.pupilsIndex = i; }
+				if (strcmp(name, "LEye") == 0 || strcmp(name, "lEye") == 0) { model.lEyeIndex = i; }
+				if (strcmp(name, "REye") == 0 || strcmp(name, "rEye") == 0) { model.rEyeIndex = i; }
+
+
 
 				for (int m = 0; m < node->mNumMeshes; m++)
 				{

@@ -130,6 +130,9 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 			}
 		}
 
+		//disable following
+		playerLockedOn = 0;
+
 		//auto playeerPos2D = playerLockedOnPosition;
 		//playeerPos2D.y = 0;
 		//auto pos2D = getPosition();

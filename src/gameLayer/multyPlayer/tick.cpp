@@ -1708,6 +1708,8 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 	for (auto &c : chunkCache.savedChunks)
 	{
+		if (!c.second->otherData.withinSimulationDistance) { continue; }
+
 		for (int h = 0; h < CHUNK_HEIGHT / 16; h++)
 		{
 			for (int i = 0; i < randomTickSpeed; i++)
@@ -1973,6 +1975,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 	for (auto &c : chunkCache.savedChunks)
 	{
+		if (!c.second->otherData.withinSimulationDistance) { continue; }
 		if (c.second->otherData.shouldUnload) { continue; }
 
 		auto &entityData = c.second->entityData;
@@ -2004,6 +2007,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 	for (auto &c : chunkCache.savedChunks)
 	{	
+		if (!c.second->otherData.withinSimulationDistance) { continue; }
 		if (c.second->otherData.shouldUnload) { continue; }
 
 		auto &entityData = c.second->entityData;
