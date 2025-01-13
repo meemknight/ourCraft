@@ -1,29 +1,13 @@
 #include <splines.h>
 #include <glm/glm.hpp>
 
-float lerp(float a, float b, float r)
-{
-	return a * (1 - r) + b * r;
-}
+
 
 glm::vec2 lerp(glm::vec2 a, glm::vec2 b, float r)
 {
 	return a * (1.f - r) + b * r;
 }
 
-float linearRemap(float val, float fromMin, float fromMax, float toMin, float toMax)
-{
-	float rez = val;
-	rez -= fromMin;
-
-	rez /= (fromMax - fromMin);
-	//rez is between 0 and 1 now
-
-	rez *= (toMax - toMin);
-	rez += toMin;
-
-	return rez;
-}
 
 float applySpline(float p, glm::vec2 *points, size_t s)
 {

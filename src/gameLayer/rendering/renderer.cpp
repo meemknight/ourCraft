@@ -3801,7 +3801,7 @@ void Renderer::renderEntities(
 	//render hand draw hand renderHand drawHand
 	renderHand();
 
-
+	std::minstd_rand rng{std::random_device()()};
 
 	auto renderAllEntitiesOfOneType = [&](Model &model, auto &container)
 	{
@@ -3844,7 +3844,8 @@ void Renderer::renderEntities(
 			//todo set kill animation or something
 
 			e.second.setEntityMatrixFull(skinningMatrix.data() +
-				(skinningMatrix.size() - model.transforms.size()), model);
+				(skinningMatrix.size() - model.transforms.size()), model, 
+				deltaTime, rng);
 
 
 			if constexpr (hasSkinBindlessTexture<decltype(e.second)>)

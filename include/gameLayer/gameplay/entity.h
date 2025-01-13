@@ -11,6 +11,7 @@
 #include <rendering/camera.h>
 #include <gameplay/effects.h>
 #include <rendering/model.h>
+#include <easing.h>
 
 //basic entity structure
 //
@@ -359,7 +360,17 @@ template <typename T>
 struct EyesAndPupilsAnimator <T, std::enable_if_t< hasEyesAndPupils<T>>>
 {
 
-	
+	EasingEngine pupilAnimation;
+	float pupilWaitTimer = 2;
+
+	EasingEngine eyeLookingDirectionAnimator;
+	EasingEngine eyeLookingDirectionUpDown;
+	float eyeUpDownTimer = 2;
+
+
+	EasingEngine eyeLookingDirectionLeftRight;
+	float eyeLeftRightTimer = 0;
+	float pupilDirection = 0;
 
 };
 
@@ -552,24 +563,106 @@ struct ClientEntity
 		}
 	}
 
-	void setEntityMatrixFull(glm::mat4 *skinningMatrix, Model &model)
+	void setEntityMatrixFull(glm::mat4 *skinningMatrix, Model &model, float deltaTime,
+		std::minstd_rand &rng)
 	{
 		if constexpr (hasEyesAndPupils<T>)
 		{
 			int stuff = 0;
-		
+			
 			if (model.pupilsIndex > -1)
 			{
-				float displacement = -(1.f/16.f * (sinf(clock() / 100.f) + 1)/2.f);
 
-				displacement *= 4;
+				float pupilDisplacement = eyesAndPupilsAnimator.pupilAnimation.update(deltaTime)
+					.sin(eyesAndPupilsAnimator.pupilWaitTimer, 2, 0.01, 0.10).burst(0.5, 0, 1, 8)
+					.clamp().result();
+
+				if (eyesAndPupilsAnimator.pupilAnimation.hasRestarted)
+				{
+					eyesAndPupilsAnimator.pupilWaitTimer =
+						getRandomNumberFloat(rng, 0.4, 6) +
+						getRandomNumberFloat(rng, 0.1, 4);
+
+				}
+
+				pupilDisplacement *= 3.9f * -(1.f / 16.f);
 
 				skinningMatrix[model.pupilsIndex] =
 					skinningMatrix[model.pupilsIndex] *
-					glm::translate(glm::vec3(0, displacement, 0));
+					glm::translate(glm::vec3(0, pupilDisplacement, 0));
 					;
 			}
 
+			if (model.lEyeIndex > -1 || 
+					model.rEyeIndex > -1
+				)
+			{
+
+				float pupilUpDown = eyesAndPupilsAnimator.eyeLookingDirectionUpDown.update(deltaTime)
+					.constant(eyesAndPupilsAnimator.eyeUpDownTimer)
+					.sin(5, 1, -1, 1)
+					.goTowards(1).result();
+
+				pupilUpDown *= (1.f / 16.f) * 0.1;
+				if (eyesAndPupilsAnimator.eyeLookingDirectionUpDown.hasRestarted)
+				{
+					eyesAndPupilsAnimator.eyeUpDownTimer =
+						getRandomNumberFloat(rng, 0.4, 10);
+				}
+
+
+				float pupilLeftRight = eyesAndPupilsAnimator.eyeLookingDirectionLeftRight.update(deltaTime)
+					.constant(eyesAndPupilsAnimator.eyeLeftRightTimer)
+					.goTowards(0.5, 1)
+					.constant(2)
+					.goTowards(0.8).result();
+				if (eyesAndPupilsAnimator.eyeLookingDirectionLeftRight.hasRestarted)
+				{
+					eyesAndPupilsAnimator.eyeLeftRightTimer =
+						getRandomNumberFloat(rng, 1, 12);
+					eyesAndPupilsAnimator.pupilDirection = 
+						std::sqrt(getRandomNumberFloat(rng, 0, 1));
+					if (getRandomChance(rng, 0.5))
+					{
+						eyesAndPupilsAnimator.pupilDirection *= -1;
+					}
+
+				}
+
+				float rEye = 0;
+				float lEye = 0;
+				pupilLeftRight *= (1.f / 16.f) * 0.6f;
+
+
+				if (eyesAndPupilsAnimator.pupilDirection > 0)
+				{
+					rEye = pupilLeftRight * eyesAndPupilsAnimator.pupilDirection;
+					lEye = rEye * 0.4;
+				}
+				else
+				{
+					lEye = pupilLeftRight * eyesAndPupilsAnimator.pupilDirection;
+					rEye = lEye * 0.4;
+				}
+
+				rEye += 0.01;
+				lEye += -0.01;
+
+				if (model.lEyeIndex)
+				{
+					skinningMatrix[model.lEyeIndex] =
+						skinningMatrix[model.lEyeIndex] *
+						glm::translate(glm::vec3(lEye, pupilUpDown, 0));
+				}
+
+				if (model.rEyeIndex)
+				{
+					skinningMatrix[model.rEyeIndex] =
+						skinningMatrix[model.rEyeIndex] *
+						glm::translate(glm::vec3(rEye, pupilUpDown, 0));
+				}
+
+			}
 
 
 		}

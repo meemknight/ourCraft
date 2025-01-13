@@ -71,7 +71,7 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 )
 {
 
-	if (1)
+	if (0)
 	{
 		float followDistance = 22;
 		float keepFollowDistance = 33;

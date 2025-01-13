@@ -2,6 +2,7 @@
 #include <vector>
 #include <glm/vec2.hpp>
 #include <string>
+#include <easing.h>
 
 constexpr static int MAX_SPLINES_COUNT = 20;
 
@@ -22,10 +23,8 @@ struct Spline
 };
 
 
-float lerp(float a, float b, float r);
 glm::vec2 lerp(glm::vec2 a, glm::vec2 b, float r);
 
-float linearRemap(float val, float fromMin, float fromMax, float toMin, float toMax);
 
 float applySpline(float p, glm::vec2 *points, size_t s);
 
