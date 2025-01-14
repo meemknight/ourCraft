@@ -1686,11 +1686,17 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 			z + this->data.z * CHUNK_SIZE};
 
 		bool snowGrass = 0;
+		bool yellowGrass = 0;
 		if (b.getType() == grass)
 		{
 			if (sides[BOTTOM] && sides[BOTTOM]->getType() == BlockTypes::snow_dirt)
 			{
 				snowGrass = true;
+			}
+
+			if (sides[BOTTOM] && sides[BOTTOM]->getType() == BlockTypes::yellowGrass)
+			{
+				yellowGrass = true;
 			}
 		}
 
@@ -1700,6 +1706,9 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 			if (snowGrass)
 			{
 				currentVector->push_back(mergeShorts(i, SNOW_GRASS_TEXTURE_INDEX * 3));
+			}else if (yellowGrass)
+			{
+				currentVector->push_back(mergeShorts(i, YELLOW_GRASS_TEXTURE_INDEX * 3));
 			}
 			else
 			{

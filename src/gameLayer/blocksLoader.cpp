@@ -104,7 +104,9 @@ const char *texturesNames[] = {
 	"marbleBricks",			//92
 	"marblePillar",			//93
 	"marbleTop",			//94
-
+	"yellow_grass_block_top",//95
+	"yellow_grass_block_side",//96
+	"yellowGrass",			//97
 
 };
 
@@ -417,6 +419,9 @@ uint16_t blocksLookupTable[] = {
 
 	//log wall
 	6, 6, 5, 5, 6, 6,
+
+	//yellow grass wall
+	96, 96, 95, 1, 96, 96,
 
 };
 

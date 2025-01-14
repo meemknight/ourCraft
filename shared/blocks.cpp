@@ -205,6 +205,7 @@ bool isAnyDirtBlock(BlockType type)
 		type == dirt ||
 		type == snow_dirt ||
 		type == coarseDirt ||
+		type == yellowGrass ||
 		type == mud;
 }
 

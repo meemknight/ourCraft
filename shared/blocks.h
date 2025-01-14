@@ -146,6 +146,7 @@ enum BlockTypes : unsigned short
 
 	logWall,
 
+	yellowGrass,
 
 	BlocksCount
 };
