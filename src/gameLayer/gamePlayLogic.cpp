@@ -327,7 +327,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.chunkSystem, gameData.lightSystem,
 			gameData.serverTimer, disconnect, 
 			gameData.currentBlockInteractionRevisionNumber, shouldExitBlockInteraction,
-			gameData.killed, respawned, gameData.chat, gameData.chatStayOnTimer);
+			gameData.killed, respawned, gameData.chat, gameData.chatStayOnTimer, 
+			gameData.interaction);
 
 		if (disconnect) { return 0; }
 

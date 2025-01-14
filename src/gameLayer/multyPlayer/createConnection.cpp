@@ -63,14 +63,6 @@ ENetPeer *getServer()
 	return clientData.server;
 }
 
-std::vector<Packet_PlaceBlocks> getRecievedBlocks()
-{
-	//auto ret = std::move(recievedBlocks);
-	auto ret = clientData.recievedBlocks;
-	clientData.recievedBlocks.clear();
-	return ret;
-}
-
 
 ConnectionData getConnectionData()
 {
@@ -94,7 +86,8 @@ void recieveDataClient(ENetEvent &event,
 	std::uint64_t &yourTimer,
 	unsigned char revisionNumberBlockInteraction,
 	bool &shouldExitBlockInteraction, bool &killedPlayer, bool &respawn,
-	std::deque<std::string> &chat, float &chatTimer
+	std::deque<std::string> &chat, float &chatTimer,
+	InteractionData &playerInteraction
 	)
 {
 	Packet p;
@@ -392,22 +385,32 @@ void recieveDataClient(ENetEvent &event,
 			break;
 		}
 
-		//todo place immediately!!!!!!!!!!!!!!!!!!!
 		case headerPlaceBlock:
 		{
-			Packet_PlaceBlocks b;
-			b.blockPos = ((Packet_PlaceBlocks *)data)->blockPos;
-			b.blockType = ((Packet_PlaceBlocks *)data)->blockType;
-			clientData.recievedBlocks.push_back(b);
+			//chunkSystem.placeBlockNoClient
+			Packet_PlaceBlocks b = *(Packet_PlaceBlocks *)data;
+
+			Block bl;
+			bl.typeAndFlags = b.blockType;
+
+			chunkSystem.placeBlockByServerAndRemoveFromUndoQueue(b.blockPos, bl, lightSystem,
+				playerInteraction, undoQueue);
+
 			break;
 		}
 
-		//todo place immediately!!!!!!!!!!!!!!!!!!!
 		case headerPlaceBlocks:
 		{
 			for (int i = 0; i < size / sizeof(Packet_PlaceBlocks); i++)
 			{
-				clientData.recievedBlocks.push_back( ((Packet_PlaceBlocks*)data)[i] );
+
+				Packet_PlaceBlocks b = ((Packet_PlaceBlocks *)data)[i];
+
+				Block bl;
+				bl.typeAndFlags = b.blockType;
+
+				chunkSystem.placeBlockByServerAndRemoveFromUndoQueue(b.blockPos, bl, lightSystem,
+					playerInteraction, undoQueue);
 
 			}
 			//std::cout << "Placed blocks..." << size / sizeof(Packet_PlaceBlocks) << "\n";
@@ -848,7 +851,8 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 	std::uint64_t &serverTimer, bool &disconnect
 	, unsigned char revisionNumberBlockInteraction, bool &shouldExitBlockInteraction,
 	bool &killedPlayer, bool &respawn,
-	std::deque<std::string> &chat, float &chatTimer
+	std::deque<std::string> &chat, float &chatTimer,
+	InteractionData &playerInteraction
 	)
 {
 	ENetEvent event;
@@ -868,7 +872,7 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 						playerPosition, squareDistance, entityManager, undoQueue,
 						chunkSystem, lightSystem, serverTimer,
 						revisionNumberBlockInteraction, shouldExitBlockInteraction, killedPlayer,
-						respawn, chat, chatTimer);
+						respawn, chat, chatTimer, playerInteraction);
 					
 					enet_packet_destroy(event.packet);
 

@@ -287,55 +287,6 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	lastPlayerBlockPosition = playerBlockPosition;
 
 
-#pragma region place block by server
-	auto recievedBLocks = getRecievedBlocks();
-	for (auto &message : recievedBLocks)
-	{
-		auto pos = message.blockPos;
-		int xPos = divideChunk(pos.x);
-		int zPos = divideChunk(pos.z);
-	
-		if (xPos >= minPos.x && zPos >= minPos.y
-			&& xPos < maxPos.x && zPos < maxPos.y
-			)
-		{
-			//process block placement
-			//todo change!!!
-			Block block;
-			block.setType(message.blockType);
-			placeBlockNoClient(message.blockPos, block, lightSystem, 0, interaction);
-
-			//Chunk *c = 0;
-			//auto rez = getBlockSafeAndChunk(message.blockPos.x, message.blockPos.y, message.blockPos.z, c);
-			//
-			//if (rez)
-			//{
-			//	setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
-			//	rez->type = message.blockType;
-			//}
-	
-		}
-		else
-		{
-			//ignore message
-		}
-
-		//remove undo queue
-
-		for (auto &e :undoQueue.events)
-		{
-			if ((e.type == UndoQueueEvent::iPlacedBlock 
-				|| e.type == UndoQueueEvent::changedBlockData)
-				&& e.blockPos == pos)
-			{
-				e.type = UndoQueueEvent::doNothing;
-			}
-		}
-
-
-	}
-#pragma endregion
-
 
 #pragma region bake
 
@@ -478,8 +429,6 @@ bool ChunkSystem::shouldRecieveEntity(glm::dvec3 entityPos)
 
 Chunk *ChunkSystem::getChunkSafeFromBlockPos(int x, int z)
 {
-
-	
 
 	auto p = fromBlockPosToMatrixSpace(x, z);
 
@@ -1211,6 +1160,41 @@ bool ChunkSystem::breakBlockByClient(glm::ivec3 pos, UndoQueue &undoQueue,
 	
 	
 	return false;
+}
+
+//this will do a placeBlockNoClient and also remove the undo queue
+void ChunkSystem::placeBlockByServerAndRemoveFromUndoQueue(
+	glm::ivec3 pos, Block block, LightSystem &lightSystem, InteractionData &playerInteraction
+	, UndoQueue &undoQueue, std::vector<unsigned char> *optionalData
+)
+{
+
+	auto c = getChunkSafeFromBlockPos(pos.x, pos.z);
+
+	if (c
+		)
+	{
+		//process block placement
+		placeBlockNoClient(pos, block, lightSystem, optionalData, playerInteraction);
+	}
+	else
+	{
+		//ignore message
+	}
+
+	//remove undo queue
+
+	for (auto &e : undoQueue.events)
+	{
+		if ((e.type == UndoQueueEvent::iPlacedBlock
+			|| e.type == UndoQueueEvent::changedBlockData)
+			&& e.blockPos == pos)
+		{
+			e.type = UndoQueueEvent::doNothing;
+		}
+	}
+
+
 }
 
 void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, Block block, LightSystem &lightSystem,

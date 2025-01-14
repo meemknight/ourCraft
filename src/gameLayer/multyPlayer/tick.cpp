@@ -1723,6 +1723,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 				auto &b = c.second->chunk.unsafeGet(x,y,z);
 				auto type = b.getType();
 
+				//todo add yellow grass
 				if (type == BlockTypes::dirt)
 				{
 
@@ -1784,6 +1785,18 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 				}
 				else if (type == BlockTypes::grassBlock)
+				{
+					auto top = c.second->chunk.safeGet(x, y + 1, z);
+					if (top && top->stopsGrassFromGrowingIfOnTop())
+					{
+						//update block
+						b.setType(BlockTypes::dirt);
+						modifiedBlocks[{x + c.first.x * CHUNK_SIZE, y, z + c.first.y * CHUNK_SIZE}] = b.getType();
+						c.second->otherData.dirty = true;
+					}
+
+				}
+				else if (type == BlockTypes::yellowGrass)
 				{
 					auto top = c.second->chunk.safeGet(x, y + 1, z);
 					if (top && top->stopsGrassFromGrowingIfOnTop())
@@ -2124,6 +2137,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 
 	//send new blocks
+	//TODO CHANGE TO BLOCK rather than blockType
 	if (!modifiedBlocks.empty())
 	{
 

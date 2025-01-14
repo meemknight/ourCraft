@@ -110,7 +110,12 @@ struct ChunkSystem
 		LightSystem &lightSystem
 	);
 
-	//just place the block, forcely by server
+    void placeBlockByServerAndRemoveFromUndoQueue(glm::ivec3 pos, Block block,
+		LightSystem &lightSystem, 
+		InteractionData &playerInteraction, UndoQueue &undoQueue,
+		std::vector<unsigned char> *optionalData = 0);
+
+    //just place the block, forcely by server
 	void placeBlockNoClient(glm::ivec3 pos, Block block,
 		LightSystem &lightSystem, std::vector<unsigned char> *optionalData, 
 		InteractionData &playerInteraction);

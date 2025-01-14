@@ -72,13 +72,10 @@ struct ConnectionData
 	ENetHost *client = 0;
 	ENetPeer *server = 0;
 	std::uint64_t cid = 0;
-	std::vector<Packet_PlaceBlocks> recievedBlocks = {};
 	bool conected = false;
 };
 
 
-
-std::vector<Packet_PlaceBlocks> getRecievedBlocks();
 ConnectionData getConnectionData();
 bool createConnection(Packet_ReceiveCIDAndData &playerData, const char *c);
 
@@ -97,7 +94,8 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 	std::uint64_t &serverTimer, bool &disconnect,
 	unsigned char revisionNumberBlockInteraction, bool &shouldExitBlockInteraction,
 	bool &killedPlayer, bool &respawn,
-	std::deque<std::string> &chat, float &chatTimer
+	std::deque<std::string> &chat, float &chatTimer,
+	InteractionData &playerInteraction
 	);
 
 void attackEntity(std::uint64_t eid, unsigned char inventorySlot, glm::vec3 direction,
