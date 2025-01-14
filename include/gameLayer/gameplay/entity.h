@@ -137,6 +137,12 @@ template <typename T>
 constexpr bool hasBodyOrientation<T, std::void_t<decltype(std::declval<T>().bodyOrientation)>> = true;
 
 template <typename T, typename = void>
+constexpr bool hasLookDirectionAnimation = false;
+
+template <typename T>
+constexpr bool hasLookDirectionAnimation <T, std::void_t<decltype(std::declval<T>().lookDirectionAnimation)>> = true;
+
+template <typename T, typename = void>
 constexpr bool hasCleanup = false;
 
 template <typename T>
@@ -566,10 +572,42 @@ struct ClientEntity
 	void setEntityMatrixFull(glm::mat4 *skinningMatrix, Model &model, float deltaTime,
 		std::minstd_rand &rng)
 	{
+
+	
+
+		//if(0)
+		if constexpr (hasLookDirectionAnimation<T>)
+		{
+			auto rotation = glm::toMat4(glm::quatLookAt(glm::normalize(getRubberBandLookDirection()), glm::vec3(0, 1, 0)));
+
+			if constexpr (hasEyesAndPupils<T>)
+			{
+				if (model.pupilsIndex > -1)
+					{
+						
+						skinningMatrix[model.pupilsIndex] = skinningMatrix[model.pupilsIndex] * rotation; 
+				
+					}
+
+				if (model.lEyeIndex > -1)
+					{ skinningMatrix[model.lEyeIndex] = skinningMatrix[model.lEyeIndex] * rotation; }
+
+				if (model.rEyeIndex > -1)
+					{ skinningMatrix[model.rEyeIndex] = skinningMatrix[model.rEyeIndex] * rotation; }
+			}
+
+			if (model.headIndex > -1)
+			{
+				skinningMatrix[model.headIndex] = skinningMatrix[model.headIndex] * rotation;
+			}
+
+		};
+
+
 		if constexpr (hasEyesAndPupils<T>)
 		{
 			int stuff = 0;
-			
+
 			if (model.pupilsIndex > -1)
 			{
 
@@ -590,11 +628,11 @@ struct ClientEntity
 				skinningMatrix[model.pupilsIndex] =
 					skinningMatrix[model.pupilsIndex] *
 					glm::translate(glm::vec3(0, pupilDisplacement, 0));
-					;
+				;
 			}
 
-			if (model.lEyeIndex > -1 || 
-					model.rEyeIndex > -1
+			if (model.lEyeIndex > -1 ||
+				model.rEyeIndex > -1
 				)
 			{
 
@@ -620,7 +658,7 @@ struct ClientEntity
 				{
 					eyesAndPupilsAnimator.eyeLeftRightTimer =
 						getRandomNumberFloat(rng, 1, 12);
-					eyesAndPupilsAnimator.pupilDirection = 
+					eyesAndPupilsAnimator.pupilDirection =
 						std::sqrt(getRandomNumberFloat(rng, 0, 1));
 					if (getRandomChance(rng, 0.5))
 					{
@@ -666,6 +704,7 @@ struct ClientEntity
 
 
 		}
+
 
 		BASE_CLIENT *baseClient = (BASE_CLIENT *)this;
 		baseClient->setEntityMatrix(skinningMatrix);

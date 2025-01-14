@@ -56,8 +56,7 @@ void ZombieClient::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 void ZombieClient::setEntityMatrix(glm::mat4 *skinningMatrix)
 {
-	skinningMatrix[1] = skinningMatrix[1] * glm::toMat4(
-		glm::quatLookAt(glm::normalize(getRubberBandLookDirection()), glm::vec3(0, 1, 0)));
+
 
 	animatePlayerHandsZombie(skinningMatrix, currentHandsAngle);
 }

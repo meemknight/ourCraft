@@ -44,10 +44,7 @@ void GoblinClient::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 void GoblinClient::setEntityMatrix(glm::mat4 *skinningMatrix)
 {
-	//todo a way to obtain the index with the head and stuff
 
-	skinningMatrix[0] = skinningMatrix[0] * glm::toMat4(
-		glm::quatLookAt(glm::normalize(getRubberBandLookDirection()), glm::vec3(0, 1, 0)));
 
 
 }
@@ -71,7 +68,7 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 )
 {
 
-	if (0)
+	if (1)
 	{
 		float followDistance = 22;
 		float keepFollowDistance = 33;
@@ -110,6 +107,7 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 		}
 
+		//look at player
 		{
 			auto found = playersPosition.find(playerLockedOn);
 
@@ -119,6 +117,11 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 			}
 			else
 			{
+
+				lookAtPosition(found->second, entity.lookDirectionAnimation,
+					getPosition(), entity.bodyOrientation, 
+					glm::radians(65.f));
+
 				if (glm::distance(found->second, getPosition()) <= keepFollowDistance)
 				{
 					playerLockedOnPosition = found->second;
@@ -129,6 +132,9 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 				}
 			}
 		}
+
+
+		
 
 		//disable following
 		playerLockedOn = 0;
@@ -159,6 +165,7 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 		//{
 		//	direction = {0,0};
 		//}
+
 
 		if (!pathFindingSucceeded && playerLockedOn && closeToPlayer)
 		{
@@ -370,6 +377,8 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 		};
 
+		//random walk
+		if (0)
 		if (!playerLockedOn)
 		{
 			waitTime -= deltaTime;

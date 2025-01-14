@@ -36,8 +36,6 @@ void CatClient::update(float deltaTime, decltype(chunkGetterSignature) *chunkGet
 void CatClient::setEntityMatrix(glm::mat4 *skinningMatrix)
 {
 
-	skinningMatrix[0] = skinningMatrix[0] * glm::toMat4(
-		glm::quatLookAt(glm::normalize(getRubberBandLookDirection()), glm::vec3(0, 1, 0)));
 
 
 	skinningMatrix[2] = skinningMatrix[2] * glm::rotate(getLegsAngle(), glm::vec3{1,0,0});

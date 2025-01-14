@@ -217,6 +217,7 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 	//std::cout << "max" << event.peer->timeoutMaximum << "\n";
 	//std::cout << "limit" << event.peer->timeoutLimit << "\n";
 
+	//make sure we wait a little longer before timeout
 	event.peer->timeoutMinimum = 10'000;
 	event.peer->timeoutMaximum = 30'000;
 	event.peer->timeoutLimit = 64;
