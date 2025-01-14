@@ -89,6 +89,7 @@ bool isOpaque(BlockType type)
 	return
 		type != BlockTypes::air
 		&& type != BlockTypes::torch
+		//&& type != BlockTypes::glowstone
 		&& !(isStairsMesh(type))
 		&& !(isSlabMesh(type))
 		&& !(isWallMesh(type))
@@ -324,6 +325,7 @@ bool isTriviallyBreakable(BlockType type)
 
 bool isAnyUnbreakable(BlockType type)
 {
+	//todo make sure this can't get to the client or just make them breakable
 	return isControlBlock(type);
 }
 
@@ -441,9 +443,14 @@ float getBlockBaseMineDuration(BlockType type)
 		return 99999999999.0f;
 	}
 
-	if (isTriviallyBreakable(torch))
+	if (isTriviallyBreakable(type))
 	{
 		return 0.2;
+	}
+
+	if (type == structureBase)
+	{
+		return 1;
 	}
 
 	std::cout << "Block without base mine duration assigned!: " << type << "\n";

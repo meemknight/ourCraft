@@ -1029,7 +1029,7 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot
 			}
 
 			b->typeAndFlags = block.typeAndFlags;
-			if (b->isOpaque()) { b->lightLevel = 0; }
+			if (b->isOpaque() && !b->isLightEmitor()) { b->lightLevel = 0; }
 
 			setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
 
@@ -1090,7 +1090,7 @@ bool ChunkSystem::placeBlockByClientForce(glm::ivec3 pos, Block block,
 		changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->getType(),
 			block.getType(), lightSystem);
 		
-		if (b->isOpaque()) { b->lightLevel = 0; }
+		if (b->isOpaque() && !b->isLightEmitor()) { b->lightLevel = 0; }
 
 
 		setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
@@ -1214,7 +1214,7 @@ void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, Block block, LightSystem &l
 
 		changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->getType(), block.getType(), lightSystem);
 
-		if (b->isOpaque()) { b->lightLevel = 0; }
+		if (b->isOpaque() && !b->isLightEmitor()) { b->lightLevel = 0; }
 
 		setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
 

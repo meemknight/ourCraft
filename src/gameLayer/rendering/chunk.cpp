@@ -678,14 +678,14 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 	
 						if (rotation == 1)
 						{
-							currentVector->push_back(mergeShorts(cornerUpStartGeometry + 5
+							currentVector->push_back(mergeShorts(cornerUpStartGeometry + 4
 								, getGpuIdIndexForBlock(b.getType(), 1
 							)));
 							placeFlagsLightsNormally();
 						}else
 						if (rotation == 3)
 						{
-							currentVector->push_back(mergeShorts(cornerUpStartGeometry + 7
+							currentVector->push_back(mergeShorts(cornerUpStartGeometry + 6
 								, getGpuIdIndexForBlock(b.getType(), 1
 							)));
 							placeFlagsLightsNormally();
@@ -710,14 +710,14 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 						if (rotation == 1)
 						{
-								currentVector->push_back(mergeShorts(cornerUpStartGeometry + 4
+								currentVector->push_back(mergeShorts(cornerUpStartGeometry + 5
 							, getGpuIdIndexForBlock(b.getType(), 1
 							)));
 							placeFlagsLightsNormally();
 						}else
 						if (rotation == 3)
 						{
-							currentVector->push_back(mergeShorts(cornerUpStartGeometry + 6
+							currentVector->push_back(mergeShorts(cornerUpStartGeometry + 7
 								, getGpuIdIndexForBlock(b.getType(), 1
 							)));
 							placeFlagsLightsNormally();
@@ -1497,10 +1497,11 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y,
 				z + this->data.z * CHUNK_SIZE};
 
+
 		for (int index = 0; index < 6; index++)
 		{
 			int i = distances[index].y;
-
+			
 			bool isWater = b.getType() == BlockTypes::water;
 
 			if ((sides[i] != nullptr
@@ -1521,6 +1522,11 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 				//no faces in between same types
 				if (sides[i] && sides[i]->getType() == b.getType()) { continue; }
+
+
+				unsigned char sunLight = 0;
+				unsigned char torchLight = 0;
+				calculateLightThings(sunLight, torchLight, sides[i], b, i, y);
 
 
 				if (isWater)
@@ -1625,40 +1631,43 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 			
 				bool isInWater = (sides[i] != nullptr) && sides[i]->getType() == BlockTypes::water;
 
-				if (dontUpdateLightSystem)
-				{
-					pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
-						15, 15, aoShape);
-				}
-				else
-					if (sides[i] == nullptr && i == 2)
-					{
-						pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
-							15, b.getLight(), aoShape);
-					}
-					else if (sides[i] == nullptr && i == 3)
-					{
-						pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
-							5, b.getLight(), aoShape);
-						//bottom of the world
-					}
-					else if (sides[i] != nullptr)
-					{
-						int val = merge4bits(
-							std::max(b.getSkyLight(),sides[i]->getSkyLight()), 
-							std::max(b.getLight(),sides[i]->getLight())
-						);
+				pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
+					sunLight, torchLight, aoShape);
 
-						pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
-							std::max(b.getSkyLight(), sides[i]->getSkyLight()),
-							std::max(b.getLight(), sides[i]->getLight()), aoShape);
-					}
-					else
-					{
-						pushFlagsLightAndPosition(*currentVector, position, 
-							isWater, isInWater,
-							0, 0, aoShape);
-					}
+				//if (dontUpdateLightSystem)
+				//{
+				//	pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
+				//		15, 15, aoShape);
+				//}
+				//else
+				//	if (sides[i] == nullptr && i == 2)
+				//	{
+				//		pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
+				//			15, b.getLight(), aoShape);
+				//	}
+				//	else if (sides[i] == nullptr && i == 3)
+				//	{
+				//		pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
+				//			5, b.getLight(), aoShape);
+				//		//bottom of the world
+				//	}
+				//	else if (sides[i] != nullptr)
+				//	{
+				//		int val = merge4bits(
+				//			std::max(b.getSkyLight(),sides[i]->getSkyLight()), 
+				//			std::max(b.getLight(),sides[i]->getLight())
+				//		);
+				//
+				//		pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
+				//			std::max(b.getSkyLight(), sides[i]->getSkyLight()),
+				//			std::max(b.getLight(), sides[i]->getLight()), aoShape);
+				//	}
+				//	else
+				//	{
+				//		pushFlagsLightAndPosition(*currentVector, position, 
+				//			isWater, isInWater,
+				//			0, 0, aoShape);
+				//	}
 
 			}
 		}
