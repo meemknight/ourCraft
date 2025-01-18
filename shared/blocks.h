@@ -148,6 +148,12 @@ enum BlockTypes : unsigned short
 
 	yellowGrass,
 
+	blueBricks,
+	blueBricks_stairs,
+	blueBricks_slabs,
+	blueBricks_wall,
+
+
 	BlocksCount
 };
 

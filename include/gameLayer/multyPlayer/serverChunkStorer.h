@@ -174,7 +174,7 @@ struct ServerChunkStorer
 
 	void saveAllChunks(WorldSaver &worldSaver);
 
-	int unloadChunksThatNeedUnloading(WorldSaver &worldSaver, int count = 1);
+	int unloadChunksThatNeedUnloading(WorldSaver &worldSaver, int count = 2);
 
 	bool entityAlreadyExists(std::uint64_t eid);
 

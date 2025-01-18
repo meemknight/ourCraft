@@ -7,6 +7,7 @@
 #include <platformTools.h>
 #include <algorithm>
 #include <array>
+#include <gameplay/entity.h>
 
 #undef max
 #undef min
@@ -116,6 +117,27 @@ void pushFlagsLightAndPosition(std::vector<int> &vect,
 	vect.push_back(positionY);
 	vect.push_back(position.z);
 };
+
+
+inline uint32_t hash(int x, int y, int z)
+{
+	uint32_t h = static_cast<uint32_t>(x) * 374761393 +
+		static_cast<uint32_t>(y) * 668265263 +
+		static_cast<uint32_t>(z) * 2147483647;
+	h ^= (h >> 13);
+	h *= 1274126177;
+	h ^= (h >> 16);
+	return h;
+}
+
+bool getRandomChance(int x, int y, int z, float chance)
+{
+	std::minstd_rand rng;
+	rng.seed(hash(x,y,z));
+
+	return getRandomChance(rng, chance);
+}
+
 
 //todo a counter to know if I have transparent geometry in this chunk
 bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, 
@@ -535,7 +557,40 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 				)
 			   )
 			{
-				currentVector->push_back(mergeShorts(i + isAnimated * 10, getGpuIdIndexForBlock(b.getType(), i)));
+
+				auto type = b.getType();
+				if (type == bricks)
+				{
+					if (getRandomChance(x, y, z, 0.2))
+					{
+						currentVector->push_back(mergeShorts(i + isAnimated * 10,
+							BRICKS_VARIATION_TEXTURE_INDEX * 3));
+					}
+					else
+					{
+						currentVector->push_back(mergeShorts(i + isAnimated * 10,
+							getGpuIdIndexForBlock(b.getType(), i)));
+					}
+				}
+				else if (type == blueBricks)
+				{
+					if (getRandomChance(x, y, z, 0.2))
+					{
+						currentVector->push_back(mergeShorts(i + isAnimated * 10,
+							BLUE_BRICKS_VARIATION_TEXTURE_INDEX * 3));
+					}
+					else
+					{
+						currentVector->push_back(mergeShorts(i + isAnimated * 10,
+							getGpuIdIndexForBlock(b.getType(), i)));
+					}
+				}
+				else
+				{
+					currentVector->push_back(mergeShorts(i + isAnimated * 10,
+						getGpuIdIndexForBlock(b.getType(), i)));
+				}
+
 
 				int aoShape = determineAOShape(i, sides);
 				bool isInWater = (sides[i] != nullptr) && sides[i]->getType() == BlockTypes::water;
@@ -1923,7 +1978,6 @@ bool Chunk::shouldBakeOnlyBecauseOfTransparency(Chunk *left, Chunk *right, Chunk
 
 	return isDirtyTransparency();
 }
-
 
 
 void Chunk::createGpuData()

@@ -26,6 +26,7 @@ bool computeRevisionStuff(Client &client, bool allowed,
 	const EventId &eventId, std::uint64_t *oldid = 0, std::uint64_t *newid = 0);
 
 
+//todo remove most things from here or just remove it completely add it in client
 struct PerClientServerSettings
 {
 

@@ -28,6 +28,7 @@ bool isStairsMesh(BlockType type)
 		type == smoothLimeStone_stairs ||
 		type == marbleBlock_stairs ||
 		type == marbleBricks_stairs ||
+		type == blueBricks_stairs ||
 		type == tiledStoneBricks_stairs
 		;
 }
@@ -47,6 +48,7 @@ bool isSlabMesh(BlockType type)
 		type == smoothLimeStone_slabs ||
 		type == marbleBlock_slabs ||
 		type == marbleBricks_slabs ||
+		type == blueBricks_slabs ||
 		type == tiledStoneBricks_slab;
 }
 
@@ -66,6 +68,7 @@ bool isWallMesh(BlockType type)
 		type == marbleBlock_wall ||
 		type == marbleBricks_wall ||
 		type == logWall ||
+		type == blueBricks_wall ||
 		type == tiledStoneBricks_wall;
 
 }
@@ -166,6 +169,10 @@ bool isBricksSound(BlockType type)
 		type == marbleBricks_stairs ||
 		type == marbleBricks_slabs ||
 		type == marbleBricks_wall ||
+		type == blueBricks ||
+		type == blueBricks_stairs ||
+		type == blueBricks_wall ||
+		type == blueBricks_slabs ||
 		type == bricks_wall;
 }
 
@@ -237,11 +244,16 @@ bool isAnySemiHardBlock(BlockType type)
 
 }
 
+//used for breaking
 bool isAnyStone(BlockType type)
 {
 	return type == stone ||
 		type == cobblestone ||
 		type == bricks ||
+		type == blueBricks ||
+		type == blueBricks_stairs ||
+		type == blueBricks_wall ||
+		type == blueBricks_slabs ||
 		type == stoneBrick ||
 		type == coal_ore ||
 		type == gold_ore ||

@@ -401,6 +401,7 @@ void serverWorkerUpdate(
 
 		//todo move in tick probably
 		//set players in their chunks, set players in chunks
+
 		for (auto &client : getAllClientsReff())
 		{
 
@@ -414,14 +415,15 @@ void serverWorkerUpdate(
 			{
 				chunk->entityData.players[client.first] = &client.second.playerData;
 				sd.chunkCache.entityChunkPositions[client.first] = cPos;
-				auto ptr = &client.second.playerData;
+				//auto ptr = &client.second.playerData;
 			}
 
 		}
+
 	#pragma endregion
 
 
-
+		//ALL CHUNKS THAT PLAYERS ARE IN SHOULD BE LOADED!!!!
 
 
 		//for (auto &c : sd.chunkCache.savedChunks)
