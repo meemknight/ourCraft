@@ -126,7 +126,7 @@ void recieveDataClient(ENetEvent &event,
 
 			if (size != sizeof(Packet_RecieveChunk))
 			{
-				std::cout << "Size error " << size << "\n";
+				std::cout << "Size error in recieve chunk!!!!!!!!!!!!!!!!!!! " << size << "\n";
 				break;
 			}
 

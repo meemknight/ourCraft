@@ -408,12 +408,14 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 	{
 
 		//todo hard reset on fail
+
 		case headerClientDroppedChunk:
 		{
 			Packet_ClientDroppedChunk packetData = *(Packet_ClientDroppedChunk *)data;
 
 			if (sizeof(Packet_ClientDroppedChunk) != size)
 			{
+				//todo hard reset on fail
 				reportError("corrupted packet or something Packet_ClientDroppedChunk");
 				break;
 			}
@@ -480,7 +482,6 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 
 				if (connection->second.playerData.entity.position != packetData.playerData.position)
 				{
-
 
 					clientCopy = connection->second;
 					clientCopyCid = connection->first;

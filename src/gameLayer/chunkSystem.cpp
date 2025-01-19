@@ -31,6 +31,7 @@ Chunk* ChunkSystem::getChunkSafeFromMatrixSpace(int x, int z)
 
 void ChunkSystem::init(int squareDistance)
 {
+	created = 0;
 	squareSize = squareDistance;
 	loadedChunks.resize(squareDistance * squareDistance, nullptr);
 	gpuBuffer.create(squareDistance * squareDistance);
@@ -42,7 +43,6 @@ void ChunkSystem::changeRenderDistance(int squareDistance, bool notifyServer)
 	if (squareSize == squareDistance) { return; }
 	if (squareDistance > 100) { return; }
 	if (squareDistance < 1) { return; }
-
 
 	cleanup(notifyServer);
 
@@ -946,6 +946,7 @@ void ChunkSystem::dropAllChunks(BigGpuBuffer *gpuBuffer, bool notifyServer)
 	{
 		dropChunkAtIndexSafe(i, gpuBuffer);
 	}
+	created = 0;
 }
 
 void ChunkSystem::dropChunkAtIndexUnsafe(int index, BigGpuBuffer *gpuBuffer)

@@ -2022,7 +2022,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 						if (x > 0)
 							ImGui::SameLine();
 
-						ImGui::PushID(z *gameData.chunkSystem.squareSize + x);
+						ImGui::PushID(z * gameData.chunkSystem.squareSize + x);
 						if (ImGui::ColorButton("##chunkb", currentColor,
 							ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoTooltip
 							, ImVec2(blockSize, blockSize)))
