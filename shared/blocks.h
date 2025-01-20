@@ -92,7 +92,7 @@ enum BlockTypes : unsigned short
 	tiledStoneBricks_stairs,
 	tiledStoneBricks_slab,
 	tiledStoneBricks_wall,
-	bricks_stairts,
+	bricks_stairs,
 	bricks_slabs,
 	bricks_wall,
 

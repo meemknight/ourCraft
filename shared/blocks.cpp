@@ -16,7 +16,7 @@ bool isStairsMesh(BlockType type)
 {
 	return 
 		type == wooden_stairs ||
-		type == bricks_stairts ||
+		type == bricks_stairs ||
 		type == stone_stairts ||
 		type == cobbleStone_stairts ||
 		type == stoneBricks_stairts ||
@@ -163,7 +163,7 @@ bool isBricksSound(BlockType type)
 {
 	return type == bricks ||
 		type == tiledStoneBricks ||
-		type == bricks_stairts ||
+		type == bricks_stairs ||
 		type == bricks_slabs ||
 		type == marbleBricks ||
 		type == marbleBricks_stairs ||
@@ -287,7 +287,7 @@ bool isAnyStone(BlockType type)
 		type == tiledStoneBricks_stairs ||
 		type == tiledStoneBricks_slab ||
 		type == tiledStoneBricks_wall ||
-		type == bricks_stairts ||
+		type == bricks_stairs ||
 		type == bricks_slabs ||
 		type == bricks_wall ||
 
