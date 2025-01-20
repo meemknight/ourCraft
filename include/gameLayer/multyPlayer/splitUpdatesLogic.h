@@ -9,20 +9,25 @@ struct Client;
 
 struct ThreadPool
 {
-	
+	ThreadPool() {};
+
 	constexpr static int MAX_THREADS = 12;
 
 	int currentCounter = 0;
 	
-	std::thread threads[MAX_THREADS];
+	std::thread threads[MAX_THREADS] = {};
 	std::atomic_bool running[MAX_THREADS] = {};
 	std::atomic_bool threIsWork[MAX_THREADS] = {};
+	std::deque<std::atomic<bool>> taskTaken;
 
-	void setThreadsNumber(int nr);
+
+	void setThreadsNumber(int nr, void(*worker)(int, ThreadPool&));
 
 	void setThrerIsWork();
 
 	void waitForEveryoneToFinish();
+
+	void cleanup();
 };
 
 

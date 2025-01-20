@@ -117,6 +117,9 @@ struct GameData
 	std::minstd_rand rng;
 }gameData;
 
+ThreadPool threadPoolForChunkBaking;
+
+
 void loadCurrentSkin()
 {
 
@@ -197,6 +200,7 @@ bool initGameplay(ProgramData &programData, const char *c) //GAME STUFF!
 
 
 	gameData = GameData();
+	threadPoolForChunkBaking.setThreadsNumber(2, bakeWorkerThread);
 	gameData.c.position = glm::vec3(0, 65, 0);
 
 	gameData.entityManager.localPlayer.entity = playerData.entity;
@@ -1375,7 +1379,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	{
 		gameData.gameplayFrameProfiler.startSubProfile("chunkSystem");
 		gameData.chunkSystem.update(blockPositionPlayer, deltaTime, gameData.undoQueue,
-			gameData.lightSystem, gameData.interaction);
+			gameData.lightSystem, gameData.interaction, threadPoolForChunkBaking);
 		gameData.gameplayFrameProfiler.endSubProfile("chunkSystem");
 	}
 
@@ -2764,4 +2768,5 @@ void closeGameLogic()
 	gameData.mapEngine.close();
 
 	gameData = GameData(); //free all resources
+	threadPoolForChunkBaking.cleanup();
 }

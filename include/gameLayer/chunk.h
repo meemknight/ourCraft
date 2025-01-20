@@ -90,6 +90,14 @@ struct ChunkData
 #define DECLARE_FLAG(N, I)	bool is##N () { return flags[ I ]; } \
 void set##N (bool flag) { flags[ I ] = flag; }
 
+
+struct TransparentCandidate
+{
+	glm::ivec3 position;
+	float distance;
+};
+
+
 //this is for the client
 struct Chunk
 {
@@ -125,9 +133,12 @@ struct Chunk
 	DECLARE_FLAG(NeighbourToRight, 3);
 	DECLARE_FLAG(NeighbourToFront, 4);
 	DECLARE_FLAG(NeighbourToBack, 5);
-	DECLARE_FLAG(DontDrawYet, 6);
-	DECLARE_FLAG(Culled, 7);
-
+	DECLARE_FLAG(NeighbourToBackLeft, 6);
+	DECLARE_FLAG(NeighbourToBackRight, 7);
+	DECLARE_FLAG(NeighbourToFrontLeft, 8);
+	DECLARE_FLAG(NeighbourToFrontRight, 9);
+	DECLARE_FLAG(DontDrawYet, 10);
+	DECLARE_FLAG(Culled, 11);
 
 
 	void clear()
@@ -146,7 +157,34 @@ struct Chunk
 	//geometry is 0 because that means that it took very little time.
 	bool bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		Chunk *frontLeft, Chunk *frontRight, Chunk *backLeft, Chunk *backRight,
-		glm::ivec3 playerPosition, BigGpuBuffer &gpuBuffer);
+		glm::ivec3 playerPosition,
+		std::vector<TransparentCandidate> &transparentCandidates,
+	std::vector<int> &opaqueGeometry,
+	std::vector<int> &transparentGeometry,
+	std::vector<glm::ivec4> &lights);
+
+	bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
+		Chunk *frontLeft, Chunk *frontRight, Chunk *backLeft, Chunk *backRight,
+		glm::ivec3 playerPosition,
+		std::vector<TransparentCandidate> &transparentCandidates,
+		std::vector<int> &opaqueGeometry,
+		std::vector<int> &transparentGeometry,
+		std::vector<glm::ivec4> &lights,
+		bool &updateGeometry, 
+		bool &updateTransparency
+	);
+
+	void sendDataToOpenGL(bool geometry, bool transparent,
+		std::vector<TransparentCandidate> &transparentCandidates,
+		std::vector<int> &opaqueGeometry,
+		std::vector<int> &transparentGeometry,
+		std::vector<glm::ivec4> &lights
+	);
+
+	bool shouldBake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
+		Chunk *frontLeft, Chunk *frontRight, Chunk *backLeft, Chunk *backRight);
+
+	bool forShureShouldntbake();
 
 	bool shouldBakeOnlyBecauseOfTransparency(Chunk *left, Chunk *right, Chunk *front, Chunk *back);
 

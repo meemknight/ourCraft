@@ -20,7 +20,6 @@ struct PerTickData
 
 static ThreadPool threadPool;
 static std::vector<PerTickData> chunkRegionsData;
-static std::deque<std::atomic<bool>> taskTaken;
 static float tickDeltaTime = 0;
 static int tickDeltaTimeMs = 0;
 static std::uint64_t currentTimer = 0;
@@ -36,13 +35,11 @@ Profiler getServerTickProfilerCopy()
 int regionsAverageCounter[50] = {};
 int counterPosition = 0;
 
+void workerThread(int index, ThreadPool &threadPool);
+
 void closeThreadPool()
 {
-	for (int i = 0; i < threadPool.currentCounter; i++)
-	{
-		threadPool.threIsWork[i] = 0;
-	}
-	threadPool.setThreadsNumber(0);
+	threadPool.cleanup();
 
 	memset(regionsAverageCounter, 0, sizeof(regionsAverageCounter));
 	counterPosition = 0;
@@ -51,9 +48,9 @@ void closeThreadPool()
 int tryTakeTask()
 {
 
-	for (int i = 0; i < taskTaken.size(); i++)
+	for (int i = 0; i < threadPool.taskTaken.size(); i++)
 	{
-		if (!taskTaken[i].exchange(true)) // If the flag was not set
+		if (!threadPool.taskTaken[i].exchange(true)) // If the flag was not set
 		{
 			return i;
 		}
@@ -182,8 +179,8 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 
 		serverProfiler.startSubProfile("Prepare tasks");
 
-		taskTaken.resize(chunkRegionsData.size());
-		for (auto &i : taskTaken) { i = 0; }
+		threadPool.taskTaken.resize(chunkRegionsData.size());
+		for (auto &i : threadPool.taskTaken) { i = 0; }
 
 		//todo fix lol
 		//if (chunkRegionsData.size() > 1)
@@ -209,7 +206,7 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 
 				int averageInt = std::roundf(average);
 
-				threadPool.setThreadsNumber(averageInt - 1);
+				threadPool.setThreadsNumber(averageInt - 1, workerThread);
 				counterPosition = 0;
 			}
 			else
@@ -453,7 +450,7 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 
 }
 
-void workerThread(int index)
+void workerThread(int index, ThreadPool &threadPool)
 {
 	std::cout << "Weaked up thread " << index << "\n";
 		 
@@ -491,12 +488,12 @@ void workerThread(int index)
 	//std::cout << "Closed thread " << index << "\n";
 }
 
-void ThreadPool::setThreadsNumber(int nr)
+void ThreadPool::setThreadsNumber(int nr, void(*worker)(int, ThreadPool &))
 {
 	if (nr < 0) { nr = 0; }
-	if (nr > MAX_THREADS)
+	if (nr >= MAX_THREADS)
 	{
-		nr = MAX_THREADS;
+		nr = MAX_THREADS - 1;
 	}
 
 	if (nr != currentCounter)
@@ -512,7 +509,7 @@ void ThreadPool::setThreadsNumber(int nr)
 
 			for (int i = currentCounter; i < nr; i++)
 			{
-				threads[i] = std::move(std::thread(workerThread, i));
+				threads[i] = std::move(std::thread(worker, i, std::ref(*this)));
 			}
 		}
 		else
@@ -548,5 +545,15 @@ void ThreadPool::waitForEveryoneToFinish()
 	{
 		while (threIsWork[i] != 0) {};
 	}
+}
+
+void ThreadPool::cleanup()
+{
+	for (int i = 0; i < currentCounter; i++)
+	{
+		threIsWork[i] = 0;
+	}
+	setThreadsNumber(0, workerThread);
+	taskTaken.clear();
 }
 
