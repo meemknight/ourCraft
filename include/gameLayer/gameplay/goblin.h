@@ -23,7 +23,6 @@ struct Goblin: public PhysicalEntity, public CanPushOthers
 
 struct GoblinClient: public ClientEntity<Goblin, GoblinClient>
 {
-	float currentLegsAngle = 0;
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 	void setEntityMatrix(glm::mat4 *skinningMatrix);

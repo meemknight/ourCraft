@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 #include <string>
 #include <easing.h>
 
@@ -25,6 +26,7 @@ struct Spline
 
 glm::vec2 lerp(glm::vec2 a, glm::vec2 b, float r);
 
+glm::dvec3 lerp(glm::dvec3 a, glm::dvec3 b, float r);
 
 float applySpline(float p, glm::vec2 *points, size_t s);
 

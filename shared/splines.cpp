@@ -8,6 +8,12 @@ glm::vec2 lerp(glm::vec2 a, glm::vec2 b, float r)
 	return a * (1.f - r) + b * r;
 }
 
+glm::dvec3 lerp(glm::dvec3 a, glm::dvec3 b, float r)
+{
+	return a * (1.0 - (double)r) + b * (double)r;
+}
+
+
 
 float applySpline(float p, glm::vec2 *points, size_t s)
 {

@@ -28,7 +28,7 @@ glm::vec3 Pig::getMaxColliderSize()
 
 void PigClient::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
 {
-	entity.update(deltaTime, chunkGetter);
+	entityBuffered.update(deltaTime, chunkGetter);
 
 }
 

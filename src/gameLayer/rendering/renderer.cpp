@@ -3822,7 +3822,7 @@ void Renderer::renderEntities(
 
 			auto rotMatrix = e.second.getBodyRotationMatrix();
 
-			if constexpr (hasCanBeKilled<decltype(e.second.entity)>)
+			if constexpr (hasCanBeKilled<decltype(e.second.entityBuffered)>)
 			{
 				if (e.second.wasKilled)
 				{
@@ -3951,17 +3951,17 @@ void Renderer::renderEntities(
 			//todo instance rendering
 			for (auto &e : entityManager.droppedItems)
 			{
-				if (!isBlock(e.second.entity.type)) { continue; }
+				if (!isBlock(e.second.entityBuffered.type)) { continue; }
 
 				//todo something better here lol
 				std::uint64_t textures[6] = {};
 
-				if (e.second.entity.type >= ItemsStartPoint)
+				if (e.second.entityBuffered.type >= ItemsStartPoint)
 				{
 					for (int i = 0; i < 6; i++)
 					{
 						textures[i] = blocksLoader.gpuIdsItems
-							[e.second.entity.type - ItemsStartPoint];
+							[e.second.entityBuffered.type - ItemsStartPoint];
 					}
 				}
 				else
@@ -3969,7 +3969,7 @@ void Renderer::renderEntities(
 					for (int i = 0; i < 6; i++)
 					{
 						textures[i] = blocksLoader.gpuIds
-							[getGpuIdIndexForBlock(e.second.entity.type, i)];
+							[getGpuIdIndexForBlock(e.second.entityBuffered.type, i)];
 					}
 				}
 
@@ -4089,8 +4089,8 @@ void Renderer::renderEntities(
 		for (auto &e : entityManager.droppedItems)
 		{
 			//continue;
-			if (isBlock(e.second.entity.type)) { continue; }
-			if (!e.second.entity.type) { continue; }
+			if (isBlock(e.second.entityBuffered.type)) { continue; }
+			if (!e.second.entityBuffered.type) { continue; }
 
 			auto b = chunkSystem.getBlockSafe(e.second.getRubberBandPosition() + glm::dvec3(0, 0.2, 0));
 			int rez = skyLightIntensity;
@@ -4106,7 +4106,7 @@ void Renderer::renderEntities(
 				rez = 15;
 			}
 
-			renderOneItem(e.second.entity.type, e.second.getRubberBandPosition(), rez);
+			renderOneItem(e.second.entityBuffered.type, e.second.getRubberBandPosition(), rez);
 
 		}
 

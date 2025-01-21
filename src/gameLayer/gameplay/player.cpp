@@ -77,9 +77,7 @@ void PlayerClient::setEntityMatrix(glm::mat4 *skinningMatrix)
 {
 
 	skinningMatrix[0] = skinningMatrix[0] * glm::toMat4(
-		glm::quatLookAt(glm::normalize(entity.lookDirectionAnimation), glm::vec3(0, 1, 0)));
-
-
+		glm::quatLookAt(glm::normalize(entityBuffered.lookDirectionAnimation), glm::vec3(0, 1, 0)));
 
 }
 

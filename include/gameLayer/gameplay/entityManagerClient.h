@@ -49,22 +49,24 @@ struct ClientEntityManager : public EntityDataClient
 
 	void removeDroppedItem(std::uint64_t entityId);
 	
-	void addOrUpdateDroppedItem(std::uint64_t eid, DroppedItem droppedItem, UndoQueue &undoQueue, float restantTimer);
+	//the server timer is only from updates from server
+	void addOrUpdateDroppedItem(std::uint64_t eid, DroppedItem droppedItem, 
+		UndoQueue &undoQueue, float restantTimer, std::uint64_t serverTimer);
 
 	template<int I, typename T>
-	void addOrUpdateGenericEntity(std::uint64_t eid, T entity, UndoQueue &undoQueue, float restantTimer);
+	void addOrUpdateGenericEntity(std::uint64_t eid, T entity, UndoQueue &undoQueue, float restantTimer,
+		std::uint64_t serverTimer);
 
 	template<int I, typename T>
 	void genericCallAddOrUpdateEntity(std::uint64_t eid, T entity, float restantTimer);
 
-	void addOrUpdateZombie(std::uint64_t eid, Zombie entity, float restantTimer);
+	//void addOrUpdateZombie(std::uint64_t eid, Zombie entity, float restantTimer);
+	//
+	//void addOrUpdatePig(std::uint64_t eid, Pig entity, float restantTimer);
+	//
+	//void addOrUpdateCat(std::uint64_t eid, Cat entity, float restantTimer);
 
-	//todo make this functions generic
-	void addOrUpdatePig(std::uint64_t eid, Pig entity, float restantTimer);
-
-	void addOrUpdateCat(std::uint64_t eid, Cat entity, float restantTimer);
-
-	void doAllUpdates(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2));
+	void doAllUpdates(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2), std::uint64_t serverTimer);
 
 	void cleanup();
 
@@ -82,15 +84,16 @@ inline void ClientEntityManager::addOrUpdateGenericEntity<EntityType::droppedIte
 	std::uint64_t eid,
 	DroppedItem entity,
 	UndoQueue &undoQueue,
-	float restantTimer)
+	float restantTimer, std::uint64_t serverTimer)
 {
-	addOrUpdateDroppedItem(eid, entity, undoQueue, restantTimer);
+	addOrUpdateDroppedItem(eid, entity, undoQueue, restantTimer, serverTimer);
 	// Specialized implementation for DroppedItem
 }
 
 
 template<int I, typename T>
-inline void ClientEntityManager::addOrUpdateGenericEntity(std::uint64_t eid, T entity, UndoQueue &undoQueue, float restantTimer)
+inline void ClientEntityManager::addOrUpdateGenericEntity(std::uint64_t eid, T entity, UndoQueue &undoQueue, 
+	float restantTimer, std::uint64_t serverTimer)
 {
 
 	auto &container = *entityGetter<I>();
@@ -100,14 +103,14 @@ inline void ClientEntityManager::addOrUpdateGenericEntity(std::uint64_t eid, T e
 
 	if (found == container.end())
 	{
-		container[eid].entity = entity;
+		container[eid].entityBuffered = entity;
 		container[eid].restantTime = restantTimer;
 	}
 	else
 	{
 
 		found->second.rubberBand
-			.addToRubberBand(found->second.entity.position - entity.position);
+			.addToRubberBand(found->second.entityBuffered.position - entity.position);
 
 		//if (restantTimer > 0)
 		//{
@@ -119,8 +122,8 @@ inline void ClientEntityManager::addOrUpdateGenericEntity(std::uint64_t eid, T e
 		//		.addToRubberBand(found->second.entity.position - entity.position);
 		//}
 
-
-		found->second.entity = entity;
+		//found->second.entity = entity;
+		found->second.bufferedEntityData.addElement(entity, serverTimer);
 		found->second.restantTime = restantTimer;
 	}
 

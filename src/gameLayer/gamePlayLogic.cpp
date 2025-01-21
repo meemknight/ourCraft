@@ -70,7 +70,7 @@ struct GameData
 
 	ClientEntityManager entityManager;
 
-	std::uint64_t serverTimer = 0;
+	std::uint64_t serverTimer = 0; //this is in MS 
 	float serverTimerCounter = 0;
 
 	Player lastSendPlayerData = {};
@@ -890,7 +890,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		gameData.c.position = gameData.entityManager.localPlayer.entity.position
 			+ glm::dvec3(0,1.5,0);
 
-		gameData.entityManager.doAllUpdates(deltaTime, chunkGetter);
+		gameData.entityManager.doAllUpdates(deltaTime, chunkGetter, gameData.serverTimer);
 
 
 

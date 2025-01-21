@@ -29,7 +29,7 @@ glm::vec3 Cat::getMaxColliderSize()
 
 void CatClient::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
 {
-	entity.update(deltaTime, chunkGetter);
+	entityBuffered.update(deltaTime, chunkGetter);
 
 }
 

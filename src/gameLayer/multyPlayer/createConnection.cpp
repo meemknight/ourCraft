@@ -70,10 +70,10 @@ ConnectionData getConnectionData()
 }
 
 #define CASE_UPDATE(I) case I: { \
-if (size != sizeof(Packet_UpdateGenericEntity) + sizeof(decltype((*entityManager.entityGetter<I>())[0].entity))) { break; } \
-auto *p = (decltype((*entityManager.entityGetter<I>())[0].entity) *)(data + sizeof(Packet_UpdateGenericEntity)); \
-float restantTimer = computeRestantTimer(firstPart->timer, yourTimer); \
-entityManager.addOrUpdateGenericEntity< I >(firstPart->eid, *p, undoQueue, restantTimer);\
+if (size != sizeof(Packet_UpdateGenericEntity) + sizeof(decltype((*entityManager.entityGetter<I>())[0].entityBuffered))) { break; } \
+auto *p = (decltype((*entityManager.entityGetter<I>())[0].entityBuffered) *)(data + sizeof(Packet_UpdateGenericEntity)); \
+float restantTimer = computeRestantTimer(firstPart->timer, serverTimer); \
+entityManager.addOrUpdateGenericEntity< I >(firstPart->eid, *p, undoQueue, restantTimer, serverTimer);\
 } break;
 
 void recieveDataClient(ENetEvent &event, 
@@ -83,7 +83,7 @@ void recieveDataClient(ENetEvent &event,
 	ClientEntityManager &entityManager,
 	UndoQueue &undoQueue, ChunkSystem &chunkSystem, 
 	LightSystem &lightSystem,
-	std::uint64_t &yourTimer,
+	std::uint64_t &serverTimer,
 	unsigned char revisionNumberBlockInteraction,
 	bool &shouldExitBlockInteraction, bool &killedPlayer, bool &respawn,
 	std::deque<std::string> &chat, float &chatTimer,
@@ -466,6 +466,7 @@ void recieveDataClient(ENetEvent &event,
 			}
 			else
 			{
+				//TODO ADD THE BUFFERED LOGIC HERE!
 				if (chunkSystem.shouldRecieveEntity(entity->entity.position))
 				{
 
@@ -476,7 +477,7 @@ void recieveDataClient(ENetEvent &event,
 						entityManager.players[entity->eid] = {};
 						found = entityManager.players.find(entity->eid);
 					}
-					float restantTimer = computeRestantTimer(entity->timer, yourTimer);
+					float restantTimer = computeRestantTimer(entity->timer, serverTimer);
 
 					//if (restantTimer > 0)
 					//{
@@ -488,9 +489,10 @@ void recieveDataClient(ENetEvent &event,
 					//	.addToRubberBand(found->second.entity.position - entity->entity.position);
 					//}
 					found->second.rubberBand
-						.addToRubberBand(found->second.entity.position - entity->entity.position);
+						.addToRubberBand(found->second.entityBuffered.position - entity->entity.position);
 
-					found->second.entity = entity->entity;
+					found->second.bufferedEntityData.addElement(entity->entity, serverTimer);
+					//found->second.entityBuffered = entity->entity;
 
 					
 					found->second.restantTime = restantTimer;
@@ -508,78 +510,6 @@ void recieveDataClient(ENetEvent &event,
 			break;
 		}
 
-		case headerClientRecieveDroppedItemUpdate:
-		{
-
-			Packet_RecieveDroppedItemUpdate *p = (Packet_RecieveDroppedItemUpdate *)data;
-
-			if (sizeof(Packet_RecieveDroppedItemUpdate) != size) { break; } //todo logs or something
-			
-			//todo dont break if reliable
-			if (p->timer + 16 < yourTimer)
-			{
-				break; //drop too old packets
-			}
-
-			float restantTimer = computeRestantTimer(p->timer, yourTimer);
-
-			entityManager.addOrUpdateDroppedItem(p->eid, p->entity, undoQueue,
-				restantTimer);
-
-			//std::cout << restantTimer << "\n";
-
-			break;
-		}
-
-		case headerUpdateZombie:
-		{
-			Packet_UpdateZombie *p = (Packet_UpdateZombie *)data;
-			if (sizeof(Packet_UpdateZombie) != size) { break; }
-
-			//todo dont break if reliable
-			if (p->timer + 16 < yourTimer)
-			{
-				break; //drop too old packets
-			}
-			float restantTimer = computeRestantTimer(p->timer, yourTimer);
-
-			entityManager.addOrUpdateZombie(p->eid, p->entity, restantTimer);
-
-			break;
-		}
-
-		case headerUpdatePig:
-		{
-			Packet_UpdatePig *p = (Packet_UpdatePig *)data;
-			if (sizeof(Packet_UpdatePig) != size) { break; }
-
-			//todo dont break if reliable
-			if (p->timer + 16 < yourTimer)
-			{
-				break; //drop too old packets
-			}
-			float restantTimer = computeRestantTimer(p->timer, yourTimer);
-
-			entityManager.addOrUpdatePig(p->eid, p->entity, restantTimer);
-
-			break;
-		}
-
-		case headerUpdateCat:
-		{
-			Packet_UpdateCat *c = (Packet_UpdateCat *)data;
-			if (sizeof(Packet_UpdateCat) != size) { break; }
-			if (c->timer + 16 < yourTimer)
-			{
-				break; //drop too old packets
-			}
-			float restantTimer = computeRestantTimer(c->timer, yourTimer);
-
-			entityManager.addOrUpdateCat(c->eid, c->entity, restantTimer);
-
-			break;
-		}
-
 		case headerUpdateGenericEntity:
 		{
 
@@ -588,7 +518,7 @@ void recieveDataClient(ENetEvent &event,
 
 			auto entityType = getEntityTypeFromEID(firstPart->eid);
 
-			if (firstPart->timer + 16 < yourTimer)
+			if (firstPart->timer + 16 < serverTimer)
 			{
 				break; //drop too old packets
 			}
@@ -611,7 +541,7 @@ void recieveDataClient(ENetEvent &event,
 			Packet_ClientUpdateTimer *p = (Packet_ClientUpdateTimer *)data;
 			if (sizeof(Packet_ClientUpdateTimer) != size) { break; } //todo logs or something
 
-			yourTimer = p->timer;
+			serverTimer = p->timer;
 			break;
 		}
 
@@ -789,9 +719,11 @@ void recieveDataClient(ENetEvent &event,
 				if (found != entityManager.players.end())
 				{
 					found->second.wasKilled = 0;
-					found->second.entity.position = packetData->pos;
-					found->second.entity.lastPosition = packetData->pos;
-					found->second.entity.forces = {};
+					found->second.flushCircularBuffer();
+
+					found->second.entityBuffered.position = packetData->pos;
+					found->second.entityBuffered.lastPosition = packetData->pos;
+					found->second.entityBuffered.forces = {};
 				}
 			}
 
@@ -803,7 +735,7 @@ void recieveDataClient(ENetEvent &event,
 			if (sizeof(Packet_UpdateEffects) != size) { break; }
 			Packet_UpdateEffects *packetData = (Packet_UpdateEffects *)data;
 
-			int timer = yourTimer - packetData->timer;
+			int timer = serverTimer - packetData->timer;
 
 			if (timer > 15'000) { break; } //probably coruption or the packet is somehow too old
 			if (timer < -4'000) { break; } //probably coruption

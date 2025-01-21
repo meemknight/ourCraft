@@ -62,7 +62,6 @@ enum : std::uint32_t
 	headerSendPlayerData,
 	headerSendPlayerOtherData,
 	headerClientRecieveOtherPlayerPosition,
-	headerClientRecieveDroppedItemUpdate,
 	headerClientRecieveAllInventory,
 	headerClientUpdateTimer,
 	headerClientMovedItem,
@@ -74,9 +73,6 @@ enum : std::uint32_t
 	headerUpdateOwnOtherPlayerSettings,
 	headerRecieveExitBlockInteraction,
 	headerDisconnectOtherPlayer, 
-	headerUpdateZombie,
-	headerUpdatePig,
-	headerUpdateCat,
 	headerUpdateGenericEntity,
 	headerRemoveEntity,
 	headerCompoundPacket,
@@ -154,12 +150,7 @@ struct Packet_ClientUsedItem
 };
 
 //todo add revision number to client drop item
-struct Packet_RecieveDroppedItemUpdate
-{
-	DroppedItem entity = {};
-	std::uint64_t eid = 0;
-	std::uint64_t timer = 0;
-};
+
 
 struct Packet_RecieveExitBlockInteraction
 {
@@ -206,13 +197,6 @@ struct Packet_ClientInteractWithBlock
 
 };
 
-struct Packet_UpdateZombie
-{
-	Zombie entity = {};
-	std::uint64_t eid = 0;
-	std::uint64_t timer = 0;
-};
-
 struct Packet_RemoveEntity
 {
 	std::uint64_t EID = 0;
@@ -238,20 +222,6 @@ struct Packet_UpdateGenericEntity
 	std::uint64_t eid = 0;
 	std::uint64_t timer = 0;
 
-};
-
-struct Packet_UpdatePig
-{
-	Pig entity = {};
-	std::uint64_t eid = 0;
-	std::uint64_t timer = 0;
-};
-
-struct Packet_UpdateCat
-{
-	Cat entity = {};
-	std::uint64_t eid = 0;
-	std::uint64_t timer = 0;
 };
 
 struct Packet_ReceiveCIDAndData

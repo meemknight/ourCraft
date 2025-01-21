@@ -124,7 +124,7 @@ bool isWater()
 
 float computeFog(float dist, float fragmentHeight)
 {
-	return 1;
+	//return 1;
 	//float rezClose = 1;
 	//
 	//if(u_fogCloseGradient!=0)

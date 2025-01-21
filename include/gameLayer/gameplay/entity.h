@@ -13,6 +13,7 @@
 #include <rendering/model.h>
 #include <easing.h>
 
+
 //basic entity structure
 //
 //
@@ -478,10 +479,75 @@ constexpr bool hasCanHaveEffects <T, std::void_t<decltype(T::canHaveEffects)>> =
 
 
 
-
-
 template<bool B, typename T>
 using ConditionalMember = typename std::conditional<B, T, unsigned char>::type;
+
+
+
+template<class T>
+struct StaticCircularBufferForBuffering
+{
+
+	constexpr static int BUFFER_CAPACITY = 20;
+
+	T elements[BUFFER_CAPACITY] = {};
+	std::uint64_t timeAdded[BUFFER_CAPACITY] = {};
+
+	unsigned char startIndex = 0;
+	unsigned char count = 0;
+
+	void addElement(T &element, std::uint64_t time)
+	{
+
+		if (count < BUFFER_CAPACITY)
+		{
+			int newPosition = startIndex + count;
+			newPosition %= BUFFER_CAPACITY;
+			elements[newPosition] = element;
+			timeAdded[newPosition] = time;
+			count++;
+		}
+		else
+		{
+			elements[startIndex] = element;
+			timeAdded[startIndex] = time;
+			startIndex++;
+			startIndex = startIndex % BUFFER_CAPACITY;
+		}
+	
+	}
+
+	void removeLastElement() 
+	{
+		
+		if (count > 0)
+		{
+			count--;
+
+			startIndex++;
+			startIndex = startIndex % BUFFER_CAPACITY;
+		}
+	}
+
+	T &getNewestElementReff()
+	{
+		//todo add perma assert back here
+		if(count == 0)
+		{
+			std::cout << "circular buffer buffer underflow !!!!!!!!!!!!";
+			exit(0);
+		}
+		//permaAssertComment(count != 0, "circular buffer buffer underflow");
+		int index = startIndex + count - 1;
+		if (index < 0) { index = BUFFER_CAPACITY - 1; }
+		index = index % BUFFER_CAPACITY;
+
+		return elements[index];
+	}
+
+};
+
+
 
 
 //dropped item doesn't inherit from this class, so if you want
@@ -520,7 +586,9 @@ template <class T, class BASE_CLIENT>
 struct ClientEntity
 {
 
-	T entity = {};
+	StaticCircularBufferForBuffering<T> bufferedEntityData;
+
+	T entityBuffered = {};
 	RubberBand rubberBand = {};
 	glm::dvec3 oldPositionForRubberBand = {};
 
@@ -537,12 +605,12 @@ struct ClientEntity
 
 	glm::dvec3 getRubberBandPosition()
 	{
-		return rubberBand.direction + entity.position;
+		return rubberBand.direction + entityBuffered.position;
 	}
 
 	glm::dvec3 &getPosition()
 	{
-		return entity.position;
+		return entityBuffered.position;
 	}
 
 	glm::vec2 getRubberBandOrientation()
@@ -567,6 +635,18 @@ struct ClientEntity
 		{
 			return {0,0,-1};
 		}
+	}
+
+	void flushCircularBuffer()
+	{
+		if (bufferedEntityData.count)
+		{
+			entityBuffered = bufferedEntityData.getNewestElementReff();
+
+			bufferedEntityData.count = 0;
+			bufferedEntityData.startIndex = 0;
+		}
+
 	}
 
 	void setEntityMatrixFull(glm::mat4 *skinningMatrix, Model &model, float deltaTime,
@@ -710,7 +790,6 @@ struct ClientEntity
 		baseClient->setEntityMatrix(skinningMatrix);
 	}
 
-
 	//todo maybe an update internal here for all this components
 	float getLegsAngle()
 	{
@@ -735,8 +814,77 @@ struct ClientEntity
 
 	}
 
-	void clientEntityUpdate(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2))
+	void clientEntityUpdate(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2),
+		std::uint64_t serverTimer)
 	{
+
+	#pragma region compute buffering		
+		{
+			if (bufferedEntityData.count)
+			{
+				
+				if (bufferedEntityData.count > 1)
+				{
+					float interpolator = 1;
+					int timeDelay = 4000;
+					int elementStart = bufferedEntityData.startIndex;
+					int nextElement = elementStart;
+					for (int i = 0; i < bufferedEntityData.count - 1; i++)
+					{
+
+						nextElement = elementStart;
+						nextElement++;
+						nextElement %= bufferedEntityData.BUFFER_CAPACITY;
+
+
+						std::uint64_t time = bufferedEntityData.timeAdded[elementStart];
+						std::uint64_t time2 = bufferedEntityData.timeAdded[nextElement];
+						std::uint64_t myTimer = 0;
+						if (serverTimer > timeDelay) { myTimer -= timeDelay; }
+
+						if (myTimer >= time && myTimer <= time2 && time <= time2)
+						{
+							interpolator = 1;
+							if (time != time2)
+							{
+								interpolator = (myTimer - time) /  float(time2 - time);
+							}
+							
+							break;
+						}
+
+						if (i == bufferedEntityData.count - 2)
+						{
+							break;
+						}
+
+						elementStart++;
+						elementStart %= bufferedEntityData.BUFFER_CAPACITY;
+					}
+
+					T &entity1 = bufferedEntityData.elements[elementStart];
+					T &entity2 = bufferedEntityData.elements[nextElement];
+
+					entityBuffered = entity1;
+
+					entityBuffered.position = lerp(entityBuffered.position, entity2.position, interpolator);
+
+				}
+				else
+				{
+					entityBuffered = bufferedEntityData.getNewestElementReff();
+
+				}
+
+
+
+			}
+
+		}
+	#pragma endregion
+
+
+
 		BASE_CLIENT *baseClient = (BASE_CLIENT *)this;
 		//baseClient->rubberBand = {};
 
@@ -785,8 +933,8 @@ struct ClientEntity
 		{
 			if(!wasKilled)
 				rubberBandOrientation.computeRubberBandOrientation(deltaTime,
-					entity.bodyOrientation,
-					entity.lookDirectionAnimation);
+				entityBuffered.bodyOrientation,
+				entityBuffered.lookDirectionAnimation);
 		}
 
 
@@ -799,13 +947,13 @@ struct ClientEntity
 			else
 			{
 
-				legAnimator.updateLegAngle(deltaTime, entity.
+				legAnimator.updateLegAngle(deltaTime, entityBuffered.
 					movementSpeedForLegsAnimations);
 			}
 		}else
 		if constexpr (hasMovementSpeedForLegsAnimations<T>)
 		{
-			legAnimator.updateLegAngle(deltaTime, entity.
+			legAnimator.updateLegAngle(deltaTime, entityBuffered.
 				movementSpeedForLegsAnimations);
 		}
 

@@ -51,7 +51,7 @@ void ZombieClient::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 		currentHandsAngle -= glm::radians(360.f);
 	}
 
-	entity.update(deltaTime, chunkGetter);
+	entityBuffered.update(deltaTime, chunkGetter);
 }
 
 void ZombieClient::setEntityMatrix(glm::mat4 *skinningMatrix)

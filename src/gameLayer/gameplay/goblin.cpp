@@ -33,13 +33,7 @@ glm::vec3 Goblin::getMaxColliderSize()
 
 void GoblinClient::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
 {
-	currentLegsAngle += deltaTime;
-	if (currentLegsAngle > glm::radians(360.f))
-	{
-		currentLegsAngle -= glm::radians(360.f);
-	}
-
-	entity.update(deltaTime, chunkGetter);
+	entityBuffered.update(deltaTime, chunkGetter);
 }
 
 void GoblinClient::setEntityMatrix(glm::mat4 *skinningMatrix)
