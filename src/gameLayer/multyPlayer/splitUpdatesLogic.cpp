@@ -97,7 +97,7 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 		for (auto i : chunkCache.savedChunks)
 		{
 			if (!i.second->otherData.shouldUnload
-				//&& i.second->otherData.withinSimulationDistance
+				//&& i.second->otherData.withinSimulationDistance //todo not implemented yet...
 				)
 			{
 
@@ -324,7 +324,7 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 
 				if (chunk)
 				{
-					std::cout << "Moved!\n";
+					//std::cout << "Moved!\n";
 					auto member = memberSelector(chunk->entityData);
 					(*member)[e.first] = e.second;
 					chunkCache.entityChunkPositions[e.first] = pos;
@@ -332,7 +332,12 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 				else
 				{
 					//todo change and make in 2 steps
-					std::cout << "OUT!\n";
+					//std::cout << "OUT!\n";
+					auto f = chunkCache.entityChunkPositions.find(e.first);
+					if(f!= chunkCache.entityChunkPositions.end()){
+						chunkCache.entityChunkPositions.erase(f);
+						//std::cout << "YESSSSSSSSSSSSS\n";
+					}
 					worldSaver.appendEntitiesForChunk(pos);
 					//todo save entity to disk here!.
 				}
@@ -380,20 +385,21 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 	}
 
 
-	//not needed anymore
-	//for (auto &c : chunkCache.savedChunks)
-	//{
-	//	for (auto &p : c.second->entityData.players)
-	//	{
-	//		clients[p.first].playerData = p.second;
-	//	}
-	//}
 
+	//note that only here the chunk positions are synked corectly, untill than, its possible that
+	//chunks that were to be unloaded but than reentered, it is possible that they don't have the
+	//corrent entities!
 #pragma region cache chunk positions checks debugging
 
 	if(INTERNAL_BUILD == 1)
 	for (auto &chunk : chunkCache.savedChunks)
 	{
+
+		if (chunk.second->otherData.shouldUnload)
+		{
+			//std::cout << "YES2\n";
+			continue;
+		};
 
 		auto &entityData = chunk.second->entityData;
 		for (auto &e : entityData.players)
@@ -446,6 +452,8 @@ void splitUpdatesLogic(float tickDeltaTime, int tickDeltaTimeMs, std::uint64_t c
 
 
 #pragma endregion
+
+
 
 
 }

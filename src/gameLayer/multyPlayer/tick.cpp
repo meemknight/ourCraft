@@ -2091,6 +2091,13 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 								//the entity left the region, we move it out,
 								// so we save it to disk or to other chunks
+
+								auto found = chunkCache.entityChunkPositions.find(e.first);
+								if (found != chunkCache.entityChunkPositions.end())
+								{
+									chunkCache.entityChunkPositions.erase(found);
+								}
+
 								orphanContainer.insert(
 									{e.first, e.second});
 							}
@@ -2258,6 +2265,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 						currentChunkPos.x = divideChunk(other.second->playerData.getPosition().x);
 						currentChunkPos.y = divideChunk(other.second->playerData.getPosition().z);
 
+						//todo only players that have entities in the simulated region later
 						if(loadedChunks.find(lastChunkPos) != loadedChunks.end()
 							||
 							loadedChunks.find(currentChunkPos) != loadedChunks.end()

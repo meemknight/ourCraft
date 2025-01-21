@@ -10,32 +10,18 @@
 #include <repeat.h>
 
 
-bool checkIfPlayerShouldGetEntity(glm::ivec2 playerPos2D,
-	glm::dvec3 entityPos, int playerSquareDistance, int extraDistance)
-{
-
-	glm::ivec2 pos(divideChunk(playerPos2D.x),
-		divideChunk(playerPos2D.y));
-
-	int distance = (playerSquareDistance/2) + extraDistance;
-
-	glm::ivec2 entityPosI(divideChunk(entityPos.x),
-		divideChunk(entityPos.z));
-	
-	glm::dvec2 difference = glm::dvec2(entityPosI - pos);
-
-	return glm::length(difference) <= distance;
-	
-}
-
 
 template<class T>
 void genericDropEntitiesThatAreTooFar(T &container, glm::ivec2 playerPos2D, int playerSquareDistance)
 {
 	for (auto it = container.begin(); it != container.end(); )
 	{
-		if (!checkIfPlayerShouldGetEntity(playerPos2D, it->second.getPosition(),
-			playerSquareDistance, 0))
+		auto entityPos = it->second.getPosition();
+		glm::ivec2 entityChunkPos = glm::ivec2(divideChunk(entityPos.x), divideChunk(entityPos.z));
+
+		//if (!checkIfPlayerShouldGetEntity(playerPos2D, it->second.getPosition(),
+		//	playerSquareDistance, 0))
+		if (!isChunkInRadius(playerPos2D, entityChunkPos, playerSquareDistance))
 		{
 
 			if constexpr (hasCleanup<decltype(it->second)>)

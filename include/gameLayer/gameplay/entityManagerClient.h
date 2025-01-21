@@ -75,8 +75,6 @@ struct ClientEntityManager : public EntityDataClient
 };
 
 
-bool checkIfPlayerShouldGetEntity(glm::ivec2 playerPos2D,
-	glm::dvec3 entityPos, int playerSquareDistance, int extraDistance);
 
 
 template<>

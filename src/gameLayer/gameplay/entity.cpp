@@ -55,7 +55,7 @@ void computeRubberBand(RubberBand &rubberBand, float deltaTime)
 {
 	if (rubberBand.initialSize)
 	{
-		float speed = rubberBand.initialSize * deltaTime * 18.f;
+		float speed = rubberBand.initialSize * deltaTime * 15.f;
 
 		float newSize = glm::length(rubberBand.direction) - speed;
 
