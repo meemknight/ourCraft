@@ -47,6 +47,8 @@ struct UiENgine
 	glm::vec2 oneInventorySlotSize;
 	glm::vec2 playerCellSize;
 
+	gl2d::Texture background;
+
 	gl2d::Texture effectsTexture[Effects::EffectsNames::Effects_Count] = {};
 
 

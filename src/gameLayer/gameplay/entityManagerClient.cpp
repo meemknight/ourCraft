@@ -10,7 +10,6 @@
 #include <repeat.h>
 
 
-
 template<class T>
 void genericDropEntitiesThatAreTooFar(T &container, glm::ivec2 playerPos2D, int playerSquareDistance)
 {
@@ -19,8 +18,6 @@ void genericDropEntitiesThatAreTooFar(T &container, glm::ivec2 playerPos2D, int 
 		auto entityPos = it->second.getPosition();
 		glm::ivec2 entityChunkPos = glm::ivec2(divideChunk(entityPos.x), divideChunk(entityPos.z));
 
-		//if (!checkIfPlayerShouldGetEntity(playerPos2D, it->second.getPosition(),
-		//	playerSquareDistance, 0))
 		if (!isChunkInRadius(playerPos2D, entityChunkPos, playerSquareDistance))
 		{
 

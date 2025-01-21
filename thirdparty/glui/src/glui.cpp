@@ -2591,4 +2591,82 @@ namespace glui
 	}
 
 
+	glm::vec4 calculateInnerPosition(glm::vec2 size, gl2d::Texture t)
+	{
+		glm::vec4 rez = {0,0, size.x, size.y};
+		glm::ivec2 textureSize = t.GetSize();
+
+		float textureW = textureSize.x;
+		float textureH = textureSize.y;
+		float w = size.x;
+		float h = size.y;
+
+		float aspect = w / h;
+		float textureAspect = textureW / textureH;
+
+		if (aspect > textureAspect)
+		{
+			//texture is taler than the screen, make it smaller
+			float minimizeFactor = textureAspect / aspect;
+			float oneMinusFactor = 1 - minimizeFactor;
+			rez.x += (oneMinusFactor / 2.f) * size.x;
+			rez.z -= (oneMinusFactor)*size.x;
+		}
+		else if (textureAspect > aspect)
+		{
+			//texture is longer than the screen, make it smaller
+			float minimizeFactor = aspect / textureAspect;
+			float oneMinusFactor = 1 - minimizeFactor;
+			rez.y += (oneMinusFactor / 2.f) * size.y;
+			rez.w -= (oneMinusFactor)*size.y;
+		}
+		else
+		{
+			//aspect ratio is the same
+		}
+
+
+		return rez;
+	};
+
+	glm::vec4 calculateInnerTextureCoords(
+		glm::vec2 size, gl2d::Texture &t)
+	{
+		glm::ivec2 textureSize = t.GetSize();
+
+		float textureW = textureSize.x;
+		float textureH = textureSize.y;
+		float w = size.x;
+		float h = size.y;
+
+		glm::vec4 textureCoords = {0,1,1,0};
+
+		float aspect = w / h;
+		float textureAspect = textureW / textureH;
+
+		if (aspect > textureAspect)
+		{
+			//texture is taler than the screen, make it smaller
+			float minimizeFactor = textureAspect / aspect;
+			float oneMinusFactor = 1 - minimizeFactor;
+			textureCoords.y = 1 - (oneMinusFactor / 2.f);
+			textureCoords.w = (oneMinusFactor / 2.f);
+		}
+		else if (textureAspect > aspect)
+		{
+			//texture is longer than the screen, make it smaller
+			float minimizeFactor = aspect / textureAspect;
+			float oneMinusFactor = 1 - minimizeFactor;
+			textureCoords.x = (oneMinusFactor / 2.f);
+			textureCoords.z = 1 - (oneMinusFactor / 2.f);
+		}
+		else
+		{
+			//aspect ratio is the same
+		}
+
+
+		return textureCoords;
+	}
+
 };

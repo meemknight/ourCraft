@@ -14,6 +14,24 @@ struct Player : public PhysicalEntity, public CollidesWithPlacedBlocks,
 	public CanHaveEffects
 {
 
+	bool operator== (Player & other)
+	{
+		if(
+			lookDirectionAnimation == other.lookDirectionAnimation &&
+			bodyOrientation == other.bodyOrientation &&
+			fly == other.fly
+			)
+		{
+			return true;
+		}
+	}
+
+	bool operator!= (Player & other)
+	{
+		return !(*this == other);
+	}
+
+
 	glm::vec3 lookDirectionAnimation = {0,0,-1};
 	glm::vec2 bodyOrientation = {0, -1};
 
@@ -21,7 +39,7 @@ struct Player : public PhysicalEntity, public CollidesWithPlacedBlocks,
 
 	void moveFPS(glm::vec3 direction, glm::vec3 lookDirection);
 
-	int chunkDistance = 10; //remove this from here?
+	int chunkDistance = 10; //TODO remove this from here!
 
 	glm::vec3 getColliderSize();
 

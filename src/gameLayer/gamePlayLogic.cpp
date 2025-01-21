@@ -73,7 +73,7 @@ struct GameData
 	std::uint64_t serverTimer = 0;
 	float serverTimerCounter = 0;
 
-	glm::dvec3 lastSendPos = {-INFINITY,0,0};
+	Player lastSendPlayerData = {};
 
 	int currentItemSelected = 0;
 	
@@ -454,7 +454,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			static float timer = 0.020;
 
 			///todo a common method to check if data was modified
-			if (gameData.entityManager.localPlayer.entity.position != gameData.lastSendPos)
+			if (gameData.entityManager.localPlayer.entity != gameData.lastSendPlayerData)
 			{
 				timer -= deltaTime;
 			}
@@ -465,7 +465,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			if (timer <= 0)
 			{
-				timer = 0.020 * 3.f;
+				timer = 0.020;
 				//timer = 0.316;
 
 				Packer_SendPlayerData data;
@@ -479,7 +479,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					formatPacket(headerSendPlayerData), (char *)&data, sizeof(data), 0,
 					channelPlayerPositions);
 
-				gameData.lastSendPos = gameData.entityManager.localPlayer.entity.position;
+				gameData.lastSendPlayerData = gameData.entityManager.localPlayer.entity;
 			}
 
 

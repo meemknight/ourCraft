@@ -480,6 +480,17 @@ bool gameLogic(float deltaTime)
 		programData.ui.menuRenderer.Begin(1);
 		programData.ui.menuRenderer.SetAlignModeFixedSizeWidgets({0,150});
 
+		//if (programData.ui.menuRenderer.internal.allMenuStacks[programData.ui.menuRenderer.internal.currentId].size() == 0)
+		{
+			programData.ui.renderer2d.renderRectangle({0,0,
+				programData.ui.renderer2d.windowW, programData.ui.renderer2d.windowH},
+				programData.ui.background, Colors_White, {}, 0,
+				glui::calculateInnerTextureCoords(
+				{programData.ui.renderer2d.windowW, programData.ui.renderer2d.windowH}, programData.ui.background)
+				);
+
+		}
+
 		//if (programData.ui.menuRenderer.Button("Host game", Colors_Gray, programData.ui.buttonTexture))
 		//{
 		
