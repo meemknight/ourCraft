@@ -11,6 +11,7 @@
 #include <platformTools.h>
 #include <cmath>
 #include <gameplay/gameplayRules.h>
+#include <rendering/renderSettings.h>
 
 Chunk *ChunkSystem::getChunksInMatrixSpaceUnsafe(int x, int z)
 {
@@ -100,7 +101,7 @@ void bakeLogicForOneThread(ThreadPool &threadPool,
 	int currentBaked = 0;
 	int currentBakedTransparency = 0;
 	int maxToBake = 1; //this frame //max to bake
-	int maxToBakeTransparency = 2; //this frame //max to bake
+	int maxToBakeTransparency = 1; //this frame //max to bake
 
 	while (true)
 	{
@@ -230,7 +231,7 @@ struct PerThreadData
 void bakeWorkerThread(int index, ThreadPool &threadPool)
 {
 
-	std::cout << "Weaked up thread CHUNK BAKER! " << index << "\n";
+	//std::cout << "Weaked up thread CHUNK BAKER! " << index << "\n";
 
 	while (threadPool.running[index])
 	{
@@ -278,7 +279,7 @@ void bakeWorkerThread(int index, ThreadPool &threadPool)
 
 	}
 
-	std::cout << "CLOSED THREAD CHUNK BAKER! " << index << "\n";
+	//std::cout << "CLOSED THREAD CHUNK BAKER! " << index << "\n";
 }
 
 //x and z are the block positions of the player
@@ -522,10 +523,13 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	::playerBlockPositionGlobal = playerBlockPosition;
 
 	bool close = 0;
+	int totalChunks = 0;
+	int notLoadedChunks = 0;
 	for (auto &c : loadedChunks)
 	{
 		if (c)
 		{
+			totalChunks++;
 			if (c->isDontDrawYet() == true) { c->setDontDrawYet(false); continue; }
 
 			if (c->forShureShouldntbake()) { continue; }
@@ -543,22 +547,36 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 			auto backLeft = getChunkSafeFromMatrixSpace(x - 1, z - 1);
 			auto backRight = getChunkSafeFromMatrixSpace(x + 1, z - 1);
 
-			ChunkTask t;
-			t.chunk = c;
+			if (c->shouldBake(left, right, front, back, frontLeft, frontRight,
+				backLeft, backRight))
+			{
+				ChunkTask t;
+				t.chunk = c;
 
-			t.left = left;
-			t.right = right;
-			t.front = front;
-			t.back = back;
-			t.frontLeft = frontLeft;
-			t.frontRight = frontRight;
-			t.backLeft = backLeft;
-			t.backRight = backRight;
+				t.left = left;
+				t.right = right;
+				t.front = front;
+				t.back = back;
+				t.frontLeft = frontLeft;
+				t.frontRight = frontRight;
+				t.backLeft = backLeft;
+				t.backRight = backRight;
 
-			chunkVectorCopyNoNullsOnlyToBake.push_back(t);
+
+				chunkVectorCopyNoNullsOnlyToBake.push_back(t);
+			}
+			
+
 		}
 	}
 
+	notLoadedChunks = chunkVectorCopyNoNullsOnlyToBake.size();
+	float chunkRatio = 0;
+	if (totalChunks != 0)
+	{
+		chunkRatio = (float)notLoadedChunks / (float)totalChunks;
+	}
+	
 	std::sort(chunkVectorCopyNoNullsOnlyToBake.begin(), chunkVectorCopyNoNullsOnlyToBake.end(),
 		[x, z](ChunkTask & a, ChunkTask & b)
 			{
@@ -577,6 +595,12 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 				return reza < rezb;
 			}
 		);
+
+	//we only keep a few chunks as tasks
+	if (chunkVectorCopyNoNullsOnlyToBake.size() > 10 + threadPool.currentCounter)
+	{
+		chunkVectorCopyNoNullsOnlyToBake.resize(10 + threadPool.currentCounter);
+	}
 	
 	threadPool.taskTaken.resize(chunkVectorCopyNoNullsOnlyToBake.size());
 	for (auto &i : threadPool.taskTaken) { i = 0; }
@@ -607,6 +631,15 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 		}
 
 	}
+
+
+	//update worker threads
+	int maxThreads = getShadingSettings().workerThreadsForBaking;
+	if (chunkRatio < 0.4) { maxThreads /= 2; }
+	if (chunkRatio < 0.2) { maxThreads = 0; }
+
+	threadPool.setThreadsNumber(maxThreads, bakeWorkerThread);
+
 
 	//for (int i = 0; i < chunkVectorCopyNoNullsOnlyToBake.size(); i++)
 	//{

@@ -200,7 +200,7 @@ bool initGameplay(ProgramData &programData, const char *c) //GAME STUFF!
 
 
 	gameData = GameData();
-	threadPoolForChunkBaking.setThreadsNumber(2, bakeWorkerThread);
+	//threadPoolForChunkBaking.setThreadsNumber(2, bakeWorkerThread);
 	gameData.c.position = glm::vec3(0, 65, 0);
 
 	gameData.entityManager.localPlayer.entity = playerData.entity;

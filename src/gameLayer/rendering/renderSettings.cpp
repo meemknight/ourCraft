@@ -93,6 +93,11 @@ good performance.\n-Fancy: significant performance cost but looks very nice.");
 
 	programData.ui.menuRenderer.Text("", {});
 	
+	programData.ui.menuRenderer.sliderInt("Chunk building extra threads", 
+		&getShadingSettings().workerThreadsForBaking,
+		0, 10, Colors_White, programData.ui.buttonTexture, Colors_Gray,
+		programData.ui.buttonTexture, Colors_White);
+
 	displayTexturePacksSettingsMenuButton(programData);
 
 	//programData.menuRenderer.BeginMenu("Volumetric", Colors_Gray, programData.buttonTexture);
@@ -592,6 +597,7 @@ void saveShadingSettings()
 	data.setInt("Version", 1);
 
 	SET_INT(viewDistance);
+	SET_INT(workerThreadsForBaking);
 	SET_INT(tonemapper);
 	SET_INT(shadows);
 	SET_INT(waterType);
@@ -627,6 +633,7 @@ void loadShadingSettings()
 	if (sfs::safeLoad(data, RESOURCES_PATH "../playerSettings/renderSettings", 0) == sfs::noError)
 	{
 		GET_INT(viewDistance);
+		GET_INT(workerThreadsForBaking);
 		GET_INT(tonemapper);
 		GET_INT(shadows);
 		GET_INT(waterType);
@@ -1181,6 +1188,7 @@ void ShadingSettings::normalize()
 	underwaterDarkenStrength = glm::clamp(underwaterDarkenStrength, 0.f, 1.f);
 	underwaterDarkenDistance = glm::clamp(underwaterDarkenDistance, 0.f, 40.f);
 	fogGradientUnderWater = glm::clamp(fogGradientUnderWater, 0.f, 32.f);
+	workerThreadsForBaking = glm::clamp(workerThreadsForBaking, 0, 10);
 
 	exposure = glm::clamp(exposure, -2.f, 2.f);
 
