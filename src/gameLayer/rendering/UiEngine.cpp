@@ -160,6 +160,11 @@ void UiENgine::loadTextures(std::string path)
 		background.loadFromFile((path + "background.jpg").c_str(), true, true);
 	}
 
+	if (!vignete.id)
+	{
+		vignete.loadFromFile((path + "vignette.png").c_str(), true, true);
+	}
+
 	if (!itemsBarInventory.id)
 	{
 		itemsBarInventory.loadFromFile((path + "ui3.png").c_str(), true, true);
@@ -210,10 +215,9 @@ void UiENgine::clearOnlyTextures()
 	buttonTexture.cleanup();
 
 	itemsBar.cleanup();
-
 	background.cleanup();
-
 	itemsHighlighter.cleanup();
+	vignete.cleanup();
 
 	itemsBarInventory.cleanup();
 	itemsBarInventorySize = {};
