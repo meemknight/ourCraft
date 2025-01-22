@@ -51,11 +51,11 @@ struct ClientEntityManager : public EntityDataClient
 	
 	//the server timer is only from updates from server
 	void addOrUpdateDroppedItem(std::uint64_t eid, DroppedItem droppedItem, 
-		UndoQueue &undoQueue, float restantTimer, std::uint64_t serverTimer);
+		UndoQueue &undoQueue, float restantTimer, std::uint64_t serverTimer, std::uint64_t timeUpdatedOnServer);
 
 	template<int I, typename T>
 	void addOrUpdateGenericEntity(std::uint64_t eid, T entity, UndoQueue &undoQueue, float restantTimer,
-		std::uint64_t serverTimer);
+		std::uint64_t serverTimer, std::uint64_t timeUpdatedOnServer);
 
 	template<int I, typename T>
 	void genericCallAddOrUpdateEntity(std::uint64_t eid, T entity, float restantTimer);
@@ -84,16 +84,16 @@ inline void ClientEntityManager::addOrUpdateGenericEntity<EntityType::droppedIte
 	std::uint64_t eid,
 	DroppedItem entity,
 	UndoQueue &undoQueue,
-	float restantTimer, std::uint64_t serverTimer)
+	float restantTimer, std::uint64_t serverTimer, std::uint64_t timeUpdatedOnServer)
 {
-	addOrUpdateDroppedItem(eid, entity, undoQueue, restantTimer, serverTimer);
+	addOrUpdateDroppedItem(eid, entity, undoQueue, restantTimer, serverTimer, timeUpdatedOnServer);
 	// Specialized implementation for DroppedItem
 }
 
 
 template<int I, typename T>
 inline void ClientEntityManager::addOrUpdateGenericEntity(std::uint64_t eid, T entity, UndoQueue &undoQueue, 
-	float restantTimer, std::uint64_t serverTimer)
+	float restantTimer, std::uint64_t serverTimer, std::uint64_t timeUpdatedOnServer)
 {
 
 	auto &container = *entityGetter<I>();
@@ -109,8 +109,9 @@ inline void ClientEntityManager::addOrUpdateGenericEntity(std::uint64_t eid, T e
 	else
 	{
 
-		found->second.rubberBand
-			.addToRubberBand(found->second.entityBuffered.position - entity.position);
+		//found->second.rubberBand
+		//	.addToRubberBand(found->second.entityBuffered.position - entity.position);
+
 
 		//if (restantTimer > 0)
 		//{
@@ -123,7 +124,7 @@ inline void ClientEntityManager::addOrUpdateGenericEntity(std::uint64_t eid, T e
 		//}
 
 		//found->second.entity = entity;
-		found->second.bufferedEntityData.addElement(entity, serverTimer);
+		found->second.bufferedEntityData.addElement(entity, serverTimer, timeUpdatedOnServer);
 		found->second.restantTime = restantTimer;
 	}
 

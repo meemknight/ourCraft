@@ -43,6 +43,10 @@ struct Player : public PhysicalEntity, public CollidesWithPlacedBlocks,
 
 	glm::vec3 getColliderSize();
 
+	//todo implement!
+	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
+
+
 	static glm::vec3 getMaxColliderSize();
 
 	bool fly = 0;

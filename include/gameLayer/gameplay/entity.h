@@ -94,7 +94,7 @@ struct RubberBand
 		if (glm::length(direction) > 0.01)
 		{
 			this->direction += direction;
-			initialSize = glm::length(direction);
+			initialSize = glm::length(this->direction);
 
 			//auto copy = this->direction + direction;
 			//
@@ -488,15 +488,16 @@ template<class T>
 struct StaticCircularBufferForBuffering
 {
 
-	constexpr static int BUFFER_CAPACITY = 20;
+	constexpr static int BUFFER_CAPACITY = 10;
 
 	T elements[BUFFER_CAPACITY] = {};
 	std::uint64_t timeAdded[BUFFER_CAPACITY] = {};
+	std::uint64_t timeUpdatedOnServer[BUFFER_CAPACITY] = {};
 
 	unsigned char startIndex = 0;
 	unsigned char count = 0;
 
-	void addElement(T &element, std::uint64_t time)
+	void addElement(T &element, std::uint64_t timeLocal, std::uint64_t timeUpdatedEntityOnServer)
 	{
 
 		if (count < BUFFER_CAPACITY)
@@ -504,13 +505,15 @@ struct StaticCircularBufferForBuffering
 			int newPosition = startIndex + count;
 			newPosition %= BUFFER_CAPACITY;
 			elements[newPosition] = element;
-			timeAdded[newPosition] = time;
+			timeAdded[newPosition] = timeLocal;
+			timeUpdatedOnServer[newPosition] = timeUpdatedEntityOnServer;
 			count++;
 		}
 		else
 		{
 			elements[startIndex] = element;
-			timeAdded[startIndex] = time;
+			timeAdded[startIndex] = timeLocal;
+			timeUpdatedOnServer[startIndex] = timeUpdatedEntityOnServer;
 			startIndex++;
 			startIndex = startIndex % BUFFER_CAPACITY;
 		}
@@ -529,6 +532,12 @@ struct StaticCircularBufferForBuffering
 		}
 	}
 
+	void clear()
+	{
+		startIndex = 0;
+		count = 0;
+	}
+
 	T &getNewestElementReff()
 	{
 		//todo add perma assert back here
@@ -544,6 +553,51 @@ struct StaticCircularBufferForBuffering
 
 		return elements[index];
 	}
+
+	std::uint64_t getNewestElementTimeUpdatedOnServer()
+	{
+		//todo add perma assert back here
+		if (count == 0)
+		{
+			std::cout << "circular buffer buffer underflow !!!!!!!!!!!!";
+			exit(0);
+		}
+		//permaAssertComment(count != 0, "circular buffer buffer underflow");
+		int index = startIndex + count - 1;
+		if (index < 0) { index = BUFFER_CAPACITY - 1; }
+		index = index % BUFFER_CAPACITY;
+
+		return timeUpdatedOnServer[index];
+	}
+
+	T &getOldestElementReff()
+	{
+		//todo add perma assert back here
+		if (count == 0)
+		{
+			std::cout << "circular buffer buffer underflow !!!!!!!!!!!!";
+			exit(0);
+		}
+
+		return elements[startIndex];
+	}
+
+	std::uint64_t getNewestElementTimer()
+	{
+		//todo add perma assert back here
+		if (count == 0)
+		{
+			std::cout << "circular buffer buffer underflow !!!!!!!!!!!!";
+			exit(0);
+		}
+		//permaAssertComment(count != 0, "circular buffer buffer underflow");
+		int index = startIndex + count - 1;
+		if (index < 0) { index = BUFFER_CAPACITY - 1; }
+		index = index % BUFFER_CAPACITY;
+
+		return timeAdded[index];
+	}
+
 
 };
 
@@ -653,7 +707,7 @@ struct ClientEntity
 		std::minstd_rand &rng)
 	{
 
-	
+
 
 		//if(0)
 		if constexpr (hasLookDirectionAnimation<T>)
@@ -663,17 +717,21 @@ struct ClientEntity
 			if constexpr (hasEyesAndPupils<T>)
 			{
 				if (model.pupilsIndex > -1)
-					{
-						
-						skinningMatrix[model.pupilsIndex] = skinningMatrix[model.pupilsIndex] * rotation; 
-				
-					}
+				{
+
+					skinningMatrix[model.pupilsIndex] = skinningMatrix[model.pupilsIndex] * rotation;
+
+				}
 
 				if (model.lEyeIndex > -1)
-					{ skinningMatrix[model.lEyeIndex] = skinningMatrix[model.lEyeIndex] * rotation; }
+				{
+					skinningMatrix[model.lEyeIndex] = skinningMatrix[model.lEyeIndex] * rotation;
+				}
 
 				if (model.rEyeIndex > -1)
-					{ skinningMatrix[model.rEyeIndex] = skinningMatrix[model.rEyeIndex] * rotation; }
+				{
+					skinningMatrix[model.rEyeIndex] = skinningMatrix[model.rEyeIndex] * rotation;
+				}
 			}
 
 			if (model.headIndex > -1)
@@ -818,61 +876,157 @@ struct ClientEntity
 		std::uint64_t serverTimer)
 	{
 
+		BASE_CLIENT *baseClient = (BASE_CLIENT *)this;
+
 	#pragma region compute buffering		
 		{
+
+			//remove buffering and just use the latest event
+			if(0)
 			if (bufferedEntityData.count)
 			{
-				
+				auto oldPosition = entityBuffered.position;
+				restantTime = computeRestantTimer(bufferedEntityData.getNewestElementTimeUpdatedOnServer(),
+					serverTimer);
+
+				entityBuffered = bufferedEntityData.getNewestElementReff();
+
+				entityBuffered.update(restantTime, chunkGetter);
+				restantTime = 0;
+
+				rubberBand.addToRubberBand(oldPosition - entityBuffered.position);
+
+
+				bufferedEntityData.clear();
+			}
+
+			//if(0)
+			if (bufferedEntityData.count)
+			{
+				int timeDelay = 200;
+				bool maxCapacity = bufferedEntityData.count == bufferedEntityData.BUFFER_CAPACITY;
+
 				if (bufferedEntityData.count > 1)
 				{
+					int clearCount = 0;
 					float interpolator = 1;
-					int timeDelay = 4000;
 					int elementStart = bufferedEntityData.startIndex;
 					int nextElement = elementStart;
-					for (int i = 0; i < bufferedEntityData.count - 1; i++)
+
+					std::uint64_t time = bufferedEntityData.timeAdded[elementStart];
+					std::uint64_t myTimer = 0;
+					if (serverTimer > timeDelay) { myTimer = serverTimer - timeDelay; }
+
+					if (myTimer < time)
 					{
+						//we don't update it yet unless we start to overflow
+						//entityBuffered = bufferedEntityData.elements[elementStart];
 
-						nextElement = elementStart;
-						nextElement++;
-						nextElement %= bufferedEntityData.BUFFER_CAPACITY;
-
-
-						std::uint64_t time = bufferedEntityData.timeAdded[elementStart];
-						std::uint64_t time2 = bufferedEntityData.timeAdded[nextElement];
-						std::uint64_t myTimer = 0;
-						if (serverTimer > timeDelay) { myTimer -= timeDelay; }
-
-						if (myTimer >= time && myTimer <= time2 && time <= time2)
+						if (maxCapacity)
 						{
-							interpolator = 1;
-							if (time != time2)
-							{
-								interpolator = (myTimer - time) /  float(time2 - time);
-							}
+							restantTime = computeRestantTimer(bufferedEntityData.timeUpdatedOnServer[bufferedEntityData.startIndex],
+								serverTimer);
+							auto oldPosition = entityBuffered.position;
+							entityBuffered = bufferedEntityData.getOldestElementReff();
+
+							entityBuffered.update(restantTime, chunkGetter);
+							restantTime = 0;
+
+							rubberBand.addToRubberBand(oldPosition - entityBuffered.position);
 							
-							break;
+							bufferedEntityData.removeLastElement();
 						}
-
-						if (i == bufferedEntityData.count - 2)
+					}
+					else
+					{
+						for (int i = 0; i < bufferedEntityData.count - 1; i++)
 						{
-							break;
+
+							nextElement = elementStart;
+							nextElement++;
+							nextElement %= bufferedEntityData.BUFFER_CAPACITY;
+
+
+							std::uint64_t time = bufferedEntityData.timeAdded[elementStart];
+							std::uint64_t time2 = bufferedEntityData.timeAdded[nextElement];
+
+
+							if (myTimer >= time && myTimer <= time2 && time <= time2)
+							{
+								interpolator = 1;
+								if (time != time2)
+								{
+									interpolator = (myTimer - time) / float(time2 - time);
+									interpolator = glm::clamp(interpolator, 0.f, 1.f);
+								}
+
+								break;
+							}
+
+							if (i == bufferedEntityData.count - 2)
+							{
+								clearCount = bufferedEntityData.count;
+								break;
+							}
+
+							elementStart++;
+							elementStart %= bufferedEntityData.BUFFER_CAPACITY;
+							clearCount++;
 						}
 
+						T &entity1 = bufferedEntityData.elements[elementStart];
+						T &entity2 = bufferedEntityData.elements[nextElement];
+
+						//todo interpolate time or something?
+						restantTime = computeRestantTimer(bufferedEntityData.timeUpdatedOnServer[elementStart],
+							serverTimer);
+						auto oldPosition = entityBuffered.position;
+						entityBuffered = entity1;
+
+						entityBuffered.update(restantTime, chunkGetter);
+						restantTime = 0;
+
+						rubberBand.addToRubberBand(oldPosition - baseClient->getPosition());
+
+						
+						//entityBuffered.position = lerp(entityBuffered.position, entity2.position, interpolator);
 						elementStart++;
-						elementStart %= bufferedEntityData.BUFFER_CAPACITY;
+
+						for (int i = 0; i < clearCount; i++)
+						{
+							bufferedEntityData.removeLastElement();
+						}
 					}
 
-					T &entity1 = bufferedEntityData.elements[elementStart];
-					T &entity2 = bufferedEntityData.elements[nextElement];
 
-					entityBuffered = entity1;
-
-					entityBuffered.position = lerp(entityBuffered.position, entity2.position, interpolator);
 
 				}
 				else
 				{
-					entityBuffered = bufferedEntityData.getNewestElementReff();
+
+					std::uint64_t time = bufferedEntityData.getNewestElementTimer();
+					std::uint64_t myTimer = 0;
+					if (serverTimer > timeDelay) { myTimer = serverTimer - timeDelay; }
+
+					if (myTimer < time)
+					{
+						//we don't update it yet
+						//entityBuffered = bufferedEntityData.getNewestElementReff();
+					}
+					else
+					{
+						restantTime = computeRestantTimer(bufferedEntityData.getNewestElementTimeUpdatedOnServer(),
+							serverTimer);
+						auto oldPosition = entityBuffered.position;
+						entityBuffered = bufferedEntityData.getNewestElementReff();
+						entityBuffered.update(restantTime, chunkGetter);
+						restantTime = 0;
+
+						rubberBand.addToRubberBand(oldPosition - entityBuffered.position);
+
+						bufferedEntityData.clear();
+					}
+
 
 				}
 
@@ -884,8 +1038,6 @@ struct ClientEntity
 	#pragma endregion
 
 
-
-		BASE_CLIENT *baseClient = (BASE_CLIENT *)this;
 		//baseClient->rubberBand = {};
 
 		if (restantTime < 0)
@@ -895,7 +1047,7 @@ struct ClientEntity
 			{
 				auto oldPosition = baseClient->oldPositionForRubberBand;
 				//baseClient->rubberBand.addToRubberBand(oldPosition - baseClient->getPosition());
-				
+
 				//auto oldPosition = baseClient->getPosition();
 				baseClient->update(timer, chunkGetter);
 				//auto newPosition = baseClient->getPosition();
@@ -931,7 +1083,7 @@ struct ClientEntity
 
 		if constexpr (hasBodyOrientation<T>)
 		{
-			if(!wasKilled)
+			if (!wasKilled)
 				rubberBandOrientation.computeRubberBandOrientation(deltaTime,
 				entityBuffered.bodyOrientation,
 				entityBuffered.lookDirectionAnimation);
@@ -950,12 +1102,13 @@ struct ClientEntity
 				legAnimator.updateLegAngle(deltaTime, entityBuffered.
 					movementSpeedForLegsAnimations);
 			}
-		}else
-		if constexpr (hasMovementSpeedForLegsAnimations<T>)
-		{
-			legAnimator.updateLegAngle(deltaTime, entityBuffered.
-				movementSpeedForLegsAnimations);
 		}
+		else
+			if constexpr (hasMovementSpeedForLegsAnimations<T>)
+			{
+				legAnimator.updateLegAngle(deltaTime, entityBuffered.
+					movementSpeedForLegsAnimations);
+			}
 
 		restantTime = 0;
 

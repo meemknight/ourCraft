@@ -291,7 +291,7 @@ void ClientEntityManager::removeDroppedItem(std::uint64_t entityId)
 
 void ClientEntityManager::addOrUpdateDroppedItem(std::uint64_t eid,
 	DroppedItem droppedItem, UndoQueue &undoQueue,
-	float restantTimer, std::uint64_t serverTimer)
+	float restantTimer, std::uint64_t serverTimer, std::uint64_t timeUpdatedOnServer)
 {
 
 	auto found = droppedItems.find(eid);
@@ -303,10 +303,10 @@ void ClientEntityManager::addOrUpdateDroppedItem(std::uint64_t eid,
 	}
 	else
 	{
-		found->second.rubberBand
-			.addToRubberBand(found->second.entityBuffered.position - droppedItem.position);	
+		//found->second.rubberBand
+		//	.addToRubberBand(found->second.entityBuffered.position - droppedItem.position);	
 
-		found->second.bufferedEntityData.addElement(droppedItem, serverTimer);
+		found->second.bufferedEntityData.addElement(droppedItem, serverTimer, timeUpdatedOnServer);
 		//found->second.entity = droppedItem;
 		found->second.restantTime = restantTimer;
 

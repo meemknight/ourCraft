@@ -53,7 +53,7 @@ bool readData(std::ifstream &f, void *data, size_t size)
 
 void computeRubberBand(RubberBand &rubberBand, float deltaTime)
 {
-
+	//rubberBand = {};
 	if (rubberBand.initialSize)
 	{
 		float speed = rubberBand.initialSize * deltaTime * 20.f;
@@ -66,6 +66,11 @@ void computeRubberBand(RubberBand &rubberBand, float deltaTime)
 		}
 		else
 		{
+			if (newSize > 16.f)
+			{
+				newSize /= 2;
+			}
+
 			//std::cout << "ns: " << newSize << "\n";
 			rubberBand.direction = glm::normalize(rubberBand.direction) * double(newSize);
 		}

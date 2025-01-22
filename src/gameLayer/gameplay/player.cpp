@@ -52,6 +52,11 @@ glm::vec3 Player::getColliderSize()
 	return getMaxColliderSize();
 }
 
+void Player::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
+{
+
+}
+
 glm::vec3 Player::getMaxColliderSize()
 {
 	return glm::vec3(0.8, 1.8, 0.8);
@@ -70,7 +75,7 @@ void PlayerClient::cleanup()
 //todo move update here
 void PlayerClient::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
 {
-
+	entityBuffered.update(deltaTime, chunkGetter);
 }
 
 void PlayerClient::setEntityMatrix(glm::mat4 *skinningMatrix)

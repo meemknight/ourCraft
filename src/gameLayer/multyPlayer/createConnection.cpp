@@ -73,7 +73,7 @@ ConnectionData getConnectionData()
 if (size != sizeof(Packet_UpdateGenericEntity) + sizeof(decltype((*entityManager.entityGetter<I>())[0].entityBuffered))) { break; } \
 auto *p = (decltype((*entityManager.entityGetter<I>())[0].entityBuffered) *)(data + sizeof(Packet_UpdateGenericEntity)); \
 float restantTimer = computeRestantTimer(firstPart->timer, serverTimer); \
-entityManager.addOrUpdateGenericEntity< I >(firstPart->eid, *p, undoQueue, restantTimer, serverTimer);\
+entityManager.addOrUpdateGenericEntity< I >(firstPart->eid, *p, undoQueue, restantTimer, serverTimer, firstPart->timer);\
 } break;
 
 void recieveDataClient(ENetEvent &event, 
@@ -491,8 +491,8 @@ void recieveDataClient(ENetEvent &event,
 					found->second.rubberBand
 						.addToRubberBand(found->second.entityBuffered.position - entity->entity.position);
 
-					found->second.bufferedEntityData.addElement(entity->entity, serverTimer);
-					//found->second.entityBuffered = entity->entity;
+					//found->second.bufferedEntityData.addElement(entity->entity, serverTimer);
+					found->second.entityBuffered = entity->entity;
 
 					
 					found->second.restantTime = restantTimer;
@@ -518,10 +518,11 @@ void recieveDataClient(ENetEvent &event,
 
 			auto entityType = getEntityTypeFromEID(firstPart->eid);
 
-			if (firstPart->timer + 16 < serverTimer)
-			{
-				break; //drop too old packets
-			}
+			//todo we shouldn'd do this if we haven't recieved updates recently....
+			//if (firstPart->timer + 16 < serverTimer)
+			//{
+			//	break; //drop too old packets
+			//}
 
 			switch (entityType)
 			{
