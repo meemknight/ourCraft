@@ -467,7 +467,7 @@ void recieveDataClient(ENetEvent &event,
 			}
 			else
 			{
-				//TODO ADD THE BUFFERED LOGIC HERE!
+
 				if (chunkSystem.shouldRecieveEntity(entity->entity.position))
 				{
 

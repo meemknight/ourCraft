@@ -181,8 +181,7 @@ bool spawnDroppedItemEntity(
 	unsigned char counter, unsigned short type,
 	std::vector<unsigned char> *metaData, glm::dvec3 pos, MotionState motionState = {},
 	std::uint64_t newId = 0,
-	float restantTimer = 0
-)
+	float restantTimer = 0, float dontPickUpTimer = 1)
 {
 
 	if (newId == 0) { newId = getEntityIdAndIncrement(worldSaver, EntityType::droppedItems); }
@@ -190,6 +189,7 @@ bool spawnDroppedItemEntity(
 
 
 	DroppedItemServer newEntity = {};
+	newEntity.dontPickTimer = dontPickUpTimer;
 	newEntity.item = itemCreator(type, counter);
 	if (metaData)
 	{
@@ -345,7 +345,7 @@ void killEntity(WorldSaver &worldSaver, std::uint64_t entity, ServerChunkStorer 
 		//it is enough to set the life of players to 0 to kill them!
 		if (found != clients.end())
 		{
-			found->second.playerData.kill();
+			found->second.playerData.newLife.life = 0;
 		};
 	}
 	else
@@ -406,6 +406,41 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 	std::unordered_map <std::uint64_t, PlayerServer *> allPlayers;
 	std::unordered_map < std::uint64_t, Client *> allClients;
 	std::unordered_map < std::uint64_t, Client *> allSurvivalClients;
+
+#pragma region calculate all players
+
+	for (auto &c : chunkCache.savedChunks)
+	{
+		auto &playersMap = c.second->entityData.players;
+		for (auto &p : playersMap)
+		{
+			if (p.second && !p.second->killed)
+			{
+				allPlayers.insert(p);
+			}
+		}
+	}
+
+	{
+		auto &reff = getAllClientsReff();
+		for (auto &p : allPlayers)
+		{
+			auto found = reff.find(p.first);
+			permaAssert(found != reff.end());
+			allClients.insert({found->first, &found->second});
+
+			if (found->second.playerData.otherPlayerSettings.gameMode ==
+				OtherPlayerSettings::SURVIVAL)
+			{
+				allSurvivalClients.insert({found->first, &found->second});
+			}
+
+		}
+	}
+
+#pragma endregion
+
+
 
 	if (profiler) { profiler->startSubProfile("Calculate entities chunk position cache"); }
 #pragma region calculate all entities chunk positions cache
@@ -1370,6 +1405,8 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 									bool rez = chunkCache.hitEntityByPlayer(entityId, client->playerData.getPosition(),
 										*item, wasKilled, dir, rng, hitResult.hitCorectness, hitResult.bonusCritChance);
 
+									//todo  we have separate logic for killing players and
+									//	maybe do the same for entities?
 									if (wasKilled)
 									{
 
@@ -1382,7 +1419,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 											glm::vec3 p = *pos;
 											p.y += 0.5;
 											spawnDroppedItemEntity(chunkCache,
-												worldSaver, 1, ItemTypes::apple, 0, p);
+												worldSaver, 1, ItemTypes::apple, 0, p, {}, {}, 0, 0);
 										}
 										else
 										{
@@ -1570,38 +1607,6 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 
 	if (profiler) { profiler->startSubProfile("Player stuff"); }
-#pragma region calculate all players
-
-	for (auto &c : chunkCache.savedChunks)
-	{
-		auto &playersMap = c.second->entityData.players;
-		for (auto &p : playersMap)
-		{
-			if (p.second && !p.second->killed)
-			{
-				allPlayers.insert(p);
-			}
-		}
-	}
-
-	{
-		auto &reff = getAllClientsReff();
-		for (auto &p : allPlayers)
-		{
-			auto found = reff.find(p.first);
-			permaAssert(found != reff.end());
-			allClients.insert({found->first, &found->second});
-
-			if (found->second.playerData.otherPlayerSettings.gameMode ==
-				OtherPlayerSettings::SURVIVAL)
-			{
-				allSurvivalClients.insert({found->first, &found->second});
-			}
-
-		}
-	}
-
-#pragma endregion
 
 #pragma region player effects
 

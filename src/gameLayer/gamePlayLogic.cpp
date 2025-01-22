@@ -2173,6 +2173,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	unsigned short selectedCreativeItem = 0;
 	int craftedItemIndex = -1;
 
+	if (gameData.killed)
+	{
+		gameData.entityManager.localPlayer.lastLife.life = 0;
+		gameData.entityManager.localPlayer.life.life = 0;
+	}
+
 	if (!gameData.isInsideMapView)
 	{
 

@@ -7,6 +7,7 @@
 #include <gameplay/gameplayRules.h>
 #include <gameplay/effects.h>
 
+#define PLAYER_DEFAULT_LIFE Life(100)
 
 //this is the shared data
 struct Player : public PhysicalEntity, public CollidesWithPlacedBlocks,
@@ -77,8 +78,8 @@ struct LocalPlayer
 	glm::ivec3 currentBlockInteractWith = {0,-1,0};
 	unsigned char isInteractingWithBlock = 0;
 
-	Life life{100};
-	Life lastLife{100};
+	Life life = PLAYER_DEFAULT_LIFE;
+	Life lastLife = PLAYER_DEFAULT_LIFE;
 	float justHealedTimer = 0;
 	float justRecievedDamageTimer = 0;
 
@@ -100,7 +101,6 @@ struct PlayerClient: public ClientEntity<Player, PlayerClient>
 
 };
 
-#define PLAYER_DEFAULT_LIFE Life(100)
 
 //todo update function
 struct PlayerServer: public ServerEntity<Player>

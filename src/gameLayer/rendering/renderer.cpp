@@ -3862,6 +3862,10 @@ void Renderer::renderEntities(
 				}
 
 			}
+			else
+			{
+				data.textureId = modelsManager.gpuIds[e.second.getTextureIndex()];
+			}
 
 			//if constexpr (hasSkinBindlessTexture<decltype(e.second)>)
 			//{

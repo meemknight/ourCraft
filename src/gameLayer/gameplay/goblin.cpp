@@ -111,7 +111,6 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 			}
 			else
 			{
-
 				lookAtPosition(found->second, entity.lookDirectionAnimation,
 					getPosition(), entity.bodyOrientation, 
 					glm::radians(65.f));
@@ -127,11 +126,13 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 			}
 		}
 
-
+		if (!playerLockedOn)
+		{
+			//todo look randomly
+		}
 		
 
-		//disable following
-		playerLockedOn = 0;
+		//playerLockedOn = 0;
 
 		//auto playeerPos2D = playerLockedOnPosition;
 		//playeerPos2D.y = 0;
@@ -160,7 +161,8 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 		//	direction = {0,0};
 		//}
 
-
+		//disable following
+		if(0)
 		if (!pathFindingSucceeded && playerLockedOn && closeToPlayer)
 		{
 
@@ -373,7 +375,7 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 		//random walk
 		if (1)
-		if (!playerLockedOn)
+		//if (!playerLockedOn)
 		{
 			waitTime -= deltaTime;
 

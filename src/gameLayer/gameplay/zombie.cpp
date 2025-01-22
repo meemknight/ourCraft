@@ -81,7 +81,7 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 )
 {
 
-	if (0)
+	if (1)
 	{
 	float followDistance = 22;
 	float keepFollowDistance = 33;
