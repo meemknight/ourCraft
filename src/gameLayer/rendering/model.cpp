@@ -216,7 +216,10 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 				if (strcmp(name, "LEye") == 0 || strcmp(name, "lEye") == 0) { model.lEyeIndex = i; }
 				if (strcmp(name, "REye") == 0 || strcmp(name, "rEye") == 0) { model.rEyeIndex = i; }
 
-
+				aiVector3D pos = {};
+				aiVector3D scale = {};
+				aiVector3D rotation = {};
+				//node->mTransformation.Decompose(scale, rotation, pos);
 
 				for (int m = 0; m < node->mNumMeshes; m++)
 				{
@@ -234,9 +237,9 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 						vertex.boneIndex = boneIndex;
 
 						// Positions
-						vertex.position.x = mesh->mVertices[v].x;
-						vertex.position.y = mesh->mVertices[v].y;
-						vertex.position.z = mesh->mVertices[v].z;
+						vertex.position.x = mesh->mVertices[v].x + pos.x;
+						vertex.position.y = mesh->mVertices[v].y + pos.y;
+						vertex.position.z = mesh->mVertices[v].z + pos.z;
 
 						// Normals
 						vertex.normal.x = mesh->mNormals[v].x;
