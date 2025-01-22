@@ -913,7 +913,7 @@ struct ClientEntity
 					int elementStart = bufferedEntityData.startIndex;
 					int nextElement = elementStart;
 
-					std::uint64_t time = bufferedEntityData.timeAdded[elementStart];
+					std::uint64_t time = bufferedEntityData.timeUpdatedOnServer[elementStart];
 					std::uint64_t myTimer = 0;
 					if (serverTimer > timeDelay) { myTimer = serverTimer - timeDelay; }
 
@@ -947,8 +947,8 @@ struct ClientEntity
 							nextElement %= bufferedEntityData.BUFFER_CAPACITY;
 
 
-							std::uint64_t time = bufferedEntityData.timeAdded[elementStart];
-							std::uint64_t time2 = bufferedEntityData.timeAdded[nextElement];
+							std::uint64_t time = bufferedEntityData.timeUpdatedOnServer[elementStart];
+							std::uint64_t time2 = bufferedEntityData.timeUpdatedOnServer[nextElement];
 
 
 							if (myTimer >= time && myTimer <= time2 && time <= time2)
@@ -1004,7 +1004,7 @@ struct ClientEntity
 				else
 				{
 
-					std::uint64_t time = bufferedEntityData.getNewestElementTimer();
+					std::uint64_t time = bufferedEntityData.getNewestElementTimeUpdatedOnServer();
 					std::uint64_t myTimer = 0;
 					if (serverTimer > timeDelay) { myTimer = serverTimer - timeDelay; }
 

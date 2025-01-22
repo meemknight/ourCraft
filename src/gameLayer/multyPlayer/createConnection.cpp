@@ -476,8 +476,22 @@ void recieveDataClient(ENetEvent &event,
 					{
 						entityManager.players[entity->eid] = {};
 						found = entityManager.players.find(entity->eid);
+						float restantTimer = computeRestantTimer(entity->timer, serverTimer);
+						found->second.restantTime = restantTimer;
+						found->second.entityBuffered = entity->entity;
+
 					}
-					float restantTimer = computeRestantTimer(entity->timer, serverTimer);
+					else
+					{
+						//entityManager.players[entity->eid].entityBuffered = entity->entity;
+						//float restantTimer = computeRestantTimer(entity->timer, serverTimer);
+						//found->second.restantTime = restantTimer;
+						//found->second.rubberBand
+						//	.addToRubberBand(found->second.entityBuffered.position - entity->entity.position);
+
+						found->second.bufferedEntityData.addElement(entity->entity, serverTimer, entity->timer);
+					}
+					//float restantTimer = computeRestantTimer(entity->timer, serverTimer);
 
 					//if (restantTimer > 0)
 					//{
@@ -488,14 +502,13 @@ void recieveDataClient(ENetEvent &event,
 					//	found->second.rubberBand
 					//	.addToRubberBand(found->second.entity.position - entity->entity.position);
 					//}
-					found->second.rubberBand
-						.addToRubberBand(found->second.entityBuffered.position - entity->entity.position);
+					//found->second.rubberBand
+					//	.addToRubberBand(found->second.entityBuffered.position - entity->entity.position);
 
 					//found->second.bufferedEntityData.addElement(entity->entity, serverTimer);
-					found->second.entityBuffered = entity->entity;
 
 					
-					found->second.restantTime = restantTimer;
+					//found->second.restantTime = restantTimer;
 
 				}
 				else

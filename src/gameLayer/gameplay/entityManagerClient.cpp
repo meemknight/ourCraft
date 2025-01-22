@@ -299,7 +299,7 @@ void ClientEntityManager::addOrUpdateDroppedItem(std::uint64_t eid,
 	if (found == droppedItems.end())
 	{	
 		droppedItems[eid].entityBuffered = droppedItem;
-		droppedItems[eid].restantTime = restantTimer;
+		droppedItems[eid].restantTime = restantTimer; //todo I think we can safely remove this 
 	}
 	else
 	{
