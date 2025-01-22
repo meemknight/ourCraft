@@ -374,7 +374,7 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 		};
 
 		//random walk
-		if (1)
+		if (0)
 		//if (!playerLockedOn)
 		{
 			waitTime -= deltaTime;
