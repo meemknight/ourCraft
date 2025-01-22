@@ -1925,7 +1925,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	float deltaTime, float dayTime, 
 	GLuint64 currentSkinBindlessTexture, bool &playerClicked, float playerRunning,
 	BoneTransform &playerHand, int currentHeldItemIndex, float waterDropsStrength,
-	bool showHand
+	bool showHand, std::unordered_map<std::uint64_t, PlayerConnectionData> &playersConnectionData
 	)
 {
 
@@ -2682,7 +2682,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			entityManager, vp, c.getProjectionMatrix(), viewMatrix, posFloat, posInt,
 			programData.renderer.defaultShader.shadingSettings.exposure, chunkSystem, skyLightIntensity,
 			currentSkinBindlessTexture, playerClicked, playerRunning, playerHand, currentHeldItemIndex,
-			showHand);
+			showHand, playersConnectionData);
 		programData.GPUProfiler.endSubProfile("entities");
 	#pragma endregion
 
@@ -2868,7 +2868,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			entityManager, vp, c.getProjectionMatrix(), viewMatrix, posFloat, posInt,
 			programData.renderer.defaultShader.shadingSettings.exposure, chunkSystem, skyLightIntensity,
 			currentSkinBindlessTexture, playerClicked, playerRunning, playerHand, currentHeldItemIndex,
-			showHand);
+			showHand, playersConnectionData);
 		programData.GPUProfiler.endSubProfile("entities");
 	#pragma endregion
 
@@ -3636,7 +3636,7 @@ void Renderer::renderEntities(
 	float exposure, ChunkSystem &chunkSystem, int 
 	skyLightIntensity, GLuint64 currentSkinBindlessTexture,
 	bool &playerClicked, float playerRunning, BoneTransform &playerHand, int currentHeldItemIndex,
-	bool showHand
+	bool showHand, std::unordered_map<std::uint64_t, PlayerConnectionData> &playersConnectionData
 	)
 {
 
@@ -3803,7 +3803,7 @@ void Renderer::renderEntities(
 
 	std::minstd_rand rng{std::random_device()()};
 
-	auto renderAllEntitiesOfOneType = [&](Model &model, auto &container)
+	auto renderAllEntitiesOfOneType = [&](Model &model, auto &container, bool isPlayers = 0)
 	{
 
 		glBindVertexArray(model.vao);
@@ -3847,12 +3847,14 @@ void Renderer::renderEntities(
 				(skinningMatrix.size() - model.transforms.size()), model, 
 				deltaTime, rng);
 
-
-			if constexpr (hasSkinBindlessTexture<decltype(e.second)>)
+			if (isPlayers)
 			{
-				if (e.second.skinBindlessTexture)
+
+				auto found = playersConnectionData.find(e.first);
+
+				if (found != playersConnectionData.end())
 				{
-					data.textureId = e.second.skinBindlessTexture;
+					data.textureId = found->second.skinBindlessTexture;
 				}
 				else
 				{
@@ -3860,10 +3862,23 @@ void Renderer::renderEntities(
 				}
 
 			}
-			else
-			{
-				data.textureId = modelsManager.gpuIds[e.second.getTextureIndex()];
-			}
+
+			//if constexpr (hasSkinBindlessTexture<decltype(e.second)>)
+			//{
+			//	if (e.second.skinBindlessTexture)
+			//	{
+			//		data.textureId = e.second.skinBindlessTexture;
+			//	}
+			//	else
+			//	{
+			//		data.textureId = modelsManager.gpuIds[e.second.getTextureIndex()];
+			//	}
+			//
+			//}
+			//else
+			//{
+			//	data.textureId = modelsManager.gpuIds[e.second.getTextureIndex()];
+			//}
 
 			decomposePosition(e.second.getRubberBandPosition(), data.entityPositionFloat, data.entityPositionInt);
 			entityData.push_back(data);
@@ -3887,7 +3902,7 @@ void Renderer::renderEntities(
 	//todo remove
 	entityRenderer.itemEntitiesToRender.clear();
 
-	renderAllEntitiesOfOneType(modelsManager.human, entityManager.players);
+	renderAllEntitiesOfOneType(modelsManager.human, entityManager.players, true);
 	renderAllEntitiesOfOneType(modelsManager.human, entityManager.zombies);
 	renderAllEntitiesOfOneType(modelsManager.pig, entityManager.pigs);
 	renderAllEntitiesOfOneType(modelsManager.cat, entityManager.cats);

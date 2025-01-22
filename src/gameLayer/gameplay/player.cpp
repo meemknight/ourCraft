@@ -63,14 +63,6 @@ glm::vec3 Player::getMaxColliderSize()
 }
 
 
-void PlayerClient::cleanup()
-{
-	if (skin.id)
-	{
-		skin.cleanup();
-		skinBindlessTexture = 0;
-	}
-}
 
 //todo move update here
 void PlayerClient::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)

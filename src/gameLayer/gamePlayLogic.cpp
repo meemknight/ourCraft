@@ -69,6 +69,7 @@ struct GameData
 	bool colidable = 1;
 
 	ClientEntityManager entityManager;
+	std::unordered_map<std::uint64_t, PlayerConnectionData> playersConnectionData;
 
 	std::uint64_t serverTimer = 0; //this is in MS 
 	float serverTimerCounter = 0;
@@ -115,6 +116,16 @@ struct GameData
 	bool showUI = 1;
 
 	std::minstd_rand rng;
+
+	void clearData()
+	{
+		for (auto &c : playersConnectionData)
+		{
+			c.second.cleanup();
+		}
+
+		*this = GameData{};
+	}
 }gameData;
 
 ThreadPool threadPoolForChunkBaking;
@@ -198,8 +209,7 @@ bool initGameplay(ProgramData &programData, const char *c) //GAME STUFF!
 		return false;
 	}
 
-
-	gameData = GameData();
+	gameData.clearData();
 	//threadPoolForChunkBaking.setThreadsNumber(2, bakeWorkerThread);
 	gameData.c.position = glm::vec3(0, 65, 0);
 
@@ -332,7 +342,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.serverTimer, disconnect, 
 			gameData.currentBlockInteractionRevisionNumber, shouldExitBlockInteraction,
 			gameData.killed, respawned, gameData.chat, gameData.chatStayOnTimer, 
-			gameData.interaction);
+			gameData.interaction, gameData.playersConnectionData);
 
 		if (disconnect) { return 0; }
 
@@ -1419,7 +1429,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.point, underWater, w, h, deltaTime, dayTime, gameData.currentSkinBindlessTexture,
 			gameData.handHit, isPlayerMovingSpeed, gameData.playerFOVHandTransform,
 			gameData.currentItemSelected, finalDropStrength, 
-			gameData.showUI
+			gameData.showUI, gameData.playersConnectionData
 			);
 
 
@@ -1439,8 +1449,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 #pragma region drop entities that are too far
-	//todo we shouldn't drop players!!!!!!,
-	//we should just not update/draw them instead
+
 	gameData.entityManager.dropEntitiesThatAreTooFar({blockPositionPlayer.x,blockPositionPlayer.z},
 		gameData.chunkSystem.squareSize);
 
@@ -2767,6 +2776,7 @@ void closeGameLogic()
 	
 	gameData.mapEngine.close();
 
-	gameData = GameData(); //free all resources
+	//free all resources
+	gameData.clearData();
 	threadPoolForChunkBaking.cleanup();
 }

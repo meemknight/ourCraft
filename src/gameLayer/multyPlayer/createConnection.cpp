@@ -87,7 +87,8 @@ void recieveDataClient(ENetEvent &event,
 	unsigned char revisionNumberBlockInteraction,
 	bool &shouldExitBlockInteraction, bool &killedPlayer, bool &respawn,
 	std::deque<std::string> &chat, float &chatTimer,
-	InteractionData &playerInteraction
+	InteractionData &playerInteraction,
+	std::unordered_map<std::uint64_t, PlayerConnectionData> &playersConnectionData
 	)
 {
 	Packet p;
@@ -480,6 +481,15 @@ void recieveDataClient(ENetEvent &event,
 						found->second.restantTime = restantTimer;
 						found->second.entityBuffered = entity->entity;
 
+
+						//we have a new player potentially
+						auto connection = playersConnectionData.find(entity->eid);
+						if (connection == playersConnectionData.end())
+						{
+							playersConnectionData[entity->eid] = {};
+						}
+
+
 					}
 					else
 					{
@@ -596,6 +606,13 @@ void recieveDataClient(ENetEvent &event,
 			{
 				entityManager.removePlayer(eid->EID);
 
+				auto found = playersConnectionData.find(eid->EID);
+
+				if (found != playersConnectionData.end())
+				{
+					found->second.cleanup();
+					playersConnectionData.erase(found);
+				}
 			}
 
 		}
@@ -635,9 +652,14 @@ void recieveDataClient(ENetEvent &event,
 
 		case headerSendPlayerSkin:
 		{
-			auto player = entityManager.players.find(p.cid);
+			auto player = playersConnectionData.find(p.cid);
 
-			if (player != entityManager.players.end())
+			if (player == playersConnectionData.end())
+			{
+				playersConnectionData[p.cid] = {};
+				player = playersConnectionData.find(p.cid);
+			}
+
 			{
 				player->second.skin.cleanup();
 
@@ -798,7 +820,8 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 	, unsigned char revisionNumberBlockInteraction, bool &shouldExitBlockInteraction,
 	bool &killedPlayer, bool &respawn,
 	std::deque<std::string> &chat, float &chatTimer,
-	InteractionData &playerInteraction
+	InteractionData &playerInteraction,
+	std::unordered_map<std::uint64_t, PlayerConnectionData> &playersConnectionData
 	)
 {
 	ENetEvent event;
@@ -818,7 +841,7 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 						playerPosition, squareDistance, entityManager, undoQueue,
 						chunkSystem, lightSystem, serverTimer,
 						revisionNumberBlockInteraction, shouldExitBlockInteraction, killedPlayer,
-						respawn, chat, chatTimer, playerInteraction);
+						respawn, chat, chatTimer, playerInteraction, playersConnectionData);
 					
 					enet_packet_destroy(event.packet);
 

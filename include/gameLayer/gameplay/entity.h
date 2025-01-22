@@ -168,6 +168,7 @@ constexpr bool hasGetDataToSend = false;
 template <typename T>
 constexpr bool hasGetDataToSend<T, std::void_t<decltype(std::declval<T>().getDataToSend())>> = true;
 
+//todo remove in the future
 template <typename T, typename = void>
 constexpr bool hasSkinBindlessTexture = false;
 

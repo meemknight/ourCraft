@@ -10,6 +10,7 @@ struct ClientEntityManager;
 struct UndoQueue;
 struct ChunkSystem;
 struct LightSystem;
+struct PlayerConnectionData;
 
 struct Task
 {
@@ -28,7 +29,6 @@ struct Task
 		clientInteractedWithBlock,
 		clientExitedInteractionWithBlock,
 		clientAttackedEntity,
-		clientUpdatedSkin,
 		clientWantsToRespawn,
 		clientRecievedDamageLocally,
 		clientRecievedDamageLocallyAndDied,
@@ -95,7 +95,8 @@ void clientMessageLoop(EventCounter &validatedEvent, RevisionNumber &invalidateR
 	unsigned char revisionNumberBlockInteraction, bool &shouldExitBlockInteraction,
 	bool &killedPlayer, bool &respawn,
 	std::deque<std::string> &chat, float &chatTimer,
-	InteractionData &playerInteraction
+	InteractionData &playerInteraction,
+	std::unordered_map<std::uint64_t, PlayerConnectionData> &playersConnectionData
 	);
 
 void attackEntity(std::uint64_t eid, unsigned char inventorySlot, glm::vec3 direction,

@@ -9,13 +9,27 @@
 #include <gameplay/zombie.h>
 #include <gameplay/pig.h>
 #include <gameplay/allentities.h>
-
+#include <iostream>
 
 struct UndoQueue;
 struct PlayerInventory;
 struct PointDebugRenderer;
 struct GyzmosRenderer;
 struct Camera;
+
+//here we store things related to other players like gpu textures
+struct PlayerConnectionData
+{
+	gl2d::Texture skin = {};
+	GLuint64 skinBindlessTexture = 0;
+
+	void cleanup()
+	{
+		std::cout << "CLEANUP SKIN!\n";
+		skin.cleanup();
+		*this = {};
+	}
+};
 
 struct ClientEntityManager : public EntityDataClient
 {

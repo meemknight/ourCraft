@@ -5,6 +5,7 @@
 #include "rendering/skyBoxRenderer.h"
 #include <gl2d/gl2d.h>
 #include "blocks.h"
+#include <unordered_map>
 
 struct BlocksLoader;
 struct ChunkSystem;
@@ -13,6 +14,7 @@ struct SunShadow;
 struct ClientEntityManager;
 struct ModelsManager;
 struct BoneTransform;
+struct PlayerConnectionData;
 
 using uniform = GLint;
 
@@ -433,7 +435,7 @@ struct Renderer
 		bool underWater, int screenX, int screenY, float deltaTime, float dayTime,
 		GLuint64 currentSkinBindlessTexture, bool &playerClicked, float playerRunning,
 		BoneTransform &playerHand, int currentHeldItemIndex, float waterDropsStrength,
-		bool showHand);
+		bool showHand, std::unordered_map<std::uint64_t, PlayerConnectionData> &playersConnectionData);
 	
 	void renderDecal(glm::ivec3 position, Camera &c, Block b, ProgramData &programData, 
 		float crack);
@@ -446,7 +448,7 @@ struct Renderer
 		float exposure, ChunkSystem &chunkSystem, int skyLightIntensity,
 		GLuint64 currentSkinBindlessTexture,
 		bool &playerClicked, float playerRunning, BoneTransform &playerHand,
-		int currentHeldItemIndex, bool showHand
+		int currentHeldItemIndex, bool showHand, std::unordered_map<std::uint64_t, PlayerConnectionData> &playersConnectionData
 		);
 
 	//todo implement this to optimize rendering

@@ -706,8 +706,26 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			memcpy(connection->second.skinData.data(), data, size);
 			connection->second.skinDataCompressed = wasCompressed;
 
-			serverTask.t.taskType = Task::clientUpdatedSkin;
-			serverTasks.push_back(serverTask);
+			{
+
+				Packet p;
+				p.header = headerSendPlayerSkin;
+				p.cid = serverTask.cid;
+
+				auto client = getClientNotLocked(serverTask.cid);
+
+				if (client)
+				{
+					if (client->skinDataCompressed)
+					{
+						p.setCompressed();
+					}
+
+					broadCastNotLocked(p, client->skinData.data(),
+						client->skinData.size(), client->peer, true, channelHandleConnections);
+				}
+			}
+
 		}
 		break;
 

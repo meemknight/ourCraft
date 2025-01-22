@@ -92,10 +92,6 @@ struct PlayerClient: public ClientEntity<Player, PlayerClient>
 
 	//todo other player settings here!
 
-	void cleanup();
-
-	gl2d::Texture skin = {};
-	GLuint64 skinBindlessTexture = 0;
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 	void setEntityMatrix(glm::mat4 *skinningMatrix);

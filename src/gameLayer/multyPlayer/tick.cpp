@@ -1329,26 +1329,6 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 
 				}
-				else if (i.t.taskType == Task::clientUpdatedSkin)
-				{
-
-					Packet p;
-					p.header = headerSendPlayerSkin;
-					p.cid = i.cid;
-
-					auto client = getClientNotLocked(i.cid);
-
-					if (client)
-					{
-						if (client->skinDataCompressed)
-						{
-							p.setCompressed();
-						}
-
-						broadCastNotLocked(p, client->skinData.data(),
-							client->skinData.size(), client->peer, true, channelHandleConnections);
-					}
-				}
 				else if (i.t.taskType == Task::clientAttackedEntity)
 				{
 					unsigned char itemInventoryIndex = i.t.inventroySlot;

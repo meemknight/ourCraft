@@ -44,8 +44,6 @@ void callGenericDropEntitiesThatAreTooFar(std::integer_sequence<int, Is...>, Cli
 
 void ClientEntityManager::dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int playerSquareDistance)
 {
-	//todo we shouldn't drop players!!!!!!1
-	 
 	
 	//auto doChecking = [&](auto &container)
 	//{
@@ -274,7 +272,6 @@ void ClientEntityManager::removePlayer(std::uint64_t entityId)
 
 	if (found != players.end())
 	{
-		found->second.cleanup();
 		players.erase(found);
 	}
 }
@@ -394,11 +391,9 @@ void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)
 
 void ClientEntityManager::cleanup()
 {
-	//todo use the has cleanup thingy or just remove it
-	for (auto &e : players)
-	{
-		e.second.cleanup();
-	}
+	//todo if we keep the cleanup thing on entities, here is where we shold call it!
+	//or else remove this
+
 }
 
 
