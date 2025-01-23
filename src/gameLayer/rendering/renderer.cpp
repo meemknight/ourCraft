@@ -3669,7 +3669,10 @@ void Renderer::renderEntities(
 		glm::ivec3 entityPositionInt = {};
 		glm::vec3 entityPositionFloat = {};
 		glm::vec3 color = {1,1,1};
-		GLuint64 textureId;
+		GLuint64 textureId0;
+		GLuint64 textureId1;
+		GLuint64 textureId2;
+		GLuint64 textureId3;
 	};
 
 	static std::vector<glm::mat4> skinningMatrix;
@@ -3752,7 +3755,6 @@ void Renderer::renderEntities(
 			}
 
 
-
 			auto transform = model.transforms[0]; //loaded from glb file
 			auto poseMatrix = playerHand.getPoseMatrix();
 
@@ -3774,7 +3776,10 @@ void Renderer::renderEntities(
 			//handItemMatrix = glm::translate(glm::vec3{0,0,2});
 
 			PerEntityData data = {};
-			data.textureId = currentSkinBindlessTexture;
+			data.textureId0 = currentSkinBindlessTexture;
+			data.textureId1 = currentSkinBindlessTexture;
+			data.textureId2 = currentSkinBindlessTexture;
+			data.textureId3 = currentSkinBindlessTexture;
 
 			glm::dvec3 position = glm::dvec3(posInt) + glm::dvec3(posFloat);
 
@@ -3814,7 +3819,7 @@ void Renderer::renderEntities(
 		entityData.clear();
 
 		skinningMatrix.reserve(model.transforms.size() * container.size());
-		entityData.reserve(model.transforms.size() * container.size());
+		entityData.reserve(container.size());
 
 		for (auto &e : container)
 		{
@@ -3854,17 +3859,27 @@ void Renderer::renderEntities(
 
 				if (found != playersConnectionData.end())
 				{
-					data.textureId = found->second.skinBindlessTexture;
+					//todo armour here!
+					data.textureId0 = found->second.skinBindlessTexture;
+					data.textureId1 = modelsManager.gpuIds[ModelsManager::HelmetTestTexture];
+					data.textureId2 = found->second.skinBindlessTexture;
+					data.textureId3 = found->second.skinBindlessTexture;
 				}
 				else
 				{
-					data.textureId = modelsManager.gpuIds[e.second.getTextureIndex()];
+					data.textureId0 = modelsManager.gpuIds[e.second.getTextureIndex()];
+					data.textureId1 = data.textureId0;
+					data.textureId2 = data.textureId0;
+					data.textureId3 = data.textureId0;
 				}
 
 			}
 			else
 			{
-				data.textureId = modelsManager.gpuIds[e.second.getTextureIndex()];
+				data.textureId0 = modelsManager.gpuIds[e.second.getTextureIndex()];
+				data.textureId1 = data.textureId0;
+				data.textureId2 = data.textureId0;
+				data.textureId3 = data.textureId0;
 			}
 
 			//if constexpr (hasSkinBindlessTexture<decltype(e.second)>)
