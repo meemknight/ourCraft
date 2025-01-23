@@ -352,6 +352,7 @@ void genericUpdateLoop(T &container, float deltaTime, ChunkData *(chunkGetter)(g
 		}
 		else
 		{
+			//we don't remove the player because ther's no need to
 			if (it->second.wasKilled)
 			{
 				it->second.wasKilledTimer -= deltaTime;
@@ -359,7 +360,7 @@ void genericUpdateLoop(T &container, float deltaTime, ChunkData *(chunkGetter)(g
 				{
 					it->second.wasKilledTimer = 0;
 					++it;
-					continue;
+					//continue;
 				}
 			}
 		}

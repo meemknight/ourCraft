@@ -791,8 +791,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		};
 
 
-		PhysicalSettings settings;
-		//settings.sideFriction = 2.f;
 
 		
 		if (gameData.killed)
@@ -802,16 +800,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 		else
 		{
-			gameData.entityManager.localPlayer.entity.updateForces(deltaTime, !player.entity.fly
-				, settings);
 
 			if (gameData.colidable)
 			{
 				auto forcesBackup = gameData.entityManager.localPlayer.entity.forces.velocity;
 
-				gameData.entityManager.localPlayer
-					.entity.resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime,
-					gameData.entityManager.localPlayer.entity.getColliderSize(), settings);
+				gameData.entityManager.localPlayer.entity.update(deltaTime, chunkGetter);
 
 				if (gameData.entityManager.localPlayer.entity.forces.colidesBottom())
 				{
@@ -892,6 +886,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			}
 			else
 			{
+				gameData.entityManager.localPlayer.entity.updateForces(deltaTime, !player.entity.fly);
+
 				gameData.entityManager.localPlayer.entity.updatePositions();
 			}
 		}

@@ -54,7 +54,9 @@ glm::vec3 Player::getColliderSize()
 
 void Player::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
 {
+	updateForces(deltaTime, !fly);
 
+	resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime, getColliderSize());
 }
 
 glm::vec3 Player::getMaxColliderSize()
@@ -103,5 +105,5 @@ float PlayerServer::calculateHealingDelayTime()
 
 float PlayerServer::calculateHealingRegenTime()
 {
-    return BASE_HEALTH_REGEN_TIME;
+	return BASE_HEALTH_REGEN_TIME;
 }
