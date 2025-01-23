@@ -112,7 +112,8 @@ void computeRubberBand(
 	RubberBand &rubberBand, float deltaTime);
 
 
-//the pupils are actually optinal
+//the pupils are actually optinal, this will add the animation logic for the eyes and pupils.
+//they will work if the model has them, if else, it won't do anything.
 struct HasEyesAndPupils
 {
 	constexpr static bool eyesAndPupils = true;
@@ -715,13 +716,11 @@ struct ClientEntity
 		{
 			auto rotation = glm::toMat4(glm::quatLookAt(glm::normalize(getRubberBandLookDirection()), glm::vec3(0, 1, 0)));
 
-			if constexpr (hasEyesAndPupils<T>)
+			//eyes and pupils stuff
 			{
 				if (model.pupilsIndex > -1)
 				{
-
 					skinningMatrix[model.pupilsIndex] = skinningMatrix[model.pupilsIndex] * rotation;
-
 				}
 
 				if (model.lEyeIndex > -1)
@@ -738,6 +737,11 @@ struct ClientEntity
 			if (model.headIndex > -1)
 			{
 				skinningMatrix[model.headIndex] = skinningMatrix[model.headIndex] * rotation;
+			}
+
+			if (model.headArmourIndex > -1)
+			{
+				skinningMatrix[model.headArmourIndex] = skinningMatrix[model.headArmourIndex] * rotation;
 			}
 
 		};

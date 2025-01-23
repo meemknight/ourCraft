@@ -25,6 +25,15 @@ struct Model
 	std::int8_t lEyeIndex = -1;
 	std::int8_t rEyeIndex = -1;
 
+	std::int8_t headArmourIndex = -1;
+	std::int8_t bodyArmourIndex = -1;
+	std::int8_t rLegArmourIndex = -1;
+	std::int8_t lLefArmourIndex = -1;
+	std::int8_t rArmArmourIndex = -1;
+	std::int8_t lArmArmourIndex = -1;
+
+
+
 	void cleanup();
 };
 

@@ -81,6 +81,27 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 )
 {
 
+
+	//look at player
+	if(0)
+	{
+		auto found = playersPosition.begin();
+
+		if (found == playersPosition.end())
+		{
+
+		}
+		else
+		{
+			lookAtPosition(found->second, entity.lookDirectionAnimation,
+				getPosition(), entity.bodyOrientation,
+				glm::radians(65.f));
+			
+		}
+	}
+
+
+
 	if (0)
 	{
 	float followDistance = 22;

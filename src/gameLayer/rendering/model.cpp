@@ -40,6 +40,24 @@ const aiNode *findNodeContainingMesh(const aiNode *node, const aiMesh *mesh)
 	return nullptr;
 }
 
+
+bool areStringsSameToLower(const char *a, const char *b)
+{
+	int i = 0;
+	while (a[i] != 0 && b[i] != 0)
+	{
+		if (tolower(a[i]) != tolower(b[i]))
+		{
+			return false;
+		}
+		
+		i++;
+	}
+	if (a[i] == 0 && b[i] == 0) { return true; }
+	return false;
+}
+
+
 void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 {
 
@@ -206,15 +224,21 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 
 				const char *name = node->mName.C_Str();
 
-				if (strcmp(name, "Head") == 0 || strcmp(name, "head") == 0) { model.headIndex = i; }
-				if (strcmp(name, "Body") == 0 || strcmp(name, "body") == 0) { model.bodyIndex = i; }
-				if (strcmp(name, "RLeg") == 0 || strcmp(name, "rLeg") == 0) { model.rLegIndex = i; }
-				if (strcmp(name, "LLeg") == 0 || strcmp(name, "lLeg") == 0) { model.lLefIndex = i; }
-				if (strcmp(name, "RArm") == 0 || strcmp(name, "rArm") == 0) { model.rArmIndex = i; }
-				if (strcmp(name, "LArm") == 0 || strcmp(name, "lArm") == 0) { model.lArmIndex = i; }
-				if (strcmp(name, "Pupils") == 0 || strcmp(name, "pupils") == 0) { model.pupilsIndex = i; }
-				if (strcmp(name, "LEye") == 0 || strcmp(name, "lEye") == 0) { model.lEyeIndex = i; }
-				if (strcmp(name, "REye") == 0 || strcmp(name, "rEye") == 0) { model.rEyeIndex = i; }
+				if (areStringsSameToLower(name, "Head")) { model.headIndex = i; }else
+				if (areStringsSameToLower(name, "Body")) { model.bodyIndex = i; }else
+				if (areStringsSameToLower(name, "RLeg")) { model.rLegIndex = i; }else
+				if (areStringsSameToLower(name, "LLeg")) { model.lLefIndex = i; }else
+				if (areStringsSameToLower(name, "RArm")) { model.rArmIndex = i; }else
+				if (areStringsSameToLower(name, "LArm")) { model.lArmIndex = i; }else
+				if (areStringsSameToLower(name, "Pupils")) { model.pupilsIndex = i; }else
+				if (areStringsSameToLower(name, "LEye")) { model.lEyeIndex = i; }else
+				if (areStringsSameToLower(name, "REye")) { model.rEyeIndex = i; }else
+				if (areStringsSameToLower(name, "HeadArmour")) { model.headArmourIndex = i; }else
+				if (areStringsSameToLower(name, "BodyArmour")) { model.bodyArmourIndex = i; }else
+				if (areStringsSameToLower(name, "RLegArmour")) { model.rLegArmourIndex = i; }else
+				if (areStringsSameToLower(name, "LLegArmour")) { model.lLefArmourIndex = i; }else
+				if (areStringsSameToLower(name, "RArmArmour")) { model.rArmArmourIndex = i; }else
+				if (areStringsSameToLower(name, "LArmArmour")) { model.lArmArmourIndex = i; }
 
 				aiVector3D pos = {};
 				aiVector3D scale = {};
