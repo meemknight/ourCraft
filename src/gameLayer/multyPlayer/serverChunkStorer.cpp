@@ -1406,7 +1406,6 @@ int ServerChunkStorer::unloadChunksThatNeedUnloading(WorldSaver &worldSaver, int
 		auto &c = *it;
 		if (c.second->otherData.shouldUnload)
 		{
-			count++;
 
 			removeEntityChunkPositionsForChunk(*c.second);
 

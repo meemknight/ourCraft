@@ -1925,7 +1925,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	float deltaTime, float dayTime, 
 	GLuint64 currentSkinBindlessTexture, bool &playerClicked, float playerRunning,
 	BoneTransform &playerHand, int currentHeldItemIndex, float waterDropsStrength,
-	bool showHand
+	bool showHand, std::unordered_map<std::uint64_t, PlayerConnectionData> &playersConnectionData
 	)
 {
 
@@ -2682,7 +2682,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			entityManager, vp, c.getProjectionMatrix(), viewMatrix, posFloat, posInt,
 			programData.renderer.defaultShader.shadingSettings.exposure, chunkSystem, skyLightIntensity,
 			currentSkinBindlessTexture, playerClicked, playerRunning, playerHand, currentHeldItemIndex,
-			showHand);
+			showHand, playersConnectionData);
 		programData.GPUProfiler.endSubProfile("entities");
 	#pragma endregion
 
@@ -2868,7 +2868,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			entityManager, vp, c.getProjectionMatrix(), viewMatrix, posFloat, posInt,
 			programData.renderer.defaultShader.shadingSettings.exposure, chunkSystem, skyLightIntensity,
 			currentSkinBindlessTexture, playerClicked, playerRunning, playerHand, currentHeldItemIndex,
-			showHand);
+			showHand, playersConnectionData);
 		programData.GPUProfiler.endSubProfile("entities");
 	#pragma endregion
 
@@ -3636,7 +3636,7 @@ void Renderer::renderEntities(
 	float exposure, ChunkSystem &chunkSystem, int 
 	skyLightIntensity, GLuint64 currentSkinBindlessTexture,
 	bool &playerClicked, float playerRunning, BoneTransform &playerHand, int currentHeldItemIndex,
-	bool showHand
+	bool showHand, std::unordered_map<std::uint64_t, PlayerConnectionData> &playersConnectionData
 	)
 {
 
@@ -3669,7 +3669,10 @@ void Renderer::renderEntities(
 		glm::ivec3 entityPositionInt = {};
 		glm::vec3 entityPositionFloat = {};
 		glm::vec3 color = {1,1,1};
-		GLuint64 textureId;
+		GLuint64 textureId0;
+		GLuint64 textureId1;
+		GLuint64 textureId2;
+		GLuint64 textureId3;
 	};
 
 	static std::vector<glm::mat4> skinningMatrix;
@@ -3752,7 +3755,6 @@ void Renderer::renderEntities(
 			}
 
 
-
 			auto transform = model.transforms[0]; //loaded from glb file
 			auto poseMatrix = playerHand.getPoseMatrix();
 
@@ -3774,7 +3776,10 @@ void Renderer::renderEntities(
 			//handItemMatrix = glm::translate(glm::vec3{0,0,2});
 
 			PerEntityData data = {};
-			data.textureId = currentSkinBindlessTexture;
+			data.textureId0 = currentSkinBindlessTexture;
+			data.textureId1 = currentSkinBindlessTexture;
+			data.textureId2 = currentSkinBindlessTexture;
+			data.textureId3 = currentSkinBindlessTexture;
 
 			glm::dvec3 position = glm::dvec3(posInt) + glm::dvec3(posFloat);
 
@@ -3801,9 +3806,9 @@ void Renderer::renderEntities(
 	//render hand draw hand renderHand drawHand
 	renderHand();
 
+	std::minstd_rand rng{std::random_device()()};
 
-
-	auto renderAllEntitiesOfOneType = [&](Model &model, auto &container)
+	auto renderAllEntitiesOfOneType = [&](Model &model, auto &container, bool isPlayers = 0)
 	{
 
 		glBindVertexArray(model.vao);
@@ -3814,7 +3819,7 @@ void Renderer::renderEntities(
 		entityData.clear();
 
 		skinningMatrix.reserve(model.transforms.size() * container.size());
-		entityData.reserve(model.transforms.size() * container.size());
+		entityData.reserve(container.size());
 
 		for (auto &e : container)
 		{
@@ -3822,7 +3827,7 @@ void Renderer::renderEntities(
 
 			auto rotMatrix = e.second.getBodyRotationMatrix();
 
-			if constexpr (hasCanBeKilled<decltype(e.second.entity)>)
+			if constexpr (hasCanBeKilled<decltype(e.second.entityBuffered)>)
 			{
 				if (e.second.wasKilled)
 				{
@@ -3843,25 +3848,56 @@ void Renderer::renderEntities(
 
 			//todo set kill animation or something
 
-			e.second.setEntityMatrix(skinningMatrix.data() + (skinningMatrix.size() - model.transforms.size()));
+			e.second.setEntityMatrixFull(skinningMatrix.data() +
+				(skinningMatrix.size() - model.transforms.size()), model, 
+				deltaTime, rng);
 
-
-			if constexpr (hasSkinBindlessTexture<decltype(e.second)>)
+			if (isPlayers)
 			{
-				if (e.second.skinBindlessTexture)
+
+				auto found = playersConnectionData.find(e.first);
+
+				if (found != playersConnectionData.end())
 				{
-					data.textureId = e.second.skinBindlessTexture;
+					//todo armour here!
+					data.textureId0 = found->second.skinBindlessTexture;
+					data.textureId1 = modelsManager.gpuIds[ModelsManager::HelmetTestTexture];
+					data.textureId2 = found->second.skinBindlessTexture;
+					data.textureId3 = found->second.skinBindlessTexture;
 				}
 				else
 				{
-					data.textureId = modelsManager.gpuIds[e.second.getTextureIndex()];
+					data.textureId0 = modelsManager.gpuIds[e.second.getTextureIndex()];
+					data.textureId1 = data.textureId0;
+					data.textureId2 = data.textureId0;
+					data.textureId3 = data.textureId0;
 				}
 
 			}
 			else
 			{
-				data.textureId = modelsManager.gpuIds[e.second.getTextureIndex()];
+				data.textureId0 = modelsManager.gpuIds[e.second.getTextureIndex()];
+				data.textureId1 = data.textureId0;
+				data.textureId2 = data.textureId0;
+				data.textureId3 = data.textureId0;
 			}
+
+			//if constexpr (hasSkinBindlessTexture<decltype(e.second)>)
+			//{
+			//	if (e.second.skinBindlessTexture)
+			//	{
+			//		data.textureId = e.second.skinBindlessTexture;
+			//	}
+			//	else
+			//	{
+			//		data.textureId = modelsManager.gpuIds[e.second.getTextureIndex()];
+			//	}
+			//
+			//}
+			//else
+			//{
+			//	data.textureId = modelsManager.gpuIds[e.second.getTextureIndex()];
+			//}
 
 			decomposePosition(e.second.getRubberBandPosition(), data.entityPositionFloat, data.entityPositionInt);
 			entityData.push_back(data);
@@ -3885,7 +3921,7 @@ void Renderer::renderEntities(
 	//todo remove
 	entityRenderer.itemEntitiesToRender.clear();
 
-	renderAllEntitiesOfOneType(modelsManager.human, entityManager.players);
+	renderAllEntitiesOfOneType(modelsManager.human, entityManager.players, true);
 	renderAllEntitiesOfOneType(modelsManager.human, entityManager.zombies);
 	renderAllEntitiesOfOneType(modelsManager.pig, entityManager.pigs);
 	renderAllEntitiesOfOneType(modelsManager.cat, entityManager.cats);
@@ -3949,17 +3985,17 @@ void Renderer::renderEntities(
 			//todo instance rendering
 			for (auto &e : entityManager.droppedItems)
 			{
-				if (!isBlock(e.second.entity.type)) { continue; }
+				if (!isBlock(e.second.entityBuffered.type)) { continue; }
 
 				//todo something better here lol
 				std::uint64_t textures[6] = {};
 
-				if (e.second.entity.type >= ItemsStartPoint)
+				if (e.second.entityBuffered.type >= ItemsStartPoint)
 				{
 					for (int i = 0; i < 6; i++)
 					{
 						textures[i] = blocksLoader.gpuIdsItems
-							[e.second.entity.type - ItemsStartPoint];
+							[e.second.entityBuffered.type - ItemsStartPoint];
 					}
 				}
 				else
@@ -3967,7 +4003,7 @@ void Renderer::renderEntities(
 					for (int i = 0; i < 6; i++)
 					{
 						textures[i] = blocksLoader.gpuIds
-							[getGpuIdIndexForBlock(e.second.entity.type, i)];
+							[getGpuIdIndexForBlock(e.second.entityBuffered.type, i)];
 					}
 				}
 
@@ -4087,8 +4123,8 @@ void Renderer::renderEntities(
 		for (auto &e : entityManager.droppedItems)
 		{
 			//continue;
-			if (isBlock(e.second.entity.type)) { continue; }
-			if (!e.second.entity.type) { continue; }
+			if (isBlock(e.second.entityBuffered.type)) { continue; }
+			if (!e.second.entityBuffered.type) { continue; }
 
 			auto b = chunkSystem.getBlockSafe(e.second.getRubberBandPosition() + glm::dvec3(0, 0.2, 0));
 			int rez = skyLightIntensity;
@@ -4104,7 +4140,7 @@ void Renderer::renderEntities(
 				rez = 15;
 			}
 
-			renderOneItem(e.second.entity.type, e.second.getRubberBandPosition(), rez);
+			renderOneItem(e.second.entityBuffered.type, e.second.getRubberBandPosition(), rez);
 
 		}
 

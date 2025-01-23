@@ -7,6 +7,7 @@
 #include <platformTools.h>
 #include <algorithm>
 #include <array>
+#include <gameplay/entity.h>
 
 #undef max
 #undef min
@@ -37,22 +38,12 @@ Block *Chunk::safeGet(int x, int y, int z)
 }
 
 
-struct TransparentCandidate
-{
-	glm::ivec3 position;
-	float distance;
-};
-
-static std::vector<TransparentCandidate> transparentCandidates;
-static std::vector<int> opaqueGeometry;
-static std::vector<int> transparentGeometry;
-static std::vector<glm::ivec4> lights;
 
 void arangeData(std::vector<int> &currentVector)
 {
-	glm::ivec4 *geometryArray = reinterpret_cast<glm::ivec4 *>(opaqueGeometry.data());
-	permaAssertComment(opaqueGeometry.size() % 4 == 0, "baking vector corrupted...");
-	size_t numElements = opaqueGeometry.size() / 4;
+	glm::ivec4 *geometryArray = reinterpret_cast<glm::ivec4 *>(currentVector.data());
+	permaAssertComment(currentVector.size() % 4 == 0, "baking vector corrupted...");
+	size_t numElements = currentVector.size() / 4;
 
 	// Custom comparator function for sorting
 	auto comparator = [](const glm::ivec4 &a, const glm::ivec4 &b)
@@ -117,14 +108,72 @@ void pushFlagsLightAndPosition(std::vector<int> &vect,
 	vect.push_back(position.z);
 };
 
-//todo a counter to know if I have transparent geometry in this chunk
+
+inline uint32_t hash(int x, int y, int z)
+{
+	uint32_t h = static_cast<uint32_t>(x) * 374761393 +
+		static_cast<uint32_t>(y) * 668265263 +
+		static_cast<uint32_t>(z) * 2147483647;
+	h ^= (h >> 13);
+	h *= 1274126177;
+	h ^= (h >> 16);
+	return h;
+}
+
+bool getRandomChance(int x, int y, int z, float chance)
+{
+	std::minstd_rand rng;
+	rng.seed(hash(x,y,z));
+
+	return getRandomChance(rng, chance);
+}
+
+
 bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, 
 	Chunk *frontLeft, Chunk *frontRight, Chunk *backLeft, Chunk *backRight,
-	glm::ivec3 playerPosition, BigGpuBuffer &gpuBuffer)
+	glm::ivec3 playerPosition,
+	std::vector<TransparentCandidate> &transparentCandidates,
+	std::vector<int> &opaqueGeometry,
+	std::vector<int> &transparentGeometry,
+	std::vector<glm::ivec4> &lights
+	)
 {
 
 	bool updateGeometry = 0;
-	bool updateTransparency = isDirtyTransparency();
+	bool updateTransparency = 0;
+
+	bakeAndDontSendDataToOpenGl(left, right, front, back, frontLeft, frontRight, backLeft,
+		backRight, playerPosition, transparentCandidates, opaqueGeometry,
+		transparentGeometry, lights, updateGeometry, updateTransparency);
+
+	//send data to GPU
+	sendDataToOpenGL(updateGeometry, updateTransparency, transparentCandidates,
+		opaqueGeometry, transparentGeometry, lights);
+
+	if ((updateTransparency && transparentElementCountSize > 0) || updateGeometry)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+
+}
+
+bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
+	Chunk *right, Chunk *front,
+	Chunk *back, Chunk *frontLeft, 
+	Chunk *frontRight, Chunk *backLeft, Chunk *backRight, 
+	glm::ivec3 playerPosition, std::vector<TransparentCandidate> &transparentCandidates, 
+	std::vector<int> &opaqueGeometry, std::vector<int> &transparentGeometry, 
+	std::vector<glm::ivec4> &lights,
+	bool &updateGeometry,
+	bool &updateTransparency)
+{
+
+	updateGeometry = 0;
+	updateTransparency = isDirtyTransparency();
 
 	if (
 		isDirty()
@@ -132,11 +181,21 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		|| (!isNeighbourToRight() && right != nullptr)
 		|| (!isNeighbourToFront() && front != nullptr)
 		|| (!isNeighbourToBack() && back != nullptr)
+
+		|| (!isNeighbourToFrontLeft() && frontLeft != nullptr)
+		|| (!isNeighbourToFrontRight() && frontRight != nullptr)
+		|| (!isNeighbourToBackLeft() && backLeft != nullptr)
+		|| (!isNeighbourToBackRight() && backRight != nullptr)
 		)
 	{
 		updateGeometry = true;
 		updateTransparency = true;
 	}
+
+	opaqueGeometry.clear();
+	transparentGeometry.clear();
+	transparentCandidates.clear();
+	lights.clear();
 
 #pragma region helpers
 
@@ -171,6 +230,30 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 	const int FRONTRIGHT = 23;
 	const int BACKLEFT = 24;
 	const int BACKRIGHT = 25;
+
+	auto getGpuIdIndexForBlockWithVariation = [&](BlockType type, int i,
+		int x, int y, int z) -> std::uint16_t
+	{
+
+		if (type == bricks || type == bricks_wall || type == bricks_slabs || type == bricks_stairs)
+		{
+			if (getRandomChance(x, y, z, 0.2))
+			{
+				return BRICKS_VARIATION_TEXTURE_INDEX * 3;
+			}
+		}
+		else if (type == blueBricks ||
+			type == blueBricks_wall || type == blueBricks_slabs || type == blueBricks_stairs
+			)
+		{
+			if (getRandomChance(x, y, z, 0.2))
+			{
+				return BLUE_BRICKS_VARIATION_TEXTURE_INDEX * 3;
+			}
+		}
+
+		return getGpuIdIndexForBlock(type, i);
+	};
 
 	auto getNeighboursLogic = [&](int x, int y, int z, Block *sides[26])
 	{
@@ -228,31 +311,34 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 					{
 						return &backLeft->unsafeGet(CHUNK_SIZE - 1, y, CHUNK_SIZE - 1);
 					}
-				}else
-				if (x >= CHUNK_SIZE && z < 0)
-				{
-					if (backRight)
-					{
-						return &backRight->unsafeGet(0, y, CHUNK_SIZE - 1);
-					}
-				}else if (x < 0 && z >= CHUNK_SIZE)
-				{
-					if (frontLeft)
-					{
-						return &frontLeft->unsafeGet(CHUNK_SIZE - 1, y, 0);
-					}
-				}else
-				if (x >= CHUNK_SIZE && z >= CHUNK_SIZE)
-				{
-					if (frontRight)
-					{
-						return &frontRight->unsafeGet(0, y, 0);
-					}
 				}
 				else
-				{
-					permaAssertComment(0, "error in chunk get neighbour logic!");
-				}
+					if (x >= CHUNK_SIZE && z < 0)
+					{
+						if (backRight)
+						{
+							return &backRight->unsafeGet(0, y, CHUNK_SIZE - 1);
+						}
+					}
+					else if (x < 0 && z >= CHUNK_SIZE)
+					{
+						if (frontLeft)
+						{
+							return &frontLeft->unsafeGet(CHUNK_SIZE - 1, y, 0);
+						}
+					}
+					else
+						if (x >= CHUNK_SIZE && z >= CHUNK_SIZE)
+						{
+							if (frontRight)
+							{
+								return &frontRight->unsafeGet(0, y, 0);
+							}
+						}
+						else
+						{
+							permaAssertComment(0, "error in chunk get neighbour logic!");
+						}
 
 				return nullptr;
 			}
@@ -265,10 +351,10 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		auto bleft = justGetBlock(x - 1, y, z);
 		auto bright = justGetBlock(x + 1, y, z);
 
-		auto bdownfront = justGetBlock(x, y-1, z + 1);
-		auto bdownback = justGetBlock(x, y-1, z - 1);
-		auto bdownleft = justGetBlock(x - 1, y-1, z);
-		auto bdownright = justGetBlock(x + 1, y-1, z);
+		auto bdownfront = justGetBlock(x, y - 1, z + 1);
+		auto bdownback = justGetBlock(x, y - 1, z - 1);
+		auto bdownleft = justGetBlock(x - 1, y - 1, z);
+		auto bdownright = justGetBlock(x + 1, y - 1, z);
 
 		auto bupfront = justGetBlock(x, y + 1, z + 1);
 		auto bupback = justGetBlock(x, y + 1, z - 1);
@@ -404,7 +490,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 			{
 				aoShape = 13; //full shaodw
 			}
-			
+
 			return aoShape;
 		};
 
@@ -420,11 +506,12 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 			bool downFrontLeft = (sides[DOWN_FRONTLEFT] && sides[DOWN_FRONTLEFT]->isOpaque());
 			bool downFrontRight = (sides[DOWN_FRONTRIGHT] && sides[DOWN_FRONTRIGHT]->isOpaque());
 
-			aoShape = calculateSide(sides, 
-				leftFront,  rightFront, upFront, downFront,
+			aoShape = calculateSide(sides,
+				leftFront, rightFront, upFront, downFront,
 				upFrontLeft, downFrontLeft, upFrontRight,
 				downFrontRight);
-		}else if (i == 1) // back
+		}
+		else if (i == 1) // back
 		{
 			bool upBack = (sides[UP_BACK] && sides[UP_BACK]->isOpaque());
 			bool downBack = (sides[DOWN_BACK] && sides[DOWN_BACK]->isOpaque());
@@ -442,73 +529,75 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 				downBackRight);
 		}
 		else
-		if (i == 2) //top
-		{
-			bool upFront = (sides[UP_FRONT] && sides[UP_FRONT]->isOpaque());
-			bool upBack = (sides[UP_BACK] && sides[UP_BACK]->isOpaque());
-			bool upLeft = (sides[UP_LEFT] && sides[UP_LEFT]->isOpaque());
-			bool upRight = (sides[UP_RIGHT] && sides[UP_RIGHT]->isOpaque());
+			if (i == 2) //top
+			{
+				bool upFront = (sides[UP_FRONT] && sides[UP_FRONT]->isOpaque());
+				bool upBack = (sides[UP_BACK] && sides[UP_BACK]->isOpaque());
+				bool upLeft = (sides[UP_LEFT] && sides[UP_LEFT]->isOpaque());
+				bool upRight = (sides[UP_RIGHT] && sides[UP_RIGHT]->isOpaque());
 
-			bool upFrontLeft = (sides[UP_FRONTLEFT] && sides[UP_FRONTLEFT]->isOpaque());
-			bool upFrontRight = (sides[UP_FRONTRIGHT] && sides[UP_FRONTRIGHT]->isOpaque());
-			bool upBackLeft = (sides[UP_BACKLEFT] && sides[UP_BACKLEFT]->isOpaque());
-			bool upBackRight = (sides[UP_BACKRIGHT] && sides[UP_BACKRIGHT]->isOpaque());
+				bool upFrontLeft = (sides[UP_FRONTLEFT] && sides[UP_FRONTLEFT]->isOpaque());
+				bool upFrontRight = (sides[UP_FRONTRIGHT] && sides[UP_FRONTRIGHT]->isOpaque());
+				bool upBackLeft = (sides[UP_BACKLEFT] && sides[UP_BACKLEFT]->isOpaque());
+				bool upBackRight = (sides[UP_BACKRIGHT] && sides[UP_BACKRIGHT]->isOpaque());
 
-			aoShape = calculateSide(sides, upFront, upBack, upLeft, upRight, upFrontLeft, upFrontRight,
-				upBackLeft, upBackRight);
-		}else
-		if (i == 3) //bottom
-		{
-			bool downFront = (sides[DOWN_FRONT] && sides[DOWN_FRONT]->isOpaque());
-			bool downBack = (sides[DOWN_BACK] && sides[DOWN_BACK]->isOpaque());
-			bool downLeft = (sides[DOWN_LEFT] && sides[DOWN_LEFT]->isOpaque());
-			bool downRight = (sides[DOWN_RIGHT] && sides[DOWN_RIGHT]->isOpaque());
+				aoShape = calculateSide(sides, upFront, upBack, upLeft, upRight, upFrontLeft, upFrontRight,
+					upBackLeft, upBackRight);
+			}
+			else
+				if (i == 3) //bottom
+				{
+					bool downFront = (sides[DOWN_FRONT] && sides[DOWN_FRONT]->isOpaque());
+					bool downBack = (sides[DOWN_BACK] && sides[DOWN_BACK]->isOpaque());
+					bool downLeft = (sides[DOWN_LEFT] && sides[DOWN_LEFT]->isOpaque());
+					bool downRight = (sides[DOWN_RIGHT] && sides[DOWN_RIGHT]->isOpaque());
 
-			bool downFrontLeft = (sides[DOWN_FRONTLEFT] && sides[DOWN_FRONTLEFT]->isOpaque());
-			bool downFrontRight = (sides[DOWN_FRONTRIGHT] && sides[DOWN_FRONTRIGHT]->isOpaque());
-			bool downBackLeft = (sides[DOWN_BACKLEFT] && sides[DOWN_BACKLEFT]->isOpaque());
-			bool downBackRight = (sides[DOWN_BACKRIGHT] && sides[DOWN_BACKRIGHT]->isOpaque());
+					bool downFrontLeft = (sides[DOWN_FRONTLEFT] && sides[DOWN_FRONTLEFT]->isOpaque());
+					bool downFrontRight = (sides[DOWN_FRONTRIGHT] && sides[DOWN_FRONTRIGHT]->isOpaque());
+					bool downBackLeft = (sides[DOWN_BACKLEFT] && sides[DOWN_BACKLEFT]->isOpaque());
+					bool downBackRight = (sides[DOWN_BACKRIGHT] && sides[DOWN_BACKRIGHT]->isOpaque());
 
-			aoShape = calculateSide(sides, 
-				 downLeft, downRight, downFront, downBack,
-				 downFrontLeft, downBackLeft, downFrontRight, downBackRight
-			);
-		}else if (i == 4) //left
-		{
-			bool upLeft = (sides[UP_LEFT] && sides[UP_LEFT]->isOpaque());
-			bool downLeft = (sides[DOWN_LEFT] && sides[DOWN_LEFT]->isOpaque());
-			bool leftFront = (sides[FRONTLEFT] && sides[FRONTLEFT]->isOpaque());
-			bool leftBack = (sides[BACKLEFT] && sides[BACKLEFT]->isOpaque());
+					aoShape = calculateSide(sides,
+						downLeft, downRight, downFront, downBack,
+						downFrontLeft, downBackLeft, downFrontRight, downBackRight
+					);
+				}
+				else if (i == 4) //left
+				{
+					bool upLeft = (sides[UP_LEFT] && sides[UP_LEFT]->isOpaque());
+					bool downLeft = (sides[DOWN_LEFT] && sides[DOWN_LEFT]->isOpaque());
+					bool leftFront = (sides[FRONTLEFT] && sides[FRONTLEFT]->isOpaque());
+					bool leftBack = (sides[BACKLEFT] && sides[BACKLEFT]->isOpaque());
 
-			bool upFrontLeft = (sides[UP_FRONTLEFT] && sides[UP_FRONTLEFT]->isOpaque());
-			bool upBackLeft = (sides[UP_BACKLEFT] && sides[UP_BACKLEFT]->isOpaque());
-			bool downFrontLeft = (sides[DOWN_FRONTLEFT] && sides[DOWN_FRONTLEFT]->isOpaque());
-			bool downBackLeft = (sides[DOWN_BACKLEFT] && sides[DOWN_BACKLEFT]->isOpaque());
+					bool upFrontLeft = (sides[UP_FRONTLEFT] && sides[UP_FRONTLEFT]->isOpaque());
+					bool upBackLeft = (sides[UP_BACKLEFT] && sides[UP_BACKLEFT]->isOpaque());
+					bool downFrontLeft = (sides[DOWN_FRONTLEFT] && sides[DOWN_FRONTLEFT]->isOpaque());
+					bool downBackLeft = (sides[DOWN_BACKLEFT] && sides[DOWN_BACKLEFT]->isOpaque());
 
-			aoShape = calculateSide(sides,
-				  leftBack, leftFront, upLeft, downLeft,
-				 upBackLeft, downBackLeft, upFrontLeft, downFrontLeft
-				);
+					aoShape = calculateSide(sides,
+						leftBack, leftFront, upLeft, downLeft,
+						upBackLeft, downBackLeft, upFrontLeft, downFrontLeft
+					);
 
-		}
-		else if (i == 5) //right
-		{
-			bool upRight = (sides[UP_RIGHT] && sides[UP_RIGHT]->isOpaque());
-			bool downRight = (sides[DOWN_RIGHT] && sides[DOWN_RIGHT]->isOpaque());
-			bool rightFront = (sides[FRONTRIGHT] && sides[FRONTRIGHT]->isOpaque());
-			bool rightBack = (sides[BACKRIGHT] && sides[BACKRIGHT]->isOpaque());
+				}
+				else if (i == 5) //right
+				{
+					bool upRight = (sides[UP_RIGHT] && sides[UP_RIGHT]->isOpaque());
+					bool downRight = (sides[DOWN_RIGHT] && sides[DOWN_RIGHT]->isOpaque());
+					bool rightFront = (sides[FRONTRIGHT] && sides[FRONTRIGHT]->isOpaque());
+					bool rightBack = (sides[BACKRIGHT] && sides[BACKRIGHT]->isOpaque());
 
-			bool upFrontRight = (sides[UP_FRONTRIGHT] && sides[UP_FRONTRIGHT]->isOpaque());
-			bool upBackRight = (sides[UP_BACKRIGHT] && sides[UP_BACKRIGHT]->isOpaque());
-			bool downFrontRight = (sides[DOWN_FRONTRIGHT] && sides[DOWN_FRONTRIGHT]->isOpaque());
-			bool downBackRight = (sides[DOWN_BACKRIGHT] && sides[DOWN_BACKRIGHT]->isOpaque());
+					bool upFrontRight = (sides[UP_FRONTRIGHT] && sides[UP_FRONTRIGHT]->isOpaque());
+					bool upBackRight = (sides[UP_BACKRIGHT] && sides[UP_BACKRIGHT]->isOpaque());
+					bool downFrontRight = (sides[DOWN_FRONTRIGHT] && sides[DOWN_FRONTRIGHT]->isOpaque());
+					bool downBackRight = (sides[DOWN_BACKRIGHT] && sides[DOWN_BACKRIGHT]->isOpaque());
 
-			aoShape = calculateSide(sides,
-				rightFront, rightBack, upRight, downRight,
-				upFrontRight, downFrontRight, upBackRight, downBackRight
-			);
+					aoShape = calculateSide(sides,
+						rightFront, rightBack, upRight, downRight,
+						upFrontRight, downFrontRight, upBackRight, downBackRight
+					);
 
-		}
+				}
 
 		return aoShape;
 	};
@@ -527,15 +616,19 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 			if (
 				(!(isAnyLeaves(b.getType()) && sides[i] != nullptr && isAnyLeaves((sides[i])->getType()))
 				&&
-				(sides[i] != nullptr && !(sides[i])->isOpaque()) )
-				|| 
+				(sides[i] != nullptr && !(sides[i])->isOpaque()))
+				||
 				(
 				//(i == 3 && y == 0) ||		//display the bottom face
 				(i == 2 && y == CHUNK_HEIGHT - 1) //display the top face
 				)
-			   )
+				)
 			{
-				currentVector->push_back(mergeShorts(i + isAnimated * 10, getGpuIdIndexForBlock(b.getType(), i)));
+
+				auto type = b.getType();
+				currentVector->push_back(mergeShorts(i + isAnimated * 10,
+					getGpuIdIndexForBlockWithVariation(type, i, x, y, z)));
+
 
 				int aoShape = determineAOShape(i, sides);
 				bool isInWater = (sides[i] != nullptr) && sides[i]->getType() == BlockTypes::water;
@@ -576,14 +669,14 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 				pushFlagsLightAndPosition(*currentVector, position, 0, isInWater,
 					sunLight, torchLight, aoShape);
-				
+
 			}
 		}
 	};
 
 	//todo reuse up
 	auto calculateLightThings = [&](unsigned char &sunLight, unsigned char &torchLight,
-			Block *side, Block &b, int i, int y)
+		Block *side, Block &b, int i, int y)
 	{
 		sunLight = 0;
 		torchLight = 0;
@@ -657,7 +750,8 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 				auto placeNormally = [&]()
 				{
-					currentVector->push_back(mergeShorts(i, getGpuIdIndexForBlock(b.getType(), i)));
+					currentVector->push_back(mergeShorts(i,
+						getGpuIdIndexForBlockWithVariation(b.getType(), i, x, y, z)));
 					placeFlagsLightsNormally();
 				};
 
@@ -672,28 +766,30 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 					{
 						//bottom rim
 						currentVector->push_back(mergeShorts(halfBottomStartGeometry + 0
-							, getGpuIdIndexForBlock(b.getType(), 0
-						)));
+							, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z)
+
+						));
 						placeFlagsLightsNormally();
-	
+
 						if (rotation == 1)
 						{
-							currentVector->push_back(mergeShorts(cornerUpStartGeometry + 5
-								, getGpuIdIndexForBlock(b.getType(), 1
-							)));
-							placeFlagsLightsNormally();
-						}else
-						if (rotation == 3)
-						{
-							currentVector->push_back(mergeShorts(cornerUpStartGeometry + 7
-								, getGpuIdIndexForBlock(b.getType(), 1
-							)));
+							currentVector->push_back(mergeShorts(cornerUpStartGeometry + 4
+								, getGpuIdIndexForBlockWithVariation(b.getType(), 1, x, y, z))
+							);
 							placeFlagsLightsNormally();
 						}
+						else
+							if (rotation == 3)
+							{
+								currentVector->push_back(mergeShorts(cornerUpStartGeometry + 6
+									, getGpuIdIndexForBlockWithVariation(b.getType(), 1, x, y, z)
+								));
+								placeFlagsLightsNormally();
+							}
 					}
 
 				}
-				else if(i == 1)
+				else if (i == 1)
 				{
 					//back
 					if (rotation == 0)
@@ -704,24 +800,25 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 					{
 						//bottom rim
 						currentVector->push_back(mergeShorts(halfBottomStartGeometry + 1
-							, getGpuIdIndexForBlock(b.getType(), 1
-						)));
+							, getGpuIdIndexForBlockWithVariation(b.getType(), 1, x, y, z)
+						));
 						placeFlagsLightsNormally();
 
 						if (rotation == 1)
 						{
-								currentVector->push_back(mergeShorts(cornerUpStartGeometry + 4
-							, getGpuIdIndexForBlock(b.getType(), 1
-							)));
-							placeFlagsLightsNormally();
-						}else
-						if (rotation == 3)
-						{
-							currentVector->push_back(mergeShorts(cornerUpStartGeometry + 6
-								, getGpuIdIndexForBlock(b.getType(), 1
-							)));
+							currentVector->push_back(mergeShorts(cornerUpStartGeometry + 5
+								, getGpuIdIndexForBlockWithVariation(b.getType(), 1, x, y, z)
+							));
 							placeFlagsLightsNormally();
 						}
+						else
+							if (rotation == 3)
+							{
+								currentVector->push_back(mergeShorts(cornerUpStartGeometry + 7
+									, getGpuIdIndexForBlockWithVariation(b.getType(), 1, x, y, z)
+								));
+								placeFlagsLightsNormally();
+							}
 					}
 
 				}
@@ -746,21 +843,22 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 					{
 						//bottom rim
 						currentVector->push_back(mergeShorts(halfBottomStartGeometry + 2
-							, getGpuIdIndexForBlock(b.getType(), 2
-						)));
+							, getGpuIdIndexForBlockWithVariation(b.getType(), 2, x, y, z)
+						));
 						placeFlagsLightsNormally();
 
 						if (rotation == 0)
 						{
 							currentVector->push_back(mergeShorts(cornerUpStartGeometry + 0
-								, getGpuIdIndexForBlock(b.getType(), 0
-							)));
+								, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z)
+							));
 							placeFlagsLightsNormally();
-						}else if (rotation == 2)
+						}
+						else if (rotation == 2)
 						{
 							currentVector->push_back(mergeShorts(cornerUpStartGeometry + 2
-								, getGpuIdIndexForBlock(b.getType(), 0
-							)));
+								, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z)
+							));
 							placeFlagsLightsNormally();
 						}
 					}
@@ -778,25 +876,26 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 					{
 						//bottom rim
 						currentVector->push_back(mergeShorts(halfBottomStartGeometry + 3
-							, getGpuIdIndexForBlock(b.getType(), 3
-						)));
+							, getGpuIdIndexForBlockWithVariation(b.getType(), 3, x, y, z)
+						));
 						placeFlagsLightsNormally();
 
 						if (rotation == 0)
 						{
 							currentVector->push_back(mergeShorts(cornerUpStartGeometry + 1
-								, getGpuIdIndexForBlock(b.getType(), 0
-							)));
-							placeFlagsLightsNormally();
-						}else
-						if (rotation == 2)
-						{
-							currentVector->push_back(mergeShorts(cornerUpStartGeometry + 3
-								, getGpuIdIndexForBlock(b.getType(), 0
-							)));
+								, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z)
+							));
 							placeFlagsLightsNormally();
 						}
-					
+						else
+							if (rotation == 2)
+							{
+								currentVector->push_back(mergeShorts(cornerUpStartGeometry + 3
+									, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z)
+								));
+								placeFlagsLightsNormally();
+							}
+
 					}
 
 				}
@@ -828,28 +927,28 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 			if (rotation == 0)
 			{
 				currentVector->push_back(mergeShorts(topHalfStartGeometry + 0
-					, getGpuIdIndexForBlock(b.getType(), 0
+					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
 				)));
 				placeFlagsLightsNormally();
 			}
 			else if (rotation == 2)
 			{
 				currentVector->push_back(mergeShorts(topHalfStartGeometry + 1
-					, getGpuIdIndexForBlock(b.getType(), 0
+					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
 				)));
 				placeFlagsLightsNormally();
 			}
 			else if (rotation == 1)
 			{
 				currentVector->push_back(mergeShorts(topHalfStartGeometry + 2
-					, getGpuIdIndexForBlock(b.getType(), 0
+					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
 				)));
 				placeFlagsLightsNormally();
 			}
 			else if (rotation == 3)
 			{
 				currentVector->push_back(mergeShorts(topHalfStartGeometry + 3
-					, getGpuIdIndexForBlock(b.getType(), 0
+					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
 				)));
 				placeFlagsLightsNormally();
 			}
@@ -881,48 +980,48 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 			if (rotation == 0)
 			{
 				currentVector->push_back(mergeShorts(topHalfBottomPartStartGeometry + 1
-					, getGpuIdIndexForBlock(b.getType(), 0
+					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
 				)));
 				placeFlagsLightsNormally();
 
 				currentVector->push_back(mergeShorts(frontalMiddleTopPieceStartGeometry + 0
-					, getGpuIdIndexForBlock(b.getType(), 0
+					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
 				)));
 				placeFlagsLightsNormally();
 			}
 			else if (rotation == 2)
 			{
 				currentVector->push_back(mergeShorts(topHalfBottomPartStartGeometry + 0
-					, getGpuIdIndexForBlock(b.getType(), 0
+					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
 				)));
 				placeFlagsLightsNormally();
 
 				currentVector->push_back(mergeShorts(frontalMiddleTopPieceStartGeometry + 1
-					, getGpuIdIndexForBlock(b.getType(), 0
+					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
 				)));
 				placeFlagsLightsNormally();
 			}
 			else if (rotation == 1)
 			{
 				currentVector->push_back(mergeShorts(topHalfBottomPartStartGeometry + 3
-					, getGpuIdIndexForBlock(b.getType(), 0
+					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
 				)));
 				placeFlagsLightsNormally();
 
 				currentVector->push_back(mergeShorts(frontalMiddleTopPieceStartGeometry + 2
-					, getGpuIdIndexForBlock(b.getType(), 0
+					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
 				)));
 				placeFlagsLightsNormally();
 			}
 			else if (rotation == 3)
 			{
 				currentVector->push_back(mergeShorts(topHalfBottomPartStartGeometry + 2
-					, getGpuIdIndexForBlock(b.getType(), 0
+					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
 				)));
 				placeFlagsLightsNormally();
 
 				currentVector->push_back(mergeShorts(frontalMiddleTopPieceStartGeometry + 3
-					, getGpuIdIndexForBlock(b.getType(), 0
+					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
 				)));
 				placeFlagsLightsNormally();
 			}
@@ -976,7 +1075,9 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 				auto placeNormally = [&]()
 				{
-					currentVector->push_back(mergeShorts(i, getGpuIdIndexForBlock(b.getType(), i)));
+					currentVector->push_back(mergeShorts(i,
+						getGpuIdIndexForBlockWithVariation(b.getType(), i, x, y, z)
+					));
 					placeFlagsLightsNormally();
 				};
 
@@ -991,15 +1092,16 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 					{
 						if (rotation == 1)
 						{
+
 							currentVector->push_back(mergeShorts(wallsSideParts + 0
-								, getGpuIdIndexForBlock(b.getType(), sideFace
+								, getGpuIdIndexForBlockWithVariation(b.getType(), sideFace, x, y, z
 							)));
 							placeFlagsLightsNormally();
 						}
 						else if (rotation == 3)
 						{
 							currentVector->push_back(mergeShorts(wallsSideParts + 1
-								, getGpuIdIndexForBlock(b.getType(), sideFace
+								, getGpuIdIndexForBlockWithVariation(b.getType(), sideFace, x, y, z
 							)));
 							placeFlagsLightsNormally();
 						}
@@ -1018,14 +1120,14 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 						if (rotation == 1)
 						{
 							currentVector->push_back(mergeShorts(wallsSideParts + 2
-								, getGpuIdIndexForBlock(b.getType(), sideFace
+								, getGpuIdIndexForBlockWithVariation(b.getType(), sideFace, x, y, z
 							)));
 							placeFlagsLightsNormally();
 						}
 						else if (rotation == 3)
 						{
 							currentVector->push_back(mergeShorts(wallsSideParts + 3
-								, getGpuIdIndexForBlock(b.getType(), sideFace
+								, getGpuIdIndexForBlockWithVariation(b.getType(), sideFace, x, y, z
 							)));
 							placeFlagsLightsNormally();
 						}
@@ -1037,28 +1139,28 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 					if (rotation == 0)
 					{
 						currentVector->push_back(mergeShorts(topHalfStartGeometry + 0
-							, getGpuIdIndexForBlock(b.getType(), sideFace
+							, getGpuIdIndexForBlockWithVariation(b.getType(), sideFace, x, y, z
 						)));
 						placeFlagsLightsNormally();
 					}
 					else if (rotation == 2)
 					{
 						currentVector->push_back(mergeShorts(topHalfStartGeometry + 1
-							, getGpuIdIndexForBlock(b.getType(), sideFace
+							, getGpuIdIndexForBlockWithVariation(b.getType(), sideFace, x, y, z
 						)));
 						placeFlagsLightsNormally();
 					}
 					else if (rotation == 1)
 					{
 						currentVector->push_back(mergeShorts(topHalfStartGeometry + 2
-							, getGpuIdIndexForBlock(b.getType(), sideFace
+							, getGpuIdIndexForBlockWithVariation(b.getType(), sideFace, x, y, z
 						)));
 						placeFlagsLightsNormally();
 					}
 					else if (rotation == 3)
 					{
 						currentVector->push_back(mergeShorts(topHalfStartGeometry + 3
-							, getGpuIdIndexForBlock(b.getType(), sideFace
+							, getGpuIdIndexForBlockWithVariation(b.getType(), sideFace, x, y, z
 						)));
 						placeFlagsLightsNormally();
 					}
@@ -1069,28 +1171,28 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 					if (rotation == 0)
 					{
 						currentVector->push_back(mergeShorts(wallsBottomPart + 0
-							, getGpuIdIndexForBlock(b.getType(), sideFace
+							, getGpuIdIndexForBlockWithVariation(b.getType(), sideFace, x, y, z
 						)));
 						placeFlagsLightsNormally();
 					}
 					else if (rotation == 2)
 					{
 						currentVector->push_back(mergeShorts(wallsBottomPart + 1
-							, getGpuIdIndexForBlock(b.getType(), sideFace
+							, getGpuIdIndexForBlockWithVariation(b.getType(), sideFace, x, y, z
 						)));
 						placeFlagsLightsNormally();
 					}
 					else if (rotation == 1)
 					{
 						currentVector->push_back(mergeShorts(wallsBottomPart + 2
-							, getGpuIdIndexForBlock(b.getType(), sideFace
+							, getGpuIdIndexForBlockWithVariation(b.getType(), sideFace, x, y, z
 						)));
 						placeFlagsLightsNormally();
 					}
 					else if (rotation == 3)
 					{
 						currentVector->push_back(mergeShorts(wallsBottomPart + 3
-							, getGpuIdIndexForBlock(b.getType(), sideFace
+							, getGpuIdIndexForBlockWithVariation(b.getType(), sideFace, x, y, z
 						)));
 						placeFlagsLightsNormally();
 					}
@@ -1107,14 +1209,14 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 						if (rotation == 0)
 						{
 							currentVector->push_back(mergeShorts(wallsSideParts + 4
-								, getGpuIdIndexForBlock(b.getType(), sideFace
+								, getGpuIdIndexForBlockWithVariation(b.getType(), sideFace, x, y, z
 							)));
 							placeFlagsLightsNormally();
 						}
 						else if (rotation == 2)
 						{
 							currentVector->push_back(mergeShorts(wallsSideParts + 5
-								, getGpuIdIndexForBlock(b.getType(), sideFace
+								, getGpuIdIndexForBlockWithVariation(b.getType(), sideFace, x, y, z
 							)));
 							placeFlagsLightsNormally();
 						}
@@ -1134,14 +1236,14 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 						if (rotation == 0)
 						{
 							currentVector->push_back(mergeShorts(wallsSideParts + 6
-								, getGpuIdIndexForBlock(b.getType(), sideFace
+								, getGpuIdIndexForBlockWithVariation(b.getType(), sideFace, x, y, z
 							)));
 							placeFlagsLightsNormally();
 						}
 						else if (rotation == 2)
 						{
 							currentVector->push_back(mergeShorts(wallsSideParts + 7
-								, getGpuIdIndexForBlock(b.getType(), sideFace
+								, getGpuIdIndexForBlockWithVariation(b.getType(), sideFace, x, y, z
 							)));
 							placeFlagsLightsNormally();
 						}
@@ -1153,7 +1255,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 		}
 
-	
+
 		//inner face
 		if (
 			(sides[0] != nullptr && !sides[0]->isOpaque()) ||
@@ -1189,30 +1291,39 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 			if (rotation == 0)
 			{
+
+
 				int i = 0; //front
 				aoShape = determineAOShape(i, sides);
-				currentVector->push_back(mergeShorts(wallsInnerFace, getGpuIdIndexForBlock(b.getType(), i)));
+				currentVector->push_back(mergeShorts(wallsInnerFace,
+					getGpuIdIndexForBlockWithVariation(b.getType(), i, x, y, z))
+				);
 				placeFlagsLightsNormally();
 			}
 			else if (rotation == 1)
 			{
 				int i = 5; //right
 				aoShape = determineAOShape(i, sides);
-				currentVector->push_back(mergeShorts(wallsInnerFace + 3, getGpuIdIndexForBlock(b.getType(), i)));
+				currentVector->push_back(mergeShorts(wallsInnerFace + 3,
+					getGpuIdIndexForBlockWithVariation(b.getType(), i, x, y, z))
+				);
 				placeFlagsLightsNormally();
 			}
 			else if (rotation == 2)
 			{
 				int i = 1; //back
 				aoShape = determineAOShape(i, sides);
-				currentVector->push_back(mergeShorts(wallsInnerFace + 1, getGpuIdIndexForBlock(b.getType(), i)));
+				currentVector->push_back(mergeShorts(wallsInnerFace + 1,
+					getGpuIdIndexForBlockWithVariation(b.getType(), i, x, y, z)));
 				placeFlagsLightsNormally();
 			}
 			else if (rotation == 3)
 			{
 				int i = 4; //left
 				aoShape = determineAOShape(i, sides);
-				currentVector->push_back(mergeShorts(wallsInnerFace + 2, getGpuIdIndexForBlock(b.getType(), i)));
+				currentVector->push_back(mergeShorts(wallsInnerFace + 2,
+					getGpuIdIndexForBlockWithVariation(b.getType(), i, x, y, z))
+				);
 				placeFlagsLightsNormally();
 			}
 
@@ -1251,7 +1362,8 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 				auto placeNormally = [&]()
 				{
-					currentVector->push_back(mergeShorts(i, getGpuIdIndexForBlock(b.getType(), i)));
+					currentVector->push_back(mergeShorts(i,
+						getGpuIdIndexForBlockWithVariation(b.getType(), i, x, y, z)));
 					placeFlagsLightsNormally();
 				};
 
@@ -1276,29 +1388,30 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 					}
 					else if (i == 0)
 					{
-						currentVector->push_back(mergeShorts(slabTopSides + 0
-							, getGpuIdIndexForBlock(b.getType(), 0
+
+						currentVector->push_back(mergeShorts(slabTopSides + 0,
+							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
 						)));
 						placeFlagsLightsNormally();
 					}
 					else if (i == 1)
 					{
-						currentVector->push_back(mergeShorts(slabTopSides + 1
-							, getGpuIdIndexForBlock(b.getType(), 0
+						currentVector->push_back(mergeShorts(slabTopSides + 1,
+							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
 						)));
 						placeFlagsLightsNormally();
 					}
 					else if (i == 4)
 					{
-						currentVector->push_back(mergeShorts(slabTopSides + 2
-							, getGpuIdIndexForBlock(b.getType(), 0
+						currentVector->push_back(mergeShorts(slabTopSides + 2,
+							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
 						)));
 						placeFlagsLightsNormally();
 					}
 					else if (i == 5)
 					{
-						currentVector->push_back(mergeShorts(slabTopSides + 3
-							, getGpuIdIndexForBlock(b.getType(), 0
+						currentVector->push_back(mergeShorts(slabTopSides + 3,
+							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
 						)));
 						placeFlagsLightsNormally();
 					}
@@ -1338,7 +1451,8 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 				}
 
 				currentVector->push_back(mergeShorts(slabFaceUnderside,
-					getGpuIdIndexForBlock(b.getType(), 2)));
+					getGpuIdIndexForBlockWithVariation(b.getType(), 2, x, y, z
+				)));
 				pushFlagsLightAndPosition(*currentVector, position, 0, isInWater,
 					sunLight, torchLight, aoShape);
 			}
@@ -1364,7 +1478,9 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 				auto placeNormally = [&]()
 				{
-					currentVector->push_back(mergeShorts(i, getGpuIdIndexForBlock(b.getType(), i)));
+					currentVector->push_back(mergeShorts(i,
+						getGpuIdIndexForBlockWithVariation(b.getType(), i, x, y, z
+					)));
 					placeFlagsLightsNormally();
 				};
 
@@ -1389,29 +1505,29 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 					}
 					else if (i == 0)
 					{
-						currentVector->push_back(mergeShorts(halfBottomStartGeometry + 0
-							, getGpuIdIndexForBlock(b.getType(), 0
+						currentVector->push_back(mergeShorts(halfBottomStartGeometry + 0,
+							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
 						)));
 						placeFlagsLightsNormally();
 					}
 					else if (i == 1)
 					{
-						currentVector->push_back(mergeShorts(halfBottomStartGeometry + 1
-							, getGpuIdIndexForBlock(b.getType(), 0
+						currentVector->push_back(mergeShorts(halfBottomStartGeometry + 1,
+							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
 						)));
 						placeFlagsLightsNormally();
 					}
 					else if (i == 4)
 					{
-						currentVector->push_back(mergeShorts(halfBottomStartGeometry + 2
-							, getGpuIdIndexForBlock(b.getType(), 0
+						currentVector->push_back(mergeShorts(halfBottomStartGeometry + 2,
+							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
 						)));
 						placeFlagsLightsNormally();
 					}
 					else if (i == 5)
 					{
-						currentVector->push_back(mergeShorts(halfBottomStartGeometry + 3
-							, getGpuIdIndexForBlock(b.getType(), 0
+						currentVector->push_back(mergeShorts(halfBottomStartGeometry + 3,
+							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
 						)));
 						placeFlagsLightsNormally();
 					}
@@ -1457,13 +1573,14 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 				}
 
 				currentVector->push_back(mergeShorts(slabTopFace,
-					getGpuIdIndexForBlock(b.getType(), 2)));
+					getGpuIdIndexForBlockWithVariation(b.getType(), 2, x, y, z
+				)));
 				pushFlagsLightAndPosition(*currentVector, position, 0, isInWater,
 					sunLight, torchLight, aoShape);
 			}
 		}
 
-		
+
 
 	};
 
@@ -1497,6 +1614,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y,
 				z + this->data.z * CHUNK_SIZE};
 
+
 		for (int index = 0; index < 6; index++)
 		{
 			int i = distances[index].y;
@@ -1505,9 +1623,9 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 			if ((sides[i] != nullptr
 				&& (!(sides[i])->isOpaque() && sides[i]->getType() != b.getType())
-				)||
+				) ||
 				(
-					isWater && i == 2 //display water if there is a block on top
+				isWater && i == 2 //display water if there is a block on top
 				)
 				|| (
 				//(i == 3 && y == 0) ||		//display the bottom face
@@ -1521,6 +1639,11 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 				//no faces in between same types
 				if (sides[i] && sides[i]->getType() == b.getType()) { continue; }
+
+
+				unsigned char sunLight = 0;
+				unsigned char torchLight = 0;
+				calculateLightThings(sunLight, torchLight, sides[i], b, i, y);
 
 
 				if (isWater)
@@ -1582,7 +1705,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 						{
 							currentIndex = i; //normal block
 						}
-						else if(topVariant && bottomVariant)
+						else if (topVariant && bottomVariant)
 						{
 							if (i == 0) { currentIndex = 32; } //front
 							if (i == 1) { currentIndex = 33; } //back
@@ -1622,43 +1745,46 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 				}
 
 				int aoShape = determineAOShape(i, sides);
-			
+
 				bool isInWater = (sides[i] != nullptr) && sides[i]->getType() == BlockTypes::water;
 
-				if (dontUpdateLightSystem)
-				{
-					pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
-						15, 15, aoShape);
-				}
-				else
-					if (sides[i] == nullptr && i == 2)
-					{
-						pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
-							15, b.getLight(), aoShape);
-					}
-					else if (sides[i] == nullptr && i == 3)
-					{
-						pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
-							5, b.getLight(), aoShape);
-						//bottom of the world
-					}
-					else if (sides[i] != nullptr)
-					{
-						int val = merge4bits(
-							std::max(b.getSkyLight(),sides[i]->getSkyLight()), 
-							std::max(b.getLight(),sides[i]->getLight())
-						);
+				pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
+					sunLight, torchLight, aoShape);
 
-						pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
-							std::max(b.getSkyLight(), sides[i]->getSkyLight()),
-							std::max(b.getLight(), sides[i]->getLight()), aoShape);
-					}
-					else
-					{
-						pushFlagsLightAndPosition(*currentVector, position, 
-							isWater, isInWater,
-							0, 0, aoShape);
-					}
+				//if (dontUpdateLightSystem)
+				//{
+				//	pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
+				//		15, 15, aoShape);
+				//}
+				//else
+				//	if (sides[i] == nullptr && i == 2)
+				//	{
+				//		pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
+				//			15, b.getLight(), aoShape);
+				//	}
+				//	else if (sides[i] == nullptr && i == 3)
+				//	{
+				//		pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
+				//			5, b.getLight(), aoShape);
+				//		//bottom of the world
+				//	}
+				//	else if (sides[i] != nullptr)
+				//	{
+				//		int val = merge4bits(
+				//			std::max(b.getSkyLight(),sides[i]->getSkyLight()), 
+				//			std::max(b.getLight(),sides[i]->getLight())
+				//		);
+				//
+				//		pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
+				//			std::max(b.getSkyLight(), sides[i]->getSkyLight()),
+				//			std::max(b.getLight(), sides[i]->getLight()), aoShape);
+				//	}
+				//	else
+				//	{
+				//		pushFlagsLightAndPosition(*currentVector, position, 
+				//			isWater, isInWater,
+				//			0, 0, aoShape);
+				//	}
 
 			}
 		}
@@ -1686,20 +1812,30 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 			z + this->data.z * CHUNK_SIZE};
 
 		bool snowGrass = 0;
+		bool yellowGrass = 0;
 		if (b.getType() == grass)
 		{
 			if (sides[BOTTOM] && sides[BOTTOM]->getType() == BlockTypes::snow_dirt)
 			{
 				snowGrass = true;
 			}
+
+			if (sides[BOTTOM] && sides[BOTTOM]->getType() == BlockTypes::yellowGrass)
+			{
+				yellowGrass = true;
+			}
 		}
 
 		for (int i = 6; i <= 9; i++)
 		{
-			
+
 			if (snowGrass)
 			{
 				currentVector->push_back(mergeShorts(i, SNOW_GRASS_TEXTURE_INDEX * 3));
+			}
+			else if (yellowGrass)
+			{
+				currentVector->push_back(mergeShorts(i, YELLOW_GRASS_TEXTURE_INDEX * 3));
 			}
 			else
 			{
@@ -1728,7 +1864,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 		for (int i = 0; i < 6; i++)
 		{
-		
+
 			if (i == 3)
 			{
 				auto bbottom = safeGet(x, y - 1, z);
@@ -1750,11 +1886,6 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 	};
 
-	opaqueGeometry.clear();
-	transparentGeometry.clear();
-	transparentCandidates.clear();
-	lights.clear();
-
 #pragma endregion
 
 	if (updateGeometry)
@@ -1764,6 +1895,11 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		setNeighbourToRight(right != nullptr);
 		setNeighbourToFront(front != nullptr);
 		setNeighbourToBack(back != nullptr);
+
+		setNeighbourToFrontLeft(frontLeft != nullptr);
+		setNeighbourToFrontRight(frontRight != nullptr);
+		setNeighbourToBackLeft(backLeft != nullptr);
+		setNeighbourToBackRight(backRight != nullptr);
 
 		for (int x = 0; x < CHUNK_SIZE; x++)
 			for (int z = 0; z < CHUNK_SIZE; z++)
@@ -1775,28 +1911,31 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 						if (b.isWallMesh())
 						{
 							blockBakeLogicForWalls(x, y, z, &opaqueGeometry, b);
-						}else if (b.isStairsMesh())
+						}
+						else if (b.isStairsMesh())
 						{
 							blockBakeLogicForStairs(x, y, z, &opaqueGeometry, b);
 						}
 						else if (b.isSlabMesh())
 						{
 							blockBakeLogicForSlabs(x, y, z, &opaqueGeometry, b);
-						}else
-						if (b.isGrassMesh())
-						{
-							blockBakeLogicForGrassMesh(x, y, z, &opaqueGeometry, b);
 						}
-						else if (b.getType() == BlockTypes::torch)
-						{
-							blockBakeLogicForTorches(x, y, z, &opaqueGeometry, b);
-						}else
-						{
-							if (!b.isTransparentGeometry())
+						else
+							if (b.isGrassMesh())
 							{
-								blockBakeLogicForSolidBlocks(x, y, z, &opaqueGeometry, b, b.isAnimatedBlock());
+								blockBakeLogicForGrassMesh(x, y, z, &opaqueGeometry, b);
 							}
-						}
+							else if (b.getType() == BlockTypes::torch)
+							{
+								blockBakeLogicForTorches(x, y, z, &opaqueGeometry, b);
+							}
+							else
+							{
+								if (!b.isTransparentGeometry())
+								{
+									blockBakeLogicForSolidBlocks(x, y, z, &opaqueGeometry, b, b.isAnimatedBlock());
+								}
+							}
 
 						if (b.isLightEmitor())
 						{
@@ -1847,6 +1986,16 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 	};
 
+
+	return updateTransparency || updateGeometry;
+}
+
+void Chunk::sendDataToOpenGL(bool updateGeometry,
+	bool updateTransparency, std::vector<TransparentCandidate> &transparentCandidates,
+	std::vector<int> &opaqueGeometry, std::vector<int> &transparentGeometry,
+	std::vector<glm::ivec4> &lights)
+{
+
 	if (updateGeometry)
 	{
 		glBindBuffer(GL_ARRAY_BUFFER, opaqueGeometryBuffer);
@@ -1863,7 +2012,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 			lights.data(), GL_STREAM_READ);
 		lightsElementCountSize = lights.size();
 
-		gpuBuffer.addChunk({data.x, data.z}, opaqueGeometry);
+		//gpuBuffer->addChunk({data.x, data.z}, opaqueGeometry);
 	}
 
 	if (updateTransparency)
@@ -1879,15 +2028,48 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	if ((updateTransparency && transparentElementCountSize > 0) || updateGeometry)
+}
+
+bool Chunk::shouldBake(Chunk *left,
+	Chunk *right, Chunk *front, Chunk *back,
+	Chunk *frontLeft, Chunk *frontRight, Chunk *backLeft, Chunk *backRight)
+{
+	if (
+		isDirty()
+		|| isDirtyTransparency()
+		|| (!isNeighbourToLeft() && left != nullptr)
+		|| (!isNeighbourToRight() && right != nullptr)
+		|| (!isNeighbourToFront() && front != nullptr)
+		|| (!isNeighbourToBack() && back != nullptr)
+
+		|| (!isNeighbourToFrontLeft() && frontLeft != nullptr)
+		|| (!isNeighbourToFrontRight() && frontRight != nullptr)
+		|| (!isNeighbourToBackLeft() && backLeft != nullptr)
+		|| (!isNeighbourToBackRight() && backRight != nullptr)
+		)
 	{
 		return true;
 	}
-	else
+
+	return false;
+}
+
+bool Chunk::forShureShouldntbake()
+{
+	if(isDirty() || isDirtyTransparency() ||
+		!isNeighbourToLeft() ||
+		!isNeighbourToRight() ||
+		!isNeighbourToFront() ||
+		!isNeighbourToBack() ||
+		!isNeighbourToFrontLeft() ||
+		!isNeighbourToFrontRight() ||
+		!isNeighbourToBackLeft() ||
+		!isNeighbourToBackRight())
 	{
 		return false;
 	}
 
+	return true;
 }
 
 bool Chunk::shouldBakeOnlyBecauseOfTransparency(Chunk *left, Chunk *right, Chunk *front, Chunk *back)
@@ -1905,7 +2087,6 @@ bool Chunk::shouldBakeOnlyBecauseOfTransparency(Chunk *left, Chunk *right, Chunk
 
 	return isDirtyTransparency();
 }
-
 
 
 void Chunk::createGpuData()

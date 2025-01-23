@@ -43,7 +43,6 @@ void Player::moveFPS(glm::vec3 direction, glm::vec3 lookDirection)
 	move += glm::normalize(glm::cross(lookDirection, glm::vec3(0, 1, 0))) * leftRight;
 	move += lookDirection * forward;
 
-	//applyImpulse(this->forces, move);
 	this->position += move;
 }
 
@@ -52,34 +51,31 @@ glm::vec3 Player::getColliderSize()
 	return getMaxColliderSize();
 }
 
+void Player::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
+{
+	updateForces(deltaTime, !fly);
+
+	resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime, getColliderSize());
+}
+
 glm::vec3 Player::getMaxColliderSize()
 {
 	return glm::vec3(0.8, 1.8, 0.8);
 }
 
 
-void PlayerClient::cleanup()
-{
-	if (skin.id)
-	{
-		skin.cleanup();
-		skinBindlessTexture = 0;
-	}
-}
 
 //todo move update here
 void PlayerClient::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
 {
-
+	entityBuffered.update(deltaTime, chunkGetter);
 }
 
 void PlayerClient::setEntityMatrix(glm::mat4 *skinningMatrix)
 {
 
-	skinningMatrix[0] = skinningMatrix[0] * glm::toMat4(
-		glm::quatLookAt(glm::normalize(entity.lookDirectionAnimation), glm::vec3(0, 1, 0)));
-
-
+	//skinningMatrix[0] = skinningMatrix[0] * glm::toMat4(
+	//	glm::quatLookAt(glm::normalize(entityBuffered.lookDirectionAnimation), glm::vec3(0, 1, 0)));
 
 }
 
@@ -108,5 +104,5 @@ float PlayerServer::calculateHealingDelayTime()
 
 float PlayerServer::calculateHealingRegenTime()
 {
-    return BASE_HEALTH_REGEN_TIME;
+	return BASE_HEALTH_REGEN_TIME;
 }

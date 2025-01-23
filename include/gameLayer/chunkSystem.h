@@ -10,13 +10,17 @@
 #include "chunk.h"
 #include <rendering/bigGpuBuffer.h>
 #include <gameplay/blocks/blocksWithData.h>
+#include <multyPlayer/splitUpdatesLogic.h>
 
 struct LightSystem;
+
+void bakeWorkerThread(int index, ThreadPool &threadPool);
 
 struct ChunkSystem
 {
 
 	BigGpuBuffer gpuBuffer;
+
 
 	struct ChunkSystemSettings
 	{
@@ -57,7 +61,7 @@ struct ChunkSystem
 	void cleanup(bool notifyServer);
 
 	void update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQueue &undoQueue, LightSystem &lightSystem,
-		InteractionData &interaction);
+		InteractionData &interaction, ThreadPool &threadPool);
 
 	bool isChunkInRadius(glm::ivec2 playerPos, glm::ivec2 chunkPos);
 
@@ -109,6 +113,11 @@ struct ChunkSystem
 		UndoQueue &undoQueue, glm::dvec3 playerPos,
 		LightSystem &lightSystem
 	);
+
+	void placeBlockByServerAndRemoveFromUndoQueue(glm::ivec3 pos, Block block,
+		LightSystem &lightSystem, 
+		InteractionData &playerInteraction, UndoQueue &undoQueue,
+		std::vector<unsigned char> *optionalData = 0);
 
 	//just place the block, forcely by server
 	void placeBlockNoClient(glm::ivec3 pos, Block block,

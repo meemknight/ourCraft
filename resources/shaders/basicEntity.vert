@@ -4,6 +4,7 @@ layout(location = 0) in vec3 shape;
 layout(location = 1) in vec3 normal;
 layout(location = 2) in vec2 uv;
 layout(location = 3) in int bone;
+layout(location = 4) in int textureIndex;
 
 
 uniform mat4 u_viewProjection;
@@ -39,7 +40,10 @@ struct PerEntityData
 	float colorG;
 	float colorB;
 
-	uvec2 textureSampler;
+	uvec2 textureSampler0;
+	uvec2 textureSampler1;
+	uvec2 textureSampler2;
+	uvec2 textureSampler3;
 };
 
 flat out uvec2 v_textureSampler;
@@ -55,7 +59,11 @@ void main()
 	vec3 entityPosFloat = vec3(entityData[gl_InstanceID].entityPositionFloatX, entityData[gl_InstanceID].entityPositionFloatY, entityData[gl_InstanceID].entityPositionFloatZ);
 	v_color = vec3(entityData[gl_InstanceID].colorR, entityData[gl_InstanceID].colorG, entityData[gl_InstanceID].colorB);
 
-	v_textureSampler = entityData[gl_InstanceID].textureSampler;
+	if(textureIndex == 1)	{v_textureSampler = entityData[gl_InstanceID].textureSampler1;} else
+	if(textureIndex == 2)	{v_textureSampler = entityData[gl_InstanceID].textureSampler2;} else
+	if(textureIndex == 3)	{v_textureSampler = entityData[gl_InstanceID].textureSampler3;} else
+							{v_textureSampler = entityData[gl_InstanceID].textureSampler0;} 
+	
 
 	vec3 diffI = entityPosInt - u_cameraPositionInt;
 	vec3 diffF = diffI - u_cameraPositionFloat + entityPosFloat;

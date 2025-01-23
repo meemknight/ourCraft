@@ -217,6 +217,7 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 	//std::cout << "max" << event.peer->timeoutMaximum << "\n";
 	//std::cout << "limit" << event.peer->timeoutLimit << "\n";
 
+	//make sure we wait a little longer before timeout
 	event.peer->timeoutMinimum = 10'000;
 	event.peer->timeoutMaximum = 30'000;
 	event.peer->timeoutLimit = 64;
@@ -407,12 +408,14 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 	{
 
 		//todo hard reset on fail
+
 		case headerClientDroppedChunk:
 		{
 			Packet_ClientDroppedChunk packetData = *(Packet_ClientDroppedChunk *)data;
 
 			if (sizeof(Packet_ClientDroppedChunk) != size)
 			{
+				//todo hard reset on fail
 				reportError("corrupted packet or something Packet_ClientDroppedChunk");
 				break;
 			}
@@ -479,7 +482,6 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 
 				if (connection->second.playerData.entity.position != packetData.playerData.position)
 				{
-
 
 					clientCopy = connection->second;
 					clientCopyCid = connection->first;
@@ -704,8 +706,26 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			memcpy(connection->second.skinData.data(), data, size);
 			connection->second.skinDataCompressed = wasCompressed;
 
-			serverTask.t.taskType = Task::clientUpdatedSkin;
-			serverTasks.push_back(serverTask);
+			{
+
+				Packet p;
+				p.header = headerSendPlayerSkin;
+				p.cid = serverTask.cid;
+
+				auto client = getClientNotLocked(serverTask.cid);
+
+				if (client)
+				{
+					if (client->skinDataCompressed)
+					{
+						p.setCompressed();
+					}
+
+					broadCastNotLocked(p, client->skinData.data(),
+						client->skinData.size(), client->peer, true, channelHandleConnections);
+				}
+			}
+
 		}
 		break;
 
@@ -847,6 +867,8 @@ static std::atomic<bool> enetServerRunning = false;
 
 
 Profiler serverProfiler;
+
+//used for accessing the profiler from another thread
 Profiler getServerProfilerCopy()
 {
 	return serverProfiler;

@@ -51,15 +51,14 @@ void ZombieClient::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 		currentHandsAngle -= glm::radians(360.f);
 	}
 
-	entity.update(deltaTime, chunkGetter);
+	entityBuffered.update(deltaTime, chunkGetter);
 }
 
 void ZombieClient::setEntityMatrix(glm::mat4 *skinningMatrix)
 {
-	skinningMatrix[1] = skinningMatrix[1] * glm::toMat4(
-		glm::quatLookAt(glm::normalize(getRubberBandLookDirection()), glm::vec3(0, 1, 0)));
 
-	animatePlayerHandsZombie(skinningMatrix, currentHandsAngle);
+
+	//animatePlayerHandsZombie(skinningMatrix, currentHandsAngle);
 }
 
 
@@ -81,6 +80,27 @@ bool ZombieServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 	std::unordered_map<std::uint64_t, glm::dvec3> &playersPosition
 )
 {
+
+
+	//look at player
+	if(0)
+	{
+		auto found = playersPosition.begin();
+
+		if (found == playersPosition.end())
+		{
+
+		}
+		else
+		{
+			lookAtPosition(found->second, entity.lookDirectionAnimation,
+				getPosition(), entity.bodyOrientation,
+				glm::radians(65.f));
+			
+		}
+	}
+
+
 
 	if (0)
 	{

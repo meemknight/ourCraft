@@ -33,21 +33,12 @@ glm::vec3 Goblin::getMaxColliderSize()
 
 void GoblinClient::update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter)
 {
-	currentLegsAngle += deltaTime;
-	if (currentLegsAngle > glm::radians(360.f))
-	{
-		currentLegsAngle -= glm::radians(360.f);
-	}
-
-	entity.update(deltaTime, chunkGetter);
+	entityBuffered.update(deltaTime, chunkGetter);
 }
 
 void GoblinClient::setEntityMatrix(glm::mat4 *skinningMatrix)
 {
-	//todo a way to obtain the index with the head and stuff
 
-	skinningMatrix[0] = skinningMatrix[0] * glm::toMat4(
-		glm::quatLookAt(glm::normalize(getRubberBandLookDirection()), glm::vec3(0, 1, 0)));
 
 
 }
@@ -110,6 +101,7 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 		}
 
+		//look at player
 		{
 			auto found = playersPosition.find(playerLockedOn);
 
@@ -119,6 +111,10 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 			}
 			else
 			{
+				lookAtPosition(found->second, entity.lookDirectionAnimation,
+					getPosition(), entity.bodyOrientation, 
+					glm::radians(65.f));
+
 				if (glm::distance(found->second, getPosition()) <= keepFollowDistance)
 				{
 					playerLockedOnPosition = found->second;
@@ -129,6 +125,14 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 				}
 			}
 		}
+
+		if (!playerLockedOn)
+		{
+			//todo look randomly
+		}
+		
+
+		//playerLockedOn = 0;
 
 		//auto playeerPos2D = playerLockedOnPosition;
 		//playeerPos2D.y = 0;
@@ -157,6 +161,8 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 		//	direction = {0,0};
 		//}
 
+		//disable following
+		if(0)
 		if (!pathFindingSucceeded && playerLockedOn && closeToPlayer)
 		{
 
@@ -367,7 +373,9 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 		};
 
-		if (!playerLockedOn)
+		//random walk
+		if (0)
+		//if (!playerLockedOn)
 		{
 			waitTime -= deltaTime;
 

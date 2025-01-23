@@ -171,7 +171,7 @@ bool DroppedItemServer::loadFromDisk(std::ifstream &f)
 void DroppedItemClient::update(float deltaTime, 
 	decltype(chunkGetterSignature) *chunkGetter)
 {
-	entity.update(deltaTime, chunkGetter);
+	entityBuffered.update(deltaTime, chunkGetter);
 }
 
 void DroppedItemClient::setEntityMatrix(glm::mat4 *skinningMatrix)

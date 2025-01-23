@@ -10,6 +10,9 @@
 #include <unordered_set>
 #include <rendering/camera.h>
 #include <gameplay/effects.h>
+#include <rendering/model.h>
+#include <easing.h>
+
 
 //basic entity structure
 //
@@ -91,7 +94,7 @@ struct RubberBand
 		if (glm::length(direction) > 0.01)
 		{
 			this->direction += direction;
-			initialSize = glm::length(direction);
+			initialSize = glm::length(this->direction);
 
 			//auto copy = this->direction + direction;
 			//
@@ -109,6 +112,27 @@ void computeRubberBand(
 	RubberBand &rubberBand, float deltaTime);
 
 
+//the pupils are actually optinal, this will add the animation logic for the eyes and pupils.
+//they will work if the model has them, if else, it won't do anything.
+
+#define EYE_ANIMATION_TYPE_NORMAL 1
+#define EYE_ANIMATION_TYPE_PLAYER 2
+
+template <unsigned char EYE_ANIMATION_TYPE = 1>
+struct HasEyesAndPupils
+{
+	constexpr static unsigned char eyesAndPupils = EYE_ANIMATION_TYPE;
+	//1 means normal
+	//2 means player style
+};
+
+template <typename T, typename = void>
+constexpr bool hasEyesAndPupils = false;
+
+template <typename T>
+constexpr bool hasEyesAndPupils<T, std::void_t<decltype(std::declval<T>().eyesAndPupils)>> = true;
+
+
 struct HasOrientationAndHeadTurnDirection
 {
 	glm::vec2 bodyOrientation = {0,-1};
@@ -120,6 +144,12 @@ constexpr bool hasBodyOrientation = false;
 
 template <typename T>
 constexpr bool hasBodyOrientation<T, std::void_t<decltype(std::declval<T>().bodyOrientation)>> = true;
+
+template <typename T, typename = void>
+constexpr bool hasLookDirectionAnimation = false;
+
+template <typename T>
+constexpr bool hasLookDirectionAnimation <T, std::void_t<decltype(std::declval<T>().lookDirectionAnimation)>> = true;
 
 template <typename T, typename = void>
 constexpr bool hasCleanup = false;
@@ -146,6 +176,7 @@ constexpr bool hasGetDataToSend = false;
 template <typename T>
 constexpr bool hasGetDataToSend<T, std::void_t<decltype(std::declval<T>().getDataToSend())>> = true;
 
+//todo remove in the future
 template <typename T, typename = void>
 constexpr bool hasSkinBindlessTexture = false;
 
@@ -335,6 +366,32 @@ struct LegsAnimator <T, std::enable_if_t< hasMovementSpeedForLegsAnimations<T>>>
 };
 
 
+template <typename T, typename Enable = void>
+struct EyesAndPupilsAnimator
+{
+};
+
+
+template <typename T>
+struct EyesAndPupilsAnimator <T, std::enable_if_t< hasEyesAndPupils<T>>>
+{
+
+	EasingEngine pupilAnimation;
+	float pupilWaitTimer = 2;
+
+	EasingEngine eyeLookingDirectionAnimator;
+	EasingEngine eyeLookingDirectionUpDown;
+	float eyeUpDownTimer = 2;
+
+
+	EasingEngine eyeLookingDirectionLeftRight;
+	float eyeLeftRightTimer = 0;
+	float pupilDirection = 0;
+
+};
+
+
+
 struct PhysicalEntity
 {
 	glm::dvec3 position = {};
@@ -431,10 +488,129 @@ constexpr bool hasCanHaveEffects <T, std::void_t<decltype(T::canHaveEffects)>> =
 
 
 
-
-
 template<bool B, typename T>
 using ConditionalMember = typename std::conditional<B, T, unsigned char>::type;
+
+
+
+template<class T>
+struct StaticCircularBufferForBuffering
+{
+
+	constexpr static int BUFFER_CAPACITY = 10;
+
+	T elements[BUFFER_CAPACITY] = {};
+	std::uint64_t timeAdded[BUFFER_CAPACITY] = {};
+	std::uint64_t timeUpdatedOnServer[BUFFER_CAPACITY] = {};
+
+	unsigned char startIndex = 0;
+	unsigned char count = 0;
+
+	void addElement(T &element, std::uint64_t timeLocal, std::uint64_t timeUpdatedEntityOnServer)
+	{
+
+		if (count < BUFFER_CAPACITY)
+		{
+			int newPosition = startIndex + count;
+			newPosition %= BUFFER_CAPACITY;
+			elements[newPosition] = element;
+			timeAdded[newPosition] = timeLocal;
+			timeUpdatedOnServer[newPosition] = timeUpdatedEntityOnServer;
+			count++;
+		}
+		else
+		{
+			elements[startIndex] = element;
+			timeAdded[startIndex] = timeLocal;
+			timeUpdatedOnServer[startIndex] = timeUpdatedEntityOnServer;
+			startIndex++;
+			startIndex = startIndex % BUFFER_CAPACITY;
+		}
+	
+	}
+
+	void removeLastElement() 
+	{
+		
+		if (count > 0)
+		{
+			count--;
+
+			startIndex++;
+			startIndex = startIndex % BUFFER_CAPACITY;
+		}
+	}
+
+	void clear()
+	{
+		startIndex = 0;
+		count = 0;
+	}
+
+	T &getNewestElementReff()
+	{
+		//todo add perma assert back here
+		if(count == 0)
+		{
+			std::cout << "circular buffer buffer underflow !!!!!!!!!!!!";
+			exit(0);
+		}
+		//permaAssertComment(count != 0, "circular buffer buffer underflow");
+		int index = startIndex + count - 1;
+		if (index < 0) { index = BUFFER_CAPACITY - 1; }
+		index = index % BUFFER_CAPACITY;
+
+		return elements[index];
+	}
+
+	std::uint64_t getNewestElementTimeUpdatedOnServer()
+	{
+		//todo add perma assert back here
+		if (count == 0)
+		{
+			std::cout << "circular buffer buffer underflow !!!!!!!!!!!!";
+			exit(0);
+		}
+		//permaAssertComment(count != 0, "circular buffer buffer underflow");
+		int index = startIndex + count - 1;
+		if (index < 0) { index = BUFFER_CAPACITY - 1; }
+		index = index % BUFFER_CAPACITY;
+
+		return timeUpdatedOnServer[index];
+	}
+
+	T &getOldestElementReff()
+	{
+		//todo add perma assert back here
+		if (count == 0)
+		{
+			std::cout << "circular buffer buffer underflow !!!!!!!!!!!!";
+			exit(0);
+		}
+
+		return elements[startIndex];
+	}
+
+	std::uint64_t getNewestElementTimer()
+	{
+		//todo add perma assert back here
+		if (count == 0)
+		{
+			std::cout << "circular buffer buffer underflow !!!!!!!!!!!!";
+			exit(0);
+		}
+		//permaAssertComment(count != 0, "circular buffer buffer underflow");
+		int index = startIndex + count - 1;
+		if (index < 0) { index = BUFFER_CAPACITY - 1; }
+		index = index % BUFFER_CAPACITY;
+
+		return timeAdded[index];
+	}
+
+
+};
+
+
 
 
 //dropped item doesn't inherit from this class, so if you want
@@ -473,7 +649,9 @@ template <class T, class BASE_CLIENT>
 struct ClientEntity
 {
 
-	T entity = {};
+	StaticCircularBufferForBuffering<T> bufferedEntityData;
+
+	T entityBuffered = {};
 	RubberBand rubberBand = {};
 	glm::dvec3 oldPositionForRubberBand = {};
 
@@ -482,7 +660,7 @@ struct ClientEntity
 	RubberBandOrientation<T> rubberBandOrientation = {};
 
 	LegsAnimator<T> legAnimator = {};
-
+	EyesAndPupilsAnimator<T> eyesAndPupilsAnimator = {};
 
 	ConditionalMember<hasCanBeKilled<T>, bool> wasKilled = 0;
 	ConditionalMember<hasCanBeKilled<T>, float> wasKilledTimer = 0;
@@ -490,12 +668,12 @@ struct ClientEntity
 
 	glm::dvec3 getRubberBandPosition()
 	{
-		return rubberBand.direction + entity.position;
+		return rubberBand.direction + entityBuffered.position;
 	}
 
 	glm::dvec3 &getPosition()
 	{
-		return entity.position;
+		return entityBuffered.position;
 	}
 
 	glm::vec2 getRubberBandOrientation()
@@ -522,6 +700,186 @@ struct ClientEntity
 		}
 	}
 
+	void flushCircularBuffer()
+	{
+		if (bufferedEntityData.count)
+		{
+			entityBuffered = bufferedEntityData.getNewestElementReff();
+
+			bufferedEntityData.count = 0;
+			bufferedEntityData.startIndex = 0;
+		}
+
+	}
+
+	void setEntityMatrixFull(glm::mat4 *skinningMatrix, Model &model, float deltaTime,
+		std::minstd_rand &rng)
+	{
+
+
+
+		//if(0)
+		if constexpr (hasLookDirectionAnimation<T>)
+		{
+			auto rotation = glm::toMat4(glm::quatLookAt(glm::normalize(getRubberBandLookDirection()), glm::vec3(0, 1, 0)));
+
+			//eyes and pupils stuff
+			{
+				if (model.pupilsIndex > -1)
+				{
+					skinningMatrix[model.pupilsIndex] = skinningMatrix[model.pupilsIndex] * rotation;
+				}
+
+				if (model.lEyeIndex > -1)
+				{
+					skinningMatrix[model.lEyeIndex] = skinningMatrix[model.lEyeIndex] * rotation;
+				}
+
+				if (model.rEyeIndex > -1)
+				{
+					skinningMatrix[model.rEyeIndex] = skinningMatrix[model.rEyeIndex] * rotation;
+				}
+			}
+
+			if (model.headIndex > -1)
+			{
+				skinningMatrix[model.headIndex] = skinningMatrix[model.headIndex] * rotation;
+			}
+
+			if (model.headArmourIndex > -1)
+			{
+				skinningMatrix[model.headArmourIndex] = skinningMatrix[model.headArmourIndex] * rotation;
+			}
+
+		};
+
+		auto scaleDownMatrix = [](float x)
+		{
+			return glm::translate(glm::vec3(0, -x/2.f, 0)) * glm::scale(glm::vec3{1,x + 1.f,1});
+		};
+
+		if constexpr (hasEyesAndPupils<T>)
+		{
+			int stuff = 0;
+
+			//blink
+			if (model.pupilsIndex > -1)
+			{
+
+				float pupilDisplacement = eyesAndPupilsAnimator.pupilAnimation.update(deltaTime)
+					.sin(eyesAndPupilsAnimator.pupilWaitTimer, 2, 0.01, 0.10).burst(0.5, 0, 1, 8)
+					.clamp().result();
+
+				if (eyesAndPupilsAnimator.pupilAnimation.hasRestarted)
+				{
+					eyesAndPupilsAnimator.pupilWaitTimer =
+						getRandomNumberFloat(rng, 0.4, 6) +
+						getRandomNumberFloat(rng, 0.1, 4);
+
+				}
+
+				//player, version
+				if (T().eyesAndPupils == EYE_ANIMATION_TYPE_PLAYER)
+				{
+					float pupilScale = pupilDisplacement * 1;
+					pupilDisplacement *= 2.0f * -(1.f / 16.f);
+
+					skinningMatrix[model.pupilsIndex] =
+						skinningMatrix[model.pupilsIndex] *
+						glm::translate(glm::vec3(0, pupilDisplacement, 0))
+						* scaleDownMatrix(pupilScale);
+				}
+				else //other
+				{
+					pupilDisplacement *= 3.9f * -(1.f / 16.f);
+
+					skinningMatrix[model.pupilsIndex] =
+						skinningMatrix[model.pupilsIndex] *
+						glm::translate(glm::vec3(0, pupilDisplacement, 0));
+				}
+
+				
+
+			}
+
+			if (model.lEyeIndex > -1 ||
+				model.rEyeIndex > -1
+				)
+			{
+
+				float pupilUpDown = eyesAndPupilsAnimator.eyeLookingDirectionUpDown.update(deltaTime)
+					.constant(eyesAndPupilsAnimator.eyeUpDownTimer)
+					.sin(5, 1, -1, 1)
+					.goTowards(1).result();
+
+				pupilUpDown *= (1.f / 16.f) * 0.1;
+				if (eyesAndPupilsAnimator.eyeLookingDirectionUpDown.hasRestarted)
+				{
+					eyesAndPupilsAnimator.eyeUpDownTimer =
+						getRandomNumberFloat(rng, 0.4, 10);
+				}
+
+
+				float pupilLeftRight = eyesAndPupilsAnimator.eyeLookingDirectionLeftRight.update(deltaTime)
+					.constant(eyesAndPupilsAnimator.eyeLeftRightTimer)
+					.goTowards(0.5, 1)
+					.constant(2)
+					.goTowards(0.8).result();
+				if (eyesAndPupilsAnimator.eyeLookingDirectionLeftRight.hasRestarted)
+				{
+					eyesAndPupilsAnimator.eyeLeftRightTimer =
+						getRandomNumberFloat(rng, 1, 12);
+					eyesAndPupilsAnimator.pupilDirection =
+						std::sqrt(getRandomNumberFloat(rng, 0, 1));
+					if (getRandomChance(rng, 0.5))
+					{
+						eyesAndPupilsAnimator.pupilDirection *= -1;
+					}
+
+				}
+
+				float rEye = 0;
+				float lEye = 0;
+				pupilLeftRight *= (1.f / 16.f) * 0.6f;
+
+
+				if (eyesAndPupilsAnimator.pupilDirection > 0)
+				{
+					rEye = pupilLeftRight * eyesAndPupilsAnimator.pupilDirection;
+					lEye = rEye * 0.4;
+				}
+				else
+				{
+					lEye = pupilLeftRight * eyesAndPupilsAnimator.pupilDirection;
+					rEye = lEye * 0.4;
+				}
+
+				rEye += 0.01;
+				lEye += -0.01;
+
+				if (model.lEyeIndex)
+				{
+					skinningMatrix[model.lEyeIndex] =
+						skinningMatrix[model.lEyeIndex] *
+						glm::translate(glm::vec3(lEye, pupilUpDown, 0));
+				}
+
+				if (model.rEyeIndex)
+				{
+					skinningMatrix[model.rEyeIndex] =
+						skinningMatrix[model.rEyeIndex] *
+						glm::translate(glm::vec3(rEye, pupilUpDown, 0));
+				}
+
+			}
+
+
+		}
+
+
+		BASE_CLIENT *baseClient = (BASE_CLIENT *)this;
+		baseClient->setEntityMatrix(skinningMatrix);
+	}
 
 	//todo maybe an update internal here for all this components
 	float getLegsAngle()
@@ -547,9 +905,172 @@ struct ClientEntity
 
 	}
 
-	void clientEntityUpdate(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2))
+	void clientEntityUpdate(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2),
+		std::uint64_t serverTimer)
 	{
+
 		BASE_CLIENT *baseClient = (BASE_CLIENT *)this;
+
+	#pragma region compute buffering		
+		{
+
+			//remove buffering and just use the latest event
+			if(0)
+			if (bufferedEntityData.count)
+			{
+				auto oldPosition = entityBuffered.position;
+				restantTime = computeRestantTimer(bufferedEntityData.getNewestElementTimeUpdatedOnServer(),
+					serverTimer);
+
+				entityBuffered = bufferedEntityData.getNewestElementReff();
+
+				entityBuffered.update(restantTime, chunkGetter);
+				restantTime = 0;
+
+				rubberBand.addToRubberBand(oldPosition - entityBuffered.position);
+
+
+				bufferedEntityData.clear();
+			}
+
+			//if(0)
+			if (bufferedEntityData.count)
+			{
+				int timeDelay = 200;
+				bool maxCapacity = bufferedEntityData.count == bufferedEntityData.BUFFER_CAPACITY;
+
+				if (bufferedEntityData.count > 1)
+				{
+					int clearCount = 0;
+					float interpolator = 1;
+					int elementStart = bufferedEntityData.startIndex;
+					int nextElement = elementStart;
+
+					std::uint64_t time = bufferedEntityData.timeUpdatedOnServer[elementStart];
+					std::uint64_t myTimer = 0;
+					if (serverTimer > timeDelay) { myTimer = serverTimer - timeDelay; }
+
+					if (myTimer < time)
+					{
+						//we don't update it yet unless we start to overflow
+						//entityBuffered = bufferedEntityData.elements[elementStart];
+
+						if (maxCapacity)
+						{
+							restantTime = computeRestantTimer(bufferedEntityData.timeUpdatedOnServer[bufferedEntityData.startIndex],
+								serverTimer);
+							auto oldPosition = entityBuffered.position;
+							entityBuffered = bufferedEntityData.getOldestElementReff();
+
+							entityBuffered.update(restantTime, chunkGetter);
+							restantTime = 0;
+
+							rubberBand.addToRubberBand(oldPosition - entityBuffered.position);
+							
+							bufferedEntityData.removeLastElement();
+						}
+					}
+					else
+					{
+						for (int i = 0; i < bufferedEntityData.count - 1; i++)
+						{
+
+							nextElement = elementStart;
+							nextElement++;
+							nextElement %= bufferedEntityData.BUFFER_CAPACITY;
+
+
+							std::uint64_t time = bufferedEntityData.timeUpdatedOnServer[elementStart];
+							std::uint64_t time2 = bufferedEntityData.timeUpdatedOnServer[nextElement];
+
+
+							if (myTimer >= time && myTimer <= time2 && time <= time2)
+							{
+								interpolator = 1;
+								if (time != time2)
+								{
+									interpolator = (myTimer - time) / float(time2 - time);
+									interpolator = glm::clamp(interpolator, 0.f, 1.f);
+								}
+
+								break;
+							}
+
+							if (i == bufferedEntityData.count - 2)
+							{
+								clearCount = bufferedEntityData.count;
+								break;
+							}
+
+							elementStart++;
+							elementStart %= bufferedEntityData.BUFFER_CAPACITY;
+							clearCount++;
+						}
+
+						T &entity1 = bufferedEntityData.elements[elementStart];
+						T &entity2 = bufferedEntityData.elements[nextElement];
+
+						//todo interpolate time or something?
+						restantTime = computeRestantTimer(bufferedEntityData.timeUpdatedOnServer[elementStart],
+							serverTimer);
+						auto oldPosition = entityBuffered.position;
+						entityBuffered = entity1;
+
+						entityBuffered.update(restantTime, chunkGetter);
+						restantTime = 0;
+
+						rubberBand.addToRubberBand(oldPosition - baseClient->getPosition());
+
+						
+						//entityBuffered.position = lerp(entityBuffered.position, entity2.position, interpolator);
+						elementStart++;
+
+						for (int i = 0; i < clearCount; i++)
+						{
+							bufferedEntityData.removeLastElement();
+						}
+					}
+
+
+
+				}
+				else
+				{
+
+					std::uint64_t time = bufferedEntityData.getNewestElementTimeUpdatedOnServer();
+					std::uint64_t myTimer = 0;
+					if (serverTimer > timeDelay) { myTimer = serverTimer - timeDelay; }
+
+					if (myTimer < time)
+					{
+						//we don't update it yet
+						//entityBuffered = bufferedEntityData.getNewestElementReff();
+					}
+					else
+					{
+						restantTime = computeRestantTimer(bufferedEntityData.getNewestElementTimeUpdatedOnServer(),
+							serverTimer);
+						auto oldPosition = entityBuffered.position;
+						entityBuffered = bufferedEntityData.getNewestElementReff();
+						entityBuffered.update(restantTime, chunkGetter);
+						restantTime = 0;
+
+						rubberBand.addToRubberBand(oldPosition - entityBuffered.position);
+
+						bufferedEntityData.clear();
+					}
+
+
+				}
+
+
+
+			}
+
+		}
+	#pragma endregion
+
+
 		//baseClient->rubberBand = {};
 
 		if (restantTime < 0)
@@ -559,7 +1080,7 @@ struct ClientEntity
 			{
 				auto oldPosition = baseClient->oldPositionForRubberBand;
 				//baseClient->rubberBand.addToRubberBand(oldPosition - baseClient->getPosition());
-				
+
 				//auto oldPosition = baseClient->getPosition();
 				baseClient->update(timer, chunkGetter);
 				//auto newPosition = baseClient->getPosition();
@@ -595,10 +1116,10 @@ struct ClientEntity
 
 		if constexpr (hasBodyOrientation<T>)
 		{
-			if(!wasKilled)
+			if (!wasKilled)
 				rubberBandOrientation.computeRubberBandOrientation(deltaTime,
-					entity.bodyOrientation,
-					entity.lookDirectionAnimation);
+				entityBuffered.bodyOrientation,
+				entityBuffered.lookDirectionAnimation);
 		}
 
 
@@ -611,15 +1132,16 @@ struct ClientEntity
 			else
 			{
 
-				legAnimator.updateLegAngle(deltaTime, entity.
+				legAnimator.updateLegAngle(deltaTime, entityBuffered.
 					movementSpeedForLegsAnimations);
 			}
-		}else
-		if constexpr (hasMovementSpeedForLegsAnimations<T>)
-		{
-			legAnimator.updateLegAngle(deltaTime, entity.
-				movementSpeedForLegsAnimations);
 		}
+		else
+			if constexpr (hasMovementSpeedForLegsAnimations<T>)
+			{
+				legAnimator.updateLegAngle(deltaTime, entityBuffered.
+					movementSpeedForLegsAnimations);
+			}
 
 		restantTime = 0;
 

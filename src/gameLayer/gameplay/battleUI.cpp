@@ -315,7 +315,7 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 			{
 
 				result.bonusCritChance = 0;
-				result.hit = 1;
+				result.hit = 1; //
 				result.hitCorectness = 1;
 
 			}

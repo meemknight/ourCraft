@@ -10,32 +10,15 @@
 #include <repeat.h>
 
 
-bool checkIfPlayerShouldGetEntity(glm::ivec2 playerPos2D,
-	glm::dvec3 entityPos, int playerSquareDistance, int extraDistance)
-{
-
-	glm::ivec2 pos(divideChunk(playerPos2D.x),
-		divideChunk(playerPos2D.y));
-
-	int distance = (playerSquareDistance/2) + extraDistance;
-
-	glm::ivec2 entityPosI(divideChunk(entityPos.x),
-		divideChunk(entityPos.z));
-	
-	glm::dvec2 difference = glm::dvec2(entityPosI - pos);
-
-	return glm::length(difference) <= distance;
-	
-}
-
-
 template<class T>
 void genericDropEntitiesThatAreTooFar(T &container, glm::ivec2 playerPos2D, int playerSquareDistance)
 {
 	for (auto it = container.begin(); it != container.end(); )
 	{
-		if (!checkIfPlayerShouldGetEntity(playerPos2D, it->second.getPosition(),
-			playerSquareDistance, 0))
+		auto entityPos = it->second.getPosition();
+		glm::ivec2 entityChunkPos = glm::ivec2(divideChunk(entityPos.x), divideChunk(entityPos.z));
+
+		if (!isChunkInRadius(playerPos2D, entityChunkPos, playerSquareDistance))
 		{
 
 			if constexpr (hasCleanup<decltype(it->second)>)
@@ -61,8 +44,6 @@ void callGenericDropEntitiesThatAreTooFar(std::integer_sequence<int, Is...>, Cli
 
 void ClientEntityManager::dropEntitiesThatAreTooFar(glm::ivec2 playerPos2D, int playerSquareDistance)
 {
-	//todo we shouldn't drop players!!!!!!1
-	 
 	
 	//auto doChecking = [&](auto &container)
 	//{
@@ -170,7 +151,7 @@ bool ClientEntityManager::dropItemByClient(
 		newEntity.type = from->type;
 		newEntity.forces = ms;
 
-		droppedItems[newEntityId].entity = newEntity;
+		droppedItems[newEntityId].entityBuffered = newEntity;
 	}
 
 	from->counter -= count;
@@ -291,7 +272,6 @@ void ClientEntityManager::removePlayer(std::uint64_t entityId)
 
 	if (found != players.end())
 	{
-		found->second.cleanup();
 		players.erase(found);
 	}
 }
@@ -308,22 +288,23 @@ void ClientEntityManager::removeDroppedItem(std::uint64_t entityId)
 
 void ClientEntityManager::addOrUpdateDroppedItem(std::uint64_t eid,
 	DroppedItem droppedItem, UndoQueue &undoQueue,
-	float restantTimer)
+	float restantTimer, std::uint64_t serverTimer, std::uint64_t timeUpdatedOnServer)
 {
 
 	auto found = droppedItems.find(eid);
 
 	if (found == droppedItems.end())
 	{	
-		droppedItems[eid].entity = droppedItem;
-		droppedItems[eid].restantTime = restantTimer;
+		droppedItems[eid].entityBuffered = droppedItem;
+		droppedItems[eid].restantTime = restantTimer; //todo I think we can safely remove this 
 	}
 	else
 	{
-		found->second.rubberBand
-			.addToRubberBand(found->second.entity.position - droppedItem.position);
+		//found->second.rubberBand
+		//	.addToRubberBand(found->second.entityBuffered.position - droppedItem.position);	
 
-		found->second.entity = droppedItem;
+		found->second.bufferedEntityData.addElement(droppedItem, serverTimer, timeUpdatedOnServer);
+		//found->second.entity = droppedItem;
 		found->second.restantTime = restantTimer;
 
 		for (auto &e : undoQueue.events)
@@ -338,68 +319,10 @@ void ClientEntityManager::addOrUpdateDroppedItem(std::uint64_t eid,
 
 }
 
-void ClientEntityManager::addOrUpdateZombie(std::uint64_t eid, Zombie entity,
-	float restantTimer)
-{
-	auto found = zombies.find(eid);
-
-	if (found == zombies.end())
-	{
-		zombies[eid].entity = entity;
-		zombies[eid].restantTime = restantTimer;
-	}
-	else
-	{
-		found->second.rubberBand
-			.addToRubberBand(found->second.entity.position - entity.position);
-
-		found->second.entity = entity;
-		found->second.restantTime = restantTimer;
-	}
-}
-
-void ClientEntityManager::addOrUpdatePig(std::uint64_t eid, Pig entity, float restantTimer)
-{
-	auto found = pigs.find(eid);
-
-	if (found == pigs.end())
-	{
-		pigs[eid].entity = entity;
-		pigs[eid].restantTime = restantTimer;
-	}
-	else
-	{
-		found->second.rubberBand
-			.addToRubberBand(found->second.entity.position - entity.position);
-
-		found->second.entity = entity;
-		found->second.restantTime = restantTimer;
-	}
-}
-
-void ClientEntityManager::addOrUpdateCat(std::uint64_t eid, Cat entity, float restantTimer)
-{
-	auto found = cats.find(eid);
-
-	if (found == cats.end())
-	{
-		cats[eid].entity = entity;
-		cats[eid].restantTime = restantTimer;
-	}
-	else
-	{
-		found->second.rubberBand
-			.addToRubberBand(found->second.entity.position - entity.position);
-
-		found->second.entity = entity;
-		found->second.restantTime = restantTimer;
-	}
-}
-
-
 
 template<int TYPE, class T>
-void genericUpdateLoop(T &container, float deltaTime, ChunkData *(chunkGetter)(glm::ivec2))
+void genericUpdateLoop(T &container, float deltaTime, ChunkData *(chunkGetter)(glm::ivec2),
+	std::uint64_t serverTimer)
 {
 
 	for (auto it = container.begin(); it != container.end();)
@@ -407,7 +330,7 @@ void genericUpdateLoop(T &container, float deltaTime, ChunkData *(chunkGetter)(g
 
 		if constexpr (TYPE != EntityType::player)
 		{
-			if constexpr (hasCanBeKilled<decltype(it->second.entity)>)
+			if constexpr (hasCanBeKilled<decltype(it->second.entityBuffered)>)
 			{
 				if (it->second.wasKilled)
 				{
@@ -429,6 +352,7 @@ void genericUpdateLoop(T &container, float deltaTime, ChunkData *(chunkGetter)(g
 		}
 		else
 		{
+			//we don't remove the player because ther's no need to
 			if (it->second.wasKilled)
 			{
 				it->second.wasKilledTimer -= deltaTime;
@@ -436,43 +360,41 @@ void genericUpdateLoop(T &container, float deltaTime, ChunkData *(chunkGetter)(g
 				{
 					it->second.wasKilledTimer = 0;
 					++it;
-					continue;
+					//continue;
 				}
 			}
 		}
 
 		// If the element wasn't erased, update it
-		it->second.clientEntityUpdate(deltaTime, chunkGetter);
+		it->second.clientEntityUpdate(deltaTime, chunkGetter, serverTimer);
 		++it; // Manually increment the iterator
 	}
 };
 
 template <int... Is>
 void callGenericUpdateLoop(std::integer_sequence<int, Is...>, float deltaTime,
-	ChunkData *(chunkGetter)(glm::ivec2), ClientEntityManager &c)
+	ChunkData *(chunkGetter)(glm::ivec2), ClientEntityManager &c, std::uint64_t serverTimer)
 {
-	(genericUpdateLoop<Is>(*c.template entityGetter<Is>(), deltaTime, chunkGetter),  ...);
+	(genericUpdateLoop<Is>(*c.template entityGetter<Is>(), deltaTime, chunkGetter, serverTimer),  ...);
 }
 
 
-void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2))
+void ClientEntityManager::doAllUpdates(float deltaTime, ChunkData *(chunkGetter)(glm::ivec2), std::uint64_t serverTimer)
 {
 	
 	//entityGetter<3>()->at(0).wasKilled = 0;
 
 	callGenericUpdateLoop(std::make_integer_sequence<int, EntitiesTypesCount>(), 
-		deltaTime, chunkGetter, *this);
+		deltaTime, chunkGetter, *this, serverTimer);
 
 
 }
 
 void ClientEntityManager::cleanup()
 {
-	//todo use the has cleanup thingy or just remove it
-	for (auto &e : players)
-	{
-		e.second.cleanup();
-	}
+	//todo if we keep the cleanup thing on entities, here is where we shold call it!
+	//or else remove this
+
 }
 
 
@@ -480,14 +402,14 @@ template<class T>
 std::uint64_t genericIntersectAllAttackableEntities(T &container, glm::dvec3 start,
 	glm::dvec3 dir, float maxDistance, float &outIntersectDist, float delta)
 {
-	if constexpr (!hasCanBeAttacked<decltype(container.begin()->second.entity)>)
+	if constexpr (!hasCanBeAttacked<decltype(container.begin()->second.entityBuffered)>)
 	{
 		return 0;
 	}
 
 	for (auto &e : container)
 	{
-		auto collider = e.second.entity.getColliderSize();
+		auto collider = e.second.entityBuffered.getColliderSize();
 
 		bool rez = lineIntersectBoxMaxDistance(start, dir, e.second.getRubberBandPosition(), collider,
 			maxDistance, outIntersectDist, delta);
@@ -576,7 +498,7 @@ void genericRenderColliders(T &container,
 		pointDebugRenderer.
 			renderPoint(camera, p.second.getRubberBandPosition());
 
-		auto boxSize = p.second.entity.getColliderSize();
+		auto boxSize = p.second.entityBuffered.getColliderSize();
 		auto pos = p.second.getRubberBandPosition();
 
 		drawBox(pos, boxSize);

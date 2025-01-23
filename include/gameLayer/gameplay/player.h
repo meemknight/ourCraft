@@ -7,23 +7,43 @@
 #include <gameplay/gameplayRules.h>
 #include <gameplay/effects.h>
 
+#define PLAYER_DEFAULT_LIFE Life(100)
 
 //this is the shared data
 struct Player : public PhysicalEntity, public CollidesWithPlacedBlocks,
 	public CanPushOthers, public CanBeKilled, public CanBeAttacked,
-	public CanHaveEffects
+	public CanHaveEffects, public HasOrientationAndHeadTurnDirection, 
+	public HasEyesAndPupils<EYE_ANIMATION_TYPE_PLAYER>
 {
 
-	glm::vec3 lookDirectionAnimation = {0,0,-1};
-	glm::vec2 bodyOrientation = {0, -1};
+	bool operator== (Player & other)
+	{
+		if(
+			lookDirectionAnimation == other.lookDirectionAnimation &&
+			bodyOrientation == other.bodyOrientation &&
+			fly == other.fly
+			)
+		{
+			return true;
+		}
+	}
+
+	bool operator!= (Player & other)
+	{
+		return !(*this == other);
+	}
 
 	void flyFPS(glm::vec3 direction, glm::vec3 lookDirection);
 
 	void moveFPS(glm::vec3 direction, glm::vec3 lookDirection);
 
-	int chunkDistance = 10; //remove this from here?
+	int chunkDistance = 10; //TODO remove this from here!
 
 	glm::vec3 getColliderSize();
+
+	//todo implement!
+	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
+
 
 	static glm::vec3 getMaxColliderSize();
 
@@ -55,8 +75,8 @@ struct LocalPlayer
 	glm::ivec3 currentBlockInteractWith = {0,-1,0};
 	unsigned char isInteractingWithBlock = 0;
 
-	Life life{100};
-	Life lastLife{100};
+	Life life = PLAYER_DEFAULT_LIFE;
+	Life lastLife = PLAYER_DEFAULT_LIFE;
 	float justHealedTimer = 0;
 	float justRecievedDamageTimer = 0;
 
@@ -70,10 +90,6 @@ struct PlayerClient: public ClientEntity<Player, PlayerClient>
 
 	//todo other player settings here!
 
-	void cleanup();
-
-	gl2d::Texture skin = {};
-	GLuint64 skinBindlessTexture = 0;
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 	void setEntityMatrix(glm::mat4 *skinningMatrix);
@@ -82,7 +98,6 @@ struct PlayerClient: public ClientEntity<Player, PlayerClient>
 
 };
 
-#define PLAYER_DEFAULT_LIFE Life(100)
 
 //todo update function
 struct PlayerServer: public ServerEntity<Player>

@@ -11,6 +11,7 @@ todo also save server stuff like current entity id
 # program
 
 todo also cleanup stuff at exit but not unnecessary stuff, like the serever should try to save stuff at exit.
+todo idea: a counter to know if I have transparent geometry in this chunk, so that means cache how many transparent blocks are there to not bake if not necessary
 
 
 
@@ -35,3 +36,4 @@ todo propper line drawing for placing blocks and for drawing collisions and othe
 # Gameplay
 
 - todo: the player should also be pushed by others.
+

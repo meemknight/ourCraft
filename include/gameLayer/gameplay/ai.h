@@ -91,6 +91,10 @@ struct AnimalBehaviour
 
 };
 
+void lookAtPosition(glm::dvec3 position,
+	glm::vec3 &lookDirectionAnimation,
+	glm::dvec3 yourEntityPosition, glm::vec2 bodyOrientation, float tresshold = glm::radians(85.f));
+
 
 template<class E, class SETTINGS>
 inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
@@ -169,7 +173,6 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 		}
 	};
 
-	//todo refactor and use position
 	auto lookAtPlayer = [&](std::uint64_t player)
 	{
 		bool foundPlayer = 0;
@@ -190,19 +193,8 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 		}
 		else
 		{
-
-			glm::vec3 vireDirection = foundPosition + glm::dvec3(0, 1.0, 0) - baseEntity->getPosition();
-			float l = glm::length(vireDirection);
-			if (l > 0.01)
-			{
-				vireDirection /= l;
-				baseEntity->entity.lookDirectionAnimation = vireDirection;
-			}
-
-			removeBodyRotationFromHead(baseEntity->entity.bodyOrientation, baseEntity->entity.lookDirectionAnimation);
-
-			//don't break their neck lol
-			adjustVectorTowardsDirection(baseEntity->entity.lookDirectionAnimation);
+			lookAtPosition(foundPosition, baseEntity->entity.lookDirectionAnimation,
+				baseEntity->getPosition(), baseEntity->entity.bodyOrientation);
 		}
 
 		return true;
@@ -653,6 +645,7 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 
 		if (playerFollow)
 		{
+			
 			if(!lookAtPlayer(playerFollow))
 			{
 				playerFollow = 0;

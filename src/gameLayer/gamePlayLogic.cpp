@@ -69,11 +69,12 @@ struct GameData
 	bool colidable = 1;
 
 	ClientEntityManager entityManager;
+	std::unordered_map<std::uint64_t, PlayerConnectionData> playersConnectionData;
 
-	std::uint64_t serverTimer = 0;
+	std::uint64_t serverTimer = 0; //this is in MS 
 	float serverTimerCounter = 0;
 
-	glm::dvec3 lastSendPos = {-INFINITY,0,0};
+	Player lastSendPlayerData = {};
 
 	int currentItemSelected = 0;
 	
@@ -115,7 +116,20 @@ struct GameData
 	bool showUI = 1;
 
 	std::minstd_rand rng;
+
+	void clearData()
+	{
+		for (auto &c : playersConnectionData)
+		{
+			c.second.cleanup();
+		}
+
+		*this = GameData{};
+	}
 }gameData;
+
+ThreadPool threadPoolForChunkBaking;
+
 
 void loadCurrentSkin()
 {
@@ -195,8 +209,8 @@ bool initGameplay(ProgramData &programData, const char *c) //GAME STUFF!
 		return false;
 	}
 
-
-	gameData = GameData();
+	gameData.clearData();
+	//threadPoolForChunkBaking.setThreadsNumber(2, bakeWorkerThread);
 	gameData.c.position = glm::vec3(0, 65, 0);
 
 	gameData.entityManager.localPlayer.entity = playerData.entity;
@@ -327,7 +341,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.chunkSystem, gameData.lightSystem,
 			gameData.serverTimer, disconnect, 
 			gameData.currentBlockInteractionRevisionNumber, shouldExitBlockInteraction,
-			gameData.killed, respawned, gameData.chat, gameData.chatStayOnTimer);
+			gameData.killed, respawned, gameData.chat, gameData.chatStayOnTimer, 
+			gameData.interaction, gameData.playersConnectionData);
 
 		if (disconnect) { return 0; }
 
@@ -449,7 +464,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			static float timer = 0.020;
 
 			///todo a common method to check if data was modified
-			if (gameData.entityManager.localPlayer.entity.position != gameData.lastSendPos)
+			if (gameData.entityManager.localPlayer.entity != gameData.lastSendPlayerData)
 			{
 				timer -= deltaTime;
 			}
@@ -460,7 +475,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			if (timer <= 0)
 			{
-				timer = 0.020 * 3.f;
+				timer = 0.020;
 				//timer = 0.316;
 
 				Packer_SendPlayerData data;
@@ -474,7 +489,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					formatPacket(headerSendPlayerData), (char *)&data, sizeof(data), 0,
 					channelPlayerPositions);
 
-				gameData.lastSendPos = gameData.entityManager.localPlayer.entity.position;
+				gameData.lastSendPlayerData = gameData.entityManager.localPlayer.entity;
 			}
 
 
@@ -776,8 +791,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		};
 
 
-		PhysicalSettings settings;
-		//settings.sideFriction = 2.f;
 
 		
 		if (gameData.killed)
@@ -787,16 +800,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 		else
 		{
-			gameData.entityManager.localPlayer.entity.updateForces(deltaTime, !player.entity.fly
-				, settings);
 
 			if (gameData.colidable)
 			{
 				auto forcesBackup = gameData.entityManager.localPlayer.entity.forces.velocity;
 
-				gameData.entityManager.localPlayer
-					.entity.resolveConstrainsAndUpdatePositions(chunkGetter, deltaTime,
-					gameData.entityManager.localPlayer.entity.getColliderSize(), settings);
+				gameData.entityManager.localPlayer.entity.update(deltaTime, chunkGetter);
 
 				if (gameData.entityManager.localPlayer.entity.forces.colidesBottom())
 				{
@@ -877,6 +886,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			}
 			else
 			{
+				gameData.entityManager.localPlayer.entity.updateForces(deltaTime, !player.entity.fly);
+
 				gameData.entityManager.localPlayer.entity.updatePositions();
 			}
 		}
@@ -885,7 +896,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		gameData.c.position = gameData.entityManager.localPlayer.entity.position
 			+ glm::dvec3(0,1.5,0);
 
-		gameData.entityManager.doAllUpdates(deltaTime, chunkGetter);
+		gameData.entityManager.doAllUpdates(deltaTime, chunkGetter, gameData.serverTimer);
 
 
 
@@ -1374,7 +1385,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	{
 		gameData.gameplayFrameProfiler.startSubProfile("chunkSystem");
 		gameData.chunkSystem.update(blockPositionPlayer, deltaTime, gameData.undoQueue,
-			gameData.lightSystem, gameData.interaction);
+			gameData.lightSystem, gameData.interaction, threadPoolForChunkBaking);
 		gameData.gameplayFrameProfiler.endSubProfile("chunkSystem");
 	}
 
@@ -1414,7 +1425,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.point, underWater, w, h, deltaTime, dayTime, gameData.currentSkinBindlessTexture,
 			gameData.handHit, isPlayerMovingSpeed, gameData.playerFOVHandTransform,
 			gameData.currentItemSelected, finalDropStrength, 
-			gameData.showUI
+			gameData.showUI, gameData.playersConnectionData
 			);
 
 
@@ -1434,8 +1445,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 #pragma region drop entities that are too far
-	//todo we shouldn't drop players!!!!!!,
-	//we should just not update/draw them instead
+
 	gameData.entityManager.dropEntitiesThatAreTooFar({blockPositionPlayer.x,blockPositionPlayer.z},
 		gameData.chunkSystem.squareSize);
 
@@ -2021,7 +2031,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 						if (x > 0)
 							ImGui::SameLine();
 
-						ImGui::PushID(z *gameData.chunkSystem.squareSize + x);
+						ImGui::PushID(z * gameData.chunkSystem.squareSize + x);
 						if (ImGui::ColorButton("##chunkb", currentColor,
 							ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoTooltip
 							, ImVec2(blockSize, blockSize)))
@@ -2158,6 +2168,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	int cursorSelected = -2;
 	unsigned short selectedCreativeItem = 0;
 	int craftedItemIndex = -1;
+
+	if (gameData.killed)
+	{
+		gameData.entityManager.localPlayer.lastLife.life = 0;
+		gameData.entityManager.localPlayer.life.life = 0;
+	}
 
 	if (!gameData.isInsideMapView)
 	{
@@ -2762,5 +2778,7 @@ void closeGameLogic()
 	
 	gameData.mapEngine.close();
 
-	gameData = GameData(); //free all resources
+	//free all resources
+	gameData.clearData();
+	threadPoolForChunkBaking.cleanup();
 }

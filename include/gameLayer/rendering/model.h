@@ -16,6 +16,23 @@ struct Model
 	std::vector<glm::mat4> transforms;
 
 	std::int8_t headIndex = -1;
+	std::int8_t bodyIndex = -1;
+	std::int8_t rLegIndex = -1;
+	std::int8_t lLefIndex = -1;
+	std::int8_t rArmIndex = -1;
+	std::int8_t lArmIndex = -1;
+	std::int8_t pupilsIndex = -1;
+	std::int8_t lEyeIndex = -1;
+	std::int8_t rEyeIndex = -1;
+
+	std::int8_t headArmourIndex = -1;
+	std::int8_t bodyArmourIndex = -1;
+	std::int8_t rLegArmourIndex = -1;
+	std::int8_t lLefArmourIndex = -1;
+	std::int8_t rArmArmourIndex = -1;
+	std::int8_t lArmArmourIndex = -1;
+
+
 
 	void cleanup();
 };
@@ -54,7 +71,8 @@ struct ModelsManager
 		ZombieTexture,
 		PigTexture,
 		CatTexture,
-		GoblinTexture
+		GoblinTexture,
+		HelmetTestTexture
 	};
 
 	std::vector<GLuint64> gpuIds;
@@ -71,4 +89,4 @@ void animatePlayerLegs(glm::mat4 *poseVector, float &currentAngle, int &directio
 
 gl2d::Texture loadPlayerSkin(const char *path);
 
-constexpr static int PLAYER_SKIN_SIZE = 64;
+constexpr static int PLAYER_SKIN_SIZE = 128;

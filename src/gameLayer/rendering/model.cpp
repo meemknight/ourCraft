@@ -40,6 +40,24 @@ const aiNode *findNodeContainingMesh(const aiNode *node, const aiMesh *mesh)
 	return nullptr;
 }
 
+
+bool areStringsSameToLower(const char *a, const char *b)
+{
+	int i = 0;
+	while (a[i] != 0 && b[i] != 0)
+	{
+		if (tolower(a[i]) != tolower(b[i]))
+		{
+			return false;
+		}
+		
+		i++;
+	}
+	if (a[i] == 0 && b[i] == 0) { return true; }
+	return false;
+}
+
+
 void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 {
 
@@ -148,7 +166,8 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		loadTexture((path + "zombie.png").c_str(), appendMode, index++, true);
 		loadTexture((path + "pig.png").c_str(), appendMode, index++);
 		loadTexture((path + "cat.png").c_str(), appendMode, index++);
-		loadTexture((path+ "goblin.png").c_str(), appendMode, index++);
+		loadTexture((path + "goblinArmour.png").c_str(), appendMode, index++);
+		loadTexture((path+ "helmetTest.png").c_str(), appendMode, index++);
 		
 
 	}
@@ -168,7 +187,8 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		glm::vec3 position = {};
 		glm::vec3 normal = {};
 		glm::vec2 uv = {};
-		int boneIndex = 0;
+		short boneIndex = 0;
+		short textureIndex = 0;
 	};
 
 	std::vector<Data> vertexes;
@@ -177,7 +197,7 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 	std::vector<unsigned int> indices;
 	indices.reserve(400);
 
-	auto loadModel = [&](const char *path, Model &model)
+	auto loadModel = [&](const char *path, Model &model, bool multipleTextures = 0)
 	{
 		vertexes.clear();
 		indices.clear();
@@ -206,10 +226,25 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 
 				const char *name = node->mName.C_Str();
 
-				if (strcmp(name, "Head") == 0 || strcmp(name, "head") == 0)
-				{
-					model.headIndex = i;
-				}
+				short textureIndex = 0;
+
+				if (areStringsSameToLower(name, "Head")) { model.headIndex = i; }else
+				if (areStringsSameToLower(name, "Body")) { model.bodyIndex = i; }else
+				if (areStringsSameToLower(name, "RLeg")) { model.rLegIndex = i; }else
+				if (areStringsSameToLower(name, "LLeg")) { model.lLefIndex = i; }else
+				if (areStringsSameToLower(name, "RArm")) { model.rArmIndex = i; }else
+				if (areStringsSameToLower(name, "LArm")) { model.lArmIndex = i; }else
+				if (areStringsSameToLower(name, "Pupils")) { model.pupilsIndex = i; }else
+				if (areStringsSameToLower(name, "LEye")) { model.lEyeIndex = i; }else
+				if (areStringsSameToLower(name, "REye")) { model.rEyeIndex = i; }else
+				if (areStringsSameToLower(name, "HeadArmour")) { model.headArmourIndex = i; textureIndex = 1; }else
+				if (areStringsSameToLower(name, "BodyArmour")) { model.bodyArmourIndex = i; textureIndex = 2; }else
+				if (areStringsSameToLower(name, "RLegArmour")) { model.rLegArmourIndex = i; textureIndex = 3; }else
+				if (areStringsSameToLower(name, "LLegArmour")) { model.lLefArmourIndex = i; textureIndex = 3; }else
+				if (areStringsSameToLower(name, "RArmArmour")) { model.rArmArmourIndex = i; textureIndex = 2; }else
+				if (areStringsSameToLower(name, "LArmArmour")) { model.lArmArmourIndex = i; textureIndex = 2; }
+
+				if (!multipleTextures) { textureIndex = 0; }
 
 				for (int m = 0; m < node->mNumMeshes; m++)
 				{
@@ -223,6 +258,7 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 					for (unsigned int v = 0; v < mesh->mNumVertices; ++v)
 					{
 						Data vertex;
+						vertex.textureIndex = textureIndex;
 
 						vertex.boneIndex = boneIndex;
 
@@ -282,8 +318,12 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 9, (void *)(sizeof(float) * 3));
 			glEnableVertexAttribArray(2);
 			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 9, (void *)(sizeof(float) * 6));
-			glEnableVertexAttribArray(3);
-			glVertexAttribIPointer(3, 1, GL_INT, sizeof(float) * 9, (void *)(sizeof(float) * 8));
+			glEnableVertexAttribArray(3); //bone
+			glVertexAttribIPointer(3, 1, GL_SHORT, sizeof(float) * 9, (void *)(sizeof(float) * 8));
+
+			glEnableVertexAttribArray(4); //texture id
+			glVertexAttribIPointer(4, 1, GL_SHORT, sizeof(float) * 9, (void *)(sizeof(float) * 8 + sizeof(short)));
+
 
 
 			glBindVertexArray(0);
@@ -300,7 +340,7 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 
 
 	if(!human.vertexCount)
-		loadModel((path + "human.glb").c_str(), human);
+		loadModel((path + "human.glb").c_str(), human, true);
 
 	if (!pig.vertexCount)
 		loadModel((path + "pig.glb").c_str(), pig);

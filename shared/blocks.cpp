@@ -16,7 +16,7 @@ bool isStairsMesh(BlockType type)
 {
 	return 
 		type == wooden_stairs ||
-		type == bricks_stairts ||
+		type == bricks_stairs ||
 		type == stone_stairts ||
 		type == cobbleStone_stairts ||
 		type == stoneBricks_stairts ||
@@ -28,6 +28,7 @@ bool isStairsMesh(BlockType type)
 		type == smoothLimeStone_stairs ||
 		type == marbleBlock_stairs ||
 		type == marbleBricks_stairs ||
+		type == blueBricks_stairs ||
 		type == tiledStoneBricks_stairs
 		;
 }
@@ -47,6 +48,7 @@ bool isSlabMesh(BlockType type)
 		type == smoothLimeStone_slabs ||
 		type == marbleBlock_slabs ||
 		type == marbleBricks_slabs ||
+		type == blueBricks_slabs ||
 		type == tiledStoneBricks_slab;
 }
 
@@ -66,6 +68,7 @@ bool isWallMesh(BlockType type)
 		type == marbleBlock_wall ||
 		type == marbleBricks_wall ||
 		type == logWall ||
+		type == blueBricks_wall ||
 		type == tiledStoneBricks_wall;
 
 }
@@ -89,6 +92,7 @@ bool isOpaque(BlockType type)
 	return
 		type != BlockTypes::air
 		&& type != BlockTypes::torch
+		//&& type != BlockTypes::glowstone
 		&& !(isStairsMesh(type))
 		&& !(isSlabMesh(type))
 		&& !(isWallMesh(type))
@@ -159,12 +163,16 @@ bool isBricksSound(BlockType type)
 {
 	return type == bricks ||
 		type == tiledStoneBricks ||
-		type == bricks_stairts ||
+		type == bricks_stairs ||
 		type == bricks_slabs ||
 		type == marbleBricks ||
 		type == marbleBricks_stairs ||
 		type == marbleBricks_slabs ||
 		type == marbleBricks_wall ||
+		type == blueBricks ||
+		type == blueBricks_stairs ||
+		type == blueBricks_wall ||
+		type == blueBricks_slabs ||
 		type == bricks_wall;
 }
 
@@ -205,6 +213,7 @@ bool isAnyDirtBlock(BlockType type)
 		type == dirt ||
 		type == snow_dirt ||
 		type == coarseDirt ||
+		type == yellowGrass ||
 		type == mud;
 }
 
@@ -235,11 +244,16 @@ bool isAnySemiHardBlock(BlockType type)
 
 }
 
+//used for breaking
 bool isAnyStone(BlockType type)
 {
 	return type == stone ||
 		type == cobblestone ||
 		type == bricks ||
+		type == blueBricks ||
+		type == blueBricks_stairs ||
+		type == blueBricks_wall ||
+		type == blueBricks_slabs ||
 		type == stoneBrick ||
 		type == coal_ore ||
 		type == gold_ore ||
@@ -273,7 +287,7 @@ bool isAnyStone(BlockType type)
 		type == tiledStoneBricks_stairs ||
 		type == tiledStoneBricks_slab ||
 		type == tiledStoneBricks_wall ||
-		type == bricks_stairts ||
+		type == bricks_stairs ||
 		type == bricks_slabs ||
 		type == bricks_wall ||
 
@@ -323,6 +337,7 @@ bool isTriviallyBreakable(BlockType type)
 
 bool isAnyUnbreakable(BlockType type)
 {
+	//todo make sure this can't get to the client or just make them breakable
 	return isControlBlock(type);
 }
 
@@ -440,9 +455,14 @@ float getBlockBaseMineDuration(BlockType type)
 		return 99999999999.0f;
 	}
 
-	if (isTriviallyBreakable(torch))
+	if (isTriviallyBreakable(type))
 	{
 		return 0.2;
+	}
+
+	if (type == structureBase)
+	{
+		return 1;
 	}
 
 	std::cout << "Block without base mine duration assigned!: " << type << "\n";

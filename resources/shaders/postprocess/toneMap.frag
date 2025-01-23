@@ -401,7 +401,8 @@ vec3 unchartedTonemapping(vec3 color)
 
 	float gamma = 2.2;
 	vec3 curr = Uncharted2Tonemap(color*4.7);
-	color = pow(curr/Uncharted2Tonemap(vec3(15.2)),vec3(1.0/gamma));
+	//color = pow(curr/Uncharted2Tonemap(vec3(15.2)),vec3(1.0/gamma));
+	color = curr/Uncharted2Tonemap(vec3(15.2));
 	//color = pow(curr,vec3(1.0/gamma));
 	
 	return color;
@@ -442,7 +443,7 @@ vec3 toGammaSpace(vec3 a)
 		return fromLinearSRGB(a);
 	}else if(u_tonemapper == 3)
 	{
-		return a;
+		return fromLinearSRGB(a);
 	}
 
 }

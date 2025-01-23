@@ -291,4 +291,8 @@ namespace glui
 		const std::string &s,
 		gl2d::Font &font, gl2d::Texture &texture, glm::ivec2 mousePos, bool mouseHeld, bool mouseReleased);
 
+	glm::vec4 calculateInnerPosition(glm::vec2 size, gl2d::Texture t);
+
+	glm::vec4 calculateInnerTextureCoords(glm::vec2 size, gl2d::Texture &t);
+
 };

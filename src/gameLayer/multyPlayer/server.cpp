@@ -355,7 +355,6 @@ void serverWorkerUpdate(
 	auto &settings = sd.settings;
 
 	static std::minstd_rand rng(std::random_device{}());
-	static bool generateNewChunks = 0; //this is set to true only once per tick
 
 
 #pragma region send chunks to players
@@ -363,9 +362,20 @@ void serverWorkerUpdate(
 	serverProfiler.startSubProfile("Send Chunks To players");
 
 	std::vector<SendBlocksBack> sendNewBlocksToPlayers;
+	bool generateNewChunks = true;
+	if (sd.seccondsTimer * targetTicksPerSeccond >= sd.runsPerSeccond)
+	{
+		generateNewChunks = false; // the server can potentially lag a little, so we stop sending chunks
+	}
+
+	if (sd.ticksPerSeccond < 5)
+	{
+		//make sure we still generate at least a few chunks even though the server is lagging
+		generateNewChunks = true;
+	}
+
 	updateLoadedChunks(wg, structuresManager, biomesManager, sendNewBlocksToPlayers,
-		worldSaver, true, rng);
-	generateNewChunks = 0;
+		worldSaver, generateNewChunks, rng);
 
 	serverProfiler.endSubProfile("Send Chunks To players");
 
@@ -401,6 +411,7 @@ void serverWorkerUpdate(
 
 		//todo move in tick probably
 		//set players in their chunks, set players in chunks
+
 		for (auto &client : getAllClientsReff())
 		{
 
@@ -414,14 +425,15 @@ void serverWorkerUpdate(
 			{
 				chunk->entityData.players[client.first] = &client.second.playerData;
 				sd.chunkCache.entityChunkPositions[client.first] = cPos;
-				auto ptr = &client.second.playerData;
+				//auto ptr = &client.second.playerData;
 			}
 
 		}
+
 	#pragma endregion
 
 
-
+		//ALL CHUNKS THAT PLAYERS ARE IN SHOULD BE LOADED!!!!
 
 
 		//for (auto &c : sd.chunkCache.savedChunks)
@@ -541,6 +553,8 @@ void serverWorkerUpdate(
 
 
 		sd.tickTimer -= (1.f / targetTicksPerSeccond);
+		sd.tickTimer = std::min(sd.tickTimer, 2.f / targetTicksPerSeccond);
+
 		sd.ticksPerSeccond++;
 
 		if(settings.perClientSettings.size())
@@ -622,6 +636,7 @@ void serverWorkerUpdate(
 	if (sd.seccondsTimer >= 1)
 	{
 		sd.seccondsTimer -= 1;
+		sd.seccondsTimer = std::min(sd.seccondsTimer, 1.f);
 		//std::cout << "Server ticks per seccond: " << sd.ticksPerSeccond << "\n";
 		//std::cout << "Server runs per seccond: " << sd.runsPerSeccond << "\n";
 		outTicksPerSeccond = sd.ticksPerSeccond;
@@ -677,6 +692,8 @@ void serverWorkerUpdate(
 	serverProfiler.endSubProfile("Save chunk on disk");
 
 	//mark all entities as dirty every 5 secconds, so we save them
+	//TODO some chunks aren't in the simulation distance so ther's no need to mark them as dirty.
+	//so find a way to check if a chunk was inactive since the last update.
 	if (sd.saveEntitiesTimer <= 0)
 	{
 		sd.saveEntitiesTimer = 5;
@@ -777,13 +794,13 @@ void updateLoadedChunks(
 	std::shuffle(cids.begin(), cids.end(), rng);
 
 
+	int geenratedThisFrame = 0;
 	for (auto cid : cids)
 	{
 
 		auto &client = clients[cid];
 		//if (c.second.playerData.killed) { continue; }
 
-		int geenratedThisFrame = 0;
 
 		glm::ivec2 pos(divideChunk(client.playerData.entity.position.x),
 			divideChunk(client.playerData.entity.position.z));
@@ -833,7 +850,6 @@ void updateLoadedChunks(
 		std::sort(positions.begin(), positions.end(),
 			[&](auto &a, auto &b)
 		{
-			
 			glm::vec2 diff1 = a - posAugmentedForSort;
 			float distance1 = glm::dot(diff1, diff1);
 
@@ -1069,7 +1085,7 @@ std::string executeServerCommand(std::uint64_t cid, const char *command)
 
 	std::string err;
 
-	auto tokens = parse(command, err);
+	std::vector<Token> tokens = parse(command, err);
 
 	if (err != "") { return err; }
 

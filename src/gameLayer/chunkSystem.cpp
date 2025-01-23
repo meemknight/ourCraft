@@ -11,6 +11,7 @@
 #include <platformTools.h>
 #include <cmath>
 #include <gameplay/gameplayRules.h>
+#include <rendering/renderSettings.h>
 
 Chunk *ChunkSystem::getChunksInMatrixSpaceUnsafe(int x, int z)
 {
@@ -31,6 +32,7 @@ Chunk* ChunkSystem::getChunkSafeFromMatrixSpace(int x, int z)
 
 void ChunkSystem::init(int squareDistance)
 {
+	created = 0;
 	squareSize = squareDistance;
 	loadedChunks.resize(squareDistance * squareDistance, nullptr);
 	gpuBuffer.create(squareDistance * squareDistance);
@@ -43,7 +45,6 @@ void ChunkSystem::changeRenderDistance(int squareDistance, bool notifyServer)
 	if (squareDistance > 100) { return; }
 	if (squareDistance < 1) { return; }
 
-
 	cleanup(notifyServer);
 
 	init(squareDistance);
@@ -54,11 +55,236 @@ void ChunkSystem::cleanup(bool notifyServer)
 {
 	dropAllChunks(nullptr, notifyServer);
 	gpuBuffer.cleanup();
+	//threadPool.cleanup();
+}
+
+int tryTakeTask(ThreadPool &threadPool)
+{
+
+	for (int i = 0; i < threadPool.taskTaken.size(); i++)
+	{
+		if (!threadPool.taskTaken[i].exchange(true)) // If the flag was not set
+		{
+			return i;
+		}
+	}
+	return -1;
+}
+
+
+
+struct ChunkTask
+{
+	Chunk *chunk = 0;
+
+	Chunk *left = 0;
+	Chunk *right = 0;
+	Chunk *front = 0;
+	Chunk *back = 0;
+	Chunk *frontLeft = 0;
+	Chunk *frontRight = 0;
+	Chunk *backLeft = 0;
+	Chunk *backRight = 0;
+};
+static std::vector<ChunkTask> chunkVectorCopyNoNullsOnlyToBake;
+static glm::ivec2 minPosGlobal;
+static glm::ivec3 playerBlockPositionGlobal;
+
+void bakeLogicForOneThread(ThreadPool &threadPool,
+	std::vector<TransparentCandidate> &transparentCandidates,
+	std::vector<int> &opaqueGeometry,
+	std::vector<int> &transparentGeometry,
+	std::vector<glm::ivec4> &lights, bool isMainThread, bool *updateTransparency,
+	bool *updateGeometry, Chunk **outChunk
+	)
+{
+	int currentBaked = 0;
+	int currentBakedTransparency = 0;
+	int maxToBake = 1; //this frame //max to bake
+	int maxToBakeTransparency = 1; //this frame //max to bake
+
+	while (true)
+	{
+		int taskIndex = tryTakeTask(threadPool);
+		if (taskIndex < 0) { break; }
+
+		auto chunk = chunkVectorCopyNoNullsOnlyToBake[taskIndex].chunk;
+
+		int x = chunk->data.x - minPosGlobal.x;
+		int z = chunk->data.z - minPosGlobal.y;
+
+		if (currentBaked < maxToBake || currentBakedTransparency < maxToBakeTransparency)
+		{
+			auto left = chunkVectorCopyNoNullsOnlyToBake[taskIndex].left;
+			auto right = chunkVectorCopyNoNullsOnlyToBake[taskIndex].right;
+			auto front = chunkVectorCopyNoNullsOnlyToBake[taskIndex].front;
+			auto back = chunkVectorCopyNoNullsOnlyToBake[taskIndex].back;
+
+			auto frontLeft = chunkVectorCopyNoNullsOnlyToBake[taskIndex].frontLeft;
+			auto frontRight = chunkVectorCopyNoNullsOnlyToBake[taskIndex].frontRight;
+			auto backLeft = chunkVectorCopyNoNullsOnlyToBake[taskIndex].backLeft;
+			auto backRight = chunkVectorCopyNoNullsOnlyToBake[taskIndex].backRight;
+
+			bool baked = 0;
+			if (chunk->isDirtyTransparency())
+			{
+				if (currentBakedTransparency < maxToBakeTransparency)
+				{
+
+					if (isMainThread)
+					{
+						auto b = chunk->bake(left, right,
+							front, back, frontLeft, frontRight, backLeft, backRight,
+							playerBlockPositionGlobal,
+							transparentCandidates, opaqueGeometry, transparentGeometry, lights
+						);
+						if (b) { currentBakedTransparency++; baked = true; }
+					}
+					else
+					{
+				
+
+						auto b = chunk->bakeAndDontSendDataToOpenGl(left, right,
+							front, back, frontLeft, frontRight, backLeft, backRight,
+							playerBlockPositionGlobal,
+							transparentCandidates, opaqueGeometry, transparentGeometry, lights,
+							*updateGeometry, *updateTransparency);
+
+						//only one chunk for worker threads!
+						if (b)
+						{
+							*outChunk = chunk;
+							break;
+						}
+
+
+
+					}
+
+
+				}
+			}
+			else
+			{
+				if (currentBaked < maxToBake)
+				{
+
+					if (isMainThread)
+					{
+						auto b = chunk->bake(left, right, front, back, frontLeft, frontRight, backLeft, backRight,
+							playerBlockPositionGlobal,
+							transparentCandidates, opaqueGeometry, transparentGeometry, lights);
+						if (b) { currentBaked++; baked = true; }
+					}
+					else
+					{
+
+						auto b = chunk->bakeAndDontSendDataToOpenGl(left, right,
+							front, back, frontLeft, frontRight, backLeft, backRight,
+							playerBlockPositionGlobal,
+							transparentCandidates, opaqueGeometry, transparentGeometry, lights,
+							*updateGeometry, *updateTransparency);
+
+						//only one chunk for worker threads!
+						if (b)
+						{
+							*outChunk = chunk;
+							break;
+						}
+					}
+
+				}
+			}
+
+			if (baked)
+			{
+				
+				//we can slow down once we have a lot of chunks
+				if (taskIndex > 20)
+				{
+					maxToBake = 1;
+					maxToBakeTransparency = 1;
+				}
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
+
+}
+
+
+struct PerThreadData
+{
+	std::vector<TransparentCandidate> transparentCandidates;
+	std::vector<int> opaqueGeometry;
+	std::vector<int> transparentGeometry;
+	std::vector<glm::ivec4> lights;
+	bool updateTransparency = 0;
+	bool updateGeometry = 0;
+	Chunk *chunk = 0;
+
+} perThreadData[ThreadPool::MAX_THREADS] = {};
+
+void bakeWorkerThread(int index, ThreadPool &threadPool)
+{
+
+	//std::cout << "Weaked up thread CHUNK BAKER! " << index << "\n";
+
+	while (threadPool.running[index])
+	{
+		//wait for work...
+		if (threadPool.threIsWork[index])
+		{
+			//while (true)
+			{
+				//if (!threadPool.running[index]) 
+				//{
+				//	//early exit in case the game wants us to close
+				//	threadPool.threIsWork[index] = false;
+				//	break;  
+				//}
+
+				auto &data = perThreadData[index];
+				data.chunk = nullptr;
+
+				bakeLogicForOneThread(threadPool, data.transparentCandidates, 
+					data.opaqueGeometry, data.transparentGeometry, data.lights, false, 
+					&data.updateTransparency, &data.updateGeometry, 
+					&data.chunk);
+
+				//
+				////std::cout << index << " took task " << taskIndex << '\n';
+				//Profiler *p = 0;
+				//if (taskIndex == 0) { p = &gameTickProfiler; }
+				//
+				////tick
+				//doGameTick(tickDeltaTime, tickDeltaTimeMs, currentTimer,
+				//	chunkRegionsData[taskIndex].chunkCache,
+				//	chunkRegionsData[taskIndex].orphanEntities,
+				//	chunkRegionsData[taskIndex].seed,
+				//	chunkRegionsData[taskIndex].waitingTasks,
+				//	*worldSaver, p
+				//);
+
+			
+			}
+
+			//done work
+			threadPool.threIsWork[index] = false;
+		}
+
+
+	}
+
+	//std::cout << "CLOSED THREAD CHUNK BAKER! " << index << "\n";
 }
 
 //x and z are the block positions of the player
 void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQueue &undoQueue
-	, LightSystem &lightSystem, InteractionData &interaction)
+	, LightSystem &lightSystem, InteractionData &interaction, ThreadPool &threadPool)
 {
 
 
@@ -74,7 +300,6 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	glm::ivec2 maxPos = glm::ivec2(x, z) + glm::ivec2(squareSize / 2 + squareSize % 2, squareSize / 2 + squareSize % 2);
 	//exclusive max
 
-	//todo check why sometimes the server and the player dissagree on chunks
 	auto checkChunkInRadius = [&](glm::ivec2 pos)
 	{
 		//glm::vec2 center{squareSize / 2,squareSize / 2};
@@ -287,86 +512,82 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	lastPlayerBlockPosition = playerBlockPosition;
 
 
-#pragma region place block by server
-	auto recievedBLocks = getRecievedBlocks();
-	for (auto &message : recievedBLocks)
-	{
-		auto pos = message.blockPos;
-		int xPos = divideChunk(pos.x);
-		int zPos = divideChunk(pos.z);
-	
-		if (xPos >= minPos.x && zPos >= minPos.y
-			&& xPos < maxPos.x && zPos < maxPos.y
-			)
-		{
-			//process block placement
-			//todo change!!!
-			Block block;
-			block.setType(message.blockType);
-			placeBlockNoClient(message.blockPos, block, lightSystem, 0, interaction);
-
-			//Chunk *c = 0;
-			//auto rez = getBlockSafeAndChunk(message.blockPos.x, message.blockPos.y, message.blockPos.z, c);
-			//
-			//if (rez)
-			//{
-			//	setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
-			//	rez->type = message.blockType;
-			//}
-	
-		}
-		else
-		{
-			//ignore message
-		}
-
-		//remove undo queue
-
-		for (auto &e :undoQueue.events)
-		{
-			if ((e.type == UndoQueueEvent::iPlacedBlock 
-				|| e.type == UndoQueueEvent::changedBlockData)
-				&& e.blockPos == pos)
-			{
-				e.type = UndoQueueEvent::doNothing;
-			}
-		}
-
-
-	}
-#pragma endregion
-
 
 #pragma region bake
 
-	int currentBaked = 0;
-	int currentBakedTransparency = 0;
-	int maxToBake = 2; //this frame //max to bake
-	int maxToBakeTransparency = 2; //this frame //max to bake
 
-	std::vector<Chunk *>chunkVectorCopyNoNulls;
-	chunkVectorCopyNoNulls.reserve(loadedChunks.size());
+	chunkVectorCopyNoNullsOnlyToBake.clear();
+
+	chunkVectorCopyNoNullsOnlyToBake.reserve(loadedChunks.size());
+	::minPosGlobal = minPos;
+	::playerBlockPositionGlobal = playerBlockPosition;
 
 	bool close = 0;
+	int totalChunks = 0;
+	int notLoadedChunks = 0;
 	for (auto &c : loadedChunks)
 	{
 		if (c)
 		{
-			chunkVectorCopyNoNulls.push_back(c);
+			totalChunks++;
+			if (c->isDontDrawYet() == true) { c->setDontDrawYet(false); continue; }
+
+			if (c->forShureShouldntbake()) { continue; }
+
+			int x = c->data.x - minPos.x;
+			int z = c->data.z - minPos.y;
+
+			auto left = getChunkSafeFromMatrixSpace(x - 1, z);
+			auto right = getChunkSafeFromMatrixSpace(x + 1, z);
+			auto front = getChunkSafeFromMatrixSpace(x, z + 1);
+			auto back = getChunkSafeFromMatrixSpace(x, z - 1);
+
+			auto frontLeft = getChunkSafeFromMatrixSpace(x - 1, z + 1);
+			auto frontRight = getChunkSafeFromMatrixSpace(x + 1, z + 1);
+			auto backLeft = getChunkSafeFromMatrixSpace(x - 1, z - 1);
+			auto backRight = getChunkSafeFromMatrixSpace(x + 1, z - 1);
+
+			if (c->shouldBake(left, right, front, back, frontLeft, frontRight,
+				backLeft, backRight))
+			{
+				ChunkTask t;
+				t.chunk = c;
+
+				t.left = left;
+				t.right = right;
+				t.front = front;
+				t.back = back;
+				t.frontLeft = frontLeft;
+				t.frontRight = frontRight;
+				t.backLeft = backLeft;
+				t.backRight = backRight;
+
+
+				chunkVectorCopyNoNullsOnlyToBake.push_back(t);
+			}
+			
+
 		}
 	}
 
-	std::sort(chunkVectorCopyNoNulls.begin(), chunkVectorCopyNoNulls.end(),
-		[x, z](Chunk* a, Chunk* b) 
+	notLoadedChunks = chunkVectorCopyNoNullsOnlyToBake.size();
+	float chunkRatio = 0;
+	if (totalChunks != 0)
+	{
+		chunkRatio = (float)notLoadedChunks / (float)totalChunks;
+	}
+	
+	std::sort(chunkVectorCopyNoNullsOnlyToBake.begin(), chunkVectorCopyNoNullsOnlyToBake.end(),
+		[x, z](ChunkTask & a, ChunkTask & b)
 			{
 				//if (a == nullptr) { return false; }
 				//if (b == nullptr) { return true; }
 				
-				int ax = a->data.x - x;
-				int az = a->data.z - z;
+				int ax = a.chunk->data.x - x;
+				int az = a.chunk->data.z - z;
 	
-				int bx = b->data.x - x;
-				int bz = b->data.z - z;
+				int bx = b.chunk->data.x - x;
+				int bz = b.chunk->data.z - z;
 	
 				unsigned long reza = ax * ax + az * az;
 				unsigned long rezb = bx * bx + bz * bz;
@@ -374,64 +595,57 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 				return reza < rezb;
 			}
 		);
-	
-	for (int i = 0; i < chunkVectorCopyNoNulls.size(); i++)
+
+	//we only keep a few chunks as tasks
+	if (chunkVectorCopyNoNullsOnlyToBake.size() > 10 + threadPool.currentCounter)
 	{
-		auto chunk = chunkVectorCopyNoNulls[i];
-		if (chunk->isDontDrawYet() == true) { chunk->setDontDrawYet(false); continue; }
-	
-		int x = chunk->data.x - minPos.x;
-		int z = chunk->data.z - minPos.y;
-	
-		if (currentBaked < maxToBake || currentBakedTransparency < maxToBakeTransparency)
-		{
-			auto left = getChunkSafeFromMatrixSpace(x - 1, z);
-			auto right = getChunkSafeFromMatrixSpace(x + 1, z);
-			auto front = getChunkSafeFromMatrixSpace(x, z + 1);
-			auto back = getChunkSafeFromMatrixSpace(x, z - 1);
-	
-			auto frontLeft = getChunkSafeFromMatrixSpace(x-1, z + 1);
-			auto frontRight = getChunkSafeFromMatrixSpace(x+1, z + 1);
-			auto backLeft = getChunkSafeFromMatrixSpace(x-1, z - 1);
-			auto backRight = getChunkSafeFromMatrixSpace(x+1, z - 1);
-
-			//todo add corners for baking cache stuff
-			//if (chunk->shouldBakeOnlyBecauseOfTransparency(left, right, front, back))
-			bool baked = 0;
-			if (chunk->isDirtyTransparency()) 
-			{
-				if (currentBakedTransparency < maxToBakeTransparency)
-				{
-					auto b = chunk->bake(left, right, 
-						front, back, frontLeft, frontRight, backLeft, backRight, playerBlockPosition, gpuBuffer);
-					if (b) { currentBakedTransparency++; baked = true; }
-				}
-			}
-			else
-			{
-				if (currentBaked < maxToBake)
-				{
-					auto b = chunk->bake(left, right, front, back, frontLeft, frontRight, backLeft, backRight,
-						playerBlockPosition, gpuBuffer);
-					if (b) { currentBaked++; baked = true;}
-				}
-			}
-
-			if (baked)
-			{
-				if (i > 20)
-				{
-					maxToBake = 1;
-					maxToBakeTransparency = 1;
-				}
-			}
-		}
-		else
-		{
-			break;
-		}
-	
+		chunkVectorCopyNoNullsOnlyToBake.resize(10 + threadPool.currentCounter);
 	}
+	
+	threadPool.taskTaken.resize(chunkVectorCopyNoNullsOnlyToBake.size());
+	for (auto &i : threadPool.taskTaken) { i = 0; }
+
+
+	//launch work!
+
+	threadPool.setThrerIsWork();
+
+	static std::vector<TransparentCandidate> transparentCandidates;
+	static std::vector<int> opaqueGeometry;
+	static std::vector<int> transparentGeometry;
+	static std::vector<glm::ivec4> lights;
+	bakeLogicForOneThread(threadPool, transparentCandidates, 
+		opaqueGeometry, transparentGeometry, lights, true, 0,0,0);
+
+	threadPool.waitForEveryoneToFinish();
+
+	//send the rest of the data to OpenGL!
+	for (int t = 0; t < threadPool.currentCounter; t++)
+	{
+		auto &data = perThreadData[t];
+		if (data.chunk)
+		{
+			data.chunk->sendDataToOpenGL(data.updateGeometry, data.updateTransparency,
+				data.transparentCandidates, data.opaqueGeometry, data.transparentGeometry,
+				data.lights);
+		}
+
+	}
+
+
+	//update worker threads
+	int maxThreads = getShadingSettings().workerThreadsForBaking;
+	if (chunkRatio < 0.4) { maxThreads /= 2; }
+	if (chunkRatio < 0.2) { maxThreads = 0; }
+
+	threadPool.setThreadsNumber(maxThreads, bakeWorkerThread);
+
+
+	//for (int i = 0; i < chunkVectorCopyNoNullsOnlyToBake.size(); i++)
+	//{
+	//	
+	//
+	//}
 
 #pragma endregion
 
@@ -478,8 +692,6 @@ bool ChunkSystem::shouldRecieveEntity(glm::dvec3 entityPos)
 
 Chunk *ChunkSystem::getChunkSafeFromBlockPos(int x, int z)
 {
-
-	
 
 	auto p = fromBlockPosToMatrixSpace(x, z);
 
@@ -997,6 +1209,7 @@ void ChunkSystem::dropAllChunks(BigGpuBuffer *gpuBuffer, bool notifyServer)
 	{
 		dropChunkAtIndexSafe(i, gpuBuffer);
 	}
+	created = 0;
 }
 
 void ChunkSystem::dropChunkAtIndexUnsafe(int index, BigGpuBuffer *gpuBuffer)
@@ -1080,7 +1293,7 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot
 			}
 
 			b->typeAndFlags = block.typeAndFlags;
-			if (b->isOpaque()) { b->lightLevel = 0; }
+			if (b->isOpaque() && !b->isLightEmitor()) { b->lightLevel = 0; }
 
 			setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
 
@@ -1141,7 +1354,7 @@ bool ChunkSystem::placeBlockByClientForce(glm::ivec3 pos, Block block,
 		changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->getType(),
 			block.getType(), lightSystem);
 		
-		if (b->isOpaque()) { b->lightLevel = 0; }
+		if (b->isOpaque() && !b->isLightEmitor()) { b->lightLevel = 0; }
 
 
 		setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
@@ -1213,6 +1426,41 @@ bool ChunkSystem::breakBlockByClient(glm::ivec3 pos, UndoQueue &undoQueue,
 	return false;
 }
 
+//this will do a placeBlockNoClient and also remove the undo queue
+void ChunkSystem::placeBlockByServerAndRemoveFromUndoQueue(
+	glm::ivec3 pos, Block block, LightSystem &lightSystem, InteractionData &playerInteraction
+	, UndoQueue &undoQueue, std::vector<unsigned char> *optionalData
+)
+{
+
+	auto c = getChunkSafeFromBlockPos(pos.x, pos.z);
+
+	if (c
+		)
+	{
+		//process block placement
+		placeBlockNoClient(pos, block, lightSystem, optionalData, playerInteraction);
+	}
+	else
+	{
+		//ignore message
+	}
+
+	//remove undo queue
+
+	for (auto &e : undoQueue.events)
+	{
+		if ((e.type == UndoQueueEvent::iPlacedBlock
+			|| e.type == UndoQueueEvent::changedBlockData)
+			&& e.blockPos == pos)
+		{
+			e.type = UndoQueueEvent::doNothing;
+		}
+	}
+
+
+}
+
 void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, Block block, LightSystem &lightSystem,
 	std::vector<unsigned char> *optionalData, InteractionData &playerInteraction)
 {
@@ -1230,7 +1478,7 @@ void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, Block block, LightSystem &l
 
 		changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->getType(), block.getType(), lightSystem);
 
-		if (b->isOpaque()) { b->lightLevel = 0; }
+		if (b->isOpaque() && !b->isLightEmitor()) { b->lightLevel = 0; }
 
 		setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
 

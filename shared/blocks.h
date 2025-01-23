@@ -92,7 +92,7 @@ enum BlockTypes : unsigned short
 	tiledStoneBricks_stairs,
 	tiledStoneBricks_slab,
 	tiledStoneBricks_wall,
-	bricks_stairts,
+	bricks_stairs,
 	bricks_slabs,
 	bricks_wall,
 
@@ -145,6 +145,13 @@ enum BlockTypes : unsigned short
 	marblePillar,
 
 	logWall,
+
+	yellowGrass,
+
+	blueBricks,
+	blueBricks_stairs,
+	blueBricks_slabs,
+	blueBricks_wall,
 
 
 	BlocksCount

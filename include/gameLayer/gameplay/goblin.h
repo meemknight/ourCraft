@@ -6,7 +6,7 @@
 
 struct Goblin: public PhysicalEntity, public CanPushOthers
 	, public HasOrientationAndHeadTurnDirection, public CollidesWithPlacedBlocks,
-	public CanBeKilled, public CanBeAttacked
+	public CanBeKilled, public CanBeAttacked, public HasEyesAndPupils<EYE_ANIMATION_TYPE_NORMAL>
 {
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
@@ -23,7 +23,6 @@ struct Goblin: public PhysicalEntity, public CanPushOthers
 
 struct GoblinClient: public ClientEntity<Goblin, GoblinClient>
 {
-	float currentLegsAngle = 0;
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 	void setEntityMatrix(glm::mat4 *skinningMatrix);

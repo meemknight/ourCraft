@@ -42,6 +42,7 @@ struct ShadingSettings
 	int tonemapper = 0;
 	int shadows = 0;
 	int waterType = 1;
+	int workerThreadsForBaking = 2;
 
 	glm::vec3 waterColor = (glm::vec3(6, 42, 52) / 255.f);
 	glm::vec3 underWaterColor = glm::vec3(0, 17, 25) / 255.f;

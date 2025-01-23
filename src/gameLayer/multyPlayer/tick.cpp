@@ -181,8 +181,7 @@ bool spawnDroppedItemEntity(
 	unsigned char counter, unsigned short type,
 	std::vector<unsigned char> *metaData, glm::dvec3 pos, MotionState motionState = {},
 	std::uint64_t newId = 0,
-	float restantTimer = 0
-)
+	float restantTimer = 0, float dontPickUpTimer = 1)
 {
 
 	if (newId == 0) { newId = getEntityIdAndIncrement(worldSaver, EntityType::droppedItems); }
@@ -190,6 +189,7 @@ bool spawnDroppedItemEntity(
 
 
 	DroppedItemServer newEntity = {};
+	newEntity.dontPickTimer = dontPickUpTimer;
 	newEntity.item = itemCreator(type, counter);
 	if (metaData)
 	{
@@ -345,7 +345,7 @@ void killEntity(WorldSaver &worldSaver, std::uint64_t entity, ServerChunkStorer 
 		//it is enough to set the life of players to 0 to kill them!
 		if (found != clients.end())
 		{
-			found->second.playerData.kill();
+			found->second.playerData.newLife.life = 0;
 		};
 	}
 	else
@@ -406,6 +406,41 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 	std::unordered_map <std::uint64_t, PlayerServer *> allPlayers;
 	std::unordered_map < std::uint64_t, Client *> allClients;
 	std::unordered_map < std::uint64_t, Client *> allSurvivalClients;
+
+#pragma region calculate all players
+
+	for (auto &c : chunkCache.savedChunks)
+	{
+		auto &playersMap = c.second->entityData.players;
+		for (auto &p : playersMap)
+		{
+			if (p.second && !p.second->killed)
+			{
+				allPlayers.insert(p);
+			}
+		}
+	}
+
+	{
+		auto &reff = getAllClientsReff();
+		for (auto &p : allPlayers)
+		{
+			auto found = reff.find(p.first);
+			permaAssert(found != reff.end());
+			allClients.insert({found->first, &found->second});
+
+			if (found->second.playerData.otherPlayerSettings.gameMode ==
+				OtherPlayerSettings::SURVIVAL)
+			{
+				allSurvivalClients.insert({found->first, &found->second});
+			}
+
+		}
+	}
+
+#pragma endregion
+
+
 
 	if (profiler) { profiler->startSubProfile("Calculate entities chunk position cache"); }
 #pragma region calculate all entities chunk positions cache
@@ -1329,26 +1364,6 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 
 				}
-				else if (i.t.taskType == Task::clientUpdatedSkin)
-				{
-
-					Packet p;
-					p.header = headerSendPlayerSkin;
-					p.cid = i.cid;
-
-					auto client = getClientNotLocked(i.cid);
-
-					if (client)
-					{
-						if (client->skinDataCompressed)
-						{
-							p.setCompressed();
-						}
-
-						broadCastNotLocked(p, client->skinData.data(),
-							client->skinData.size(), client->peer, true, channelHandleConnections);
-					}
-				}
 				else if (i.t.taskType == Task::clientAttackedEntity)
 				{
 					unsigned char itemInventoryIndex = i.t.inventroySlot;
@@ -1390,6 +1405,8 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 									bool rez = chunkCache.hitEntityByPlayer(entityId, client->playerData.getPosition(),
 										*item, wasKilled, dir, rng, hitResult.hitCorectness, hitResult.bonusCritChance);
 
+									//todo  we have separate logic for killing players and
+									//	maybe do the same for entities?
 									if (wasKilled)
 									{
 
@@ -1402,7 +1419,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 											glm::vec3 p = *pos;
 											p.y += 0.5;
 											spawnDroppedItemEntity(chunkCache,
-												worldSaver, 1, ItemTypes::apple, 0, p);
+												worldSaver, 1, ItemTypes::apple, 0, p, {}, {}, 0, 0);
 										}
 										else
 										{
@@ -1590,38 +1607,6 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 
 	if (profiler) { profiler->startSubProfile("Player stuff"); }
-#pragma region calculate all players
-
-	for (auto &c : chunkCache.savedChunks)
-	{
-		auto &playersMap = c.second->entityData.players;
-		for (auto &p : playersMap)
-		{
-			if (p.second && !p.second->killed)
-			{
-				allPlayers.insert(p);
-			}
-		}
-	}
-
-	{
-		auto &reff = getAllClientsReff();
-		for (auto &p : allPlayers)
-		{
-			auto found = reff.find(p.first);
-			permaAssert(found != reff.end());
-			allClients.insert({found->first, &found->second});
-
-			if (found->second.playerData.otherPlayerSettings.gameMode ==
-				OtherPlayerSettings::SURVIVAL)
-			{
-				allSurvivalClients.insert({found->first, &found->second});
-			}
-
-		}
-	}
-
-#pragma endregion
 
 #pragma region player effects
 
@@ -1708,6 +1693,8 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 	for (auto &c : chunkCache.savedChunks)
 	{
+		if (!c.second->otherData.withinSimulationDistance) { continue; }
+
 		for (int h = 0; h < CHUNK_HEIGHT / 16; h++)
 		{
 			for (int i = 0; i < randomTickSpeed; i++)
@@ -1721,6 +1708,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 				auto &b = c.second->chunk.unsafeGet(x,y,z);
 				auto type = b.getType();
 
+				//todo add yellow grass
 				if (type == BlockTypes::dirt)
 				{
 
@@ -1782,6 +1770,18 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 				}
 				else if (type == BlockTypes::grassBlock)
+				{
+					auto top = c.second->chunk.safeGet(x, y + 1, z);
+					if (top && top->stopsGrassFromGrowingIfOnTop())
+					{
+						//update block
+						b.setType(BlockTypes::dirt);
+						modifiedBlocks[{x + c.first.x * CHUNK_SIZE, y, z + c.first.y * CHUNK_SIZE}] = b.getType();
+						c.second->otherData.dirty = true;
+					}
+
+				}
+				else if (type == BlockTypes::yellowGrass)
 				{
 					auto top = c.second->chunk.safeGet(x, y + 1, z);
 					if (top && top->stopsGrassFromGrowingIfOnTop())
@@ -1973,6 +1973,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 	for (auto &c : chunkCache.savedChunks)
 	{
+		if (!c.second->otherData.withinSimulationDistance) { continue; }
 		if (c.second->otherData.shouldUnload) { continue; }
 
 		auto &entityData = c.second->entityData;
@@ -2004,6 +2005,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 	for (auto &c : chunkCache.savedChunks)
 	{	
+		if (!c.second->otherData.withinSimulationDistance) { continue; }
 		if (c.second->otherData.shouldUnload) { continue; }
 
 		auto &entityData = c.second->entityData;
@@ -2074,6 +2076,13 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 								//the entity left the region, we move it out,
 								// so we save it to disk or to other chunks
+
+								auto found = chunkCache.entityChunkPositions.find(e.first);
+								if (found != chunkCache.entityChunkPositions.end())
+								{
+									chunkCache.entityChunkPositions.erase(found);
+								}
+
 								orphanContainer.insert(
 									{e.first, e.second});
 							}
@@ -2120,6 +2129,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 
 	//send new blocks
+	//TODO CHANGE TO BLOCK rather than blockType
 	if (!modifiedBlocks.empty())
 	{
 
@@ -2240,6 +2250,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 						currentChunkPos.x = divideChunk(other.second->playerData.getPosition().x);
 						currentChunkPos.y = divideChunk(other.second->playerData.getPosition().z);
 
+						//todo only players that have entities in the simulated region later
 						if(loadedChunks.find(lastChunkPos) != loadedChunks.end()
 							||
 							loadedChunks.find(currentChunkPos) != loadedChunks.end()
