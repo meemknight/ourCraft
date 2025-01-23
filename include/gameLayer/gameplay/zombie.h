@@ -6,7 +6,7 @@
 
 struct Zombie: public PhysicalEntity, public CanPushOthers
 	, public HasOrientationAndHeadTurnDirection, public CollidesWithPlacedBlocks,
-	public CanBeKilled, public CanBeAttacked, public HasEyesAndPupils
+	public CanBeKilled, public CanBeAttacked, public HasEyesAndPupils<EYE_ANIMATION_TYPE_PLAYER>
 {
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);

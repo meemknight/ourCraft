@@ -12,7 +12,8 @@
 //this is the shared data
 struct Player : public PhysicalEntity, public CollidesWithPlacedBlocks,
 	public CanPushOthers, public CanBeKilled, public CanBeAttacked,
-	public CanHaveEffects
+	public CanHaveEffects, public HasOrientationAndHeadTurnDirection, 
+	public HasEyesAndPupils<EYE_ANIMATION_TYPE_PLAYER>
 {
 
 	bool operator== (Player & other)
@@ -31,10 +32,6 @@ struct Player : public PhysicalEntity, public CollidesWithPlacedBlocks,
 	{
 		return !(*this == other);
 	}
-
-
-	glm::vec3 lookDirectionAnimation = {0,0,-1};
-	glm::vec2 bodyOrientation = {0, -1};
 
 	void flyFPS(glm::vec3 direction, glm::vec3 lookDirection);
 

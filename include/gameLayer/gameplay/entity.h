@@ -114,9 +114,16 @@ void computeRubberBand(
 
 //the pupils are actually optinal, this will add the animation logic for the eyes and pupils.
 //they will work if the model has them, if else, it won't do anything.
+
+#define EYE_ANIMATION_TYPE_NORMAL 1
+#define EYE_ANIMATION_TYPE_PLAYER 2
+
+template <unsigned char EYE_ANIMATION_TYPE = 1>
 struct HasEyesAndPupils
 {
-	constexpr static bool eyesAndPupils = true;
+	constexpr static unsigned char eyesAndPupils = EYE_ANIMATION_TYPE;
+	//1 means normal
+	//2 means player style
 };
 
 template <typename T, typename = void>
@@ -746,11 +753,16 @@ struct ClientEntity
 
 		};
 
+		auto scaleDownMatrix = [](float x)
+		{
+			return glm::translate(glm::vec3(0, -x/2.f, 0)) * glm::scale(glm::vec3{1,x + 1.f,1});
+		};
 
 		if constexpr (hasEyesAndPupils<T>)
 		{
 			int stuff = 0;
 
+			//blink
 			if (model.pupilsIndex > -1)
 			{
 
@@ -766,12 +778,28 @@ struct ClientEntity
 
 				}
 
-				pupilDisplacement *= 3.9f * -(1.f / 16.f);
+				//player, version
+				if (T().eyesAndPupils == EYE_ANIMATION_TYPE_PLAYER)
+				{
+					float pupilScale = pupilDisplacement * 1;
+					pupilDisplacement *= 2.0f * -(1.f / 16.f);
 
-				skinningMatrix[model.pupilsIndex] =
-					skinningMatrix[model.pupilsIndex] *
-					glm::translate(glm::vec3(0, pupilDisplacement, 0));
-				;
+					skinningMatrix[model.pupilsIndex] =
+						skinningMatrix[model.pupilsIndex] *
+						glm::translate(glm::vec3(0, pupilDisplacement, 0))
+						* scaleDownMatrix(pupilScale);
+				}
+				else //other
+				{
+					pupilDisplacement *= 3.9f * -(1.f / 16.f);
+
+					skinningMatrix[model.pupilsIndex] =
+						skinningMatrix[model.pupilsIndex] *
+						glm::translate(glm::vec3(0, pupilDisplacement, 0));
+				}
+
+				
+
 			}
 
 			if (model.lEyeIndex > -1 ||

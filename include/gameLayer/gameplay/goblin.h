@@ -6,7 +6,7 @@
 
 struct Goblin: public PhysicalEntity, public CanPushOthers
 	, public HasOrientationAndHeadTurnDirection, public CollidesWithPlacedBlocks,
-	public CanBeKilled, public CanBeAttacked, public HasEyesAndPupils
+	public CanBeKilled, public CanBeAttacked, public HasEyesAndPupils<EYE_ANIMATION_TYPE_NORMAL>
 {
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
