@@ -125,6 +125,7 @@ struct Chunk
 	GLuint lightsBuffer = 0;
 	size_t lightsElementCountSize = 0;
 
+	unsigned char currentLod = 0;
 	std::bitset<16> flags = {};
 	
 	DECLARE_FLAG(Dirty, 0);
@@ -161,7 +162,7 @@ struct Chunk
 		std::vector<TransparentCandidate> &transparentCandidates,
 	std::vector<int> &opaqueGeometry,
 	std::vector<int> &transparentGeometry,
-	std::vector<glm::ivec4> &lights);
+	std::vector<glm::ivec4> &lights, int lod);
 
 	bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		Chunk *frontLeft, Chunk *frontRight, Chunk *backLeft, Chunk *backRight,
@@ -171,7 +172,7 @@ struct Chunk
 		std::vector<int> &transparentGeometry,
 		std::vector<glm::ivec4> &lights,
 		bool &updateGeometry, 
-		bool &updateTransparency
+		bool &updateTransparency, int lod
 	);
 
 	void sendDataToOpenGL(bool geometry, bool transparent,
@@ -182,10 +183,11 @@ struct Chunk
 	);
 
 	bool shouldBake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
-		Chunk *frontLeft, Chunk *frontRight, Chunk *backLeft, Chunk *backRight);
+		Chunk *frontLeft, Chunk *frontRight, Chunk *backLeft, Chunk *backRight, int lod);
 
-	bool forShureShouldntbake();
+	bool forShureShouldntbake(int lod);
 
+	//todo update or remove
 	bool shouldBakeOnlyBecauseOfTransparency(Chunk *left, Chunk *right, Chunk *front, Chunk *back);
 
 	void createGpuData();

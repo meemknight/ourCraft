@@ -545,3 +545,83 @@ bool canBeMinedByAxe(std::uint16_t type)
 
 	return false;
 }
+
+BlockType fromAnyShapeToNormalBlockType(BlockType b)
+{
+
+	switch (b)
+	{
+
+	case logWall: {return woodLog; }
+
+	case wooden_slab:
+	case wooden_wall:
+	case wooden_stairs: { return wooden_plank; };
+
+	case bricks_slabs:
+	case bricks_wall:
+	case bricks_stairs: { return bricks; };
+
+	case stone_slabs:
+	case stone_wall:
+	case stone_stairts: { return stone; };
+
+	case cobbleStone_slabs:
+	case cobbleStone_wall:
+	case cobbleStone_stairts: { return cobblestone; };
+
+	case stoneBricks_slabs:
+	case stoneBricks_wall:
+	case stoneBricks_stairts: { return stoneBrick; };
+
+	case hardSandStone_slabs:
+	case hardSandStone_wall:
+	case hardSandStone_stairs: { return hardSandStone; };
+
+	case sandStone_slabs:
+	case sandStone_wall:
+	case sandStone_stairts: { return sand_stone; };
+
+	case dungeonBricks_slabs:
+	case dungeonBricks_wall:
+	case dungeonBricks_stairts: { return dungeonBricks; };
+
+	case volcanicRock_slabs:
+	case volcanicRock_wall:
+	case volcanicRock_stairts: { return volcanicRock_stairts; };
+
+	case smoothStone_slabs:
+	case smoothStone_wall:
+	case smoothStone_stairts: { return smoothStone; };
+
+	case smoothLimeStone_slabs:
+	case smoothLimeStone_wall:
+	case smoothLimeStone_stairs: { return limeStone; };
+
+	case marbleBlock_slabs:
+	case marbleBlock_wall:
+	case marbleBlock_stairs: { return marbleBlock; };
+
+	case marbleBricks_slabs:
+	case marbleBricks_wall:
+	case marbleBricks_stairs: { return marbleBlock_stairs; };
+
+	case blueBricks_slabs:
+	case blueBricks_wall:
+	case blueBricks_stairs: { return blueBricks; };
+
+	case tiledStoneBricks_slab:
+	case tiledStoneBricks_wall:
+	case tiledStoneBricks_stairs: { return tiledStoneBricks; };
+
+	};
+
+	if (INTERNAL_BUILD == 1)
+	{
+		permaAssertComment(isStairsMesh(b), "error you forgot to add a stair here!");
+		permaAssertComment(isWallMesh(b), "error you forgot to add a wall here!");
+		permaAssertComment(isSlabMesh(b), "error you forgot to add a slab here!");
+	}
+
+	return b;
+}

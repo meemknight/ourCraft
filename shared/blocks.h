@@ -246,6 +246,8 @@ bool canBeMinedByShovel(std::uint16_t type);
 bool canBeMinedByAxe(std::uint16_t type);
 
 
+BlockType fromAnyShapeToNormalBlockType(BlockType b);
+
 struct BlockCollider
 {
 	glm::vec3 size = {1,1,1};

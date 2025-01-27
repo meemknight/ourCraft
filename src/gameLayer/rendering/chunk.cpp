@@ -135,7 +135,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 	std::vector<TransparentCandidate> &transparentCandidates,
 	std::vector<int> &opaqueGeometry,
 	std::vector<int> &transparentGeometry,
-	std::vector<glm::ivec4> &lights
+	std::vector<glm::ivec4> &lights, int lod
 	)
 {
 
@@ -144,7 +144,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 	bakeAndDontSendDataToOpenGl(left, right, front, back, frontLeft, frontRight, backLeft,
 		backRight, playerPosition, transparentCandidates, opaqueGeometry,
-		transparentGeometry, lights, updateGeometry, updateTransparency);
+		transparentGeometry, lights, updateGeometry, updateTransparency, lod);
 
 	//send data to GPU
 	sendDataToOpenGL(updateGeometry, updateTransparency, transparentCandidates,
@@ -161,6 +161,9 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 }
 
+static thread_local Block chunkLod1[CHUNK_SIZE / 2][CHUNK_SIZE / 2][CHUNK_HEIGHT / 2]{};
+
+
 bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 	Chunk *right, Chunk *front,
 	Chunk *back, Chunk *frontLeft, 
@@ -169,7 +172,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 	std::vector<int> &opaqueGeometry, std::vector<int> &transparentGeometry, 
 	std::vector<glm::ivec4> &lights,
 	bool &updateGeometry,
-	bool &updateTransparency)
+	bool &updateTransparency, int lod)
 {
 
 	updateGeometry = 0;
@@ -186,6 +189,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 		|| (!isNeighbourToFrontRight() && frontRight != nullptr)
 		|| (!isNeighbourToBackLeft() && backLeft != nullptr)
 		|| (!isNeighbourToBackRight() && backRight != nullptr)
+		|| currentLod != lod
 		)
 	{
 		updateGeometry = true;
@@ -196,6 +200,8 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 	transparentGeometry.clear();
 	transparentCandidates.clear();
 	lights.clear();
+
+	currentLod = lod;
 
 #pragma region helpers
 
@@ -1901,49 +1907,175 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 		setNeighbourToBackLeft(backLeft != nullptr);
 		setNeighbourToBackRight(backRight != nullptr);
 
-		for (int x = 0; x < CHUNK_SIZE; x++)
-			for (int z = 0; z < CHUNK_SIZE; z++)
-				for (int y = 0; y < CHUNK_HEIGHT; y++)
+		if (currentLod == 1)
+		{
+
+			memset(chunkLod1, 0, sizeof(chunkLod1));
+
+			auto check = [&](Block &b)
+			{
+				if (!b.air() && !b.isGrassMesh()
+					&& !b.getType() == BlockTypes::torch)
 				{
-					auto &b = unsafeGet(x, y, z);
-					if (!b.air())
+					return true;
+				}
+				return false;
+			};
+
+
+			for (int x = 0; x < CHUNK_SIZE; x += 2)
+				for (int z = 0; z < CHUNK_SIZE; z += 2)
+					for (int y = 0; y < CHUNK_HEIGHT; y += 2)
 					{
-						if (b.isWallMesh())
+
+						//auto &b = unsafeGet(x, y, z);
+						//auto &bFront = unsafeGet(x, y, z + 1);
+						//auto &bRight = unsafeGet(x + 1, y, z);
+						//auto &bFrontRight = unsafeGet(x + 1, y, z + 1);
+						//auto &bTop = unsafeGet(x, y + 1, z);
+						//auto &bTopFront = unsafeGet(x, y + 1, z + 1);
+						//auto &bTopRight = unsafeGet(x + 1, y + 1, z);
+						//auto &bTopFrontRight = unsafeGet(x + 1, y + 1, z + 1);
+
+						Block b[8] = {};
+						b[0] = unsafeGet(x, y + 1, z);
+						b[1] = unsafeGet(x, y + 1, z + 1);
+						b[2] = unsafeGet(x + 1, y + 1, z);
+						b[3] = unsafeGet(x + 1, y + 1, z + 1);
+						b[4] = unsafeGet(x, y, z);
+						b[5] = unsafeGet(x, y, z + 1);
+						b[6] = unsafeGet(x + 1, y, z);
+						b[7] = unsafeGet(x + 1, y, z + 1);
+
+						Block results[8] = {};
+						int index = 0;
+						
+						for (int i = 0; i < 8; i++)
 						{
-							blockBakeLogicForWalls(x, y, z, &opaqueGeometry, b);
-						}
-						else if (b.isStairsMesh())
-						{
-							blockBakeLogicForStairs(x, y, z, &opaqueGeometry, b);
-						}
-						else if (b.isSlabMesh())
-						{
-							blockBakeLogicForSlabs(x, y, z, &opaqueGeometry, b);
-						}
-						else
-							if (b.isGrassMesh())
+							if (check(b[i]))
 							{
-								blockBakeLogicForGrassMesh(x, y, z, &opaqueGeometry, b);
+								results[index].setType(fromAnyShapeToNormalBlockType(b[i].getType()));
+								index++;
 							}
-							else if (b.getType() == BlockTypes::torch)
+						}
+
+						Block finalResult = {};
+						int counters[8] = {};
+
+						for (int i = 0; i < index; i++)
+						{
+							if (results[i].getType() == 0) { break; }
+
+							counters[i]++;
+
+							for (int j = i + 1; j < index; j++)
 							{
-								blockBakeLogicForTorches(x, y, z, &opaqueGeometry, b);
-							}
-							else
-							{
-								if (!b.isTransparentGeometry())
+								if (results[j].getType() == 0) { break; }
+
+								if (results[i].getType() == results[j].getType())
 								{
-									blockBakeLogicForSolidBlocks(x, y, z, &opaqueGeometry, b, b.isAnimatedBlock());
+									results[j].setType(0);
+									counters[i]++;
 								}
 							}
-
-						if (b.isLightEmitor())
+						}
+						
+						int biggestIndex = 0;
+						int biggestSize = 0;
+						for (int i = 0; i < index; i++)
 						{
-							lights.push_back({x + data.x * CHUNK_SIZE, y, z + data.z * CHUNK_SIZE,0});
+							if (counters[i] == 0) { break; }
+
+							if (counters[i] > biggestSize)
+							{
+								biggestSize = counters[i];
+								biggestIndex = i;
+							}
+						}
+						
+						if (biggestSize)
+						{
+							finalResult.setType(results[biggestIndex].getType());
+						}
+
+						if (finalResult.getType())
+						{
+							for (int i = 0; i < index; i++)
+							{
+								if (results[i].getLight() > finalResult.getLight())
+								{
+									finalResult.setLightLevel(results[i].getLight());
+								}
+
+								if (results[i].getSkyLight() > finalResult.getSkyLight())
+								{
+									finalResult.setSkyLevel(results[i].getSkyLight());
+								}
+							}
+						}
+
+						chunkLod1[x/2][z/2][y/2] = finalResult;
+					}
+
+			for (int x = 0; x < CHUNK_SIZE/2; x ++)
+				for (int z = 0; z < CHUNK_SIZE/2; z ++)
+					for (int y = 0; y < CHUNK_HEIGHT / 2; y++)
+					{
+
+
+
+					}
+
+		}
+		else
+		{
+			for (int x = 0; x < CHUNK_SIZE; x++)
+				for (int z = 0; z < CHUNK_SIZE; z++)
+					for (int y = 0; y < CHUNK_HEIGHT; y++)
+					{
+						auto &b = unsafeGet(x, y, z);
+						if (!b.air())
+						{
+							if (b.isWallMesh())
+							{
+								blockBakeLogicForWalls(x, y, z, &opaqueGeometry, b);
+							}
+							else if (b.isStairsMesh())
+							{
+								blockBakeLogicForStairs(x, y, z, &opaqueGeometry, b);
+							}
+							else if (b.isSlabMesh())
+							{
+								blockBakeLogicForSlabs(x, y, z, &opaqueGeometry, b);
+							}
+							else
+								if (b.isGrassMesh())
+								{
+									blockBakeLogicForGrassMesh(x, y, z, &opaqueGeometry, b);
+								}
+								else if (b.getType() == BlockTypes::torch)
+								{
+									blockBakeLogicForTorches(x, y, z, &opaqueGeometry, b);
+								}
+								else
+								{
+									if (!b.isTransparentGeometry())
+									{
+										blockBakeLogicForSolidBlocks(x, y, z, &opaqueGeometry, b, b.isAnimatedBlock());
+									}
+								}
+
+							if (b.isLightEmitor())
+							{
+								lights.push_back({x + data.x * CHUNK_SIZE, y, z + data.z * CHUNK_SIZE,0});
+							}
 						}
 					}
-				}
+		}
 
+
+
+		//todo see if removing this improves speed!!!!!1
 		//trying to place the data in a better way for the gpu
 		arangeData(opaqueGeometry);
 	}
@@ -2032,7 +2164,7 @@ void Chunk::sendDataToOpenGL(bool updateGeometry,
 
 bool Chunk::shouldBake(Chunk *left,
 	Chunk *right, Chunk *front, Chunk *back,
-	Chunk *frontLeft, Chunk *frontRight, Chunk *backLeft, Chunk *backRight)
+	Chunk *frontLeft, Chunk *frontRight, Chunk *backLeft, Chunk *backRight, int lod)
 {
 	if (
 		isDirty()
@@ -2046,6 +2178,7 @@ bool Chunk::shouldBake(Chunk *left,
 		|| (!isNeighbourToFrontRight() && frontRight != nullptr)
 		|| (!isNeighbourToBackLeft() && backLeft != nullptr)
 		|| (!isNeighbourToBackRight() && backRight != nullptr)
+		|| currentLod != lod
 		)
 	{
 		return true;
@@ -2054,7 +2187,7 @@ bool Chunk::shouldBake(Chunk *left,
 	return false;
 }
 
-bool Chunk::forShureShouldntbake()
+bool Chunk::forShureShouldntbake(int lod)
 {
 	if(isDirty() || isDirtyTransparency() ||
 		!isNeighbourToLeft() ||
@@ -2064,7 +2197,10 @@ bool Chunk::forShureShouldntbake()
 		!isNeighbourToFrontLeft() ||
 		!isNeighbourToFrontRight() ||
 		!isNeighbourToBackLeft() ||
-		!isNeighbourToBackRight())
+		!isNeighbourToBackRight()
+		|| currentLod != lod
+		)
+		
 	{
 		return false;
 	}
