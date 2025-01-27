@@ -660,40 +660,40 @@ float vertexData[] = {
 		//lod 1
 
 			//front
-			0.5, 0.5, 0.5,
-			-0.5, 0.5, 0.5,
-			-0.5, -0.5, 0.5,
-			0.5, -0.5, 0.5,
+			1.5, 1.5, 1.5,
+			-0.5, 1.5, 1.5,
+			-0.5, -0.5, 1.5,
+			1.5, -0.5, 1.5,
 
 			//back
 			-0.5, -0.5, -0.5,
-			-0.5, 0.5, -0.5,
-			0.5, 0.5, -0.5,
-			0.5, -0.5, -0.5,
+			-0.5, 1.5, -0.5,
+			1.5, 1.5, -0.5,
+			1.5, -0.5, -0.5,
 
 			//top
-			-0.5, 0.5, -0.5,
-			-0.5, 0.5, 0.5,
-			0.5, 0.5, 0.5,
-			0.5, 0.5, -0.5,
+			-0.5, 1.5, -0.5,
+			-0.5, 1.5, 1.5,
+			1.5, 1.5, 1.5,
+			1.5, 1.5, -0.5,
 
 			//bottom
-			0.5, -0.5, 0.5,
-			-0.5, -0.5, 0.5,
+			1.5, -0.5, 1.5,
+			-0.5, -0.5, 1.5,
 			-0.5, -0.5, -0.5,
-			0.5, -0.5, -0.5,
+			1.5, -0.5, -0.5,
 
 			//left
-			-0.5, -0.5, 0.5,
-			-0.5, 0.5, 0.5,
-			-0.5, 0.5, -0.5,
+			-0.5, -0.5, 1.5,
+			-0.5, 1.5, 1.5,
+			-0.5, 1.5, -0.5,
 			-0.5, -0.5, -0.5,
 
 			//right
-			0.5, 0.5, -0.5,
-			0.5, 0.5, 0.5,
-			0.5, -0.5, 0.5,
-			0.5, -0.5, -0.5,
+			1.5, 1.5, -0.5,
+			1.5, 1.5, 1.5,
+			1.5, -0.5, 1.5,
+			1.5, -0.5, -0.5,
 
 		#pragma endregion
 
@@ -1215,40 +1215,41 @@ float vertexUV[] = {
 	#pragma region lods
 
 		//front
-		1, 1,
-		0, 1,
-		0, 0,
-		1, 0,
+		2, 1, //
+		0, 1, //
+		0, -1,// 
+		2, -1,//
 
 		//back
-		0, 0,
-		0, 1,
-		1, 1,
-		1, 0,
+		0, -1,//
+		0, 1, //
+		2, 1, //
+		2, -1,//
 
 		//top
-		1, 1,
-		0, 1,
-		0, 0,
-		1, 0,
+		2, 1, //
+		0, 1, //
+		0, -1,//
+		2, -1,//
 
 		//bottom
-		1, 1,
-		0, 1,
-		0, 0,
-		1, 0,
+		2, 1, //
+		0, 1, //
+		0, -1,//
+		2, -1,//
 
 		//left
-		1, 0,
-		1, 1,
-		0, 1,
-		0, 0,
+		2, -1,//
+		2, 1, //
+		0, 1, //
+		0, -1,//
 
 		//right
-		1, 1,
-		0, 1,
-		0, 0,
-		1, 0,
+		2, 1, //
+		0, 1, //
+		0, -1,//
+		2, -1,//
+
 
 
 	#pragma endregion
@@ -2647,7 +2648,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	};
 
-	auto renderTransparentGeometry = [&]()
+	auto renderTransparentGeometry = [&](bool firstLod, bool otherLods)
 	{
 
 		if (!renderTransparent) { return; }
@@ -2657,8 +2658,13 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			int facesCount = chunk->transparentElementCountSize;
 			if (facesCount)
 			{
-				glBindVertexArray(chunk->transparentVao);
-				glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
+				if (chunk->currentLod == 0 && firstLod
+					|| chunk->currentLod == 1 && otherLods
+					)
+				{
+					glBindVertexArray(chunk->transparentVao);
+					glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
+				}
 			}
 		}
 
@@ -2712,7 +2718,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		fboLastFramePositions.copyColorFromOtherFBO(fboMain.fboOnlySecondTarget, screenX, screenY);
 	};
 
-	auto renderTransparentGeometryPhaze = [&](bool hasPeelInformation)
+	auto renderTransparentGeometryPhaze = [&](bool hasPeelInformation, bool firstLod, bool otherLods)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
 		defaultShader.shader.bind();
@@ -2738,7 +2744,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		glDepthFunc(GL_LESS);
 		glDisable(GL_CULL_FACE); //todo change
-		renderTransparentGeometry();
+		renderTransparentGeometry(firstLod, otherLods);
 		glEnable(GL_CULL_FACE);
 	};
 
@@ -2888,7 +2894,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glDisablei(GL_BLEND, 1);
 		glColorMask(0, 0, 0, 0);
 
-		renderTransparentGeometry();
+		renderTransparentGeometry(true, false);
 		programData.GPUProfiler.endSubProfile("render only water to depth 4");
 	#pragma endregion
 
@@ -2912,7 +2918,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glDepthFunc(GL_LESS);
 		//glDisable(GL_CULL_FACE); //todo change
 		//todo disable ssr for this step?
-		renderTransparentGeometry();
+		renderTransparentGeometry(true, false);
 		programData.GPUProfiler.endSubProfile("render first water 5");
 	#pragma endregion
 
@@ -2925,7 +2931,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	#pragma region render transparent geometry last phaze 7
 		programData.GPUProfiler.startSubProfile("final transparency 7");
 
-		renderTransparentGeometryPhaze(true);
+		renderTransparentGeometryPhaze(true, true, true);
+		//renderTransparentGeometryPhaze(false, false, true);
 		programData.GPUProfiler.endSubProfile("final transparency 7");
 	#pragma endregion
 
@@ -2970,7 +2977,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		}
 
 		programData.GPUProfiler.startSubProfile("final transparency 7");
-		renderTransparentGeometryPhaze(false);
+		renderTransparentGeometryPhaze(false, true, true);
 		programData.GPUProfiler.endSubProfile("final transparency 7");
 
 		{

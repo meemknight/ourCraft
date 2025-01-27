@@ -23,6 +23,7 @@ constexpr int slabFaceUnderside = 65; //in the middle
 constexpr int wallsInnerFace = 66;
 constexpr int wallsBottomPart = 70;
 constexpr int wallsSideParts = 74;
+constexpr int lod1Parts = 82;
 
 
 Block *Chunk::safeGet(int x, int y, int z)
@@ -161,7 +162,6 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 }
 
-static thread_local Block chunkLod1[CHUNK_SIZE / 2][CHUNK_SIZE / 2][CHUNK_HEIGHT / 2]{};
 
 
 bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
@@ -261,50 +261,55 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 		return getGpuIdIndexForBlock(type, i);
 	};
 
-	auto getNeighboursLogic = [&](int x, int y, int z, Block *sides[26])
+	auto getNeighboursLogic = [&](int x, int y, int z, Block *sides[26], int lod)
 	{
 		auto justGetBlock = [&](int x, int y, int z) -> Block *
 		{
-			if (y >= CHUNK_HEIGHT || y < 0) { return nullptr; }
+			int HEIGHT = CHUNK_HEIGHT;
+			int SIZE = CHUNK_SIZE;
+			if (lod == 1) { HEIGHT = CHUNK_HEIGHT / 2; }
+			if (lod == 1) { SIZE = CHUNK_SIZE / 2; }
 
-			if (x >= 0 && x < CHUNK_SIZE && z >= 0 && z < CHUNK_SIZE)
+			if (y >= HEIGHT || y < 0) { return nullptr; }
+
+			if (x >= 0 && x < SIZE && z >= 0 && z < SIZE)
 			{
-				return &unsafeGet(x, y, z);
+				return &unsafeGet(x, y, z, lod);
 			}
 
-			if (x >= 0 && x < CHUNK_SIZE)
+			if (x >= 0 && x < SIZE)
 			{
 				//z is the problem
 				if (z < 0)
 				{
 					if (back)
 					{
-						return &back->unsafeGet(x, y, CHUNK_SIZE - 1);
+						return &back->unsafeGet(x, y, SIZE - 1, lod);
 					}
 				}
 				else
 				{
 					if (front)
 					{
-						return &front->unsafeGet(x, y, 0);
+						return &front->unsafeGet(x, y, 0, lod);
 					}
 				}
 			}
-			else if (z >= 0 && z < CHUNK_SIZE)
+			else if (z >= 0 && z < SIZE)
 			{
 				//x is the problem
 				if (x < 0)
 				{
 					if (left)
 					{
-						return &left->unsafeGet(CHUNK_SIZE - 1, y, z);
+						return &left->unsafeGet(SIZE - 1, y, z, lod);
 					}
 				}
 				else
 				{
 					if (right)
 					{
-						return &right->unsafeGet(0, y, z);
+						return &right->unsafeGet(0, y, z, lod);
 					}
 				}
 			}
@@ -315,30 +320,30 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 				{
 					if (backLeft)
 					{
-						return &backLeft->unsafeGet(CHUNK_SIZE - 1, y, CHUNK_SIZE - 1);
+						return &backLeft->unsafeGet(SIZE - 1, y, SIZE - 1, lod);
 					}
 				}
 				else
-					if (x >= CHUNK_SIZE && z < 0)
+					if (x >= SIZE && z < 0)
 					{
 						if (backRight)
 						{
-							return &backRight->unsafeGet(0, y, CHUNK_SIZE - 1);
+							return &backRight->unsafeGet(0, y, SIZE - 1, lod);
 						}
 					}
-					else if (x < 0 && z >= CHUNK_SIZE)
+					else if (x < 0 && z >= SIZE)
 					{
 						if (frontLeft)
 						{
-							return &frontLeft->unsafeGet(CHUNK_SIZE - 1, y, 0);
+							return &frontLeft->unsafeGet(SIZE - 1, y, 0, lod);
 						}
 					}
 					else
-						if (x >= CHUNK_SIZE && z >= CHUNK_SIZE)
+						if (x >= SIZE && z >= SIZE)
 						{
 							if (frontRight)
 							{
-								return &frontRight->unsafeGet(0, y, 0);
+								return &frontRight->unsafeGet(0, y, 0, lod);
 							}
 						}
 						else
@@ -612,7 +617,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 		std::vector<int> *currentVector, Block &b, bool isAnimated)
 	{
 		Block *sides[26] = {};
-		getNeighboursLogic(x, y, z, sides);
+		getNeighboursLogic(x, y, z, sides, 0);
 
 		glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y, z + this->data.z * CHUNK_SIZE};
 
@@ -719,11 +724,53 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 		}
 	};
 
+	auto blockBakeLogicForLods = [&](int x, int y, int z,
+		std::vector<int> *currentVector, Block &b)
+	{
+		Block *sides[26] = {};
+		getNeighboursLogic(x, y, z, sides, 1);
+
+		glm::ivec3 position = {(x * 2) + this->data.x * CHUNK_SIZE, y * 2, (z * 2) + this->data.z * CHUNK_SIZE};
+
+		for (int i = 0; i < 6; i++)
+		{
+
+			if (
+				(!(isAnyLeaves(b.getType()) && sides[i] != nullptr && isAnyLeaves((sides[i])->getType()))
+				&&
+				(sides[i] != nullptr && !(sides[i])->isOpaque()))
+				||
+				(
+				//(i == 3 && y == 0) ||		//display the bottom face
+				(i == 2 && y == CHUNK_HEIGHT/2 - 1) //display the top face
+				)
+				)
+			{
+
+				auto type = b.getType();
+				currentVector->push_back(mergeShorts(i + lod1Parts,
+					getGpuIdIndexForBlock(type, i)));
+
+				int aoShape = determineAOShape(i, sides);
+				bool isInWater = (sides[i] != nullptr) && sides[i]->getType() == BlockTypes::water;
+
+				unsigned char sunLight = 0;
+				unsigned char torchLight = 0;
+				calculateLightThings(sunLight, torchLight, sides[i], b, i, y);
+
+				//todo idea instead of is whater type flag why not just look for the texture id maybe?
+				pushFlagsLightAndPosition(*currentVector, position, type == BlockTypes::water, isInWater,
+					sunLight, torchLight, aoShape);
+
+			}
+		}
+	};
+
 	auto blockBakeLogicForStairs = [&](int x, int y, int z,
 		std::vector<int> *currentVector, Block &b)
 	{
 		Block *sides[26] = {};
-		getNeighboursLogic(x, y, z, sides);
+		getNeighboursLogic(x, y, z, sides, 0);
 
 		glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y, z + this->data.z * CHUNK_SIZE};
 
@@ -1049,7 +1096,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 		}
 
 		Block *sides[26] = {};
-		getNeighboursLogic(x, y, z, sides);
+		getNeighboursLogic(x, y, z, sides, 0);
 
 		glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y, z + this->data.z * CHUNK_SIZE};
 
@@ -1342,7 +1389,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 		std::vector<int> *currentVector, Block &b)
 	{
 		Block *sides[26] = {};
-		getNeighboursLogic(x, y, z, sides);
+		getNeighboursLogic(x, y, z, sides, 0);
 
 
 		glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y, z + this->data.z * CHUNK_SIZE};
@@ -1591,7 +1638,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 	};
 
 	auto blockBakeLogicForTransparentBlocks = [&](int x, int y, int z,
-		std::vector<int> *currentVector, Block &b, bool isAnimated
+		std::vector<int> *currentVector, Block &b, int lod
 		)
 	{
 		int chunkPosX = data.x * CHUNK_SIZE;
@@ -1602,7 +1649,10 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 		std::array<glm::vec2, 6> distances = {};
 		for (int i = 0; i < 6; i++)
 		{
-			auto diff = glm::vec3(playerPosition - glm::ivec3{x, y, z} - glm::ivec3{chunkPosX, 0, chunkPosZ}) - displace[i];
+			glm::ivec3 blockPos = glm::ivec3{x, y, z};
+			if (lod == 1) { blockPos *= 2; }
+
+			auto diff = glm::vec3(playerPosition - blockPos - glm::ivec3{chunkPosX, 0, chunkPosZ}) - displace[i];
 			distances[i].x = glm::dot(diff, diff);
 			distances[i].y = i;
 		}
@@ -1613,13 +1663,17 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 			return a.x > b.x;
 		});
 
-
 		Block *sides[26] = {};
-		getNeighboursLogic(x, y, z, sides);
+		getNeighboursLogic(x, y, z, sides, lod);
 
 		glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y,
 				z + this->data.z * CHUNK_SIZE};
 
+		if (lod == 1)
+		{
+			position = glm::vec3{x * 2 + this->data.x * CHUNK_SIZE, y * 2,
+				z * 2 + this->data.z * CHUNK_SIZE};
+		}
 
 		for (int index = 0; index < 6; index++)
 		{
@@ -1732,11 +1786,17 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 							if (i == 5) { currentIndex = 31; } //front
 						}
 
+						if (lod == 1) { currentIndex = i + lod1Parts; }
+
 						currentVector->push_back(mergeShorts(currentIndex, getGpuIdIndexForBlock(b.getType(), i)));
 					}
 					else
 					{
-						currentVector->push_back(mergeShorts(i + 22, getGpuIdIndexForBlock(b.getType(), i)));
+						int currentIndex = i + 22;
+
+						if (lod == 1) { currentIndex = i + lod1Parts; }
+
+						currentVector->push_back(mergeShorts(currentIndex, getGpuIdIndexForBlock(b.getType(), i)));
 					}
 
 					//if (!sides[2] || sides[2]->type != BlockTypes::water)
@@ -1747,7 +1807,9 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 				}
 				else
 				{
-					currentVector->push_back(mergeShorts(i, getGpuIdIndexForBlock(b.getType(), i)));
+					int currentIndex = i;
+					if (lod == 1) { currentIndex = i + lod1Parts; }
+					currentVector->push_back(mergeShorts(currentIndex, getGpuIdIndexForBlock(b.getType(), i)));
 				}
 
 				int aoShape = determineAOShape(i, sides);
@@ -1757,41 +1819,6 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 				pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
 					sunLight, torchLight, aoShape);
 
-				//if (dontUpdateLightSystem)
-				//{
-				//	pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
-				//		15, 15, aoShape);
-				//}
-				//else
-				//	if (sides[i] == nullptr && i == 2)
-				//	{
-				//		pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
-				//			15, b.getLight(), aoShape);
-				//	}
-				//	else if (sides[i] == nullptr && i == 3)
-				//	{
-				//		pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
-				//			5, b.getLight(), aoShape);
-				//		//bottom of the world
-				//	}
-				//	else if (sides[i] != nullptr)
-				//	{
-				//		int val = merge4bits(
-				//			std::max(b.getSkyLight(),sides[i]->getSkyLight()), 
-				//			std::max(b.getLight(),sides[i]->getLight())
-				//		);
-				//
-				//		pushFlagsLightAndPosition(*currentVector, position, isWater, isInWater,
-				//			std::max(b.getSkyLight(), sides[i]->getSkyLight()),
-				//			std::max(b.getLight(), sides[i]->getLight()), aoShape);
-				//	}
-				//	else
-				//	{
-				//		pushFlagsLightAndPosition(*currentVector, position, 
-				//			isWater, isInWater,
-				//			0, 0, aoShape);
-				//	}
-
 			}
 		}
 	};
@@ -1800,7 +1827,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 		std::vector<int> *currentVector, Block &b)
 	{
 		Block *sides[26] = {};
-		getNeighboursLogic(x, y, z, sides);
+		getNeighboursLogic(x, y, z, sides, 0);
 
 		bool ocluded = 1;
 		for (int i = 0; i < 6; i++)
@@ -1907,21 +1934,19 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 		setNeighbourToBackLeft(backLeft != nullptr);
 		setNeighbourToBackRight(backRight != nullptr);
 
-		if (currentLod == 1)
+		//update lod
 		{
-
 			memset(chunkLod1, 0, sizeof(chunkLod1));
 
 			auto check = [&](Block &b)
 			{
 				if (!b.air() && !b.isGrassMesh()
-					&& !b.getType() == BlockTypes::torch)
+					&& b.getType() != BlockTypes::torch)
 				{
 					return true;
 				}
 				return false;
 			};
-
 
 			for (int x = 0; x < CHUNK_SIZE; x += 2)
 				for (int z = 0; z < CHUNK_SIZE; z += 2)
@@ -1949,7 +1974,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 
 						Block results[8] = {};
 						int index = 0;
-						
+
 						for (int i = 0; i < 8; i++)
 						{
 							if (check(b[i]))
@@ -1979,7 +2004,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 								}
 							}
 						}
-						
+
 						int biggestIndex = 0;
 						int biggestSize = 0;
 						for (int i = 0; i < index; i++)
@@ -1992,7 +2017,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 								biggestIndex = i;
 							}
 						}
-						
+
 						if (biggestSize)
 						{
 							finalResult.setType(results[biggestIndex].getType());
@@ -2014,16 +2039,23 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 							}
 						}
 
-						chunkLod1[x/2][z/2][y/2] = finalResult;
+						chunkLod1[x / 2][z / 2][y / 2] = finalResult;
 					}
+		}
+
+		if (currentLod == 1)
+		{
+
 
 			for (int x = 0; x < CHUNK_SIZE/2; x ++)
 				for (int z = 0; z < CHUNK_SIZE/2; z ++)
 					for (int y = 0; y < CHUNK_HEIGHT / 2; y++)
 					{
-
-
-
+						auto &b = unsafeGet(x, y, z, 1);
+						if (!b.air() && !b.isTransparentGeometry())
+						{
+							blockBakeLogicForLods(x, y, z, &opaqueGeometry, b);
+						}
 					}
 
 		}
@@ -2087,34 +2119,69 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 		int chunkPosX = data.x * CHUNK_SIZE;
 		int chunkPosZ = data.z * CHUNK_SIZE;
 
-		for (int x = 0; x < CHUNK_SIZE; x++)
-			for (int z = 0; z < CHUNK_SIZE; z++)
-				for (int y = 0; y < CHUNK_HEIGHT; y++)
-				{
-					auto &b = unsafeGet(x, y, z);
-
-					//transparent geometry doesn't include air
-					if (b.isTransparentGeometry())
+		if (currentLod == 1)
+		{
+			for (int x = 0; x < CHUNK_SIZE/2; x++)
+				for (int z = 0; z < CHUNK_SIZE/2; z++)
+					for (int y = 0; y < CHUNK_HEIGHT/2; y++)
 					{
-						glm::vec3 difference = playerPosition - glm::ivec3{x, y, z} - glm::ivec3{chunkPosX, 0, chunkPosZ};
-						float distance = glm::dot(difference, difference);
-						transparentCandidates.push_back({{x,y,z}, distance});
+						auto &b = unsafeGet(x, y, z, 1);
+
+						//transparent geometry doesn't include air
+						if (b.isTransparentGeometry())
+						{
+							glm::vec3 difference = playerPosition - glm::ivec3{x*2, y*2, z*2} - glm::ivec3{chunkPosX, 0, chunkPosZ};
+							float distance = glm::dot(difference, difference);
+							transparentCandidates.push_back({{x,y,z}, distance});
+						}
+
 					}
 
-				}
+			std::sort(transparentCandidates.begin(), transparentCandidates.end(), [](TransparentCandidate &a,
+				TransparentCandidate &b)
+			{
+				return a.distance > b.distance;
+			});
 
-		std::sort(transparentCandidates.begin(), transparentCandidates.end(), [](TransparentCandidate &a,
-			TransparentCandidate &b)
-		{
-			return a.distance > b.distance;
-		});
-
-		for (auto &c : transparentCandidates)
-		{
-			auto &b = unsafeGet(c.position.x, c.position.y, c.position.z);
-			blockBakeLogicForTransparentBlocks(c.position.x, c.position.y, c.position.z, &transparentGeometry, b,
-				b.isAnimatedBlock());
+			for (auto &c : transparentCandidates)
+			{
+				auto &b = unsafeGet(c.position.x, c.position.y, c.position.z, 1);
+				blockBakeLogicForTransparentBlocks(c.position.x, c.position.y, c.position.z, &transparentGeometry,
+					b, 1);
+			}
 		}
+		else
+		{
+			for (int x = 0; x < CHUNK_SIZE; x++)
+				for (int z = 0; z < CHUNK_SIZE; z++)
+					for (int y = 0; y < CHUNK_HEIGHT; y++)
+					{
+						auto &b = unsafeGet(x, y, z);
+
+						//transparent geometry doesn't include air
+						if (b.isTransparentGeometry())
+						{
+							glm::vec3 difference = playerPosition - glm::ivec3{x, y, z} - glm::ivec3{chunkPosX, 0, chunkPosZ};
+							float distance = glm::dot(difference, difference);
+							transparentCandidates.push_back({{x,y,z}, distance});
+						}
+
+					}
+
+			std::sort(transparentCandidates.begin(), transparentCandidates.end(), [](TransparentCandidate &a,
+				TransparentCandidate &b)
+			{
+				return a.distance > b.distance;
+			});
+
+			for (auto &c : transparentCandidates)
+			{
+				auto &b = unsafeGet(c.position.x, c.position.y, c.position.z);
+				blockBakeLogicForTransparentBlocks(c.position.x, c.position.y, c.position.z, &transparentGeometry, 
+					b, 0);
+			}
+		}
+
 
 	};
 

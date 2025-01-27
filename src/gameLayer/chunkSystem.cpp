@@ -42,8 +42,8 @@ void ChunkSystem::changeRenderDistance(int squareDistance, bool notifyServer)
 {
 
 	if (squareSize == squareDistance) { return; }
-	if (squareDistance > 100) { return; }
-	if (squareDistance < 1) { return; }
+	if (squareDistance > 102) { squareDistance = 102; }
+	if (squareDistance < 2) { squareDistance = 2; }
 
 	cleanup(notifyServer);
 
@@ -92,10 +92,21 @@ static glm::ivec3 playerBlockPositionGlobal;
 
 int determineLodLevel(glm::ivec2 playerChunkPosition, glm::ivec2 chunkPosition)
 {
+
+	auto lodStrength = getShadingSettings().lodStrength;
+	auto viewDist = getShadingSettings().viewDistance;
+	if (lodStrength == 0) { return 0; }
+
 	glm::vec2 diff = playerChunkPosition - chunkPosition;
 	float distSquared = glm::dot(diff, diff);
 
-	if (distSquared > 8 * 8)
+	float distPercent[6] = {0, 0.8f, 0.7f, 0.6f, 0.5f, 0.5f};
+	int distMax[6] = {99, 30, 24, 16, 12, 8};
+
+	int firstLod = distPercent[lodStrength] * viewDist;
+	firstLod = std::min(firstLod, (int)distMax[lodStrength]);
+
+	if (distSquared > firstLod * firstLod)
 	{
 		return 1;
 	}

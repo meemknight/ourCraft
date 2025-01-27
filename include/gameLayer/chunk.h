@@ -5,6 +5,9 @@
 
 #include <metrics.h>
 #include <gameplay/blocks/blocksWithData.h>
+#include <platform/platformTools.h>
+#define NOMINMAX
+
 
 struct BigGpuBuffer;
 
@@ -108,6 +111,7 @@ struct Chunk
 	}
 
 	ChunkData data;
+	Block chunkLod1[CHUNK_SIZE / 2][CHUNK_SIZE / 2][CHUNK_HEIGHT / 2]{};
 
 	BlocksWithDataHolder blockData;
 
@@ -150,6 +154,22 @@ struct Chunk
 	Block &unsafeGet(int x, int y, int z)
 	{
 		return data.blocks[x][z][y];
+	}
+
+	Block &unsafeGet(int x, int y, int z, int lod)
+	{
+		if (lod == 0)
+		{
+			return data.blocks[x][z][y];
+		}
+		else if(lod == 1)
+		{
+			return chunkLod1[x][z][y];
+		}
+		else
+		{
+			permaAssertComment(0, "unsafe get wrong lod");
+		}
 	}
 
 	Block *safeGet(int x, int y, int z);

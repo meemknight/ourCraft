@@ -2751,6 +2751,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma endregion
 
+	//updateviewdistance changeviewdistance updaterenderdistance
 	gameData.chunkSystem.changeRenderDistance(getShadingSettings().viewDistance * 2, true);
 
 

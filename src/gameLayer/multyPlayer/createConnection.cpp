@@ -464,6 +464,7 @@ void recieveDataClient(ENetEvent &event,
 			{
 				//update local player
 				entityManager.localPlayer.entity = entity->entity;
+				std::cout << "YESSSSSSSSSSSSSSSSSSSSSSSSSSSS LMAO " << entity->entity.chunkDistance << "\n";
 			}
 			else
 			{

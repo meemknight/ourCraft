@@ -1400,6 +1400,7 @@ void ServerChunkStorer::saveAllChunks(WorldSaver &worldSaver)
 
 int ServerChunkStorer::unloadChunksThatNeedUnloading(WorldSaver &worldSaver, int count)
 {
+	//todo optimize, this seems to take an unnecessarily long time
 	int unloaded = 0;
 	for (auto it = savedChunks.begin(); it != savedChunks.end(); )
 	{

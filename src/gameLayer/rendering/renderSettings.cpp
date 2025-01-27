@@ -23,7 +23,11 @@ void displayRenderSettingsMenu(ProgramData &programData)
 	programData.ui.menuRenderer.Text("Rendering Settings...", Colors_White);
 
 	programData.ui.menuRenderer.sliderInt("View Distance", &getShadingSettings().viewDistance,
-		1, 40, Colors_White, programData.ui.buttonTexture, Colors_Gray,
+		1, 50, Colors_White, programData.ui.buttonTexture, Colors_Gray,
+		programData.ui.buttonTexture, Colors_White);
+
+	programData.ui.menuRenderer.sliderInt("Lod Strength", &getShadingSettings().lodStrength,
+		0, 5, Colors_White, programData.ui.buttonTexture, Colors_Gray,
 		programData.ui.buttonTexture, Colors_White);
 
 #pragma region water
@@ -597,6 +601,7 @@ void saveShadingSettings()
 	data.setInt("Version", 1);
 
 	SET_INT(viewDistance);
+	SET_INT(lodStrength);
 	SET_INT(workerThreadsForBaking);
 	SET_INT(tonemapper);
 	SET_INT(shadows);
@@ -633,6 +638,7 @@ void loadShadingSettings()
 	if (sfs::safeLoad(data, RESOURCES_PATH "../playerSettings/renderSettings", 0) == sfs::noError)
 	{
 		GET_INT(viewDistance);
+		GET_INT(lodStrength);
 		GET_INT(workerThreadsForBaking);
 		GET_INT(tonemapper);
 		GET_INT(shadows);
@@ -1177,7 +1183,7 @@ void ShadingSettings::normalize()
 {
 
 
-	viewDistance = glm::clamp(viewDistance, 1, 40);
+	viewDistance = glm::clamp(viewDistance, 1, 50);
 	tonemapper = glm::clamp(tonemapper, 0, 3);
 	shadows = glm::clamp(shadows, 0, 2);
 	waterType = glm::clamp(waterType, 0, 1);
@@ -1189,6 +1195,7 @@ void ShadingSettings::normalize()
 	underwaterDarkenDistance = glm::clamp(underwaterDarkenDistance, 0.f, 40.f);
 	fogGradientUnderWater = glm::clamp(fogGradientUnderWater, 0.f, 32.f);
 	workerThreadsForBaking = glm::clamp(workerThreadsForBaking, 0, 10);
+	lodStrength = glm::clamp(lodStrength, 0, 5);
 
 	exposure = glm::clamp(exposure, -2.f, 2.f);
 

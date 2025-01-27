@@ -43,6 +43,7 @@ struct ShadingSettings
 	int shadows = 0;
 	int waterType = 1;
 	int workerThreadsForBaking = 2;
+	int lodStrength = 1;
 
 	glm::vec3 waterColor = (glm::vec3(6, 42, 52) / 255.f);
 	glm::vec3 underWaterColor = glm::vec3(0, 17, 25) / 255.f;
@@ -67,6 +68,8 @@ struct ShadingSettings
 			underwaterDarkenDistance == other.underwaterDarkenDistance &&
 			fogGradientUnderWater == other.fogGradientUnderWater &&
 			exposure == other.exposure &&
+			lodStrength == other.lodStrength &&
+			workerThreadsForBaking == other.workerThreadsForBaking &&
 			waterType == other.waterType;
 	}
 

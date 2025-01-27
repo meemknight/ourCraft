@@ -618,9 +618,9 @@ BlockType fromAnyShapeToNormalBlockType(BlockType b)
 
 	if (INTERNAL_BUILD == 1)
 	{
-		permaAssertComment(isStairsMesh(b), "error you forgot to add a stair here!");
-		permaAssertComment(isWallMesh(b), "error you forgot to add a wall here!");
-		permaAssertComment(isSlabMesh(b), "error you forgot to add a slab here!");
+		permaAssertComment(!isStairsMesh(b), "error you forgot to add a stair here!");
+		permaAssertComment(!isWallMesh(b), "error you forgot to add a wall here!");
+		permaAssertComment(!isSlabMesh(b), "error you forgot to add a slab here!");
 	}
 
 	return b;
