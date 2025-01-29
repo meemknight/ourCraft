@@ -10,7 +10,7 @@
 
 
 struct BigGpuBuffer;
-
+struct Renderer;
 
 inline std::uint64_t getRegionId(int x, int z)
 {
@@ -182,7 +182,7 @@ struct Chunk
 		std::vector<TransparentCandidate> &transparentCandidates,
 	std::vector<int> &opaqueGeometry,
 	std::vector<int> &transparentGeometry,
-	std::vector<glm::ivec4> &lights, int lod);
+	std::vector<glm::ivec4> &lights, int lod, Renderer &renderer);
 
 	bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		Chunk *frontLeft, Chunk *frontRight, Chunk *backLeft, Chunk *backRight,
@@ -192,7 +192,7 @@ struct Chunk
 		std::vector<int> &transparentGeometry,
 		std::vector<glm::ivec4> &lights,
 		bool &updateGeometry, 
-		bool &updateTransparency, int lod
+		bool &updateTransparency, int lod, Renderer &renderer
 	);
 
 	void sendDataToOpenGL(bool geometry, bool transparent,

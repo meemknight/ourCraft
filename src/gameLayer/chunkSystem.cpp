@@ -89,6 +89,7 @@ struct ChunkTask
 static std::vector<ChunkTask> chunkVectorCopyNoNullsOnlyToBake;
 static glm::ivec2 minPosGlobal;
 static glm::ivec3 playerBlockPositionGlobal;
+static Renderer *mainRenderer;
 
 int determineLodLevel(glm::ivec2 playerChunkPosition, glm::ivec2 chunkPosition)
 {
@@ -162,7 +163,7 @@ void bakeLogicForOneThread(ThreadPool &threadPool,
 							front, back, frontLeft, frontRight, backLeft, backRight,
 							playerBlockPositionGlobal,
 							transparentCandidates, opaqueGeometry, transparentGeometry, lights
-							, determineLodLevel(playerChunkPos, {chunk->data.x, chunk->data.z}));
+							, determineLodLevel(playerChunkPos, {chunk->data.x, chunk->data.z}), *mainRenderer);
 						if (b) { currentBakedTransparency++; baked = true; }
 					}
 					else
@@ -174,7 +175,7 @@ void bakeLogicForOneThread(ThreadPool &threadPool,
 							playerBlockPositionGlobal,
 							transparentCandidates, opaqueGeometry, transparentGeometry, lights,
 							*updateGeometry, *updateTransparency
-							, determineLodLevel(playerChunkPos, {chunk->data.x, chunk->data.z}));
+							, determineLodLevel(playerChunkPos, {chunk->data.x, chunk->data.z}), *mainRenderer);
 
 						//only one chunk for worker threads!
 						if (b)
@@ -200,7 +201,7 @@ void bakeLogicForOneThread(ThreadPool &threadPool,
 						auto b = chunk->bake(left, right, front, back, frontLeft, frontRight, backLeft, backRight,
 							playerBlockPositionGlobal,
 							transparentCandidates, opaqueGeometry, transparentGeometry, lights
-							, determineLodLevel(playerChunkPos, {chunk->data.x, chunk->data.z}));
+							, determineLodLevel(playerChunkPos, {chunk->data.x, chunk->data.z}), *mainRenderer);
 						if (b) { currentBaked++; baked = true; }
 					}
 					else
@@ -211,7 +212,7 @@ void bakeLogicForOneThread(ThreadPool &threadPool,
 							playerBlockPositionGlobal,
 							transparentCandidates, opaqueGeometry, transparentGeometry, lights,
 							*updateGeometry, *updateTransparency
-							, determineLodLevel(playerChunkPos, {chunk->data.x, chunk->data.z}));
+							, determineLodLevel(playerChunkPos, {chunk->data.x, chunk->data.z}), *mainRenderer);
 
 						//only one chunk for worker threads!
 						if (b)
@@ -312,7 +313,7 @@ void bakeWorkerThread(int index, ThreadPool &threadPool)
 
 //x and z are the block positions of the player
 void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQueue &undoQueue
-	, LightSystem &lightSystem, InteractionData &interaction, ThreadPool &threadPool)
+	, LightSystem &lightSystem, InteractionData &interaction, ThreadPool &threadPool, Renderer &renderer)
 {
 
 
@@ -549,6 +550,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	chunkVectorCopyNoNullsOnlyToBake.reserve(loadedChunks.size());
 	::minPosGlobal = minPos;
 	::playerBlockPositionGlobal = playerBlockPosition;
+	::mainRenderer = &renderer;
 
 	bool close = 0;
 	int totalChunks = 0;

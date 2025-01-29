@@ -58,12 +58,17 @@ struct Renderer
 	QueryObject sunFlareQueries[3] = {};
 	float averageLuminosity = 0.5;
 
+	int chairStartIndex = 0;
+	int chairComponentCount = 0;
+	void recreateBlockGeometryData(ModelsManager &modelsManager);
+
 
 	struct FBO
 	{
 		void create(GLint addColor, bool addDepth, GLint addSecondaryRenderTarget = 0,
 			GLint addThirdRenderTarget = 0, GLint addFourthRenderTarget = 0,
 			GLint addFifthRenderTarget = 0);
+
 
 		void updateSize(int x, int y);
 
@@ -422,7 +427,7 @@ struct Renderer
 
 	void recreateBlocksTexturesBuffer(BlocksLoader &blocksLoader);
 
-	void create();
+	void create(ModelsManager &modelsManager);
 	void reloadShaders();
 	//void render(std::vector<int> &data, Camera &c, gl2d::Texture &texture);
 

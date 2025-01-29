@@ -136,7 +136,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 	std::vector<TransparentCandidate> &transparentCandidates,
 	std::vector<int> &opaqueGeometry,
 	std::vector<int> &transparentGeometry,
-	std::vector<glm::ivec4> &lights, int lod
+	std::vector<glm::ivec4> &lights, int lod, Renderer &renderer
 	)
 {
 
@@ -145,7 +145,7 @@ bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 
 	bakeAndDontSendDataToOpenGl(left, right, front, back, frontLeft, frontRight, backLeft,
 		backRight, playerPosition, transparentCandidates, opaqueGeometry,
-		transparentGeometry, lights, updateGeometry, updateTransparency, lod);
+		transparentGeometry, lights, updateGeometry, updateTransparency, lod, renderer);
 
 	//send data to GPU
 	sendDataToOpenGL(updateGeometry, updateTransparency, transparentCandidates,
@@ -172,7 +172,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 	std::vector<int> &opaqueGeometry, std::vector<int> &transparentGeometry, 
 	std::vector<glm::ivec4> &lights,
 	bool &updateGeometry,
-	bool &updateTransparency, int lod)
+	bool &updateTransparency, int lod, Renderer &renderer)
 {
 
 	updateGeometry = 0;
@@ -2068,6 +2068,21 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 						auto &b = unsafeGet(x, y, z);
 						if (!b.air())
 						{
+							auto type = b.getType();
+							if (b.isChairMesh())
+							{
+								glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y, z + this->data.z * CHUNK_SIZE};
+								for (int i = 0; i < renderer.chairComponentCount; i++)
+								{
+									opaqueGeometry.push_back(mergeShorts(i + renderer.chairStartIndex,
+										getGpuIdIndexForBlockWithVariation(type, 0, x, y, z)));
+
+									pushFlagsLightAndPosition(opaqueGeometry, position, 0, false,
+										15, 15, 0);
+
+								}
+
+							}else
 							if (b.isWallMesh())
 							{
 								blockBakeLogicForWalls(x, y, z, &opaqueGeometry, b);

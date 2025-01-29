@@ -92,6 +92,7 @@ bool isOpaque(BlockType type)
 	return
 		type != BlockTypes::air
 		&& type != BlockTypes::torch
+		&& !(isChairMesh(type))
 		//&& type != BlockTypes::glowstone
 		&& !(isStairsMesh(type))
 		&& !(isSlabMesh(type))
@@ -141,6 +142,11 @@ bool isWoodPlank(BlockType type)
 		type == BlockTypes::birch_planks;
 }
 
+bool isChairMesh(BlockType type)
+{
+	return type == oakChair;
+}
+
 //used for breaking related things
 bool isAnyWoddenBlock(BlockType type)
 {
@@ -155,6 +161,7 @@ bool isAnyWoddenBlock(BlockType type)
 		type == wooden_wall ||
 		type == wooden_slab ||
 		type == spruce_log ||
+		type == oakChair ||
 		type == logWall;
 		
 }
@@ -552,8 +559,10 @@ BlockType fromAnyShapeToNormalBlockType(BlockType b)
 	switch (b)
 	{
 
+
 	case logWall: {return woodLog; }
 
+	case oakChair:
 	case wooden_slab:
 	case wooden_wall:
 	case wooden_stairs: { return wooden_plank; };

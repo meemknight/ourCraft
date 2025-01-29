@@ -1409,7 +1409,7 @@ void Renderer::recreateBlocksTexturesBuffer(BlocksLoader &blocksLoader)
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-void Renderer::create()
+void Renderer::create(ModelsManager &modelsManager)
 {
 
 
@@ -1508,21 +1508,10 @@ void Renderer::create()
 
 	reloadShaders();
 
-	
-	
 	glGenBuffers(1, &vertexDataBuffer);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexDataBuffer);
-	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(vertexData), vertexData, 0);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vertexDataBuffer);
-
-	
 	glGenBuffers(1, &vertexUVBuffer);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexUVBuffer);
-	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(vertexUV), vertexUV, 0);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, vertexUVBuffer);
 
-
-	
+	recreateBlockGeometryData(modelsManager);
 
 	
 	glGenBuffers(1, &lightBuffer);
@@ -1658,6 +1647,45 @@ void Renderer::create()
 
 #pragma endregion
 
+
+
+}
+
+void Renderer::recreateBlockGeometryData(ModelsManager &modelsManager)
+{
+
+	static std::vector<float> newVertexData;
+	newVertexData.clear();
+	newVertexData.resize(sizeof(vertexData)/sizeof(vertexData[0])
+	 + modelsManager.chairModel.vertices.size());
+
+	static std::vector<float> newUVData;
+	newUVData.clear();
+	newUVData.resize(sizeof(vertexUV) / sizeof(vertexUV[0]) + 
+		modelsManager.chairModel.uvs.size());
+
+
+	memcpy(newVertexData.data(), vertexData, sizeof(vertexData));
+	chairStartIndex = sizeof(vertexData) / (sizeof(float)*(3*4));
+	chairComponentCount = modelsManager.chairModel.vertices.size() / (3*4);
+	memcpy(newVertexData.data() + sizeof(vertexData)/4, modelsManager.chairModel.vertices.data(),
+		modelsManager.chairModel.vertices.size() * sizeof(float));
+
+
+	memcpy(newUVData.data(), vertexUV, sizeof(vertexUV));
+	memcpy(newUVData.data() + sizeof(vertexUV)/4, modelsManager.chairModel.uvs.data(),
+		modelsManager.chairModel.uvs.size() * sizeof(float));
+
+
+	//todo optimize with buffer storage!!!! (don't forget to recreate the buffer!!)
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexDataBuffer);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, newVertexData.size() * sizeof(float), newVertexData.data(), GL_STATIC_DRAW);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vertexDataBuffer);
+
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexUVBuffer);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, newUVData.size() * sizeof(float), newUVData.data(), GL_STATIC_DRAW);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, vertexUVBuffer);
 
 
 }
@@ -5222,6 +5250,7 @@ void Renderer::FBO::create(GLint addColor, bool addDepth,
 
 
 }
+
 
 void Renderer::FBO::updateSize(int x, int y)
 {

@@ -153,6 +153,7 @@ enum BlockTypes : unsigned short
 	blueBricks_slabs,
 	blueBricks_wall,
 
+	oakChair,
 
 	BlocksCount
 };
@@ -182,6 +183,8 @@ bool isGrassMesh(BlockType type);
 bool isColidable(BlockType type);
 
 bool isWoodPlank(BlockType type);
+
+bool isChairMesh(BlockType type);
 
 //used for breaking
 bool isAnyWoddenBlock(BlockType type);
@@ -317,6 +320,14 @@ struct Block
 	BlockCollider getCollider()
 	{
 
+		if (isChairMesh())
+		{
+			BlockCollider b{};
+			b.size.y = 0.5;
+			b.size.x = 0.8;
+			b.size.z = 0.8;
+			return b;
+		}else
 		if (isStairsMesh())
 		{
 			BlockCollider b{};
@@ -436,6 +447,11 @@ struct Block
 	bool isStairsMesh()
 	{
 		return ::isStairsMesh(getType());
+	}
+
+	bool isChairMesh()
+	{
+		return ::isChairMesh(getType());
 	}
 
 	bool isWallMesh()

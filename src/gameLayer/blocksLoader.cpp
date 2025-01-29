@@ -436,6 +436,8 @@ uint16_t blocksLookupTable[] = {
 	98, 98, 98, 98, 98, 98,
 
 
+	//oak chair
+	7,7,7,7,7,7,
 
 
 };

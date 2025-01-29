@@ -1385,7 +1385,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	{
 		gameData.gameplayFrameProfiler.startSubProfile("chunkSystem");
 		gameData.chunkSystem.update(blockPositionPlayer, deltaTime, gameData.undoQueue,
-			gameData.lightSystem, gameData.interaction, threadPoolForChunkBaking);
+			gameData.lightSystem, gameData.interaction, threadPoolForChunkBaking, programData.renderer);
 		gameData.gameplayFrameProfiler.endSubProfile("chunkSystem");
 	}
 

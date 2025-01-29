@@ -336,10 +336,12 @@ bool initGame() //main server and title screen stuff
 	programData.gyzmosRenderer.create();
 	programData.pointDebugRenderer.create();
 	programData.skyBoxLoaderAndDrawer.createGpuData();
-	programData.renderer.create();
 	programData.sunRenderer.create();
 
 	loadAllDefaultTexturePacks();
+	programData.renderer.create(programData.modelsManager);
+
+
 
 	AudioEngine::loadAllMusic();
 	AudioEngine::playTitleMusic();
