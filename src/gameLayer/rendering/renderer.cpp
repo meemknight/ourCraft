@@ -1960,11 +1960,8 @@ void Renderer::reloadShaders()
 		RESOURCES_PATH "shaders/postProcess/applyHBAO.frag");
 	GET_UNIFORM2(applyHBAOShader, u_hbao);
 	GET_UNIFORM2(applyHBAOShader, u_currentViewSpace);
+	GET_UNIFORM2(applyHBAOShader, u_viewDistance);
 
-	applyHBAOShader.u_shadingSettings
-		= glGetUniformBlockIndex(applyHBAOShader.shader.id, "ShadingSettings");
-	glBindBufferBase(GL_UNIFORM_BUFFER,
-		applyHBAOShader.u_shadingSettings, defaultShader.shadingSettingsBuffer);
 
 
 	warpShader.shader.clear();
@@ -2020,6 +2017,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	defaultShader.shadingSettings.exposure = adaptiveExposure.currentExposure
 		+ shadingSettings.exposure;
+
 
 	//glPolygonMode(GL_FRONT, GL_POINT);
 	//glPolygonMode(GL_BACK, GL_FILL);
@@ -2114,7 +2112,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		}
 
 	}
-
 
 	fboSunForGodRays.updateSize(screenX / 2, screenY / 2);
 	fboSunForGodRaysSecond.updateSize(screenX / 2, screenY / 2);
@@ -2343,6 +2340,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		defaultShader.shadingSettings.fogDistance =
 			(chunkSystem.squareSize / 2.f) * CHUNK_SIZE - CHUNK_SIZE;
 
+		defaultShader.shadingSettings.fogCloseGradient = getShadingSettings().fogGradient;
 
 		glNamedBufferData(defaultShader.shadingSettingsBuffer,
 			sizeof(defaultShader.shadingSettings), &defaultShader.shadingSettings,
@@ -2872,8 +2870,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	#pragma endregion
 
 
-
-
 		//disable bloom for transparent geometry
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
@@ -3130,9 +3126,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 #pragma endregion
 
 	bool lastBloomChannel = 0;
-	if (bloom)
+	if (bloom && getShadingSettings().bloomMultiplier > 0)
 	{
-
 
 		programData.GPUProfiler.startSubProfile("Bloom");
 
@@ -3154,16 +3149,23 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		glUniform1f(filterBloomDataShader.u_exposure, defaultShader.shadingSettings.exposure);
 
+		float finalTresshold = getShadingSettings().bloomTresshold / 100.f;
+		finalTresshold *= linearRemap(pow(adaptiveExposure.getLuminosityOrDefaultValueIfDisabeled(), 2.2), 0, 1, 0.8, 2);
+
+		float finalMultiplier = getShadingSettings().bloomMultiplier * (2.f/5.f);
+		finalMultiplier *= linearRemap(pow(adaptiveExposure.getLuminosityOrDefaultValueIfDisabeled(), 2.0), 0, 1, 1.2, 0.4);
+
+
 		if (underWater)
 		{
-			glUniform1f(filterBloomDataShader.u_tresshold, bloomTresshold / 2);
+			glUniform1f(filterBloomDataShader.u_tresshold, finalTresshold / 2);
 		}
 		else
 		{
-			glUniform1f(filterBloomDataShader.u_tresshold, bloomTresshold);
+			glUniform1f(filterBloomDataShader.u_tresshold, finalTresshold);
 		}
 
-		glUniform1f(filterBloomDataShader.u_multiplier, bloomMultiplier);
+		glUniform1f(filterBloomDataShader.u_multiplier, finalMultiplier /10000.f);
 
 		glViewport(0, 0, screenX, screenY);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -3357,6 +3359,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, fboHBAO.color);
 		glUniform1i(applyHBAOShader.u_hbao, 0);
+		glUniform1f(applyHBAOShader.u_viewDistance, (chunkSystem.squareSize/2.f) * 16.f);
+		
 
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, fboMain.secondaryColor);
@@ -5471,7 +5475,7 @@ void AdaptiveExposure::update(float deltaTime, float newLuminosity)
 		}
 	};
 
-	moveTowards(currentLuminosity, newLuminosity, 0.4);
+	moveTowards(currentLuminosity, newLuminosity, 0.3);
 
 	float newValue = linearRemap(currentLuminosity, 0, 1, maxExposure, minExposure);
 	moveTowards(currentExposure, newValue, 0.1);
@@ -5495,4 +5499,9 @@ void AdaptiveExposure::update(float deltaTime, float newLuminosity)
 
 
 
+}
+
+float AdaptiveExposure::getLuminosityOrDefaultValueIfDisabeled()
+{
+	return currentLuminosity;
 }

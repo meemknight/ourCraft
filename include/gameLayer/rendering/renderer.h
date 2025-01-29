@@ -43,9 +43,11 @@ struct AdaptiveExposure
 	float moveSpeed = 0;
 
 	float bonusAmbient = 0;
-	float currentLuminosity = 0.5;
+	float currentLuminosity = 0.5; //0 - 1
 
 	void update(float deltaTime, float newLuminosity);
+
+	float getLuminosityOrDefaultValueIfDisabeled();
 };
 
 struct Renderer
@@ -241,7 +243,7 @@ struct Renderer
 		Shader shader;
 		uniform u_hbao;
 		uniform u_currentViewSpace;
-		GLuint u_shadingSettings = 0;
+		uniform u_viewDistance;
 
 	}applyHBAOShader;
 
@@ -395,10 +397,7 @@ struct Renderer
 	bool frustumCulling = 1;
 	bool ssao = 1;
 	bool bloom = 1;
-
-	float bloomTresshold = 0.01; // 1.7
-	float bloomMultiplier = 0.00003;
-
+	
 	FBO fboHBAO;
 	FBO fboMain;
 	FBO fboSunForGodRays;

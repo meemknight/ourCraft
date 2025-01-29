@@ -73,6 +73,8 @@ void main()
 
 	outColor.a = 1;
 
+
+
 	if(lightIntensity * u_exposure > u_tresshold)
 	{
 		//vec3 normalizedColor = readColor.rgb / u_tresshold;
@@ -80,8 +82,8 @@ void main()
 		float decrease = 1.f / (u_tresshold);
 		//decrease = 1;
 
-		//outColor.rgb = reinhard(readColor) * u_multiplier;
-		outColor.rgb = (readColor) * u_multiplier * decrease;
+		outColor.rgb = reinhard(readColor) * u_multiplier * decrease * 1.2;
+		//outColor.rgb = (readColor) * u_multiplier * decrease;
 
 	}else
 	{

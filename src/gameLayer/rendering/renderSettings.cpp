@@ -16,6 +16,8 @@ void displayRenderSettingsMenuButton(ProgramData &programData)
 	programData.ui.menuRenderer.EndMenu();
 }
 
+#define DEFAULT_SLIDER Colors_White, programData.ui.buttonTexture, Colors_Gray, programData.ui.buttonTexture, Colors_White
+
 void displayRenderSettingsMenu(ProgramData &programData)
 {
 
@@ -83,6 +85,17 @@ good performance.\n-Fancy: significant performance cost but looks very nice.");
 }
 #pragma endregion
 
+#pragma region bloom
+	programData.ui.menuRenderer.BeginMenu("Bloom", Colors_Gray, programData.ui.buttonTexture);
+	programData.ui.menuRenderer.Text("Bloom settings...", Colors_White);
+
+	programData.ui.menuRenderer.sliderFloat("Bloom Multiplier", &getShadingSettings().bloomMultiplier, 0, 1, DEFAULT_SLIDER);
+	programData.ui.menuRenderer.sliderFloat("Bloom Tresshold", &getShadingSettings().bloomTresshold, 0.1, 1, DEFAULT_SLIDER);
+
+	programData.ui.menuRenderer.EndMenu();
+#pragma endregion
+
+
 	static glm::vec4 colorsTonemapper[] = {{0.6,0.9,0.6,1}, {0.6,0.9,0.6,1}, {0.7,0.8,0.6,1} , {0.4,0.8,0.4,1}};
 	programData.ui.menuRenderer.toggleOptions("Tonemapper: ",
 		"ACES|AgX|ZCAM|Uncharted", &getShadingSettings().tonemapper,
@@ -107,8 +120,8 @@ good performance.\n-Fancy: significant performance cost but looks very nice.");
 	//programData.menuRenderer.BeginMenu("Volumetric", Colors_Gray, programData.buttonTexture);
 	//programData.menuRenderer.Text("Volumetric Settings...", Colors_White);
 	programData.ui.menuRenderer.sliderFloat("Fog gradient (O to disable it)",
-		&programData.renderer.defaultShader.shadingSettings.fogCloseGradient,
-		0, 64, Colors_White, programData.ui.buttonTexture, Colors_Gray,
+		&getShadingSettings().fogGradient,
+		0, 100, Colors_White, programData.ui.buttonTexture, Colors_Gray,
 		programData.ui.buttonTexture, Colors_White);
 	//programData.menuRenderer.EndMenu();
 
@@ -613,7 +626,10 @@ void saveShadingSettings()
 	SET_FLOAT(underwaterDarkenStrength);
 	SET_FLOAT(underwaterDarkenDistance);
 	SET_FLOAT(fogGradientUnderWater);
+	SET_FLOAT(bloomTresshold);
+	SET_FLOAT(bloomMultiplier);
 	SET_FLOAT(exposure);
+	SET_FLOAT(fogGradient);
 
 	sfs::safeSave(data, RESOURCES_PATH "../playerSettings/renderSettings", 0);
 
@@ -658,6 +674,11 @@ void loadShadingSettings()
 		GET_FLOAT(underwaterDarkenDistance);
 		GET_FLOAT(fogGradientUnderWater);
 		GET_FLOAT(exposure);
+
+		GET_FLOAT(bloomTresshold);
+		GET_FLOAT(bloomMultiplier);
+		GET_FLOAT(fogGradient);
+
 	}
 
 	shadingSettings.normalize();
@@ -1182,7 +1203,6 @@ void displayWorldSelectorMenu(ProgramData &programData)
 void ShadingSettings::normalize()
 {
 
-
 	viewDistance = glm::clamp(viewDistance, 1, 50);
 	tonemapper = glm::clamp(tonemapper, 0, 3);
 	shadows = glm::clamp(shadows, 0, 2);
@@ -1197,7 +1217,10 @@ void ShadingSettings::normalize()
 	workerThreadsForBaking = glm::clamp(workerThreadsForBaking, 0, 10);
 	lodStrength = glm::clamp(lodStrength, 0, 5);
 
-	exposure = glm::clamp(exposure, -2.f, 2.f);
+	bloomTresshold = glm::clamp(bloomTresshold, 0.1f, 1.f);
+	bloomMultiplier = glm::clamp(bloomMultiplier, 0.0f, 1.f);
 
+	exposure = glm::clamp(exposure, -2.f, 2.f);
+	fogGradient = glm::clamp(fogGradient, 0.f, 100.f);
 
 }

@@ -52,7 +52,11 @@ struct ShadingSettings
 	float underwaterDarkenDistance = 29;
 	float fogGradientUnderWater = 1.9;
 	
+	float bloomTresshold = 0.5;
+	float bloomMultiplier = 0.5;
+
 	float exposure = 0;
+	float fogGradient = 16.f;
 
 	void normalize();
 
@@ -70,7 +74,10 @@ struct ShadingSettings
 			exposure == other.exposure &&
 			lodStrength == other.lodStrength &&
 			workerThreadsForBaking == other.workerThreadsForBaking &&
+			bloomTresshold == other.bloomTresshold &&
+			bloomMultiplier == other.bloomMultiplier &&
 			waterType == other.waterType;
+		
 	}
 
 	// Inequality operator
