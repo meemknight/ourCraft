@@ -2043,6 +2043,21 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 					}
 		}
 
+		auto bakeForBlockGeometry = [&](int x, int y, int z, Renderer::BlockGeometryIndex &geometry, Block &b)
+		{
+			auto type = b.getType();
+			glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y, z + this->data.z * CHUNK_SIZE};
+			for (int i = 0; i < geometry.componentCount; i++)
+			{
+				opaqueGeometry.push_back(mergeShorts(i + geometry.startIndex,
+					getGpuIdIndexForBlockWithVariation(type, 0, x, y, z)));
+
+				pushFlagsLightAndPosition(opaqueGeometry, position, 0, false,
+					b.getSkyLight(), b.getLight(), 0);
+			}
+
+		};
+
 		if (currentLod == 1)
 		{
 
@@ -2069,18 +2084,13 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 						if (!b.air())
 						{
 							auto type = b.getType();
+							if (type == mug)
+							{
+								bakeForBlockGeometry(x, y, z, renderer.mugGeometry, b);
+							}else
 							if (b.isChairMesh())
 							{
-								glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y, z + this->data.z * CHUNK_SIZE};
-								for (int i = 0; i < renderer.chairComponentCount; i++)
-								{
-									opaqueGeometry.push_back(mergeShorts(i + renderer.chairStartIndex,
-										getGpuIdIndexForBlockWithVariation(type, 0, x, y, z)));
-
-									pushFlagsLightAndPosition(opaqueGeometry, position, 0, false,
-										15, 15, 0);
-
-								}
+								bakeForBlockGeometry(x, y, z, renderer.chairGeometry, b);
 
 							}else
 							if (b.isWallMesh())

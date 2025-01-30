@@ -75,6 +75,7 @@ struct ModelsManager
 	Model goblin;
 
 	BlockModel chairModel;
+	BlockModel mugModel;
 
 	enum TexturesLoaded
 	{

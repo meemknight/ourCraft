@@ -402,6 +402,7 @@ void recieveDataClient(ENetEvent &event,
 
 		case headerPlaceBlocks:
 		{
+			//std::cout << "headerPlaceBlocks ! ";
 			for (int i = 0; i < size / sizeof(Packet_PlaceBlocks); i++)
 			{
 

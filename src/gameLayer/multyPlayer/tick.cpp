@@ -1691,6 +1691,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 	unsigned int randomTickSpeed = getRandomTickSpeed();
 
+	//todo server spamming the client problem
 	for (auto &c : chunkCache.savedChunks)
 	{
 		if (!c.second->otherData.withinSimulationDistance) { continue; }

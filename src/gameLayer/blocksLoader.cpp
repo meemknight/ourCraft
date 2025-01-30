@@ -110,6 +110,7 @@ const char *texturesNames[] = {
 	"blueBricks",			//98
 	"bricksVariation",		//99
 	"blueBricksVariation",	//100
+	"mug"					//101
 
 };
 
@@ -438,7 +439,11 @@ uint16_t blocksLookupTable[] = {
 
 	//oak chair
 	7,7,7,7,7,7,
+	//oak log chair
+	5, 5, 5, 5, 5, 5,
 
+	//mug
+	101, 101, 101, 101, 101, 101,
 
 };
 

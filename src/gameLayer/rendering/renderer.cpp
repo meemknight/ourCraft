@@ -1657,24 +1657,37 @@ void Renderer::recreateBlockGeometryData(ModelsManager &modelsManager)
 	static std::vector<float> newVertexData;
 	newVertexData.clear();
 	newVertexData.resize(sizeof(vertexData)/sizeof(vertexData[0])
-	 + modelsManager.chairModel.vertices.size());
+	 + modelsManager.chairModel.vertices.size() + modelsManager.mugModel.vertices.size());
 
 	static std::vector<float> newUVData;
 	newUVData.clear();
 	newUVData.resize(sizeof(vertexUV) / sizeof(vertexUV[0]) + 
-		modelsManager.chairModel.uvs.size());
+		modelsManager.chairModel.uvs.size() + modelsManager.mugModel.uvs.size());
 
 
 	memcpy(newVertexData.data(), vertexData, sizeof(vertexData));
-	chairStartIndex = sizeof(vertexData) / (sizeof(float)*(3*4));
-	chairComponentCount = modelsManager.chairModel.vertices.size() / (3*4);
-	memcpy(newVertexData.data() + sizeof(vertexData)/4, modelsManager.chairModel.vertices.data(),
-		modelsManager.chairModel.vertices.size() * sizeof(float));
-
-
 	memcpy(newUVData.data(), vertexUV, sizeof(vertexUV));
-	memcpy(newUVData.data() + sizeof(vertexUV)/4, modelsManager.chairModel.uvs.data(),
-		modelsManager.chairModel.uvs.size() * sizeof(float));
+
+	int currentVertexIndex = sizeof(vertexData) / 4;
+	int currentUvIndex = sizeof(vertexUV) / 4;
+
+	auto addGeometry = [&](BlockGeometryIndex &b, BlockModel &model)
+	{
+		b.startIndex = currentVertexIndex / (sizeof(float) * 3);
+		b.componentCount = model.vertices.size() / (3 * 4);
+		memcpy(newVertexData.data() + currentVertexIndex, model.vertices.data(),
+			model.vertices.size() * sizeof(float));
+		currentVertexIndex += model.vertices.size();
+
+		memcpy(newUVData.data() + currentUvIndex, model.uvs.data(),
+			model.uvs.size() * sizeof(float));
+		currentUvIndex += model.uvs.size();
+	};
+
+
+	addGeometry(chairGeometry, modelsManager.chairModel);
+	addGeometry(mugGeometry, modelsManager.mugModel);
+
 
 
 	//todo optimize with buffer storage!!!! (don't forget to recreate the buffer!!)
@@ -3029,9 +3042,11 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fboOnlyFirstTarget);
 
 		glDisable(GL_DEPTH_TEST);
-		glEnable(GL_BLEND);
-		glBlendEquation(GL_FUNC_ADD);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		
+		glDisable(GL_BLEND);
+		//glEnable(GL_BLEND);
+		//glBlendEquation(GL_FUNC_ADD);
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		ssrShader.shader.bind();
 		glBindVertexArray(vaoQuad);

@@ -571,6 +571,8 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 	if (!chairModel.vertices.size())
 		loadBlockModel((path + "chair.glb").c_str(), chairModel);
 
+	if (!mugModel.vertices.size())
+		loadBlockModel((path + "aleMug.glb").c_str(), mugModel);
 
 
 	//todo check if it frees all of them

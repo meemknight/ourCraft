@@ -154,12 +154,15 @@ enum BlockTypes : unsigned short
 	blueBricks_wall,
 
 	oakChair,
+	oakLogChair,
+	mug,
 
 	BlocksCount
 };
 
 using BlockType = uint16_t;
 
+//todo look into this
 bool isBlockMesh(BlockType type);
 
 bool isStairsMesh(BlockType type);
@@ -518,6 +521,7 @@ struct Block
 	{
 		return isColidable() && !isAnyLeaves(getType())
 			&& !isWallMesh() && !(isSlabMesh() && getTopPartForSlabs())
+			&& !isChairMesh() && (getType() != mug)
 			;
 	}
 

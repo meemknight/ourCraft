@@ -628,9 +628,9 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 		);
 
 	//we only keep a few chunks as tasks
-	if (chunkVectorCopyNoNullsOnlyToBake.size() > 10 + threadPool.currentCounter)
+	if (chunkVectorCopyNoNullsOnlyToBake.size() > 100 + threadPool.currentCounter)
 	{
-		chunkVectorCopyNoNullsOnlyToBake.resize(10 + threadPool.currentCounter);
+		chunkVectorCopyNoNullsOnlyToBake.resize(100 + threadPool.currentCounter);
 	}
 	
 	threadPool.taskTaken.resize(chunkVectorCopyNoNullsOnlyToBake.size());

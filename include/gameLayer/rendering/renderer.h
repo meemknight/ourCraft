@@ -58,8 +58,15 @@ struct Renderer
 	QueryObject sunFlareQueries[3] = {};
 	float averageLuminosity = 0.5;
 
-	int chairStartIndex = 0;
-	int chairComponentCount = 0;
+	struct BlockGeometryIndex
+	{
+		int startIndex = 0;
+		int componentCount = 0;
+	};
+
+	BlockGeometryIndex chairGeometry;
+	BlockGeometryIndex mugGeometry;
+
 	void recreateBlockGeometryData(ModelsManager &modelsManager);
 
 

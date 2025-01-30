@@ -93,6 +93,7 @@ bool isOpaque(BlockType type)
 		type != BlockTypes::air
 		&& type != BlockTypes::torch
 		&& !(isChairMesh(type))
+		&& !(type == mug)
 		//&& type != BlockTypes::glowstone
 		&& !(isStairsMesh(type))
 		&& !(isSlabMesh(type))
@@ -132,6 +133,7 @@ bool isColidable(BlockType type)
 		type != BlockTypes::cactus_bud &&
 		type != BlockTypes::dead_bush &&
 		type != BlockTypes::torch &&
+		type != BlockTypes::mug &&
 		type != BlockTypes::water;
 }
 
@@ -144,7 +146,7 @@ bool isWoodPlank(BlockType type)
 
 bool isChairMesh(BlockType type)
 {
-	return type == oakChair;
+	return type == oakChair || type == oakLogChair;
 }
 
 //used for breaking related things
@@ -162,6 +164,7 @@ bool isAnyWoddenBlock(BlockType type)
 		type == wooden_slab ||
 		type == spruce_log ||
 		type == oakChair ||
+		type == oakLogChair ||
 		type == logWall;
 		
 }
@@ -472,6 +475,12 @@ float getBlockBaseMineDuration(BlockType type)
 		return 1;
 	}
 
+	//todo for furniture maybe?
+	if (type == mug)
+	{
+		return 0.2;
+	}
+
 	std::cout << "Block without base mine duration assigned!: " << type << "\n";
 	permaAssertComment(0, ("Block without base mine duration assigned!: " + std::to_string(type)).c_str());
 
@@ -559,7 +568,7 @@ BlockType fromAnyShapeToNormalBlockType(BlockType b)
 	switch (b)
 	{
 
-
+	case oakLogChair:
 	case logWall: {return woodLog; }
 
 	case oakChair:
