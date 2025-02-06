@@ -164,9 +164,10 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 	std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
 	bool generateGhostAndStructures,
 	std::vector<StructureToGenerate> *newStructuresToAdd, 
-	WorldSaver &worldSaver, bool *wasGenerated)
+	WorldSaver &worldSaver, bool *wasGenerated, bool *wasLoaded)
 {
 	if (wasGenerated) { *wasGenerated = false; }
+	if (wasLoaded) { *wasLoaded = false; }
 
 	glm::ivec2 pos = {posX, posZ};
 	auto foundPos = savedChunks.find(pos);
@@ -199,6 +200,8 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 		}
 		else
 		{
+			if (wasLoaded) { *wasLoaded = true; }
+
 			//we loaded a chunk so no need to dirty here.
 			rez->otherData.dirty = false;
 			rez->otherData.dirtyBlockData = false;

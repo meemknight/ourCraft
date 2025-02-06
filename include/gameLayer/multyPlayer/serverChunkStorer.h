@@ -144,7 +144,7 @@ struct ServerChunkStorer
 		StructuresManager &structureManager, BiomesManager &biomesManager,
 		std::vector<SendBlocksBack> &sendNewBlocksToPlayers, bool generateGhostAndStructures,
 		std::vector<StructureToGenerate> *newStructuresToAdd, WorldSaver &worldSaver,
-		bool *wasGenerated = 0);
+		bool *wasGenerated = 0, bool *wasLoaded = 0);
 
 
 	bool generateStructure(StructureToGenerate s, StructureData *structure, int rotation,
