@@ -45,3 +45,4 @@ void generateChunk(Chunk &c, WorldGenerator &wg, StructuresManager &structuresMa
 void generateChunk(ChunkData &c, WorldGenerator &wg, StructuresManager &structuresManager, BiomesManager &biomesManager
 	,std::vector<StructureToGenerate> &generateStructures);
 
+

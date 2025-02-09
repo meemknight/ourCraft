@@ -3,6 +3,7 @@
 #include "glm/vec2.hpp"
 #include <glui/glui.h>
 #include <gameplay/effects.h>
+#include <optional>
 
 struct PlayerInventory;
 struct BlocksLoader;

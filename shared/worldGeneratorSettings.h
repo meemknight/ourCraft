@@ -61,15 +61,20 @@ struct WorldGeneratorSettings
 	bool loadSettings(const char *data);
 };
 
+namespace gl2d
+{
+	struct Texture;
+};
+
 struct WorldGenerator
 {
 
 
-	FastNoiseSIMD *regionsHeightNoise;
-	FastNoiseSIMD *regionsHeightTranzition;
-	FastNoiseSIMD *regionsRandomNumber;
-	FastNoiseSIMD *regionsX;
-	FastNoiseSIMD *regionsZ;
+	FastNoiseSIMD *regionsHeightNoise = 0;
+	FastNoiseSIMD *regionsHeightTranzition = 0;
+	FastNoiseSIMD *regionsRandomNumber = 0;
+	FastNoiseSIMD *regionsX = 0;
+	FastNoiseSIMD *regionsZ = 0;
 	Spline regionsHeightSplines;
 
 
@@ -186,5 +191,9 @@ struct WorldGenerator
 		float borderingFactor[16 * 16], float &vegetationMaster, float tightBorders[16 * 16],
 		float &xValuue, float &zValue, float &biomeTypeRandomValue
 		);
+
+	//this isn't game accurate!
+	void generateChunkPreview(gl2d::Texture &t, glm::ivec2 size, glm::ivec2 pos);
+
 
 };

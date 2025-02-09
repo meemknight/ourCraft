@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////
-//gl2d.h				1.0.2
+//gl2d.h				1.0.3 CHANGED
 //Copyright(c) 2023 Luta Vlad
 //https://github.com/meemknight/glui
 //
@@ -19,6 +19,7 @@
 #include "gl2d/gl2d.h"
 #include <string>
 #include <unordered_map>
+#include <optional>
 
 namespace glui
 {
@@ -129,6 +130,9 @@ namespace glui
 		void End();
 
 		void SetAlignModeFixedSizeWidgets(glm::ivec2 size);
+
+		//will automatically reset at the end of the frame!
+		std::optional<glm::vec4> temporalViewPort;
 
 		struct Internal
 		{
@@ -286,6 +290,12 @@ namespace glui
 	bool renderSliderFloat(gl2d::Renderer2D &renderer, glm::vec4 transform, float *value, float min, float max, bool &sliderBeingDragged, gl2d::Texture barT, gl2d::Color4f barC, gl2d::Texture ballT, gl2d::Color4f ballC, RendererUi::Internal::InputData &input);
 
 	bool renderSliderInt(gl2d::Renderer2D &renderer, glm::vec4 transform, int *value, int min, int max, bool &sliderBeingDragged, gl2d::Texture barT, gl2d::Color4f barC, gl2d::Texture ballT, gl2d::Color4f ballC, RendererUi::Internal::InputData &input);
+
+	bool toggleOptions(gl2d::Renderer2D &renderer, glm::vec4 transform, const std::string &text, glm::vec4 textColor,
+		const std::string &optionsSeparatedByBars, int *currentIndex, bool showText,
+		gl2d::Font &font, gl2d::Texture &texture, gl2d::Color4f textureColor,
+		glm::ivec2 mousePos, bool mouseHeld, bool mouseReleased, gl2d::Color4f *optionsColors = nullptr,
+		std::string toolTip = "");
 
 	bool drawButton(gl2d::Renderer2D &renderer, glm::vec4 transform, glm::vec4 color,
 		const std::string &s,

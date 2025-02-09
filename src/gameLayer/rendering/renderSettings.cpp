@@ -6,6 +6,7 @@
 #include "multyPlayer/createConnection.h"
 #include <audioEngine.h>
 #include <safeSave.h>
+#include <sstream>
 
 void displayRenderSettingsMenuButton(ProgramData &programData)
 {
@@ -1080,8 +1081,17 @@ void displayWorldSelectorMenu(ProgramData &programData)
 
 	static char seed[12] = {};
 	static char name[20] = {};
+	static int currentIndex = 0;
+	static WorldGeneratorSettings settings;
+	static gl2d::Texture worldPreviewTexture;
+	static WorldGenerator wg;
+	if (wg.regionsHeightNoise == 0)
+	{
+		wg.init();
+	}
 
 	programData.ui.menuRenderer.BeginManualMenu("Create world");
+
 	
 	if (programData.ui.menuRenderer.internal.allMenuStacks
 		[programData.ui.menuRenderer.internal.currentId].size()
@@ -1089,9 +1099,13 @@ void displayWorldSelectorMenu(ProgramData &programData)
 		[programData.ui.menuRenderer.internal.currentId].back() == "Create world"
 		)
 	{
-	
+
+		programData.ui.menuRenderer.temporalViewPort
+			= glm::vec4(0, 0, programData.ui.renderer2d.windowW / 2.6f, programData.ui.renderer2d.windowH);
+
 		programData.ui.menuRenderer.Text("Create a new world!", Colors_White);
-	
+		
+
 		//background
 		{
 			float rezolution = 256;
@@ -1111,6 +1125,8 @@ void displayWorldSelectorMenu(ProgramData &programData)
 		programData.ui.menuRenderer.InputText("Seed: ", seed, sizeof(seed),
 			Colors_Gray, programData.ui.buttonTexture);
 		
+		//programData.ui.menuRenderer.Toggle("Super Flat", Colors_Gray, &superFlatWorld, programData.ui.buttonTexture, programData.ui.buttonTexture);
+
 		std::string finalName = RESOURCES_PATH "worlds/";
 		finalName += name;
 
@@ -1145,12 +1161,29 @@ void displayWorldSelectorMenu(ProgramData &programData)
 			if (create || createAndPlay)
 			{
 				std::error_code err;
+				bool err2 = 0;
 				std::filesystem::create_directory(finalName, err);
 
-				if (!err)
+
 				{
+					std::ifstream f(RESOURCES_PATH "gameData/worldGenerator/default.wgenerator");
+					if (f.is_open())
 					{
-						std::ofstream f(finalName + "/seed.txt");
+						std::stringstream buffer;
+						buffer << f.rdbuf();
+						if (!settings.loadSettings(buffer.str().c_str()))
+						{
+							err2 = true;
+						}
+					}
+
+				}
+
+				if (!err && !err2)
+				{
+					int finalSeed = 0;
+					{
+						//std::ofstream f(finalName + "/seed.txt");
 
 						long long computedSeed = 0;
 						long long pow = 1;
@@ -1168,13 +1201,22 @@ void displayWorldSelectorMenu(ProgramData &programData)
 							computedSeed = time(0);
 						}
 
-						int finalSeed = computedSeed;
+						finalSeed = computedSeed;
 						if (finalSeed < 0) { finalSeed = -finalSeed; }
 						if (finalSeed == 0) { finalSeed = 1; }
 
-						f << (int)finalSeed;
-						f.close();
+						//f << (int)finalSeed;
+						//f.close();
 					};
+
+					{
+						std::ofstream f(finalName + "/worldGenSettings.wgenerator");
+						settings.seed = finalSeed;
+
+						settings.sanitize();
+						f << settings.saveSettings();
+
+					}
 
 					if (createAndPlay)
 					{
@@ -1187,12 +1229,64 @@ void displayWorldSelectorMenu(ProgramData &programData)
 
 		}
 		
-	
+		
+		//programData.ui.menuRenderer.newColum(11);
+		//programData.ui.menuRenderer.newColum(12);
+
+		{
+			auto &renderer = programData.ui.renderer2d;
+			glui::Frame f({0,0, renderer.windowW, renderer.windowH});
+
+			{
+				glui::Frame f(glui::Box().xLeftPerc(0.35).yTopPerc(0.1).yDimensionPercentage(0.8).xDimensionPercentage(0.6)());
+
+				{
+					auto fullBox = glui::Box().xLeft().yTop().xDimensionPercentage(1.f).yDimensionPercentage(1.f)();
+					
+
+					auto buttonBox = glui::Box().xLeft().yBottom().xDimensionPercentage(1.f).yDimensionPixels(150.f)();
+					glui::toggleOptions(renderer, buttonBox, "World type: ", Colors_White,
+						"Normal|Super Flat", &currentIndex, true, programData.ui.font,
+						programData.ui.buttonTexture, Colors_Gray, platform::getRelMousePosition(),
+						platform::isLMouseHeld(), platform::isLMouseReleased());
+
+					auto mapBox = glui::Box().xLeft().yTop().xDimensionPercentage(1.f).yDimensionPercentage(1.f)();
+					mapBox.w -= buttonBox.w;
+
+					if (mapBox.w > 0)
+					{
+						renderer.render9Patch(mapBox, 20,
+							Colors_Gray, {}, 0.f, programData.ui.buttonTexture, 
+							GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
+
+						auto textureBox = mapBox;
+						textureBox = shrinkPercentage(textureBox, {0.2f, 0.2f});
+
+						worldPreviewTexture.cleanup();
+						wg.applySettings(settings);
+							
+						wg.generateChunkPreview(worldPreviewTexture, {textureBox.z,textureBox.w}, {});
+
+						renderer.renderRectangle(textureBox, worldPreviewTexture);
+
+					}
+
+				}
+
+
+			}
+
+
+		}
+
+
 	}
 	else
 	{
 		memset(seed, 0, sizeof(seed));
 		memset(name, 0, sizeof(name));
+		currentIndex = 0;
+		settings = {};
 	}
 	
 	programData.ui.menuRenderer.EndMenu();

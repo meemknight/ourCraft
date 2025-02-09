@@ -694,6 +694,180 @@ namespace glui
 	}
 
 
+	bool toggleOptions(gl2d::Renderer2D &renderer, glm::vec4 transform, const std::string &text, glm::vec4 textColor,
+		const std::string &optionsSeparatedByBars, int *currentIndex, bool showText,
+		gl2d::Font &font, gl2d::Texture &texture, gl2d::Color4f textureColor, 
+		glm::ivec2 mousePos, bool mouseHeld, bool mouseReleased,  
+		gl2d::Color4f *optionsColors, std::string toolTip)
+	{
+
+		auto transformDrawn = transform;
+		auto aabbTransform = transform;
+		bool hovered = 0;
+		bool clicked = 0;
+		bool retValue = 0;
+
+		int *index = (int *)currentIndex;
+
+		int stub = 0;
+		if (!index) { index = &stub; errorFunc("Error, nullptr passed as an index for toggleOptions!"); }
+
+		if (textColor.a <= 0.01f)
+		{
+			auto p = determineTextPos(renderer, text, font, transformDrawn, true);
+			aabbTransform = p;
+		}
+
+		int maxSize = 1;
+		for (int i = 0; i < optionsSeparatedByBars.size(); i++)
+		{
+			char c = optionsSeparatedByBars[i];
+			if (c == '|')
+			{
+				maxSize++;
+			}
+		}
+
+		if (optionsSeparatedByBars.empty()) { maxSize = 0; }
+
+		if (*index > maxSize - 1)
+		{
+			*index = 0;
+		}
+
+		glm::vec4 newTextColor = textColor;
+
+		if (optionsColors)
+		{
+			newTextColor = ((glm::vec4 *)optionsColors)[*index];
+		}
+
+		if (aabb(aabbTransform, mousePos))
+		{
+			hovered = true;
+			if (mouseHeld)
+			{
+				clicked = true;
+				transformDrawn.y += transformDrawn.w * pressDownSize;
+			}
+		}
+
+		if (hovered && newTextColor.a <= 0.01f)
+		{
+			newTextColor = stepColorDown(newTextColor, 0.8);
+		}
+
+		if (mouseReleased && aabb(aabbTransform, mousePos))
+		{
+			retValue = true;
+			(*index)++;
+		}
+
+		if (*index > maxSize - 1)
+		{
+			*index = 0;
+		}
+
+		renderFancyBox(renderer, transformDrawn,
+			textureColor, texture, hovered, clicked);
+
+		std::string finalText;
+
+		if (showText)
+		{
+			finalText = text;
+		}
+
+		int currentIncrement = 0;
+		for (int i = 0; i < optionsSeparatedByBars.size(); i++)
+		{
+			if (currentIncrement == *index)
+			{
+
+				char c = optionsSeparatedByBars[i];
+				if (c == '|')
+				{
+					break;
+				}
+				finalText += c;
+			}
+
+			char c = optionsSeparatedByBars[i];
+			if (c == '|')
+			{
+				currentIncrement++;
+			}
+		}
+
+		if ((newTextColor.a <= 0.01f || texture.id == 0))
+		{
+			renderText(renderer, finalText, font,
+				transformDrawn, newTextColor, true, !hovered);
+		}
+		else
+		{
+			renderText(renderer, finalText,
+				font, transformDrawn, newTextColor, false, !hovered);
+		}
+
+		if (!toolTip.empty() && hovered)
+		{
+			glm::vec4 transform = transformDrawn;
+			transform.x += transform.z * 0.1;
+			transform.y += transform.w * 1.1f;
+
+			int lines = 1;
+			for (auto &c : toolTip)
+			{
+				if (c == '\n' || c == '\v')
+				{
+					lines++;
+				}
+			}
+
+			transform.w *= lines;
+
+			renderFancyBox(renderer, transform,
+				stepColorDown(textureColor, 0.8)
+				, texture, 0, 0);
+
+			transform.x += transform.z * 0.1f;
+			transform.y += transform.w * 0.1f;
+			transform.z *= 0.9f;
+			transform.w *= 0.9f;
+
+			transform.w /= lines;
+
+			int ind = 0;
+			std::string copy = "";
+			for (int l = 1; l <= lines;)
+			{
+				if (toolTip[ind] == '\n' ||
+					toolTip[ind] == '\v'
+					)
+				{
+					renderText(renderer, copy,
+						font, transform, textColor, 0, true, true);
+					l++;
+					copy = "";
+					transform.y += transform.w;
+				}
+				else
+				{
+					copy += toolTip[ind];
+				}
+
+				ind++;
+
+				if (ind >= toolTip.size())break;
+			}
+
+			renderText(renderer, copy,
+				font, transform, textColor, 0, true, true);
+		}
+
+	}
+
 
 	float timer=0;
 	bool idWasSet = 0;
@@ -934,28 +1108,31 @@ namespace glui
 		auto computePos = [&](int elementsHeight, float &advanceSizeY)
 		{
 
+			glm::vec4 viewFrame(0, 0, renderer.windowW, renderer.windowH);
+			if (temporalViewPort) { viewFrame = *temporalViewPort; }
+
 			float sizeWithPaddY = 0;
 
 			if (internal.alignSettings.widgetSize.y != 0)
 			{
 				sizeWithPaddY = std::min(internal.alignSettings.widgetSize.y,
-					((float)renderer.windowH / elementsHeight));
+					((float)viewFrame.w / elementsHeight));
 			}
 			else
 			{
-				sizeWithPaddY = ((float)renderer.windowH / elementsHeight);
+				sizeWithPaddY = ((float)viewFrame.w / elementsHeight);
 			}
 
 			float sizeY = sizeWithPaddY * inSizeY;
 			float paddSizeY = sizeWithPaddY * (1 - inSizeY) / 2.f;
 
-			float sizeWithPaddX = (float)renderer.windowW;
+			float sizeWithPaddX = (float)viewFrame.z;
 			float sizeX = sizeWithPaddX * inSizeX;
 			float paddSizeX = sizeWithPaddX * (1 - inSizeX) / 2.f;
 
 			glm::vec4 computedPos = {};
-			computedPos.x = paddSizeX + (float)renderer.windowW * (1 - mainInSizeX) * 0.5f;
-			computedPos.y = paddSizeY + (float)renderer.windowH * (1 - mainInSizeY) * 0.5f;
+			computedPos.x = paddSizeX + (float)viewFrame.z * (1 - mainInSizeX) * 0.5f + viewFrame.x;
+			computedPos.y = paddSizeY + (float)viewFrame.w * (1 - mainInSizeY) * 0.5f + viewFrame.y;
 			computedPos.z = sizeX * mainInSizeX;
 			computedPos.w = sizeY * mainInSizeY;
 
@@ -1688,175 +1865,20 @@ namespace glui
 					case widgetType::optionsToggle:
 					{
 
-						auto transformDrawn = colums[currentColum].first;
-						auto aabbTransform = colums[currentColum].first;
-						bool hovered = 0;
-						bool clicked = 0;
-						auto textColor = j.second.colors;
-
-						int *index = (int *)j.second.pointer;
-
-						int stub = 0;
-						if (!index) { index = &stub; errorFunc("Error, nullptr passed as an index for toggleOptions!"); }
-
-						if (widget.colors.a <= 0.01f)
-						{
-							auto p = determineTextPos(renderer, j.first, font, transformDrawn, true);
-							aabbTransform = p;
-						}
-
-						int maxSize = 1;
-						for (int i = 0; i < j.second.text2.size(); i++)
-						{
-							char c = j.second.text2[i];
-							if (c == '|')
-							{
-								maxSize++;
-							}
-						}
-
-						if (j.second.text2.empty()) { maxSize = 0; }
-
-						if (*index > maxSize - 1)
-						{
-							*index = 0;
-						}
-
-						if (j.second.pointer2)
-						{
-							textColor = ((glm::vec4 *)j.second.pointer2)[*index];
-						}
-
-						if (aabb(aabbTransform, input.mousePos))
-						{
-							hovered = true;
-							if (input.mouseHeld)
-							{
-								clicked = true;
-								transformDrawn.y += transformDrawn.w * pressDownSize;
-							}
-						}
-
-						if (hovered && widget.colors.a <= 0.01f)
-						{
-							textColor = stepColorDown(textColor, 0.8);
-						}
-
-						if (input.mouseReleased && aabb(aabbTransform, input.mousePos))
+						if(glui::toggleOptions(renderer, colums[currentColum].first,
+							j.first, widget.colors, j.second.text2, (int *)j.second.pointer, j.second.displayText,
+							font, widget.texture, widget.colors2, input.mousePos, input.mouseHeld, input.mouseReleased,
+							(glm::vec4 *)j.second.pointer2, j.second.text3
+						))
 						{
 							widget.returnFromUpdate = true;
 							if (anyButtonPressed) { *anyButtonPressed = true; }
 							if (anyToggleToggeled) { *anyToggleToggeled = true; }
-							(*index)++;
 						}
 						else
 						{
 							widget.returnFromUpdate = false;
 						}
-
-						if (*index > maxSize - 1)
-						{
-							*index = 0;
-						}
-						
-						renderFancyBox(renderer, transformDrawn,
-							widget.colors2, widget.texture, hovered, clicked);
-
-						std::string finalText;
-
-						if (j.second.displayText)
-						{
-							finalText = j.first;
-						}
-
-						int currentIncrement = 0;
-						for (int i = 0; i < j.second.text2.size(); i++)
-						{
-							if (currentIncrement == *index)
-							{
-
-								char c = j.second.text2[i];
-								if (c == '|')
-								{
-									break;
-								}
-								finalText += c;
-							}
-
-							char c = j.second.text2[i];
-							if (c == '|')
-							{
-								currentIncrement++;
-							}
-						}
-
-						if ((widget.colors.a <= 0.01f || j.second.texture.id == 0))
-						{
-							renderText(renderer, finalText, font,
-								transformDrawn, textColor, true, !hovered);
-						}
-						else
-						{
-							renderText(renderer, finalText,
-								font, transformDrawn, textColor, false, !hovered);
-						}
-
-						if (!j.second.text3.empty() && hovered)
-						{
-							glm::vec4 transform = transformDrawn;
-							transform.x += transform.z * 0.1;
-							transform.y += transform.w * 1.1f;
-
-							int lines = 1;
-							for (auto &c : j.second.text3)
-							{
-								if (c == '\n' || c == '\v')
-								{
-									lines++;
-								}
-							}
-
-							transform.w *= lines;
-
-							renderFancyBox(renderer, transform,
-								stepColorDown(widget.colors2, 0.8)
-								, widget.texture, 0, 0);
-
-							transform.x += transform.z * 0.1f;
-							transform.y += transform.w * 0.1f;
-							transform.z *= 0.9f;
-							transform.w *= 0.9f;
-
-							transform.w /= lines;
-
-							int ind = 0;
-							std::string copy = "";
-							for (int l = 1; l <= lines;)
-							{
-								if (j.second.text3[ind] == '\n' ||
-									j.second.text3[ind] == '\v'
-									)
-								{
-									renderText(renderer,copy,
-										font, transform, j.second.colors, 0, true, true);
-									l++;
-									copy = "";
-									transform.y += transform.w;
-								}
-								else
-								{
-									copy += j.second.text3[ind];
-								}
-
-								ind++;
-
-								if (ind >= j.second.text3.size())break;
-							}
-
-							renderText(renderer, copy,
-								font, transform, j.second.colors, 0, true, true);
-						}
-
 
 						break;
 					}
@@ -1897,6 +1919,7 @@ namespace glui
 		}
 		internal.idStr.clear();
 
+		temporalViewPort = std::nullopt;
 	}
 
 	bool RendererUi::Button(std::string name,

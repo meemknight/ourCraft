@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <iostream>
 #include <profilerLib/include/profilerLib.h>
+#include <gl2d/gl2d.h>
 
 const int waterLevel = 65;
 
@@ -1882,3 +1883,10 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 }
 
+void WorldGenerator::generateChunkPreview(gl2d::Texture &t, glm::ivec2 size, glm::ivec2 pos)
+{
+
+	t.create1PxSquare();
+
+
+}
