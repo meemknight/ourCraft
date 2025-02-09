@@ -109,3 +109,19 @@ void assertFuncInternal(
 
 #endif
 
+
+
+#include <functional>
+
+struct Defer
+{
+public:
+	explicit Defer(std::function<void()> func): func_(std::move(func)) {}
+	~Defer() { func_(); }
+
+	std::function<void()> func_;
+};
+
+#define CONCATENATE_DEFFER(x, y) x##y
+#define MAKE_UNIQUE_VAR_DEFFER(x, y) CONCATENATE_DEFFER(x, y)
+#define defer(func) Defer MAKE_UNIQUE_VAR_DEFFER(_defer_, __COUNTER__)(func)

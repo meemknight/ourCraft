@@ -190,6 +190,9 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 		rez->chunk.x = posX;
 		rez->chunk.z = posZ;
 
+		PL::Profiler profiler;
+		profiler.start();
+
 		if (!worldSaver.loadChunk(rez->chunk))
 		{
 			//create new chunk!
@@ -200,6 +203,11 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 		}
 		else
 		{
+			profiler.end();
+
+			//0.3 ms! for non zipped!
+			//std::cout << "Loaded Chunk ms: " << profiler.rezult.timeSeconds * 1000 << "\n";
+
 			if (wasLoaded) { *wasLoaded = true; }
 
 			//we loaded a chunk so no need to dirty here.
