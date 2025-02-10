@@ -48,6 +48,16 @@ struct BoneTransform
 };
 
 
+
+struct BlockModel
+{
+	std::vector<float> vertices;
+	std::vector<float> uvs;
+
+	void cleanup() { *this = {}; }
+};
+
+
 struct ModelsManager
 {
 
@@ -63,6 +73,9 @@ struct ModelsManager
 	Model rightHand;
 
 	Model goblin;
+
+	BlockModel chairModel;
+	BlockModel mugModel;
 
 	enum TexturesLoaded
 	{

@@ -110,6 +110,7 @@ const char *texturesNames[] = {
 	"blueBricks",			//98
 	"bricksVariation",		//99
 	"blueBricksVariation",	//100
+	"mug"					//101
 
 };
 
@@ -436,7 +437,13 @@ uint16_t blocksLookupTable[] = {
 	98, 98, 98, 98, 98, 98,
 
 
+	//oak chair
+	7,7,7,7,7,7,
+	//oak log chair
+	5, 5, 5, 5, 5, 5,
 
+	//mug
+	101, 101, 101, 101, 101, 101,
 
 };
 
@@ -851,6 +858,8 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 		t.bind();
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.f);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 4.f);
@@ -973,6 +982,8 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 		t.bind();
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.f);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 4.f);
 		glGenerateMipmap(GL_TEXTURE_2D);
@@ -1121,6 +1132,8 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 				t.bind();
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 				//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 6.f);
 				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 4.f);
 				glGenerateMipmap(GL_TEXTURE_2D);

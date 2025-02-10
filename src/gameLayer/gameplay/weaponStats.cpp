@@ -19,8 +19,6 @@ void WeaponStats::normalize()
 	armourPenetration = glm::clamp(armourPenetration, 0.f, 999.f);
 	
 
-
-
 }
 
 float WeaponStats::getKnockBackNormalized()

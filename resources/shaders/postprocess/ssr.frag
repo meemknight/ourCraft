@@ -279,6 +279,8 @@ void main()
 
 	float roughness = texture(u_materials, fragCoord).r;
 
+	vec3 mainColor = textureLod(u_color, fragCoord, 0).rgb;
+
 	vec3 ssr = vec3(0,0,0);
 	vec3 V = vec3(0,0,0);
 	vec3 N = vec3(0,0,0);
@@ -332,7 +334,7 @@ void main()
 			
 	}else
 	{
-		out_color.rgba = vec4(0,0,0,0);
+		out_color.rgba = vec4(mainColor,1);
 		return;
 	}
 
@@ -349,13 +351,15 @@ void main()
 
 		//out_color.rgba = vec4(ssr, pow(roughness, 0.5));
 
-		out_color.rgba = vec4(ssr, freshnel * pow(roughness, 0.5));
+		//out_color.rgba = vec4(ssr, freshnel * pow(roughness, 0.5));
+		out_color.rgb = mix(mainColor, ssr, freshnel * pow(roughness, 0.5));
+		out_color.a = 1;
 		//out_color.rgba = vec4(1,0,0,1);
 
 	
 	}else
 	{
-		out_color.rgba = vec4(0,0,0,0);
+		out_color.rgba = vec4(mainColor,1);
 	}
 
 

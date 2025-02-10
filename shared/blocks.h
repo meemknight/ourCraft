@@ -153,12 +153,16 @@ enum BlockTypes : unsigned short
 	blueBricks_slabs,
 	blueBricks_wall,
 
+	oakChair,
+	oakLogChair,
+	mug,
 
 	BlocksCount
 };
 
 using BlockType = uint16_t;
 
+//todo look into this
 bool isBlockMesh(BlockType type);
 
 bool isStairsMesh(BlockType type);
@@ -182,6 +186,8 @@ bool isGrassMesh(BlockType type);
 bool isColidable(BlockType type);
 
 bool isWoodPlank(BlockType type);
+
+bool isChairMesh(BlockType type);
 
 //used for breaking
 bool isAnyWoddenBlock(BlockType type);
@@ -245,6 +251,8 @@ bool canBeMinedByShovel(std::uint16_t type);
 
 bool canBeMinedByAxe(std::uint16_t type);
 
+
+BlockType fromAnyShapeToNormalBlockType(BlockType b);
 
 struct BlockCollider
 {
@@ -315,6 +323,14 @@ struct Block
 	BlockCollider getCollider()
 	{
 
+		if (isChairMesh())
+		{
+			BlockCollider b{};
+			b.size.y = 0.5;
+			b.size.x = 0.8;
+			b.size.z = 0.8;
+			return b;
+		}else
 		if (isStairsMesh())
 		{
 			BlockCollider b{};
@@ -436,6 +452,11 @@ struct Block
 		return ::isStairsMesh(getType());
 	}
 
+	bool isChairMesh()
+	{
+		return ::isChairMesh(getType());
+	}
+
 	bool isWallMesh()
 	{
 		return ::isWallMesh(getType());
@@ -500,6 +521,7 @@ struct Block
 	{
 		return isColidable() && !isAnyLeaves(getType())
 			&& !isWallMesh() && !(isSlabMesh() && getTopPartForSlabs())
+			&& !isChairMesh() && (getType() != mug)
 			;
 	}
 

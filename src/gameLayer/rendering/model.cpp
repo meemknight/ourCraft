@@ -14,6 +14,8 @@
 #include <glm/gtc/type_ptr.hpp> // for glm::make_mat4
 #include <glm/gtx/quaternion.hpp>
 #include <fstream>
+#include <map>
+#include <set>
 
 glm::mat4 aiToGlm(const aiMatrix4x4 &matrix)
 {
@@ -166,7 +168,7 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		loadTexture((path + "zombie.png").c_str(), appendMode, index++, true);
 		loadTexture((path + "pig.png").c_str(), appendMode, index++);
 		loadTexture((path + "cat.png").c_str(), appendMode, index++);
-		loadTexture((path + "goblinArmour.png").c_str(), appendMode, index++);
+		loadTexture((path + "goblin.png").c_str(), appendMode, index++);
 		loadTexture((path+ "helmetTest.png").c_str(), appendMode, index++);
 		
 
@@ -354,6 +356,225 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 	if (!goblin.vertexCount)
 		loadModel((path + "goblin.glb").c_str(), goblin);
 
+
+	
+	flags = aiProcess_ImproveCacheLocality 
+		| aiProcess_JoinIdenticalVertices 
+		| aiProcess_GenUVCoords | aiProcess_TransformUVCoords | aiProcess_FindInstances;
+
+	importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT); // Remove lines and points
+	importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, aiComponent_NORMALS | aiComponent_BONEWEIGHTS | aiComponent_ANIMATIONS);
+
+
+	struct Quad
+	{
+		int a = 0;
+		int b = 0;
+		int c = 0;
+		int d = 0;
+	};
+
+	std::vector<Quad> quads;
+	quads.reserve(50);
+
+	auto loadBlockModel = [&](const char *path, BlockModel &blockModel)
+	{
+		blockModel.cleanup();
+
+		const aiScene *scene = importer.ReadFile(path, flags);
+
+		if (scene)
+		{
+			for (unsigned int i = 0; i < scene->mRootNode->mNumChildren; ++i)
+			{
+				const aiNode *node = scene->mRootNode->mChildren[i];
+				aiMatrix4x4 transform = node->mTransformation;
+
+				for (int m = 0; m < node->mNumMeshes; m++)
+				{
+					const aiMesh *mesh = scene->mMeshes[node->mMeshes[m]];
+					quads.clear();
+
+					struct Triangle
+					{
+						unsigned int indices[3] = {};
+						aiVector3D normal = {};
+						int adjacentIndex = -1; // Store the index of the triangle it merges with
+					};
+
+					std::vector<Triangle> triangles;
+					triangles.reserve(mesh->mNumFaces);
+
+					// Step 1: Collect triangles and compute normals
+					for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
+					{
+						const aiFace &face = mesh->mFaces[i];
+
+						if (face.mNumIndices != 3)
+						{
+							std::cout << "ERROR wrong model format!\n";
+							continue;
+						}
+
+						Triangle tri;
+						tri.indices[0] = face.mIndices[0];
+						tri.indices[1] = face.mIndices[1];
+						tri.indices[2] = face.mIndices[2];
+
+						// Compute normal using cross product
+						aiVector3D v0 = mesh->mVertices[tri.indices[0]];
+						aiVector3D v1 = mesh->mVertices[tri.indices[1]];
+						aiVector3D v2 = mesh->mVertices[tri.indices[2]];
+						tri.normal = (v1 - v0) ^ (v2 - v0); // Cross product
+						tri.normal.Normalize();
+
+						triangles.push_back(tri);
+					}
+
+					// Step 2: Find adjacent triangle pairs
+					std::map<std::pair<unsigned int, unsigned int>, int> edgeMap; // Edge -> Triangle index
+
+					for (size_t i = 0; i < triangles.size(); i++)
+					{
+						auto &tri = triangles[i];
+
+						for (int e = 0; e < 3; e++)
+						{
+							unsigned int a = tri.indices[e];
+							unsigned int b = tri.indices[(e + 1) % 3];
+
+							if (a > b)
+								std::swap(a, b);
+
+							auto edge = std::make_pair(a, b);
+							if (edgeMap.count(edge))
+							{
+								int otherIndex = edgeMap[edge];
+								auto &otherTri = triangles[otherIndex];
+
+								// Step 3: Check for planarity
+								if (tri.normal * otherTri.normal > 0.99f) // Almost parallel normals
+								{
+									// Step 4: Merge into quad
+									tri.adjacentIndex = otherIndex;
+									otherTri.adjacentIndex = i;
+								}
+							}
+							else
+							{
+								edgeMap[edge] = i;
+							}
+						}
+					}
+
+					// Step 5: Store quads
+					std::vector<char> merged(triangles.size(), false);
+
+					for (size_t i = 0; i < triangles.size(); i++)
+					{
+						if (merged[i] || triangles[i].adjacentIndex == -1)
+							continue;
+
+						int j = triangles[i].adjacentIndex;
+						if (merged[j])
+							continue;
+
+						// Find the fourth vertex not shared
+						std::set<unsigned int> quadVertices = {
+							triangles[i].indices[0],
+							triangles[i].indices[1],
+							triangles[i].indices[2],
+							triangles[j].indices[0],
+							triangles[j].indices[1],
+							triangles[j].indices[2],
+						};
+
+						if (quadVertices.size() == 4)
+						{
+							auto it = quadVertices.begin();
+							Quad q;
+							q.a = *it++;
+							q.b = *it++;
+							q.c = *it++;
+							q.d = *it++;
+
+							quads.push_back(q);
+							merged[i] = merged[j] = true;
+						}
+					}
+
+					// Step 6: Push quads to blockModel
+					for (const Quad &q : quads)
+					{
+
+						aiVector3D v = mesh->mVertices[q.d];
+						v *= transform;
+						blockModel.vertices.push_back(v.x);
+						blockModel.vertices.push_back(v.y - 0.5);
+						blockModel.vertices.push_back(v.z);
+
+						v = mesh->mVertices[q.b];
+						v *= transform;
+						blockModel.vertices.push_back(v.x);
+						blockModel.vertices.push_back(v.y - 0.5);
+						blockModel.vertices.push_back(v.z);
+
+						v = mesh->mVertices[q.a];
+						v *= transform;
+						blockModel.vertices.push_back(v.x);
+						blockModel.vertices.push_back(v.y - 0.5);
+						blockModel.vertices.push_back(v.z);
+
+						v = mesh->mVertices[q.c];
+						v *= transform;
+						blockModel.vertices.push_back(v.x);
+						blockModel.vertices.push_back(v.y - 0.5);
+						blockModel.vertices.push_back(v.z);
+
+						if (mesh->mTextureCoords[0]) // Has UVs
+						{
+
+							blockModel.uvs.push_back(mesh->mTextureCoords[0][q.d].x);
+							blockModel.uvs.push_back(mesh->mTextureCoords[0][q.d].y);
+
+							blockModel.uvs.push_back(mesh->mTextureCoords[0][q.b].x);
+							blockModel.uvs.push_back(mesh->mTextureCoords[0][q.b].y);
+
+
+							blockModel.uvs.push_back(mesh->mTextureCoords[0][q.a].x);
+							blockModel.uvs.push_back(mesh->mTextureCoords[0][q.a].y);
+
+							blockModel.uvs.push_back(mesh->mTextureCoords[0][q.c].x);
+							blockModel.uvs.push_back(mesh->mTextureCoords[0][q.c].y);
+
+						}
+					}
+				}
+			}
+
+
+			if (blockModel.vertices.size() % 3 != 0 && 
+				blockModel.vertices.size() % 12 != 0 &&
+				blockModel.uvs.size() %2 != 0 &&
+				(blockModel.vertices.size()/3) != (blockModel.uvs.size() /2)
+				)
+			{
+				std::cout << "ERROR LOADING MODEL!\n";
+				blockModel.cleanup();
+			}
+
+
+		}
+	};
+
+
+	if (!chairModel.vertices.size())
+		loadBlockModel((path + "chair.glb").c_str(), chairModel);
+
+	if (!mugModel.vertices.size())
+		loadBlockModel((path + "aleMug.glb").c_str(), mugModel);
+
+
 	//todo check if it frees all of them
 	importer.FreeScene();
 
@@ -372,6 +593,8 @@ void ModelsManager::clearAllModels()
 	rightHand.cleanup();
 
 	goblin.cleanup();
+
+	chairModel.cleanup();
 
 	if (texturesIds.size())
 	{

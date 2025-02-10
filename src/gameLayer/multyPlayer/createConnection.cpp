@@ -402,6 +402,7 @@ void recieveDataClient(ENetEvent &event,
 
 		case headerPlaceBlocks:
 		{
+			//std::cout << "headerPlaceBlocks ! ";
 			for (int i = 0; i < size / sizeof(Packet_PlaceBlocks); i++)
 			{
 
@@ -464,6 +465,7 @@ void recieveDataClient(ENetEvent &event,
 			{
 				//update local player
 				entityManager.localPlayer.entity = entity->entity;
+				std::cout << "YESSSSSSSSSSSSSSSSSSSSSSSSSSSS LMAO " << entity->entity.chunkDistance << "\n";
 			}
 			else
 			{

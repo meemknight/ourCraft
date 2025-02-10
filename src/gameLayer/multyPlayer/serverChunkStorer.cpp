@@ -164,9 +164,10 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 	std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
 	bool generateGhostAndStructures,
 	std::vector<StructureToGenerate> *newStructuresToAdd, 
-	WorldSaver &worldSaver, bool *wasGenerated)
+	WorldSaver &worldSaver, bool *wasGenerated, bool *wasLoaded)
 {
 	if (wasGenerated) { *wasGenerated = false; }
+	if (wasLoaded) { *wasLoaded = false; }
 
 	glm::ivec2 pos = {posX, posZ};
 	auto foundPos = savedChunks.find(pos);
@@ -189,6 +190,9 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 		rez->chunk.x = posX;
 		rez->chunk.z = posZ;
 
+		PL::Profiler profiler;
+		profiler.start();
+
 		if (!worldSaver.loadChunk(rez->chunk))
 		{
 			//create new chunk!
@@ -199,6 +203,13 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 		}
 		else
 		{
+			profiler.end();
+
+			//0.3 ms! for non zipped!
+			//std::cout << "Loaded Chunk ms: " << profiler.rezult.timeSeconds * 1000 << "\n";
+
+			if (wasLoaded) { *wasLoaded = true; }
+
 			//we loaded a chunk so no need to dirty here.
 			rez->otherData.dirty = false;
 			rez->otherData.dirtyBlockData = false;
@@ -1400,6 +1411,7 @@ void ServerChunkStorer::saveAllChunks(WorldSaver &worldSaver)
 
 int ServerChunkStorer::unloadChunksThatNeedUnloading(WorldSaver &worldSaver, int count)
 {
+	//todo optimize, this seems to take an unnecessarily long time
 	int unloaded = 0;
 	for (auto it = savedChunks.begin(); it != savedChunks.end(); )
 	{

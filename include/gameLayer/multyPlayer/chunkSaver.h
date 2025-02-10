@@ -27,6 +27,7 @@ struct WorldSaver
 	void saveChunkDataInFile(std::fstream &f, ChunkData &c, int index);
 	void appendChunkDataInFile(std::fstream &f, ChunkData &c);
 	void loadChunkAtIndex(std::fstream &f, ChunkData &c, int index);
+	void loadChunkAtIndex(std::istream &f, ChunkData &c, int index);
 
 	void saveEntityId(std::uint64_t eid);
 

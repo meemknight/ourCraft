@@ -369,3 +369,7 @@ float computeRestantTimer(std::uint64_t older, std::uint64_t newer);
 void sendPlayerSkinPacket(ENetPeer *to, std::uint64_t cid, gl2d::Texture &t);
 
 void sendPlayerSkinPacket(ENetPeer *to, std::uint64_t cid, std::vector<unsigned char> &data);
+
+void *compressData(const char *data, size_t size, size_t &compressedSize);
+
+void *compressDataForce(const char *data, size_t size, size_t &compressedSize);

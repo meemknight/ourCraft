@@ -61,7 +61,7 @@ struct ChunkSystem
 	void cleanup(bool notifyServer);
 
 	void update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQueue &undoQueue, LightSystem &lightSystem,
-		InteractionData &interaction, ThreadPool &threadPool);
+		InteractionData &interaction, ThreadPool &threadPool, Renderer &renderer);
 
 	bool isChunkInRadius(glm::ivec2 playerPos, glm::ivec2 chunkPos);
 

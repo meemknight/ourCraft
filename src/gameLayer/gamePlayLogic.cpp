@@ -603,21 +603,21 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				|| platform::getControllerButtons().buttons[platform::ControllerButtons::Up].held
 				)
 			{
-				moveDir.z -= speed;
+				moveDir.z -= 1;
 			}
 			if (platform::isKeyHeld(platform::Button::Down)
 				|| platform::isKeyHeld(platform::Button::S)
 				|| platform::getControllerButtons().buttons[platform::ControllerButtons::Down].held
 				)
 			{
-				moveDir.z += speed;
+				moveDir.z += 1;
 			}
 			if (platform::isKeyHeld(platform::Button::Left)
 				|| platform::isKeyHeld(platform::Button::A)
 				|| platform::getControllerButtons().buttons[platform::ControllerButtons::Left].held
 				)
 			{
-				moveDir.x -= speed;
+				moveDir.x -= 1;
 
 			}
 			if (platform::isKeyHeld(platform::Button::Right)
@@ -625,7 +625,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				|| platform::getControllerButtons().buttons[platform::ControllerButtons::Right].held
 				)
 			{
-				moveDir.x += speed;
+				moveDir.x += 1;
 			}
 
 			if (player.entity.fly)
@@ -634,13 +634,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					|| platform::getControllerButtons().buttons[platform::ControllerButtons::RBumper].held
 					)
 				{
-					moveDir.y -= speed;
+					moveDir.y -= 1;
 				}
 				if (platform::isKeyHeld(platform::Button::Space)
 					|| platform::getControllerButtons().buttons[platform::ControllerButtons::LBumper].held
 					)
 				{
-					moveDir.y += speed;
+					moveDir.y += 1;
 				}
 			}
 			else
@@ -651,8 +651,16 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				{
 					gameData.entityManager.localPlayer.entity.jump();
 				}
+			}
 
-
+			{
+				float l = glm::length(glm::vec2(moveDir.x, moveDir.z));
+				if (l != 0)
+				{
+					moveDir.x /= l;
+					moveDir.z /= l;
+				}
+				moveDir *= speed;
 			}
 
 			static float jumpTimer = 0;
@@ -1385,7 +1393,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	{
 		gameData.gameplayFrameProfiler.startSubProfile("chunkSystem");
 		gameData.chunkSystem.update(blockPositionPlayer, deltaTime, gameData.undoQueue,
-			gameData.lightSystem, gameData.interaction, threadPoolForChunkBaking);
+			gameData.lightSystem, gameData.interaction, threadPoolForChunkBaking, programData.renderer);
 		gameData.gameplayFrameProfiler.endSubProfile("chunkSystem");
 	}
 
@@ -1950,8 +1958,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				ImGui::Image((void *)programData.renderer.bluredColorBuffer[1], {256, 256},
 					{0, 1}, {1, 0});
 
-				ImGui::SliderFloat("Multiplier", &programData.renderer.bloomMultiplier, 0.0001, 3);
-				ImGui::SliderFloat("Tresshold", &programData.renderer.bloomTresshold, 0.0001, 10);
+				ImGui::SliderFloat("Multiplier", &getShadingSettings().bloomMultiplier, 0, 7);
+				ImGui::SliderFloat("Tresshold", &getShadingSettings().bloomTresshold, 0.0001, 10);
 			}
 
 			if (ImGui::CollapsingHeader("Chunk system",
@@ -2751,6 +2759,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma endregion
 
+	//updateviewdistance changeviewdistance updaterenderdistance
 	gameData.chunkSystem.changeRenderDistance(getShadingSettings().viewDistance * 2, true);
 
 

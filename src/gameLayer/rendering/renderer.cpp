@@ -655,6 +655,49 @@ float vertexData[] = {
 		0.5, -0.5, 0.5,
 		0.5, -0.5, 0.0,
 
+
+	#pragma region LOD1
+		//lod 1
+
+			//front
+			1.5, 1.5, 1.5,
+			-0.5, 1.5, 1.5,
+			-0.5, -0.5, 1.5,
+			1.5, -0.5, 1.5,
+
+			//back
+			-0.5, -0.5, -0.5,
+			-0.5, 1.5, -0.5,
+			1.5, 1.5, -0.5,
+			1.5, -0.5, -0.5,
+
+			//top
+			-0.5, 1.5, -0.5,
+			-0.5, 1.5, 1.5,
+			1.5, 1.5, 1.5,
+			1.5, 1.5, -0.5,
+
+			//bottom
+			1.5, -0.5, 1.5,
+			-0.5, -0.5, 1.5,
+			-0.5, -0.5, -0.5,
+			1.5, -0.5, -0.5,
+
+			//left
+			-0.5, -0.5, 1.5,
+			-0.5, 1.5, 1.5,
+			-0.5, 1.5, -0.5,
+			-0.5, -0.5, -0.5,
+
+			//right
+			1.5, 1.5, -0.5,
+			1.5, 1.5, 1.5,
+			1.5, -0.5, 1.5,
+			1.5, -0.5, -0.5,
+
+		#pragma endregion
+
+
 };
 
 float vertexUV[] = {
@@ -1168,6 +1211,50 @@ float vertexUV[] = {
 	0.5, 1,
 	0.5, 0,
 	1, 0,
+
+	#pragma region lods
+
+		//front
+		2, 1, //
+		0, 1, //
+		0, -1,// 
+		2, -1,//
+
+		//back
+		0, -1,//
+		0, 1, //
+		2, 1, //
+		2, -1,//
+
+		//top
+		2, 1, //
+		0, 1, //
+		0, -1,//
+		2, -1,//
+
+		//bottom
+		2, 1, //
+		0, 1, //
+		0, -1,//
+		2, -1,//
+
+		//left
+		2, -1,//
+		2, 1, //
+		0, 1, //
+		0, -1,//
+
+		//right
+		2, 1, //
+		0, 1, //
+		0, -1,//
+		2, -1,//
+
+
+
+	#pragma endregion
+
+
 };
 
 
@@ -1322,7 +1409,7 @@ void Renderer::recreateBlocksTexturesBuffer(BlocksLoader &blocksLoader)
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-void Renderer::create()
+void Renderer::create(ModelsManager &modelsManager)
 {
 
 
@@ -1421,21 +1508,10 @@ void Renderer::create()
 
 	reloadShaders();
 
-	
-	
 	glGenBuffers(1, &vertexDataBuffer);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexDataBuffer);
-	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(vertexData), vertexData, 0);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vertexDataBuffer);
-
-	
 	glGenBuffers(1, &vertexUVBuffer);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexUVBuffer);
-	glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(vertexUV), vertexUV, 0);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, vertexUVBuffer);
 
-
-	
+	recreateBlockGeometryData(modelsManager);
 
 	
 	glGenBuffers(1, &lightBuffer);
@@ -1571,6 +1647,58 @@ void Renderer::create()
 
 #pragma endregion
 
+
+
+}
+
+void Renderer::recreateBlockGeometryData(ModelsManager &modelsManager)
+{
+
+	static std::vector<float> newVertexData;
+	newVertexData.clear();
+	newVertexData.resize(sizeof(vertexData)/sizeof(vertexData[0])
+	 + modelsManager.chairModel.vertices.size() + modelsManager.mugModel.vertices.size());
+
+	static std::vector<float> newUVData;
+	newUVData.clear();
+	newUVData.resize(sizeof(vertexUV) / sizeof(vertexUV[0]) + 
+		modelsManager.chairModel.uvs.size() + modelsManager.mugModel.uvs.size());
+
+
+	memcpy(newVertexData.data(), vertexData, sizeof(vertexData));
+	memcpy(newUVData.data(), vertexUV, sizeof(vertexUV));
+
+	int currentVertexIndex = sizeof(vertexData) / 4;
+	int currentUvIndex = sizeof(vertexUV) / 4;
+
+	auto addGeometry = [&](BlockGeometryIndex &b, BlockModel &model)
+	{
+		b.startIndex = currentVertexIndex / (sizeof(float) * 3);
+		b.componentCount = model.vertices.size() / (3 * 4);
+		memcpy(newVertexData.data() + currentVertexIndex, model.vertices.data(),
+			model.vertices.size() * sizeof(float));
+		currentVertexIndex += model.vertices.size();
+
+		memcpy(newUVData.data() + currentUvIndex, model.uvs.data(),
+			model.uvs.size() * sizeof(float));
+		currentUvIndex += model.uvs.size();
+	};
+
+
+	addGeometry(chairGeometry, modelsManager.chairModel);
+	addGeometry(mugGeometry, modelsManager.mugModel);
+
+
+
+	//todo optimize with buffer storage!!!! (don't forget to recreate the buffer!!)
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexDataBuffer);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, newVertexData.size() * sizeof(float), newVertexData.data(), GL_STATIC_DRAW);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vertexDataBuffer);
+
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexUVBuffer);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, newUVData.size() * sizeof(float), newUVData.data(), GL_STATIC_DRAW);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, vertexUVBuffer);
 
 
 }
@@ -1873,11 +2001,8 @@ void Renderer::reloadShaders()
 		RESOURCES_PATH "shaders/postProcess/applyHBAO.frag");
 	GET_UNIFORM2(applyHBAOShader, u_hbao);
 	GET_UNIFORM2(applyHBAOShader, u_currentViewSpace);
+	GET_UNIFORM2(applyHBAOShader, u_viewDistance);
 
-	applyHBAOShader.u_shadingSettings
-		= glGetUniformBlockIndex(applyHBAOShader.shader.id, "ShadingSettings");
-	glBindBufferBase(GL_UNIFORM_BUFFER,
-		applyHBAOShader.u_shadingSettings, defaultShader.shadingSettingsBuffer);
 
 
 	warpShader.shader.clear();
@@ -1933,6 +2058,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	defaultShader.shadingSettings.exposure = adaptiveExposure.currentExposure
 		+ shadingSettings.exposure;
+
 
 	//glPolygonMode(GL_FRONT, GL_POINT);
 	//glPolygonMode(GL_BACK, GL_FILL);
@@ -2027,7 +2153,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		}
 
 	}
-
 
 	fboSunForGodRays.updateSize(screenX / 2, screenY / 2);
 	fboSunForGodRaysSecond.updateSize(screenX / 2, screenY / 2);
@@ -2256,6 +2381,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		defaultShader.shadingSettings.fogDistance =
 			(chunkSystem.squareSize / 2.f) * CHUNK_SIZE - CHUNK_SIZE;
 
+		defaultShader.shadingSettings.fogCloseGradient = getShadingSettings().fogGradient;
 
 		glNamedBufferData(defaultShader.shadingSettingsBuffer,
 			sizeof(defaultShader.shadingSettings), &defaultShader.shadingSettings,
@@ -2561,7 +2687,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	};
 
-	auto renderTransparentGeometry = [&]()
+	auto renderTransparentGeometry = [&](bool firstLod, bool otherLods)
 	{
 
 		if (!renderTransparent) { return; }
@@ -2571,8 +2697,13 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			int facesCount = chunk->transparentElementCountSize;
 			if (facesCount)
 			{
-				glBindVertexArray(chunk->transparentVao);
-				glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
+				if (chunk->currentLod == 0 && firstLod
+					|| chunk->currentLod == 1 && otherLods
+					)
+				{
+					glBindVertexArray(chunk->transparentVao);
+					glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
+				}
 			}
 		}
 
@@ -2626,7 +2757,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		fboLastFramePositions.copyColorFromOtherFBO(fboMain.fboOnlySecondTarget, screenX, screenY);
 	};
 
-	auto renderTransparentGeometryPhaze = [&](bool hasPeelInformation)
+	auto renderTransparentGeometryPhaze = [&](bool hasPeelInformation, bool firstLod, bool otherLods)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
 		defaultShader.shader.bind();
@@ -2652,7 +2783,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		glDepthFunc(GL_LESS);
 		glDisable(GL_CULL_FACE); //todo change
-		renderTransparentGeometry();
+		renderTransparentGeometry(firstLod, otherLods);
 		glEnable(GL_CULL_FACE);
 	};
 
@@ -2780,8 +2911,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	#pragma endregion
 
 
-
-
 		//disable bloom for transparent geometry
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
@@ -2802,7 +2931,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glDisablei(GL_BLEND, 1);
 		glColorMask(0, 0, 0, 0);
 
-		renderTransparentGeometry();
+		renderTransparentGeometry(true, false);
 		programData.GPUProfiler.endSubProfile("render only water to depth 4");
 	#pragma endregion
 
@@ -2826,7 +2955,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glDepthFunc(GL_LESS);
 		//glDisable(GL_CULL_FACE); //todo change
 		//todo disable ssr for this step?
-		renderTransparentGeometry();
+		renderTransparentGeometry(true, false);
 		programData.GPUProfiler.endSubProfile("render first water 5");
 	#pragma endregion
 
@@ -2839,7 +2968,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	#pragma region render transparent geometry last phaze 7
 		programData.GPUProfiler.startSubProfile("final transparency 7");
 
-		renderTransparentGeometryPhaze(true);
+		renderTransparentGeometryPhaze(true, true, true);
+		//renderTransparentGeometryPhaze(false, false, true);
 		programData.GPUProfiler.endSubProfile("final transparency 7");
 	#pragma endregion
 
@@ -2884,7 +3014,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		}
 
 		programData.GPUProfiler.startSubProfile("final transparency 7");
-		renderTransparentGeometryPhaze(false);
+		renderTransparentGeometryPhaze(false, true, true);
 		programData.GPUProfiler.endSubProfile("final transparency 7");
 
 		{
@@ -2912,9 +3042,11 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fboOnlyFirstTarget);
 
 		glDisable(GL_DEPTH_TEST);
-		glEnable(GL_BLEND);
-		glBlendEquation(GL_FUNC_ADD);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		
+		glDisable(GL_BLEND);
+		//glEnable(GL_BLEND);
+		//glBlendEquation(GL_FUNC_ADD);
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		ssrShader.shader.bind();
 		glBindVertexArray(vaoQuad);
@@ -3037,9 +3169,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 #pragma endregion
 
 	bool lastBloomChannel = 0;
-	if (bloom)
+	if (bloom && getShadingSettings().bloomMultiplier > 0)
 	{
-
 
 		programData.GPUProfiler.startSubProfile("Bloom");
 
@@ -3061,16 +3192,23 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		glUniform1f(filterBloomDataShader.u_exposure, defaultShader.shadingSettings.exposure);
 
+		float finalTresshold = getShadingSettings().bloomTresshold / 100.f;
+		finalTresshold *= linearRemap(pow(adaptiveExposure.getLuminosityOrDefaultValueIfDisabeled(), 2.2), 0, 1, 0.8, 2);
+
+		float finalMultiplier = getShadingSettings().bloomMultiplier * (2.f/5.f);
+		finalMultiplier *= linearRemap(pow(adaptiveExposure.getLuminosityOrDefaultValueIfDisabeled(), 2.0), 0, 1, 1.2, 0.4);
+
+
 		if (underWater)
 		{
-			glUniform1f(filterBloomDataShader.u_tresshold, bloomTresshold / 2);
+			glUniform1f(filterBloomDataShader.u_tresshold, finalTresshold / 2);
 		}
 		else
 		{
-			glUniform1f(filterBloomDataShader.u_tresshold, bloomTresshold);
+			glUniform1f(filterBloomDataShader.u_tresshold, finalTresshold);
 		}
 
-		glUniform1f(filterBloomDataShader.u_multiplier, bloomMultiplier);
+		glUniform1f(filterBloomDataShader.u_multiplier, finalMultiplier /10000.f);
 
 		glViewport(0, 0, screenX, screenY);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -3264,6 +3402,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, fboHBAO.color);
 		glUniform1i(applyHBAOShader.u_hbao, 0);
+		glUniform1f(applyHBAOShader.u_viewDistance, (chunkSystem.squareSize/2.f) * 16.f);
+		
 
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, fboMain.secondaryColor);
@@ -5126,6 +5266,7 @@ void Renderer::FBO::create(GLint addColor, bool addDepth,
 
 }
 
+
 void Renderer::FBO::updateSize(int x, int y)
 {
 	if (size.x != x || size.y != y)
@@ -5378,7 +5519,7 @@ void AdaptiveExposure::update(float deltaTime, float newLuminosity)
 		}
 	};
 
-	moveTowards(currentLuminosity, newLuminosity, 0.4);
+	moveTowards(currentLuminosity, newLuminosity, 0.3);
 
 	float newValue = linearRemap(currentLuminosity, 0, 1, maxExposure, minExposure);
 	moveTowards(currentExposure, newValue, 0.1);
@@ -5402,4 +5543,9 @@ void AdaptiveExposure::update(float deltaTime, float newLuminosity)
 
 
 
+}
+
+float AdaptiveExposure::getLuminosityOrDefaultValueIfDisabeled()
+{
+	return currentLuminosity;
 }
