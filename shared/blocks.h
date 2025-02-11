@@ -269,33 +269,33 @@ struct Block
 
 	BlockType getType()
 	{
-		return typeAndFlags & 0b11'1111'1111;
+		return typeAndFlags & 0b0111'1111'1111;
 	}
 
 	//used for stairs, or furnace type blocks
 	unsigned char getRotationFor365RotationTypeBlocks()
 	{
-		return (typeAndFlags >> 10) & 0b0000'11;
+		return (typeAndFlags >> 11) & 0b0001'1;
 	}
 
 	void setRotationFor365RotationTypeBlocks(int rotation)
 	{
-		rotation <<= 10;
-		typeAndFlags &= 0b1111'0011'1111'1111;
+		rotation <<= 11;
+		typeAndFlags &= 0b1110'0111'1111'1111;
 		typeAndFlags |= rotation;
 	}
 
 	void setTopPartForSlabs(int topPart)
 	{
 		topPart = (bool)topPart;
-		topPart <<= 10;
-		typeAndFlags &= 0b1111'1011'1111'1111;
+		topPart <<= 11;
+		typeAndFlags &= 0b1111'0111'1111'1111;
 		typeAndFlags |= topPart;
 	}
 
 	bool getTopPartForSlabs()
 	{
-		return (typeAndFlags >> 10) & 0b0000'01;
+		return (typeAndFlags >> 11) & 0b0000'1;
 	}
 
 	//used for stairs, or furnace type blocks
@@ -306,7 +306,7 @@ struct Block
 
 	void setType(BlockType t)
 	{
-		typeAndFlags = t & 0b11'1111'1111;
+		typeAndFlags = t & 0b0111'1111'1111;
 	}
 
 	bool air() { return getType() == 0; }

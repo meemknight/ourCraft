@@ -305,35 +305,37 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	//PL::Profiler profiler;
 	//profiler.start();
 
+	if (wg.isSuperFlat)
+	{
+		//super flat
+		for (int x = 0; x < CHUNK_SIZE; x++)
+			for (int z = 0; z < CHUNK_SIZE; z++)
+			{
+				for (int y = 0; y < 256; y++)
+				{
+					if (y <= 4)
+					{
+						c.unsafeGet(x, y, z).setType(BlockTypes::stone);
+					}
+					else if(y <= 7)
+					{
+						c.unsafeGet(x, y, z).setType(BlockTypes::dirt);
+					}
+					else if (y == 8)
+					{
+						c.unsafeGet(x, y, z).setType(BlockTypes::grassBlock);
+					}
+					else
+					{
+						c.unsafeGet(x, y, z).setType(BlockTypes::air);
+					}
+		
+				}
+			}
+		return;
+	}
 
-	//super flat
-	//for (int x = 0; x < CHUNK_SIZE; x++)
-	//	for (int z = 0; z < CHUNK_SIZE; z++)
-	//	{
-	//		c.cachedBiomes[x][z] = 0;
-	//
-	//		for (int y = 0; y < 256; y++)
-	//		{
-	//			if (y <= 4)
-	//			{
-	//				c.unsafeGet(x, y, z).setType(BlockTypes::stone);
-	//			}
-	//			else if(y <= 7)
-	//			{
-	//				c.unsafeGet(x, y, z).setType(BlockTypes::dirt);
-	//			}
-	//			else if (y == 8)
-	//			{
-	//				c.unsafeGet(x, y, z).setType(BlockTypes::grassBlock);
-	//			}
-	//			else
-	//			{
-	//				c.unsafeGet(x, y, z).setType(BlockTypes::air);
-	//			}
-	//
-	//		}
-	//	}
-	//return;
+
 
 	float interpolateValues[16 * 16] = {};
 	float borderingFactor[16 * 16] = {};

@@ -1081,7 +1081,7 @@ void displayWorldSelectorMenu(ProgramData &programData)
 
 	static char seed[12] = {};
 	static char name[20] = {};
-	static int currentIndex = 0;
+	static int currentIndex = 0; //0 normal, 1 super flat
 	static WorldGeneratorSettings settings;
 	static gl2d::Texture worldPreviewTexture;
 	static WorldGenerator wg;
@@ -1212,6 +1212,7 @@ void displayWorldSelectorMenu(ProgramData &programData)
 					{
 						std::ofstream f(finalName + "/worldGenSettings.wgenerator");
 						settings.seed = finalSeed;
+						settings.isSuperFlat = (currentIndex == 1);
 
 						settings.sanitize();
 						f << settings.saveSettings();

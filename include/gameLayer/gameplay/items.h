@@ -4,7 +4,7 @@
 #include <string>
 #include <gameplay/weaponStats.h>
 
-constexpr static unsigned short ItemsStartPoint = 1'024;
+constexpr static unsigned short ItemsStartPoint = 2'048;
 
 enum ItemTypes : unsigned short
 {

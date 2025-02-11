@@ -48,6 +48,8 @@ struct WorldGeneratorSettings
 	NoiseSetting stoneSpikeMask;
 	NoiseSetting iceNoise;
 
+	bool isSuperFlat = 0;
+
 	//todo remove
 	Spline peaksAndValiesContributionSpline;
 	Spline regionsHeightSpline;
@@ -178,6 +180,7 @@ struct WorldGenerator
 	float randomSandPower = 1.f;
 
 	FastNoiseSIMD *alternativePatchesOfBlocks;
+	bool isSuperFlat = 0;
 
 
 	void init();
