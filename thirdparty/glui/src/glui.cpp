@@ -866,6 +866,7 @@ namespace glui
 				font, transform, textColor, 0, true, true);
 		}
 
+		return retValue;
 	}
 
 

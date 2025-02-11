@@ -1259,15 +1259,15 @@ void displayWorldSelectorMenu(ProgramData &programData)
 							Colors_Gray, {}, 0.f, programData.ui.buttonTexture, 
 							GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
 
-						auto textureBox = mapBox;
-						textureBox = shrinkPercentage(textureBox, {0.2f, 0.2f});
-
-						worldPreviewTexture.cleanup();
-						wg.applySettings(settings);
-							
-						wg.generateChunkPreview(worldPreviewTexture, {textureBox.z,textureBox.w}, {});
-
-						renderer.renderRectangle(textureBox, worldPreviewTexture);
+						//auto textureBox = mapBox;
+						//textureBox = shrinkPercentage(textureBox, {0.6f, 0.6f});
+						//
+						//worldPreviewTexture.cleanup();
+						//wg.applySettings(settings);
+						//	
+						//wg.generateChunkPreview(worldPreviewTexture, {textureBox.z,textureBox.w}, {});
+						//
+						//renderer.renderRectangle(textureBox, worldPreviewTexture);
 
 					}
 

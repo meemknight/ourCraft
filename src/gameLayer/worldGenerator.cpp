@@ -1886,7 +1886,80 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 void WorldGenerator::generateChunkPreview(gl2d::Texture &t, glm::ivec2 size, glm::ivec2 pos)
 {
 
-	t.create1PxSquare();
+	struct Color
+	{
+		unsigned char r = 0;
+		unsigned char g = 0;
+		unsigned char b = 0;
+		unsigned char a = 255;
+	};
+
+	static std::vector<Color> chunkPreviewData;
+	chunkPreviewData.clear();
+
+	if (size.x <= 0) { return; }
+	if (size.y <= 0) { return; }
+	if (size.x > 4'000) { size.x = 4000; }
+	if (size.y > 4'000) { size.y = 4000; }
+
+	chunkPreviewData.resize(size.x * size.y);
+	static float values[256];
+	static float borderingFactor[16 * 16];
+	float vegetationMaster = 0;
+	static float tightBorders[16 * 16];
+	float xValuue = 0;
+	float zValue = 0;
+	float biomeTypeRandomValue = 0;
+
+	for (int y = 0; y < size.y; y+= CHUNK_SIZE)
+		for (int x = 0; x < size.x; x+= CHUNK_SIZE)
+		{
+
+			int height = getRegionHeightAndBlendingsForChunk(divideChunk(x), divideChunk(y), values,
+				borderingFactor, vegetationMaster, tightBorders, xValuue, zValue, biomeTypeRandomValue);
+
+			glm::vec4 color = {};
+
+			if (height == 0 || height == 1)
+			{
+				color = Colors_Blue;
+			}else if (height == 4)
+			{
+				color = Colors_Gray;
+			}
+			else if (height == 5)
+			{
+				color = Colors_White;
+			}
+			else
+			{
+				color = Colors_Green;
+			}
+
+			for (int j = y; j < std::min(size.y, y + CHUNK_SIZE); j++)
+				for (int i = x; i < std::min(size.x, x + CHUNK_SIZE); i++)
+				{
+					auto c = color;
+
+					int indexX = i - x;
+					int indexY = j - y;
+
+					if (tightBorders[indexY + indexX * CHUNK_SIZE] != 0)
+					{
+						c = Colors_Red;
+					}
+
+					Color cfinal{c.r * 255,c.g * 255,c.b * 255,c.a * 255};
+					chunkPreviewData[i + j * size.x] = cfinal;
+				}
+
+
+
+		}
+
+	t.createFromBuffer((char*)chunkPreviewData.data(), size.x, size.y, true, false);
+
+	//t.create1PxSquare();
 
 
 }

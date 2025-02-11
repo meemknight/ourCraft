@@ -1383,7 +1383,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	programData.renderer.sunPos = calculateSunPosition(dayTime);
 	
 	//dayTime += deltaTime * 0.05f;
-	//if (dayTime > 0) { dayTime -= (int)dayTime; }
+	if (dayTime > 0) { dayTime -= (int)dayTime; }
 
 #pragma endregion
 
