@@ -19,6 +19,7 @@ in float v_ambientMultiplier; //for face darkening or under water darkening
 in flat uvec2 v_textureSampler;
 in flat uvec2 v_normalSampler;
 in flat uvec2 v_materialSampler;
+in flat uvec2 v_paralaxSampler;
 in flat int v_ambientInt;
 
 in flat int v_skyLight; //ambient sun value, todo remove?
@@ -348,7 +349,7 @@ float getLastDepthLiniarized(vec2 p, out float nonLinear)
 	return linear;	
 }
 
-vec3 applyNormalMap(vec3 inNormal)
+vec3 applyNormalMap(vec3 inNormal, vec2 uv)
 {
 	vec3 normal;
 	if( isWater() && (u_shaders!=0) )
@@ -375,7 +376,7 @@ vec3 applyNormalMap(vec3 inNormal)
 		//return inNormal;
 	}else
 	{
-		normal = texture(sampler2D(v_normalSampler), v_uv).rgb;
+		normal = texture(sampler2D(v_normalSampler), uv).rgb;
 	}
 
 	normal = normalize(2*normal - 1.f);
@@ -879,7 +880,7 @@ void main()
 		//gamma correction
 		textureColor.rgb = toLinear(textureColor.rgb);
 
-		vec3 N = applyNormalMap(v_normal);
+		vec3 N = applyNormalMap(v_normal, v_uv);
 
 		float viewLength = length(v_semiViewSpacePos);
 		vec3 V = -v_semiViewSpacePos / viewLength;
@@ -958,8 +959,61 @@ void main()
 	}else
 	{
 
-		//float shadow = shadowCalc2(dot(u_sunDirection, v_normal));
-		
+
+		float viewLength = length(v_semiViewSpacePos);
+		vec3 V = -v_semiViewSpacePos / viewLength;
+		vec2 finalUV = v_uv;
+		vec3 viewWorldSpace = normalize((u_view * vec4(v_semiViewSpacePos,1)).xyz);
+
+		//paralax
+		//https://www.youtube.com/watch?v=LrnE5f3h2SU
+		if(false)
+		{
+			vec3 viewVector = viewWorldSpace;
+			
+			float heightScale = 0.10;
+			const float minLayers = 4;
+			const float maxLayers = 16;
+			float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0,0,1), viewVector)));
+			float power = 1;
+
+
+			float layerDepth = 1.0 / numLayers;
+			float currentLayerDepth = 0;
+
+
+			// Remove the z division if you want less aberated results
+			//vec2 S = viewVector.xy * heightScale; 
+			vec2 S = viewVector.xy / viewVector.z * heightScale; 
+			vec2 deltaUVs = S / numLayers;
+
+			vec2 UVs = v_uv;
+			float currentDepthMapValue = 1.0f - pow(texture(sampler2D(v_paralaxSampler), UVs).r, power);
+	
+
+			// Loop till the point on the heightmap is "hit"
+			while(currentLayerDepth < currentDepthMapValue)
+			{
+				UVs -= deltaUVs;
+				currentDepthMapValue = 1.0f - pow(texture(sampler2D(v_paralaxSampler), UVs).r, power);
+				currentLayerDepth += layerDepth;
+			}
+
+			// Apply Occlusion (interpolation with prev value)
+			vec2 prevTexCoords = UVs + deltaUVs;
+			float afterDepth  = currentDepthMapValue - currentLayerDepth;
+			float beforeDepth = 1.0f - pow(texture(sampler2D(v_paralaxSampler), prevTexCoords).r, power) - currentLayerDepth + layerDepth;
+			float weight = afterDepth / (afterDepth - beforeDepth);
+			UVs = prevTexCoords * weight + UVs * (1.0f - weight);
+
+			// Get rid of anything outside the normal range
+			//if(UVs.x > 1.0 || UVs.y > 1.0 || UVs.x < 0.0 || UVs.y < 0.0)
+			//	discard;
+			
+			//set the final UV
+			UVs = clamp(UVs, vec2(0,0), vec2(1,1));
+			finalUV = UVs;
+		}
 
 
 		//load material
@@ -967,7 +1021,7 @@ void main()
 		float roughness = 0;
 		float emissive = 0;
 		{
-			vec3 materialColor = texture(sampler2D(v_materialSampler), v_uv).rgb;
+			vec3 materialColor = texture(sampler2D(v_materialSampler), finalUV).rgb;
 			
 			roughness = pow((1 - materialColor.r),2);
 			metallic =pow((materialColor.g),0.5);
@@ -984,8 +1038,9 @@ void main()
 		//load albedo
 		vec4 textureColor;
 		{
-			textureColor = texture(sampler2D(v_textureSampler), v_uv);
-			if(textureColor.a <= 0){discard;}
+			textureColor = texture(sampler2D(v_textureSampler), finalUV);
+			float textureAlphaOriginal = texture(sampler2D(v_textureSampler), v_uv).a;
+			if(textureAlphaOriginal <= 0){discard;}
 			//gamma correction
 			textureColor.rgb = toLinear(textureColor.rgb);
 
@@ -1006,14 +1061,13 @@ void main()
 		
 		vec3 skyBoxColor = texture(u_skyTexture, (gl_FragCoord.xy / textureSize(u_skyTexture, 0)) ).rgb;
 
-		vec3 N = applyNormalMap(v_normal);
+		vec3 N = applyNormalMap(v_normal, finalUV);
 		//vec3 N = v_normal;
 		//vec3 ViewSpaceVector = compute(u_positionInt, u_positionFloat, fragmentPositionI, fragmentPositionF);
 		//float viewLength = length(ViewSpaceVector);
 		//vec3 V = ViewSpaceVector / viewLength;
 		
-		float viewLength = length(v_semiViewSpacePos);
-		vec3 V = -v_semiViewSpacePos / viewLength;
+
 
 		//V = getViewVector(gl_FragCoord.xy / textureSize(u_lastFramePositionViewSpace, 0).xy);
 
@@ -1026,7 +1080,7 @@ void main()
 		//if(u_writeScreenSpacePositions != 0)
 		{
 			////out_screenSpacePositions.xyz = u_view* -ViewSpaceVector; 
-			out_screenSpacePositions.xyz = (u_view * vec4(v_semiViewSpacePos,1)).xyz; //this is good
+			out_screenSpacePositions.xyz = viewWorldSpace; //this is good
 			//out_screenSpacePositions.a = 1;
 		}
 		

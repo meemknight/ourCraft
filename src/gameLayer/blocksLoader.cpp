@@ -830,6 +830,27 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 
 			gpuIds.push_back(handle);
 		}
+
+		//default paralax
+		{
+			unsigned char data[4] = {};
+
+			{
+				int i = 0;
+				data[i++] = 0;
+				data[i++] = 0;
+				data[i++] = 0;
+				data[i++] = 255;
+			}
+
+			gl2d::Texture t;
+			t.createFromBuffer((char *)data, 1, 1, true, false);
+			texturesIds.push_back(t.id);
+			auto handle = glGetTextureHandleARB(t.id);
+			glMakeTextureHandleResidentARB(handle);
+
+			gpuIds.push_back(handle);
+		}
 	};
 
 	std::string path;
@@ -847,6 +868,10 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 		handle = glGetTextureHandleARB(texturesIds[blockIndex + 2]);
 		glMakeTextureHandleResidentARB(handle);
 		gpuIds[blockIndex + 2] = handle;
+
+		handle = glGetTextureHandleARB(texturesIds[blockIndex + 3]);
+		glMakeTextureHandleResidentARB(handle);
+		gpuIds[blockIndex + 3] = handle;
 	};
 
 	auto addTexture = [&](int index, std::string path, bool isNormalMap = 0) -> bool
@@ -865,7 +890,6 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 4.f);
 
 		glGenerateMipmap(GL_TEXTURE_2D);
-
 
 
 		auto handle = glGetTextureHandleARB(t.id);
@@ -889,7 +913,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 	for (int i = 0; i < count; i++)
 	{
 		
-		if (!appendMode && texturesIds[(i+1)*3] != texturesIds[0])
+		if (!appendMode && texturesIds[(i+1)*4] != texturesIds[0])
 		{
 			continue;
 		}
@@ -898,7 +922,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 		path += texturesNames[i];
 
 		
-		if (!texturesNames[i][0] || !addTexture((i+1) * 3, path + ".png"))
+		if (!texturesNames[i][0] || !addTexture((i+1) * 4, path + ".png"))
 		{
 			if (appendMode)
 			{
@@ -917,7 +941,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 		}
 		else
 		{
-			if (!texturesNames[i][0] || !addTexture((i+1) * 3 + 1, path + "_n.png", true))
+			if (!texturesNames[i][0] || !addTexture((i+1) * 4 + 1, path + "_n.png", true))
 			{
 				if (appendMode)
 				{
@@ -927,7 +951,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 			}
 		}
 
-		if (!texturesNames[i][0] || !addTexture((i+1) * 3 + 2, path + "_s.png"))
+		if (!texturesNames[i][0] || !addTexture((i+1) * 4 + 2, path + "_s.png"))
 		{
 			if (appendMode)
 			{
@@ -936,6 +960,14 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 			}
 		}
 
+		if (!texturesNames[i][0] || !addTexture((i + 1) * 4 + 3, path + "_b.png"))
+		{
+			if (appendMode)
+			{
+				texturesIds.push_back(texturesIds[3]);
+				gpuIds.push_back(gpuIds[3]);
+			}
+		}
 
 	}
 	
@@ -944,6 +976,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 		texturesIds[desinationIndex + 0] = texturesIds[sourceIndex + 0];
 		texturesIds[desinationIndex + 1] = texturesIds[sourceIndex + 1];
 		texturesIds[desinationIndex + 2] = texturesIds[sourceIndex + 2];
+		texturesIds[desinationIndex + 3] = texturesIds[sourceIndex + 3];
 	};
 
 	auto applyModifications = [&](std::vector<unsigned char> &data,
@@ -1045,14 +1078,14 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 	//generate normal maps
 	{
 
-		for (int i = 1; i < texturesIds.size() / 3; i++)
+		for (int i = 1; i < texturesIds.size() / 4; i++)
 		{
 
-			if (texturesIds[i * 3 + 1] == texturesIds[1] && texturesIds[i*3] != texturesIds[0])
+			if (texturesIds[i * 4 + 1] == texturesIds[1] && texturesIds[i*4] != texturesIds[0])
 			{
 				//no normal map!, but the block is loaded
 
-				gl2d::Texture t; t.id = texturesIds[i*3 + 0];
+				gl2d::Texture t; t.id = texturesIds[i * 4 + 0];
 				glm::ivec2 size = {};
 				auto data = t.readTextureData(0, &size);
 
@@ -1127,7 +1160,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 					}
 
 				t.createFromBuffer((char *)data.data(), size.x * magnify, size.y * magnify, true, true);
-				texturesIds[i * 3 + 1] = t.id;
+				texturesIds[i * 4 + 1] = t.id;
 
 				t.bind();
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
@@ -1138,15 +1171,104 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 4.f);
 				glGenerateMipmap(GL_TEXTURE_2D);
 
-				auto handle = glGetTextureHandleARB(texturesIds[i*3 + 1]);
+				auto handle = glGetTextureHandleARB(texturesIds[i*4 + 1]);
 				glMakeTextureHandleResidentARB(handle);
-				gpuIds[i * 3 + 1] = handle;
+				gpuIds[i * 4 + 1] = handle;
 
 			}
 
 		}
 
 	}
+
+	//generate bump maps for paralax
+	{
+
+		for (int i = 1; i < texturesIds.size() / 4; i++)
+		{
+
+			if (texturesIds[i * 4 + 3] == texturesIds[3] && texturesIds[i * 4] != texturesIds[0])
+			{
+				//no bump map!, but the block is loaded
+
+				gl2d::Texture t; t.id = texturesIds[i * 4 + 0];
+				glm::ivec2 size = {};
+				auto data = t.readTextureData(0, &size);
+
+				std::vector<float> dataGrayScale;
+				dataGrayScale.resize(data.size() / 4);
+
+				for (int i = 0; i < data.size() / 4; i++)
+				{
+					glm::vec3 color = {};
+					color.r = data[i * 4 + 0] / 255.f;
+					color.g = data[i * 4 + 1] / 255.f;
+					color.b = data[i * 4 + 2] / 255.f;
+					float luminosity = glm::dot(color, {0.21,0.71,0.07});
+					dataGrayScale[i] = luminosity;
+
+					//if transparent
+					//if (data[i * 4 + 3] <= 2)
+					//{
+					//	dataGrayScale[i] = 0;
+					//}
+				}
+
+				constexpr int magnify = 1;
+				data.clear();
+				data.resize(dataGrayScale.size() * 4 * magnify * magnify);
+
+				float pixelSize = (1.f / size.x) * 3.8f;
+				//the last constant represents the height of the normal map result, hence the strength, smaller constant stronger normal
+
+				auto sample = [&](float u, float v)
+				{
+					int i = u * size.x;
+					int j = v * size.y;
+
+					return dataGrayScale[i + j * size.x];
+				};
+
+				for (int y = 0; y < size.y * magnify; y++)
+					for (int x = 0; x < size.x * magnify; x++)
+					{
+						glm::vec3 color = {};
+
+						float val = sample((float)x / (size.x * magnify), (float)y / (size.y * magnify));
+						int finalVal = glm::clamp(int(val * 255), 0, 255);
+						
+
+						int i = x + y * (size.x * magnify);
+
+						data[i * 4 + 0] = finalVal;
+						data[i * 4 + 1] = finalVal;
+						data[i * 4 + 2] = finalVal;
+						data[i * 4 + 3] = 255;
+
+					}
+
+				t.createFromBuffer((char *)data.data(), size.x * magnify, size.y * magnify, true, true);
+				texturesIds[i * 4 + 3] = t.id;
+
+				t.bind();
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+				//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 6.f);
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 4.f);
+				glGenerateMipmap(GL_TEXTURE_2D);
+
+				auto handle = glGetTextureHandleARB(texturesIds[i * 4 + 3]);
+				glMakeTextureHandleResidentARB(handle);
+				gpuIds[i * 4 + 3] = handle;
+
+			}
+
+		}
+
+	}
+
 
 
 	auto loadFromFileAndAddPadding = [&](gl2d::Texture &t, const char *path)
@@ -1423,21 +1545,26 @@ void BlocksLoader::clearAllTextures()
 	
 	spawnEggOverlay.cleanup();
 
-	for (int i = 1; i < texturesIds.size()/3; i++)
+	for (int i = 1; i < texturesIds.size()/4; i++)
 	{
-		if (texturesIds[i * 3] != texturesIds[0])
+		if (texturesIds[i * 4] != texturesIds[0])
 		{
-			glDeleteTextures(1, &texturesIds[i * 3]);
+			glDeleteTextures(1, &texturesIds[i * 4]);
 		}
 
-		if (texturesIds[i * 3 + 1] != texturesIds[1])
+		if (texturesIds[i * 4 + 1] != texturesIds[1])
 		{
-			glDeleteTextures(1, &texturesIds[i * 3 +1]);
+			glDeleteTextures(1, &texturesIds[i * 4 +1]);
 		}
 
-		if (texturesIds[i * 3 + 2] != texturesIds[2])
+		if (texturesIds[i * 4 + 2] != texturesIds[2])
 		{
-			glDeleteTextures(1, &texturesIds[i * 3 + 2]);
+			glDeleteTextures(1, &texturesIds[i * 4 + 2]);
+		}
+
+		if (texturesIds[i * 4 + 3] != texturesIds[3])
+		{
+			glDeleteTextures(1, &texturesIds[i * 4 + 3]);
 		}
 	}
 
@@ -1449,7 +1576,7 @@ void BlocksLoader::clearAllTextures()
 		}
 	}
 
-	glDeleteTextures(3, &texturesIds[0]);
+	glDeleteTextures(4, &texturesIds[0]);
 	texturesIds.clear();
 	gpuIds.clear();
 
@@ -1850,7 +1977,7 @@ void BlocksLoader::loadAllItemsGeometry()
 
 uint16_t getGpuIdIndexForBlock(short type, int face)
 {
-	return blocksLookupTable[type * 6 + face] * 3;
+	return blocksLookupTable[type * 6 + face] * 4;
 }
 
 

@@ -87,6 +87,7 @@ out flat int v_ambientInt;
 out flat uvec2 v_textureSampler;
 out flat uvec2 v_normalSampler;
 out flat uvec2 v_materialSampler;
+out flat uvec2 v_paralaxSampler;
 
 //in world space
 out flat ivec3 fragmentPositionI;
@@ -367,5 +368,6 @@ void main()
 	v_textureSampler = textureSamplerers[in_textureIndex];
 	v_normalSampler = textureSamplerers[in_textureIndex+1];
 	v_materialSampler = textureSamplerers[in_textureIndex+2];
+	v_paralaxSampler = textureSamplerers[in_textureIndex+3];
 
 }

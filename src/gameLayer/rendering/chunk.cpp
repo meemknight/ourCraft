@@ -245,7 +245,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 		{
 			if (getRandomChance(x, y, z, 0.2))
 			{
-				return BRICKS_VARIATION_TEXTURE_INDEX * 3;
+				return BRICKS_VARIATION_TEXTURE_INDEX * 4;
 			}
 		}
 		else if (type == blueBricks ||
@@ -254,7 +254,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 		{
 			if (getRandomChance(x, y, z, 0.2))
 			{
-				return BLUE_BRICKS_VARIATION_TEXTURE_INDEX * 3;
+				return BLUE_BRICKS_VARIATION_TEXTURE_INDEX * 4;
 			}
 		}
 
@@ -1864,11 +1864,11 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 
 			if (snowGrass)
 			{
-				currentVector->push_back(mergeShorts(i, SNOW_GRASS_TEXTURE_INDEX * 3));
+				currentVector->push_back(mergeShorts(i, SNOW_GRASS_TEXTURE_INDEX * 4));
 			}
 			else if (yellowGrass)
 			{
-				currentVector->push_back(mergeShorts(i, YELLOW_GRASS_TEXTURE_INDEX * 3));
+				currentVector->push_back(mergeShorts(i, YELLOW_GRASS_TEXTURE_INDEX * 4));
 			}
 			else
 			{
@@ -2052,8 +2052,17 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 				opaqueGeometry.push_back(mergeShorts(i + geometry.startIndex,
 					getGpuIdIndexForBlockWithVariation(type, 0, x, y, z)));
 
-				pushFlagsLightAndPosition(opaqueGeometry, position, 0, false,
-					b.getSkyLight(), b.getLight(), 0);
+				if (dontUpdateLightSystem)
+				{
+					pushFlagsLightAndPosition(opaqueGeometry, position, 0, false,
+						15, 0, 0);
+				}
+				else
+				{
+					pushFlagsLightAndPosition(opaqueGeometry, position, 0, false,
+						b.getSkyLight(), b.getLight(), 0);
+				}
+
 			}
 
 		};
