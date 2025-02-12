@@ -114,6 +114,22 @@ good performance.\n-Fancy: significant performance cost but looks very nice.");
 	programData.ui.menuRenderer.EndMenu();
 #pragma endregion
 
+#pragma region lights
+	programData.ui.menuRenderer.BeginMenu("Lights", Colors_Gray, programData.ui.buttonTexture);
+	programData.ui.menuRenderer.Text("Lights settings...", Colors_White);
+
+	programData.ui.menuRenderer.toggleOptions("Lights: ", "OFF|ON", &getShadingSettings().useLights, true, Colors_White, 0,
+		programData.ui.buttonTexture, Colors_Gray, "If this is on, torches will contribute with specualr and diffuse lights.");
+
+	if (getShadingSettings().useLights)
+	{
+		programData.ui.menuRenderer.sliderInt("Max lights", &getShadingSettings().maxLights, 1, 100, DEFAULT_SLIDER);
+		programData.ui.menuRenderer.sliderFloat("Lights strength", &getShadingSettings().lightsStrength, 0.1, 2, DEFAULT_SLIDER);
+	};
+
+	programData.ui.menuRenderer.EndMenu();
+#pragma endregion
+
 
 	//static glm::vec4 colorsTonemapper[] = {{0.6,0.9,0.6,1}, {0.6,0.9,0.6,1}, {0.7,0.8,0.6,1} , {0.4,0.8,0.4,1}};
 	programData.ui.menuRenderer.toggleOptions("Tonemapper: ",
@@ -641,7 +657,8 @@ bool checkIfShadingSettingsChangedForShaderReloads()
 	if (
 		shadingSettings.shadows != shadingSettingsLastFrame.shadows ||
 		shadingSettings.PBR != shadingSettingsLastFrame.PBR ||
-		shadingSettings.SSR != shadingSettingsLastFrame.SSR
+		shadingSettings.useLights != shadingSettingsLastFrame.useLights ||
+		shadingSettings.SSR != shadingSettingsLastFrame.SSR 
 		)
 	{
 		shadingSettingsLastFrame = shadingSettings;
@@ -672,7 +689,10 @@ void saveShadingSettings()
 	SET_INT(waterType);
 	SET_INT(PBR);
 	SET_INT(SSR);
+	SET_INT(maxLights);
+	SET_INT(useLights);
 	SET_INT(bloom);
+	SET_FLOAT(lightsStrength);
 
 	SET_VEC3(waterColor);
 	SET_VEC3(underWaterColor);
@@ -715,7 +735,10 @@ void loadShadingSettings()
 		GET_INT(waterType);
 		GET_INT(PBR);
 		GET_INT(SSR);
+		GET_INT(maxLights);
 		GET_INT(bloom);
+		GET_INT(useLights);
+		GET_FLOAT(lightsStrength);
 
 
 		void *rawData = 0;
@@ -1375,6 +1398,10 @@ void ShadingSettings::normalize()
 	PBR = glm::clamp(PBR, 0, 1);
 	bloom = glm::clamp(bloom, 0, 1);
 	SSR = glm::clamp(SSR, 0, 1);
+	useLights = glm::clamp(useLights, 0, 1);
+	lightsStrength = glm::clamp(lightsStrength, 0.1f, 2.f);
+
+	maxLights = glm::clamp(maxLights, 1,100);
 
 	exposure = glm::clamp(exposure, -2.f, 2.f);
 	fogGradient = glm::clamp(fogGradient, 0.f, 100.f);
@@ -1398,7 +1425,7 @@ std::string ShadingSettings::formatIntoGLSLcode()
 	ADD_TO_RESULT(shadows);
 	ADD_TO_RESULT(PBR);
 	ADD_TO_RESULT(SSR);
-
+	ADD_TO_RESULT(useLights);
 
 
 

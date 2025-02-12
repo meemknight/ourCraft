@@ -2084,7 +2084,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	{
 		sunShadow.update();
 
-		if (shadingSettings.shadows)
+		if (getShadingSettings().shadows)
 		{
 			programData.renderer.renderShadow(sunShadow,
 				chunkSystem, c, programData, mainLightPosition);
@@ -2504,6 +2504,97 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		}
 
 	#pragma region lights
+		//new
+		if(1)
+		{
+			int maxLights = getShadingSettings().maxLights;
+
+			static int lastFrameMaxLights = 0;
+
+			if (lastFrameMaxLights != maxLights)
+			{
+				chunkSystem.shouldUpdateLights = true;
+				lastFrameMaxLights = maxLights;
+			}
+
+			if (chunkSystem.shouldUpdateLights)
+			{
+				chunkSystem.shouldUpdateLights = 0;
+
+				//std::cout << "Updated lights\n";
+
+				lightsBufferCount = 0;
+
+				if (maxLights)
+				{
+					int currentSize = 0;
+					int s = chunkVectorCopy.size();
+					for (int i = s - 1; i >= 0; i--)
+					{
+						auto &c = chunkVectorCopy[i];
+						if (c && !c->isDontDrawYet())
+						{
+							currentSize += c->lightsElementCountSize;
+
+							if (currentSize >= maxLights)
+							{
+								break;
+							}
+						}
+
+					}
+
+					glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightBuffer);
+					glBufferData(GL_SHADER_STORAGE_BUFFER, currentSize * sizeof(glm::ivec4), NULL, GL_STREAM_COPY);
+					glBindBuffer(GL_COPY_WRITE_BUFFER, lightBuffer);
+					size_t offset = 0;
+
+					for (int i = s - 1; i >= 0; i--)
+					{
+						auto &c = chunkVectorCopy[i];
+						if (c && !c->isDontDrawYet())
+						{
+							lightsBufferCount += c->lightsElementCountSize;
+
+							glBindBuffer(GL_COPY_READ_BUFFER, c->lightsBuffer);
+
+							// Copy data from the first existing SSBO to the new SSBO
+							glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset,
+								c->lightsElementCountSize * sizeof(glm::ivec4));
+
+							offset += c->lightsElementCountSize * sizeof(glm::ivec4);
+
+							if (lightsBufferCount > maxLights)
+							{
+								break;
+							}
+						}
+
+					}
+
+
+					glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightBuffer);
+					glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, lightBuffer);
+				}
+
+
+			};
+
+			glUniform1i(defaultShader.u_lightsCount, std::min(lightsBufferCount, (size_t)maxLights));
+
+			//auto c = chunkSystem.getChunkSafeFromBlockPos(posInt.x, posInt.z);
+			//
+			//if (c)
+			//{
+			//	glBindBuffer(GL_SHADER_STORAGE_BUFFER, c->lightsBuffer);
+			//	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, c->lightsBuffer);
+			//	glUniform1i(u_lightsCount, c->lightsElementCountSize);
+			//}
+		}
+
+		//old
+		
+		if(0)
 		{
 
 			if (chunkSystem.shouldUpdateLights)
@@ -2560,6 +2651,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			//	glUniform1i(u_lightsCount, c->lightsElementCountSize);
 			//}
 		}
+		
 	#pragma endregion
 
 	}

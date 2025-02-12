@@ -45,6 +45,9 @@ struct ShadingSettings
 	int workerThreadsForBaking = 2; //MOVE TODO
 	int lodStrength = 1; //MOVE TODO
 	int PBR = 1;
+	int maxLights = 40;
+	int useLights = 1;
+	float lightsStrength = 1.f;
 
 	glm::vec3 waterColor = (glm::vec3(6, 42, 52) / 255.f);
 	glm::vec3 underWaterColor = glm::vec3(0, 17, 25) / 255.f;

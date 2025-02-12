@@ -962,13 +962,14 @@ void main()
 		float viewLength = length(v_semiViewSpacePos);
 		vec3 V = -v_semiViewSpacePos / viewLength;
 		vec2 finalUV = v_uv;
-		vec3 viewWorldSpace = normalize((u_view * vec4(v_semiViewSpacePos,1)).xyz);
+		vec3 viewWorldSpace = ((u_view * vec4(v_semiViewSpacePos,1)).xyz);
 
 		//paralax
 		//https://www.youtube.com/watch?v=LrnE5f3h2SU
+		/*
 		if(false)
 		{
-			vec3 viewVector = viewWorldSpace;
+			vec3 viewVector = normalize(viewWorldSpace);
 			
 			float heightScale = 0.10;
 			const float minLayers = 4;
@@ -1013,7 +1014,7 @@ void main()
 			UVs = clamp(UVs, vec2(0,0), vec2(1,1));
 			finalUV = UVs;
 		}
-
+		*/
 
 		//load material
 		float metallic = 0;
@@ -1079,7 +1080,7 @@ void main()
 		//if(u_writeScreenSpacePositions != 0)
 		{
 			////out_screenSpacePositions.xyz = u_view* -ViewSpaceVector; 
-			out_screenSpacePositions.xyz = viewWorldSpace; //this is good
+			out_screenSpacePositions.xyz =  viewWorldSpace;
 			//out_screenSpacePositions.a = 1;
 		}
 		
@@ -1133,6 +1134,7 @@ void main()
 
 		//compute lights color
 		//if(false)
+		if(c_useLights != 0)
 		for(int i=0; i< u_lightsCount; i++)
 		{
 			if(v_normalLight == 0){continue;}
