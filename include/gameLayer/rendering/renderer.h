@@ -182,7 +182,6 @@ struct Renderer
 			float fogGradientUnderWater = 1.9;
 			int shaders = true;
 			float fogCloseGradient = 0;
-			int shadows = 0;
 		}shadingSettings;
 
 
@@ -408,7 +407,6 @@ struct Renderer
 	bool renderTransparent = 1;
 	bool frustumCulling = 1;
 	bool ssao = 1;
-	bool bloom = 1;
 	
 	FBO fboHBAO;
 	FBO fboMain;

@@ -46,7 +46,7 @@ GLint createShaderFromData(const char* data, GLenum shaderType)
 
 }
 
-GLint createShaderFromFile(const char* source, GLenum shaderType)
+GLint createShaderFromFile(const char* source, GLenum shaderType, const char *extraCode = 0)
 {
 	std::ifstream file;
 	file.open(source);
@@ -57,23 +57,52 @@ GLint createShaderFromFile(const char* source, GLenum shaderType)
 		return 0;
 	}
 
-	GLint size = 0;
-	file.seekg(0, file.end);
-	size = file.tellg();
-	file.seekg(0, file.beg);
+	if (extraCode)
+	{
+		file.seekg(0, std::ios::end);
+		std::streamsize size = file.tellg(); // Get file size
+		file.seekg(0, std::ios::beg); // Seek back to start
+		std::string content(size, '\0'); // Preallocate string buffer
+		file.read(&content[0], size); // Read directly into string
 
-	char* fileContent = new char[size + 1]{};
+		//search content for the string #version and add the extraCode variable to the string in that point
+		size_t pos = content.find("#version");
+		if (pos != std::string::npos)
+		{
+			// Find the end of the line
+			pos = content.find('\n', pos);
+			if (pos != std::string::npos)
+			{
+				// Insert extraCode after the newline
+				content.insert(pos + 1, extraCode);
+			}
+		}
+		file.close();
 
-	file.read(fileContent, size);
+		auto rez = createShaderFromData(content.c_str(), shaderType);
+		return rez;
+	}
+	else
+	{
+		GLint size = 0;
+		file.seekg(0, file.end);
+		size = file.tellg();
+		file.seekg(0, file.beg);
+
+		char *fileContent = new char[size + 1] {};
+
+		file.read(fileContent, size);
 
 
-	file.close();
+		file.close();
 
-	auto rez = createShaderFromData(fileContent, shaderType);
+		auto rez = createShaderFromData(fileContent, shaderType);
 
-	delete[] fileContent;
+		delete[] fileContent;
 
-	return rez;
+		return rez;
+	}
+
 
 }
 
@@ -160,6 +189,59 @@ bool Shader::loadShaderProgramFromFile(const char* vertexShader, const char* geo
 	if (info != GL_TRUE)
 	{
 		char* message = 0;
+		int   l = 0;
+
+		glGetProgramiv(id, GL_INFO_LOG_LENGTH, &l);
+
+		message = new char[l];
+
+		glGetProgramInfoLog(id, l, &l, message);
+
+		std::cout << "Link error: " << message << "\n";
+
+		delete[] message;
+
+		glDeleteProgram(id);
+		id = 0;
+		return 0;
+	}
+
+	glValidateProgram(id);
+
+	return true;
+}
+
+bool Shader::loadShaderProgramFromFileAndAddCode(const char *vertexShader, const char *fragmentShader, const char *codeToAdd)
+{
+
+	auto vertexId = createShaderFromFile(vertexShader, GL_VERTEX_SHADER, codeToAdd);
+
+	if (vertexId == 0) { return 0; }
+
+	auto fragmentId = createShaderFromFile(fragmentShader, GL_FRAGMENT_SHADER, codeToAdd);
+
+	if (fragmentId == 0)
+	{
+		glDeleteShader(vertexId);
+		return 0;
+	}
+
+	id = glCreateProgram();
+
+	glAttachShader(id, vertexId);
+	glAttachShader(id, fragmentId);
+
+	glLinkProgram(id);
+
+	glDeleteShader(vertexId);
+	glDeleteShader(fragmentId);
+
+	GLint info = 0;
+	glGetProgramiv(id, GL_LINK_STATUS, &info);
+
+	if (info != GL_TRUE)
+	{
+		char *message = 0;
 		int   l = 0;
 
 		glGetProgramiv(id, GL_INFO_LOG_LENGTH, &l);

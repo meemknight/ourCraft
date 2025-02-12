@@ -22,6 +22,18 @@ void displayRenderSettingsMenuButton(ProgramData &programData)
 void displayRenderSettingsMenu(ProgramData &programData)
 {
 
+	for (auto &s : programData.ui.menuRenderer.internal.allMenuStacks
+		[programData.ui.menuRenderer.internal.currentId])
+	{
+		if (s == "Rendering")
+		{
+			programData.ui.renderer2d.renderText({150,50},
+				("fps: " + std::to_string(programData.currentFps)).c_str(), programData.ui.font, Colors_Gray, 0.75f);
+			break;
+		}
+	}
+
+
 
 	programData.ui.menuRenderer.Text("Rendering Settings...", Colors_White);
 
@@ -90,17 +102,23 @@ good performance.\n-Fancy: significant performance cost but looks very nice.");
 	programData.ui.menuRenderer.BeginMenu("Bloom", Colors_Gray, programData.ui.buttonTexture);
 	programData.ui.menuRenderer.Text("Bloom settings...", Colors_White);
 
-	programData.ui.menuRenderer.sliderFloat("Bloom Multiplier", &getShadingSettings().bloomMultiplier, 0, 1, DEFAULT_SLIDER);
-	programData.ui.menuRenderer.sliderFloat("Bloom Tresshold", &getShadingSettings().bloomTresshold, 0.1, 1, DEFAULT_SLIDER);
+	programData.ui.menuRenderer.toggleOptions("BLoom: ", "OFF|ON", &getShadingSettings().bloom, true, Colors_White, 0, programData.ui.buttonTexture,
+		Colors_Gray);
+
+	if (getShadingSettings().bloom)
+	{
+		programData.ui.menuRenderer.sliderFloat("Bloom Multiplier", &getShadingSettings().bloomMultiplier, 0, 1, DEFAULT_SLIDER);
+		programData.ui.menuRenderer.sliderFloat("Bloom Tresshold", &getShadingSettings().bloomTresshold, 0.1, 1, DEFAULT_SLIDER);
+	};
 
 	programData.ui.menuRenderer.EndMenu();
 #pragma endregion
 
 
-	static glm::vec4 colorsTonemapper[] = {{0.6,0.9,0.6,1}, {0.6,0.9,0.6,1}, {0.7,0.8,0.6,1} , {0.4,0.8,0.4,1}};
+	//static glm::vec4 colorsTonemapper[] = {{0.6,0.9,0.6,1}, {0.6,0.9,0.6,1}, {0.7,0.8,0.6,1} , {0.4,0.8,0.4,1}};
 	programData.ui.menuRenderer.toggleOptions("Tonemapper: ",
 		"ACES|AgX|ZCAM|Uncharted", &getShadingSettings().tonemapper,
-		true, Colors_White, colorsTonemapper, programData.ui.buttonTexture,
+		true, Colors_White, nullptr, programData.ui.buttonTexture,
 		Colors_Gray, 
 "The tonemapper is the thing that displays the final color\n\
 -Aces: a filmic look.\n-AgX: a more dull neutral look.\n-ZCAM a verey neutral and vanila look\n   preserves colors, slightly more expensive.\n Unchrated :))");
@@ -118,6 +136,22 @@ good performance.\n-Fancy: significant performance cost but looks very nice.");
 
 	displayTexturePacksSettingsMenuButton(programData);
 
+#pragma region SSR
+	programData.ui.menuRenderer.BeginMenu("Screen Space Reflections", Colors_Gray, programData.ui.buttonTexture);
+	programData.ui.menuRenderer.Text("Screen Space Reflections settings...", Colors_White);
+
+	programData.ui.menuRenderer.toggleOptions("SSR: ", "OFF|ON", &getShadingSettings().SSR, true, Colors_White, 0, programData.ui.buttonTexture,
+		Colors_Gray);
+
+	if (getShadingSettings().SSR)
+	{
+		//... other SSR settings like quality stuff
+	};
+
+	programData.ui.menuRenderer.EndMenu();
+#pragma endregion
+
+
 	//programData.menuRenderer.BeginMenu("Volumetric", Colors_Gray, programData.buttonTexture);
 	//programData.menuRenderer.Text("Volumetric Settings...", Colors_White);
 	programData.ui.menuRenderer.sliderFloat("Fog gradient (O to disable it)",
@@ -129,11 +163,10 @@ good performance.\n-Fancy: significant performance cost but looks very nice.");
 
 	static glm::vec4 colorsShadows[] = {{0.0,1,0.0,1}, {0.8,0.6,0.6,1}, {0.9,0.3,0.3,1}};
 	programData.ui.menuRenderer.toggleOptions("Shadows: ", "Off|Hard|Soft",
-		&programData.renderer.defaultShader.shadingSettings.shadows, true,
+		&getShadingSettings().shadows, true,
 		Colors_White, colorsShadows, programData.ui.buttonTexture,
 		Colors_Gray, "Shadows can affect the performance significantly."
 	);
-	getShadingSettings().shadows = programData.renderer.defaultShader.shadingSettings.shadows;
 
 
 }
@@ -595,10 +628,27 @@ std::string getSkinName()
 }
 
 ShadingSettings shadingSettings;
+ShadingSettings shadingSettingsLastFrame;
 
 ShadingSettings &getShadingSettings()
 {
 	return shadingSettings;
+}
+
+bool checkIfShadingSettingsChangedForShaderReloads()
+{
+	shadingSettings.normalize();
+	if (
+		shadingSettings.shadows != shadingSettingsLastFrame.shadows ||
+		shadingSettings.PBR != shadingSettingsLastFrame.PBR ||
+		shadingSettings.SSR != shadingSettingsLastFrame.SSR
+		)
+	{
+		shadingSettingsLastFrame = shadingSettings;
+		return true;
+	}
+
+	return false;
 }
 
 #define SET_INT(x) data.setInt( #x, shadingSettings. x )
@@ -620,6 +670,9 @@ void saveShadingSettings()
 	SET_INT(tonemapper);
 	SET_INT(shadows);
 	SET_INT(waterType);
+	SET_INT(PBR);
+	SET_INT(SSR);
+	SET_INT(bloom);
 
 	SET_VEC3(waterColor);
 	SET_VEC3(underWaterColor);
@@ -660,6 +713,10 @@ void loadShadingSettings()
 		GET_INT(tonemapper);
 		GET_INT(shadows);
 		GET_INT(waterType);
+		GET_INT(PBR);
+		GET_INT(SSR);
+		GET_INT(bloom);
+
 
 		void *rawData = 0;
 		size_t dataSize = 0;
@@ -1314,8 +1371,36 @@ void ShadingSettings::normalize()
 
 	bloomTresshold = glm::clamp(bloomTresshold, 0.1f, 1.f);
 	bloomMultiplier = glm::clamp(bloomMultiplier, 0.0f, 1.f);
+	
+	PBR = glm::clamp(PBR, 0, 1);
+	bloom = glm::clamp(bloom, 0, 1);
+	SSR = glm::clamp(SSR, 0, 1);
 
 	exposure = glm::clamp(exposure, -2.f, 2.f);
 	fogGradient = glm::clamp(fogGradient, 0.f, 100.f);
 
+}
+
+#define GET_STR(x) "c_" #x
+
+#define ADD_TO_RESULT(x) result += ("#define " GET_STR(x) " ") + std::to_string(x) + "\n"
+#define ADD_TO_RESULT_VEC3(x) result += ("#define " GET_STR(x) " vec3(") + std::to_string(x.r) + "," + std::to_string(x.g) + "," + std::to_string(x.b) + ")\n"
+
+
+std::string ShadingSettings::formatIntoGLSLcode()
+{
+	normalize();
+
+	std::string result;
+	result.reserve(500);
+
+
+	ADD_TO_RESULT(shadows);
+	ADD_TO_RESULT(PBR);
+	ADD_TO_RESULT(SSR);
+
+
+
+
+	return result;
 }

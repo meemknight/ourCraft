@@ -42,8 +42,9 @@ struct ShadingSettings
 	int tonemapper = 0;
 	int shadows = 0;
 	int waterType = 1;
-	int workerThreadsForBaking = 2;
-	int lodStrength = 1;
+	int workerThreadsForBaking = 2; //MOVE TODO
+	int lodStrength = 1; //MOVE TODO
+	int PBR = 1;
 
 	glm::vec3 waterColor = (glm::vec3(6, 42, 52) / 255.f);
 	glm::vec3 underWaterColor = glm::vec3(0, 17, 25) / 255.f;
@@ -57,27 +58,17 @@ struct ShadingSettings
 
 	float exposure = 0;
 	float fogGradient = 16.f;
+	int bloom = 1;
+
+	int SSR = 1;
+
 
 	void normalize();
 
 	// Equality operator
 	bool operator==(const ShadingSettings &other) const
 	{
-		return viewDistance == other.viewDistance &&
-			tonemapper == other.tonemapper &&
-			shadows == other.shadows &&
-			waterColor == other.waterColor &&
-			underWaterColor == other.underWaterColor &&
-			underwaterDarkenStrength == other.underwaterDarkenStrength &&
-			underwaterDarkenDistance == other.underwaterDarkenDistance &&
-			fogGradientUnderWater == other.fogGradientUnderWater &&
-			exposure == other.exposure &&
-			lodStrength == other.lodStrength &&
-			workerThreadsForBaking == other.workerThreadsForBaking &&
-			bloomTresshold == other.bloomTresshold &&
-			bloomMultiplier == other.bloomMultiplier &&
-			waterType == other.waterType;
-		
+		return std::memcmp(this, &other, sizeof(ShadingSettings)) == 0;
 	}
 
 	// Inequality operator
@@ -85,9 +76,13 @@ struct ShadingSettings
 	{
 		return !(*this == other);
 	}
+
+	std::string formatIntoGLSLcode();
 };
 
 ShadingSettings &getShadingSettings();
+
+bool checkIfShadingSettingsChangedForShaderReloads();
 
 void saveShadingSettings();
 

@@ -581,18 +581,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 
 
-		if (platform::isKeyPressedOn(platform::Button::R))
-		{
-			programData.renderer.reloadShaders();
-			programData.skyBoxLoaderAndDrawer.clearOnlyGPUdata();
-			programData.skyBoxLoaderAndDrawer.createGpuData();
-			programData.skyBoxLoaderAndDrawer.createSkyTextures();
-
-			programData.sunRenderer.clear();
-			programData.sunRenderer.create();
-
-		}
-
 
 		//move
 		{
@@ -734,13 +722,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 					gameData.currentItemSelected = i;
 
-					
+
 				}
 			}
 
 			auto scroll = platform::getScroll();
 			if (scroll < -0.5)
-			{	
+			{
 				if (gameData.currentItemSelected < 8)
 				{
 					AudioEngine::playSound(AudioEngine::sounds::uiSlider, UI_SOUND_VOLUME);
@@ -764,15 +752,15 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	#pragma region drop items
 
-			if (platform::isKeyPressedOn(platform::Button::Q))
-			{
-				gameData.entityManager.dropItemByClient(
-					gameData.entityManager.localPlayer.entity.position,
-					gameData.currentItemSelected, gameData.undoQueue, gameData.c.viewDirection * 5.f,
-					gameData.serverTimer, player.inventory, !platform::isKeyHeld(platform::Button::LeftCtrl));
+		if (platform::isKeyPressedOn(platform::Button::Q))
+		{
+			gameData.entityManager.dropItemByClient(
+				gameData.entityManager.localPlayer.entity.position,
+				gameData.currentItemSelected, gameData.undoQueue, gameData.c.viewDirection * 5.f,
+				gameData.serverTimer, player.inventory, !platform::isKeyHeld(platform::Button::LeftCtrl));
 
-				gameData.currentBlockBreaking = {};
-			}
+			gameData.currentBlockBreaking = {};
+		}
 
 	#pragma endregion
 	}
@@ -780,6 +768,29 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 #pragma endregion
+
+#pragma region reload shaders
+	{
+
+		if (checkIfShadingSettingsChangedForShaderReloads() ||
+			(!stopMainInput && platform::isKeyPressedOn(platform::Button::R)))
+		//if(!stopMainInput && platform::isKeyPressedOn(platform::Button::R))
+		{
+
+			programData.renderer.reloadShaders();
+			programData.skyBoxLoaderAndDrawer.clearOnlyGPUdata();
+			programData.skyBoxLoaderAndDrawer.createGpuData();
+			programData.skyBoxLoaderAndDrawer.createSkyTextures();
+
+			programData.sunRenderer.clear();
+			programData.sunRenderer.create();
+
+		}
+
+
+	}
+#pragma endregion
+
 
 
 #pragma region block collisions and entity updates!
@@ -2077,9 +2088,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				&programData.renderer.ssao);
 			//ImGui::Checkbox("Water Refraction",
 			//	&programData.renderer.waterRefraction);
-
-			ImGui::Checkbox("Bloom", &programData.renderer.bloom);
-
+			
 
 			if (ImGui::CollapsingHeader("Music ",
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))

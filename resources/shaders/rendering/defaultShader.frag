@@ -39,7 +39,6 @@ uniform ShadingSettings
 	float u_fogGradientUnderWater;
 	int u_shaders;
 	float u_fogCloseGradient;
-	int u_shadows;
 
 };
 
@@ -608,9 +607,9 @@ float getShadowDistance(vec3 pos)
 float shadowCalc2(float dotLightNormal)
 {
 	
-	if(u_shadows == 0){ return 1.f; }
+	if(c_shadows == 0){ return 1.f; }
 
-	if(u_shadows == 1){return shadowCalc(dotLightNormal);}
+	if(c_shadows == 1){return shadowCalc(dotLightNormal);}
 
 	vec3 projCoords = v_fragPosLightSpace.xyz * 0.5 + 0.5;
 	projCoords.z = min(projCoords.z, 1.0);
@@ -1294,6 +1293,7 @@ void main()
 		//out_color = clamp(out_color, vec4(0), vec4(1));
 		
 		//ssr
+		if(c_SSR != 0)
 		if(true)
 		if(!physicallyAccurateReflections)
 		if(roughness < 0.45)

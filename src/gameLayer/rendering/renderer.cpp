@@ -1706,10 +1706,12 @@ void Renderer::recreateBlockGeometryData(ModelsManager &modelsManager)
 void Renderer::reloadShaders()
 {
 
+	std::string defines = getShadingSettings().formatIntoGLSLcode();
+
 	defaultShader.shader.clear();
 
-	defaultShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/rendering/defaultShader.vert",
-		RESOURCES_PATH "shaders/rendering/defaultShader.frag");
+	defaultShader.shader.loadShaderProgramFromFileAndAddCode(RESOURCES_PATH "shaders/rendering/defaultShader.vert",
+		RESOURCES_PATH "shaders/rendering/defaultShader.frag", defines.c_str());
 	defaultShader.shader.bind();
 
 	GET_UNIFORM2(defaultShader, u_viewProjection);
@@ -2082,7 +2084,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	{
 		sunShadow.update();
 
-		if (programData.renderer.defaultShader.shadingSettings.shadows)
+		if (shadingSettings.shadows)
 		{
 			programData.renderer.renderShadow(sunShadow,
 				chunkSystem, c, programData, mainLightPosition);
@@ -3169,13 +3171,12 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 #pragma endregion
 
 	bool lastBloomChannel = 0;
-	if (bloom && getShadingSettings().bloomMultiplier > 0)
+	if (getShadingSettings().bloom && getShadingSettings().bloomMultiplier > 0)
 	{
 
 		programData.GPUProfiler.startSubProfile("Bloom");
 
 #pragma region get bloom filtered data
-	if(bloom)
 	{
 		glDisable(GL_DEPTH_TEST);
 
@@ -3219,7 +3220,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 #pragma endregion
 
 #pragma region bloom blur
-	if (bloom)
 	{
 		glBindVertexArray(vaoQuad);
 
@@ -3420,7 +3420,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 
 	//bloom
-	if(bloom)
+	if(getShadingSettings().bloom && getShadingSettings().bloomMultiplier > 0)
 	{
 
 

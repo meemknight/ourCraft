@@ -321,7 +321,6 @@ bool initGame() //main server and title screen stuff
 
 		s.exposure = loadedS.exposure;
 		s.fogGradientUnderWater = loadedS.fogGradientUnderWater;
-		s.shadows = loadedS.shadows;
 		s.tonemapper = loadedS.tonemapper;
 		s.underWaterColor = loadedS.underWaterColor;
 		s.underwaterDarkenDistance = loadedS.underwaterDarkenDistance;
