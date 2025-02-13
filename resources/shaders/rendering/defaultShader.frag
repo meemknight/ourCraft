@@ -25,7 +25,7 @@ in flat int v_ambientInt;
 in flat int v_skyLight; //ambient sun value, todo remove?
 in flat int v_skyLightUnchanged;
 in flat int v_normalLight;
-
+in flat int v_colors;
 
 uniform ShadingSettings 
 {
@@ -1054,6 +1054,16 @@ void main()
 		}
 
 		out_materials.r = roughness;
+
+
+		//paing
+		if(v_colors != 0)
+		{
+			textureColor.rgb *= vec3(0.9,0.1,0.1);
+			roughness -= 0.5;
+			roughness = clamp(roughness, 0, 1);
+		}
+
 
 		
 		out_bloom += emissive * 0.12 * textureColor.rgb;

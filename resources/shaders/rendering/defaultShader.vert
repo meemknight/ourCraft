@@ -107,6 +107,9 @@ out vec4 v_fragPosLightSpace;
 
 out flat int v_flags;
 
+out flat int v_colors;
+
+
 vec2 calculateUVs(int vertexId)
 {	
 	vec2 uvs; 
@@ -365,9 +368,14 @@ void main()
 	//v_color = vertexColor[in_faceOrientation];
 
 
-	v_textureSampler = textureSamplerers[in_textureIndex];
-	v_normalSampler = textureSamplerers[in_textureIndex+1];
-	v_materialSampler = textureSamplerers[in_textureIndex+2];
-	v_paralaxSampler = textureSamplerers[in_textureIndex+3];
+	//0b1111'1000'0000'0000
+	//0b0000'0111'1111'1111
+	v_colors = (in_textureIndex & 0xF800) >> 11;
+	int textureIndex = in_textureIndex & 0x07FF;
+
+	v_textureSampler = textureSamplerers[textureIndex];
+	v_normalSampler = textureSamplerers[textureIndex+1];
+	v_materialSampler = textureSamplerers[textureIndex+2];
+	v_paralaxSampler = textureSamplerers[textureIndex+3];
 
 }

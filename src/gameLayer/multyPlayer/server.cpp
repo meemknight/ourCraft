@@ -668,7 +668,7 @@ void serverWorkerUpdate(
 			//broadCast(packet, &packetData, sizeof(Packet_PlaceBlock), nullptr, true, channelChunksAndBlocks);
 
 			newBlocks[i].blockPos = b.pos;
-			newBlocks[i].blockType = b.block;
+			newBlocks[i].blockInfo = b.blockInfo;
 
 			i++;
 		}

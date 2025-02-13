@@ -322,7 +322,7 @@ struct Packet_ClientDroppedItem
 struct Packet_PlaceBlocks
 {
 	glm::ivec3 blockPos = {};
-	BlockType blockType = {};
+	Block blockInfo = {};
 };
 
 struct Packet_AttackEntity

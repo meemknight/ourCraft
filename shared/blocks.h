@@ -265,7 +265,19 @@ struct Block
 {
 	BlockType typeAndFlags = 0;
 	unsigned char lightLevel = 0; //first 4 bytes represent the sun level and bottom 4 bytes the other lights level
-	unsigned char notUsed = 0;
+	unsigned char colorAndOtherFlags = 0;
+
+	unsigned short getColor()
+	{
+		return colorAndOtherFlags & 0b0001'1111;
+	}
+
+	void setColor(unsigned short color)
+	{
+		if (color >= 32) { color = 31; }
+		colorAndOtherFlags &= 0b1110'0000;
+		colorAndOtherFlags |= color;
+	}
 
 	BlockType getType()
 	{

@@ -1100,6 +1100,19 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 							
 							auto actionType = isInteractable(b->getType());
 
+
+							if (player.inventory.getItemFromIndex(gameData.currentItemSelected)->isPaint())
+							{
+								didAction = true;
+
+								auto &item = *player.inventory.getItemFromIndex(gameData.currentItemSelected);
+
+								int paintType = item.type - soap;
+
+								b->setColor(paintType);
+								c->setDirty(true);
+
+							}else
 							if (actionType)
 							{
 								didAction = true;

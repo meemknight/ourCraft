@@ -391,10 +391,7 @@ void recieveDataClient(ENetEvent &event,
 			//chunkSystem.placeBlockNoClient
 			Packet_PlaceBlocks b = *(Packet_PlaceBlocks *)data;
 
-			Block bl;
-			bl.typeAndFlags = b.blockType;
-
-			chunkSystem.placeBlockByServerAndRemoveFromUndoQueue(b.blockPos, bl, lightSystem,
+			chunkSystem.placeBlockByServerAndRemoveFromUndoQueue(b.blockPos, b.blockInfo, lightSystem,
 				playerInteraction, undoQueue);
 
 			break;
@@ -408,10 +405,7 @@ void recieveDataClient(ENetEvent &event,
 
 				Packet_PlaceBlocks b = ((Packet_PlaceBlocks *)data)[i];
 
-				Block bl;
-				bl.typeAndFlags = b.blockType;
-
-				chunkSystem.placeBlockByServerAndRemoveFromUndoQueue(b.blockPos, bl, lightSystem,
+				chunkSystem.placeBlockByServerAndRemoveFromUndoQueue(b.blockPos, b.blockInfo, lightSystem,
 					playerInteraction, undoQueue);
 
 			}

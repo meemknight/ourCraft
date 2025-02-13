@@ -37,6 +37,25 @@ enum ItemTypes : unsigned short
 	leatherTunic,
 	leatherCap,
 
+	soap,
+	whitePaint,
+	lightGrayPaint,
+	darkGrayPaint,
+	blackPaint,
+	brownPaint,
+	redPaint,
+	orangePaint,
+	yellowPaint,
+	limePaint,
+	greenPaint,
+	turqoisePaint,
+	cyanPaint,
+	bluePaint,
+	purplePaint,
+	magentaPaint,
+	pinkPaint,
+
+
 	lastItem,
 
 };
@@ -72,6 +91,8 @@ struct Item
 	unsigned char getStackSize();
 
 	bool isTool();
+
+	bool isPaint();
 
 	bool isAxe();
 

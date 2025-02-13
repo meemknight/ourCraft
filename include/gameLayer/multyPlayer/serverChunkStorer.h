@@ -71,6 +71,7 @@ struct ListNode
 	ListNode *next = nullptr;
 };
 
+//TODO REFACTOR TO ALSO USE FULL BLOCK INFO!!
 struct GhostBlock
 {
 	BlockType type;
@@ -117,8 +118,8 @@ struct SavedChunk
 
 struct SendBlocksBack
 {
-	glm::ivec3 pos;
-	BlockType block;
+	glm::ivec3 pos = {};
+	Block blockInfo = {};
 };
 
 

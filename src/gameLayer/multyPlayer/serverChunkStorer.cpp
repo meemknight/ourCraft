@@ -973,7 +973,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 								{
 									SendBlocksBack sendB;
 									sendB.pos = {x,y,z};
-									sendB.block = newB;
+									sendB.blockInfo = b;
 									sendNewBlocksToPlayers.push_back(sendB);
 								}
 
@@ -1020,7 +1020,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 								{
 									SendBlocksBack sendB;
 									sendB.pos = {x,y,z};
-									sendB.block = b;
+									sendB.blockInfo.setType(b);
 									sendNewBlocksToPlayers.push_back(sendB);
 								}
 
@@ -1064,7 +1064,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 									{
 										SendBlocksBack sendB;
 										sendB.pos = {x,y,z};
-										sendB.block = b;
+										sendB.blockInfo.setType(b);
 										sendNewBlocksToPlayers.push_back(sendB);
 									}
 
@@ -1086,7 +1086,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 										{
 											SendBlocksBack sendB;
 											sendB.pos = {x,y,z};
-											sendB.block = b;
+											sendB.blockInfo.setType(b);
 											sendNewBlocksToPlayers.push_back(sendB);
 										}
 

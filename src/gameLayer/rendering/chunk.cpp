@@ -70,6 +70,26 @@ void arangeData(std::vector<int> &currentVector)
 
 }
 
+void pushFaceShapeTextureAndColor(std::vector<int> &vect, short shape, short texture, unsigned short color)
+{
+
+	// texture and color format
+	// obxxxxx000'00000000
+	//  color    texture
+
+	permaAssertComment(texture < 1000, "Too many textures");
+
+	unsigned short textureAndColor = texture;
+	color <<= 11;
+
+	textureAndColor |= color;
+
+	vect.push_back(mergeShorts(shape, textureAndColor));
+
+
+}
+
+
 void pushFlagsLightAndPosition(std::vector<int> &vect,
 	glm::ivec3 position,
 	bool isWater, bool isInWater,
@@ -620,6 +640,8 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 		getNeighboursLogic(x, y, z, sides, 0);
 
 		glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y, z + this->data.z * CHUNK_SIZE};
+		auto type = b.getType();
+		auto color = b.getColor();
 
 		for (int i = 0; i < 6; i++)
 		{
@@ -636,9 +658,8 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 				)
 			{
 
-				auto type = b.getType();
-				currentVector->push_back(mergeShorts(i + isAnimated * 10,
-					getGpuIdIndexForBlockWithVariation(type, i, x, y, z)));
+				pushFaceShapeTextureAndColor(*currentVector, i + isAnimated * 10,
+					getGpuIdIndexForBlockWithVariation(type, i, x, y, z), color);
 
 
 				int aoShape = determineAOShape(i, sides);
@@ -2448,7 +2469,6 @@ void ChunkData::clearLightLevels()
 			for (int y = 0; y < CHUNK_HEIGHT; y++)
 			{
 				unsafeGet(x, y, z).lightLevel = 0;
-				unsafeGet(x, y, z).notUsed = 0;
 			}
 
 }

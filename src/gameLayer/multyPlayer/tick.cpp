@@ -383,7 +383,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 	auto &settings = getServerSettingsReff();
 
 
-	std::unordered_map<glm::ivec3, BlockType> modifiedBlocks;
+	std::unordered_map<glm::ivec3, Block> modifiedBlocks;
 
 	static thread_local ServerChunkStorer *chunkCacheGlobal = 0;
 
@@ -553,7 +553,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 									Packet_PlaceBlocks packetData;
 									packetData.blockPos = i.t.pos;
-									packetData.blockType = i.t.blockType;
+									packetData.blockInfo = *b;
 
 									//todo broadcast only to local players from now on
 									broadCastNotLocked(packet, &packetData, sizeof(Packet_PlaceBlocks),
@@ -708,7 +708,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 										Packet_PlaceBlocks packetData;
 										packetData.blockPos = i.t.pos;
-										packetData.blockType = i.t.blockType;
+										packetData.blockInfo = *b;
 
 										//todo only for local players
 										broadCastNotLocked(packet, &packetData, sizeof(Packet_PlaceBlocks),
@@ -1763,7 +1763,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 						{
 							//update block
 							b.setType(BlockTypes::grassBlock);
-							modifiedBlocks[{x + c.first.x * CHUNK_SIZE, y, z + c.first.y * CHUNK_SIZE}] = b.getType();
+							modifiedBlocks[{x + c.first.x * CHUNK_SIZE, y, z + c.first.y * CHUNK_SIZE}] = b;
 							c.second->otherData.dirty = true;
 						}
 
@@ -1777,7 +1777,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 					{
 						//update block
 						b.setType(BlockTypes::dirt);
-						modifiedBlocks[{x + c.first.x * CHUNK_SIZE, y, z + c.first.y * CHUNK_SIZE}] = b.getType();
+						modifiedBlocks[{x + c.first.x * CHUNK_SIZE, y, z + c.first.y * CHUNK_SIZE}] = b;
 						c.second->otherData.dirty = true;
 					}
 
@@ -1789,7 +1789,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 					{
 						//update block
 						b.setType(BlockTypes::dirt);
-						modifiedBlocks[{x + c.first.x * CHUNK_SIZE, y, z + c.first.y * CHUNK_SIZE}] = b.getType();
+						modifiedBlocks[{x + c.first.x * CHUNK_SIZE, y, z + c.first.y * CHUNK_SIZE}] = b;
 						c.second->otherData.dirty = true;
 					}
 
@@ -2145,7 +2145,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 		for (auto &b : modifiedBlocks)
 		{
 			newBlocks[i].blockPos = b.first;
-			newBlocks[i].blockType = b.second;
+			newBlocks[i].blockInfo = b.second;
 			i++;
 		}
 
