@@ -84,7 +84,7 @@ void pushFaceShapeTextureAndColor(std::vector<int> &vect, short shape, short tex
 
 	textureAndColor |= color;
 
-	vect.push_back(mergeShorts(shape, textureAndColor));
+	vect.push_back(mergeShortsUnsigned(shape, textureAndColor));
 
 
 }

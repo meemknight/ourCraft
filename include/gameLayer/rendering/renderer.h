@@ -550,6 +550,13 @@ struct PointDebugRenderer
 
 };
 
+constexpr int mergeShortsUnsigned(unsigned short a, unsigned short b)
+{
+	int rez = 0;
+	((unsigned short *)&rez)[0] = a;
+	((unsigned short *)&rez)[1] = b;
+	return rez;
+}
 
 constexpr int mergeShorts(short a, short b)
 {
