@@ -808,6 +808,53 @@ vec3 getViewVector(vec2 fragCoord)
 	return -normalize(worldPos);
 }
 
+//http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
+//https://gist.github.com/983/e170a24ae8eba2cd174f#file-frag-glsl-L3
+vec3 rgb2hsv(vec3 c)
+{
+	vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+	vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+	vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+
+	float d = q.x - min(q.w, q.y);
+	float e = 1.0e-10;
+	return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+
+vec3 hsv2rgb(vec3 c)
+{
+	vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+	vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+	return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
+vec3 paint(vec3 colorIn, vec3 newColor, vec3 colorReff)
+{
+
+	colorIn = mix(colorIn, newColor, vec3(0.12));
+	colorIn = mix(colorIn, colorIn * newColor, 0.12);
+
+	vec3 reffHSV = rgb2hsv(colorReff);
+	vec3 colorInHSV = rgb2hsv(colorIn);
+	vec3 newColorHSV = rgb2hsv(newColor);
+
+	float diff = reffHSV.r - newColor.r;
+
+	colorInHSV.r -= diff;
+	colorInHSV.r = mod(colorInHSV.r + 1.0, 1.0);
+	colorInHSV.r = mix(colorInHSV.r, newColorHSV.r, 0.5);
+	colorInHSV.s = pow(colorInHSV.s+0.1,0.20);
+	colorInHSV.z = pow(colorInHSV.z,1.2);
+
+	vec3 color = hsv2rgb(colorInHSV);
+
+	color = mix(color, colorIn, 0.5);
+	color = mix(color, newColor, vec3(0.12));
+	color = mix(color, color * newColor, 0.5);
+
+	return color;
+}
+
 
 in flat int v_isSkyLightMain;
 
@@ -1053,17 +1100,40 @@ void main()
 			}
 		}
 
-		out_materials.r = roughness;
-
-
-		//paing
+		
+		//paing paint
 		if(v_colors != 0)
 		{
-			textureColor.rgb *= vec3(0.9,0.1,0.1);
-			roughness -= 0.5;
-			roughness = clamp(roughness, 0, 1);
+
+			vec3 colorsVector[] = vec3[](
+			vec3(1.0, 1.0, 1.0),  // whitePaint
+			vec3(0.75, 0.75, 0.75), // lightGrayPaint
+			vec3(0.5, 0.5, 0.5),  // darkGrayPaint
+			vec3(0.0, 0.0, 0.0),  // blackPaint
+			vec3(0.36, 0.25, 0.20), // brownPaint
+			vec3(1.0, 0.0, 0.0),  // redPaint
+			vec3(1.0, 0.5, 0.0),  // orangePaint
+			vec3(1.0, 1.0, 0.0),  // yellowPaint
+			vec3(0.75, 1.0, 0.0), // limePaint
+			vec3(0.0, 0.5, 0.0),  // greenPaint
+			vec3(0.0, 0.75, 0.75), // turqoisePaint
+			vec3(0.0, 1.0, 1.0),  // cyanPaint
+			vec3(0.0, 0.0, 1.0),  // bluePaint
+			vec3(0.5, 0.0, 0.5),  // purplePaint
+			vec3(1.0, 0.0, 1.0),  // magentaPaint
+			vec3(1.0, 0.5, 0.75)  // pinkPaint
+			);
+
+			int lastMip = textureQueryLevels(sampler2D(v_textureSampler)) - 1;
+			vec3 colorReff = textureLod(sampler2D(v_textureSampler), vec2(0,0), lastMip).rgb;
+
+			textureColor.rgb = paint(textureColor.rgb, colorsVector[v_colors-1], colorReff);
+			//roughness -= 0.5;
+			//roughness = clamp(roughness, 0, 1);
 		}
 
+
+		out_materials.r = roughness;
 
 		
 		out_bloom += emissive * 0.12 * textureColor.rgb;
