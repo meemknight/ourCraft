@@ -1656,13 +1656,19 @@ void Renderer::recreateBlockGeometryData(ModelsManager &modelsManager)
 
 	static std::vector<float> newVertexData;
 	newVertexData.clear();
-	newVertexData.resize(sizeof(vertexData)/sizeof(vertexData[0])
-	 + modelsManager.chairModel.vertices.size() + modelsManager.mugModel.vertices.size());
+	int newVertexDataSize = sizeof(vertexData) / sizeof(vertexData[0]);
+	int newVertexUVSize = sizeof(vertexUV) / sizeof(vertexUV[0]);
+	for (int i = 0; i < ModelsManager::BLOCK_MODELS_COUNT; i++)
+	{
+		newVertexDataSize += modelsManager.blockModels[i].vertices.size() * 4;
+		newVertexUVSize += modelsManager.blockModels[i].uvs.size() * 4;
+	}
+
+	newVertexData.resize(newVertexDataSize);
 
 	static std::vector<float> newUVData;
 	newUVData.clear();
-	newUVData.resize(sizeof(vertexUV) / sizeof(vertexUV[0]) + 
-		modelsManager.chairModel.uvs.size() + modelsManager.mugModel.uvs.size());
+	newUVData.resize(newVertexUVSize);
 
 
 	memcpy(newVertexData.data(), vertexData, sizeof(vertexData));
@@ -1677,18 +1683,52 @@ void Renderer::recreateBlockGeometryData(ModelsManager &modelsManager)
 		b.componentCount = model.vertices.size() / (3 * 4);
 		memcpy(newVertexData.data() + currentVertexIndex, model.vertices.data(),
 			model.vertices.size() * sizeof(float));
-		currentVertexIndex += model.vertices.size();
+
+
+		size_t vSize = model.vertices.size();
+		for (int i = 0; i < vSize / 3; i++)
+		{
+			glm::vec2 angle = {};
+			angle.x = model.vertices[i * 3 + 0];
+			float y = model.vertices[i * 3 + 1];
+			angle.y = model.vertices[i * 3 + 2];
+
+			angle = glm::vec2(angle.y, -angle.x); //rotate 90
+			newVertexData[currentVertexIndex + model.vertices.size() + i * 3 + 0] = angle.x;
+			newVertexData[currentVertexIndex + model.vertices.size() + i * 3 + 1] = y;
+			newVertexData[currentVertexIndex + model.vertices.size() + i * 3 + 2] = angle.y;
+
+			angle = glm::vec2(angle.y, -angle.x); //rotate 90
+			newVertexData[currentVertexIndex + model.vertices.size()*2 + i * 3 + 0] = angle.x;
+			newVertexData[currentVertexIndex + model.vertices.size()*2 + i * 3 + 1] = y;
+			newVertexData[currentVertexIndex + model.vertices.size()*2 + i * 3 + 2] = angle.y;
+
+			angle = glm::vec2(angle.y, -angle.x); //rotate 90
+			newVertexData[currentVertexIndex + model.vertices.size()*3 + i * 3 + 0] = angle.x;
+			newVertexData[currentVertexIndex + model.vertices.size()*3 + i * 3 + 1] = y;
+			newVertexData[currentVertexIndex + model.vertices.size()*3 + i * 3 + 2] = angle.y;
+		}
+
+
+		currentVertexIndex += model.vertices.size() * 4;
 
 		memcpy(newUVData.data() + currentUvIndex, model.uvs.data(),
 			model.uvs.size() * sizeof(float));
-		currentUvIndex += model.uvs.size();
+		memcpy(newUVData.data() + currentUvIndex + model.uvs.size(), model.uvs.data(),
+			model.uvs.size() * sizeof(float));
+		memcpy(newUVData.data() + currentUvIndex + model.uvs.size() * 2, model.uvs.data(),
+			model.uvs.size() * sizeof(float));
+		memcpy(newUVData.data() + currentUvIndex + model.uvs.size() * 3, model.uvs.data(),
+			model.uvs.size() * sizeof(float));
+
+
+		currentUvIndex += model.uvs.size() * 4;
 	};
 
-
-	addGeometry(chairGeometry, modelsManager.chairModel);
-	addGeometry(mugGeometry, modelsManager.mugModel);
-
-
+	for (int i = 0; i < ModelsManager::BLOCK_MODELS_COUNT; i++)
+	{
+		addGeometry(blockGeometry[i], modelsManager.blockModels[i]);
+	}
 
 	//todo optimize with buffer storage!!!! (don't forget to recreate the buffer!!)
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexDataBuffer);
@@ -1699,7 +1739,7 @@ void Renderer::recreateBlockGeometryData(ModelsManager &modelsManager)
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexUVBuffer);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, newUVData.size() * sizeof(float), newUVData.data(), GL_STATIC_DRAW);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, vertexUVBuffer);
-
+	
 
 }
 
@@ -2733,6 +2773,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	auto renderStaticGeometry = [&]()
 	{
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 
 		if (unifiedGeometry)
@@ -2778,6 +2819,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		}
 
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	};
 

@@ -156,6 +156,8 @@ enum BlockTypes : unsigned short
 	oakChair,
 	oakLogChair,
 	mug,
+	goblet,
+	wineBottle,
 
 	BlocksCount
 };
@@ -177,6 +179,8 @@ bool isControlBlock(BlockType type);
 
 bool isOpaque(BlockType type);
 
+bool isDecorativeFurniture(BlockType type);
+
 bool isLightEmitor(BlockType type);
 
 bool isTransparentGeometry(BlockType type);
@@ -188,6 +192,8 @@ bool isColidable(BlockType type);
 bool isWoodPlank(BlockType type);
 
 bool isChairMesh(BlockType type);
+
+bool isGobletMesh(BlockType type);
 
 //used for breaking
 bool isAnyWoddenBlock(BlockType type);
@@ -310,10 +316,16 @@ struct Block
 		return (typeAndFlags >> 11) & 0b0000'1;
 	}
 
+	bool isDecorativeFurniture()
+	{
+		auto type = getType();
+		return ::isDecorativeFurniture(getType());
+	}
+
 	//used for stairs, or furnace type blocks
 	bool hasRotationFor365RotationTypeBlocks()
 	{
-		return isStairsMesh() || isWallMesh();
+		return isStairsMesh() || isWallMesh() || isDecorativeFurniture();
 	}
 
 	void setType(BlockType t)
@@ -467,6 +479,11 @@ struct Block
 	bool isChairMesh()
 	{
 		return ::isChairMesh(getType());
+	}
+
+	bool isGobletMesh()
+	{
+		return ::isGobletMesh(getType());
 	}
 
 	bool isWallMesh()

@@ -6,6 +6,7 @@
 #include <gl2d/gl2d.h>
 #include "blocks.h"
 #include <unordered_map>
+#include <rendering/model.h>
 
 struct BlocksLoader;
 struct ChunkSystem;
@@ -64,8 +65,7 @@ struct Renderer
 		int componentCount = 0;
 	};
 
-	BlockGeometryIndex chairGeometry;
-	BlockGeometryIndex mugGeometry;
+	BlockGeometryIndex blockGeometry[ModelsManager::BLOCK_MODELS_COUNT];
 
 	void recreateBlockGeometryData(ModelsManager &modelsManager);
 

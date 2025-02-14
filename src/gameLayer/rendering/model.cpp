@@ -453,7 +453,7 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 								auto &otherTri = triangles[otherIndex];
 
 								// Step 3: Check for planarity
-								if (tri.normal * otherTri.normal > 0.99f) // Almost parallel normals
+								if (tri.normal * otherTri.normal > 0.9999f) // Almost parallel normals
 								{
 									// Step 4: Merge into quad
 									tri.adjacentIndex = otherIndex;
@@ -479,35 +479,59 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 						if (merged[j])
 							continue;
 
-						// Find the fourth vertex not shared
-						std::set<unsigned int> quadVertices = {
-							triangles[i].indices[0],
-							triangles[i].indices[1],
-							triangles[i].indices[2],
-							triangles[j].indices[0],
-							triangles[j].indices[1],
-							triangles[j].indices[2],
-						};
+						// Find the shared edge
+						std::vector<unsigned int> shared, unique;
+						for (unsigned int v : triangles[i].indices)
+							if (std::find(std::begin(triangles[j].indices), std::end(triangles[j].indices), v) != std::end(triangles[j].indices))
+								shared.push_back(v);
+							else
+								unique.push_back(v);
 
-						if (quadVertices.size() == 4)
+						for (unsigned int v : triangles[j].indices)
+							if (std::find(std::begin(triangles[i].indices), std::end(triangles[i].indices), v) == std::end(triangles[i].indices))
+								unique.push_back(v);
+
+						if (shared.size() == 2 && unique.size() == 2)
 						{
-							auto it = quadVertices.begin();
 							Quad q;
-							q.a = *it++;
-							q.b = *it++;
-							q.c = *it++;
-							q.d = *it++;
+
+							// Check triangle winding order and adjust
+							aiVector3D v0 = mesh->mVertices[unique[0]];
+							aiVector3D v1 = mesh->mVertices[shared[0]];
+							aiVector3D v2 = mesh->mVertices[shared[1]];
+
+							aiVector3D edge1 = v1 - v0;
+							aiVector3D edge2 = v2 - v0;
+							aiVector3D normal = edge1 ^ edge2; // Cross product
+
+							if (normal * triangles[i].normal < 0.0f)
+							{
+								// Flip to maintain consistency
+								q.a = unique[1];
+								q.b = shared[0];
+								q.c = unique[0];
+								q.d = shared[1];
+							}
+							else
+							{
+								// Keep order
+								q.a = unique[0];
+								q.b = shared[0];
+								q.c = unique[1];
+								q.d = shared[1];
+							}
 
 							quads.push_back(q);
 							merged[i] = merged[j] = true;
 						}
+
 					}
 
 					// Step 6: Push quads to blockModel
 					for (const Quad &q : quads)
 					{
 
-						aiVector3D v = mesh->mVertices[q.d];
+						aiVector3D v = mesh->mVertices[q.a];
 						v *= transform;
 						blockModel.vertices.push_back(v.x);
 						blockModel.vertices.push_back(v.y - 0.5);
@@ -519,13 +543,13 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 						blockModel.vertices.push_back(v.y - 0.5);
 						blockModel.vertices.push_back(v.z);
 
-						v = mesh->mVertices[q.a];
+						v = mesh->mVertices[q.c];
 						v *= transform;
 						blockModel.vertices.push_back(v.x);
 						blockModel.vertices.push_back(v.y - 0.5);
 						blockModel.vertices.push_back(v.z);
 
-						v = mesh->mVertices[q.c];
+						v = mesh->mVertices[q.d];
 						v *= transform;
 						blockModel.vertices.push_back(v.x);
 						blockModel.vertices.push_back(v.y - 0.5);
@@ -534,18 +558,18 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 						if (mesh->mTextureCoords[0]) // Has UVs
 						{
 
-							blockModel.uvs.push_back(mesh->mTextureCoords[0][q.d].x);
-							blockModel.uvs.push_back(mesh->mTextureCoords[0][q.d].y);
+							blockModel.uvs.push_back(mesh->mTextureCoords[0][q.a].x);
+							blockModel.uvs.push_back(mesh->mTextureCoords[0][q.a].y);
 
 							blockModel.uvs.push_back(mesh->mTextureCoords[0][q.b].x);
 							blockModel.uvs.push_back(mesh->mTextureCoords[0][q.b].y);
 
 
-							blockModel.uvs.push_back(mesh->mTextureCoords[0][q.a].x);
-							blockModel.uvs.push_back(mesh->mTextureCoords[0][q.a].y);
-
 							blockModel.uvs.push_back(mesh->mTextureCoords[0][q.c].x);
 							blockModel.uvs.push_back(mesh->mTextureCoords[0][q.c].y);
+
+							blockModel.uvs.push_back(mesh->mTextureCoords[0][q.d].x);
+							blockModel.uvs.push_back(mesh->mTextureCoords[0][q.d].y);
 
 						}
 					}
@@ -568,11 +592,25 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 	};
 
 
-	if (!chairModel.vertices.size())
-		loadBlockModel((path + "chair.glb").c_str(), chairModel);
+	const char *blockModelsNames[] = 
+	{
+		"chair.glb",
+		"aleMug.glb",
+		"goblet.glb",
+		"wineBottle.glb",
+	};
 
-	if (!mugModel.vertices.size())
-		loadBlockModel((path + "aleMug.glb").c_str(), mugModel);
+	static_assert(sizeof(blockModelsNames) / sizeof(blockModelsNames[0]) == BLOCK_MODELS_COUNT);
+	
+
+	for (int i = 0; i < BLOCK_MODELS_COUNT; i++)
+	{
+
+		if (!blockModels[i].vertices.size())
+			loadBlockModel((path + blockModelsNames[i]).c_str(), blockModels[i]);
+
+	}
+
 
 
 	//todo check if it frees all of them
@@ -594,7 +632,12 @@ void ModelsManager::clearAllModels()
 
 	goblin.cleanup();
 
-	chairModel.cleanup();
+	for (int i = 0; i < BLOCK_MODELS_COUNT; i++)
+	{
+
+		blockModels[i].cleanup();
+	}
+
 
 	if (texturesIds.size())
 	{

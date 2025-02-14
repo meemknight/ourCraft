@@ -7,6 +7,8 @@
 #include <platformTools.h>
 
 //loadallblocks
+//load all textures
+//loadalltextures
 
 const char *texturesNames[] = {
 	
@@ -110,8 +112,10 @@ const char *texturesNames[] = {
 	"blueBricks",			//98
 	"bricksVariation",		//99
 	"blueBricksVariation",	//100
-	"models/mug"			//101
-
+	"models/mug",			//101
+	"models/goblet",		//102
+	"models/wineBottle",	//102
+	
 };
 
 //front
@@ -445,6 +449,11 @@ uint16_t blocksLookupTable[] = {
 	//mug
 	101, 101, 101, 101, 101, 101,
 
+	//goblet
+	102, 102, 102, 102, 102, 102,
+
+	//wine bottle
+	103, 103, 103, 103, 103, 103,
 };
 
 void fixAlphaForNormals(unsigned char *buffer, int w, int h)

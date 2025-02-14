@@ -150,6 +150,14 @@ bool getRandomChance(int x, int y, int z, float chance)
 }
 
 
+float getRandomNumberFloat(int x, int y, int z, float a, float b)
+{
+	std::minstd_rand rng;
+	rng.seed(hash(x, y, z));
+
+	return getRandomNumberFloat(rng, a, b);
+}
+
 bool Chunk::bake(Chunk *left, Chunk *right, Chunk *front, Chunk *back, 
 	Chunk *frontLeft, Chunk *frontRight, Chunk *backLeft, Chunk *backRight,
 	glm::ivec3 playerPosition,
@@ -2066,11 +2074,18 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 
 		auto bakeForBlockGeometry = [&](int x, int y, int z, Renderer::BlockGeometryIndex &geometry, Block &b)
 		{
+
+			//std::minstd_rand rng;
+			//rng.seed(hash(x, y, z));
+			//int rotation = getRandomNumber(rng, 0, 3);
+			int rotation = b.getRotationFor365RotationTypeBlocks();
+
+
 			auto type = b.getType();
 			glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y, z + this->data.z * CHUNK_SIZE};
 			for (int i = 0; i < geometry.componentCount; i++)
 			{
-				opaqueGeometry.push_back(mergeShorts(i + geometry.startIndex,
+				opaqueGeometry.push_back(mergeShorts(i + geometry.startIndex + geometry.componentCount * rotation,
 					getGpuIdIndexForBlockWithVariation(type, 0, x, y, z)));
 
 				if (dontUpdateLightSystem)
@@ -2116,14 +2131,19 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 							auto type = b.getType();
 							if (type == mug)
 							{
-								bakeForBlockGeometry(x, y, z, renderer.mugGeometry, b);
-							}else
-							if (b.isChairMesh())
+								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::mugModel], b);
+							}else if (b.isChairMesh())
 							{
-								bakeForBlockGeometry(x, y, z, renderer.chairGeometry, b);
-
-							}else
-							if (b.isWallMesh())
+								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::chairModel], b);
+							}else if (b.isGobletMesh())
+							{
+								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::gobletModel], b);
+							}
+							else if (b.getType() == wineBottle)
+							{
+								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::wineBottleModel], b);
+							}
+							else if (b.isWallMesh())
 							{
 								blockBakeLogicForWalls(x, y, z, &opaqueGeometry, b);
 							}

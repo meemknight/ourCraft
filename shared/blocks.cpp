@@ -92,8 +92,7 @@ bool isOpaque(BlockType type)
 	return
 		type != BlockTypes::air
 		&& type != BlockTypes::torch
-		&& !(isChairMesh(type))
-		&& !(type == mug)
+		&& !isDecorativeFurniture(type)
 		//&& type != BlockTypes::glowstone
 		&& !(isStairsMesh(type))
 		&& !(isSlabMesh(type))
@@ -101,6 +100,11 @@ bool isOpaque(BlockType type)
 		&& !(isAnyLeaves(type))
 		&& !(isTransparentGeometry(type))
 		&& !(isGrassMesh(type));
+}
+
+bool isDecorativeFurniture(BlockType type)
+{
+	return type == mug || isChairMesh(type) || isGobletMesh(type) || type == wineBottle;
 }
 
 bool isLightEmitor(BlockType type)
@@ -134,6 +138,8 @@ bool isColidable(BlockType type)
 		type != BlockTypes::dead_bush &&
 		type != BlockTypes::torch &&
 		type != BlockTypes::mug &&
+		type != BlockTypes::goblet &&
+		type != BlockTypes::wineBottle &&
 		type != BlockTypes::water;
 }
 
@@ -148,6 +154,12 @@ bool isChairMesh(BlockType type)
 {
 	return type == oakChair || type == oakLogChair;
 }
+
+bool isGobletMesh(BlockType type)
+{
+	return type == BlockTypes::goblet;
+}
+
 
 //used for breaking related things
 bool isAnyWoddenBlock(BlockType type)
@@ -476,7 +488,7 @@ float getBlockBaseMineDuration(BlockType type)
 	}
 
 	//todo for furniture maybe?
-	if (type == mug)
+	if (isDecorativeFurniture(type))
 	{
 		return 0.2;
 	}

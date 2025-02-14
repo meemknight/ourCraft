@@ -74,8 +74,19 @@ struct ModelsManager
 
 	Model goblin;
 
-	BlockModel chairModel;
-	BlockModel mugModel;
+	enum BlockModels
+	{
+		chairModel,
+		mugModel,
+		gobletModel,
+		wineBottleModel,
+		BLOCK_MODELS_COUNT
+
+
+	};
+
+	BlockModel blockModels[BLOCK_MODELS_COUNT];
+
 
 	enum TexturesLoaded
 	{
