@@ -80,6 +80,14 @@ struct ModelsManager
 		mugModel,
 		gobletModel,
 		wineBottleModel,
+		skullModel,
+		skullTorchModel,
+		booksModel,
+		candleHolderModel,
+		potModel,
+		jarModel,
+		globeModel,
+
 		BLOCK_MODELS_COUNT
 
 

@@ -77,7 +77,8 @@ void pushFaceShapeTextureAndColor(std::vector<int> &vect, short shape, short tex
 	// obxxxxx000'00000000
 	//  color    texture
 
-	permaAssertComment(texture < 1000, "Too many textures");
+	//permaAssertComment(texture < 1000, "Too many textures");
+	if (texture > 1000) { texture = 0; }
 
 	unsigned short textureAndColor = texture;
 	color <<= 11;
@@ -2142,6 +2143,11 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 							else if (b.getType() == wineBottle)
 							{
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::wineBottleModel], b);
+							}
+							else if (type >= skull && type <= globe)
+							{
+								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::skullModel +
+									type - skull], b);
 							}
 							else if (b.isWallMesh())
 							{

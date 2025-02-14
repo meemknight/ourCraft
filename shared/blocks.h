@@ -159,6 +159,14 @@ enum BlockTypes : unsigned short
 	goblet,
 	wineBottle,
 
+	skull,
+	skullTorch,
+	book,
+	candleHolder,
+	pot,
+	jar,
+	globe,
+
 	BlocksCount
 };
 
@@ -550,7 +558,7 @@ struct Block
 	{
 		return isColidable() && !isAnyLeaves(getType())
 			&& !isWallMesh() && !(isSlabMesh() && getTopPartForSlabs())
-			&& !isChairMesh() && (getType() != mug)
+			&& !isDecorativeFurniture()
 			;
 	}
 
