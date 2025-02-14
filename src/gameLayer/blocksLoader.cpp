@@ -110,7 +110,7 @@ const char *texturesNames[] = {
 	"blueBricks",			//98
 	"bricksVariation",		//99
 	"blueBricksVariation",	//100
-	"mug"					//101
+	"models/mug"			//101
 
 };
 
