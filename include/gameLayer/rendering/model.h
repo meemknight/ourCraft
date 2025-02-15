@@ -96,6 +96,7 @@ struct ModelsManager
 		chickenCaracasModel,
 		chickenWingsPlateModel,
 		fishPlateModel,
+		ladderModel,
 
 		BLOCK_MODELS_COUNT
 

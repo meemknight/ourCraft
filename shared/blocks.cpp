@@ -9,7 +9,22 @@ constexpr static float BLOCK_DEFAULT_FRICTION = 8.f;
 
 bool isBlockMesh(BlockType type)
 {
-	return !isCrossMesh(type);
+	return !isCrossMesh(type)
+		&& !(type == torch)
+		&& !isStairsMesh(type)
+		&& !isWallMesh(type)
+		&& !isSlabMesh(type)
+		&& !isDecorativeFurniture(type)
+		&& !isWallMountedBlock(type)
+		
+		;
+}
+
+bool canWallMountedBlocksBePlacedOn(BlockType type)
+{
+	return isBlockMesh(type) ||
+		isStairsMesh(type) ||
+		isWallMesh(type);
 }
 
 bool isStairsMesh(BlockType type)
@@ -87,11 +102,17 @@ bool isControlBlock(BlockType type)
 		type == BlockTypes::control4;
 }
 
+bool isWallMountedBlock(BlockType type)
+{
+	return type == BlockTypes::ladder;
+}
+
 bool isOpaque(BlockType type)
 {
 	return
 		type != BlockTypes::air
 		&& type != BlockTypes::torch
+		&& type != BlockTypes::ladder
 		&& !isDecorativeFurniture(type)
 		//&& type != BlockTypes::glowstone
 		&& !(isStairsMesh(type))
@@ -168,6 +189,10 @@ bool isColidable(BlockType type)
 		type != BlockTypes::candleHolder &&
 		type != BlockTypes::goblet &&
 		type != BlockTypes::wineBottle &&
+		type != BlockTypes::chickenWingsPlate &&
+		type != BlockTypes::chickenCaracas &&
+		type != BlockTypes::fishPlate &&
+		type != BlockTypes::ladder &&
 		type != BlockTypes::water;
 }
 
@@ -201,6 +226,9 @@ bool isAnyWoddenBlock(BlockType type)
 		type == craftingTable ||
 		type == wooden_stairs ||
 		type == wooden_wall ||
+		type == ladder ||
+		type == oakTable ||
+		type == oakLogTable ||
 		type == wooden_slab ||
 		type == spruce_log ||
 		type == oakChair ||

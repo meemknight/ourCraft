@@ -689,6 +689,38 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 									}
 
+									//validate ladder placement
+									if (i.t.taskType == Task::placeBlock && actualPlacedBLock.isWallMountedBlock())
+									{
+
+										int rotation = actualPlacedBLock.getRotationFor365RotationTypeBlocks();
+										
+										glm::ivec3 directions[4] = {
+										glm::ivec3(0, 0, 1),
+										glm::ivec3(1, 0, 0),
+										glm::ivec3(0, 0, -1),
+										glm::ivec3(-1, 0, 0)};
+
+										auto direction = directions[rotation];
+										auto wallPos = i.t.pos - direction;
+
+										Block *wallBlock = chunkCache.getBlockSafe(wallPos);
+
+										if (!wallBlock)
+										{
+											legal = false;
+										}
+										else
+										{
+											if (!wallBlock->canWallMountedBlocksBePlacedOn())
+											{
+												legal = false;
+											}
+										}
+
+
+									}
+
 								}
 
 								legal = computeRevisionStuff(*client, legal, i.t.eventId);

@@ -2161,7 +2161,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 							{
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::chairBigModel], b);
 							}
-							else if (type >= cookingPot && type <= fishPlate)
+							else if (type >= cookingPot && type <= ladder)
 							{
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::cookingPotModel
 								 + type - cookingPot

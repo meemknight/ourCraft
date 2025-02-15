@@ -1222,19 +1222,77 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 							}
 							else if (blockToPlace && item.isBlock())
 							{
-								bool intersect = false;
+								bool dontPlace = false;
 
 								//todo intersect other entities
-								if (boxColideBlock(
-									player.entity.position,
-									player.entity.getColliderSize(),
-									*blockToPlace
-									))
+								if (isColidable(item.type))
 								{
-									intersect = true;
+									if (boxColideBlock(
+										player.entity.position,
+										player.entity.getColliderSize(),
+										*blockToPlace
+										))
+									{
+										dontPlace = true;
+									}
+								};
+
+								int faceDirection = facingDirection;
+
+								if (!dontPlace && isWallMountedBlock(item.type))
+								{
+									if (blockToPlace)
+									{
+										glm::ivec3 placeDiff = *blockToPlace - rayCastPos;
+
+										if (placeDiff == glm::ivec3(1, 0, 0) ||
+											placeDiff == glm::ivec3(-1, 0, 0) ||
+											placeDiff == glm::ivec3(0, 0, 1) ||
+											placeDiff == glm::ivec3(0, 0, -1))
+										{
+											//todo walls as well
+											if (raycastBlock && 
+												raycastBlock->canWallMountedBlocksBePlacedOn())
+											{
+												//good
+												//we place ladders only on blocks
+
+												if (placeDiff == glm::ivec3(1, 0, 0))
+												{
+													faceDirection = 1; //not0
+												}else if (placeDiff == glm::ivec3(-1, 0, 0))
+												{
+													faceDirection = 3; //not1
+												}
+												else if (placeDiff == glm::ivec3(0, 0, 1))
+												{
+													faceDirection = 0; //not2
+												}
+												else if (placeDiff == glm::ivec3(0, 0, -1))
+												{
+													faceDirection = 2; //not3
+												}
+
+											}
+											else
+											{
+												dontPlace = true;
+											}
+										}
+										else
+										{
+											dontPlace = true;
+										}
+
+									}
+									else
+									{
+										dontPlace = true;
+									}
+
 								}
 
-								if (!intersect)
+								if (!dontPlace)
 								{
 									//place block
 									gameData.chunkSystem.placeBlockByClient(*blockToPlace,
@@ -1244,7 +1302,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 										gameData.lightSystem,
 										player.inventory,
 										player.otherPlayerSettings.gameMode == OtherPlayerSettings::SURVIVAL,
-										facingDirection, topPartForSlabs
+										faceDirection, topPartForSlabs
 									);
 
 									AudioEngine::playSound(getSoundForBlockStepping(item.type),

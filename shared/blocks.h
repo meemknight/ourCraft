@@ -177,6 +177,7 @@ enum BlockTypes : unsigned short
 	chickenCaracas,
 	chickenWingsPlate,
 	fishPlate,
+	ladder,
 
 	BlocksCount
 };
@@ -185,6 +186,8 @@ using BlockType = uint16_t;
 
 //todo look into this
 bool isBlockMesh(BlockType type);
+
+bool canWallMountedBlocksBePlacedOn(BlockType type);
 
 bool isStairsMesh(BlockType type);
 
@@ -195,6 +198,8 @@ bool isWallMesh(BlockType type);
 bool isCrossMesh(BlockType type);
 
 bool isControlBlock(BlockType type);
+
+bool isWallMountedBlock(BlockType type);
 
 bool isOpaque(BlockType type);
 
@@ -351,7 +356,7 @@ struct Block
 	//used for stairs, or furnace type blocks
 	bool hasRotationFor365RotationTypeBlocks()
 	{
-		return isStairsMesh() || isWallMesh() || isDecorativeFurniture();
+		return isStairsMesh() || isWallMesh() || isDecorativeFurniture() || getType() == ladder;
 	}
 
 	void setType(BlockType t)
@@ -363,6 +368,11 @@ struct Block
 	bool isOpaque()
 	{
 		return ::isOpaque(getType());
+	}
+
+	bool isWallMountedBlock()
+	{
+		return ::isWallMountedBlock(getType());
 	}
 
 	bool hasSecondCollider()
@@ -555,6 +565,11 @@ struct Block
 		l = l & 0b1111;
 		lightLevel &= 0b1111'0000;
 		lightLevel |= l;
+	}
+
+	bool canWallMountedBlocksBePlacedOn()
+	{
+		return ::canWallMountedBlocksBePlacedOn(getType());
 	}
 
 	bool isBlockMesh()
