@@ -47,7 +47,7 @@ Features and todos:
 	
 - [x] Chunk system
 
-- [ ] Multy player
+- [ ] Multi player
   - [x] Connection to server and handshake
   - [x] Server can validate moves
   - [x] Server knows player position to optimize chunk logic stuff
