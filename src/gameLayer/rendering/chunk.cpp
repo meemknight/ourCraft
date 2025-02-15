@@ -2140,7 +2140,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 							{
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::gobletModel], b);
 							}
-							else if (b.getType() == wineBottle)
+							else if (type == wineBottle)
 							{
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::wineBottleModel], b);
 							}
@@ -2149,18 +2149,25 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::skullModel +
 									type - skull], b);
 							}
-							else if (b.getType() == oakLogTable)
+							else if (type == oakLogTable)
 							{
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::tableModel], b);
 							}
-							else if (b.getType() == craftingItems)
+							else if (type == craftingItems)
 							{
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::workItemsModel], b);
 							}
-							else if (b.getType() == oakBigChair || b.getType() == oakLogBigChair)
+							else if (type == oakBigChair || type == oakLogBigChair)
 							{
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::chairBigModel], b);
 							}
+							else if (type >= cookingPot && type <= fishPlate)
+							{
+								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::cookingPotModel
+								 + type - cookingPot
+								], b);
+							}
+
 							else if (b.isWallMesh())
 							{
 								blockBakeLogicForWalls(x, y, z, &opaqueGeometry, b);

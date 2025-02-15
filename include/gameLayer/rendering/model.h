@@ -92,6 +92,10 @@ struct ModelsManager
 		tableModel,
 		workItemsModel,
 		chairBigModel,
+		cookingPotModel,
+		chickenCaracasModel,
+		chickenWingsPlateModel,
+		fishPlateModel,
 
 		BLOCK_MODELS_COUNT
 

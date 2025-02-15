@@ -173,6 +173,10 @@ enum BlockTypes : unsigned short
 	craftingItems,
 	oakBigChair,
 	oakLogBigChair,
+	cookingPot,
+	chickenCaracas,
+	chickenWingsPlate,
+	fishPlate,
 
 	BlocksCount
 };

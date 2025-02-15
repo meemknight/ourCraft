@@ -112,6 +112,10 @@ bool isDecorativeFurniture(BlockType type)
 		type == pot ||
 		type == jar ||
 		type == keg ||
+		type == cookingPot ||
+		type == chickenCaracas ||
+		type == chickenWingsPlate ||
+		type == fishPlate ||
 		type == workBench ||
 		type == oakTable ||
 		type == craftingItems ||
