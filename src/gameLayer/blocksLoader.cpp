@@ -123,6 +123,8 @@ const char *texturesNames[] = {
 	"models/pot", //108
 	"models/jar", //109
 	"models/globe", //110
+	"models/keg", //111
+	"models/workBench", //112
 
 
 
@@ -483,8 +485,20 @@ uint16_t blocksLookupTable[] = {
 	//"models/jar", //109
 	109, 109, 109, 109, 109, 109,
 
-	//globe
-	110, 110, 110, 110, 110, 110,
+	110, 110, 110, 110, 110, 110, //globe
+	111, 111, 111, 111, 111, 111, //keg
+	112, 112, 112, 112, 112, 112, //work bench
+
+	7, 7, 7, 7, 7, 7, //oak table
+	5, 5, 5, 5, 5, 5, //oak log table
+	112, 112, 112, 112, 112, 112, //work items
+
+
+	//oak chair big
+	7, 7, 7, 7, 7, 7,
+	//oak log chair big
+	5, 5, 5, 5, 5, 5,
+
 
 
 };

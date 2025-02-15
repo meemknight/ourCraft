@@ -216,6 +216,11 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 			//std::cout << "Loaded!\n";
 
 			worldSaver.loadBlockData(*rez);
+			if (rez->normalize())
+			{
+				rez->otherData.dirty = true;
+				rez->otherData.dirtyBlockData = true;
+			}
 
 		}
 
@@ -1865,5 +1870,21 @@ void SavedChunk::removeBlockWithData(glm::ivec3 pos,
 	}
 
 
+
+}
+
+bool SavedChunk::normalize()
+{
+	bool rez = 0;
+	for (int x = 0; x < CHUNK_SIZE; x++)
+		for (int z = 0; z < CHUNK_SIZE; z++)
+			for (int y = 0; y < CHUNK_HEIGHT; y++)
+			{
+				auto &b = chunk.blocks[x][z][y];
+
+				if (b.normalize()) { rez = 1; }
+			}
+
+	return rez;
 
 }

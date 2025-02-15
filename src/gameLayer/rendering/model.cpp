@@ -605,6 +605,11 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		"pot.glb",
 		"jar.glb",
 		"globe.glb",
+		"keg.glb",
+		"workBench.glb",
+		"table.glb",
+		"workItems.glb",
+		"chairBig.glb",
 	};
 
 	static_assert(sizeof(blockModelsNames) / sizeof(blockModelsNames[0]) == BLOCK_MODELS_COUNT);

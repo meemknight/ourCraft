@@ -166,6 +166,13 @@ enum BlockTypes : unsigned short
 	pot,
 	jar,
 	globe,
+	keg,
+	workBench,
+	oakTable,
+	oakLogTable,
+	craftingItems,
+	oakBigChair,
+	oakLogBigChair,
 
 	BlocksCount
 };
@@ -293,9 +300,16 @@ struct Block
 		colorAndOtherFlags |= color;
 	}
 
+	bool normalize();
+
 	BlockType getType()
 	{
 		return typeAndFlags & 0b0111'1111'1111;
+	}
+
+	unsigned char getFlagsBytes()
+	{
+		return typeAndFlags >> 11;
 	}
 
 	//used for stairs, or furnace type blocks

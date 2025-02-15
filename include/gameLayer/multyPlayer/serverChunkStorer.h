@@ -114,6 +114,8 @@ struct SavedChunk
 
 	//removes the data for a block with data
 	void removeBlockWithData(glm::ivec3 pos, std::uint16_t blockType);
+
+	bool normalize();
 };
 
 struct SendBlocksBack

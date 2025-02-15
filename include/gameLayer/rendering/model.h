@@ -87,6 +87,11 @@ struct ModelsManager
 		potModel,
 		jarModel,
 		globeModel,
+		keg,
+		workBenchModel,
+		tableModel,
+		workItemsModel,
+		chairBigModel,
 
 		BLOCK_MODELS_COUNT
 

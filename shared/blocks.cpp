@@ -111,6 +111,13 @@ bool isDecorativeFurniture(BlockType type)
 		type == candleHolder ||
 		type == pot ||
 		type == jar ||
+		type == keg ||
+		type == workBench ||
+		type == oakTable ||
+		type == craftingItems ||
+		type == oakLogTable ||
+		type == oakBigChair ||
+		type == oakLogBigChair ||
 		type == globe
 		
 		;
@@ -417,6 +424,27 @@ unsigned char isInteractable(BlockType type)
 bool isBlock(std::uint16_t type) //todo == 0 ???????????????????/
 {
 	return type > 0 && type < BlocksCount;
+}
+
+bool Block::normalize()
+{
+
+	auto type = getType();
+
+	if (type >= BlockTypes::BlocksCount)
+	{
+		typeAndFlags = {};
+		return true;
+	}
+
+	//we have flags...
+	if (getFlagsBytes())
+	{
+		//todo
+	}
+
+
+	return false;
 }
 
 float Block::getFriction()

@@ -2144,10 +2144,22 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 							{
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::wineBottleModel], b);
 							}
-							else if (type >= skull && type <= globe)
+							else if (type >= skull && type <= oakTable)
 							{
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::skullModel +
 									type - skull], b);
+							}
+							else if (b.getType() == oakLogTable)
+							{
+								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::tableModel], b);
+							}
+							else if (b.getType() == craftingItems)
+							{
+								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::workItemsModel], b);
+							}
+							else if (b.getType() == oakBigChair || b.getType() == oakLogBigChair)
+							{
+								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::chairBigModel], b);
 							}
 							else if (b.isWallMesh())
 							{
