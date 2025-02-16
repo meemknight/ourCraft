@@ -42,6 +42,7 @@ struct Task
 	int taskType = 0;
 	unsigned short craftingRecepieIndex = 0;
 	BlockType blockType = 0;
+	Block block = {};
 	EventId eventId = {};
 	glm::ivec2 playerPosForChunkGeneration = {};
 	unsigned short blockCount = 0;

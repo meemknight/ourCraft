@@ -1250,7 +1250,7 @@ bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
 		if (save)
 		{
 			std::vector<unsigned char> data;
-			data.resize(sizeof(StructureData) + sizeof(BlockType) * size.x * size.y * size.z);
+			data.resize(sizeof(StructureData) + 2 * sizeof(BlockType) * size.x * size.y * size.z);
 		
 			StructureData *s = (StructureData *)data.data();
 		
@@ -1267,11 +1267,12 @@ bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
 		
 						if (rez)
 						{
-							s->unsafeGet(x, y, z) = rez->getType();
+							s->unsafeGet(x, y, z) = *rez;
 						}
 						else
 						{
-							s->unsafeGet(x, y, z) = BlockTypes::air;
+							s->unsafeGet(x, y, z).setType(BlockTypes::air);
+							s->unsafeGet(x, y, z).colorAndOtherFlags = 0;
 						}
 		
 					}
@@ -1296,9 +1297,9 @@ bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
 						{
 							glm::ivec3 pos = startPos + glm::ivec3(x, y, z);
 		
-							Block block;
-							block.setType(s->unsafeGet(x, y, z));
-		
+							Block block = s->unsafeGet(x, y, z);
+							block.lightLevel = 0;
+
 							//todo implement the bulk version...
 							chunkSystem.placeBlockByClientForce(pos,
 								block, undoQueue,lightSystem);
@@ -1310,8 +1311,7 @@ bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
 		}
 
 
-
-		return rez;
+		return rez || load;
 	}
 
 	return false;

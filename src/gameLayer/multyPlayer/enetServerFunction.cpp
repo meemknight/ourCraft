@@ -442,7 +442,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			Packet_ClientPlaceBlockForce packetData = *(Packet_ClientPlaceBlockForce *)data;
 			serverTask.t.taskType = Task::placeBlockForce;
 			serverTask.t.pos = packetData.blockPos;
-			serverTask.t.blockType = packetData.blockType;
+			serverTask.t.block = packetData.block;
 			serverTask.t.eventId = packetData.eventId;
 
 			serverTasks.push_back(serverTask);

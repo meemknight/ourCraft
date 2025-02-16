@@ -848,24 +848,24 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 	auto size = structure->size;
 
 	//the user can replace a block with another
-	auto replaceB = [&](BlockType &b)
+	auto replaceB = [&](Block &b)
 	{
 		if (replace)
 		{
-			if (b == from)
+			if (b.getType() == from)
 			{
-				b = to;
+				b.setType(to);
 			}
 		}
 
-		if (s.replaceLeavesWith && isAnyLeaves(b))
+		if (s.replaceLeavesWith && isAnyLeaves(b.getType()))
 		{
-			b = s.replaceLeavesWith;
+			b.setType(s.replaceLeavesWith);
 		}
 
-		if (s.replaceLogWith && isAnyWoddenLOG(b))
+		if (s.replaceLogWith && isAnyWoddenLOG(b.getType()))
 		{
-			b = s.replaceLogWith;
+			b.setType(s.replaceLogWith);
 		}
 	};
 
@@ -970,9 +970,9 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 
 							replaceB(newB);
 
-							if (newB != BlockTypes::air)
+							if (newB.getType() != BlockTypes::air)
 							{
-								b.setType(newB);
+								b = newB;
 
 								if (sendDataToPlayers)
 								{
@@ -984,7 +984,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 
 								if (controlBlocks)
 								{
-									if (isControlBlock(newB))
+									if (isControlBlock(newB.getType()))
 									{
 										controlBlocks->push_back({x,y,z});
 									}
@@ -1012,11 +1012,11 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 
 							replaceB(b);
 
-							if (b != BlockTypes::air)
+							if (b.getType() != BlockTypes::air)
 							{
 
 								GhostBlock ghostBlock;
-								ghostBlock.type = b;
+								ghostBlock.type = b.typeAndFlags;
 								ghostBlock.replaceAnything = replaceAnything;
 
 								rez[{inChunkX, y, inChunkZ}] = ghostBlock; //todo either ghost either send
@@ -1025,13 +1025,13 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 								{
 									SendBlocksBack sendB;
 									sendB.pos = {x,y,z};
-									sendB.blockInfo.setType(b);
+									sendB.blockInfo = b;
 									sendNewBlocksToPlayers.push_back(sendB);
 								}
 
 								if (controlBlocks)
 								{
-									if (isControlBlock(b))
+									if (isControlBlock(b.getType()))
 									{
 										controlBlocks->push_back({x,y,z});
 									}
@@ -1053,10 +1053,10 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 
 							replaceB(b);
 
-							if (b != BlockTypes::air)
+							if (b.getType() != BlockTypes::air)
 							{
 								GhostBlock ghostBlock;
-								ghostBlock.type = b;
+								ghostBlock.type = b.getType();
 								ghostBlock.replaceAnything = replaceAnything;
 
 								auto blockIt = it->second.find({inChunkX, y, inChunkZ});
@@ -1069,13 +1069,13 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 									{
 										SendBlocksBack sendB;
 										sendB.pos = {x,y,z};
-										sendB.blockInfo.setType(b);
+										sendB.blockInfo = b;
 										sendNewBlocksToPlayers.push_back(sendB);
 									}
 
 									if (controlBlocks)
 									{
-										if (isControlBlock(b))
+										if (isControlBlock(b.getType()))
 										{
 											controlBlocks->push_back({x,y,z});
 										}
@@ -1091,13 +1091,13 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 										{
 											SendBlocksBack sendB;
 											sendB.pos = {x,y,z};
-											sendB.blockInfo.setType(b);
+											sendB.blockInfo = b;
 											sendNewBlocksToPlayers.push_back(sendB);
 										}
 
 										if (controlBlocks)
 										{
-											if (isControlBlock(b))
+											if (isControlBlock(b.getType()))
 											{
 												controlBlocks->push_back({x,y,z});
 											}

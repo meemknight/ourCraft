@@ -1970,7 +1970,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				if (ImGui::Button("Save structure"))
 				{
 					std::vector<unsigned char> data;
-					data.resize(sizeof(StructureData) + sizeof(BlockType) * gameData.pointSize.x * gameData.pointSize.y * gameData.pointSize.z);
+					data.resize(sizeof(StructureData) + 2 * sizeof(BlockType) * gameData.pointSize.x * gameData.pointSize.y * gameData.pointSize.z);
 
 					StructureData *s = (StructureData *)data.data();
 
@@ -1987,11 +1987,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 								if (rez)
 								{
-									s->unsafeGet(x, y, z) = rez->getType();
+									s->unsafeGet(x, y, z) = *rez;
+									s->unsafeGet(x, y, z).lightLevel = 0;
 								}
 								else
 								{
-									s->unsafeGet(x, y, z) = BlockTypes::air;
+									s->unsafeGet(x, y, z) = {};
 								}
 
 							}
@@ -2012,8 +2013,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 								{
 									glm::ivec3 pos = gameData.point + glm::ivec3(x, y, z);
 
-									Block block;
-									block.setType(s->unsafeGet(x, y, z));
+									Block block = s->unsafeGet(x, y, z);
 
 									//todo implement the bulk version...
 									gameData.chunkSystem.placeBlockByClientForce(pos,

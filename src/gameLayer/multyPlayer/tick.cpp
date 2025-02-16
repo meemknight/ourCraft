@@ -529,9 +529,10 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 						if (b)
 						{
-							auto block = i.t.blockType;
+							auto block = i.t.block;
+							block.lightLevel = 0;
 
-							if (isBlock(block) || block == 0)
+							if (isBlock(block.getType()) || block.getType() == 0)
 							{
 								good = true;
 							}
@@ -543,7 +544,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 								auto lastBlock = b->getType();
 								chunk->removeBlockWithData({convertedX,
 									i.t.pos.y, convertedZ}, lastBlock);
-								b->setType(i.t.blockType);
+								*b = block;
 								chunk->otherData.dirty = true;
 
 								{

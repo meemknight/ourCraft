@@ -1360,7 +1360,7 @@ bool ChunkSystem::placeBlockByClientForce(glm::ivec3 pos, Block block,
 
 		Packet_ClientPlaceBlockForce packetData = {};
 		packetData.blockPos = pos;
-		packetData.blockType = block.getType();
+		packetData.block = block;
 		packetData.eventId = undoQue.currentEventId;
 
 		sendPacket(getConnectionData().server,

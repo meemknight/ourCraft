@@ -297,7 +297,7 @@ struct Packet_ClientPlaceBlockForce
 {
 	glm::ivec3 blockPos = {};
 	EventId eventId = {}; //event id is used by the player
-	BlockType blockType = {};
+	Block block = {};
 };
 
 struct Packet_ClientBreakBlock
