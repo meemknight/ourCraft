@@ -191,6 +191,12 @@ enum BlockTypes : unsigned short
 
 	strippedOakLog,
 	strippedBirchLog,
+	strippedSpruceLog,
+
+	sprucePlank,
+	sprucePlank_stairs,
+	sprucePlank_slabs,
+	sprucePlank_wall,
 
 	BlocksCount
 };

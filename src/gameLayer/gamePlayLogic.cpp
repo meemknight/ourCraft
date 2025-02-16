@@ -1105,14 +1105,15 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 							if (player.inventory.getItemFromIndex(gameData.currentItemSelected)->isPaint())
 							{
-								didAction = true;
-
 								auto &item = *player.inventory.getItemFromIndex(gameData.currentItemSelected);
 
 								int paintType = item.type - soap;
 
+								Block oldBlock = *b;
 								b->setColor(paintType);
 								c->setDirty(true);
+								gameData.undoQueue.addPlaceBlockEvent(rayCastPos, oldBlock, *b);
+
 
 							}else
 							if (actionType)
@@ -1199,27 +1200,46 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 								};
 
 							}else
-							if (item.isItemThatCanBeUsed() && blockToPlace)
+							if (item.isItemThatCanBeUsed())
 							{
 
 								Packet_ClientUsedItem data;
 								data.from = gameData.currentItemSelected;
 								data.itemType = item.type;
-								data.position = *blockToPlace;
 								data.revisionNumber = player.inventory.revisionNumber;
+								bool good = true;
 
-								sendPacket(getServer(), headerClientUsedItem, player.entityId,
-									&data, sizeof(data), true, channelChunksAndBlocks);
-
-								if (item.isConsumedAfterUse() && player.otherPlayerSettings.gameMode ==
-									OtherPlayerSettings::SURVIVAL)
+								if (item.isPaint())
 								{
-									item.counter--;
-									if (item.counter <= 0)
+									data.position = rayCastPos;
+								}
+								else if(blockToPlace)
+								{
+									data.position = *blockToPlace;
+								}
+								else
+								{
+									good = false;
+								}
+
+								data.eventId = gameData.undoQueue.currentEventId;
+
+								if (good)
+								{
+									sendPacket(getServer(), headerClientUsedItem, player.entityId,
+										&data, sizeof(data), true, channelChunksAndBlocks);
+
+									if (item.isConsumedAfterUse() && player.otherPlayerSettings.gameMode ==
+										OtherPlayerSettings::SURVIVAL)
 									{
-										item = {};
+										item.counter--;
+										if (item.counter <= 0)
+										{
+											item = {};
+										}
 									}
 								}
+								
 
 							}
 							else if (blockToPlace && item.isBlock())

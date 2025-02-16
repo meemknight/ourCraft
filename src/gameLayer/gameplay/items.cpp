@@ -15,7 +15,7 @@ bool Item::isItemThatCanBeUsed()
 {
 	if (type == pigSpawnEgg || type == zombieSpawnEgg 
 		|| type == catSpawnEgg || type == goblinSpawnEgg
-		|| isEatable()
+		|| isEatable() || isPaint()
 		)
 	{
 		return true;

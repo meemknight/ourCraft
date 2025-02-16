@@ -649,6 +649,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.itemType = packetData->itemType;
 			serverTask.t.pos = packetData->position;
 			serverTask.t.revisionNumber = packetData->revisionNumber;
+			serverTask.t.eventId = packetData->eventId;
 			serverTasks.push_back(serverTask);
 
 			break;

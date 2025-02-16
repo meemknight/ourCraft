@@ -1174,31 +1174,45 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 				}
 				else if (i.t.taskType == Task::clientUsedItem)
 				{
-
+					
 					auto client = getClientNotLocked(i.cid);
 
 					if (client)
 					{
+						bool shouldUpdateRevisionStuff = false;
+						bool allowed = false;
+						Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
 
-						//if the revision number isn't good we don't do anything
-						if (client->playerData.inventory.revisionNumber
-							== i.t.revisionNumber
-							)
+						if (from)
 						{
 
-							//serverTask.t.pos = packetData->position;
 
-							Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
+							if (from->isPaint())
+							{
+								shouldUpdateRevisionStuff = true;
+							}
 
-							if (from && !client->playerData.killed)
+							//if the revision number isn't good we don't do anything
+							if (client->playerData.inventory.revisionNumber
+								== i.t.revisionNumber
+								)
 							{
 
-								if (from->counter <= 0) { from = {}; }
+								//serverTask.t.pos = packetData->position;
 
-								if (from->type == i.t.itemType)
+
+								if (from && !client->playerData.killed)
+								{
+									allowed = true;
+
+									
+
+									if (from->counter <= 0) { from = {}; }
+
+									if (from->type == i.t.itemType)
 								{
 
-									bool allowed = true;
+									
 
 									if (from->type == ItemTypes::pigSpawnEgg)
 									{
@@ -1254,6 +1268,49 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 
 									}
+									else if (from->isPaint())
+									{
+
+										auto b = chunkCache.getBlockSafe(i.t.pos);
+
+										if (b)
+										{
+											allowed = true;
+
+
+											shouldUpdateRevisionStuff = false;
+											if (computeRevisionStuff(*client, allowed, i.t.eventId))
+											{
+												//
+												//todo only for local players
+												{
+													Packet packet;
+													packet.cid = i.cid;
+													packet.header = headerPlaceBlocks;
+													int paintType = from->type - soap;
+													b->setColor(paintType);
+
+													Packet_PlaceBlocks packetData;
+													packetData.blockPos = i.t.pos;
+													packetData.blockInfo = *b;
+
+													//todo only for local players
+													broadCastNotLocked(packet, &packetData, sizeof(Packet_PlaceBlocks),
+														client->peer, true, channelChunksAndBlocks);
+												}
+											}
+
+										}
+										else
+										{
+											allowed = false;
+										}
+
+									}
+									else
+									{
+										//todo player used an item that "can't be used" hard reset here
+									}
 
 									if (
 										allowed &&
@@ -1272,18 +1329,26 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 										sendPlayerInventoryAndIncrementRevision(*client);
 									}
 								}
+									else
+									{
+										sendPlayerInventoryAndIncrementRevision(*client);
+										allowed = false;
+									}
+
+								}
 								else
 								{
 									sendPlayerInventoryAndIncrementRevision(*client);
 								}
 
-							}
-							else
-							{
-								sendPlayerInventoryAndIncrementRevision(*client);
-							}
+							};
 
 						};
+
+						if (shouldUpdateRevisionStuff)
+						{
+							computeRevisionStuff(*client, allowed, i.t.eventId);
+						}
 
 						//the client might have eaten something so we update life anyway,
 						// the same for the effects

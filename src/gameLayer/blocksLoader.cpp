@@ -84,8 +84,8 @@ const char *texturesNames[] = {
 	"glass2",				//70
 	"strippedOakLog",	//71
 	"strippedBirchLog",	//72
-	"cyan_stained_glass",	//73
-	"light_blue_stained_glass",	//74
+	"strippedSpruceLog",	//73
+	"sprucePlank",			//74
 	"blue_stained_glass",	//75
 	"purple_stained_glass",	//76
 	"magenta_stained_glass",//77
@@ -531,6 +531,13 @@ uint16_t blocksLookupTable[] = {
 	//stripped log
 	71, 71, 6, 6, 71, 71, //oak
 	72, 72, 25, 25, 72, 72, //birch
+
+	73, 73, 53, 53, 73, 73,	//"strippedSpruceLog",	//73
+
+	74, 74, 74, 74, 74, 74, //spruce plank + stair slab wall variations
+	74, 74, 74, 74, 74, 74,
+	74, 74, 74, 74, 74, 74,
+	74, 74, 74, 74, 74, 74,
 
 };
 

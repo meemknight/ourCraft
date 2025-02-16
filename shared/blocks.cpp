@@ -42,6 +42,7 @@ bool isStairsMesh(BlockType type)
 		type == volcanicRock_stairts ||
 		type == smoothStone_stairts ||
 		type == smoothLimeStone_stairs ||
+		type == sprucePlank_stairs ||
 		type == marbleBlock_stairs ||
 		type == marbleBricks_stairs ||
 		type == cloth_stairs ||
@@ -69,6 +70,7 @@ bool isSlabMesh(BlockType type)
 		type == smoothLimeStone_slabs ||
 		type == cloth_slabs ||
 		type == marbleBlock_slabs ||
+		type == sprucePlank_slabs ||
 		type == marbleBricks_slabs ||
 		type == blueBricks_slabs ||
 		type == oakLogSlab ||
@@ -89,6 +91,7 @@ bool isWallMesh(BlockType type)
 		type == dungeonBricks_wall ||
 		type == volcanicRock_wall ||
 		type == smoothStone_wall ||
+		type == sprucePlank_wall ||
 		type == plankedWallBlock_wall ||
 		type == smoothLimeStone_wall ||
 		type == marbleBlock_wall ||
@@ -215,6 +218,7 @@ bool isWoodPlank(BlockType type)
 {
 	return type == BlockTypes::wooden_plank ||
 		type == BlockTypes::jungle_planks ||
+		type == BlockTypes::sprucePlank ||
 		type == BlockTypes::birchPlanks;
 }
 
@@ -234,6 +238,9 @@ bool isAnyWoddenBlock(BlockType type)
 {
 	return isWoodPlank(type) ||
 		type == woodLog ||
+		type == sprucePlank_stairs ||
+		type == sprucePlank_slabs ||
+		type == sprucePlank_wall ||
 		type == bookShelf ||
 		type == birch_log ||
 		type == jungle_log ||
@@ -255,6 +262,7 @@ bool isAnyWoddenBlock(BlockType type)
 		type == oakLogChair ||
 		type == strippedOakLog ||
 		type == strippedBirchLog ||
+		type == strippedSpruceLog ||
 		type == logWall;
 		
 }
@@ -300,6 +308,7 @@ bool isAnyWoddenLOG(BlockType type)
 		type == palm_log ||
 		type == strippedOakLog ||
 		type == strippedBirchLog  ||
+		type == strippedSpruceLog ||
 		type == spruce_log;
 }
 
@@ -771,6 +780,11 @@ BlockType fromAnyShapeToNormalBlockType(BlockType b)
 	case birchPlanks_slabs:
 	case birchPlanks_wall:
 	case birchPlanks_stairs: { return birchPlanks; };
+
+	case sprucePlank_stairs:
+	case sprucePlank_slabs:
+	case sprucePlank_wall: { return sprucePlank; };
+
 	};
 
 	if (INTERNAL_BUILD == 1)

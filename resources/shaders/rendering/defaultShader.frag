@@ -1129,12 +1129,12 @@ void main()
 			vec3(1.0, 0.0, 0.0),  // redPaint
 			vec3(1.0, 0.5, 0.0),  // orangePaint
 			vec3(1.0, 1.0, 0.0),  // yellowPaint
-			vec3(0.75, 1.0, 0.0), // limePaint
+			vec3(81, 255, 0)/255.f, // limePaint
 			vec3(0.0, 0.5, 0.0),  // greenPaint
-			vec3(0.0, 0.75, 0.75), // turqoisePaint
+			vec3(0, 255, 195)/255.f, // turqoisePaint
 			vec3(0.0, 1.0, 1.0),  // cyanPaint
-			vec3(0.0, 0.0, 1.0),  // bluePaint
-			vec3(0.5, 0.0, 0.5),  // purplePaint
+			vec3(0, 62, 176)/255.f,  // bluePaint
+			vec3(98, 0, 209)/255.f,  // purplePaint
 			vec3(1.0, 0.0, 1.0),  // magentaPaint
 			vec3(1.0, 0.5, 0.75)  // pinkPaint
 			);
