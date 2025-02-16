@@ -1311,7 +1311,7 @@ bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
 		}
 
 
-		return rez || load;
+		return rez || load || save;
 	}
 
 	return false;
