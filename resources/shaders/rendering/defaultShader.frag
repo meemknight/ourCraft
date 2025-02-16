@@ -828,31 +828,46 @@ vec3 hsv2rgb(vec3 c)
 	return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 
+vec3 paintGray(vec3 colorIn, vec3 newColor)
+{
+	vec3 colorInHSV = rgb2hsv(colorIn);
+	colorIn.y = 0;
+
+	colorIn.z = mix(colorIn.z, newColor.x, 0.6);
+
+	return hsv2rgb(colorIn);
+}
+
 vec3 paint(vec3 colorIn, vec3 newColor, vec3 colorReff)
 {
-
-	colorIn = mix(colorIn, newColor, vec3(0.12));
-	colorIn = mix(colorIn, colorIn * newColor, 0.12);
-
 	vec3 reffHSV = rgb2hsv(colorReff);
 	vec3 colorInHSV = rgb2hsv(colorIn);
 	vec3 newColorHSV = rgb2hsv(newColor);
+	
+	colorInHSV.x = newColorHSV.x;
+	colorInHSV.y += 0.2; if(colorInHSV.y > 1){colorInHSV.y = 1;}
+	colorInHSV.y = sqrt(colorInHSV.y);
+	vec3 c = hsv2rgb(colorInHSV);
+	return mix(c * newColor, c, vec3(0.4));
 
-	float diff = reffHSV.r - newColor.r;
-
-	colorInHSV.r -= diff;
-	colorInHSV.r = mod(colorInHSV.r + 1.0, 1.0);
-	colorInHSV.r = mix(colorInHSV.r, newColorHSV.r, 0.5);
-	colorInHSV.s = pow(colorInHSV.s+0.1,0.20);
-	colorInHSV.z = pow(colorInHSV.z,1.2);
-
-	vec3 color = hsv2rgb(colorInHSV);
-
-	color = mix(color, colorIn, 0.5);
-	color = mix(color, newColor, vec3(0.12));
-	color = mix(color, color * newColor, 0.5);
-
-	return color;
+	//colorIn = mix(colorIn, newColor, vec3(0.12));
+	//colorIn = mix(colorIn, colorIn * newColor, 0.12);
+	//
+	//float diff = reffHSV.r - newColor.r;
+	//
+	//colorInHSV.r -= diff;
+	//colorInHSV.r = mod(colorInHSV.r + 1.0, 1.0);
+	//colorInHSV.r = mix(colorInHSV.r, newColorHSV.r, 0.5);
+	//colorInHSV.s = pow(colorInHSV.s+0.1,0.20);
+	//colorInHSV.z = pow(colorInHSV.z,1.2);
+	//
+	//vec3 color = hsv2rgb(colorInHSV);
+	//
+	//color = mix(color, colorIn, 0.5);
+	//color = mix(color, newColor, vec3(0.12));
+	//color = mix(color, color * newColor, 0.5);
+	//
+	//return color;
 }
 
 
@@ -1124,10 +1139,18 @@ void main()
 			vec3(1.0, 0.5, 0.75)  // pinkPaint
 			);
 
-			int lastMip = textureQueryLevels(sampler2D(v_textureSampler)) - 1;
-			vec3 colorReff = textureLod(sampler2D(v_textureSampler), vec2(0,0), lastMip).rgb;
+			//int lastMip = textureQueryLevels(sampler2D(v_textureSampler)) - 1;
+			//vec3 colorReff = textureLod(sampler2D(v_textureSampler), vec2(0,0), lastMip).rgb;
 
-			textureColor.rgb = paint(textureColor.rgb, colorsVector[v_colors-1], colorReff);
+			if(v_colors-1 <= 3)
+			{
+				textureColor.rgb = paintGray(textureColor.rgb, colorsVector[v_colors-1]);
+			}else
+			{
+				textureColor.rgb = paint(textureColor.rgb, colorsVector[v_colors-1], vec3(0,0,0));
+			}
+
+			
 			//roughness -= 0.5;
 			//roughness = clamp(roughness, 0, 1);
 		}

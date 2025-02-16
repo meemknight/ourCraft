@@ -134,7 +134,7 @@ static CraftingRecepie recepies[] =
 
 	recepie<1>(Item(BlockTypes::wooden_plank, 4), {Item(BlockTypes::woodLog)}),
 	recepie<1>(Item(BlockTypes::wooden_plank, 4), {Item(BlockTypes::spruce_log)}),
-	recepie<1>(Item(BlockTypes::birch_planks, 4), {Item(BlockTypes::birch_log)}),
+	recepie<1>(Item(BlockTypes::birchPlanks, 4), {Item(BlockTypes::birch_log)}),
 	recepie<1>(Item(BlockTypes::jungle_planks, 4),{Item(BlockTypes::jungle_log)}),
 	recepie<1>(Item(BlockTypes::craftingTable, 1),{Item(BlockTypes::wooden_plank, 4)}),
 	recepie<1>(Item(BlockTypes::sand_stone, 1),{Item(BlockTypes::sand, 2)}),

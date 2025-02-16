@@ -1708,6 +1708,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 		for (int index = 0; index < 6; index++)
 		{
 			int i = distances[index].y;
+			auto color = b.getColor();
 
 			bool isWater = b.getType() == BlockTypes::water;
 
@@ -1818,7 +1819,9 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 
 						if (lod == 1) { currentIndex = i + lod1Parts; }
 
-						currentVector->push_back(mergeShorts(currentIndex, getGpuIdIndexForBlock(b.getType(), i)));
+						pushFaceShapeTextureAndColor(*currentVector, currentIndex,
+							getGpuIdIndexForBlock(b.getType(), i), color);
+
 					}
 					else
 					{
@@ -1826,7 +1829,8 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 
 						if (lod == 1) { currentIndex = i + lod1Parts; }
 
-						currentVector->push_back(mergeShorts(currentIndex, getGpuIdIndexForBlock(b.getType(), i)));
+						pushFaceShapeTextureAndColor(*currentVector, currentIndex,
+							getGpuIdIndexForBlock(b.getType(), i), color);
 					}
 
 					//if (!sides[2] || sides[2]->type != BlockTypes::water)
@@ -1839,7 +1843,8 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 				{
 					int currentIndex = i;
 					if (lod == 1) { currentIndex = i + lod1Parts; }
-					currentVector->push_back(mergeShorts(currentIndex, getGpuIdIndexForBlock(b.getType(), i)));
+					pushFaceShapeTextureAndColor(*currentVector, currentIndex,
+						getGpuIdIndexForBlock(b.getType(), i), color);
 				}
 
 				int aoShape = determineAOShape(i, sides);
@@ -2153,6 +2158,10 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 							{
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::tableModel], b);
 							}
+							else if (type == smallRock)
+							{
+								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::smallRockModel], b);
+							}
 							else if (type == craftingItems)
 							{
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::workItemsModel], b);
@@ -2161,7 +2170,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 							{
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::chairBigModel], b);
 							}
-							else if (type >= cookingPot && type <= ladder)
+							else if (type >= cookingPot && type <= vines)
 							{
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::cookingPotModel
 								 + type - cookingPot

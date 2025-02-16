@@ -97,6 +97,8 @@ struct ModelsManager
 		chickenWingsPlateModel,
 		fishPlateModel,
 		ladderModel,
+		vinesModel,
+		smallRockModel,
 
 		BLOCK_MODELS_COUNT
 

@@ -313,6 +313,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma region server stuff
 	{
+		//todo when the server invalidates a block action it should also send you that block state back just
+		//in case.
 		gameData.gameplayFrameProfiler.startSubProfile("server messages");
 
 		EventCounter validateEvent = 0;

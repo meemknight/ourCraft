@@ -59,25 +59,25 @@ enum BlockTypes : unsigned short
 	torch,
 	craftingTable,
 	coarseDirt,
-	birch_planks,
+	birchPlanks,
 
-	black_stained_glass,
-	gray_stained_glass,
-	light_gray_stained_glass,
-	white_stained_glass,
-	brown_stained_glass,
-	red_stained_glass,
-	orange_stained_glass,
-	yellow_stained_glass,
-	lime_stained_glass,
-	green_stained_glass,
-	cyan_stained_glass,
-	light_blue_stained_glass,
-	blue_stained_glass,
+	pathBlock,
+	plankedWallBlock,
+	plankedWallBlock_stairs,
+	plankedWallBlock_wall,
+	terracotta,
+	terracotta_stairs,
+	terracotta_slabs,
+	terracotta_wall,
+	glassNotClear,
+	vitral1,
+	vitral2,
+	glassNotClear2,
+	glass2,
 	purple_stained_glass,
 	magenta_stained_glass,
 	pink_stained_glass,
-	whiteWool,
+	clothBlock,
 	wooden_stairs,
 	wooden_slab,
 	wooden_wall,
@@ -178,6 +178,19 @@ enum BlockTypes : unsigned short
 	chickenWingsPlate,
 	fishPlate,
 	ladder,
+	vines,
+	cloth_stairs,
+	cloth_slabs,
+	cloth_wall,
+
+	birchPlanks_stairs,
+	birchPlanks_slabs,
+	birchPlanks_wall,
+	oakLogSlab,
+	smallRock,
+
+	strippedOakLog,
+	strippedBirchLog,
 
 	BlocksCount
 };
@@ -230,7 +243,7 @@ bool isVolcanicInActiveSound(BlockType type);
 
 bool isAnyWoddenLOG(BlockType type);
 
-//used for breaking
+//used for breaking, cloth blocks
 bool isAnyWool(BlockType type);
 
 //used for breaking
@@ -356,7 +369,7 @@ struct Block
 	//used for stairs, or furnace type blocks
 	bool hasRotationFor365RotationTypeBlocks()
 	{
-		return isStairsMesh() || isWallMesh() || isDecorativeFurniture() || getType() == ladder;
+		return isStairsMesh() || isWallMesh() || isDecorativeFurniture() || isWallMountedBlock();
 	}
 
 	void setType(BlockType t)

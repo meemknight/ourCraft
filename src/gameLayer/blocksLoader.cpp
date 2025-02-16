@@ -74,23 +74,23 @@ const char *texturesNames[] = {
 	"crafting_table_top",	//60
 	"gravel-dirt-bloc",		//61
 	"birch_planks",		//62
-	"black_stained_glass",	//63
-	"gray_stained_glass",	//64
-	"light_gray_stained_glass",	//65
-	"white_stained_glass",	//66
-	"brown_stained_glass",	//67
-	"red_stained_glass",	//68
-	"orange_stained_glass",	//69
-	"yellow_stained_glass",	//70
-	"lime_stained_glass",	//71
-	"green_stained_glass",	//72
+	"pathBlock",	//63
+	"stoneAndLog",	//64
+	"terracotta",	//65
+	"notClearGlass",		//66
+	"vitral1",				//67
+	"vitral2",				//68
+	"notClearGlass2",		//69
+	"glass2",				//70
+	"strippedOakLog",	//71
+	"strippedBirchLog",	//72
 	"cyan_stained_glass",	//73
 	"light_blue_stained_glass",	//74
 	"blue_stained_glass",	//75
 	"purple_stained_glass",	//76
 	"magenta_stained_glass",//77
 	"pink_stained_glass",	//78
-	"white_wool",			//79
+	"cloth",				//79
 	"tiledStoneBrick",		//80
 	"structureBase",		//81
 	"snowGrass",			//82
@@ -128,6 +128,7 @@ const char *texturesNames[] = {
 	"models/cookingPot", //113
 	"models/chickenCaracas", //114
 	"models/ladder", //115
+	"models/vines", //116
 	
 
 
@@ -295,7 +296,7 @@ uint16_t blocksLookupTable[] = {
 	//crafting table
 	58, 58, 60, 7, 59, 59, 
 
-	//white_wool
+	//coarse dirt
 	61,61,61,61,61,61,
 
 	//birch_planks
@@ -303,23 +304,24 @@ uint16_t blocksLookupTable[] = {
 
 	//glasses
 	63, 63, 63, 63, 63, 63,
-	64, 64, 64, 64, 64, 64,
+	64, 64, 5, 8, 64, 64,
+	64, 64, 5, 8, 64, 64,
+	64, 64, 5, 8, 64, 64,
+	65, 65, 65, 65, 65, 65, //terracotta
 	65, 65, 65, 65, 65, 65,
-	66, 66, 66, 66, 66, 66,
+	65, 65, 65, 65, 65, 65,
+	65, 65, 65, 65, 65, 65,
+
+	66, 66, 66, 66, 66, 66, //vitrals and not clear glass
 	67, 67, 67, 67, 67, 67,
 	68, 68, 68, 68, 68, 68,
-	69, 69, 69, 69, 69, 69,
-	70, 70, 70, 70, 70, 70,
-	71, 71, 71, 71, 71, 71,
-	72, 72, 72, 72, 72, 72,
-	73, 73, 73, 73, 73, 73,
-	74, 74, 74, 74, 74, 74,
-	75, 75, 75, 75, 75, 75,
+	69, 69, 69, 69, 69, 69, //glass very not clear
+	70, 70, 70, 70, 70, 70, //glass 2
 	76, 76, 76, 76, 76, 76,
 	77, 77, 77, 77, 77, 77,
 	78, 78, 78, 78, 78, 78,
 
-	//whool
+	//cloth
 	79,79,79,79,79,79,
 
 	//wooden_stairs
@@ -502,15 +504,33 @@ uint16_t blocksLookupTable[] = {
 	//oak log chair big
 	5, 5, 5, 5, 5, 5,
 
-
 	113, 113, 113, 113, 113, 113, //cooking pot
 	114, 114, 114, 114, 114, 114,
 	114, 114, 114, 114, 114, 114,
 	114, 114, 114, 114, 114, 114,
 
-	
 	115, 115, 115, 115, 115, 115, //ladder oak
+	116, 116, 116, 116, 116, 116, //vines
 
+	//cloth stairs walls slabs
+	79, 79, 79, 79, 79, 79,
+	79, 79, 79, 79, 79, 79,
+	79, 79, 79, 79, 79, 79,
+
+	//birch wall slapb stairs
+	62, 62, 62, 62, 62, 62,
+	62, 62, 62, 62, 62, 62,
+	62, 62, 62, 62, 62, 62,
+
+	//oak log slab
+	5, 5, 6, 6, 5, 5,
+
+	//small rock
+	8, 8, 8, 8, 8, 8,
+
+	//stripped log
+	71, 71, 6, 6, 71, 71, //oak
+	72, 72, 25, 25, 72, 72, //birch
 
 };
 

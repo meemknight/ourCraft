@@ -235,17 +235,7 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 
 		c.playerData.inventory.items[0] = itemCreator(ItemTypes::trainingSpear);
 		c.playerData.inventory.items[1] = itemCreator(ItemTypes::apple, 20);
-		c.playerData.inventory.items[10] = Item(BlockTypes::yellow_stained_glass);
-		c.playerData.inventory.items[11] = Item(BlockTypes::lime_stained_glass);
-		c.playerData.inventory.items[12] = Item(BlockTypes::green_stained_glass);
-		c.playerData.inventory.items[13] = Item(BlockTypes::whiteWool, 64);
-		c.playerData.inventory.items[17] = Item(BlockTypes::cyan_stained_glass);
-		c.playerData.inventory.items[18] = Item(BlockTypes::light_blue_stained_glass);
-		c.playerData.inventory.items[19] = Item(BlockTypes::blue_stained_glass);
-		c.playerData.inventory.items[14] = Item(BlockTypes::purple_stained_glass);
-		c.playerData.inventory.items[15] = Item(BlockTypes::magenta_stained_glass);
-		c.playerData.inventory.items[16] = Item(BlockTypes::pink_stained_glass);
-		c.playerData.inventory.items[20] = Item(BlockTypes::jungle_planks, 64);
+		c.playerData.inventory.items[13] = Item(BlockTypes::clothBlock, 64);
 		c.playerData.inventory.items[21] = Item(BlockTypes::woodLog, 64);
 		c.playerData.inventory.items[22] = Item(BlockTypes::palm_log, 64);
 		c.playerData.inventory.items[23] = Item(BlockTypes::glowstone, 64);
