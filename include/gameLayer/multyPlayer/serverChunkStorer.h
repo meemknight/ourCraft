@@ -97,7 +97,7 @@ struct SavedChunk
 	{
 	
 		//dirty means we should resave it to the disk
-		bool dirty = 0;
+		bool dirty = 0; //todo investigate if should remove?
 		bool dirtyEntity = 0;
 		bool shouldUnload = 0; 
 		bool dirtyBlockData = 0;
@@ -161,6 +161,8 @@ struct ServerChunkStorer
 		std::vector<glm::ivec3> *controlBlocks);
 
 	Block *getBlockSafe(glm::ivec3 pos);
+
+	Block *getBlockSafeAndChunk(glm::ivec3 pos, SavedChunk *&c);
 
 	Block *tryGetBlockIfChunkExistsNoChecks(glm::ivec3 pos);
 

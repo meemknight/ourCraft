@@ -1441,6 +1441,7 @@ bool ChunkSystem::breakBlockByClient(glm::ivec3 pos, UndoQueue &undoQueue,
 			}
 
 			b->setType(BlockTypes::air);
+			b->colorAndOtherFlags = 0;
 
 			setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
 

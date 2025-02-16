@@ -633,6 +633,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 								Block actualPlacedBLock;
 								actualPlacedBLock.typeAndFlags = i.t.blockType;
+								actualPlacedBLock.setColor(0);
 
 								if (!b)
 								{
@@ -1271,9 +1272,10 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 									else if (from->isPaint())
 									{
 
-										auto b = chunkCache.getBlockSafe(i.t.pos);
+										SavedChunk *c = 0;
+										auto b = chunkCache.getBlockSafeAndChunk(i.t.pos, c);
 
-										if (b)
+										if (b && c)
 										{
 											allowed = true;
 
@@ -1281,6 +1283,10 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 											shouldUpdateRevisionStuff = false;
 											if (computeRevisionStuff(*client, allowed, i.t.eventId))
 											{
+												
+												c->otherData.dirtyBlockData = true;
+												c->otherData.dirty = true;
+
 												//
 												//todo only for local players
 												{

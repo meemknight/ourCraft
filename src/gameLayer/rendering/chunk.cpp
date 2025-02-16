@@ -805,6 +805,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 		glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y, z + this->data.z * CHUNK_SIZE};
 
 		int rotation = b.getRotationFor365RotationTypeBlocks();
+		auto color = b.getColor();
 
 		for (int i = 0; i < 6; i++)
 		{
@@ -833,8 +834,8 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 
 				auto placeNormally = [&]()
 				{
-					currentVector->push_back(mergeShorts(i,
-						getGpuIdIndexForBlockWithVariation(b.getType(), i, x, y, z)));
+					pushFaceShapeTextureAndColor(*currentVector, i,
+						getGpuIdIndexForBlockWithVariation(b.getType(), i, x, y, z), color);
 					placeFlagsLightsNormally();
 				};
 
@@ -848,25 +849,21 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 					else
 					{
 						//bottom rim
-						currentVector->push_back(mergeShorts(halfBottomStartGeometry + 0
-							, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z)
-
-						));
+						pushFaceShapeTextureAndColor(*currentVector, halfBottomStartGeometry + 0,
+							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 						placeFlagsLightsNormally();
 
 						if (rotation == 1)
 						{
-							currentVector->push_back(mergeShorts(cornerUpStartGeometry + 4
-								, getGpuIdIndexForBlockWithVariation(b.getType(), 1, x, y, z))
-							);
+							pushFaceShapeTextureAndColor(*currentVector, cornerUpStartGeometry + 4,
+								getGpuIdIndexForBlockWithVariation(b.getType(), 1, x, y, z), color);
 							placeFlagsLightsNormally();
 						}
 						else
 							if (rotation == 3)
 							{
-								currentVector->push_back(mergeShorts(cornerUpStartGeometry + 6
-									, getGpuIdIndexForBlockWithVariation(b.getType(), 1, x, y, z)
-								));
+								pushFaceShapeTextureAndColor(*currentVector, cornerUpStartGeometry + 6,
+									getGpuIdIndexForBlockWithVariation(b.getType(), 1, x, y, z), color);
 								placeFlagsLightsNormally();
 							}
 					}
@@ -882,24 +879,21 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 					else
 					{
 						//bottom rim
-						currentVector->push_back(mergeShorts(halfBottomStartGeometry + 1
-							, getGpuIdIndexForBlockWithVariation(b.getType(), 1, x, y, z)
-						));
+						pushFaceShapeTextureAndColor(*currentVector, halfBottomStartGeometry + 1,
+							getGpuIdIndexForBlockWithVariation(b.getType(), 1, x, y, z), color);
 						placeFlagsLightsNormally();
 
 						if (rotation == 1)
 						{
-							currentVector->push_back(mergeShorts(cornerUpStartGeometry + 5
-								, getGpuIdIndexForBlockWithVariation(b.getType(), 1, x, y, z)
-							));
+							pushFaceShapeTextureAndColor(*currentVector, cornerUpStartGeometry + 5,
+								getGpuIdIndexForBlockWithVariation(b.getType(), 1, x, y, z), color);
 							placeFlagsLightsNormally();
 						}
 						else
 							if (rotation == 3)
 							{
-								currentVector->push_back(mergeShorts(cornerUpStartGeometry + 7
-									, getGpuIdIndexForBlockWithVariation(b.getType(), 1, x, y, z)
-								));
+								pushFaceShapeTextureAndColor(*currentVector, cornerUpStartGeometry + 7,
+									getGpuIdIndexForBlockWithVariation(b.getType(), 1, x, y, z), color);
 								placeFlagsLightsNormally();
 							}
 					}
@@ -925,23 +919,20 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 					else
 					{
 						//bottom rim
-						currentVector->push_back(mergeShorts(halfBottomStartGeometry + 2
-							, getGpuIdIndexForBlockWithVariation(b.getType(), 2, x, y, z)
-						));
+						pushFaceShapeTextureAndColor(*currentVector, halfBottomStartGeometry + 2,
+							getGpuIdIndexForBlockWithVariation(b.getType(), 2, x, y, z), color);
 						placeFlagsLightsNormally();
 
 						if (rotation == 0)
 						{
-							currentVector->push_back(mergeShorts(cornerUpStartGeometry + 0
-								, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z)
-							));
+							pushFaceShapeTextureAndColor(*currentVector, cornerUpStartGeometry + 0,
+								getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 							placeFlagsLightsNormally();
 						}
 						else if (rotation == 2)
 						{
-							currentVector->push_back(mergeShorts(cornerUpStartGeometry + 2
-								, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z)
-							));
+							pushFaceShapeTextureAndColor(*currentVector, cornerUpStartGeometry + 2,
+								getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 							placeFlagsLightsNormally();
 						}
 					}
@@ -958,24 +949,21 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 					else
 					{
 						//bottom rim
-						currentVector->push_back(mergeShorts(halfBottomStartGeometry + 3
-							, getGpuIdIndexForBlockWithVariation(b.getType(), 3, x, y, z)
-						));
+						pushFaceShapeTextureAndColor(*currentVector, halfBottomStartGeometry + 3,
+							getGpuIdIndexForBlockWithVariation(b.getType(), 3, x, y, z), color);
 						placeFlagsLightsNormally();
 
 						if (rotation == 0)
 						{
-							currentVector->push_back(mergeShorts(cornerUpStartGeometry + 1
-								, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z)
-							));
+							pushFaceShapeTextureAndColor(*currentVector, cornerUpStartGeometry + 1,
+								getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 							placeFlagsLightsNormally();
 						}
 						else
 							if (rotation == 2)
 							{
-								currentVector->push_back(mergeShorts(cornerUpStartGeometry + 3
-									, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z)
-								));
+								pushFaceShapeTextureAndColor(*currentVector, cornerUpStartGeometry + 3,
+									getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 								placeFlagsLightsNormally();
 							}
 
@@ -1009,30 +997,26 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 
 			if (rotation == 0)
 			{
-				currentVector->push_back(mergeShorts(topHalfStartGeometry + 0
-					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
-				)));
+				pushFaceShapeTextureAndColor(*currentVector, topHalfStartGeometry + 0,
+					getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 				placeFlagsLightsNormally();
 			}
 			else if (rotation == 2)
 			{
-				currentVector->push_back(mergeShorts(topHalfStartGeometry + 1
-					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
-				)));
+				pushFaceShapeTextureAndColor(*currentVector, topHalfStartGeometry + 1,
+					getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 				placeFlagsLightsNormally();
 			}
 			else if (rotation == 1)
 			{
-				currentVector->push_back(mergeShorts(topHalfStartGeometry + 2
-					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
-				)));
+				pushFaceShapeTextureAndColor(*currentVector, topHalfStartGeometry + 2,
+					getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 				placeFlagsLightsNormally();
 			}
 			else if (rotation == 3)
 			{
-				currentVector->push_back(mergeShorts(topHalfStartGeometry + 3
-					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
-				)));
+				pushFaceShapeTextureAndColor(*currentVector, topHalfStartGeometry + 3,
+					getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 				placeFlagsLightsNormally();
 			}
 		}
@@ -1062,50 +1046,46 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 
 			if (rotation == 0)
 			{
-				currentVector->push_back(mergeShorts(topHalfBottomPartStartGeometry + 1
-					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
-				)));
+				pushFaceShapeTextureAndColor(*currentVector, topHalfBottomPartStartGeometry + 1,
+					getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 				placeFlagsLightsNormally();
 
-				currentVector->push_back(mergeShorts(frontalMiddleTopPieceStartGeometry + 0
-					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
-				)));
+
+				pushFaceShapeTextureAndColor(*currentVector, frontalMiddleTopPieceStartGeometry + 0,
+					getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 				placeFlagsLightsNormally();
 			}
 			else if (rotation == 2)
 			{
-				currentVector->push_back(mergeShorts(topHalfBottomPartStartGeometry + 0
-					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
-				)));
+				pushFaceShapeTextureAndColor(*currentVector, topHalfBottomPartStartGeometry + 0,
+					getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 				placeFlagsLightsNormally();
 
-				currentVector->push_back(mergeShorts(frontalMiddleTopPieceStartGeometry + 1
-					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
-				)));
+
+				pushFaceShapeTextureAndColor(*currentVector, frontalMiddleTopPieceStartGeometry + 1,
+					getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 				placeFlagsLightsNormally();
 			}
 			else if (rotation == 1)
 			{
-				currentVector->push_back(mergeShorts(topHalfBottomPartStartGeometry + 3
-					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
-				)));
+				pushFaceShapeTextureAndColor(*currentVector, topHalfBottomPartStartGeometry + 3,
+					getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 				placeFlagsLightsNormally();
 
-				currentVector->push_back(mergeShorts(frontalMiddleTopPieceStartGeometry + 2
-					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
-				)));
+
+				pushFaceShapeTextureAndColor(*currentVector, frontalMiddleTopPieceStartGeometry + 2,
+					getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 				placeFlagsLightsNormally();
 			}
 			else if (rotation == 3)
 			{
-				currentVector->push_back(mergeShorts(topHalfBottomPartStartGeometry + 2
-					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
-				)));
+				pushFaceShapeTextureAndColor(*currentVector, topHalfBottomPartStartGeometry + 2,
+					getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 				placeFlagsLightsNormally();
 
-				currentVector->push_back(mergeShorts(frontalMiddleTopPieceStartGeometry + 3
-					, getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
-				)));
+
+				pushFaceShapeTextureAndColor(*currentVector, frontalMiddleTopPieceStartGeometry + 3,
+					getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 				placeFlagsLightsNormally();
 			}
 
@@ -1423,6 +1403,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 
 
 		glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y, z + this->data.z * CHUNK_SIZE};
+		auto color = b.getColor();
 
 		if (b.getTopPartForSlabs())
 		{
@@ -1445,8 +1426,8 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 
 				auto placeNormally = [&]()
 				{
-					currentVector->push_back(mergeShorts(i,
-						getGpuIdIndexForBlockWithVariation(b.getType(), i, x, y, z)));
+					pushFaceShapeTextureAndColor(*currentVector, i,
+						getGpuIdIndexForBlockWithVariation(b.getType(), i, x, y, z), color);
 					placeFlagsLightsNormally();
 				};
 
@@ -1471,31 +1452,26 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 					}
 					else if (i == 0)
 					{
-
-						currentVector->push_back(mergeShorts(slabTopSides + 0,
-							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
-						)));
+						pushFaceShapeTextureAndColor(*currentVector, slabTopSides + 0,
+							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 						placeFlagsLightsNormally();
 					}
 					else if (i == 1)
 					{
-						currentVector->push_back(mergeShorts(slabTopSides + 1,
-							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
-						)));
+						pushFaceShapeTextureAndColor(*currentVector, slabTopSides + 1,
+							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 						placeFlagsLightsNormally();
 					}
 					else if (i == 4)
 					{
-						currentVector->push_back(mergeShorts(slabTopSides + 2,
-							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
-						)));
+						pushFaceShapeTextureAndColor(*currentVector, slabTopSides + 2,
+							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 						placeFlagsLightsNormally();
 					}
 					else if (i == 5)
 					{
-						currentVector->push_back(mergeShorts(slabTopSides + 3,
-							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
-						)));
+						pushFaceShapeTextureAndColor(*currentVector, slabTopSides + 3,
+							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 						placeFlagsLightsNormally();
 					}
 
@@ -1533,9 +1509,8 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 					torchLight = b.getLight();
 				}
 
-				currentVector->push_back(mergeShorts(slabFaceUnderside,
-					getGpuIdIndexForBlockWithVariation(b.getType(), 2, x, y, z
-				)));
+				pushFaceShapeTextureAndColor(*currentVector, slabFaceUnderside,
+					getGpuIdIndexForBlockWithVariation(b.getType(), 2, x, y, z), color);
 				pushFlagsLightAndPosition(*currentVector, position, 0, isInWater,
 					sunLight, torchLight, aoShape);
 			}
@@ -1561,9 +1536,8 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 
 				auto placeNormally = [&]()
 				{
-					currentVector->push_back(mergeShorts(i,
-						getGpuIdIndexForBlockWithVariation(b.getType(), i, x, y, z
-					)));
+					pushFaceShapeTextureAndColor(*currentVector, i,
+						getGpuIdIndexForBlockWithVariation(b.getType(), i, x, y, z), color);
 					placeFlagsLightsNormally();
 				};
 
@@ -1588,30 +1562,26 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 					}
 					else if (i == 0)
 					{
-						currentVector->push_back(mergeShorts(halfBottomStartGeometry + 0,
-							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
-						)));
+						pushFaceShapeTextureAndColor(*currentVector, halfBottomStartGeometry + 0,
+							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 						placeFlagsLightsNormally();
 					}
 					else if (i == 1)
 					{
-						currentVector->push_back(mergeShorts(halfBottomStartGeometry + 1,
-							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
-						)));
+						pushFaceShapeTextureAndColor(*currentVector, halfBottomStartGeometry + 1,
+							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 						placeFlagsLightsNormally();
 					}
 					else if (i == 4)
 					{
-						currentVector->push_back(mergeShorts(halfBottomStartGeometry + 2,
-							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
-						)));
+						pushFaceShapeTextureAndColor(*currentVector, halfBottomStartGeometry + 2,
+							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 						placeFlagsLightsNormally();
 					}
 					else if (i == 5)
 					{
-						currentVector->push_back(mergeShorts(halfBottomStartGeometry + 3,
-							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z
-						)));
+						pushFaceShapeTextureAndColor(*currentVector, halfBottomStartGeometry + 3,
+							getGpuIdIndexForBlockWithVariation(b.getType(), 0, x, y, z), color);
 						placeFlagsLightsNormally();
 					}
 
@@ -1655,9 +1625,8 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 					torchLight = b.getLight();
 				}
 
-				currentVector->push_back(mergeShorts(slabTopFace,
-					getGpuIdIndexForBlockWithVariation(b.getType(), 2, x, y, z
-				)));
+				pushFaceShapeTextureAndColor(*currentVector, slabTopFace,
+					getGpuIdIndexForBlockWithVariation(b.getType(), 2, x, y, z), color);
 				pushFlagsLightAndPosition(*currentVector, position, 0, isInWater,
 					sunLight, torchLight, aoShape);
 			}

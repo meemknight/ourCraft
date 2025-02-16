@@ -833,7 +833,13 @@ vec3 paintGray(vec3 colorIn, vec3 newColor)
 	vec3 colorInHSV = rgb2hsv(colorIn);
 	colorIn.y = 0;
 
-	colorIn.z = mix(colorIn.z, newColor.x, 0.6);
+	float colSqr = newColor.x * newColor.x;
+	colorIn.z = mix(colorIn.z, 
+					mix(colSqr, colorIn.z * colSqr, 0.6 ), 
+					0.6);
+
+	if(newColor.x == 0){colorIn.z = pow(colorIn.z, 1.2);}
+
 
 	return hsv2rgb(colorIn);
 }
@@ -1123,7 +1129,7 @@ void main()
 			vec3 colorsVector[] = vec3[](
 			vec3(1.0, 1.0, 1.0),  // whitePaint
 			vec3(0.75, 0.75, 0.75), // lightGrayPaint
-			vec3(0.5, 0.5, 0.5),  // darkGrayPaint
+			vec3(0.25, 0.25, 0.25),  // darkGrayPaint
 			vec3(0.0, 0.0, 0.0),  // blackPaint
 			vec3(0.36, 0.25, 0.20), // brownPaint
 			vec3(1.0, 0.0, 0.0),  // redPaint

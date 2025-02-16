@@ -1255,6 +1255,21 @@ Block *ServerChunkStorer::getBlockSafe(glm::ivec3 pos)
 	return nullptr;
 }
 
+Block *ServerChunkStorer::getBlockSafeAndChunk(glm::ivec3 pos, SavedChunk *&c)
+{
+	c = getChunkOrGetNull(divideChunk(pos.x), divideChunk(pos.z));
+
+	if (c)
+	{
+		if (pos.y > 0 && pos.y < CHUNK_HEIGHT)
+		{
+			return &c->chunk.unsafeGet(modBlockToChunk(pos.x), pos.y, modBlockToChunk(pos.z));
+		}
+	}
+
+	return nullptr;
+}
+
 
 Block *ServerChunkStorer::tryGetBlockIfChunkExistsNoChecks(glm::ivec3 pos)
 {
