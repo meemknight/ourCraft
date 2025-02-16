@@ -1245,6 +1245,8 @@ bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
 		filePath += baseBlock.name;
 		filePath += ".structure";
 
+		//todo make the save button red if changes!!!
+
 		if (save)
 		{
 			std::vector<unsigned char> data;
