@@ -279,6 +279,14 @@ void dealDamageToLocalPlayer(int damage)
 
 }
 
+void paintBlock(int color, Block &b, Chunk &c, glm::ivec3 pos)
+{
+	Block oldBlock = b;
+	b.setColor(color);
+	c.setDirty(true);
+	gameData.undoQueue.addPlaceBlockEvent(pos, oldBlock, b);
+}
+
 void exitInventoryMenu()
 {
 
@@ -1109,10 +1117,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 								int paintType = item.type - soap;
 
-								Block oldBlock = *b;
-								b->setColor(paintType);
-								c->setDirty(true);
-								gameData.undoQueue.addPlaceBlockEvent(rayCastPos, oldBlock, *b);
+								paintBlock(paintType, *b, *c, rayCastPos);
+
+								
 
 
 							}else
@@ -1326,6 +1333,28 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 										player.otherPlayerSettings.gameMode == OtherPlayerSettings::SURVIVAL,
 										faceDirection, topPartForSlabs
 									);
+
+
+									auto itemLast = player.inventory.getItemFromIndex(8);
+									if (itemLast && itemLast->isPaint())
+									{
+										auto b = gameData.chunkSystem.getBlockSafe(blockToPlace->x, 
+											blockToPlace->y, blockToPlace->z);
+
+										int paintType = itemLast->type - soap;
+										paintBlock(paintType, *b, *c, *blockToPlace);
+
+										Packet_ClientUsedItem data;
+										data.from = 8;
+										data.itemType = itemLast->type;
+										data.revisionNumber = player.inventory.revisionNumber;
+
+										data.position = *blockToPlace;
+										data.eventId = gameData.undoQueue.currentEventId;
+
+										sendPacket(getServer(), headerClientUsedItem, player.entityId,
+											&data, sizeof(data), true, channelChunksAndBlocks);
+									}
 
 									AudioEngine::playSound(getSoundForBlockStepping(item.type),
 										PLACED_BLOCK_SOUND_VOLUME);

@@ -39,6 +39,9 @@ bool isStairsMesh(BlockType type)
 		type == hardSandStone_stairs ||
 		type == sandStone_stairts ||
 		type == dungeonBricks_stairts ||
+		type == dungeonStone_stairs ||
+		type == dungeonCobblestone_stairs ||
+		type == dungeonSmoothStone_stairs ||
 		type == volcanicRock_stairts ||
 		type == smoothStone_stairts ||
 		type == smoothLimeStone_stairs ||
@@ -65,6 +68,9 @@ bool isSlabMesh(BlockType type)
 		type == sandStone_slabs ||
 		type == terracotta_slabs ||
 		type == dungeonBricks_slabs ||
+		type == dungeonStone_slabs ||
+		type == dungeonCobblestone_slabs ||
+		type == dungeonSmoothStone_slabs ||
 		type == volcanicRock_slabs ||
 		type == smoothStone_slabs ||
 		type == smoothLimeStone_slabs ||
@@ -89,6 +95,9 @@ bool isWallMesh(BlockType type)
 		type == hardSandStone_wall ||
 		type == sandStone_wall ||
 		type == dungeonBricks_wall ||
+		type == dungeonStone_wall ||
+		type == dungeonCobblestone_wall ||
+		type == dungeonSmoothStone_wall ||
 		type == volcanicRock_wall ||
 		type == smoothStone_wall ||
 		type == sprucePlank_wall ||
@@ -422,10 +431,7 @@ bool isAnyStone(BlockType type)
 		type == hardSandStone_stairs ||
 		type == hardSandStone_wall ||
 
-		type == dungeonBricks ||
-		type == dungeonBricks_slabs ||
-		type == dungeonBricks_stairts  ||
-		type == dungeonBricks_wall ||
+
 
 		type == smoothStone ||
 		type == smoothStone_stairts ||
@@ -435,6 +441,31 @@ bool isAnyStone(BlockType type)
 		type == stoneBricks_stairts ||
 		type == stoneBricks_slabs ||
 		type == stoneBricks_wall;
+}
+
+bool isDungeonBrick(BlockType type)
+{
+	
+	return
+		type == dungeonBricks ||
+		type == dungeonBricks_slabs ||
+		type == dungeonBricks_stairts ||
+		type == dungeonBricks_wall ||
+		type == dungeonStone ||
+		type == dungeonStone_stairs ||
+		type == dungeonStone_slabs ||
+		type == dungeonStone_wall ||
+		type == dungeonCobblestone ||
+		type == dungeonCobblestone_stairs ||
+		type == dungeonCobblestone_slabs ||
+		type == dungeonCobblestone_wall ||
+		type == dungeonSmoothStone ||
+		type == dungeonSmoothStone_stairs ||
+		type == dungeonSmoothStone_slabs ||
+		type == dungeonSmoothStone_wall ||
+		type == dungeonPillar ||
+		type == chiseledDungeonBrick ||
+		type == dungeonSkullBlock;
 }
 
 bool isAnyPlant(BlockType type)
@@ -567,6 +598,11 @@ float getBlockBaseMineDuration(BlockType type)
 	if (isAnySemiHardBlock(type) || type == testBlock)
 	{
 		return 3.0;
+	}
+
+	if (isDungeonBrick(type))
+	{
+		return 10.0;
 	}
 
 	if (isAnyStone(type))
@@ -784,6 +820,18 @@ BlockType fromAnyShapeToNormalBlockType(BlockType b)
 	case sprucePlank_stairs:
 	case sprucePlank_slabs:
 	case sprucePlank_wall: { return sprucePlank; };
+
+	case dungeonStone_stairs : 
+	case dungeonStone_slabs : 
+	case dungeonStone_wall: { return dungeonStone; }
+
+	case dungeonCobblestone_stairs:
+	case dungeonCobblestone_slabs:
+	case dungeonCobblestone_wall: { return dungeonCobblestone; }
+
+	case dungeonSmoothStone_stairs:
+	case dungeonSmoothStone_slabs:
+	case dungeonSmoothStone_wall: { return dungeonSmoothStone; }
 
 	};
 

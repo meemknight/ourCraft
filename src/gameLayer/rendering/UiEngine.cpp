@@ -1230,7 +1230,7 @@ bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
 		menuRenderer.sliderUint8("Size Y", &baseBlock.sizeY, 0, 120, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
 		menuRenderer.sliderUint8("Size Z", &baseBlock.sizeZ, 0, 120, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
 
-		bool rez = menuRenderer.Button("Update Settongs", Colors_Gray, buttonTexture);
+		bool rez = menuRenderer.Button("Update Settings", Colors_Gray, buttonTexture);
 		
 		bool save = menuRenderer.Button("Save Structure To Disk", Colors_Gray, buttonTexture);
 		bool load = menuRenderer.Button("Load Structure from disk", Colors_Gray, buttonTexture);

@@ -1275,7 +1275,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 										SavedChunk *c = 0;
 										auto b = chunkCache.getBlockSafeAndChunk(i.t.pos, c);
 
-										if (b && c)
+										if (b && c && b->canBePainted())
 										{
 											allowed = true;
 

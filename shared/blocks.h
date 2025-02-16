@@ -198,6 +198,26 @@ enum BlockTypes : unsigned short
 	sprucePlank_slabs,
 	sprucePlank_wall,
 
+	dungeonStone,
+	dungeonStone_stairs,
+	dungeonStone_slabs,
+	dungeonStone_wall,
+	
+	dungeonCobblestone,
+	dungeonCobblestone_stairs,
+	dungeonCobblestone_slabs,
+	dungeonCobblestone_wall,
+
+	dungeonSmoothStone,
+	dungeonSmoothStone_stairs,
+	dungeonSmoothStone_slabs,
+	dungeonSmoothStone_wall,
+
+	dungeonPillar,
+	dungeonSkullBlock,
+	chiseledDungeonBrick,
+
+
 	BlocksCount
 };
 
@@ -266,6 +286,9 @@ bool isAnySemiHardBlock(BlockType type);
 
 //used for breaking
 bool isAnyStone(BlockType type);
+
+//used for breaking
+bool isDungeonBrick(BlockType type);
 
 //used for breaking
 bool isAnyPlant(BlockType type);
@@ -384,6 +407,9 @@ struct Block
 	}
 
 	bool air() { return getType() == 0; }
+
+	bool canBePainted() { return getType() != 0; }
+
 	bool isOpaque()
 	{
 		return ::isOpaque(getType());

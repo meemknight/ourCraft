@@ -130,7 +130,12 @@ const char *texturesNames[] = {
 	"models/ladder", //115
 	"models/vines", //116
 	
-
+	"dungeonStone", //117
+	"dungeonCobbleStone", //118,
+	"dungeonSmoothStone", //119,
+	"dungeonPillar", //120,
+	"dungeonPillarTop", //121,
+	"dungeonBrickSkull",//122
 
 };
 
@@ -538,6 +543,43 @@ uint16_t blocksLookupTable[] = {
 	74, 74, 74, 74, 74, 74,
 	74, 74, 74, 74, 74, 74,
 	74, 74, 74, 74, 74, 74,
+
+
+		//"dungeonStone", //117
+		//"dungeonCobbleStone" //118,
+		//"dungeonSmoothStone" //119,
+		//"dungeonPillar" //120,
+		//"dungeonPillarTop" //121,
+		//"dungeonBrickSkull",//122
+
+	//dungeonStone,
+	117, 117, 117, 117, 117, 117,
+	117, 117, 117, 117, 117, 117,
+	117, 117, 117, 117, 117, 117,
+	117, 117, 117, 117, 117, 117,
+
+	//dungeonCobblestone
+	118, 118, 118, 118, 118, 118,
+	118, 118, 118, 118, 118, 118,
+	118, 118, 118, 118, 118, 118,
+	118, 118, 118, 118, 118, 118,
+	
+
+	//dungeonSmoothStone,
+	119, 119, 119, 119, 119, 119,
+	119, 119, 119, 119, 119, 119,
+	119, 119, 119, 119, 119, 119,
+	119, 119, 119, 119, 119, 119,
+
+
+	//dungeonPillar,
+	120,120,121,121,120,120,
+
+	//dungeonSkullBlock,
+	122,122,122,122,122,122,
+	
+	//chiseledDungeonBrick
+	121, 121, 121, 121, 121, 121,
 
 };
 
