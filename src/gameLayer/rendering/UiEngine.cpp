@@ -277,7 +277,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 		{
 
 			gl2d::Texture t = blocksLoader.blockUiTextures[item.type];
-			float size = 0.1;
+			float size = 0.2;
 
 			if (t.id == 0)
 			{

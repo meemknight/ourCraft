@@ -1267,58 +1267,91 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 								};
 
 								int faceDirection = facingDirection;
+								int isOnWall = 0;
 
-								if (!dontPlace && isWallMountedBlock(item.type))
+								if (!dontPlace &&
+									(isWallMountedBlock(item.type) ||
+									isWallMountedOrStangingBlock(item.type))
+									)
 								{
-									if (blockToPlace)
-									{
-										glm::ivec3 placeDiff = *blockToPlace - rayCastPos;
 
-										if (placeDiff == glm::ivec3(1, 0, 0) ||
-											placeDiff == glm::ivec3(-1, 0, 0) ||
-											placeDiff == glm::ivec3(0, 0, 1) ||
-											placeDiff == glm::ivec3(0, 0, -1))
+									if (!blockToPlace)
+									{
+										dontPlace = true;
+									}
+									else
+									{
+										bool skipNextStep = 0;
+										if (isWallMountedOrStangingBlock(item.type))
 										{
-											//todo walls as well
-											if (raycastBlock && 
-												raycastBlock->canWallMountedBlocksBePlacedOn())
+											glm::ivec3 placeDiff = *blockToPlace - rayCastPos;
+
+											if (placeDiff == glm::ivec3(0, 1, 0))
 											{
 												//good
-												//we place ladders only on blocks
+												skipNextStep = true;
+											}
+											else if (placeDiff == glm::ivec3(0, -1, 0))
+											{
+												//bad 
+												dontPlace = true;
+												skipNextStep = true;
+											}
 
-												if (placeDiff == glm::ivec3(1, 0, 0))
-												{
-													faceDirection = 1; //not0
-												}else if (placeDiff == glm::ivec3(-1, 0, 0))
-												{
-													faceDirection = 3; //not1
-												}
-												else if (placeDiff == glm::ivec3(0, 0, 1))
-												{
-													faceDirection = 0; //not2
-												}
-												else if (placeDiff == glm::ivec3(0, 0, -1))
-												{
-													faceDirection = 2; //not3
-												}
 
+										}
+
+										if (!skipNextStep)
+										{
+											glm::ivec3 placeDiff = *blockToPlace - rayCastPos;
+
+											if (placeDiff == glm::ivec3(1, 0, 0) ||
+												placeDiff == glm::ivec3(-1, 0, 0) ||
+												placeDiff == glm::ivec3(0, 0, 1) ||
+												placeDiff == glm::ivec3(0, 0, -1))
+											{
+												//todo walls as well
+												if (raycastBlock &&
+													raycastBlock->canWallMountedBlocksBePlacedOn())
+												{
+													isOnWall = true;
+													//good
+													//we place ladders only on blocks
+
+													if (placeDiff == glm::ivec3(1, 0, 0))
+													{
+														faceDirection = 1;
+													}
+													else if (placeDiff == glm::ivec3(-1, 0, 0))
+													{
+														faceDirection = 3;
+													}
+													else if (placeDiff == glm::ivec3(0, 0, 1))
+													{
+														faceDirection = 0;
+													}
+													else if (placeDiff == glm::ivec3(0, 0, -1))
+													{
+														faceDirection = 2;
+													}
+
+												}
+												else
+												{
+													dontPlace = true;
+												}
 											}
 											else
 											{
 												dontPlace = true;
 											}
-										}
-										else
-										{
-											dontPlace = true;
+
+											
 										}
 
 									}
-									else
-									{
-										dontPlace = true;
-									}
 
+									
 								}
 
 								if (!dontPlace)
@@ -1331,7 +1364,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 										gameData.lightSystem,
 										player.inventory,
 										player.otherPlayerSettings.gameMode == OtherPlayerSettings::SURVIVAL,
-										faceDirection, topPartForSlabs
+										faceDirection, topPartForSlabs, isOnWall
 									);
 
 

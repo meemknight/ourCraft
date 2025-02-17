@@ -143,7 +143,10 @@ const char *texturesNames[] = {
 	"models/ironChest",		//127 
 	"models/silverChest",	//128 
 	"models/goldChest",		//129 
-	
+	"crate",				//130
+	"models/crate",			//131
+	"models/torch",			//132
+
 };
 
 //front
@@ -303,7 +306,7 @@ uint16_t blocksLookupTable[] = {
 	56, 56, 56, 56, 56, 56,
 
 	//torch
-	57, 57, 57, 57, 57, 57,
+	132, 132, 132, 132, 132, 132,
 
 	//crafting table
 	58, 58, 60, 7, 59, 59, 
@@ -598,6 +601,9 @@ uint16_t blocksLookupTable[] = {
 	127, 127, 127, 127, 127, 127, //iron
 	128, 128, 128, 128, 128, 128, //silver
 	129, 129, 129, 129, 129, 129, //gold
+
+	130, 130, 130, 130, 130, 130, //crate
+	131,131,131,131,131,131, //crate small
 
 };
 

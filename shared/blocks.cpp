@@ -131,6 +131,11 @@ bool isWallMountedBlock(BlockType type)
 	return type == BlockTypes::ladder || type == BlockTypes::vines;
 }
 
+bool isWallMountedOrStangingBlock(BlockType type)
+{
+	return type == BlockTypes::torch;
+}
+
 bool isOpaque(BlockType type)
 {
 	return
@@ -174,6 +179,7 @@ bool isDecorativeFurniture(BlockType type)
 		type == ironChest ||
 		type == silverChest ||
 		type == goldChest ||
+		type == smallCrate ||
 		type == globe
 		
 		;
@@ -274,6 +280,7 @@ bool isAnyWoddenBlock(BlockType type)
 		type == birchPlanks_wall ||
 		type == spruce_log ||
 		type == oakChair ||
+		type == crate || 
 		type == oakLogChair ||
 		type == strippedOakLog ||
 		type == strippedBirchLog ||

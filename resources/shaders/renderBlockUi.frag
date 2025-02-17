@@ -19,8 +19,8 @@ void main()
 	//color.a = sqrt(color.a);
 
 
-	float light = 0.5;
-	light += 0.5 * clamp(dot(v_normal, normalize(-vec3(0.5,1,0.2))),0,1);
-
+	float light = 0.65;
+	light += 0.35 * clamp(dot(v_normal, normalize(vec3(-0.5,0.8,0.2))),0,1);
+	color.rgb *= light;
 
 }

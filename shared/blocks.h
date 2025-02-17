@@ -225,6 +225,9 @@ enum BlockTypes : unsigned short
 	silverChest,
 	goldChest,
 
+	crate,
+	smallCrate,
+
 	BlocksCount
 };
 
@@ -246,6 +249,8 @@ bool isCrossMesh(BlockType type);
 bool isControlBlock(BlockType type);
 
 bool isWallMountedBlock(BlockType type);
+
+bool isWallMountedOrStangingBlock(BlockType type);
 
 bool isOpaque(BlockType type);
 
@@ -376,6 +381,20 @@ struct Block
 		return (typeAndFlags >> 11) & 0b0001'1;
 	}
 
+	//true for standing on wall!
+	unsigned char getRotatedOrStandingForWallOrStandingBlocks()
+	{
+		return (typeAndFlags >> 13) & 0b001;
+	}
+
+	void setRotatedOrStandingForWallOrStandingBlocks(bool isOnWall)
+	{
+		unsigned int is = isOnWall;
+		is <<= 13;
+		typeAndFlags &= 0b1101'1111'1111'1111;
+		typeAndFlags |= is;
+	}
+
 	void setRotationFor365RotationTypeBlocks(int rotation)
 	{
 		rotation <<= 11;
@@ -405,7 +424,8 @@ struct Block
 	//used for stairs, or furnace type blocks
 	bool hasRotationFor365RotationTypeBlocks()
 	{
-		return isStairsMesh() || isWallMesh() || isDecorativeFurniture() || isWallMountedBlock();
+		return isStairsMesh() || isWallMesh() || isDecorativeFurniture() || isWallMountedBlock()
+			|| isWallMountedOrStangingBlock();
 	}
 
 	void setType(BlockType t)
@@ -425,6 +445,11 @@ struct Block
 	bool isWallMountedBlock()
 	{
 		return ::isWallMountedBlock(getType());
+	}
+
+	bool isWallMountedOrStangingBlock()
+	{
+		return::isWallMountedOrStangingBlock(getType());
 	}
 
 	bool hasSecondCollider()

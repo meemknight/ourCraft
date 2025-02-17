@@ -2122,6 +2122,10 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 							{
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::workItemsModel], b);
 							}
+							else if (type == smallCrate)
+							{
+								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::crateModel], b);
+							}
 							else if (type == oakBigChair || type == oakLogBigChair)
 							{
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::chairBigModel], b);
@@ -2156,7 +2160,16 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 								}
 								else if (b.getType() == BlockTypes::torch)
 								{
-									blockBakeLogicForTorches(x, y, z, &opaqueGeometry, b);
+									if (!b.getRotatedOrStandingForWallOrStandingBlocks())
+									{
+										bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::torchModel], b);
+									}
+									else
+									{
+										bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::torchHolderModel], b);
+									}
+									
+									//blockBakeLogicForTorches(x, y, z, &opaqueGeometry, b);
 								}
 								else
 								{

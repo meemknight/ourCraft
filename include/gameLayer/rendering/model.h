@@ -100,6 +100,9 @@ struct ModelsManager
 		vinesModel,
 		smallRockModel,
 		chestModel,
+		crateModel,
+		torchModel,
+		torchHolderModel,
 
 		BLOCK_MODELS_COUNT
 

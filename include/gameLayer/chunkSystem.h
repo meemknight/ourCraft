@@ -96,7 +96,7 @@ struct ChunkSystem
 	bool placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot,
 		UndoQueue &undoQueue, glm::dvec3 playerPos, 
 		LightSystem &lightSystem, PlayerInventory &inventory, bool decreaseCounter,
-		int faceDirection, int topPartForSlabs
+		int faceDirection, int topPartForSlabs, bool isOnWall
 	);
 
 

@@ -692,7 +692,13 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 									}
 
 									//validate ladder placement
-									if (i.t.taskType == Task::placeBlock && actualPlacedBLock.isWallMountedBlock())
+									if (i.t.taskType == Task::placeBlock 
+										&&
+										(actualPlacedBLock.isWallMountedBlock()
+											|| (actualPlacedBLock.isWallMountedOrStangingBlock() && 
+												actualPlacedBLock.getRotatedOrStandingForWallOrStandingBlocks())
+										)
+										)
 									{
 
 										int rotation = actualPlacedBLock.getRotationFor365RotationTypeBlocks();

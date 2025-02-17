@@ -1823,13 +1823,19 @@ void Renderer::recreateBlockGeometryData(ModelsManager &modelsManager)
 	int currentVertexIndex = sizeof(vertexData) / 4;
 	int currentUvIndex = sizeof(vertexUV) / 4;
 
-	auto addGeometry = [&](BlockGeometryIndex &b, BlockModel &model)
+	//special rotate rotates the block a few degrees each time instead of 90. for crates
+	auto addGeometry = [&](BlockGeometryIndex &b, BlockModel &model, bool specialRotate)
 	{
 		b.startIndex = currentVertexIndex / (sizeof(float) * 3);
 		b.componentCount = model.vertices.size() / (3 * 4);
 		memcpy(newVertexData.data() + currentVertexIndex, model.vertices.data(),
 			model.vertices.size() * sizeof(float));
 
+		float rotationAngle = glm::radians(20.0f);
+		glm::mat2 rotationMatrix = glm::mat2(
+			glm::cos(rotationAngle), -glm::sin(rotationAngle),
+			glm::sin(rotationAngle), glm::cos(rotationAngle)
+		);
 
 		size_t vSize = model.vertices.size();
 		for (int i = 0; i < vSize / 3; i++)
@@ -1839,17 +1845,38 @@ void Renderer::recreateBlockGeometryData(ModelsManager &modelsManager)
 			float y = model.vertices[i * 3 + 1];
 			angle.y = model.vertices[i * 3 + 2];
 
-			angle = glm::vec2(angle.y, -angle.x); //rotate 90
+			if (specialRotate)
+			{
+				angle = rotationMatrix * angle;
+			}
+			else
+			{
+				angle = glm::vec2(angle.y, -angle.x); //rotate 90
+			}
 			newVertexData[currentVertexIndex + model.vertices.size() + i * 3 + 0] = angle.x;
 			newVertexData[currentVertexIndex + model.vertices.size() + i * 3 + 1] = y;
 			newVertexData[currentVertexIndex + model.vertices.size() + i * 3 + 2] = angle.y;
 
-			angle = glm::vec2(angle.y, -angle.x); //rotate 90
+			if (specialRotate)
+			{
+				angle = rotationMatrix * angle;
+			}
+			else
+			{
+				angle = glm::vec2(angle.y, -angle.x); //rotate 90
+			}
 			newVertexData[currentVertexIndex + model.vertices.size()*2 + i * 3 + 0] = angle.x;
 			newVertexData[currentVertexIndex + model.vertices.size()*2 + i * 3 + 1] = y;
 			newVertexData[currentVertexIndex + model.vertices.size()*2 + i * 3 + 2] = angle.y;
 
-			angle = glm::vec2(angle.y, -angle.x); //rotate 90
+			if (specialRotate)
+			{
+				angle = rotationMatrix * angle;
+			}
+			else
+			{
+				angle = glm::vec2(angle.y, -angle.x); //rotate 90
+			}
 			newVertexData[currentVertexIndex + model.vertices.size()*3 + i * 3 + 0] = angle.x;
 			newVertexData[currentVertexIndex + model.vertices.size()*3 + i * 3 + 1] = y;
 			newVertexData[currentVertexIndex + model.vertices.size()*3 + i * 3 + 2] = angle.y;
@@ -1873,7 +1900,8 @@ void Renderer::recreateBlockGeometryData(ModelsManager &modelsManager)
 
 	for (int i = 0; i < ModelsManager::BLOCK_MODELS_COUNT; i++)
 	{
-		addGeometry(blockGeometry[i], modelsManager.blockModels[i]);
+		addGeometry(blockGeometry[i], modelsManager.blockModels[i], 
+			i == ModelsManager::crateModel);
 	}
 
 	//todo optimize with buffer storage!!!! (don't forget to recreate the buffer!!)
