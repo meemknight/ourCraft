@@ -131,12 +131,19 @@ const char *texturesNames[] = {
 	"models/vines", //116
 	
 	"dungeonStone", //117
-	"dungeonCobbleStone", //118,
-	"dungeonSmoothStone", //119,
-	"dungeonPillar", //120,
-	"dungeonPillarTop", //121,
-	"dungeonBrickSkull",//122
-
+	"dungeonCobbleStone",	//118,
+	"dungeonSmoothStone",	//119,
+	"dungeonPillar",		//120,
+	"dungeonPillarTop",		//121,
+	"dungeonBrickSkull",	//122
+	"dungeonGlass",			//123 dungeonGlass
+	"models/woddenChest",	//124 woodenChest
+	"models/goblinChest",	//125 
+	"models/copperChest",	//126 
+	"models/ironChest",		//127 
+	"models/silverChest",	//128 
+	"models/goldChest",		//129 
+	
 };
 
 //front
@@ -580,6 +587,17 @@ uint16_t blocksLookupTable[] = {
 	
 	//chiseledDungeonBrick
 	121, 121, 121, 121, 121, 121,
+
+	//dungeon glass
+	123, 123, 123, 123, 123, 123,
+
+	//wodden chest
+	124, 124, 124, 124, 124, 124,
+	125, 125, 125, 125, 125, 125, //goblin chest
+	126, 126, 126, 126, 126, 126, //copper
+	127, 127, 127, 127, 127, 127, //iron
+	128, 128, 128, 128, 128, 128, //silver
+	129, 129, 129, 129, 129, 129, //gold
 
 };
 

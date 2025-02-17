@@ -2132,6 +2132,10 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 								 + type - cookingPot
 								], b);
 							}
+							else if (type >= woddenChest && type <= goldChest)
+							{
+								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::chestModel], b);
+							}
 
 							else if (b.isWallMesh())
 							{

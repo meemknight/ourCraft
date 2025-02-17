@@ -99,6 +99,7 @@ struct ModelsManager
 		ladderModel,
 		vinesModel,
 		smallRockModel,
+		chestModel,
 
 		BLOCK_MODELS_COUNT
 

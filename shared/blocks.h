@@ -216,7 +216,14 @@ enum BlockTypes : unsigned short
 	dungeonPillar,
 	dungeonSkullBlock,
 	chiseledDungeonBrick,
-
+	dungeonGlass,
+		
+	woddenChest,
+	goblinChest,
+	copperChest,
+	ironChest,
+	silverChest,
+	goldChest,
 
 	BlocksCount
 };

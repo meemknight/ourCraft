@@ -168,6 +168,12 @@ bool isDecorativeFurniture(BlockType type)
 		type == oakBigChair ||
 		type == oakLogBigChair ||
 		type == smallRock ||
+		type == woddenChest ||
+		type == goblinChest ||
+		type == copperChest ||
+		type == ironChest ||
+		type == silverChest ||
+		type == goldChest ||
 		type == globe
 		
 		;
@@ -465,6 +471,7 @@ bool isDungeonBrick(BlockType type)
 		type == dungeonSmoothStone_wall ||
 		type == dungeonPillar ||
 		type == chiseledDungeonBrick ||
+		type == dungeonGlass ||
 		type == dungeonSkullBlock;
 }
 
@@ -481,7 +488,7 @@ bool isAnyGlass(BlockType type)
 {
 	return isStainedGlass(type) || type == glass || type == glass2 ||
 		type == glassNotClear || type == vitral1 || type == vitral2 || type == glassNotClear2 
-		;
+		 || type == dungeonGlass;
 }
 
 bool isTriviallyBreakable(BlockType type)
