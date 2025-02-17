@@ -1409,6 +1409,137 @@ void Renderer::recreateBlocksTexturesBuffer(BlocksLoader &blocksLoader)
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
+void Renderer::renderAllBlocksUiTextures(BlocksLoader &blocksLoader)
+{
+	//unsigned char data[16] = {};
+	//
+	//{
+	//	int i = 0;
+	//	data[i++] = 0;
+	//	data[i++] = 0;
+	//	data[i++] = 0;
+	//	data[i++] = 255;
+	//
+	//	data[i++] = 146;
+	//	data[i++] = 52;
+	//	data[i++] = 235;
+	//	data[i++] = 255;
+	//
+	//	data[i++] = 146;
+	//	data[i++] = 52;
+	//	data[i++] = 235;
+	//	data[i++] = 255;
+	//
+	//	data[i++] = 0;
+	//	data[i++] = 0;
+	//	data[i++] = 0;
+	//	data[i++] = 255;
+	//}
+	//
+
+	if (!renderUIBlocksShader.shader.id) { return; }
+
+	{
+
+		float distFromCamera = 0.8;
+		auto projection = glm::ortho(-distFromCamera, distFromCamera, -distFromCamera, distFromCamera, 0.1f, 10.f);
+		auto view = glm::lookAt(glm::vec3{2, 2, 2}, {0, 0, 0}, {0, 1, 0});
+
+		renderUIBlocksShader.shader.bind();
+
+		glUniformMatrix4fv(renderUIBlocksShader.u_viewProjection, 1, GL_FALSE, &(projection * view)[0][0]);
+		
+
+	}
+	
+
+
+	const int TEXTURE_SIZE = 64;
+
+	GLuint fbo = 0;
+	GLuint depthTexture = 0;
+
+	// Create framebuffer
+	{
+		glGenFramebuffers(1, &fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+		// Create depth texture
+		glGenTextures(1, &depthTexture);
+		glBindTexture(GL_TEXTURE_2D, depthTexture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, TEXTURE_SIZE, TEXTURE_SIZE, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nullptr);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
+
+		GLenum drawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+		glDrawBuffers(1, drawBuffers);
+	}
+
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBindVertexArray(entityRenderer.blockEntityshader.vaoCube);
+	glViewport(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
+
+	// Resize textures array
+	blocksLoader.blockUiTextures.resize(BlocksCount);
+
+	for (BlockType i = 1; i < BlocksCount; i++)
+	{
+		if (isBlockMesh(i))
+		{
+			//blocksLoader.blockUiTextures[i].create1PxSquare();
+			//continue;
+
+			GLuint colorTexture = 0;
+			glGenTextures(1, &colorTexture);
+			glBindTexture(GL_TEXTURE_2D, colorTexture);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, TEXTURE_SIZE, TEXTURE_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
+
+			// Validate framebuffer for each texture
+			//if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+			//{
+			//	std::cout << "Framebuffer not complete for block: " << i << "\n";
+			//}
+
+			std::uint64_t textures[6] = {};
+			for (int j = 0; j < 6; j++)
+			{
+				textures[j] = blocksLoader.gpuIds[getGpuIdIndexForBlock(i, j)];
+			}
+			glUniformHandleui64vARB(renderUIBlocksShader.u_texture, 6, textures);
+			
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+
+			blocksLoader.blockUiTextures[i].id = colorTexture;
+		}
+		else
+		{
+			//we leave the texture blank for now
+			//blocksLoader.blockUiTextures[i].createFromBuffer((char *)data, 2, 2, true, false);
+
+		}
+	}
+
+	// Unbind and delete framebuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDeleteFramebuffers(1, &fbo);
+	glDeleteTextures(1, &depthTexture);
+
+	glBindVertexArray(0);
+
+
+
+}
+
 void Renderer::create(ModelsManager &modelsManager)
 {
 
@@ -1861,6 +1992,18 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(gausianBLurShader, u_texel);
 
 
+#pragma endregion
+
+#pragma region ui blocks
+	{
+		renderUIBlocksShader.shader.clear();
+		renderUIBlocksShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/renderBlockUi.vert",
+			RESOURCES_PATH "shaders/renderBlockUi.frag");
+		renderUIBlocksShader.shader.bind();
+		GET_UNIFORM2(renderUIBlocksShader, u_texture);
+		GET_UNIFORM2(renderUIBlocksShader, u_viewProjection);
+	
+	}
 #pragma endregion
 
 
@@ -3842,7 +3985,6 @@ void Renderer::renderDecal(glm::ivec3 position, Camera &c, Block b, ProgramData 
 				15, 15, 0);
 		}
 	}
-
 	
 	
 	int elementCountSize = currentVector.size() / 4; //todo magic number
@@ -4204,7 +4346,7 @@ void Renderer::renderEntities(
 
 	glBindVertexArray(0);
 
-
+	//cube entities
 #pragma region cubeEntities
 	{
 
@@ -4280,7 +4422,6 @@ void Renderer::renderEntities(
 							[getGpuIdIndexForBlock(e.second.entityBuffered.type, i)];
 					}
 				}
-
 
 				glUniformHandleui64vARB(entityRenderer.blockEntityshader.u_texture, 6, textures);
 

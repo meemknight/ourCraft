@@ -393,9 +393,14 @@ struct Renderer
 		GLuint geometry = 0;
 		GLuint index = 0;
 
-
-
 	}decalShader;
+
+	struct RenderUIBlocksShader
+	{
+		Shader shader;
+		GLuint u_texture = GL_INVALID_INDEX;
+		GLuint u_viewProjection = GL_INVALID_INDEX;
+	}renderUIBlocksShader;
 
 
 	float metallic = 0;
@@ -431,6 +436,8 @@ struct Renderer
 	GLuint drawCommandsOpaqueBuffer;
 
 	void recreateBlocksTexturesBuffer(BlocksLoader &blocksLoader);
+
+	void renderAllBlocksUiTextures(BlocksLoader &blocksLoader);
 
 	void create(ModelsManager &modelsManager);
 	void reloadShaders();

@@ -1730,6 +1730,12 @@ void BlocksLoader::clearAllTextures()
 		}
 	}
 
+	for (auto &t : blockUiTextures)
+	{
+		t.cleanup();
+	}
+	blockUiTextures.clear();
+
 	glDeleteTextures(4, &texturesIds[0]);
 	texturesIds.clear();
 	gpuIds.clear();
