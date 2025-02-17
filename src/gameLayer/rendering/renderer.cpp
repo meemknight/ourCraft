@@ -1441,7 +1441,7 @@ void Renderer::renderAllBlocksUiTextures(BlocksLoader &blocksLoader)
 
 	{
 
-		float distFromCamera = 0.8;
+		float distFromCamera = 0.78;
 		auto projection = glm::ortho(-distFromCamera, distFromCamera, -distFromCamera, distFromCamera, 0.1f, 10.f);
 		auto view = glm::lookAt(glm::vec3{2, 2, 2}, {0, 0, 0}, {0, 1, 0});
 
@@ -1714,17 +1714,32 @@ void Renderer::create(ModelsManager &modelsManager)
 	std::vector<float> data;
 	for (int face = 0; face < 6; face++)
 	{
+
+
+		glm::vec3 normal = {};
+		glm::vec3 positions[3] = {};
+
+		for (int i = 0; i < 3; i++)
+		{	
+			positions[i].x = vertexDataOriginal[i * 3 + face * 3 * 6 + 0];
+			positions[i].y = vertexDataOriginal[i * 3 + face * 3 * 6 + 1];
+			positions[i].z = vertexDataOriginal[i * 3 + face * 3 * 6 + 2];
+		}
+
+		glm::vec3 edge1 = positions[1] - positions[0];
+		glm::vec3 edge2 = positions[2] - positions[0];
+		normal = glm::normalize(glm::cross(edge1, edge2));
+
 		for (int i = 0; i < 6; i++)
 		{
-			
+
 			data.push_back(vertexDataOriginal[i * 3 + face * 3 * 6 + 0]);
 			data.push_back(vertexDataOriginal[i * 3 + face * 3 * 6 + 1]);
 			data.push_back(vertexDataOriginal[i * 3 + face * 3 * 6 + 2]);
 
-			//todo normal
-			data.push_back(0);
-			data.push_back(1);
-			data.push_back(0);
+			data.push_back(normal.x);
+			data.push_back(normal.y);
+			data.push_back(normal.z);
 
 			data.push_back(vertexUVOriginal[i * 2 + face * 2 * 6 + 0]);
 			data.push_back(vertexUVOriginal[i * 2 + face * 2 * 6 + 1]);

@@ -827,16 +827,19 @@ void createFromFileDataWithAplhaFixing(gl2d::Texture &t, const unsigned char *im
 }
 
 bool loadFromFileWithAplhaFixing(gl2d::Texture &t, 
-	const char *fileName, bool pixelated, bool useMipMaps, bool isNormalMap)
+	const char *fileName, bool pixelated, bool useMipMaps, bool isNormalMap, bool reportErrors)
 {
 	std::ifstream file(fileName, std::ios::binary);
 
 	if (!file.is_open())
 	{
-		char c[300] = {0};
-		strcat(c, "error openning: ");
-		strcat(c + strlen(c), fileName);
-		reportError(c);
+		if (reportErrors)
+		{
+			char c[300] = {0};
+			strcat(c, "error openning: ");
+			strcat(c + strlen(c), fileName);
+			reportError(c);
+		};
 		return 0;
 	}
 
@@ -875,10 +878,25 @@ glm::vec3 hsv2rgb(glm::vec3 c)
 	return c.z * glm::mix(glm::vec3(K.x, K.x, K.x), glm::clamp(p - glm::vec3(K.x, K.x, K.x), 0.0f, 1.0f), c.y);
 }
 
+void noErrorFunc(const char *msg, void *userDefinedData)
+{
+}
+
 //textureloader texture loader
 void BlocksLoader::loadAllTextures(std::string filePath)
 {
-	
+	gl2d::errorFuncType *errorFunc = nullptr;
+	auto noErrors = [&]() 
+	{
+		errorFunc = gl2d::setErrorFuncCallback(noErrorFunc);
+	};
+
+	auto enableErrors = [&]()
+	{
+		gl2d::setErrorFuncCallback(errorFunc);
+	};
+
+
 	if (!backgroundTexture.id)
 	{
 		std::string path;
@@ -1028,12 +1046,12 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 		gpuIds[blockIndex + 3] = handle;
 	};
 
-	auto addTexture = [&](int index, std::string path, bool isNormalMap = 0) -> bool
+	auto addTexture = [&](int index, std::string path, bool isNormalMap = 0, bool errors = 1) -> bool
 	{
 
 		gl2d::Texture t;
 		
-		if (!loadFromFileWithAplhaFixing(t, path.c_str(), true, false, isNormalMap)) { return 0; }
+		if (!loadFromFileWithAplhaFixing(t, path.c_str(), true, false, isNormalMap, errors)) { return 0; }
 		t.bind();
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -1095,7 +1113,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 		}
 		else
 		{
-			if (!texturesNames[i][0] || !addTexture((i+1) * 4 + 1, path + "_n.png", true))
+			if (!texturesNames[i][0] || !addTexture((i+1) * 4 + 1, path + "_n.png", true, 0))
 			{
 				if (appendMode)
 				{
@@ -1105,7 +1123,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 			}
 		}
 
-		if (!texturesNames[i][0] || !addTexture((i+1) * 4 + 2, path + "_s.png"))
+		if (!texturesNames[i][0] || !addTexture((i+1) * 4 + 2, path + "_s.png", false, 0))
 		{
 			if (appendMode)
 			{
@@ -1114,7 +1132,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 			}
 		}
 
-		if (!texturesNames[i][0] || !addTexture((i + 1) * 4 + 3, path + "_b.png"))
+		if (!texturesNames[i][0] || !addTexture((i + 1) * 4 + 3, path + "_b.png", false, 0))
 		{
 			if (appendMode)
 			{
@@ -1122,6 +1140,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 				gpuIds.push_back(gpuIds[3]);
 			}
 		}
+
 
 	}
 	

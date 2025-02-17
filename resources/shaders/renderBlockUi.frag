@@ -7,6 +7,7 @@ in vec2 v_uv;
 in flat int v_id;
 
 uniform sampler2D u_texture[6];
+in flat vec3 v_normal;
 
 
 void main()
@@ -15,5 +16,11 @@ void main()
 	//color = vec4(1,0,0,1);
 	color = texture(u_texture[v_id/6], v_uv).rgba;
 	if(color.a <= 0){discard;}
-	color.a = sqrt(color.a);
+	//color.a = sqrt(color.a);
+
+
+	float light = 0.5;
+	light += 0.5 * clamp(dot(v_normal, normalize(-vec3(0.5,1,0.2))),0,1);
+
+
 }

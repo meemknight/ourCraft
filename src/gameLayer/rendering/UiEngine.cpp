@@ -277,14 +277,16 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 		{
 
 			gl2d::Texture t = blocksLoader.blockUiTextures[item.type];
+			float size = 0.1;
 
 			if (t.id == 0)
 			{
 				t.id = blocksLoader.texturesIds[getGpuIdIndexForBlock(item.type, 0)];
+				size = 0.25;
 			}
 
 			//we have a block
-			renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, in + 0.20), t, {color, color, color, 1});
+			renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, in + size), t, {color, color, color, 1});
 
 		}
 		else
