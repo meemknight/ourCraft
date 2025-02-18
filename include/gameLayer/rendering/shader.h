@@ -9,6 +9,8 @@ struct Shader
 	bool loadShaderProgramFromFile(const char* vertexShader,
 		const char* geometryShader, const char* fragmentShader);
 
+	bool loadShaderProgramFromFileAndAddCode(const char *vertexShader, const char *fragmentShader, const char *codeToAdd);
+
 	void bind();
 
 	void clear();

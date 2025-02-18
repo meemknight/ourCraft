@@ -71,6 +71,7 @@ struct ListNode
 	ListNode *next = nullptr;
 };
 
+//TODO REFACTOR TO ALSO USE FULL BLOCK INFO!!
 struct GhostBlock
 {
 	BlockType type;
@@ -96,7 +97,7 @@ struct SavedChunk
 	{
 	
 		//dirty means we should resave it to the disk
-		bool dirty = 0;
+		bool dirty = 0; //todo investigate if should remove?
 		bool dirtyEntity = 0;
 		bool shouldUnload = 0; 
 		bool dirtyBlockData = 0;
@@ -113,12 +114,14 @@ struct SavedChunk
 
 	//removes the data for a block with data
 	void removeBlockWithData(glm::ivec3 pos, std::uint16_t blockType);
+
+	bool normalize();
 };
 
 struct SendBlocksBack
 {
-	glm::ivec3 pos;
-	BlockType block;
+	glm::ivec3 pos = {};
+	Block blockInfo = {};
 };
 
 
@@ -144,7 +147,7 @@ struct ServerChunkStorer
 		StructuresManager &structureManager, BiomesManager &biomesManager,
 		std::vector<SendBlocksBack> &sendNewBlocksToPlayers, bool generateGhostAndStructures,
 		std::vector<StructureToGenerate> *newStructuresToAdd, WorldSaver &worldSaver,
-		bool *wasGenerated = 0);
+		bool *wasGenerated = 0, bool *wasLoaded = 0);
 
 
 	bool generateStructure(StructureToGenerate s, StructureData *structure, int rotation,
@@ -158,6 +161,8 @@ struct ServerChunkStorer
 		std::vector<glm::ivec3> *controlBlocks);
 
 	Block *getBlockSafe(glm::ivec3 pos);
+
+	Block *getBlockSafeAndChunk(glm::ivec3 pos, SavedChunk *&c);
 
 	Block *tryGetBlockIfChunkExistsNoChecks(glm::ivec3 pos);
 

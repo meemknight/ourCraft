@@ -421,12 +421,8 @@ void serverWorkerUpdate(
 
 			permaAssertComment(chunk, "Error, A chunk that a player is in unloaded...");
 
-			//if (!client.second.playerData.killed)
-			{
-				chunk->entityData.players[client.first] = &client.second.playerData;
-				sd.chunkCache.entityChunkPositions[client.first] = cPos;
-				//auto ptr = &client.second.playerData;
-			}
+			chunk->entityData.players[client.first] = &client.second.playerData;
+			sd.chunkCache.entityChunkPositions[client.first] = cPos;
 
 		}
 
@@ -672,7 +668,7 @@ void serverWorkerUpdate(
 			//broadCast(packet, &packetData, sizeof(Packet_PlaceBlock), nullptr, true, channelChunksAndBlocks);
 
 			newBlocks[i].blockPos = b.pos;
-			newBlocks[i].blockType = b.block;
+			newBlocks[i].blockInfo = b.blockInfo;
 
 			i++;
 		}
@@ -768,6 +764,7 @@ void updateLoadedChunks(
 
 
 	constexpr const int MAX_GENERATE = 1;
+	constexpr const int MAX_LOAD = 5;
 	constexpr const int MAX_CHUNKS_PENDING = 5; //how many packets can be waiting to be sent at one time
 
 	for (auto &c : sd.chunkCache.savedChunks)
@@ -795,6 +792,7 @@ void updateLoadedChunks(
 
 
 	int geenratedThisFrame = 0;
+	int loadedThisFrame = 0;
 	for (auto cid : cids)
 	{
 
@@ -866,6 +864,7 @@ void updateLoadedChunks(
 
 			bool generateMoreChunks = true;
 			if (geenratedThisFrame >= MAX_GENERATE)generateMoreChunks = false;
+			if (loadedThisFrame >= MAX_LOAD)generateMoreChunks = false;
 
 			bool canSendMoreChunks = true;
 
@@ -879,15 +878,21 @@ void updateLoadedChunks(
 				if (chunkPos == pos) { generatedChunkPlayerIsIn = true; }
 
 				bool generated = 0;
+				bool loaded = 0;
 
 				c = sd.chunkCache.getOrCreateChunk(chunkPos.x, chunkPos.y,
 					wg, structureManager, biomesManager, sendNewBlocksToPlayers, true,
-					nullptr, worldSaver, &generated
+					nullptr, worldSaver, &generated, &loaded
 				);
 
 				if (generated)
 				{
 					geenratedThisFrame++;
+				}
+				
+				if(loaded)
+				{
+					loadedThisFrame++;
 				}
 			}
 		

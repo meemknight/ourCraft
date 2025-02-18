@@ -6,6 +6,7 @@
 #include "multyPlayer/createConnection.h"
 #include <audioEngine.h>
 #include <safeSave.h>
+#include <sstream>
 
 void displayRenderSettingsMenuButton(ProgramData &programData)
 {
@@ -16,14 +17,32 @@ void displayRenderSettingsMenuButton(ProgramData &programData)
 	programData.ui.menuRenderer.EndMenu();
 }
 
+#define DEFAULT_SLIDER Colors_White, programData.ui.buttonTexture, Colors_Gray, programData.ui.buttonTexture, Colors_White
+
 void displayRenderSettingsMenu(ProgramData &programData)
 {
+
+	for (auto &s : programData.ui.menuRenderer.internal.allMenuStacks
+		[programData.ui.menuRenderer.internal.currentId])
+	{
+		if (s == "Rendering")
+		{
+			programData.ui.renderer2d.renderText({150,50},
+				("fps: " + std::to_string(programData.currentFps)).c_str(), programData.ui.font, Colors_Gray, 0.75f);
+			break;
+		}
+	}
+
 
 
 	programData.ui.menuRenderer.Text("Rendering Settings...", Colors_White);
 
 	programData.ui.menuRenderer.sliderInt("View Distance", &getShadingSettings().viewDistance,
-		1, 40, Colors_White, programData.ui.buttonTexture, Colors_Gray,
+		1, 50, Colors_White, programData.ui.buttonTexture, Colors_Gray,
+		programData.ui.buttonTexture, Colors_White);
+
+	programData.ui.menuRenderer.sliderInt("Lod Strength", &getShadingSettings().lodStrength,
+		0, 5, Colors_White, programData.ui.buttonTexture, Colors_Gray,
 		programData.ui.buttonTexture, Colors_White);
 
 #pragma region water
@@ -79,10 +98,43 @@ good performance.\n-Fancy: significant performance cost but looks very nice.");
 }
 #pragma endregion
 
-	static glm::vec4 colorsTonemapper[] = {{0.6,0.9,0.6,1}, {0.6,0.9,0.6,1}, {0.7,0.8,0.6,1} , {0.4,0.8,0.4,1}};
+#pragma region bloom
+	programData.ui.menuRenderer.BeginMenu("Bloom", Colors_Gray, programData.ui.buttonTexture);
+	programData.ui.menuRenderer.Text("Bloom settings...", Colors_White);
+
+	programData.ui.menuRenderer.toggleOptions("BLoom: ", "OFF|ON", &getShadingSettings().bloom, true, Colors_White, 0, programData.ui.buttonTexture,
+		Colors_Gray);
+
+	if (getShadingSettings().bloom)
+	{
+		programData.ui.menuRenderer.sliderFloat("Bloom Multiplier", &getShadingSettings().bloomMultiplier, 0, 1, DEFAULT_SLIDER);
+		programData.ui.menuRenderer.sliderFloat("Bloom Tresshold", &getShadingSettings().bloomTresshold, 0.1, 1, DEFAULT_SLIDER);
+	};
+
+	programData.ui.menuRenderer.EndMenu();
+#pragma endregion
+
+#pragma region lights
+	programData.ui.menuRenderer.BeginMenu("Lights", Colors_Gray, programData.ui.buttonTexture);
+	programData.ui.menuRenderer.Text("Lights settings...", Colors_White);
+
+	programData.ui.menuRenderer.toggleOptions("Lights: ", "OFF|ON", &getShadingSettings().useLights, true, Colors_White, 0,
+		programData.ui.buttonTexture, Colors_Gray, "If this is on, torches will contribute with specualr and diffuse lights.");
+
+	if (getShadingSettings().useLights)
+	{
+		programData.ui.menuRenderer.sliderInt("Max lights", &getShadingSettings().maxLights, 1, 100, DEFAULT_SLIDER);
+		programData.ui.menuRenderer.sliderFloat("Lights strength", &getShadingSettings().lightsStrength, 0.1, 2, DEFAULT_SLIDER);
+	};
+
+	programData.ui.menuRenderer.EndMenu();
+#pragma endregion
+
+
+	//static glm::vec4 colorsTonemapper[] = {{0.6,0.9,0.6,1}, {0.6,0.9,0.6,1}, {0.7,0.8,0.6,1} , {0.4,0.8,0.4,1}};
 	programData.ui.menuRenderer.toggleOptions("Tonemapper: ",
 		"ACES|AgX|ZCAM|Uncharted", &getShadingSettings().tonemapper,
-		true, Colors_White, colorsTonemapper, programData.ui.buttonTexture,
+		true, Colors_White, nullptr, programData.ui.buttonTexture,
 		Colors_Gray, 
 "The tonemapper is the thing that displays the final color\n\
 -Aces: a filmic look.\n-AgX: a more dull neutral look.\n-ZCAM a verey neutral and vanila look\n   preserves colors, slightly more expensive.\n Unchrated :))");
@@ -100,22 +152,37 @@ good performance.\n-Fancy: significant performance cost but looks very nice.");
 
 	displayTexturePacksSettingsMenuButton(programData);
 
+#pragma region SSR
+	programData.ui.menuRenderer.BeginMenu("Screen Space Reflections", Colors_Gray, programData.ui.buttonTexture);
+	programData.ui.menuRenderer.Text("Screen Space Reflections settings...", Colors_White);
+
+	programData.ui.menuRenderer.toggleOptions("SSR: ", "OFF|ON", &getShadingSettings().SSR, true, Colors_White, 0, programData.ui.buttonTexture,
+		Colors_Gray);
+
+	if (getShadingSettings().SSR)
+	{
+		//... other SSR settings like quality stuff
+	};
+
+	programData.ui.menuRenderer.EndMenu();
+#pragma endregion
+
+
 	//programData.menuRenderer.BeginMenu("Volumetric", Colors_Gray, programData.buttonTexture);
 	//programData.menuRenderer.Text("Volumetric Settings...", Colors_White);
 	programData.ui.menuRenderer.sliderFloat("Fog gradient (O to disable it)",
-		&programData.renderer.defaultShader.shadingSettings.fogCloseGradient,
-		0, 64, Colors_White, programData.ui.buttonTexture, Colors_Gray,
+		&getShadingSettings().fogGradient,
+		0, 100, Colors_White, programData.ui.buttonTexture, Colors_Gray,
 		programData.ui.buttonTexture, Colors_White);
 	//programData.menuRenderer.EndMenu();
 
 
 	static glm::vec4 colorsShadows[] = {{0.0,1,0.0,1}, {0.8,0.6,0.6,1}, {0.9,0.3,0.3,1}};
 	programData.ui.menuRenderer.toggleOptions("Shadows: ", "Off|Hard|Soft",
-		&programData.renderer.defaultShader.shadingSettings.shadows, true,
+		&getShadingSettings().shadows, true,
 		Colors_White, colorsShadows, programData.ui.buttonTexture,
 		Colors_Gray, "Shadows can affect the performance significantly."
 	);
-	getShadingSettings().shadows = programData.renderer.defaultShader.shadingSettings.shadows;
 
 
 }
@@ -577,10 +644,28 @@ std::string getSkinName()
 }
 
 ShadingSettings shadingSettings;
+ShadingSettings shadingSettingsLastFrame;
 
 ShadingSettings &getShadingSettings()
 {
 	return shadingSettings;
+}
+
+bool checkIfShadingSettingsChangedForShaderReloads()
+{
+	shadingSettings.normalize();
+	if (
+		shadingSettings.shadows != shadingSettingsLastFrame.shadows ||
+		shadingSettings.PBR != shadingSettingsLastFrame.PBR ||
+		shadingSettings.useLights != shadingSettingsLastFrame.useLights ||
+		shadingSettings.SSR != shadingSettingsLastFrame.SSR 
+		)
+	{
+		shadingSettingsLastFrame = shadingSettings;
+		return true;
+	}
+
+	return false;
 }
 
 #define SET_INT(x) data.setInt( #x, shadingSettings. x )
@@ -597,10 +682,17 @@ void saveShadingSettings()
 	data.setInt("Version", 1);
 
 	SET_INT(viewDistance);
+	SET_INT(lodStrength);
 	SET_INT(workerThreadsForBaking);
 	SET_INT(tonemapper);
 	SET_INT(shadows);
 	SET_INT(waterType);
+	SET_INT(PBR);
+	SET_INT(SSR);
+	SET_INT(maxLights);
+	SET_INT(useLights);
+	SET_INT(bloom);
+	SET_FLOAT(lightsStrength);
 
 	SET_VEC3(waterColor);
 	SET_VEC3(underWaterColor);
@@ -608,7 +700,10 @@ void saveShadingSettings()
 	SET_FLOAT(underwaterDarkenStrength);
 	SET_FLOAT(underwaterDarkenDistance);
 	SET_FLOAT(fogGradientUnderWater);
+	SET_FLOAT(bloomTresshold);
+	SET_FLOAT(bloomMultiplier);
 	SET_FLOAT(exposure);
+	SET_FLOAT(fogGradient);
 
 	sfs::safeSave(data, RESOURCES_PATH "../playerSettings/renderSettings", 0);
 
@@ -633,10 +728,18 @@ void loadShadingSettings()
 	if (sfs::safeLoad(data, RESOURCES_PATH "../playerSettings/renderSettings", 0) == sfs::noError)
 	{
 		GET_INT(viewDistance);
+		GET_INT(lodStrength);
 		GET_INT(workerThreadsForBaking);
 		GET_INT(tonemapper);
 		GET_INT(shadows);
 		GET_INT(waterType);
+		GET_INT(PBR);
+		GET_INT(SSR);
+		GET_INT(maxLights);
+		GET_INT(bloom);
+		GET_INT(useLights);
+		GET_FLOAT(lightsStrength);
+
 
 		void *rawData = 0;
 		size_t dataSize = 0;
@@ -652,6 +755,11 @@ void loadShadingSettings()
 		GET_FLOAT(underwaterDarkenDistance);
 		GET_FLOAT(fogGradientUnderWater);
 		GET_FLOAT(exposure);
+
+		GET_FLOAT(bloomTresshold);
+		GET_FLOAT(bloomMultiplier);
+		GET_FLOAT(fogGradient);
+
 	}
 
 	shadingSettings.normalize();
@@ -1053,8 +1161,17 @@ void displayWorldSelectorMenu(ProgramData &programData)
 
 	static char seed[12] = {};
 	static char name[20] = {};
+	static int currentIndex = 0; //0 normal, 1 super flat
+	static WorldGeneratorSettings settings;
+	static gl2d::Texture worldPreviewTexture;
+	static WorldGenerator wg;
+	if (wg.regionsHeightNoise == 0)
+	{
+		wg.init();
+	}
 
 	programData.ui.menuRenderer.BeginManualMenu("Create world");
+
 	
 	if (programData.ui.menuRenderer.internal.allMenuStacks
 		[programData.ui.menuRenderer.internal.currentId].size()
@@ -1062,9 +1179,13 @@ void displayWorldSelectorMenu(ProgramData &programData)
 		[programData.ui.menuRenderer.internal.currentId].back() == "Create world"
 		)
 	{
-	
+
+		programData.ui.menuRenderer.temporalViewPort
+			= glm::vec4(0, 0, programData.ui.renderer2d.windowW / 2.6f, programData.ui.renderer2d.windowH);
+
 		programData.ui.menuRenderer.Text("Create a new world!", Colors_White);
-	
+		
+
 		//background
 		{
 			float rezolution = 256;
@@ -1084,6 +1205,8 @@ void displayWorldSelectorMenu(ProgramData &programData)
 		programData.ui.menuRenderer.InputText("Seed: ", seed, sizeof(seed),
 			Colors_Gray, programData.ui.buttonTexture);
 		
+		//programData.ui.menuRenderer.Toggle("Super Flat", Colors_Gray, &superFlatWorld, programData.ui.buttonTexture, programData.ui.buttonTexture);
+
 		std::string finalName = RESOURCES_PATH "worlds/";
 		finalName += name;
 
@@ -1118,12 +1241,29 @@ void displayWorldSelectorMenu(ProgramData &programData)
 			if (create || createAndPlay)
 			{
 				std::error_code err;
+				bool err2 = 0;
 				std::filesystem::create_directory(finalName, err);
 
-				if (!err)
+
 				{
+					std::ifstream f(RESOURCES_PATH "gameData/worldGenerator/default.wgenerator");
+					if (f.is_open())
 					{
-						std::ofstream f(finalName + "/seed.txt");
+						std::stringstream buffer;
+						buffer << f.rdbuf();
+						if (!settings.loadSettings(buffer.str().c_str()))
+						{
+							err2 = true;
+						}
+					}
+
+				}
+
+				if (!err && !err2)
+				{
+					int finalSeed = 0;
+					{
+						//std::ofstream f(finalName + "/seed.txt");
 
 						long long computedSeed = 0;
 						long long pow = 1;
@@ -1141,13 +1281,23 @@ void displayWorldSelectorMenu(ProgramData &programData)
 							computedSeed = time(0);
 						}
 
-						int finalSeed = computedSeed;
+						finalSeed = computedSeed;
 						if (finalSeed < 0) { finalSeed = -finalSeed; }
 						if (finalSeed == 0) { finalSeed = 1; }
 
-						f << (int)finalSeed;
-						f.close();
+						//f << (int)finalSeed;
+						//f.close();
 					};
+
+					{
+						std::ofstream f(finalName + "/worldGenSettings.wgenerator");
+						settings.seed = finalSeed;
+						settings.isSuperFlat = (currentIndex == 1);
+
+						settings.sanitize();
+						f << settings.saveSettings();
+
+					}
 
 					if (createAndPlay)
 					{
@@ -1160,12 +1310,64 @@ void displayWorldSelectorMenu(ProgramData &programData)
 
 		}
 		
-	
+		
+		//programData.ui.menuRenderer.newColum(11);
+		//programData.ui.menuRenderer.newColum(12);
+
+		{
+			auto &renderer = programData.ui.renderer2d;
+			glui::Frame f({0,0, renderer.windowW, renderer.windowH});
+
+			{
+				glui::Frame f(glui::Box().xLeftPerc(0.35).yTopPerc(0.1).yDimensionPercentage(0.8).xDimensionPercentage(0.6)());
+
+				{
+					auto fullBox = glui::Box().xLeft().yTop().xDimensionPercentage(1.f).yDimensionPercentage(1.f)();
+					
+
+					auto buttonBox = glui::Box().xLeft().yBottom().xDimensionPercentage(1.f).yDimensionPixels(150.f)();
+					glui::toggleOptions(renderer, buttonBox, "World type: ", Colors_White,
+						"Normal|Super Flat", &currentIndex, true, programData.ui.font,
+						programData.ui.buttonTexture, Colors_Gray, platform::getRelMousePosition(),
+						platform::isLMouseHeld(), platform::isLMouseReleased());
+
+					auto mapBox = glui::Box().xLeft().yTop().xDimensionPercentage(1.f).yDimensionPercentage(1.f)();
+					mapBox.w -= buttonBox.w;
+
+					if (mapBox.w > 0)
+					{
+						renderer.render9Patch(mapBox, 20,
+							Colors_Gray, {}, 0.f, programData.ui.buttonTexture, 
+							GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
+
+						//auto textureBox = mapBox;
+						//textureBox = shrinkPercentage(textureBox, {0.6f, 0.6f});
+						//
+						//worldPreviewTexture.cleanup();
+						//wg.applySettings(settings);
+						//	
+						//wg.generateChunkPreview(worldPreviewTexture, {textureBox.z,textureBox.w}, {});
+						//
+						//renderer.renderRectangle(textureBox, worldPreviewTexture);
+
+					}
+
+				}
+
+
+			}
+
+
+		}
+
+
 	}
 	else
 	{
 		memset(seed, 0, sizeof(seed));
 		memset(name, 0, sizeof(name));
+		currentIndex = 0;
+		settings = {};
 	}
 	
 	programData.ui.menuRenderer.EndMenu();
@@ -1176,8 +1378,7 @@ void displayWorldSelectorMenu(ProgramData &programData)
 void ShadingSettings::normalize()
 {
 
-
-	viewDistance = glm::clamp(viewDistance, 1, 40);
+	viewDistance = glm::clamp(viewDistance, 1, 50);
 	tonemapper = glm::clamp(tonemapper, 0, 3);
 	shadows = glm::clamp(shadows, 0, 2);
 	waterType = glm::clamp(waterType, 0, 1);
@@ -1189,8 +1390,44 @@ void ShadingSettings::normalize()
 	underwaterDarkenDistance = glm::clamp(underwaterDarkenDistance, 0.f, 40.f);
 	fogGradientUnderWater = glm::clamp(fogGradientUnderWater, 0.f, 32.f);
 	workerThreadsForBaking = glm::clamp(workerThreadsForBaking, 0, 10);
+	lodStrength = glm::clamp(lodStrength, 0, 5);
+
+	bloomTresshold = glm::clamp(bloomTresshold, 0.1f, 1.f);
+	bloomMultiplier = glm::clamp(bloomMultiplier, 0.0f, 1.f);
+	
+	PBR = glm::clamp(PBR, 0, 1);
+	bloom = glm::clamp(bloom, 0, 1);
+	SSR = glm::clamp(SSR, 0, 1);
+	useLights = glm::clamp(useLights, 0, 1);
+	lightsStrength = glm::clamp(lightsStrength, 0.1f, 2.f);
+
+	maxLights = glm::clamp(maxLights, 1,100);
 
 	exposure = glm::clamp(exposure, -2.f, 2.f);
+	fogGradient = glm::clamp(fogGradient, 0.f, 100.f);
+
+}
+
+#define GET_STR(x) "c_" #x
+
+#define ADD_TO_RESULT(x) result += ("#define " GET_STR(x) " ") + std::to_string(x) + "\n"
+#define ADD_TO_RESULT_VEC3(x) result += ("#define " GET_STR(x) " vec3(") + std::to_string(x.r) + "," + std::to_string(x.g) + "," + std::to_string(x.b) + ")\n"
 
 
+std::string ShadingSettings::formatIntoGLSLcode()
+{
+	normalize();
+
+	std::string result;
+	result.reserve(500);
+
+
+	ADD_TO_RESULT(shadows);
+	ADD_TO_RESULT(PBR);
+	ADD_TO_RESULT(SSR);
+	ADD_TO_RESULT(useLights);
+
+
+
+	return result;
 }

@@ -14,8 +14,37 @@ void *compressData(const char *data, size_t size, size_t &compressedSize)
 
 	char *rezult = new char[newExpectedMaxSize];
 
-
+	//TODO try out other compresssion levels
 	compressedSize = ZSTD_compress(rezult, newExpectedMaxSize, data, size, 1);
+
+	//profiler.end();
+
+	if (ZSTD_isError(compressedSize))
+	{
+		delete[] rezult;
+		return 0;
+	}
+
+	//std::cout << "Old size: " << size << " new size: " << rezSize << " ratio: " << (float)size / rezSize << "\n";
+	//std::cout << "Time ms: " << profiler.rezult.timeSeconds * 1000 << " Time per 100: " << profiler.rezult.timeSeconds * 100'000 <<"\n";
+
+	return rezult;
+	//delete[] rezult;
+
+}
+
+void *compressDataForce(const char *data, size_t size, size_t &compressedSize)
+{
+
+	//PL::Profiler profiler;
+	//profiler.start();
+
+	size_t newExpectedMaxSize = size * 1.2;
+
+	char *rezult = new char[newExpectedMaxSize];
+
+	//TODO try out other compresssion levels
+	compressedSize = ZSTD_compress(rezult, newExpectedMaxSize, data, size, 3);
 
 	//profiler.end();
 

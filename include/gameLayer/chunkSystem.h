@@ -61,7 +61,7 @@ struct ChunkSystem
 	void cleanup(bool notifyServer);
 
 	void update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQueue &undoQueue, LightSystem &lightSystem,
-		InteractionData &interaction, ThreadPool &threadPool);
+		InteractionData &interaction, ThreadPool &threadPool, Renderer &renderer);
 
 	bool isChunkInRadius(glm::ivec2 playerPos, glm::ivec2 chunkPos);
 
@@ -96,7 +96,7 @@ struct ChunkSystem
 	bool placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot,
 		UndoQueue &undoQueue, glm::dvec3 playerPos, 
 		LightSystem &lightSystem, PlayerInventory &inventory, bool decreaseCounter,
-		int faceDirection, int topPartForSlabs
+		int faceDirection, int topPartForSlabs, bool isOnWall
 	);
 
 

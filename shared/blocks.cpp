@@ -9,7 +9,22 @@ constexpr static float BLOCK_DEFAULT_FRICTION = 8.f;
 
 bool isBlockMesh(BlockType type)
 {
-	return !isCrossMesh(type);
+	return !isCrossMesh(type)
+		&& !(type == torch)
+		&& !isStairsMesh(type)
+		&& !isWallMesh(type)
+		&& !isSlabMesh(type)
+		&& !isDecorativeFurniture(type)
+		&& !isWallMountedBlock(type)
+		
+		;
+}
+
+bool canWallMountedBlocksBePlacedOn(BlockType type)
+{
+	return isBlockMesh(type) ||
+		isStairsMesh(type) ||
+		isWallMesh(type);
 }
 
 bool isStairsMesh(BlockType type)
@@ -18,16 +33,24 @@ bool isStairsMesh(BlockType type)
 		type == wooden_stairs ||
 		type == bricks_stairs ||
 		type == stone_stairts ||
+		type == birchPlanks_stairs ||
 		type == cobbleStone_stairts ||
 		type == stoneBricks_stairts ||
 		type == hardSandStone_stairs ||
 		type == sandStone_stairts ||
 		type == dungeonBricks_stairts ||
+		type == dungeonStone_stairs ||
+		type == dungeonCobblestone_stairs ||
+		type == dungeonSmoothStone_stairs ||
 		type == volcanicRock_stairts ||
 		type == smoothStone_stairts ||
 		type == smoothLimeStone_stairs ||
+		type == sprucePlank_stairs ||
 		type == marbleBlock_stairs ||
 		type == marbleBricks_stairs ||
+		type == cloth_stairs ||
+		type == terracotta_stairs ||
+		type == plankedWallBlock_stairs ||
 		type == blueBricks_stairs ||
 		type == tiledStoneBricks_stairs
 		;
@@ -41,14 +64,22 @@ bool isSlabMesh(BlockType type)
 		type == cobbleStone_slabs ||
 		type == stoneBricks_slabs ||
 		type == hardSandStone_slabs ||
+		type == birchPlanks_slabs ||
 		type == sandStone_slabs ||
+		type == terracotta_slabs ||
 		type == dungeonBricks_slabs ||
+		type == dungeonStone_slabs ||
+		type == dungeonCobblestone_slabs ||
+		type == dungeonSmoothStone_slabs ||
 		type == volcanicRock_slabs ||
 		type == smoothStone_slabs ||
 		type == smoothLimeStone_slabs ||
+		type == cloth_slabs ||
 		type == marbleBlock_slabs ||
+		type == sprucePlank_slabs ||
 		type == marbleBricks_slabs ||
 		type == blueBricks_slabs ||
+		type == oakLogSlab ||
 		type == tiledStoneBricks_slab;
 }
 
@@ -58,14 +89,22 @@ bool isWallMesh(BlockType type)
 		type == bricks_wall ||
 		type == stone_wall ||
 		type == cobbleStone_wall ||
+		type == birchPlanks_wall ||
 		type == stoneBricks_wall ||
+		type == terracotta_wall ||
 		type == hardSandStone_wall ||
 		type == sandStone_wall ||
 		type == dungeonBricks_wall ||
+		type == dungeonStone_wall ||
+		type == dungeonCobblestone_wall ||
+		type == dungeonSmoothStone_wall ||
 		type == volcanicRock_wall ||
 		type == smoothStone_wall ||
+		type == sprucePlank_wall ||
+		type == plankedWallBlock_wall ||
 		type == smoothLimeStone_wall ||
 		type == marbleBlock_wall ||
+		type == cloth_wall ||
 		type == marbleBricks_wall ||
 		type == logWall ||
 		type == blueBricks_wall ||
@@ -87,11 +126,23 @@ bool isControlBlock(BlockType type)
 		type == BlockTypes::control4;
 }
 
+bool isWallMountedBlock(BlockType type)
+{
+	return type == BlockTypes::ladder || type == BlockTypes::vines;
+}
+
+bool isWallMountedOrStangingBlock(BlockType type)
+{
+	return type == BlockTypes::torch;
+}
+
 bool isOpaque(BlockType type)
 {
 	return
 		type != BlockTypes::air
 		&& type != BlockTypes::torch
+		&& !isWallMountedBlock(type)
+		&& !isDecorativeFurniture(type)
 		//&& type != BlockTypes::glowstone
 		&& !(isStairsMesh(type))
 		&& !(isSlabMesh(type))
@@ -101,16 +152,51 @@ bool isOpaque(BlockType type)
 		&& !(isGrassMesh(type));
 }
 
+bool isDecorativeFurniture(BlockType type)
+{
+	return type == mug || isChairMesh(type) || isGobletMesh(type) || type == wineBottle ||
+		type == skull ||
+		type == skullTorch ||
+		type == book ||
+		type == candleHolder ||
+		type == pot ||
+		type == jar ||
+		type == keg ||
+		type == cookingPot ||
+		type == chickenCaracas ||
+		type == chickenWingsPlate ||
+		type == fishPlate ||
+		type == workBench ||
+		type == oakTable ||
+		type == craftingItems ||
+		type == oakLogTable ||
+		type == oakBigChair ||
+		type == oakLogBigChair ||
+		type == smallRock ||
+		type == woddenChest ||
+		type == goblinChest ||
+		type == copperChest ||
+		type == ironChest ||
+		type == silverChest ||
+		type == goldChest ||
+		type == smallCrate ||
+		type == globe
+		
+		;
+}
+
 bool isLightEmitor(BlockType type)
 {
-	return type == BlockTypes::glowstone 
-		|| type == BlockTypes::torch;
+	return type == BlockTypes::glowstone
+		|| type == BlockTypes::torch
+		|| type == BlockTypes::candleHolder
+		|| type == BlockTypes::skullTorch;
 }
 
 bool isTransparentGeometry(BlockType type)
 {
-	return type == BlockTypes::ice || type == BlockTypes::water || type == BlockTypes::glass || 
-		::isStainedGlass(type);
+	return type == BlockTypes::ice || type == BlockTypes::water ||
+		::isAnyGlass(type);
 }
 
 bool isGrassMesh(BlockType type)
@@ -131,6 +217,21 @@ bool isColidable(BlockType type)
 		type != BlockTypes::cactus_bud &&
 		type != BlockTypes::dead_bush &&
 		type != BlockTypes::torch &&
+		type != BlockTypes::mug &&
+		type != BlockTypes::jar &&
+		type != BlockTypes::globe &&
+		type != BlockTypes::skull &&
+		type != BlockTypes::skullTorch &&
+		type != BlockTypes::book &&
+		type != BlockTypes::candleHolder &&
+		type != BlockTypes::goblet &&
+		type != BlockTypes::wineBottle &&
+		type != BlockTypes::chickenWingsPlate &&
+		type != BlockTypes::chickenCaracas &&
+		type != BlockTypes::fishPlate &&
+		type != BlockTypes::ladder &&
+		type != BlockTypes::vines &&
+		type != BlockTypes::smallRock &&
 		type != BlockTypes::water;
 }
 
@@ -138,14 +239,29 @@ bool isWoodPlank(BlockType type)
 {
 	return type == BlockTypes::wooden_plank ||
 		type == BlockTypes::jungle_planks ||
-		type == BlockTypes::birch_planks;
+		type == BlockTypes::sprucePlank ||
+		type == BlockTypes::birchPlanks;
 }
+
+bool isChairMesh(BlockType type)
+{
+	return type == oakChair || type == oakLogChair;
+}
+
+bool isGobletMesh(BlockType type)
+{
+	return type == BlockTypes::goblet;
+}
+
 
 //used for breaking related things
 bool isAnyWoddenBlock(BlockType type)
 {
 	return isWoodPlank(type) ||
 		type == woodLog ||
+		type == sprucePlank_stairs ||
+		type == sprucePlank_slabs ||
+		type == sprucePlank_wall ||
 		type == bookShelf ||
 		type == birch_log ||
 		type == jungle_log ||
@@ -153,8 +269,22 @@ bool isAnyWoddenBlock(BlockType type)
 		type == craftingTable ||
 		type == wooden_stairs ||
 		type == wooden_wall ||
+		type == oakLogSlab ||
+		type == ladder ||
+		type == oakTable ||
+		type == oakLogTable ||
 		type == wooden_slab ||
+		type == birchPlanks ||
+		type == birchPlanks_slabs ||
+		type == birchPlanks_stairs ||
+		type == birchPlanks_wall ||
 		type == spruce_log ||
+		type == oakChair ||
+		type == crate || 
+		type == oakLogChair ||
+		type == strippedOakLog ||
+		type == strippedBirchLog ||
+		type == strippedSpruceLog ||
 		type == logWall;
 		
 }
@@ -198,12 +328,15 @@ bool isAnyWoddenLOG(BlockType type)
 		type == birch_log ||
 		type == jungle_log ||
 		type == palm_log ||
+		type == strippedOakLog ||
+		type == strippedBirchLog  ||
+		type == strippedSpruceLog ||
 		type == spruce_log;
 }
 
 bool isAnyWool(BlockType type)
 {
-	return type == whiteWool;
+	return type == clothBlock || type == cloth_stairs || type == cloth_slabs || type == cloth_wall;
 }
 
 bool isAnyDirtBlock(BlockType type)
@@ -211,6 +344,7 @@ bool isAnyDirtBlock(BlockType type)
 	return
 		type == grassBlock ||
 		type == dirt ||
+		type == pathBlock || 
 		type == snow_dirt ||
 		type == coarseDirt ||
 		type == yellowGrass ||
@@ -239,7 +373,12 @@ bool isAnySemiHardBlock(BlockType type)
 		type == sand_stone ||
 		type == sandStone_wall ||
 		type == sandStone_slabs ||
-		type == sandStone_stairts;
+		type == sandStone_stairts||
+		type == terracotta ||
+		type == terracotta_wall ||
+		type == terracotta_slabs ||
+		type == terracotta_stairs
+		;
 
 
 }
@@ -252,6 +391,8 @@ bool isAnyStone(BlockType type)
 		type == bricks ||
 		type == blueBricks ||
 		type == blueBricks_stairs ||
+		type == plankedWallBlock_stairs ||
+		type == plankedWallBlock_wall ||
 		type == blueBricks_wall ||
 		type == blueBricks_slabs ||
 		type == stoneBrick ||
@@ -259,6 +400,7 @@ bool isAnyStone(BlockType type)
 		type == gold_ore ||
 		type == diamond_ore ||
 		type == iron_ore ||
+		type == plankedWallBlock ||
 		type == tiledStoneBricks ||
 		type == gold_block ||
 		type == limeStone ||
@@ -302,10 +444,7 @@ bool isAnyStone(BlockType type)
 		type == hardSandStone_stairs ||
 		type == hardSandStone_wall ||
 
-		type == dungeonBricks ||
-		type == dungeonBricks_slabs ||
-		type == dungeonBricks_stairts  ||
-		type == dungeonBricks_wall ||
+
 
 		type == smoothStone ||
 		type == smoothStone_stairts ||
@@ -317,17 +456,46 @@ bool isAnyStone(BlockType type)
 		type == stoneBricks_wall;
 }
 
+bool isDungeonBrick(BlockType type)
+{
+	
+	return
+		type == dungeonBricks ||
+		type == dungeonBricks_slabs ||
+		type == dungeonBricks_stairts ||
+		type == dungeonBricks_wall ||
+		type == dungeonStone ||
+		type == dungeonStone_stairs ||
+		type == dungeonStone_slabs ||
+		type == dungeonStone_wall ||
+		type == dungeonCobblestone ||
+		type == dungeonCobblestone_stairs ||
+		type == dungeonCobblestone_slabs ||
+		type == dungeonCobblestone_wall ||
+		type == dungeonSmoothStone ||
+		type == dungeonSmoothStone_stairs ||
+		type == dungeonSmoothStone_slabs ||
+		type == dungeonSmoothStone_wall ||
+		type == dungeonPillar ||
+		type == chiseledDungeonBrick ||
+		type == dungeonGlass ||
+		type == dungeonSkullBlock;
+}
+
 bool isAnyPlant(BlockType type)
 {
 	return type == grass ||
 		type == rose ||
 		type == dead_bush ||
+		type == vines ||
 		type == cactus_bud;
 }
 
 bool isAnyGlass(BlockType type)
 {
-	return isStainedGlass(type) || type == glass;
+	return isStainedGlass(type) || type == glass || type == glass2 ||
+		type == glassNotClear || type == vitral1 || type == vitral2 || type == glassNotClear2 
+		 || type == dungeonGlass;
 }
 
 bool isTriviallyBreakable(BlockType type)
@@ -359,7 +527,7 @@ bool isAnyLeaves(BlockType type)
 
 bool isStainedGlass(BlockType type)
 {
-	return type >= black_stained_glass && type <= pink_stained_glass;
+	return type >= purple_stained_glass && type <= pink_stained_glass;
 }
 
 unsigned char isInteractable(BlockType type)
@@ -378,6 +546,27 @@ unsigned char isInteractable(BlockType type)
 bool isBlock(std::uint16_t type) //todo == 0 ???????????????????/
 {
 	return type > 0 && type < BlocksCount;
+}
+
+bool Block::normalize()
+{
+
+	auto type = getType();
+
+	if (type >= BlockTypes::BlocksCount)
+	{
+		typeAndFlags = {};
+		return true;
+	}
+
+	//we have flags...
+	if (getFlagsBytes())
+	{
+		//todo
+	}
+
+
+	return false;
 }
 
 float Block::getFriction()
@@ -425,6 +614,11 @@ float getBlockBaseMineDuration(BlockType type)
 		return 3.0;
 	}
 
+	if (isDungeonBrick(type))
+	{
+		return 10.0;
+	}
+
 	if (isAnyStone(type))
 	{
 		return 3.5;
@@ -463,6 +657,11 @@ float getBlockBaseMineDuration(BlockType type)
 	if (type == structureBase)
 	{
 		return 1;
+	}
+
+	if (isDecorativeFurniture(type))
+	{
+		return 0.2;
 	}
 
 	std::cout << "Block without base mine duration assigned!: " << type << "\n";
@@ -544,4 +743,118 @@ bool canBeMinedByAxe(std::uint16_t type)
 	}
 
 	return false;
+}
+
+BlockType fromAnyShapeToNormalBlockType(BlockType b)
+{
+
+	switch (b)
+	{
+
+	case oakLogChair:
+	case oakLogSlab:
+	case logWall: {return woodLog; }
+
+	case oakChair:
+	case wooden_slab:
+	case wooden_wall:
+	case wooden_stairs: { return wooden_plank; };
+
+	case bricks_slabs:
+	case bricks_wall:
+	case bricks_stairs: { return bricks; };
+
+	case stone_slabs:
+	case stone_wall:
+	case stone_stairts: { return stone; };
+
+	case cobbleStone_slabs:
+	case cobbleStone_wall:
+	case cobbleStone_stairts: { return cobblestone; };
+
+	case stoneBricks_slabs:
+	case stoneBricks_wall:
+	case stoneBricks_stairts: { return stoneBrick; };
+
+	case hardSandStone_slabs:
+	case hardSandStone_wall:
+	case hardSandStone_stairs: { return hardSandStone; };
+
+	case sandStone_slabs:
+	case sandStone_wall:
+	case sandStone_stairts: { return sand_stone; };
+
+	case dungeonBricks_slabs:
+	case dungeonBricks_wall:
+	case dungeonBricks_stairts: { return dungeonBricks; };
+
+	case volcanicRock_slabs:
+	case volcanicRock_wall:
+	case volcanicRock_stairts: { return volcanicRock_stairts; };
+
+	case smoothStone_slabs:
+	case smoothStone_wall:
+	case smoothStone_stairts: { return smoothStone; };
+
+	case smoothLimeStone_slabs:
+	case smoothLimeStone_wall:
+	case smoothLimeStone_stairs: { return limeStone; };
+
+	case marbleBlock_slabs:
+	case marbleBlock_wall:
+	case marbleBlock_stairs: { return marbleBlock; };
+
+	case marbleBricks_slabs:
+	case marbleBricks_wall:
+	case marbleBricks_stairs: { return marbleBlock_stairs; };
+
+	case blueBricks_slabs:
+	case blueBricks_wall:
+	case blueBricks_stairs: { return blueBricks; };
+
+	case tiledStoneBricks_slab:
+	case tiledStoneBricks_wall:
+	case tiledStoneBricks_stairs: { return tiledStoneBricks; };
+
+	case cloth_slabs:
+	case cloth_wall:
+	case cloth_stairs: { return clothBlock; };
+
+	case plankedWallBlock_wall:
+	case plankedWallBlock_stairs: { return plankedWallBlock; };
+
+	case terracotta_slabs:
+	case terracotta_wall:
+	case terracotta_stairs: { return terracotta; };
+
+	case birchPlanks_slabs:
+	case birchPlanks_wall:
+	case birchPlanks_stairs: { return birchPlanks; };
+
+	case sprucePlank_stairs:
+	case sprucePlank_slabs:
+	case sprucePlank_wall: { return sprucePlank; };
+
+	case dungeonStone_stairs : 
+	case dungeonStone_slabs : 
+	case dungeonStone_wall: { return dungeonStone; }
+
+	case dungeonCobblestone_stairs:
+	case dungeonCobblestone_slabs:
+	case dungeonCobblestone_wall: { return dungeonCobblestone; }
+
+	case dungeonSmoothStone_stairs:
+	case dungeonSmoothStone_slabs:
+	case dungeonSmoothStone_wall: { return dungeonSmoothStone; }
+
+	};
+
+	if (INTERNAL_BUILD == 1)
+	{
+		permaAssertComment(!isStairsMesh(b), "error you forgot to add a stair here!");
+		permaAssertComment(!isWallMesh(b), "error you forgot to add a wall here!");
+		permaAssertComment(!isSlabMesh(b), "error you forgot to add a slab here!");
+	}
+
+	return b;
 }

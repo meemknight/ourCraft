@@ -164,9 +164,10 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 	std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
 	bool generateGhostAndStructures,
 	std::vector<StructureToGenerate> *newStructuresToAdd, 
-	WorldSaver &worldSaver, bool *wasGenerated)
+	WorldSaver &worldSaver, bool *wasGenerated, bool *wasLoaded)
 {
 	if (wasGenerated) { *wasGenerated = false; }
+	if (wasLoaded) { *wasLoaded = false; }
 
 	glm::ivec2 pos = {posX, posZ};
 	auto foundPos = savedChunks.find(pos);
@@ -189,6 +190,9 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 		rez->chunk.x = posX;
 		rez->chunk.z = posZ;
 
+		PL::Profiler profiler;
+		profiler.start();
+
 		if (!worldSaver.loadChunk(rez->chunk))
 		{
 			//create new chunk!
@@ -199,12 +203,24 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 		}
 		else
 		{
+			profiler.end();
+
+			//0.3 ms! for non zipped!
+			//std::cout << "Loaded Chunk ms: " << profiler.rezult.timeSeconds * 1000 << "\n";
+
+			if (wasLoaded) { *wasLoaded = true; }
+
 			//we loaded a chunk so no need to dirty here.
 			rez->otherData.dirty = false;
 			rez->otherData.dirtyBlockData = false;
 			//std::cout << "Loaded!\n";
 
 			worldSaver.loadBlockData(*rez);
+			if (rez->normalize())
+			{
+				rez->otherData.dirty = true;
+				rez->otherData.dirtyBlockData = true;
+			}
 
 		}
 
@@ -832,24 +848,24 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 	auto size = structure->size;
 
 	//the user can replace a block with another
-	auto replaceB = [&](BlockType &b)
+	auto replaceB = [&](Block &b)
 	{
 		if (replace)
 		{
-			if (b == from)
+			if (b.getType() == from)
 			{
-				b = to;
+				b.setType(to);
 			}
 		}
 
-		if (s.replaceLeavesWith && isAnyLeaves(b))
+		if (s.replaceLeavesWith && isAnyLeaves(b.getType()))
 		{
-			b = s.replaceLeavesWith;
+			b.setType(s.replaceLeavesWith);
 		}
 
-		if (s.replaceLogWith && isAnyWoddenLOG(b))
+		if (s.replaceLogWith && isAnyWoddenLOG(b.getType()))
 		{
-			b = s.replaceLogWith;
+			b.setType(s.replaceLogWith);
 		}
 	};
 
@@ -954,21 +970,21 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 
 							replaceB(newB);
 
-							if (newB != BlockTypes::air)
+							if (newB.getType() != BlockTypes::air)
 							{
-								b.setType(newB);
+								b = newB;
 
 								if (sendDataToPlayers)
 								{
 									SendBlocksBack sendB;
 									sendB.pos = {x,y,z};
-									sendB.block = newB;
+									sendB.blockInfo = b;
 									sendNewBlocksToPlayers.push_back(sendB);
 								}
 
 								if (controlBlocks)
 								{
-									if (isControlBlock(newB))
+									if (isControlBlock(newB.getType()))
 									{
 										controlBlocks->push_back({x,y,z});
 									}
@@ -996,11 +1012,11 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 
 							replaceB(b);
 
-							if (b != BlockTypes::air)
+							if (b.getType() != BlockTypes::air)
 							{
 
 								GhostBlock ghostBlock;
-								ghostBlock.type = b;
+								ghostBlock.type = b.typeAndFlags;
 								ghostBlock.replaceAnything = replaceAnything;
 
 								rez[{inChunkX, y, inChunkZ}] = ghostBlock; //todo either ghost either send
@@ -1009,13 +1025,13 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 								{
 									SendBlocksBack sendB;
 									sendB.pos = {x,y,z};
-									sendB.block = b;
+									sendB.blockInfo = b;
 									sendNewBlocksToPlayers.push_back(sendB);
 								}
 
 								if (controlBlocks)
 								{
-									if (isControlBlock(b))
+									if (isControlBlock(b.getType()))
 									{
 										controlBlocks->push_back({x,y,z});
 									}
@@ -1037,10 +1053,10 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 
 							replaceB(b);
 
-							if (b != BlockTypes::air)
+							if (b.getType() != BlockTypes::air)
 							{
 								GhostBlock ghostBlock;
-								ghostBlock.type = b;
+								ghostBlock.type = b.getType();
 								ghostBlock.replaceAnything = replaceAnything;
 
 								auto blockIt = it->second.find({inChunkX, y, inChunkZ});
@@ -1053,13 +1069,13 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 									{
 										SendBlocksBack sendB;
 										sendB.pos = {x,y,z};
-										sendB.block = b;
+										sendB.blockInfo = b;
 										sendNewBlocksToPlayers.push_back(sendB);
 									}
 
 									if (controlBlocks)
 									{
-										if (isControlBlock(b))
+										if (isControlBlock(b.getType()))
 										{
 											controlBlocks->push_back({x,y,z});
 										}
@@ -1075,13 +1091,13 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 										{
 											SendBlocksBack sendB;
 											sendB.pos = {x,y,z};
-											sendB.block = b;
+											sendB.blockInfo = b;
 											sendNewBlocksToPlayers.push_back(sendB);
 										}
 
 										if (controlBlocks)
 										{
-											if (isControlBlock(b))
+											if (isControlBlock(b.getType()))
 											{
 												controlBlocks->push_back({x,y,z});
 											}
@@ -1227,6 +1243,21 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 Block *ServerChunkStorer::getBlockSafe(glm::ivec3 pos)
 {
 	auto c = getChunkOrGetNull(divideChunk(pos.x), divideChunk(pos.z));
+
+	if (c)
+	{
+		if (pos.y > 0 && pos.y < CHUNK_HEIGHT)
+		{
+			return &c->chunk.unsafeGet(modBlockToChunk(pos.x), pos.y, modBlockToChunk(pos.z));
+		}
+	}
+
+	return nullptr;
+}
+
+Block *ServerChunkStorer::getBlockSafeAndChunk(glm::ivec3 pos, SavedChunk *&c)
+{
+	c = getChunkOrGetNull(divideChunk(pos.x), divideChunk(pos.z));
 
 	if (c)
 	{
@@ -1400,6 +1431,7 @@ void ServerChunkStorer::saveAllChunks(WorldSaver &worldSaver)
 
 int ServerChunkStorer::unloadChunksThatNeedUnloading(WorldSaver &worldSaver, int count)
 {
+	//todo optimize, this seems to take an unnecessarily long time
 	int unloaded = 0;
 	for (auto it = savedChunks.begin(); it != savedChunks.end(); )
 	{
@@ -1853,5 +1885,21 @@ void SavedChunk::removeBlockWithData(glm::ivec3 pos,
 	}
 
 
+
+}
+
+bool SavedChunk::normalize()
+{
+	bool rez = 0;
+	for (int x = 0; x < CHUNK_SIZE; x++)
+		for (int z = 0; z < CHUNK_SIZE; z++)
+			for (int y = 0; y < CHUNK_HEIGHT; y++)
+			{
+				auto &b = chunk.blocks[x][z][y];
+
+				if (b.normalize()) { rez = 1; }
+			}
+
+	return rez;
 
 }

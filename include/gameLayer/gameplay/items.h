@@ -4,7 +4,7 @@
 #include <string>
 #include <gameplay/weaponStats.h>
 
-constexpr static unsigned short ItemsStartPoint = 1'024;
+constexpr static unsigned short ItemsStartPoint = 2'048;
 
 enum ItemTypes : unsigned short
 {
@@ -36,6 +36,25 @@ enum ItemTypes : unsigned short
 	leatherBoots,
 	leatherTunic,
 	leatherCap,
+
+	soap,
+	whitePaint,
+	lightGrayPaint,
+	darkGrayPaint,
+	blackPaint,
+	brownPaint,
+	redPaint,
+	orangePaint,
+	yellowPaint,
+	limePaint,
+	greenPaint,
+	turqoisePaint,
+	cyanPaint,
+	bluePaint,
+	purplePaint,
+	magentaPaint,
+	pinkPaint,
+
 
 	lastItem,
 
@@ -72,6 +91,8 @@ struct Item
 	unsigned char getStackSize();
 
 	bool isTool();
+
+	bool isPaint();
 
 	bool isAxe();
 

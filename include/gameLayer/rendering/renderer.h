@@ -6,6 +6,7 @@
 #include <gl2d/gl2d.h>
 #include "blocks.h"
 #include <unordered_map>
+#include <rendering/model.h>
 
 struct BlocksLoader;
 struct ChunkSystem;
@@ -43,9 +44,11 @@ struct AdaptiveExposure
 	float moveSpeed = 0;
 
 	float bonusAmbient = 0;
-	float currentLuminosity = 0.5;
+	float currentLuminosity = 0.5; //0 - 1
 
 	void update(float deltaTime, float newLuminosity);
+
+	float getLuminosityOrDefaultValueIfDisabeled();
 };
 
 struct Renderer
@@ -56,12 +59,23 @@ struct Renderer
 	QueryObject sunFlareQueries[3] = {};
 	float averageLuminosity = 0.5;
 
+	struct BlockGeometryIndex
+	{
+		int startIndex = 0;
+		int componentCount = 0;
+	};
+
+	BlockGeometryIndex blockGeometry[ModelsManager::BLOCK_MODELS_COUNT];
+
+	void recreateBlockGeometryData(ModelsManager &modelsManager);
+
 
 	struct FBO
 	{
 		void create(GLint addColor, bool addDepth, GLint addSecondaryRenderTarget = 0,
 			GLint addThirdRenderTarget = 0, GLint addFourthRenderTarget = 0,
 			GLint addFifthRenderTarget = 0);
+
 
 		void updateSize(int x, int y);
 
@@ -168,7 +182,6 @@ struct Renderer
 			float fogGradientUnderWater = 1.9;
 			int shaders = true;
 			float fogCloseGradient = 0;
-			int shadows = 0;
 		}shadingSettings;
 
 
@@ -241,7 +254,7 @@ struct Renderer
 		Shader shader;
 		uniform u_hbao;
 		uniform u_currentViewSpace;
-		GLuint u_shadingSettings = 0;
+		uniform u_viewDistance;
 
 	}applyHBAOShader;
 
@@ -380,9 +393,14 @@ struct Renderer
 		GLuint geometry = 0;
 		GLuint index = 0;
 
-
-
 	}decalShader;
+
+	struct RenderUIBlocksShader
+	{
+		Shader shader;
+		GLuint u_texture = GL_INVALID_INDEX;
+		GLuint u_viewProjection = GL_INVALID_INDEX;
+	}renderUIBlocksShader;
 
 
 	float metallic = 0;
@@ -394,11 +412,7 @@ struct Renderer
 	bool renderTransparent = 1;
 	bool frustumCulling = 1;
 	bool ssao = 1;
-	bool bloom = 1;
-
-	float bloomTresshold = 0.01; // 1.7
-	float bloomMultiplier = 0.00003;
-
+	
 	FBO fboHBAO;
 	FBO fboMain;
 	FBO fboSunForGodRays;
@@ -423,7 +437,9 @@ struct Renderer
 
 	void recreateBlocksTexturesBuffer(BlocksLoader &blocksLoader);
 
-	void create();
+	void renderAllBlocksUiTextures(BlocksLoader &blocksLoader);
+
+	void create(ModelsManager &modelsManager);
 	void reloadShaders();
 	//void render(std::vector<int> &data, Camera &c, gl2d::Texture &texture);
 
@@ -541,6 +557,13 @@ struct PointDebugRenderer
 
 };
 
+constexpr int mergeShortsUnsigned(unsigned short a, unsigned short b)
+{
+	int rez = 0;
+	((unsigned short *)&rez)[0] = a;
+	((unsigned short *)&rez)[1] = b;
+	return rez;
+}
 
 constexpr int mergeShorts(short a, short b)
 {

@@ -38,6 +38,15 @@ bool StructuresManager::loadAllStructures()
 					return 0;
 				}
 
+				auto structure = (StructureData *)sData;
+
+				for (int x = 0; x < structure->size.x; x++)
+					for (int z = 0; z < structure->size.z; z++)
+						for (int y = 0; y < structure->size.y; y++)
+				{
+					structure->unsafeGet(x, y, z).lightLevel = 0;
+				}
+
 				structures.push_back((StructureData *)sData);
 			}
 		}

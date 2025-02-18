@@ -15,7 +15,7 @@ bool Item::isItemThatCanBeUsed()
 {
 	if (type == pigSpawnEgg || type == zombieSpawnEgg 
 		|| type == catSpawnEgg || type == goblinSpawnEgg
-		|| isEatable()
+		|| isEatable() || isPaint()
 		)
 	{
 		return true;
@@ -165,7 +165,7 @@ void Item::sanitize()
 
 unsigned char Item::getStackSize()
 {
-	if (isTool())
+	if (isTool() || isPaint())
 	{
 		return 1;
 	}
@@ -190,6 +190,11 @@ bool Item::isTool()
 	{
 		return false;
 	}
+}
+
+bool Item::isPaint()
+{
+	return type >= soap && type <= pinkPaint;
 }
 
 bool Item::isAxe()
@@ -512,6 +517,24 @@ const char *itemsNamesTextures[] =
 	"armour/leatherBoots.png",
 	"armour/leatherTunic.png",
 	"armour/leatherCap.png",
+
+	"soap.png",
+	"whitePaint.png",
+	"lightGrayPaint.png",
+	"darkGrayPaint.png",
+	"blackPaint.png",
+	"brownPaint.png",
+	"redPaint.png",
+	"orangePaint.png",
+	"yellowPaint.png",
+	"limePaint.png",
+	"greenPaint.png",
+	"turqoisePaint.png",
+	"cyanPaint.png",
+	"bluePaint.png",
+	"purplePaint.png",
+	"magentaPaint.png",
+	"pinkPaint.png",
 };
 
 const char *itemsNames[] =
@@ -543,6 +566,23 @@ const char *itemsNames[] =
 	"leather tunic",
 	"leather cap",
 
+	"soap",
+	"white paint",
+	"lightGray paint",
+	"darkGray paint",
+	"black paint",
+	"brown paint",
+	"red paint",
+	"orange paint",
+	"yellow paint",
+	"lime paint",
+	"green paint",
+	"turqoise paint",
+	"cyan paint",
+	"blue paint",
+	"purple paint",
+	"magenta paint",
+	"pink paint",
 
 };
 

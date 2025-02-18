@@ -391,10 +391,7 @@ void recieveDataClient(ENetEvent &event,
 			//chunkSystem.placeBlockNoClient
 			Packet_PlaceBlocks b = *(Packet_PlaceBlocks *)data;
 
-			Block bl;
-			bl.typeAndFlags = b.blockType;
-
-			chunkSystem.placeBlockByServerAndRemoveFromUndoQueue(b.blockPos, bl, lightSystem,
+			chunkSystem.placeBlockByServerAndRemoveFromUndoQueue(b.blockPos, b.blockInfo, lightSystem,
 				playerInteraction, undoQueue);
 
 			break;
@@ -402,15 +399,13 @@ void recieveDataClient(ENetEvent &event,
 
 		case headerPlaceBlocks:
 		{
+			//std::cout << "headerPlaceBlocks ! ";
 			for (int i = 0; i < size / sizeof(Packet_PlaceBlocks); i++)
 			{
 
 				Packet_PlaceBlocks b = ((Packet_PlaceBlocks *)data)[i];
 
-				Block bl;
-				bl.typeAndFlags = b.blockType;
-
-				chunkSystem.placeBlockByServerAndRemoveFromUndoQueue(b.blockPos, bl, lightSystem,
+				chunkSystem.placeBlockByServerAndRemoveFromUndoQueue(b.blockPos, b.blockInfo, lightSystem,
 					playerInteraction, undoQueue);
 
 			}
@@ -464,6 +459,7 @@ void recieveDataClient(ENetEvent &event,
 			{
 				//update local player
 				entityManager.localPlayer.entity = entity->entity;
+				std::cout << "YESSSSSSSSSSSSSSSSSSSSSSSSSSSS LMAO " << entity->entity.chunkDistance << "\n";
 			}
 			else
 			{

@@ -33,6 +33,8 @@ struct BlocksLoader
 
 	gl2d::Texture backgroundTexture;
 
+	std::vector<gl2d::Texture> blockUiTextures;
+
 	std::vector<glm::vec3> blocksColors;
 
 };

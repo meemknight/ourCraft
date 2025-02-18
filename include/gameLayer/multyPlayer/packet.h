@@ -24,7 +24,7 @@ struct EventId
 	EventId() {};
 	EventId(EventCounter counter, RevisionNumber revision):counter(counter), revision(revision) {};
 
-	EventCounter counter = 0; //todo just remove the counter or use the same revision for the items and everything
+	EventCounter counter = 0; //todo just remove the counter because it isn't used, or use the same revision for the items and everything
 	RevisionNumber revision = 0;
 };
 
@@ -144,6 +144,7 @@ struct Packet_RespawnPlayer
 struct Packet_ClientUsedItem
 {
 	glm::ivec3 position = {};
+	EventId eventId = {}; //used when interacting with blocks
 	unsigned short itemType = 0;
 	unsigned char from = 0;
 	unsigned char revisionNumber = 0;
@@ -296,7 +297,7 @@ struct Packet_ClientPlaceBlockForce
 {
 	glm::ivec3 blockPos = {};
 	EventId eventId = {}; //event id is used by the player
-	BlockType blockType = {};
+	Block block = {};
 };
 
 struct Packet_ClientBreakBlock
@@ -322,7 +323,7 @@ struct Packet_ClientDroppedItem
 struct Packet_PlaceBlocks
 {
 	glm::ivec3 blockPos = {};
-	BlockType blockType = {};
+	Block blockInfo = {};
 };
 
 struct Packet_AttackEntity
@@ -369,3 +370,7 @@ float computeRestantTimer(std::uint64_t older, std::uint64_t newer);
 void sendPlayerSkinPacket(ENetPeer *to, std::uint64_t cid, gl2d::Texture &t);
 
 void sendPlayerSkinPacket(ENetPeer *to, std::uint64_t cid, std::vector<unsigned char> &data);
+
+void *compressData(const char *data, size_t size, size_t &compressedSize);
+
+void *compressDataForce(const char *data, size_t size, size_t &compressedSize);

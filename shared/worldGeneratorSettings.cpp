@@ -249,7 +249,7 @@ void WorldGenerator::applySettings(WorldGeneratorSettings &s)
 	alternativePatchesOfBlocks->SetCellularNoiseLookupFrequency(0.30);
 	alternativePatchesOfBlocks->SetCellularNoiseLookupType(FastNoiseSIMD::NoiseType::Simplex);
 
-
+	isSuperFlat = s.isSuperFlat;
 }
 
 
@@ -476,88 +476,97 @@ std::string WorldGeneratorSettings::saveSettings()
 
 	rez += "seed: "; rez += std::to_string(seed); rez += ";\n";
 
-	rez += "continentalnessNoise:\n";
-	rez += continentalnessNoiseSettings.saveSettings(1);
+	if (isSuperFlat)
+	{
+		rez += "superFlat: 1;\n";
+	}
+	else
+	{
 
-	rez += "continentalnessNoise2:\n";
-	rez += continentalness2NoiseSettings.saveSettings(1);
+		rez += "continentalnessNoise:\n";
+		rez += continentalnessNoiseSettings.saveSettings(1);
 
-	rez += "continentalnessPickNoise:\n";
-	rez += continentalnessPickSettings.saveSettings(1);
+		rez += "continentalnessNoise2:\n";
+		rez += continentalness2NoiseSettings.saveSettings(1);
 
-	rez += "swampNoise:\n";
-	rez += swampNoise.saveSettings(1);
+		rez += "continentalnessPickNoise:\n";
+		rez += continentalnessPickSettings.saveSettings(1);
 
-	rez += "stoneSpikesNoise:\n";
-	rez += stoneSpikesNoise.saveSettings(1);
+		rez += "swampNoise:\n";
+		rez += swampNoise.saveSettings(1);
 
-	rez += "stoneSpikesMask:\n";
-	rez += stoneSpikeMask.saveSettings(1);
+		rez += "stoneSpikesNoise:\n";
+		rez += stoneSpikesNoise.saveSettings(1);
 
-	rez += "swampMask:\n";
-	rez += swampMask.saveSettings(1);
-	
-	rez += "iceNoise:\n";
-	rez += iceNoise.saveSettings(1);
+		rez += "stoneSpikesMask:\n";
+		rez += stoneSpikeMask.saveSettings(1);
 
-	rez += "peaksAndValies:\n";
-	rez += peaksAndValies.saveSettings(1);
-	rez += "peaksAndValiesContributionSpline:\n";
-	rez += peaksAndValiesContributionSpline.saveSettings(1);
+		rez += "swampMask:\n";
+		rez += swampMask.saveSettings(1);
 
-	rez += "randomHills:\n";
-	rez += randomHills.saveSettings(1);
+		rez += "iceNoise:\n";
+		rez += iceNoise.saveSettings(1);
 
-	rez += "wierdness:\n";
-	rez += wierdness.saveSettings(1);
+		rez += "peaksAndValies:\n";
+		rez += peaksAndValies.saveSettings(1);
+		rez += "peaksAndValiesContributionSpline:\n";
+		rez += peaksAndValiesContributionSpline.saveSettings(1);
 
-	rez += "vegetationNoise:\n";
-	rez += vegetationNoise.saveSettings(1);
+		rez += "randomHills:\n";
+		rez += randomHills.saveSettings(1);
 
-	rez += "stonetDnoise:\n";
-	rez += stone3Dnoise.saveSettings(1);
+		rez += "wierdness:\n";
+		rez += wierdness.saveSettings(1);
 
-	rez += "riversNoise:\n";
-	rez += riversNoise.saveSettings(1);
+		rez += "vegetationNoise:\n";
+		rez += vegetationNoise.saveSettings(1);
 
-	rez += "roadsNoise:\n";
-	rez += roadsNoise.saveSettings(1);
+		rez += "stonetDnoise:\n";
+		rez += stone3Dnoise.saveSettings(1);
 
-	rez += "stonePatches:\n";
-	rez += stonePatches.saveSettings(1);
+		rez += "riversNoise:\n";
+		rez += riversNoise.saveSettings(1);
 
-	rez += "randomSand:\n";
-	rez += randomSand.saveSettings(1);
+		rez += "roadsNoise:\n";
+		rez += roadsNoise.saveSettings(1);
 
-	rez += "hillsDrop:\n";
-	rez += hillsDrops.saveSettings(1);
+		rez += "stonePatches:\n";
+		rez += stonePatches.saveSettings(1);
 
-	rez += "treesAmountNoise:\n";
-	rez += treesAmountNoise.saveSettings(1);
+		rez += "randomSand:\n";
+		rez += randomSand.saveSettings(1);
 
-	rez += "treesTypeNoise:\n";
-	rez += treesTypeNoise.saveSettings(1);
+		rez += "hillsDrop:\n";
+		rez += hillsDrops.saveSettings(1);
 
-	rez += "cavesNoise:\n";
-	rez += cavesNoise.saveSettings(1);
+		rez += "treesAmountNoise:\n";
+		rez += treesAmountNoise.saveSettings(1);
 
-	rez += "lakesNoise:\n";
-	rez += lakesNoise.saveSettings(1);
+		rez += "treesTypeNoise:\n";
+		rez += treesTypeNoise.saveSettings(1);
 
-	rez += "spagettiNoise:\n";
-	rez += spagettiNoise.saveSettings(1);
-	//rez += "spagettiBias: "; rez += std::to_string(spagettiBias); rez += ";\n";
-	//rez += "spagettiBiasPower: "; rez += std::to_string(spagettiBiasPower); rez += ";\n";
+		rez += "cavesNoise:\n";
+		rez += cavesNoise.saveSettings(1);
+
+		rez += "lakesNoise:\n";
+		rez += lakesNoise.saveSettings(1);
+
+		rez += "spagettiNoise:\n";
+		rez += spagettiNoise.saveSettings(1);
+		//rez += "spagettiBias: "; rez += std::to_string(spagettiBias); rez += ";\n";
+		//rez += "spagettiBiasPower: "; rez += std::to_string(spagettiBiasPower); rez += ";\n";
 
 
-	//rez += "densityBias: "; rez += std::to_string(densityBias); rez += ";\n";
-	//rez += "densityBiasPower: "; rez += std::to_string(densityBiasPower); rez += ";\n";
+		//rez += "densityBias: "; rez += std::to_string(densityBias); rez += ";\n";
+		//rez += "densityBiasPower: "; rez += std::to_string(densityBiasPower); rez += ";\n";
 
-	//rez += "densitySquishFactor: "; rez += std::to_string(densitySquishFactor); rez += ";\n";
-	//rez += "densitySquishPower: "; rez += std::to_string(densitySquishPower); rez += ";\n";
-	//rez += "densityHeightoffset: "; rez += std::to_string(densityHeightoffset); rez += ";\n";
+		//rez += "densitySquishFactor: "; rez += std::to_string(densitySquishFactor); rez += ";\n";
+		//rez += "densitySquishPower: "; rez += std::to_string(densitySquishPower); rez += ";\n";
+		//rez += "densityHeightoffset: "; rez += std::to_string(densityHeightoffset); rez += ";\n";
 
-	rez += "regionsHeightSpline: "; rez += regionsHeightSpline.saveSettings(1);
+		rez += "regionsHeightSpline: "; rez += regionsHeightSpline.saveSettings(1);
+	}
+
 
 
 	return rez;
@@ -990,12 +999,19 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 				auto s = tokens[i].s; //todo to lower
 				i++;
 
-				if (s == "seed") //todo remove from here
+				if (s == "seed")
 				{
 					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
 					if (isEof()) { return 0; }
 					if (!isNumber()) { return 0; }
 					seed = consumeNumber();
+					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
+				}else if (s == "superFlat") 
+				{
+					if (!consume(Token{TokenSymbol, "", ':', 0})) { return 0; }
+					if (isEof()) { return 0; }
+					if (!isNumber()) { return 0; }
+					isSuperFlat = consumeNumber();
 					if (!consume(Token{TokenSymbol, "", ';', 0})) { return 0; }
 				}
 				else if (s == "continentalnessNoise")

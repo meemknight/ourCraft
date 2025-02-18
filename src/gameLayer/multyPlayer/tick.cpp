@@ -383,7 +383,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 	auto &settings = getServerSettingsReff();
 
 
-	std::unordered_map<glm::ivec3, BlockType> modifiedBlocks;
+	std::unordered_map<glm::ivec3, Block> modifiedBlocks;
 
 	static thread_local ServerChunkStorer *chunkCacheGlobal = 0;
 
@@ -529,9 +529,10 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 						if (b)
 						{
-							auto block = i.t.blockType;
+							auto block = i.t.block;
+							block.lightLevel = 0;
 
-							if (isBlock(block) || block == 0)
+							if (isBlock(block.getType()) || block.getType() == 0)
 							{
 								good = true;
 							}
@@ -543,7 +544,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 								auto lastBlock = b->getType();
 								chunk->removeBlockWithData({convertedX,
 									i.t.pos.y, convertedZ}, lastBlock);
-								b->setType(i.t.blockType);
+								*b = block;
 								chunk->otherData.dirty = true;
 
 								{
@@ -553,7 +554,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 									Packet_PlaceBlocks packetData;
 									packetData.blockPos = i.t.pos;
-									packetData.blockType = i.t.blockType;
+									packetData.blockInfo = *b;
 
 									//todo broadcast only to local players from now on
 									broadCastNotLocked(packet, &packetData, sizeof(Packet_PlaceBlocks),
@@ -633,6 +634,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 								Block actualPlacedBLock;
 								actualPlacedBLock.typeAndFlags = i.t.blockType;
+								actualPlacedBLock.setColor(0);
 
 								if (!b)
 								{
@@ -689,6 +691,44 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 									}
 
+									//validate ladder placement
+									if (i.t.taskType == Task::placeBlock 
+										&&
+										(actualPlacedBLock.isWallMountedBlock()
+											|| (actualPlacedBLock.isWallMountedOrStangingBlock() && 
+												actualPlacedBLock.getRotatedOrStandingForWallOrStandingBlocks())
+										)
+										)
+									{
+
+										int rotation = actualPlacedBLock.getRotationFor365RotationTypeBlocks();
+										
+										glm::ivec3 directions[4] = {
+										glm::ivec3(0, 0, 1),
+										glm::ivec3(1, 0, 0),
+										glm::ivec3(0, 0, -1),
+										glm::ivec3(-1, 0, 0)};
+
+										auto direction = directions[rotation];
+										auto wallPos = i.t.pos - direction;
+
+										Block *wallBlock = chunkCache.getBlockSafe(wallPos);
+
+										if (!wallBlock)
+										{
+											legal = false;
+										}
+										else
+										{
+											if (!wallBlock->canWallMountedBlocksBePlacedOn())
+											{
+												legal = false;
+											}
+										}
+
+
+									}
+
 								}
 
 								legal = computeRevisionStuff(*client, legal, i.t.eventId);
@@ -708,7 +748,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 										Packet_PlaceBlocks packetData;
 										packetData.blockPos = i.t.pos;
-										packetData.blockType = i.t.blockType;
+										packetData.blockInfo = *b;
 
 										//todo only for local players
 										broadCastNotLocked(packet, &packetData, sizeof(Packet_PlaceBlocks),
@@ -1142,31 +1182,45 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 				}
 				else if (i.t.taskType == Task::clientUsedItem)
 				{
-
+					
 					auto client = getClientNotLocked(i.cid);
 
 					if (client)
 					{
+						bool shouldUpdateRevisionStuff = false;
+						bool allowed = false;
+						Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
 
-						//if the revision number isn't good we don't do anything
-						if (client->playerData.inventory.revisionNumber
-							== i.t.revisionNumber
-							)
+						if (from)
 						{
 
-							//serverTask.t.pos = packetData->position;
 
-							Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
+							if (from->isPaint())
+							{
+								shouldUpdateRevisionStuff = true;
+							}
 
-							if (from && !client->playerData.killed)
+							//if the revision number isn't good we don't do anything
+							if (client->playerData.inventory.revisionNumber
+								== i.t.revisionNumber
+								)
 							{
 
-								if (from->counter <= 0) { from = {}; }
+								//serverTask.t.pos = packetData->position;
 
-								if (from->type == i.t.itemType)
+
+								if (from && !client->playerData.killed)
+								{
+									allowed = true;
+
+									
+
+									if (from->counter <= 0) { from = {}; }
+
+									if (from->type == i.t.itemType)
 								{
 
-									bool allowed = true;
+									
 
 									if (from->type == ItemTypes::pigSpawnEgg)
 									{
@@ -1222,6 +1276,54 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 
 									}
+									else if (from->isPaint())
+									{
+
+										SavedChunk *c = 0;
+										auto b = chunkCache.getBlockSafeAndChunk(i.t.pos, c);
+
+										if (b && c && b->canBePainted())
+										{
+											allowed = true;
+
+
+											shouldUpdateRevisionStuff = false;
+											if (computeRevisionStuff(*client, allowed, i.t.eventId))
+											{
+												
+												c->otherData.dirtyBlockData = true;
+												c->otherData.dirty = true;
+
+												//
+												//todo only for local players
+												{
+													Packet packet;
+													packet.cid = i.cid;
+													packet.header = headerPlaceBlocks;
+													int paintType = from->type - soap;
+													b->setColor(paintType);
+
+													Packet_PlaceBlocks packetData;
+													packetData.blockPos = i.t.pos;
+													packetData.blockInfo = *b;
+
+													//todo only for local players
+													broadCastNotLocked(packet, &packetData, sizeof(Packet_PlaceBlocks),
+														client->peer, true, channelChunksAndBlocks);
+												}
+											}
+
+										}
+										else
+										{
+											allowed = false;
+										}
+
+									}
+									else
+									{
+										//todo player used an item that "can't be used" hard reset here
+									}
 
 									if (
 										allowed &&
@@ -1240,18 +1342,26 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 										sendPlayerInventoryAndIncrementRevision(*client);
 									}
 								}
+									else
+									{
+										sendPlayerInventoryAndIncrementRevision(*client);
+										allowed = false;
+									}
+
+								}
 								else
 								{
 									sendPlayerInventoryAndIncrementRevision(*client);
 								}
 
-							}
-							else
-							{
-								sendPlayerInventoryAndIncrementRevision(*client);
-							}
+							};
 
 						};
+
+						if (shouldUpdateRevisionStuff)
+						{
+							computeRevisionStuff(*client, allowed, i.t.eventId);
+						}
 
 						//the client might have eaten something so we update life anyway,
 						// the same for the effects
@@ -1691,6 +1801,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 	unsigned int randomTickSpeed = getRandomTickSpeed();
 
+	//todo server spamming the client problem
 	for (auto &c : chunkCache.savedChunks)
 	{
 		if (!c.second->otherData.withinSimulationDistance) { continue; }
@@ -1762,7 +1873,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 						{
 							//update block
 							b.setType(BlockTypes::grassBlock);
-							modifiedBlocks[{x + c.first.x * CHUNK_SIZE, y, z + c.first.y * CHUNK_SIZE}] = b.getType();
+							modifiedBlocks[{x + c.first.x * CHUNK_SIZE, y, z + c.first.y * CHUNK_SIZE}] = b;
 							c.second->otherData.dirty = true;
 						}
 
@@ -1776,7 +1887,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 					{
 						//update block
 						b.setType(BlockTypes::dirt);
-						modifiedBlocks[{x + c.first.x * CHUNK_SIZE, y, z + c.first.y * CHUNK_SIZE}] = b.getType();
+						modifiedBlocks[{x + c.first.x * CHUNK_SIZE, y, z + c.first.y * CHUNK_SIZE}] = b;
 						c.second->otherData.dirty = true;
 					}
 
@@ -1788,7 +1899,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 					{
 						//update block
 						b.setType(BlockTypes::dirt);
-						modifiedBlocks[{x + c.first.x * CHUNK_SIZE, y, z + c.first.y * CHUNK_SIZE}] = b.getType();
+						modifiedBlocks[{x + c.first.x * CHUNK_SIZE, y, z + c.first.y * CHUNK_SIZE}] = b;
 						c.second->otherData.dirty = true;
 					}
 
@@ -2144,7 +2255,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 		for (auto &b : modifiedBlocks)
 		{
 			newBlocks[i].blockPos = b.first;
-			newBlocks[i].blockType = b.second;
+			newBlocks[i].blockInfo = b.second;
 			i++;
 		}
 

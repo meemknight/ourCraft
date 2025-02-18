@@ -9,14 +9,14 @@ struct StructureData
 
 	//data is held outside
 
-	BlockType &unsafeGet(int x, int y, int z)
+	Block &unsafeGet(int x, int y, int z)
 	{
 		assert(x >= 0 && y >= 0 && z >= 0 && x < size.x && y < size.y && z < size.z);
 
-		return ((BlockType*)(this + 1))[y + z * size.y + x * size.y*size.z];
+		return ((Block *)(this + 1))[y + z * size.y + x * size.y*size.z];
 	}
 
-	BlockType &unsafeGetRotated(int x, int y, int z, int r)
+	Block &unsafeGetRotated(int x, int y, int z, int r)
 	{
 		if (r == 0)
 		{
@@ -41,7 +41,7 @@ struct StructureData
 
 	}
 
-	BlockType *safeGet(int x, int y, int z)
+	Block *safeGet(int x, int y, int z)
 	{
 		if (x < 0 || y < 0 || z < 0 || x >= size.x || y >= size.y || z >= size.z)
 		{

@@ -48,6 +48,16 @@ struct BoneTransform
 };
 
 
+
+struct BlockModel
+{
+	std::vector<float> vertices;
+	std::vector<float> uvs;
+
+	void cleanup() { *this = {}; }
+};
+
+
 struct ModelsManager
 {
 
@@ -63,6 +73,44 @@ struct ModelsManager
 	Model rightHand;
 
 	Model goblin;
+
+	enum BlockModels
+	{
+		chairModel,
+		mugModel,
+		gobletModel,
+		wineBottleModel,
+		skullModel,
+		skullTorchModel,
+		booksModel,
+		candleHolderModel,
+		potModel,
+		jarModel,
+		globeModel,
+		keg,
+		workBenchModel,
+		tableModel,
+		workItemsModel,
+		chairBigModel,
+		cookingPotModel,
+		chickenCaracasModel,
+		chickenWingsPlateModel,
+		fishPlateModel,
+		ladderModel,
+		vinesModel,
+		smallRockModel,
+		chestModel,
+		crateModel,
+		torchModel,
+		torchHolderModel,
+
+		BLOCK_MODELS_COUNT
+
+
+	};
+
+	BlockModel blockModels[BLOCK_MODELS_COUNT];
+
 
 	enum TexturesLoaded
 	{

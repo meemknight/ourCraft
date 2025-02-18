@@ -19,12 +19,13 @@ in float v_ambientMultiplier; //for face darkening or under water darkening
 in flat uvec2 v_textureSampler;
 in flat uvec2 v_normalSampler;
 in flat uvec2 v_materialSampler;
+in flat uvec2 v_paralaxSampler;
 in flat int v_ambientInt;
 
 in flat int v_skyLight; //ambient sun value, todo remove?
 in flat int v_skyLightUnchanged;
 in flat int v_normalLight;
-
+in flat int v_colors;
 
 uniform ShadingSettings 
 {
@@ -38,7 +39,6 @@ uniform ShadingSettings
 	float u_fogGradientUnderWater;
 	int u_shaders;
 	float u_fogCloseGradient;
-	int u_shadows;
 
 };
 
@@ -348,7 +348,7 @@ float getLastDepthLiniarized(vec2 p, out float nonLinear)
 	return linear;	
 }
 
-vec3 applyNormalMap(vec3 inNormal)
+vec3 applyNormalMap(vec3 inNormal, vec2 uv)
 {
 	vec3 normal;
 	if( isWater() && (u_shaders!=0) )
@@ -375,7 +375,7 @@ vec3 applyNormalMap(vec3 inNormal)
 		//return inNormal;
 	}else
 	{
-		normal = texture(sampler2D(v_normalSampler), v_uv).rgb;
+		normal = texture(sampler2D(v_normalSampler), uv).rgb;
 	}
 
 	normal = normalize(2*normal - 1.f);
@@ -607,9 +607,9 @@ float getShadowDistance(vec3 pos)
 float shadowCalc2(float dotLightNormal)
 {
 	
-	if(u_shadows == 0){ return 1.f; }
+	if(c_shadows == 0){ return 1.f; }
 
-	if(u_shadows == 1){return shadowCalc(dotLightNormal);}
+	if(c_shadows == 1){return shadowCalc(dotLightNormal);}
 
 	vec3 projCoords = v_fragPosLightSpace.xyz * 0.5 + 0.5;
 	projCoords.z = min(projCoords.z, 1.0);
@@ -808,6 +808,74 @@ vec3 getViewVector(vec2 fragCoord)
 	return -normalize(worldPos);
 }
 
+//http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl
+//https://gist.github.com/983/e170a24ae8eba2cd174f#file-frag-glsl-L3
+vec3 rgb2hsv(vec3 c)
+{
+	vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+	vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+	vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+
+	float d = q.x - min(q.w, q.y);
+	float e = 1.0e-10;
+	return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+
+vec3 hsv2rgb(vec3 c)
+{
+	vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+	vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+	return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
+vec3 paintGray(vec3 colorIn, vec3 newColor)
+{
+	vec3 colorInHSV = rgb2hsv(colorIn);
+	colorIn.y = 0;
+
+	float colSqr = newColor.x * newColor.x;
+	colorIn.z = mix(colorIn.z, 
+					mix(colSqr, colorIn.z * colSqr, 0.6 ), 
+					0.6);
+
+	if(newColor.x == 0){colorIn.z = pow(colorIn.z, 1.2);}
+
+
+	return hsv2rgb(colorIn);
+}
+
+vec3 paint(vec3 colorIn, vec3 newColor, vec3 colorReff)
+{
+	vec3 reffHSV = rgb2hsv(colorReff);
+	vec3 colorInHSV = rgb2hsv(colorIn);
+	vec3 newColorHSV = rgb2hsv(newColor);
+	
+	colorInHSV.x = newColorHSV.x;
+	colorInHSV.y += 0.2; if(colorInHSV.y > 1){colorInHSV.y = 1;}
+	colorInHSV.y = sqrt(colorInHSV.y);
+	vec3 c = hsv2rgb(colorInHSV);
+	return mix(c * newColor, c, vec3(0.4));
+
+	//colorIn = mix(colorIn, newColor, vec3(0.12));
+	//colorIn = mix(colorIn, colorIn * newColor, 0.12);
+	//
+	//float diff = reffHSV.r - newColor.r;
+	//
+	//colorInHSV.r -= diff;
+	//colorInHSV.r = mod(colorInHSV.r + 1.0, 1.0);
+	//colorInHSV.r = mix(colorInHSV.r, newColorHSV.r, 0.5);
+	//colorInHSV.s = pow(colorInHSV.s+0.1,0.20);
+	//colorInHSV.z = pow(colorInHSV.z,1.2);
+	//
+	//vec3 color = hsv2rgb(colorInHSV);
+	//
+	//color = mix(color, colorIn, 0.5);
+	//color = mix(color, newColor, vec3(0.12));
+	//color = mix(color, color * newColor, 0.5);
+	//
+	//return color;
+}
+
 
 in flat int v_isSkyLightMain;
 
@@ -879,7 +947,7 @@ void main()
 		//gamma correction
 		textureColor.rgb = toLinear(textureColor.rgb);
 
-		vec3 N = applyNormalMap(v_normal);
+		vec3 N = applyNormalMap(v_normal, v_uv);
 
 		float viewLength = length(v_semiViewSpacePos);
 		vec3 V = -v_semiViewSpacePos / viewLength;
@@ -958,16 +1026,70 @@ void main()
 	}else
 	{
 
-		//float shadow = shadowCalc2(dot(u_sunDirection, v_normal));
-		
 
+		float viewLength = length(v_semiViewSpacePos);
+		vec3 V = -v_semiViewSpacePos / viewLength;
+		vec2 finalUV = v_uv;
+		vec3 viewWorldSpace = ((u_view * vec4(v_semiViewSpacePos,1)).xyz);
+
+		//paralax
+		//https://www.youtube.com/watch?v=LrnE5f3h2SU
+		/*
+		if(false)
+		{
+			vec3 viewVector = normalize(viewWorldSpace);
+			
+			float heightScale = 0.10;
+			const float minLayers = 4;
+			const float maxLayers = 16;
+			float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0,0,1), viewVector)));
+			float power = 1;
+
+
+			float layerDepth = 1.0 / numLayers;
+			float currentLayerDepth = 0;
+
+
+			// Remove the z division if you want less aberated results
+			//vec2 S = viewVector.xy * heightScale; 
+			vec2 S = viewVector.xy / viewVector.z * heightScale; 
+			vec2 deltaUVs = S / numLayers;
+
+			vec2 UVs = v_uv;
+			float currentDepthMapValue = 1.0f - pow(texture(sampler2D(v_paralaxSampler), UVs).r, power);
+	
+
+			// Loop till the point on the heightmap is "hit"
+			while(currentLayerDepth < currentDepthMapValue)
+			{
+				UVs -= deltaUVs;
+				currentDepthMapValue = 1.0f - pow(texture(sampler2D(v_paralaxSampler), UVs).r, power);
+				currentLayerDepth += layerDepth;
+			}
+
+			// Apply Occlusion (interpolation with prev value)
+			vec2 prevTexCoords = UVs + deltaUVs;
+			float afterDepth  = currentDepthMapValue - currentLayerDepth;
+			float beforeDepth = 1.0f - pow(texture(sampler2D(v_paralaxSampler), prevTexCoords).r, power) - currentLayerDepth + layerDepth;
+			float weight = afterDepth / (afterDepth - beforeDepth);
+			UVs = prevTexCoords * weight + UVs * (1.0f - weight);
+
+			// Get rid of anything outside the normal range
+			//if(UVs.x > 1.0 || UVs.y > 1.0 || UVs.x < 0.0 || UVs.y < 0.0)
+			//	discard;
+			
+			//set the final UV
+			UVs = clamp(UVs, vec2(0,0), vec2(1,1));
+			finalUV = UVs;
+		}
+		*/
 
 		//load material
 		float metallic = 0;
 		float roughness = 0;
 		float emissive = 0;
 		{
-			vec3 materialColor = texture(sampler2D(v_materialSampler), v_uv).rgb;
+			vec3 materialColor = texture(sampler2D(v_materialSampler), finalUV).rgb;
 			
 			roughness = pow((1 - materialColor.r),2);
 			metallic =pow((materialColor.g),0.5);
@@ -984,8 +1106,9 @@ void main()
 		//load albedo
 		vec4 textureColor;
 		{
-			textureColor = texture(sampler2D(v_textureSampler), v_uv);
-			if(textureColor.a <= 0){discard;}
+			textureColor = texture(sampler2D(v_textureSampler), finalUV);
+			float textureAlphaOriginal = texture(sampler2D(v_textureSampler), v_uv).a;
+			if(textureAlphaOriginal <= 0){discard;}
 			//gamma correction
 			textureColor.rgb = toLinear(textureColor.rgb);
 
@@ -998,6 +1121,47 @@ void main()
 			}
 		}
 
+		
+		//paing paint
+		if(v_colors != 0)
+		{
+
+			vec3 colorsVector[] = vec3[](
+			vec3(1.0, 1.0, 1.0),  // whitePaint
+			vec3(0.75, 0.75, 0.75), // lightGrayPaint
+			vec3(0.25, 0.25, 0.25),  // darkGrayPaint
+			vec3(0.0, 0.0, 0.0),  // blackPaint
+			vec3(0.36, 0.25, 0.20), // brownPaint
+			vec3(1.0, 0.0, 0.0),  // redPaint
+			vec3(1.0, 0.5, 0.0),  // orangePaint
+			vec3(1.0, 1.0, 0.0),  // yellowPaint
+			vec3(81, 255, 0)/255.f, // limePaint
+			vec3(0.0, 0.5, 0.0),  // greenPaint
+			vec3(0, 255, 195)/255.f, // turqoisePaint
+			vec3(0.0, 1.0, 1.0),  // cyanPaint
+			vec3(0, 62, 176)/255.f,  // bluePaint
+			vec3(98, 0, 209)/255.f,  // purplePaint
+			vec3(1.0, 0.0, 1.0),  // magentaPaint
+			vec3(1.0, 0.5, 0.75)  // pinkPaint
+			);
+
+			//int lastMip = textureQueryLevels(sampler2D(v_textureSampler)) - 1;
+			//vec3 colorReff = textureLod(sampler2D(v_textureSampler), vec2(0,0), lastMip).rgb;
+
+			if(v_colors-1 <= 3)
+			{
+				textureColor.rgb = paintGray(textureColor.rgb, colorsVector[v_colors-1]);
+			}else
+			{
+				textureColor.rgb = paint(textureColor.rgb, colorsVector[v_colors-1], vec3(0,0,0));
+			}
+
+			
+			//roughness -= 0.5;
+			//roughness = clamp(roughness, 0, 1);
+		}
+
+
 		out_materials.r = roughness;
 
 		
@@ -1006,14 +1170,13 @@ void main()
 		
 		vec3 skyBoxColor = texture(u_skyTexture, (gl_FragCoord.xy / textureSize(u_skyTexture, 0)) ).rgb;
 
-		vec3 N = applyNormalMap(v_normal);
+		vec3 N = applyNormalMap(v_normal, finalUV);
 		//vec3 N = v_normal;
 		//vec3 ViewSpaceVector = compute(u_positionInt, u_positionFloat, fragmentPositionI, fragmentPositionF);
 		//float viewLength = length(ViewSpaceVector);
 		//vec3 V = ViewSpaceVector / viewLength;
 		
-		float viewLength = length(v_semiViewSpacePos);
-		vec3 V = -v_semiViewSpacePos / viewLength;
+
 
 		//V = getViewVector(gl_FragCoord.xy / textureSize(u_lastFramePositionViewSpace, 0).xy);
 
@@ -1026,7 +1189,7 @@ void main()
 		//if(u_writeScreenSpacePositions != 0)
 		{
 			////out_screenSpacePositions.xyz = u_view* -ViewSpaceVector; 
-			out_screenSpacePositions.xyz = (u_view * vec4(v_semiViewSpacePos,1)).xyz; //this is good
+			out_screenSpacePositions.xyz =  viewWorldSpace;
 			//out_screenSpacePositions.a = 1;
 		}
 		
@@ -1080,6 +1243,7 @@ void main()
 
 		//compute lights color
 		//if(false)
+		if(c_useLights != 0)
 		for(int i=0; i< u_lightsCount; i++)
 		{
 			if(v_normalLight == 0){continue;}
@@ -1240,6 +1404,7 @@ void main()
 		//out_color = clamp(out_color, vec4(0), vec4(1));
 		
 		//ssr
+		if(c_SSR != 0)
 		if(true)
 		if(!physicallyAccurateReflections)
 		if(roughness < 0.45)

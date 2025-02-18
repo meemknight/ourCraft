@@ -227,6 +227,6 @@ void main()
 
 	gl_Position = posProjection;
 	
-
-	v_textureSampler = textureSamplerers[in_textureIndex];
+	int textureIndex = in_textureIndex & 0x07FF;
+	v_textureSampler = textureSamplerers[textureIndex];
 }

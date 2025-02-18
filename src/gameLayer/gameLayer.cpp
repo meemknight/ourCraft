@@ -213,6 +213,10 @@ void loadAllDefaultTexturePacks()
 
 	programData.renderer.recreateBlocksTexturesBuffer(programData.blocksLoader);
 
+	programData.renderer.renderAllBlocksUiTextures(programData.blocksLoader);
+
+	
+
 	//programData.blocksLoader.clearAllTextures();
 	//
 	//programData.blocksLoader.loadAllTextures(RESOURCES_PATH "assets/");
@@ -321,7 +325,6 @@ bool initGame() //main server and title screen stuff
 
 		s.exposure = loadedS.exposure;
 		s.fogGradientUnderWater = loadedS.fogGradientUnderWater;
-		s.shadows = loadedS.shadows;
 		s.tonemapper = loadedS.tonemapper;
 		s.underWaterColor = loadedS.underWaterColor;
 		s.underwaterDarkenDistance = loadedS.underwaterDarkenDistance;
@@ -336,10 +339,12 @@ bool initGame() //main server and title screen stuff
 	programData.gyzmosRenderer.create();
 	programData.pointDebugRenderer.create();
 	programData.skyBoxLoaderAndDrawer.createGpuData();
-	programData.renderer.create();
 	programData.sunRenderer.create();
 
 	loadAllDefaultTexturePacks();
+	programData.renderer.create(programData.modelsManager);
+	programData.renderer.renderAllBlocksUiTextures(programData.blocksLoader);
+
 
 	AudioEngine::loadAllMusic();
 	AudioEngine::playTitleMusic();

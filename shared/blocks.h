@@ -59,25 +59,25 @@ enum BlockTypes : unsigned short
 	torch,
 	craftingTable,
 	coarseDirt,
-	birch_planks,
+	birchPlanks,
 
-	black_stained_glass,
-	gray_stained_glass,
-	light_gray_stained_glass,
-	white_stained_glass,
-	brown_stained_glass,
-	red_stained_glass,
-	orange_stained_glass,
-	yellow_stained_glass,
-	lime_stained_glass,
-	green_stained_glass,
-	cyan_stained_glass,
-	light_blue_stained_glass,
-	blue_stained_glass,
+	pathBlock,
+	plankedWallBlock,
+	plankedWallBlock_stairs,
+	plankedWallBlock_wall,
+	terracotta,
+	terracotta_stairs,
+	terracotta_slabs,
+	terracotta_wall,
+	glassNotClear,
+	vitral1,
+	vitral2,
+	glassNotClear2,
+	glass2,
 	purple_stained_glass,
 	magenta_stained_glass,
 	pink_stained_glass,
-	whiteWool,
+	clothBlock,
 	wooden_stairs,
 	wooden_slab,
 	wooden_wall,
@@ -153,13 +153,90 @@ enum BlockTypes : unsigned short
 	blueBricks_slabs,
 	blueBricks_wall,
 
+	oakChair,
+	oakLogChair,
+	mug,
+	goblet,
+	wineBottle,
+
+	skull,
+	skullTorch,
+	book,
+	candleHolder,
+	pot,
+	jar,
+	globe,
+	keg,
+	workBench,
+	oakTable,
+	oakLogTable,
+	craftingItems,
+	oakBigChair,
+	oakLogBigChair,
+	cookingPot,
+	chickenCaracas,
+	chickenWingsPlate,
+	fishPlate,
+	ladder,
+	vines,
+	cloth_stairs,
+	cloth_slabs,
+	cloth_wall,
+
+	birchPlanks_stairs,
+	birchPlanks_slabs,
+	birchPlanks_wall,
+	oakLogSlab,
+	smallRock,
+
+	strippedOakLog,
+	strippedBirchLog,
+	strippedSpruceLog,
+
+	sprucePlank,
+	sprucePlank_stairs,
+	sprucePlank_slabs,
+	sprucePlank_wall,
+
+	dungeonStone,
+	dungeonStone_stairs,
+	dungeonStone_slabs,
+	dungeonStone_wall,
+	
+	dungeonCobblestone,
+	dungeonCobblestone_stairs,
+	dungeonCobblestone_slabs,
+	dungeonCobblestone_wall,
+
+	dungeonSmoothStone,
+	dungeonSmoothStone_stairs,
+	dungeonSmoothStone_slabs,
+	dungeonSmoothStone_wall,
+
+	dungeonPillar,
+	dungeonSkullBlock,
+	chiseledDungeonBrick,
+	dungeonGlass,
+		
+	woddenChest,
+	goblinChest,
+	copperChest,
+	ironChest,
+	silverChest,
+	goldChest,
+
+	crate,
+	smallCrate,
 
 	BlocksCount
 };
 
 using BlockType = uint16_t;
 
+//todo look into this
 bool isBlockMesh(BlockType type);
+
+bool canWallMountedBlocksBePlacedOn(BlockType type);
 
 bool isStairsMesh(BlockType type);
 
@@ -171,7 +248,13 @@ bool isCrossMesh(BlockType type);
 
 bool isControlBlock(BlockType type);
 
+bool isWallMountedBlock(BlockType type);
+
+bool isWallMountedOrStangingBlock(BlockType type);
+
 bool isOpaque(BlockType type);
+
+bool isDecorativeFurniture(BlockType type);
 
 bool isLightEmitor(BlockType type);
 
@@ -182,6 +265,10 @@ bool isGrassMesh(BlockType type);
 bool isColidable(BlockType type);
 
 bool isWoodPlank(BlockType type);
+
+bool isChairMesh(BlockType type);
+
+bool isGobletMesh(BlockType type);
 
 //used for breaking
 bool isAnyWoddenBlock(BlockType type);
@@ -194,7 +281,7 @@ bool isVolcanicInActiveSound(BlockType type);
 
 bool isAnyWoddenLOG(BlockType type);
 
-//used for breaking
+//used for breaking, cloth blocks
 bool isAnyWool(BlockType type);
 
 //used for breaking
@@ -211,6 +298,9 @@ bool isAnySemiHardBlock(BlockType type);
 
 //used for breaking
 bool isAnyStone(BlockType type);
+
+//used for breaking
+bool isDungeonBrick(BlockType type);
 
 //used for breaking
 bool isAnyPlant(BlockType type);
@@ -246,6 +336,8 @@ bool canBeMinedByShovel(std::uint16_t type);
 bool canBeMinedByAxe(std::uint16_t type);
 
 
+BlockType fromAnyShapeToNormalBlockType(BlockType b);
+
 struct BlockCollider
 {
 	glm::vec3 size = {1,1,1};
@@ -257,54 +349,107 @@ struct Block
 {
 	BlockType typeAndFlags = 0;
 	unsigned char lightLevel = 0; //first 4 bytes represent the sun level and bottom 4 bytes the other lights level
-	unsigned char notUsed = 0;
+	unsigned char colorAndOtherFlags = 0;
+
+	unsigned short getColor()
+	{
+		return colorAndOtherFlags & 0b0001'1111;
+	}
+
+	void setColor(unsigned short color)
+	{
+		if (color >= 32) { color = 31; }
+		colorAndOtherFlags &= 0b1110'0000;
+		colorAndOtherFlags |= color;
+	}
+
+	bool normalize();
 
 	BlockType getType()
 	{
-		return typeAndFlags & 0b11'1111'1111;
+		return typeAndFlags & 0b0111'1111'1111;
+	}
+
+	unsigned char getFlagsBytes()
+	{
+		return typeAndFlags >> 11;
 	}
 
 	//used for stairs, or furnace type blocks
 	unsigned char getRotationFor365RotationTypeBlocks()
 	{
-		return (typeAndFlags >> 10) & 0b0000'11;
+		return (typeAndFlags >> 11) & 0b0001'1;
+	}
+
+	//true for standing on wall!
+	unsigned char getRotatedOrStandingForWallOrStandingBlocks()
+	{
+		return (typeAndFlags >> 13) & 0b001;
+	}
+
+	void setRotatedOrStandingForWallOrStandingBlocks(bool isOnWall)
+	{
+		unsigned int is = isOnWall;
+		is <<= 13;
+		typeAndFlags &= 0b1101'1111'1111'1111;
+		typeAndFlags |= is;
 	}
 
 	void setRotationFor365RotationTypeBlocks(int rotation)
 	{
-		rotation <<= 10;
-		typeAndFlags &= 0b1111'0011'1111'1111;
+		rotation <<= 11;
+		typeAndFlags &= 0b1110'0111'1111'1111;
 		typeAndFlags |= rotation;
 	}
 
 	void setTopPartForSlabs(int topPart)
 	{
 		topPart = (bool)topPart;
-		topPart <<= 10;
-		typeAndFlags &= 0b1111'1011'1111'1111;
+		topPart <<= 11;
+		typeAndFlags &= 0b1111'0111'1111'1111;
 		typeAndFlags |= topPart;
 	}
 
 	bool getTopPartForSlabs()
 	{
-		return (typeAndFlags >> 10) & 0b0000'01;
+		return (typeAndFlags >> 11) & 0b0000'1;
+	}
+
+	bool isDecorativeFurniture()
+	{
+		auto type = getType();
+		return ::isDecorativeFurniture(getType());
 	}
 
 	//used for stairs, or furnace type blocks
 	bool hasRotationFor365RotationTypeBlocks()
 	{
-		return isStairsMesh() || isWallMesh();
+		return isStairsMesh() || isWallMesh() || isDecorativeFurniture() || isWallMountedBlock()
+			|| isWallMountedOrStangingBlock();
 	}
 
 	void setType(BlockType t)
 	{
-		typeAndFlags = t & 0b11'1111'1111;
+		typeAndFlags = t & 0b0111'1111'1111;
 	}
 
 	bool air() { return getType() == 0; }
+
+	bool canBePainted() { return getType() != 0; }
+
 	bool isOpaque()
 	{
 		return ::isOpaque(getType());
+	}
+
+	bool isWallMountedBlock()
+	{
+		return ::isWallMountedBlock(getType());
+	}
+
+	bool isWallMountedOrStangingBlock()
+	{
+		return::isWallMountedOrStangingBlock(getType());
 	}
 
 	bool hasSecondCollider()
@@ -315,6 +460,14 @@ struct Block
 	BlockCollider getCollider()
 	{
 
+		if (isChairMesh())
+		{
+			BlockCollider b{};
+			b.size.y = 0.5;
+			b.size.x = 0.8;
+			b.size.z = 0.8;
+			return b;
+		}else
 		if (isStairsMesh())
 		{
 			BlockCollider b{};
@@ -436,6 +589,16 @@ struct Block
 		return ::isStairsMesh(getType());
 	}
 
+	bool isChairMesh()
+	{
+		return ::isChairMesh(getType());
+	}
+
+	bool isGobletMesh()
+	{
+		return ::isGobletMesh(getType());
+	}
+
 	bool isWallMesh()
 	{
 		return ::isWallMesh(getType());
@@ -481,6 +644,11 @@ struct Block
 		lightLevel |= l;
 	}
 
+	bool canWallMountedBlocksBePlacedOn()
+	{
+		return ::canWallMountedBlocksBePlacedOn(getType());
+	}
+
 	bool isBlockMesh()
 	{
 		return ::isBlockMesh(getType());
@@ -500,6 +668,7 @@ struct Block
 	{
 		return isColidable() && !isAnyLeaves(getType())
 			&& !isWallMesh() && !(isSlabMesh() && getTopPartForSlabs())
+			&& !isDecorativeFurniture()
 			;
 	}
 

@@ -7,6 +7,8 @@
 #include <platformTools.h>
 
 //loadallblocks
+//load all textures
+//loadalltextures
 
 const char *texturesNames[] = {
 	
@@ -72,23 +74,23 @@ const char *texturesNames[] = {
 	"crafting_table_top",	//60
 	"gravel-dirt-bloc",		//61
 	"birch_planks",		//62
-	"black_stained_glass",	//63
-	"gray_stained_glass",	//64
-	"light_gray_stained_glass",	//65
-	"white_stained_glass",	//66
-	"brown_stained_glass",	//67
-	"red_stained_glass",	//68
-	"orange_stained_glass",	//69
-	"yellow_stained_glass",	//70
-	"lime_stained_glass",	//71
-	"green_stained_glass",	//72
-	"cyan_stained_glass",	//73
-	"light_blue_stained_glass",	//74
+	"pathBlock",	//63
+	"stoneAndLog",	//64
+	"terracotta",	//65
+	"notClearGlass",		//66
+	"vitral1",				//67
+	"vitral2",				//68
+	"notClearGlass2",		//69
+	"glass2",				//70
+	"strippedOakLog",	//71
+	"strippedBirchLog",	//72
+	"strippedSpruceLog",	//73
+	"sprucePlank",			//74
 	"blue_stained_glass",	//75
 	"purple_stained_glass",	//76
 	"magenta_stained_glass",//77
 	"pink_stained_glass",	//78
-	"white_wool",			//79
+	"cloth",				//79
 	"tiledStoneBrick",		//80
 	"structureBase",		//81
 	"snowGrass",			//82
@@ -110,6 +112,40 @@ const char *texturesNames[] = {
 	"blueBricks",			//98
 	"bricksVariation",		//99
 	"blueBricksVariation",	//100
+	"models/mug",			//101
+	"models/goblet",		//102
+	"models/wineBottle",	//103
+	
+	"models/skull", //104
+	"models/skullTorch", //105
+	"models/books", //106
+	"models/candleHolder", //107
+	"models/pot", //108
+	"models/jar", //109
+	"models/globe", //110
+	"models/keg", //111
+	"models/workBench", //112
+	"models/cookingPot", //113
+	"models/chickenCaracas", //114
+	"models/ladder", //115
+	"models/vines", //116
+	
+	"dungeonStone", //117
+	"dungeonCobbleStone",	//118,
+	"dungeonSmoothStone",	//119,
+	"dungeonPillar",		//120,
+	"dungeonPillarTop",		//121,
+	"dungeonBrickSkull",	//122
+	"dungeonGlass",			//123 dungeonGlass
+	"models/woddenChest",	//124 woodenChest
+	"models/goblinChest",	//125 
+	"models/copperChest",	//126 
+	"models/ironChest",		//127 
+	"models/silverChest",	//128 
+	"models/goldChest",		//129 
+	"crate",				//130
+	"models/crate",			//131
+	"models/torch",			//132
 
 };
 
@@ -270,12 +306,12 @@ uint16_t blocksLookupTable[] = {
 	56, 56, 56, 56, 56, 56,
 
 	//torch
-	57, 57, 57, 57, 57, 57,
+	132, 132, 132, 132, 132, 132,
 
 	//crafting table
 	58, 58, 60, 7, 59, 59, 
 
-	//white_wool
+	//coarse dirt
 	61,61,61,61,61,61,
 
 	//birch_planks
@@ -283,23 +319,24 @@ uint16_t blocksLookupTable[] = {
 
 	//glasses
 	63, 63, 63, 63, 63, 63,
-	64, 64, 64, 64, 64, 64,
+	64, 64, 5, 8, 64, 64,
+	64, 64, 5, 8, 64, 64,
+	64, 64, 5, 8, 64, 64,
+	65, 65, 65, 65, 65, 65, //terracotta
 	65, 65, 65, 65, 65, 65,
-	66, 66, 66, 66, 66, 66,
+	65, 65, 65, 65, 65, 65,
+	65, 65, 65, 65, 65, 65,
+
+	66, 66, 66, 66, 66, 66, //vitrals and not clear glass
 	67, 67, 67, 67, 67, 67,
 	68, 68, 68, 68, 68, 68,
-	69, 69, 69, 69, 69, 69,
-	70, 70, 70, 70, 70, 70,
-	71, 71, 71, 71, 71, 71,
-	72, 72, 72, 72, 72, 72,
-	73, 73, 73, 73, 73, 73,
-	74, 74, 74, 74, 74, 74,
-	75, 75, 75, 75, 75, 75,
+	69, 69, 69, 69, 69, 69, //glass very not clear
+	70, 70, 70, 70, 70, 70, //glass 2
 	76, 76, 76, 76, 76, 76,
 	77, 77, 77, 77, 77, 77,
 	78, 78, 78, 78, 78, 78,
 
-	//whool
+	//cloth
 	79,79,79,79,79,79,
 
 	//wooden_stairs
@@ -436,7 +473,137 @@ uint16_t blocksLookupTable[] = {
 	98, 98, 98, 98, 98, 98,
 
 
+	//oak chair
+	7,7,7,7,7,7,
+	//oak log chair
+	5, 5, 5, 5, 5, 5,
 
+	//mug
+	101, 101, 101, 101, 101, 101,
+
+	//goblet
+	102, 102, 102, 102, 102, 102,
+
+	//wine bottle
+	103, 103, 103, 103, 103, 103,
+
+	//"models/skull", //104
+	104, 104, 104, 104, 104, 104,
+	
+	//"models/skullTorch", //105
+	105, 105, 105, 105, 105, 105,
+
+	//"models/books", //106
+	106, 106, 106, 106, 106, 106,
+
+	//"models/candleHolder", //107
+	107, 107, 107, 107, 107, 107,
+
+	//"models/pot", //108
+	108, 108, 108, 108, 108, 108,
+
+	//"models/jar", //109
+	109, 109, 109, 109, 109, 109,
+
+	110, 110, 110, 110, 110, 110, //globe
+	111, 111, 111, 111, 111, 111, //keg
+	112, 112, 112, 112, 112, 112, //work bench
+
+	7, 7, 7, 7, 7, 7, //oak table
+	5, 5, 5, 5, 5, 5, //oak log table
+	112, 112, 112, 112, 112, 112, //work items
+
+
+	//oak chair big
+	7, 7, 7, 7, 7, 7,
+	//oak log chair big
+	5, 5, 5, 5, 5, 5,
+
+	113, 113, 113, 113, 113, 113, //cooking pot
+	114, 114, 114, 114, 114, 114,
+	114, 114, 114, 114, 114, 114,
+	114, 114, 114, 114, 114, 114,
+
+	115, 115, 115, 115, 115, 115, //ladder oak
+	116, 116, 116, 116, 116, 116, //vines
+
+	//cloth stairs walls slabs
+	79, 79, 79, 79, 79, 79,
+	79, 79, 79, 79, 79, 79,
+	79, 79, 79, 79, 79, 79,
+
+	//birch wall slapb stairs
+	62, 62, 62, 62, 62, 62,
+	62, 62, 62, 62, 62, 62,
+	62, 62, 62, 62, 62, 62,
+
+	//oak log slab
+	5, 5, 6, 6, 5, 5,
+
+	//small rock
+	8, 8, 8, 8, 8, 8,
+
+	//stripped log
+	71, 71, 6, 6, 71, 71, //oak
+	72, 72, 25, 25, 72, 72, //birch
+
+	73, 73, 53, 53, 73, 73,	//"strippedSpruceLog",	//73
+
+	74, 74, 74, 74, 74, 74, //spruce plank + stair slab wall variations
+	74, 74, 74, 74, 74, 74,
+	74, 74, 74, 74, 74, 74,
+	74, 74, 74, 74, 74, 74,
+
+
+		//"dungeonStone", //117
+		//"dungeonCobbleStone" //118,
+		//"dungeonSmoothStone" //119,
+		//"dungeonPillar" //120,
+		//"dungeonPillarTop" //121,
+		//"dungeonBrickSkull",//122
+
+	//dungeonStone,
+	117, 117, 117, 117, 117, 117,
+	117, 117, 117, 117, 117, 117,
+	117, 117, 117, 117, 117, 117,
+	117, 117, 117, 117, 117, 117,
+
+	//dungeonCobblestone
+	118, 118, 118, 118, 118, 118,
+	118, 118, 118, 118, 118, 118,
+	118, 118, 118, 118, 118, 118,
+	118, 118, 118, 118, 118, 118,
+	
+
+	//dungeonSmoothStone,
+	119, 119, 119, 119, 119, 119,
+	119, 119, 119, 119, 119, 119,
+	119, 119, 119, 119, 119, 119,
+	119, 119, 119, 119, 119, 119,
+
+
+	//dungeonPillar,
+	120,120,121,121,120,120,
+
+	//dungeonSkullBlock,
+	122,122,122,122,122,122,
+	
+	//chiseledDungeonBrick
+	121, 121, 121, 121, 121, 121,
+
+	//dungeon glass
+	123, 123, 123, 123, 123, 123,
+
+	//wodden chest
+	124, 124, 124, 124, 124, 124,
+	125, 125, 125, 125, 125, 125, //goblin chest
+	126, 126, 126, 126, 126, 126, //copper
+	127, 127, 127, 127, 127, 127, //iron
+	128, 128, 128, 128, 128, 128, //silver
+	129, 129, 129, 129, 129, 129, //gold
+
+	130, 130, 130, 130, 130, 130, //crate
+	131,131,131,131,131,131, //crate small
 
 };
 
@@ -666,16 +833,19 @@ void createFromFileDataWithAplhaFixing(gl2d::Texture &t, const unsigned char *im
 }
 
 bool loadFromFileWithAplhaFixing(gl2d::Texture &t, 
-	const char *fileName, bool pixelated, bool useMipMaps, bool isNormalMap)
+	const char *fileName, bool pixelated, bool useMipMaps, bool isNormalMap, bool reportErrors)
 {
 	std::ifstream file(fileName, std::ios::binary);
 
 	if (!file.is_open())
 	{
-		char c[300] = {0};
-		strcat(c, "error openning: ");
-		strcat(c + strlen(c), fileName);
-		reportError(c);
+		if (reportErrors)
+		{
+			char c[300] = {0};
+			strcat(c, "error openning: ");
+			strcat(c + strlen(c), fileName);
+			reportError(c);
+		};
 		return 0;
 	}
 
@@ -714,10 +884,25 @@ glm::vec3 hsv2rgb(glm::vec3 c)
 	return c.z * glm::mix(glm::vec3(K.x, K.x, K.x), glm::clamp(p - glm::vec3(K.x, K.x, K.x), 0.0f, 1.0f), c.y);
 }
 
+void noErrorFunc(const char *msg, void *userDefinedData)
+{
+}
+
 //textureloader texture loader
 void BlocksLoader::loadAllTextures(std::string filePath)
 {
-	
+	gl2d::errorFuncType *errorFunc = nullptr;
+	auto noErrors = [&]() 
+	{
+		errorFunc = gl2d::setErrorFuncCallback(noErrorFunc);
+	};
+
+	auto enableErrors = [&]()
+	{
+		gl2d::setErrorFuncCallback(errorFunc);
+	};
+
+
 	if (!backgroundTexture.id)
 	{
 		std::string path;
@@ -823,6 +1008,27 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 
 			gpuIds.push_back(handle);
 		}
+
+		//default paralax
+		{
+			unsigned char data[4] = {};
+
+			{
+				int i = 0;
+				data[i++] = 0;
+				data[i++] = 0;
+				data[i++] = 0;
+				data[i++] = 255;
+			}
+
+			gl2d::Texture t;
+			t.createFromBuffer((char *)data, 1, 1, true, false);
+			texturesIds.push_back(t.id);
+			auto handle = glGetTextureHandleARB(t.id);
+			glMakeTextureHandleResidentARB(handle);
+
+			gpuIds.push_back(handle);
+		}
 	};
 
 	std::string path;
@@ -840,23 +1046,28 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 		handle = glGetTextureHandleARB(texturesIds[blockIndex + 2]);
 		glMakeTextureHandleResidentARB(handle);
 		gpuIds[blockIndex + 2] = handle;
+
+		handle = glGetTextureHandleARB(texturesIds[blockIndex + 3]);
+		glMakeTextureHandleResidentARB(handle);
+		gpuIds[blockIndex + 3] = handle;
 	};
 
-	auto addTexture = [&](int index, std::string path, bool isNormalMap = 0) -> bool
+	auto addTexture = [&](int index, std::string path, bool isNormalMap = 0, bool errors = 1) -> bool
 	{
 
 		gl2d::Texture t;
 		
-		if (!loadFromFileWithAplhaFixing(t, path.c_str(), true, false, isNormalMap)) { return 0; }
+		if (!loadFromFileWithAplhaFixing(t, path.c_str(), true, false, isNormalMap, errors)) { return 0; }
 		t.bind();
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.f);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 4.f);
 
 		glGenerateMipmap(GL_TEXTURE_2D);
-
 
 
 		auto handle = glGetTextureHandleARB(t.id);
@@ -880,7 +1091,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 	for (int i = 0; i < count; i++)
 	{
 		
-		if (!appendMode && texturesIds[(i+1)*3] != texturesIds[0])
+		if (!appendMode && texturesIds[(i+1)*4] != texturesIds[0])
 		{
 			continue;
 		}
@@ -889,7 +1100,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 		path += texturesNames[i];
 
 		
-		if (!texturesNames[i][0] || !addTexture((i+1) * 3, path + ".png"))
+		if (!texturesNames[i][0] || !addTexture((i+1) * 4, path + ".png"))
 		{
 			if (appendMode)
 			{
@@ -908,7 +1119,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 		}
 		else
 		{
-			if (!texturesNames[i][0] || !addTexture((i+1) * 3 + 1, path + "_n.png", true))
+			if (!texturesNames[i][0] || !addTexture((i+1) * 4 + 1, path + "_n.png", true, 0))
 			{
 				if (appendMode)
 				{
@@ -918,12 +1129,21 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 			}
 		}
 
-		if (!texturesNames[i][0] || !addTexture((i+1) * 3 + 2, path + "_s.png"))
+		if (!texturesNames[i][0] || !addTexture((i+1) * 4 + 2, path + "_s.png", false, 0))
 		{
 			if (appendMode)
 			{
 				texturesIds.push_back(texturesIds[2]);
 				gpuIds.push_back(gpuIds[2]);
+			}
+		}
+
+		if (!texturesNames[i][0] || !addTexture((i + 1) * 4 + 3, path + "_b.png", false, 0))
+		{
+			if (appendMode)
+			{
+				texturesIds.push_back(texturesIds[3]);
+				gpuIds.push_back(gpuIds[3]);
 			}
 		}
 
@@ -935,6 +1155,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 		texturesIds[desinationIndex + 0] = texturesIds[sourceIndex + 0];
 		texturesIds[desinationIndex + 1] = texturesIds[sourceIndex + 1];
 		texturesIds[desinationIndex + 2] = texturesIds[sourceIndex + 2];
+		texturesIds[desinationIndex + 3] = texturesIds[sourceIndex + 3];
 	};
 
 	auto applyModifications = [&](std::vector<unsigned char> &data,
@@ -973,6 +1194,8 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 		t.bind();
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.f);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 4.f);
 		glGenerateMipmap(GL_TEXTURE_2D);
@@ -1034,14 +1257,14 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 	//generate normal maps
 	{
 
-		for (int i = 1; i < texturesIds.size() / 3; i++)
+		for (int i = 1; i < texturesIds.size() / 4; i++)
 		{
 
-			if (texturesIds[i * 3 + 1] == texturesIds[1] && texturesIds[i*3] != texturesIds[0])
+			if (texturesIds[i * 4 + 1] == texturesIds[1] && texturesIds[i*4] != texturesIds[0])
 			{
 				//no normal map!, but the block is loaded
 
-				gl2d::Texture t; t.id = texturesIds[i*3 + 0];
+				gl2d::Texture t; t.id = texturesIds[i * 4 + 0];
 				glm::ivec2 size = {};
 				auto data = t.readTextureData(0, &size);
 
@@ -1116,24 +1339,115 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 					}
 
 				t.createFromBuffer((char *)data.data(), size.x * magnify, size.y * magnify, true, true);
-				texturesIds[i * 3 + 1] = t.id;
+				texturesIds[i * 4 + 1] = t.id;
 
 				t.bind();
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 				//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 6.f);
 				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 4.f);
 				glGenerateMipmap(GL_TEXTURE_2D);
 
-				auto handle = glGetTextureHandleARB(texturesIds[i*3 + 1]);
+				auto handle = glGetTextureHandleARB(texturesIds[i*4 + 1]);
 				glMakeTextureHandleResidentARB(handle);
-				gpuIds[i * 3 + 1] = handle;
+				gpuIds[i * 4 + 1] = handle;
 
 			}
 
 		}
 
 	}
+
+	//generate bump maps for paralax
+	{
+
+		for (int i = 1; i < texturesIds.size() / 4; i++)
+		{
+
+			if (texturesIds[i * 4 + 3] == texturesIds[3] && texturesIds[i * 4] != texturesIds[0])
+			{
+				//no bump map!, but the block is loaded
+
+				gl2d::Texture t; t.id = texturesIds[i * 4 + 0];
+				glm::ivec2 size = {};
+				auto data = t.readTextureData(0, &size);
+
+				std::vector<float> dataGrayScale;
+				dataGrayScale.resize(data.size() / 4);
+
+				for (int i = 0; i < data.size() / 4; i++)
+				{
+					glm::vec3 color = {};
+					color.r = data[i * 4 + 0] / 255.f;
+					color.g = data[i * 4 + 1] / 255.f;
+					color.b = data[i * 4 + 2] / 255.f;
+					float luminosity = glm::dot(color, {0.21,0.71,0.07});
+					dataGrayScale[i] = luminosity;
+
+					//if transparent
+					//if (data[i * 4 + 3] <= 2)
+					//{
+					//	dataGrayScale[i] = 0;
+					//}
+				}
+
+				constexpr int magnify = 1;
+				data.clear();
+				data.resize(dataGrayScale.size() * 4 * magnify * magnify);
+
+				float pixelSize = (1.f / size.x) * 3.8f;
+				//the last constant represents the height of the normal map result, hence the strength, smaller constant stronger normal
+
+				auto sample = [&](float u, float v)
+				{
+					int i = u * size.x;
+					int j = v * size.y;
+
+					return dataGrayScale[i + j * size.x];
+				};
+
+				for (int y = 0; y < size.y * magnify; y++)
+					for (int x = 0; x < size.x * magnify; x++)
+					{
+						glm::vec3 color = {};
+
+						float val = sample((float)x / (size.x * magnify), (float)y / (size.y * magnify));
+						int finalVal = glm::clamp(int(val * 255), 0, 255);
+						
+
+						int i = x + y * (size.x * magnify);
+
+						data[i * 4 + 0] = finalVal;
+						data[i * 4 + 1] = finalVal;
+						data[i * 4 + 2] = finalVal;
+						data[i * 4 + 3] = 255;
+
+					}
+
+				t.createFromBuffer((char *)data.data(), size.x * magnify, size.y * magnify, true, true);
+				texturesIds[i * 4 + 3] = t.id;
+
+				t.bind();
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+				//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 6.f);
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 4.f);
+				glGenerateMipmap(GL_TEXTURE_2D);
+
+				auto handle = glGetTextureHandleARB(texturesIds[i * 4 + 3]);
+				glMakeTextureHandleResidentARB(handle);
+				gpuIds[i * 4 + 3] = handle;
+
+			}
+
+		}
+
+	}
+
 
 
 	auto loadFromFileAndAddPadding = [&](gl2d::Texture &t, const char *path)
@@ -1410,21 +1724,26 @@ void BlocksLoader::clearAllTextures()
 	
 	spawnEggOverlay.cleanup();
 
-	for (int i = 1; i < texturesIds.size()/3; i++)
+	for (int i = 1; i < texturesIds.size()/4; i++)
 	{
-		if (texturesIds[i * 3] != texturesIds[0])
+		if (texturesIds[i * 4] != texturesIds[0])
 		{
-			glDeleteTextures(1, &texturesIds[i * 3]);
+			glDeleteTextures(1, &texturesIds[i * 4]);
 		}
 
-		if (texturesIds[i * 3 + 1] != texturesIds[1])
+		if (texturesIds[i * 4 + 1] != texturesIds[1])
 		{
-			glDeleteTextures(1, &texturesIds[i * 3 +1]);
+			glDeleteTextures(1, &texturesIds[i * 4 +1]);
 		}
 
-		if (texturesIds[i * 3 + 2] != texturesIds[2])
+		if (texturesIds[i * 4 + 2] != texturesIds[2])
 		{
-			glDeleteTextures(1, &texturesIds[i * 3 + 2]);
+			glDeleteTextures(1, &texturesIds[i * 4 + 2]);
+		}
+
+		if (texturesIds[i * 4 + 3] != texturesIds[3])
+		{
+			glDeleteTextures(1, &texturesIds[i * 4 + 3]);
 		}
 	}
 
@@ -1436,7 +1755,13 @@ void BlocksLoader::clearAllTextures()
 		}
 	}
 
-	glDeleteTextures(3, &texturesIds[0]);
+	for (auto &t : blockUiTextures)
+	{
+		t.cleanup();
+	}
+	blockUiTextures.clear();
+
+	glDeleteTextures(4, &texturesIds[0]);
 	texturesIds.clear();
 	gpuIds.clear();
 
@@ -1837,7 +2162,7 @@ void BlocksLoader::loadAllItemsGeometry()
 
 uint16_t getGpuIdIndexForBlock(short type, int face)
 {
-	return blocksLookupTable[type * 6 + face] * 3;
+	return blocksLookupTable[type * 6 + face] * 4;
 }
 
 

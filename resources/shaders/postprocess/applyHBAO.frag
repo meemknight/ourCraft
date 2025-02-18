@@ -6,29 +6,17 @@ noperspective in vec2 v_texCoords;
 
 uniform sampler2D u_hbao;
 uniform sampler2D u_currentViewSpace;
-
-
-uniform ShadingSettings
-{
-	vec3 u_waterColor;
-	int u_tonemapper;
-	vec3 u_underWaterColor;
-	float u_fogDistance;
-	float u_exposure;
-	float u_underwaterDarkenStrength;
-	float u_underwaterDarkenDistance;
-	float u_fogGradientUnderWater;
-	int u_shaders;
-};
+uniform float u_viewDistance;
 
 const float fogGradient = 16;
 
 float computeFog(float dist)
 {
-
+	//return 1;
 	//float rez = exp(-pow(dist*(1/(u_fogDistance-32)), fogGradient));
-	float rez = exp(-pow(dist*(1/(min(12, u_fogDistance))), fogGradient));
+	float rez = exp(-pow(dist*(1/(u_viewDistance)), fogGradient));
 	if(rez > 0.9){return 1;};
+	rez = pow(rez, 16);
 	return rez;
 }
 

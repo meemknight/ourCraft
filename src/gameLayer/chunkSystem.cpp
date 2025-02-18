@@ -42,8 +42,8 @@ void ChunkSystem::changeRenderDistance(int squareDistance, bool notifyServer)
 {
 
 	if (squareSize == squareDistance) { return; }
-	if (squareDistance > 100) { return; }
-	if (squareDistance < 1) { return; }
+	if (squareDistance > 102) { squareDistance = 102; }
+	if (squareDistance < 2) { squareDistance = 2; }
 
 	cleanup(notifyServer);
 
@@ -89,6 +89,30 @@ struct ChunkTask
 static std::vector<ChunkTask> chunkVectorCopyNoNullsOnlyToBake;
 static glm::ivec2 minPosGlobal;
 static glm::ivec3 playerBlockPositionGlobal;
+static Renderer *mainRenderer;
+
+int determineLodLevel(glm::ivec2 playerChunkPosition, glm::ivec2 chunkPosition)
+{
+
+	auto lodStrength = getShadingSettings().lodStrength;
+	auto viewDist = getShadingSettings().viewDistance;
+	if (lodStrength == 0) { return 0; }
+
+	glm::vec2 diff = playerChunkPosition - chunkPosition;
+	float distSquared = glm::dot(diff, diff);
+
+	float distPercent[6] = {0, 0.8f, 0.7f, 0.6f, 0.5f, 0.5f};
+	int distMax[6] = {99, 30, 24, 16, 12, 8};
+
+	int firstLod = distPercent[lodStrength] * viewDist;
+	firstLod = std::min(firstLod, (int)distMax[lodStrength]);
+
+	if (distSquared > firstLod * firstLod)
+	{
+		return 1;
+	}
+	else return 0;
+}
 
 void bakeLogicForOneThread(ThreadPool &threadPool,
 	std::vector<TransparentCandidate> &transparentCandidates,
@@ -102,6 +126,8 @@ void bakeLogicForOneThread(ThreadPool &threadPool,
 	int currentBakedTransparency = 0;
 	int maxToBake = 1; //this frame //max to bake
 	int maxToBakeTransparency = 1; //this frame //max to bake
+
+	glm::ivec2 playerChunkPos = glm::ivec2(fromBlockPosToChunkPos(playerBlockPositionGlobal));
 
 	while (true)
 	{
@@ -137,7 +163,7 @@ void bakeLogicForOneThread(ThreadPool &threadPool,
 							front, back, frontLeft, frontRight, backLeft, backRight,
 							playerBlockPositionGlobal,
 							transparentCandidates, opaqueGeometry, transparentGeometry, lights
-						);
+							, determineLodLevel(playerChunkPos, {chunk->data.x, chunk->data.z}), *mainRenderer);
 						if (b) { currentBakedTransparency++; baked = true; }
 					}
 					else
@@ -148,7 +174,8 @@ void bakeLogicForOneThread(ThreadPool &threadPool,
 							front, back, frontLeft, frontRight, backLeft, backRight,
 							playerBlockPositionGlobal,
 							transparentCandidates, opaqueGeometry, transparentGeometry, lights,
-							*updateGeometry, *updateTransparency);
+							*updateGeometry, *updateTransparency
+							, determineLodLevel(playerChunkPos, {chunk->data.x, chunk->data.z}), *mainRenderer);
 
 						//only one chunk for worker threads!
 						if (b)
@@ -173,7 +200,8 @@ void bakeLogicForOneThread(ThreadPool &threadPool,
 					{
 						auto b = chunk->bake(left, right, front, back, frontLeft, frontRight, backLeft, backRight,
 							playerBlockPositionGlobal,
-							transparentCandidates, opaqueGeometry, transparentGeometry, lights);
+							transparentCandidates, opaqueGeometry, transparentGeometry, lights
+							, determineLodLevel(playerChunkPos, {chunk->data.x, chunk->data.z}), *mainRenderer);
 						if (b) { currentBaked++; baked = true; }
 					}
 					else
@@ -183,7 +211,8 @@ void bakeLogicForOneThread(ThreadPool &threadPool,
 							front, back, frontLeft, frontRight, backLeft, backRight,
 							playerBlockPositionGlobal,
 							transparentCandidates, opaqueGeometry, transparentGeometry, lights,
-							*updateGeometry, *updateTransparency);
+							*updateGeometry, *updateTransparency
+							, determineLodLevel(playerChunkPos, {chunk->data.x, chunk->data.z}), *mainRenderer);
 
 						//only one chunk for worker threads!
 						if (b)
@@ -284,7 +313,7 @@ void bakeWorkerThread(int index, ThreadPool &threadPool)
 
 //x and z are the block positions of the player
 void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQueue &undoQueue
-	, LightSystem &lightSystem, InteractionData &interaction, ThreadPool &threadPool)
+	, LightSystem &lightSystem, InteractionData &interaction, ThreadPool &threadPool, Renderer &renderer)
 {
 
 
@@ -521,6 +550,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	chunkVectorCopyNoNullsOnlyToBake.reserve(loadedChunks.size());
 	::minPosGlobal = minPos;
 	::playerBlockPositionGlobal = playerBlockPosition;
+	::mainRenderer = &renderer;
 
 	bool close = 0;
 	int totalChunks = 0;
@@ -529,10 +559,11 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 	{
 		if (c)
 		{
+			int lod = determineLodLevel(playerChunkPos, {c->data.x, c->data.z});
 			totalChunks++;
 			if (c->isDontDrawYet() == true) { c->setDontDrawYet(false); continue; }
 
-			if (c->forShureShouldntbake()) { continue; }
+			if (c->forShureShouldntbake(lod)) { continue; }
 
 			int x = c->data.x - minPos.x;
 			int z = c->data.z - minPos.y;
@@ -548,7 +579,7 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 			auto backRight = getChunkSafeFromMatrixSpace(x + 1, z - 1);
 
 			if (c->shouldBake(left, right, front, back, frontLeft, frontRight,
-				backLeft, backRight))
+				backLeft, backRight, lod))
 			{
 				ChunkTask t;
 				t.chunk = c;
@@ -597,9 +628,9 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 		);
 
 	//we only keep a few chunks as tasks
-	if (chunkVectorCopyNoNullsOnlyToBake.size() > 10 + threadPool.currentCounter)
+	if (chunkVectorCopyNoNullsOnlyToBake.size() > 100 + threadPool.currentCounter)
 	{
-		chunkVectorCopyNoNullsOnlyToBake.resize(10 + threadPool.currentCounter);
+		chunkVectorCopyNoNullsOnlyToBake.resize(100 + threadPool.currentCounter);
 	}
 	
 	threadPool.taskTaken.resize(chunkVectorCopyNoNullsOnlyToBake.size());
@@ -1232,7 +1263,7 @@ void ChunkSystem::dropChunkAtIndexSafe(int index, BigGpuBuffer *gpuBuffer)
 bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot,
 	UndoQueue &undoQueue, glm::dvec3 playerPos,
 	LightSystem &lightSystem, PlayerInventory &inventory, bool decreaseCounter, 
-	int faceDirection, int topPartForSlabs)
+	int faceDirection, int topPartForSlabs, bool isOnWall)
 {
 	Chunk *chunk = 0;
 	auto b = getBlockSafeAndChunk(pos.x, pos.y, pos.z, chunk);
@@ -1263,6 +1294,11 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot
 			else if (block.isSlabMesh())
 			{
 				block.setTopPartForSlabs(topPartForSlabs);
+			}
+
+			if (block.isWallMountedOrStangingBlock())
+			{
+				block.setRotatedOrStandingForWallOrStandingBlocks(isOnWall);
 			}
 
 			Packet_ClientPlaceBlock packetData = {};
@@ -1329,7 +1365,7 @@ bool ChunkSystem::placeBlockByClientForce(glm::ivec3 pos, Block block,
 
 		Packet_ClientPlaceBlockForce packetData = {};
 		packetData.blockPos = pos;
-		packetData.blockType = block.getType();
+		packetData.block = block;
 		packetData.eventId = undoQue.currentEventId;
 
 		sendPacket(getConnectionData().server,
@@ -1410,6 +1446,7 @@ bool ChunkSystem::breakBlockByClient(glm::ivec3 pos, UndoQueue &undoQueue,
 			}
 
 			b->setType(BlockTypes::air);
+			b->colorAndOtherFlags = 0;
 
 			setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
 

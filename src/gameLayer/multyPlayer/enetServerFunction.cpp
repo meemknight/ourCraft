@@ -235,17 +235,7 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 
 		c.playerData.inventory.items[0] = itemCreator(ItemTypes::trainingSpear);
 		c.playerData.inventory.items[1] = itemCreator(ItemTypes::apple, 20);
-		c.playerData.inventory.items[10] = Item(BlockTypes::yellow_stained_glass);
-		c.playerData.inventory.items[11] = Item(BlockTypes::lime_stained_glass);
-		c.playerData.inventory.items[12] = Item(BlockTypes::green_stained_glass);
-		c.playerData.inventory.items[13] = Item(BlockTypes::whiteWool, 64);
-		c.playerData.inventory.items[17] = Item(BlockTypes::cyan_stained_glass);
-		c.playerData.inventory.items[18] = Item(BlockTypes::light_blue_stained_glass);
-		c.playerData.inventory.items[19] = Item(BlockTypes::blue_stained_glass);
-		c.playerData.inventory.items[14] = Item(BlockTypes::purple_stained_glass);
-		c.playerData.inventory.items[15] = Item(BlockTypes::magenta_stained_glass);
-		c.playerData.inventory.items[16] = Item(BlockTypes::pink_stained_glass);
-		c.playerData.inventory.items[20] = Item(BlockTypes::jungle_planks, 64);
+		c.playerData.inventory.items[13] = Item(BlockTypes::clothBlock, 64);
 		c.playerData.inventory.items[21] = Item(BlockTypes::woodLog, 64);
 		c.playerData.inventory.items[22] = Item(BlockTypes::palm_log, 64);
 		c.playerData.inventory.items[23] = Item(BlockTypes::glowstone, 64);
@@ -452,7 +442,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			Packet_ClientPlaceBlockForce packetData = *(Packet_ClientPlaceBlockForce *)data;
 			serverTask.t.taskType = Task::placeBlockForce;
 			serverTask.t.pos = packetData.blockPos;
-			serverTask.t.blockType = packetData.blockType;
+			serverTask.t.block = packetData.block;
 			serverTask.t.eventId = packetData.eventId;
 
 			serverTasks.push_back(serverTask);
@@ -659,6 +649,7 @@ void recieveData(ENetHost *server, ENetEvent &event, std::vector<ServerTask> &se
 			serverTask.t.itemType = packetData->itemType;
 			serverTask.t.pos = packetData->position;
 			serverTask.t.revisionNumber = packetData->revisionNumber;
+			serverTask.t.eventId = packetData->eventId;
 			serverTasks.push_back(serverTask);
 
 			break;
@@ -975,42 +966,68 @@ void enetServerFunction(std::string path)
 	ENetEvent event = {};
 
 
+	//todo will remove later!
 	std::ifstream seedFile(std::string(RESOURCES_PATH "worlds/") + path + "/seed.txt");
 	if (!seedFile.is_open())
 	{
-		exit(0);
-	}
-
-	int seed = 0;
-	seedFile >> seed;
-	if (!seedFile)
-	{
-		exit(0);
-	}
-	seedFile.close();
-
-	std::ifstream f(RESOURCES_PATH "gameData/worldGenerator/default.mgenerator");
-	if (f.is_open())
-	{
-		std::stringstream buffer;
-		buffer << f.rdbuf();
-		WorldGeneratorSettings s;
-		if (s.loadSettings(buffer.str().c_str()))
+		std::ifstream worldSettingsFile(std::string(RESOURCES_PATH "worlds/") + path + "/worldGenSettings.wgenerator");
+		
+		if (worldSettingsFile.is_open())
 		{
-			s.seed = seed;
-			wg.applySettings(s);
+			std::stringstream buffer;
+			buffer << worldSettingsFile.rdbuf();
+			WorldGeneratorSettings s;
+			if (s.loadSettings(buffer.str().c_str()))
+			{
+				s.sanitize();
+				wg.applySettings(s);
+			}
+			else
+			{
+				std::cout << "NOISE LOADING ERROR";
+				exit(0); //todo error out
+			}
+			worldSettingsFile.close();
 		}
-		else
-		{
-			std::cout << "NOISE LOADING ERROR";
-			exit(0); //todo error out
-		}
-		f.close();
+
 	}
 	else
 	{
-		exit(0); //todo error out
+		int seed = 0;
+		seedFile >> seed;
+		if (!seedFile)
+		{
+			exit(0);
+		}
+		seedFile.close();
+
+
+		std::ifstream f(RESOURCES_PATH "gameData/worldGenerator/default.wgenerator");
+		if (f.is_open())
+		{
+			std::stringstream buffer;
+			buffer << f.rdbuf();
+			WorldGeneratorSettings s;
+			if (s.loadSettings(buffer.str().c_str()))
+			{
+				s.seed = seed;
+				wg.applySettings(s);
+			}
+			else
+			{
+				std::cout << "NOISE LOADING ERROR";
+				exit(0); //todo error out
+			}
+			f.close();
+		}
+		else
+		{
+			exit(0); //todo error out
+		}
 	}
+
+
+
 
 
 	auto start = std::chrono::high_resolution_clock::now();

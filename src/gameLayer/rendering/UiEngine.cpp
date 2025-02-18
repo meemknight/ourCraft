@@ -276,12 +276,17 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 		if (item.type < BlocksCount)
 		{
 
-			gl2d::Texture t;
-			t.id = blocksLoader.texturesIds[getGpuIdIndexForBlock(item.type, 0)];
+			gl2d::Texture t = blocksLoader.blockUiTextures[item.type];
+			float size = 0.2;
+
+			if (t.id == 0)
+			{
+				t.id = blocksLoader.texturesIds[getGpuIdIndexForBlock(item.type, 0)];
+				size = 0.25;
+			}
 
 			//we have a block
-			renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, in + 0.20), t, {color, color, color, 1});
-
+			renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, in + size), t, {color, color, color, 1});
 
 		}
 		else
@@ -1230,7 +1235,7 @@ bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
 		menuRenderer.sliderUint8("Size Y", &baseBlock.sizeY, 0, 120, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
 		menuRenderer.sliderUint8("Size Z", &baseBlock.sizeZ, 0, 120, Colors_White, buttonTexture, Colors_Gray, buttonTexture, Colors_White);
 
-		bool rez = menuRenderer.Button("Update Settongs", Colors_Gray, buttonTexture);
+		bool rez = menuRenderer.Button("Update Settings", Colors_Gray, buttonTexture);
 		
 		bool save = menuRenderer.Button("Save Structure To Disk", Colors_Gray, buttonTexture);
 		bool load = menuRenderer.Button("Load Structure from disk", Colors_Gray, buttonTexture);
@@ -1245,10 +1250,12 @@ bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
 		filePath += baseBlock.name;
 		filePath += ".structure";
 
+		//todo make the save button red if changes!!!
+
 		if (save)
 		{
 			std::vector<unsigned char> data;
-			data.resize(sizeof(StructureData) + sizeof(BlockType) * size.x * size.y * size.z);
+			data.resize(sizeof(StructureData) + 2 * sizeof(BlockType) * size.x * size.y * size.z);
 		
 			StructureData *s = (StructureData *)data.data();
 		
@@ -1265,11 +1272,12 @@ bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
 		
 						if (rez)
 						{
-							s->unsafeGet(x, y, z) = rez->getType();
+							s->unsafeGet(x, y, z) = *rez;
 						}
 						else
 						{
-							s->unsafeGet(x, y, z) = BlockTypes::air;
+							s->unsafeGet(x, y, z).setType(BlockTypes::air);
+							s->unsafeGet(x, y, z).colorAndOtherFlags = 0;
 						}
 		
 					}
@@ -1294,9 +1302,9 @@ bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
 						{
 							glm::ivec3 pos = startPos + glm::ivec3(x, y, z);
 		
-							Block block;
-							block.setType(s->unsafeGet(x, y, z));
-		
+							Block block = s->unsafeGet(x, y, z);
+							block.lightLevel = 0;
+
 							//todo implement the bulk version...
 							chunkSystem.placeBlockByClientForce(pos,
 								block, undoQueue,lightSystem);
@@ -1308,8 +1316,7 @@ bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
 		}
 
 
-
-		return rez;
+		return rez || load || save;
 	}
 
 	return false;

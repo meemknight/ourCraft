@@ -306,10 +306,17 @@ void main()
 			// get sample depth
 			//float sampleDepth = vec3( u_view * vec4(texture(u_gPosition, offset.xy).xyz,1) ).z;
 			float sampleDepth = texture(u_gPosition, offset.xy).z; // get depth value of kernel sample
-			
+			float finalBias = bias;
+
+			//if(sampleDepth < 10)
+			//{
+			//	finalBias += sampleDepth * 0.1;
+			//}
+
 			// range check & accumulate
 			float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPos.z - sampleDepth));
-			occlusion += (sampleDepth >= samplePos.z + bias ? 1.0 : 0.0) * rangeCheck;
+			//rangeCheck = 1;
+			occlusion += (sampleDepth >= samplePos.z + finalBias ? 1.0 : 0.0) * rangeCheck;
 		}
 
 	}  
@@ -317,7 +324,9 @@ void main()
 	occlusion = (occlusion / kernelSize);
 
 	occlusion = pow(occlusion,0.9);
+	//occlusion = pow(occlusion,0.2);
 	//occlusion = sigmoid(occlusion, -0.5, 10);
+
 
 	fragColor.rgba = vec4(occlusion,0,0,1);
 

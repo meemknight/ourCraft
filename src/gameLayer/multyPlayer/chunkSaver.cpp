@@ -5,6 +5,8 @@
 #include <multyPlayer/serverChunkStorer.h>
 #include <cmath>
 #include <safeSave.h>
+#include <multyPlayer/packet.h>
+#include <sstream>
 
 constexpr unsigned int CHUNK_PACK = 4;
 
@@ -56,8 +58,62 @@ void saveAllEntitiesIntoOpenFile(std::ofstream &f, EntityData &entityData)
 
 }
 
+//todo if the loading chunk fails we should not load the entities there and rather delete those files if exist!!
 bool WorldSaver::loadChunk(ChunkData &c)
 {
+
+	//new implementation!
+
+	{
+		const glm::ivec2 pos = {c.x, c.z};
+
+		std::string fileName;
+		fileName.reserve(256);
+		fileName = savePath;
+		fileName += "/c";
+		fileName += std::to_string(pos.x);
+		fileName += '_';
+		fileName += std::to_string(pos.y);
+		fileName += ".chz";
+
+		std::vector<unsigned char> data;
+		if (sfs::readEntireFile(data, fileName.c_str()) != sfs::noError) 
+		{
+			//return 0; 
+		}
+		else
+		{
+			size_t newSize = 0;
+			char *newData = (char*)unCompressData((char*)data.data(), data.size(), newSize);
+
+			if (newData)
+			{
+				defer([&] { delete[] newData; });
+
+				static_assert(sizeof(c.blocks) == chunkDataSize);
+				if (newSize != chunkDataSize)
+				{
+					std::cout << "Server error chunk file corupted size!\n";
+					return 0;
+				}
+
+				memcpy(c.blocks, newData, newSize);
+				c.clearLightLevels();
+				return 1;
+			}
+			else
+			{
+				std::cout << "Server error chunk file corupted!\n";
+				return 0;
+			}
+
+		}
+
+
+	}
+
+
+	//old implemenetation
 
 	glm::ivec2 filePos = determineFilePos({c.x, c.z});
 
@@ -70,98 +126,86 @@ bool WorldSaver::loadChunk(ChunkData &c)
 	fileName += std::to_string(filePos.y);
 	fileName += ".chunks";
 
-	if (!std::filesystem::exists(fileName))
-	{
-		return 0;
-	}
-
-	//if it does exist, we first read it's content
-	std::fstream f(fileName, std::ios::in | std::ios::out | std::ios::binary);
-
-	f.seekg(0);
-
-	char count = 0;
-	f.read(&count, 1);
-
-	if (count > CHUNK_PACK * CHUNK_PACK)
-	{
-		//todo error report.
-		std::cout << "Corrupted file size bigger";
-		return 0;
-	}
-
-	glm::ivec2 positions[CHUNK_PACK * CHUNK_PACK];
-
-	f.read((char *)positions, count * sizeof(glm::ivec2));
-
-	//then we see if that chunk was already loaded
-	int loadIndex = -1;
-	for (int i = 0; i < count; i++)
-	{
-		if (positions[i] == glm::ivec2{c.x, c.z})
-		{
-			loadIndex = i;
-			break;
-		}
-	}
-
-	if (loadIndex == -1)
-	{
-		//chunk file exists but there is no such chunk generate new chunk...
-		f.close();
-		return 0;
-	}
-
-	loadChunkAtIndex(f, c, loadIndex);
-	c.clearLightLevels();
-
-
-	f.close();
-	return 1;
-}
-
-void WorldSaver::saveChunk(ChunkData &c)
-{
-
-	const glm::ivec2 pos = {c.x, c.z};
-	const glm::ivec2 filePos = determineFilePos(pos);
-
-	std::string fileName;
-	fileName.reserve(256);
-	fileName = savePath;
-	fileName += "/c";
-	fileName += std::to_string(filePos.x);
-	fileName += '_';
-	fileName += std::to_string(filePos.y);
-	fileName += ".chunks";
+	//bool zippedVersion = 0;
 
 	if (!std::filesystem::exists(fileName))
 	{
-		//if the chunk doesn't exist, we create it
-		std::fstream f;
-		f.open(fileName, std::ios::out | std::ios::binary);
+		//try the zipped version first
 
-		unsigned char fillData = 0xFF;
+		//fileName += 'z';
 
-		char count = 1;
+		return 0;
+		//if (!std::filesystem::exists(fileName))
+		//{
+		//	return 0;
+		//}
+		//else
+		//{
+		//	zippedVersion = true;
+		//}
 
-		f.write(&count, 1);
-
-		for (int i = 0; i < CHUNK_PACK * CHUNK_PACK * sizeof(glm::ivec2); i++)
-		{
-			f.write((char *)&fillData, sizeof(fillData));
-		}
-
-		f.seekp(1);
-		//f.seekg(1);
-
-		f.write((char *)&pos, sizeof(pos));
-
-		appendChunkDataInFile(f, c);
-
-		f.close();
 	}
-	else
+
+	//if (zippedVersion)
+	//{
+	//	std::vector<unsigned char> data;
+	//	if (sfs::readEntireFile(data, fileName.c_str()) != sfs::noError) { return 0; };
+	//
+	//	size_t newDataSize = 0;
+	//	char* newData = (char*)unCompressData((char*)data.data(), data.size(), newDataSize);
+	//	defer([&] { std::cout << "Deffer works!!\n"; delete[] newData; }); //todo check that defer works!
+	//
+	//	if (!newData)
+	//	{
+	//		//todo report error here
+	//		std::cout << "Server Error: corupted chunk!!!!\n";
+	//		return 0;
+	//	}
+	//
+	//	std::string_view view(newData, newDataSize);
+	//	std::basic_stringbuf<char> buf(view.data(), std::ios::in);
+	//	std::istream f(&buf);
+	//
+	//	f.seekg(0);
+	//
+	//	char count = 0;
+	//	f.read(&count, 1);
+	//
+	//	if (count > CHUNK_PACK * CHUNK_PACK)
+	//	{
+	//		//todo error report.
+	//		std::cout << "Corrupted file size bigger";
+	//		return 0;
+	//	}
+	//
+	//	glm::ivec2 positions[CHUNK_PACK * CHUNK_PACK];
+	//
+	//	f.read((char *)positions, count * sizeof(glm::ivec2));
+	//
+	//	//then we see if that chunk was already loaded
+	//	int loadIndex = -1;
+	//	for (int i = 0; i < count; i++)
+	//	{
+	//		if (positions[i] == glm::ivec2{c.x, c.z})
+	//		{
+	//			loadIndex = i;
+	//			break;
+	//		}
+	//	}
+	//
+	//	if (loadIndex == -1)
+	//	{
+	//		//chunk file exists but there is no such chunk generate new chunk...
+	//		return 0;
+	//	}
+	//
+	//	loadChunkAtIndex(f, c, loadIndex);
+	//	c.clearLightLevels();
+	//
+	//
+	//	return 1;
+	//}
+	//else
 	{
 		//if it does exist, we first read it's content
 		std::fstream f(fileName, std::ios::in | std::ios::out | std::ios::binary);
@@ -174,8 +218,8 @@ void WorldSaver::saveChunk(ChunkData &c)
 		if (count > CHUNK_PACK * CHUNK_PACK)
 		{
 			//todo error report.
-			//todo probably try to recreate this chunk?
-			std::cout << "corrupted file bigger while saving\n";
+			std::cout << "Corrupted file size bigger";
+			return 0;
 		}
 
 		glm::ivec2 positions[CHUNK_PACK * CHUNK_PACK];
@@ -186,36 +230,166 @@ void WorldSaver::saveChunk(ChunkData &c)
 		int loadIndex = -1;
 		for (int i = 0; i < count; i++)
 		{
-			if (positions[i] == pos)
+			if (positions[i] == glm::ivec2{c.x, c.z})
 			{
 				loadIndex = i;
 				break;
 			}
 		}
 
-		if (loadIndex != -1)
+		if (loadIndex == -1)
 		{
-			saveChunkDataInFile(f, c, loadIndex);
+			//chunk file exists but there is no such chunk generate new chunk...
+			f.close();
+			return 0;
+		}
+
+		loadChunkAtIndex(f, c, loadIndex);
+		c.clearLightLevels();
+
+
+		f.close();
+		return 1;
+	}
+
+
+}
+
+void WorldSaver::saveChunk(ChunkData &c)
+{
+
+	const glm::ivec2 pos = {c.x, c.z};
+
+	std::string fileName;
+	fileName.reserve(256);
+	fileName = savePath;
+	fileName += "/c";
+	fileName += std::to_string(pos.x);
+	fileName += '_';
+	fileName += std::to_string(pos.y);
+	fileName += ".chz";
+
+	std::fstream f;
+	f.open(fileName, std::ios::out | std::ios::binary | std::ios::trunc);
+	if (!f.is_open())
+	{
+		std::cout << "Server error saving chunk cant open file!!!\n";
+	}
+	defer([&] { f.close(); });
+
+	size_t newSize = 0;
+	char *newData = (char*)compressDataForce((char*)&c.blocks, sizeof(c.blocks), newSize);
+	static_assert(sizeof(c.blocks) == chunkDataSize);
+
+	if (!newData)
+	{
+		std::cout << "Server error saving chunk, cant compress data!!!\n";
+		return;
+	}
+	defer([&] { delete[] newData; });
+
+	f.write(newData, newSize);
+
+	return;
+
+
+	{
+		//old implementation
+		const glm::ivec2 pos = {c.x, c.z};
+		const glm::ivec2 filePos = determineFilePos(pos);
+
+		std::string fileName;
+		fileName.reserve(256);
+		fileName = savePath;
+		fileName += "/c";
+		fileName += std::to_string(filePos.x);
+		fileName += '_';
+		fileName += std::to_string(filePos.y);
+		fileName += ".chunks";
+
+
+		if (!std::filesystem::exists(fileName))
+		{
+			//if the chunk doesn't exist, we create it
+			std::fstream f;
+			f.open(fileName, std::ios::out | std::ios::binary);
+
+			unsigned char fillData = 0xFF;
+
+			char count = 1;
+
+			f.write(&count, 1);
+
+			for (int i = 0; i < CHUNK_PACK * CHUNK_PACK * sizeof(glm::ivec2); i++)
+			{
+				f.write((char *)&fillData, sizeof(fillData));
+			}
+
+			f.seekp(1);
+			//f.seekg(1);
+
+			f.write((char *)&pos, sizeof(pos));
+
+			appendChunkDataInFile(f, c);
+
+			f.close();
 		}
 		else
 		{
-			//we add the new chunk
-			f.seekp(0, std::ios_base::beg);
-			count++;
-			f.write(&count, 1);
+			//if it does exist, we first read it's content
+			std::fstream f(fileName, std::ios::in | std::ios::out | std::ios::binary);
 
-			f.seekp(1 + (count - 1) * sizeof(glm::ivec2), std::ios_base::beg);
-			f.write((char *)&pos, sizeof(glm::ivec2));
+			f.seekg(0);
 
-			appendChunkDataInFile(f, c);
+			char count = 0;
+			f.read(&count, 1);
+
+			if (count > CHUNK_PACK * CHUNK_PACK)
+			{
+				//todo error report.
+				//todo probably try to recreate this chunk?
+				std::cout << "corrupted file bigger while saving\n";
+			}
+
+			glm::ivec2 positions[CHUNK_PACK * CHUNK_PACK];
+
+			f.read((char *)positions, count * sizeof(glm::ivec2));
+
+			//then we see if that chunk was already loaded
+			int loadIndex = -1;
+			for (int i = 0; i < count; i++)
+			{
+				if (positions[i] == pos)
+				{
+					loadIndex = i;
+					break;
+				}
+			}
+
+			if (loadIndex != -1)
+			{
+				saveChunkDataInFile(f, c, loadIndex);
+			}
+			else
+			{
+				//we add the new chunk
+				f.seekp(0, std::ios_base::beg);
+				count++;
+				f.write(&count, 1);
+
+				f.seekp(1 + (count - 1) * sizeof(glm::ivec2), std::ios_base::beg);
+				f.write((char *)&pos, sizeof(glm::ivec2));
+
+				appendChunkDataInFile(f, c);
+			}
+
+			//const char* test = "12345678";
+			//f.write(test, 8);
+			//f.write((char*)&pos.x, sizeof(pos.x));
+			f.close();
 		}
 
-		//const char* test = "12345678";
-		//f.write(test, 8);
-		//f.write((char*)&pos.x, sizeof(pos.x));
-		f.close();
-	}
-
+	};
 }
 
 void WorldSaver::saveChunkBlockData(SavedChunk &c)
@@ -382,7 +556,20 @@ void WorldSaver::saveEntitiesForChunk(SavedChunk &c)
 	if (f.is_open())
 	{
 		saveAllEntitiesIntoOpenFile(f, c.entityData);
-		f.close();
+
+		if (f.tellp() == 0)
+		{
+			f.close();
+			f = {};
+
+			std::error_code e;
+			std::filesystem::remove(fileName, e);
+		}
+		else
+		{
+			f.close();
+		}
+
 	}
 
 
@@ -428,6 +615,12 @@ void WorldSaver::appendChunkDataInFile(std::fstream &f, ChunkData &c)
 }
 
 void WorldSaver::loadChunkAtIndex(std::fstream &f, ChunkData &c, int index)
+{
+	f.seekg(headDist + (chunkDataSize * index), std::ios_base::beg);
+	f.read((char *)c.blocks, chunkDataSize);
+}
+
+void WorldSaver::loadChunkAtIndex(std::istream &f, ChunkData &c, int index)
 {
 	f.seekg(headDist + (chunkDataSize * index), std::ios_base::beg);
 	f.read((char *)c.blocks, chunkDataSize);
