@@ -2158,7 +2158,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 								{
 									blockBakeLogicForGrassMesh(x, y, z, &opaqueGeometry, b);
 								}
-								else if (b.getType() == BlockTypes::torch)
+								else if (b.getType() == BlockTypes::torch || b.getType() == BlockTypes::torchWood)
 								{
 									if (!b.getRotatedOrStandingForWallOrStandingBlocks())
 									{
@@ -2169,6 +2169,19 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 										bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::torchHolderModel], b);
 									}
 									
+									//blockBakeLogicForTorches(x, y, z, &opaqueGeometry, b);
+								}
+								else if (b.getType() == BlockTypes::lamp)
+								{
+									if (!b.getRotatedOrStandingForWallOrStandingBlocks())
+									{
+										bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::lampModel], b);
+									}
+									else
+									{
+										bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::lampHolderModel], b);
+									}
+
 									//blockBakeLogicForTorches(x, y, z, &opaqueGeometry, b);
 								}
 								else

@@ -11,6 +11,8 @@ bool isBlockMesh(BlockType type)
 {
 	return !isCrossMesh(type)
 		&& !(type == torch)
+		&& !(type == torchWood)
+		&& !(type == lamp)
 		&& !isStairsMesh(type)
 		&& !isWallMesh(type)
 		&& !isSlabMesh(type)
@@ -133,7 +135,11 @@ bool isWallMountedBlock(BlockType type)
 
 bool isWallMountedOrStangingBlock(BlockType type)
 {
-	return type == BlockTypes::torch;
+	return type == BlockTypes::torch
+		|| type == BlockTypes::torchWood
+		|| type == BlockTypes::lamp
+		;
+
 }
 
 bool isOpaque(BlockType type)
@@ -141,6 +147,8 @@ bool isOpaque(BlockType type)
 	return
 		type != BlockTypes::air
 		&& type != BlockTypes::torch
+		&& type != BlockTypes::torchWood
+		&& type != BlockTypes::lamp
 		&& !isWallMountedBlock(type)
 		&& !isDecorativeFurniture(type)
 		//&& type != BlockTypes::glowstone
@@ -189,6 +197,8 @@ bool isLightEmitor(BlockType type)
 {
 	return type == BlockTypes::glowstone
 		|| type == BlockTypes::torch
+		|| type == BlockTypes::torchWood
+		|| type == BlockTypes::lamp
 		|| type == BlockTypes::candleHolder
 		|| type == BlockTypes::skullTorch;
 }
@@ -217,6 +227,8 @@ bool isColidable(BlockType type)
 		type != BlockTypes::cactus_bud &&
 		type != BlockTypes::dead_bush &&
 		type != BlockTypes::torch &&
+		type != BlockTypes::lamp &&
+		type != BlockTypes::torchWood &&
 		type != BlockTypes::mug &&
 		type != BlockTypes::jar &&
 		type != BlockTypes::globe &&
@@ -500,7 +512,7 @@ bool isAnyGlass(BlockType type)
 
 bool isTriviallyBreakable(BlockType type)
 {
-	return type == torch;
+	return type == torch || type == torchWood || type == lamp;
 }
 
 bool isAnyUnbreakable(BlockType type)

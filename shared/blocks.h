@@ -228,6 +228,9 @@ enum BlockTypes : unsigned short
 	crate,
 	smallCrate,
 
+	lamp,
+	torchWood,
+
 	BlocksCount
 };
 

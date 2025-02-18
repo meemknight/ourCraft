@@ -621,6 +621,8 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		"crate.glb",
 		"torch.glb",
 		"torchHolder.glb",
+		"lamp.glb",
+		"lampWall.glb",
 	};
 
 	static_assert(sizeof(blockModelsNames) / sizeof(blockModelsNames[0]) == BLOCK_MODELS_COUNT);

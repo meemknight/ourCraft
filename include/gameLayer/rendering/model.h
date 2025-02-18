@@ -103,6 +103,8 @@ struct ModelsManager
 		crateModel,
 		torchModel,
 		torchHolderModel,
+		lampModel,
+		lampHolderModel,
 
 		BLOCK_MODELS_COUNT
 

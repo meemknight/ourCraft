@@ -146,6 +146,7 @@ const char *texturesNames[] = {
 	"crate",				//130
 	"models/crate",			//131
 	"models/torch",			//132
+	"models/lamp",			//133
 
 };
 
@@ -604,6 +605,11 @@ uint16_t blocksLookupTable[] = {
 
 	130, 130, 130, 130, 130, 130, //crate
 	131,131,131,131,131,131, //crate small
+
+	133, 133, 133, 133, 133, 133, //lamp
+
+	//torch wood todo
+	132, 132, 132, 132, 132, 132,
 
 };
 
