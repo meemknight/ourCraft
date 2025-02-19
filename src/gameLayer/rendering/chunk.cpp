@@ -1468,7 +1468,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 				(y == CHUNK_HEIGHT - 1) ||
 				(sides[0] != nullptr && !(sides[0])->isOpaque()) ||
 				(sides[1] != nullptr && !(sides[1])->isOpaque()) ||
-				(sides[2] != nullptr && !(sides[2])->isOpaque()) ||
+				(sides[3] != nullptr && !(sides[3])->isOpaque()) ||
 				(sides[4] != nullptr && !(sides[4])->isOpaque()) ||
 				(sides[5] != nullptr && !(sides[5])->isOpaque())
 				)
