@@ -8,7 +8,7 @@ struct BlocksLoader
 	std::vector<GLuint> texturesIds;
 
 	//load all blocks loadallblocks
-	void loadAllTextures(std::string path);
+	void loadAllTextures(std::string path, bool reportErrors);
 	void setupAllColors();
 	void clearAllTextures();
 

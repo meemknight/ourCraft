@@ -245,6 +245,7 @@ const int INVENTORY_TAB_CRAFTING = 1;
 const int INVENTORY_TAB_BLOCKS = 2;
 const int INVENTORY_TAB_ITEMS = 3;
 
+//render ui renderui
 void UiENgine::renderGameUI(float deltaTime, int w, int h
 	, int itemSelected, PlayerInventory &inventory, BlocksLoader &blocksLoader,
 	bool insideInventory, int &cursorItemIndex,
@@ -266,7 +267,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 	cursorItemIndex = -1;
 	glm::vec4 cursorItemIndexBox = {};
-	Item *currentItem = {};
+	std::optional<Item> currentItemHovered = {};
 	auto mousePos = platform::getRelMousePosition();
 
 	auto renderOneItem = [&](glm::vec4 itemBox, Item & item, float in = 0, float color = 1)
@@ -377,7 +378,8 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						if (glui::aabb(box, mousePos))
 						{
 							cursorItemIndex = i;
-							currentItem = inventory.getItemFromIndex(cursorItemIndex);
+							auto rez = inventory.getItemFromIndex(cursorItemIndex);
+							if (rez)currentItemHovered = *rez;
 							cursorItemIndexBox = box;
 							renderer2d.renderRectangle(shrinkRectanglePercentage(box, (2.f / 22.f)),
 								{0.7,0.7,0.7,0.5});
@@ -407,13 +409,37 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 							if (glui::aabb(itemBox, mousePos))
 							{
 								selectedItem = i;
-								currentItem = inventory.getItemFromIndex(cursorItemIndex);
+								auto rez = inventory.getItemFromIndex(cursorItemIndex);
+								if (rez)currentItemHovered = *rez;
 								cursorItemIndexBox = itemBox;
 								renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, (2.f / 22.f)),
 									{0.7,0.7,0.7,0.5});
 							}
 						}
 					};
+
+					auto checkInsideCreativeMenuBlocks = [&](int start, glm::vec4 box)
+					{
+						auto itemBox = box;
+						itemBox.z = itemBox.w;
+						for (int i = start; i < start + 9; i++)
+						{
+							if (!isItem(i) && !isBlock(i)) { continue; }
+
+							itemBox.x = box.x + itemBox.z * (i - start);
+							if (glui::aabb(itemBox, mousePos))
+							{
+								selectedItem = getBlockReorder(i);
+								currentItemHovered = Item(selectedItem);
+								//auto rez = inventory.getItemFromIndex(cursorItemIndex);
+								//if (rez)currentItem = *rez;
+								cursorItemIndexBox = itemBox;
+								renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, (2.f / 22.f)),
+									{0.7,0.7,0.7,0.5});
+							}
+						}
+					};
+
 
 					auto checkInsideOneCell = [&](int start, glm::vec4 box)
 					{
@@ -423,7 +449,8 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						if (glui::aabb(itemBox, mousePos))
 						{
 							cursorItemIndex = start;
-							currentItem = inventory.getItemFromIndex(cursorItemIndex);
+							auto rez = inventory.getItemFromIndex(cursorItemIndex);
+							if (rez)currentItemHovered = *rez;
 							cursorItemIndexBox = itemBox;
 							renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, (2.f / 22.f)),
 								{0.7,0.7,0.7,0.5});
@@ -598,7 +625,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 									{
 										//cursorItemIndex = i;
 										cursorItemIndexBox = itemBox;
-										currentItem = &allItems[start + 1].recepie.result;
+										currentItemHovered = allItems[start + 1].recepie.result;
 										renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, -0.3 + (0.3f / 4.f)),
 											{0.7,0.7,0.7,0.5});
 
@@ -659,7 +686,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 											{
 												//cursorItemIndex = i;
 												cursorItemIndexBox = box;
-												currentItem = &recepie.recepie.items[i];
+												currentItemHovered = recepie.recepie.items[i];
 											}
 
 											renderOneItem(box, recepie.recepie.items[i]);
@@ -747,7 +774,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 								if (i < BlocksCount)
 								{
 									itemBox.x = box.x + itemBox.z * (i - start);
-									renderOneItem(itemBox, Item(i), 4.f / 22.f);
+									renderOneItem(itemBox, Item(getBlockReorder(i)), 4.f / 22.f);
 								}
 							}
 						};
@@ -756,7 +783,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						{
 							renderer2d.renderRectangle(inventoryBars, itemsBarInventory);
 
-							checkInsideCreativeMenu((6 - i) * 9 + 1 + currentStartRow * 9, inventoryBars);
+							checkInsideCreativeMenuBlocks((6 - i) * 9 + 1 + currentStartRow * 9, inventoryBars);
 							renderCreativeBlocks((6 - i) * 9 + 1 + currentStartRow * 9, inventoryBars);
 
 							inventoryBars.y -= inventoryBars.w;
@@ -903,10 +930,10 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 				renderOneItem(itemPos, inventory.heldInMouse, 0);
 
 				//render hovered item stuff
-				if (currentItem && !inventory.heldInMouse.type)
+				if (currentItemHovered && !inventory.heldInMouse.type)
 				{
 
-					auto item = currentItem;
+					auto item = currentItemHovered;
 
 					if (item->type)
 					{

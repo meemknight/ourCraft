@@ -6,6 +6,85 @@
 
 constexpr static float BLOCK_DEFAULT_FRICTION = 8.f;
 
+int blockReorder[] = {
+	// Basic Blocks
+	air, grassBlock, dirt, stone, stone_stairts, stone_slabs, stone_wall, cobblestone, cobbleStone_stairts, cobbleStone_slabs, cobbleStone_wall, gravel, water,
+
+	// Ores & Resources
+	coal_ore, iron_ore, gold_ore, diamond_ore, gold_block,
+
+	// Natural Blocks
+	sand, sand_stone, sandStone_stairts, sandStone_slabs, sandStone_wall, hardSandStone, hardSandStone_stairs, hardSandStone_slabs, hardSandStone_wall,
+	clay, clayBricks, redClay, redClayBricks, mud,
+	snow_dirt, snow_block, ice, glowstone, pathBlock, coarseDirt,
+	limeStone, smoothLimeStone, smoothLimeStone_stairs, smoothLimeStone_slabs, smoothLimeStone_wall,
+
+	// Wood & Planks
+	woodLog, jungle_log, birch_log, palm_log, spruce_log, strippedOakLog, strippedBirchLog, strippedSpruceLog,
+	wooden_plank, wooden_stairs, wooden_slab, wooden_wall, jungle_planks,
+	birchPlanks, birchPlanks_stairs, birchPlanks_slabs, birchPlanks_wall,
+	sprucePlank, sprucePlank_stairs, sprucePlank_slabs, sprucePlank_wall,
+
+	// Leaves & Plants
+	leaves, jungle_leaves, birch_leaves, palm_leaves, spruce_leaves, spruce_leaves_red,
+	grass, rose, dead_bush, cactus_bud, vines, yellowGrass,
+
+	// Decorative & Special Blocks
+	bricks, bricks_stairs, bricks_slabs, bricks_wall, blueBricks, blueBricks_stairs, blueBricks_slabs, blueBricks_wall,
+	mossyCobblestone,mossyCobblestone_stairs,mossyCobblestone_slab,mossyCobblestone_wall,
+	stoneBrick, stoneBricks_stairts, stoneBricks_slabs, stoneBricks_wall,
+	tiledStoneBricks, tiledStoneBricks_stairs, tiledStoneBricks_slab, tiledStoneBricks_wall,
+	clothBlock, cloth_stairs, cloth_slabs, cloth_wall,
+	terracotta, terracotta_stairs, terracotta_slabs, terracotta_wall,
+	volcanicHotRock, volcanicRock, volcanicRock_stairts, volcanicRock_slabs, volcanicRock_wall,
+	smoothStone, smoothStone_stairts, smoothStone_slabs, smoothStone_wall,
+	marbleBlock, marbleBlock_stairs, marbleBlock_slabs, marbleBlock_wall, smoothMarbleBlock,
+	marbleBricks, marbleBricks_stairs, marbleBricks_slabs, marbleBricks_wall, marblePillar,
+
+	// Walls
+	plankedWallBlock, plankedWallBlock_stairs, plankedWallBlock_wall,
+
+	// Glass Variants
+	glass, glassNotClear, glassNotClear2, glass2,
+	vitral1, vitral2,
+	 magenta_stained_glass, pink_stained_glass,
+
+	// Structures & Functional Blocks
+	craftingTable, workBench, cookingPot, ladder,
+
+	// Furniture
+	bookShelf,
+	oakChair, oakBigChair, oakLogChair, oakLogBigChair, oakTable, oakLogTable,
+	woddenChest, goblinChest, copperChest, ironChest, silverChest, goldChest,
+	crate, smallCrate,
+
+	// Decorations
+	torch, torchWood, skull, skullTorch, book, candleHolder, pot, jar, globe, keg, wineBottle, goblet, mug,
+	lamp,
+
+	// Miscellaneous
+	smallRock, oakLogSlab, logWall, craftingItems, chickenCaracas, chickenWingsPlate, fishPlate,
+	cobweb,
+
+	// Dungeon Stuff
+	dungeonBricks, dungeonBricks_stairts, dungeonBricks_slabs, dungeonBricks_wall,
+	dungeonStone, dungeonStone_stairs, dungeonStone_slabs, dungeonStone_wall,
+	dungeonCobblestone, dungeonCobblestone_stairs, dungeonCobblestone_slabs, dungeonCobblestone_wall,
+	dungeonSmoothStone, dungeonSmoothStone_stairs, dungeonSmoothStone_slabs, dungeonSmoothStone_wall,
+	dungeonPillar, dungeonSkullBlock, chiseledDungeonBrick, dungeonGlass,
+
+	// Creative
+	testBlock, control1, control2, control3, control4, structureBase,
+};
+
+
+
+int getBlockReorder(int index)
+{
+	static_assert(sizeof(blockReorder) / sizeof(blockReorder[0]) == BlocksCount);
+
+	return blockReorder[index];
+}
 
 bool isBlockMesh(BlockType type)
 {
@@ -50,6 +129,7 @@ bool isStairsMesh(BlockType type)
 		type == sprucePlank_stairs ||
 		type == marbleBlock_stairs ||
 		type == marbleBricks_stairs ||
+		type == mossyCobblestone_stairs ||
 		type == cloth_stairs ||
 		type == terracotta_stairs ||
 		type == plankedWallBlock_stairs ||
@@ -82,6 +162,7 @@ bool isSlabMesh(BlockType type)
 		type == marbleBricks_slabs ||
 		type == blueBricks_slabs ||
 		type == oakLogSlab ||
+		type == mossyCobblestone_slab ||
 		type == tiledStoneBricks_slab;
 }
 
@@ -110,13 +191,14 @@ bool isWallMesh(BlockType type)
 		type == marbleBricks_wall ||
 		type == logWall ||
 		type == blueBricks_wall ||
+		type == mossyCobblestone_wall ||
 		type == tiledStoneBricks_wall;
 
 }
 
 bool isCrossMesh(BlockType type)
 {
-	return isGrassMesh(type);
+	return isGrassMesh(type) || type == cobweb;
 }
 
 bool isControlBlock(BlockType type)
@@ -149,6 +231,7 @@ bool isOpaque(BlockType type)
 		&& type != BlockTypes::torch
 		&& type != BlockTypes::torchWood
 		&& type != BlockTypes::lamp
+		&& type != BlockTypes::cobweb
 		&& !isWallMountedBlock(type)
 		&& !isDecorativeFurniture(type)
 		//&& type != BlockTypes::glowstone
@@ -232,7 +315,7 @@ bool isColidable(BlockType type)
 		type != BlockTypes::torch &&
 		type != BlockTypes::lamp &&
 		type != BlockTypes::torchWood &&
-		type != BlockTypes::mug &&
+		type != BlockTypes::water &&
 		type != BlockTypes::jar &&
 		type != BlockTypes::globe &&
 		type != BlockTypes::skull &&
@@ -247,7 +330,8 @@ bool isColidable(BlockType type)
 		type != BlockTypes::ladder &&
 		type != BlockTypes::vines &&
 		type != BlockTypes::smallRock &&
-		type != BlockTypes::water;
+		type != BlockTypes::cobweb &&
+		type != BlockTypes::mug;
 }
 
 bool isWoodPlank(BlockType type)
@@ -423,6 +507,10 @@ bool isAnyStone(BlockType type)
 		type == smoothLimeStone_wall ||
 		type == smoothLimeStone_stairs ||
 		type == smoothLimeStone_slabs ||
+		type == mossyCobblestone ||
+		type == mossyCobblestone_stairs ||
+		type == mossyCobblestone_slab ||
+		type == mossyCobblestone_wall ||
 
 		type == marbleBlock ||
 		type == marbleBlock_stairs ||
@@ -542,7 +630,7 @@ bool isAnyLeaves(BlockType type)
 
 bool isStainedGlass(BlockType type)
 {
-	return type >= purple_stained_glass && type <= pink_stained_glass;
+	return type >= magenta_stained_glass && type <= pink_stained_glass;
 }
 
 unsigned char isInteractable(BlockType type)
@@ -667,6 +755,11 @@ float getBlockBaseMineDuration(BlockType type)
 	if (isTriviallyBreakable(type))
 	{
 		return 0.2;
+	}
+
+	if (type == cobweb)
+	{
+		return 1;
 	}
 
 	if (type == structureBase)
@@ -861,6 +954,10 @@ BlockType fromAnyShapeToNormalBlockType(BlockType b)
 	case dungeonSmoothStone_stairs:
 	case dungeonSmoothStone_slabs:
 	case dungeonSmoothStone_wall: { return dungeonSmoothStone; }
+
+	case mossyCobblestone_stairs:
+	case mossyCobblestone_slab:
+	case mossyCobblestone_wall: { return mossyCobblestone; }
 
 	};
 

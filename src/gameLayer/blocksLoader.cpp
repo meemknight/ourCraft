@@ -86,8 +86,8 @@ const char *texturesNames[] = {
 	"strippedBirchLog",	//72
 	"strippedSpruceLog",	//73
 	"sprucePlank",			//74
-	"blue_stained_glass",	//75
-	"purple_stained_glass",	//76
+	"mossyCobblestone",		//75
+	"cobweb",				//76
 	"magenta_stained_glass",//77
 	"pink_stained_glass",	//78
 	"cloth",				//79
@@ -334,7 +334,7 @@ uint16_t blocksLookupTable[] = {
 	68, 68, 68, 68, 68, 68,
 	69, 69, 69, 69, 69, 69, //glass very not clear
 	70, 70, 70, 70, 70, 70, //glass 2
-	76, 76, 76, 76, 76, 76,
+	75, 75, 75, 75, 75, 75, //mossy cobblestone
 	77, 77, 77, 77, 77, 77,
 	78, 78, 78, 78, 78, 78,
 
@@ -612,6 +612,11 @@ uint16_t blocksLookupTable[] = {
 	//torch wood
 	134, 134, 134, 134, 134, 134,
 
+	75, 75, 75, 75, 75, 75, //mossy cobblestone slab
+	75, 75, 75, 75, 75, 75, //mossy cobblestone stair
+	75, 75, 75, 75, 75, 75, //mossy cobblestone wall
+	
+	76, 76, 76, 76, 76, 76, //cobweb
 };
 
 void fixAlphaForNormals(unsigned char *buffer, int w, int h)
@@ -896,7 +901,7 @@ void noErrorFunc(const char *msg, void *userDefinedData)
 }
 
 //textureloader texture loader
-void BlocksLoader::loadAllTextures(std::string filePath)
+void BlocksLoader::loadAllTextures(std::string filePath, bool reportErrors)
 {
 	gl2d::errorFuncType *errorFunc = nullptr;
 	auto noErrors = [&]() 
@@ -1107,7 +1112,7 @@ void BlocksLoader::loadAllTextures(std::string filePath)
 		path += texturesNames[i];
 
 		
-		if (!texturesNames[i][0] || !addTexture((i+1) * 4, path + ".png"))
+		if (!texturesNames[i][0] || !addTexture((i+1) * 4, path + ".png", false, reportErrors))
 		{
 			if (appendMode)
 			{

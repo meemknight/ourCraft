@@ -2105,7 +2105,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 								blockBakeLogicForSlabs(x, y, z, &opaqueGeometry, b);
 							}
 							else
-							if (b.isGrassMesh())
+							if (b.isGrassMesh() || b.isCrossMesh())
 							{
 								blockBakeLogicForGrassMesh(x, y, z, &opaqueGeometry, b);
 							}
