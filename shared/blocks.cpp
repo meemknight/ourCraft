@@ -188,6 +188,9 @@ bool isDecorativeFurniture(BlockType type)
 		type == silverChest ||
 		type == goldChest ||
 		type == smallCrate ||
+		type == lamp ||
+		type == torch ||
+		type == torchWood ||
 		type == globe
 		
 		;

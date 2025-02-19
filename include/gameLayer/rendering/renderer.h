@@ -402,6 +402,7 @@ struct Renderer
 		Shader shader;
 		GLuint u_texture = GL_INVALID_INDEX;
 		GLuint u_viewProjection = GL_INVALID_INDEX;
+		GLuint u_useOneTexture = GL_INVALID_INDEX;
 	}renderUIBlocksShader;
 
 
@@ -439,7 +440,7 @@ struct Renderer
 
 	void recreateBlocksTexturesBuffer(BlocksLoader &blocksLoader);
 
-	void renderAllBlocksUiTextures(BlocksLoader &blocksLoader);
+	void renderAllBlocksUiTextures(BlocksLoader &blocksLoader, ModelsManager &modelsManager);
 
 	void create(ModelsManager &modelsManager);
 	void reloadShaders();

@@ -8,14 +8,19 @@ in flat int v_id;
 
 uniform sampler2D u_texture[6];
 in flat vec3 v_normal;
-
+uniform int u_useOneTexture;
 
 void main()
 {
 	
 	//color = vec4(1,0,0,1);
-	//color = texture(u_texture[v_id/6], v_uv).rgba;
-	color = texture(u_texture[0], v_uv).rgba;
+	if(u_useOneTexture != 0)
+	{
+		color = texture(u_texture[0], v_uv).rgba;
+	}else
+	{
+		color = texture(u_texture[v_id/6], v_uv).rgba;
+	}
 	if(color.a <= 0){discard;}
 	//color.a = sqrt(color.a);
 

@@ -54,6 +54,11 @@ struct BlockModel
 	std::vector<float> vertices;
 	std::vector<float> uvs;
 
+	glm::vec3 minPos = {};
+	glm::vec3 maxPos = {};
+
+	glm::vec3 getDimensions() { return maxPos - minPos; }
+
 	void cleanup() { *this = {}; }
 };
 
@@ -105,6 +110,9 @@ struct ModelsManager
 		torchHolderModel,
 		lampModel,
 		lampHolderModel,
+		slabModel,
+		stairsModel,
+		wallModel,
 
 		BLOCK_MODELS_COUNT
 
@@ -140,3 +148,5 @@ void animatePlayerLegs(glm::mat4 *poseVector, float &currentAngle, int &directio
 gl2d::Texture loadPlayerSkin(const char *path);
 
 constexpr static int PLAYER_SKIN_SIZE = 128;
+
+int getDefaultBlockShapeForFurniture(unsigned int b);

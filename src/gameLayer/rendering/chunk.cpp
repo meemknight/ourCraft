@@ -2091,57 +2091,8 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 						if (!b.air())
 						{
 							auto type = b.getType();
-							if (type == mug)
-							{
-								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::mugModel], b);
-							}else if (b.isChairMesh())
-							{
-								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::chairModel], b);
-							}else if (b.isGobletMesh())
-							{
-								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::gobletModel], b);
-							}
-							else if (type == wineBottle)
-							{
-								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::wineBottleModel], b);
-							}
-							else if (type >= skull && type <= oakTable)
-							{
-								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::skullModel +
-									type - skull], b);
-							}
-							else if (type == oakLogTable)
-							{
-								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::tableModel], b);
-							}
-							else if (type == smallRock)
-							{
-								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::smallRockModel], b);
-							}
-							else if (type == craftingItems)
-							{
-								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::workItemsModel], b);
-							}
-							else if (type == smallCrate)
-							{
-								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::crateModel], b);
-							}
-							else if (type == oakBigChair || type == oakLogBigChair)
-							{
-								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::chairBigModel], b);
-							}
-							else if (type >= cookingPot && type <= vines)
-							{
-								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::cookingPotModel
-								 + type - cookingPot
-								], b);
-							}
-							else if (type >= woddenChest && type <= goldChest)
-							{
-								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::chestModel], b);
-							}
 
-							else if (b.isWallMesh())
+							if (b.isWallMesh())
 							{
 								blockBakeLogicForWalls(x, y, z, &opaqueGeometry, b);
 							}
@@ -2154,43 +2105,55 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 								blockBakeLogicForSlabs(x, y, z, &opaqueGeometry, b);
 							}
 							else
-								if (b.isGrassMesh())
+							if (b.isGrassMesh())
+							{
+								blockBakeLogicForGrassMesh(x, y, z, &opaqueGeometry, b);
+							}
+							else if (b.getType() == BlockTypes::torch || b.getType() == BlockTypes::torchWood)
+							{
+								if (!b.getRotatedOrStandingForWallOrStandingBlocks())
 								{
-									blockBakeLogicForGrassMesh(x, y, z, &opaqueGeometry, b);
-								}
-								else if (b.getType() == BlockTypes::torch || b.getType() == BlockTypes::torchWood)
-								{
-									if (!b.getRotatedOrStandingForWallOrStandingBlocks())
-									{
-										bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::torchModel], b);
-									}
-									else
-									{
-										bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::torchHolderModel], b);
-									}
-									
-									//blockBakeLogicForTorches(x, y, z, &opaqueGeometry, b);
-								}
-								else if (b.getType() == BlockTypes::lamp)
-								{
-									if (!b.getRotatedOrStandingForWallOrStandingBlocks())
-									{
-										bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::lampModel], b);
-									}
-									else
-									{
-										bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::lampHolderModel], b);
-									}
-
-									//blockBakeLogicForTorches(x, y, z, &opaqueGeometry, b);
+									bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::torchModel], b);
 								}
 								else
 								{
-									if (!b.isTransparentGeometry())
-									{
-										blockBakeLogicForSolidBlocks(x, y, z, &opaqueGeometry, b, b.isAnimatedBlock());
-									}
+									bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::torchHolderModel], b);
 								}
+								
+								//blockBakeLogicForTorches(x, y, z, &opaqueGeometry, b);
+							}
+							else if (b.getType() == BlockTypes::lamp)
+							{
+								if (!b.getRotatedOrStandingForWallOrStandingBlocks())
+								{
+									bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::lampModel], b);
+								}
+								else
+								{
+									bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::lampHolderModel], b);
+								}
+
+								//blockBakeLogicForTorches(x, y, z, &opaqueGeometry, b);
+							}
+							else if (b.getType() == BlockTypes::ladder)
+							{
+								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::ladderModel], b);
+							}
+							else if (b.getType() == BlockTypes::vines)
+							{
+								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::vinesModel], b);
+							}
+							else if (b.isDecorativeFurniture())
+							{
+								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[getDefaultBlockShapeForFurniture(b.getType())], b);
+							}
+							else
+							{
+								if (!b.isTransparentGeometry())
+								{
+									blockBakeLogicForSolidBlocks(x, y, z, &opaqueGeometry, b, b.isAnimatedBlock());
+								}
+							}
 
 							if (b.isLightEmitor())
 							{

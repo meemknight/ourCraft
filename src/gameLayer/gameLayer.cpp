@@ -213,7 +213,7 @@ void loadAllDefaultTexturePacks()
 
 	programData.renderer.recreateBlocksTexturesBuffer(programData.blocksLoader);
 
-	programData.renderer.renderAllBlocksUiTextures(programData.blocksLoader);
+	programData.renderer.renderAllBlocksUiTextures(programData.blocksLoader, programData.modelsManager);
 
 	
 
@@ -343,7 +343,7 @@ bool initGame() //main server and title screen stuff
 
 	loadAllDefaultTexturePacks();
 	programData.renderer.create(programData.modelsManager);
-	programData.renderer.renderAllBlocksUiTextures(programData.blocksLoader);
+	programData.renderer.renderAllBlocksUiTextures(programData.blocksLoader, programData.modelsManager);
 
 
 	AudioEngine::loadAllMusic();

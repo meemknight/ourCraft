@@ -1,7 +1,8 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/type_ptr.hpp> // for glm::make_mat4
+#include <glm/gtx/quaternion.hpp>
 #include <glm/mat3x3.hpp>
 #include <glm/gtx/transform.hpp>
 #include <rendering/model.h>
@@ -11,11 +12,10 @@
 #include <assimp/postprocess.h>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
-#include <glm/gtc/type_ptr.hpp> // for glm::make_mat4
-#include <glm/gtx/quaternion.hpp>
 #include <fstream>
 #include <map>
 #include <set>
+#include <blocks.h>
 
 glm::mat4 aiToGlm(const aiMatrix4x4 &matrix)
 {
@@ -383,8 +383,11 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 
 		const aiScene *scene = importer.ReadFile(path, flags);
 
-		if (scene)
+		if (scene && scene->mRootNode->mNumChildren)
 		{
+			blockModel.maxPos = glm::vec3{-10000,-10000,-10000};
+			blockModel.minPos = glm::vec3{10000,10000,10000};
+
 			for (unsigned int i = 0; i < scene->mRootNode->mNumChildren; ++i)
 			{
 				const aiNode *node = scene->mRootNode->mChildren[i];
@@ -427,6 +430,26 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 						aiVector3D v2 = mesh->mVertices[tri.indices[2]];
 						tri.normal = (v1 - v0) ^ (v2 - v0); // Cross product
 						tri.normal.Normalize();
+
+						if (blockModel.maxPos.x < v0.x) { blockModel.maxPos.x = v0.x; }
+						if (blockModel.maxPos.y < v0.y) { blockModel.maxPos.y = v0.y; }
+						if (blockModel.maxPos.z < v0.z) { blockModel.maxPos.z = v0.z; }
+						if (blockModel.maxPos.x < v1.x) { blockModel.maxPos.x = v1.x; }
+						if (blockModel.maxPos.y < v1.y) { blockModel.maxPos.y = v1.y; }
+						if (blockModel.maxPos.z < v1.z) { blockModel.maxPos.z = v1.z; }
+						if (blockModel.maxPos.x < v2.x) { blockModel.maxPos.x = v2.x; }
+						if (blockModel.maxPos.y < v2.y) { blockModel.maxPos.y = v2.y; }
+						if (blockModel.maxPos.z < v2.z) { blockModel.maxPos.z = v2.z; }
+
+						if (blockModel.minPos.x > v0.x) { blockModel.minPos.x = v0.x; }
+						if (blockModel.minPos.y > v0.y) { blockModel.minPos.y = v0.y; }
+						if (blockModel.minPos.z > v0.z) { blockModel.minPos.z = v0.z; }
+						if (blockModel.minPos.x > v1.x) { blockModel.minPos.x = v1.x; }
+						if (blockModel.minPos.y > v1.y) { blockModel.minPos.y = v1.y; }
+						if (blockModel.minPos.z > v1.z) { blockModel.minPos.z = v1.z; }
+						if (blockModel.minPos.x > v2.x) { blockModel.minPos.x = v2.x; }
+						if (blockModel.minPos.y > v2.y) { blockModel.minPos.y = v2.y; }
+						if (blockModel.minPos.z > v2.z) { blockModel.minPos.z = v2.z; }
 
 						triangles.push_back(tri);
 					}
@@ -623,6 +646,9 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		"torchHolder.glb",
 		"lamp.glb",
 		"lampWall.glb",
+		"slab.glb",
+		"stairs.glb",
+		"wall.glb",
 	};
 
 	static_assert(sizeof(blockModelsNames) / sizeof(blockModelsNames[0]) == BLOCK_MODELS_COUNT);
@@ -648,6 +674,63 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 
 
 	setupSSBO();
+}
+
+
+//gets the block shape
+int getDefaultBlockShapeForFurniture(unsigned int b)
+{
+
+	if (isChairMesh(b))
+	{
+		return ModelsManager::chairModel;
+	}
+
+	if (isGobletMesh(b))
+	{
+		return ModelsManager::gobletModel;
+	}
+
+	switch (b)
+	{
+
+		case mug: return ModelsManager::mugModel;
+
+		case wineBottle:  return ModelsManager::wineBottleModel;
+		case skull: return ModelsManager::skullModel ;
+		case skullTorch: return ModelsManager::skullTorchModel ;
+		case book: return ModelsManager::booksModel ;
+		case candleHolder: return ModelsManager::candleHolderModel ;
+		case pot: return ModelsManager::potModel ;
+		case jar: return ModelsManager::jarModel ;
+		case keg: return ModelsManager::keg;
+		case cookingPot: return ModelsManager::cookingPotModel;
+		case chickenCaracas: return ModelsManager::chickenCaracasModel;
+		case chickenWingsPlate: return ModelsManager::chickenWingsPlateModel;
+		case fishPlate: return ModelsManager::fishPlateModel;
+		case workBench: return ModelsManager::workBenchModel;
+		case oakTable: return ModelsManager::tableModel;
+		case craftingItems: return ModelsManager::workItemsModel;
+		case oakLogTable: return ModelsManager::tableModel;
+		case oakBigChair: return ModelsManager::chairBigModel;
+		case oakLogBigChair: return ModelsManager::chairBigModel;
+		case smallRock: return ModelsManager::smallRockModel;
+		case woddenChest: return ModelsManager::chestModel;
+		case goblinChest: return ModelsManager::chestModel;
+		case copperChest: return ModelsManager::chestModel;
+		case ironChest: return ModelsManager::chestModel;
+		case silverChest: return ModelsManager::chestModel;
+		case goldChest: return ModelsManager::chestModel;
+		case smallCrate: return ModelsManager::crateModel;
+		case globe: return ModelsManager::globeModel;
+		case lamp: return ModelsManager::lampModel;
+		case torch: return ModelsManager::torchModel;
+		case torchWood: return ModelsManager::torchModel;
+
+
+
+	}
+
 }
 
 void ModelsManager::clearAllModels()

@@ -1409,7 +1409,7 @@ void Renderer::recreateBlocksTexturesBuffer(BlocksLoader &blocksLoader)
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-void Renderer::renderAllBlocksUiTextures(BlocksLoader &blocksLoader)
+void Renderer::renderAllBlocksUiTextures(BlocksLoader &blocksLoader, ModelsManager &modelsManager)
 {
 	//unsigned char data[16] = {};
 	//
@@ -1437,27 +1437,31 @@ void Renderer::renderAllBlocksUiTextures(BlocksLoader &blocksLoader)
 	//}
 	//
 
+
 	if (!renderUIBlocksShader.shader.id) { return; }
+	renderUIBlocksShader.shader.bind();
 
+	auto view = glm::lookAt(glm::vec3{3, 3, 3}, {0, 0, 0}, {0, 1, 0});
+
+	auto setDistance = [&](glm::vec3 size)
 	{
+		float s = size.x;
+		if (size.y > s) { s = size.y; }
+		if (size.z > s) { s = size.z; }
+		s = glm::clamp(s, 0.4f, 2.f);
 
-		float distFromCamera = 0.78;
-		auto projection = glm::ortho(-distFromCamera, distFromCamera, -distFromCamera, distFromCamera, 0.1f, 10.f);
-		auto view = glm::lookAt(glm::vec3{2, 2, 2}, {0, 0, 0}, {0, 1, 0});
-
-		renderUIBlocksShader.shader.bind();
-
+		float distFromCamera = s - 0.1f*s;
+		auto projection = glm::ortho(-distFromCamera, distFromCamera, -distFromCamera - 0.1f, distFromCamera - 0.1f, 0.1f, 10.f);
 		glUniformMatrix4fv(renderUIBlocksShader.u_viewProjection, 1, GL_FALSE, &(projection * view)[0][0]);
-		
+	};
 
-	}
 	
-
 
 	const int TEXTURE_SIZE = 64;
 
 	GLuint fbo = 0;
 	GLuint depthTexture = 0;
+
 
 	// Create framebuffer
 	{
@@ -1489,6 +1493,11 @@ void Renderer::renderAllBlocksUiTextures(BlocksLoader &blocksLoader)
 	// Resize textures array
 	blocksLoader.blockUiTextures.resize(BlocksCount);
 
+	float distFromCamera = 0.78;
+	auto projection = glm::ortho(-distFromCamera, distFromCamera, -distFromCamera, distFromCamera, 0.1f, 10.f);
+	glUniformMatrix4fv(renderUIBlocksShader.u_viewProjection, 1, GL_FALSE, &(projection * view)[0][0]);
+
+	glUniform1i(renderUIBlocksShader.u_useOneTexture, false);
 	for (BlockType i = 1; i < BlocksCount; i++)
 	{
 		if (isBlockMesh(i))
@@ -1510,16 +1519,122 @@ void Renderer::renderAllBlocksUiTextures(BlocksLoader &blocksLoader)
 				textures[j] = blocksLoader.gpuIds[getGpuIdIndexForBlock(i, j)];
 			}
 			glUniformHandleui64vARB(renderUIBlocksShader.u_texture, 6, textures);
-			
+
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 
 			blocksLoader.blockUiTextures[i].id = colorTexture;
 		}
-		else if(i >= skull && i <= oakTable)
-		{
-			int index = ModelsManager::skullModel + i - skull;
+	}
 
+	glUniform1i(renderUIBlocksShader.u_useOneTexture, true);
+	{
+		int index = ModelsManager::stairsModel;
+		//setDistance(modelsManager.blockModels[index].getDimensions());
+
+		for (BlockType i = 1; i < BlocksCount; i++)
+		{
+			if (isStairsMesh(i))
+			{
+				//blocksLoader.blockUiTextures[i].create1PxSquare();
+				//continue;
+
+				GLuint colorTexture = 0;
+				glGenTextures(1, &colorTexture);
+				glBindTexture(GL_TEXTURE_2D, colorTexture);
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, TEXTURE_SIZE, TEXTURE_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
+
+				std::uint64_t textures[6] = {};
+				for (int j = 0; j < 6; j++)
+				{
+					textures[j] = blocksLoader.gpuIds[getGpuIdIndexForBlock(i, j)];
+				}
+				glUniformHandleui64vARB(renderUIBlocksShader.u_texture, 6, textures);
+
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+				glDrawArrays(GL_TRIANGLES, blockGeometryForEntities[index].startIndex / 8, blockGeometryForEntities[index].componentCount);
+
+				blocksLoader.blockUiTextures[i].id = colorTexture;
+			}
+		}
+	}
+
+	{
+		int index = ModelsManager::slabModel;
+		//setDistance(modelsManager.blockModels[index].getDimensions());
+
+		for (BlockType i = 1; i < BlocksCount; i++)
+		{
+			if (isSlabMesh(i))
+			{
+				//blocksLoader.blockUiTextures[i].create1PxSquare();
+				//continue;
+
+				GLuint colorTexture = 0;
+				glGenTextures(1, &colorTexture);
+				glBindTexture(GL_TEXTURE_2D, colorTexture);
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, TEXTURE_SIZE, TEXTURE_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
+
+				std::uint64_t textures[6] = {};
+				for (int j = 0; j < 6; j++)
+				{
+					textures[j] = blocksLoader.gpuIds[getGpuIdIndexForBlock(i, j)];
+				}
+				glUniformHandleui64vARB(renderUIBlocksShader.u_texture, 6, textures);
+
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+				glDrawArrays(GL_TRIANGLES, blockGeometryForEntities[index].startIndex / 8, blockGeometryForEntities[index].componentCount);
+
+				blocksLoader.blockUiTextures[i].id = colorTexture;
+			}
+		}
+	}
+
+	{
+		int index = ModelsManager::wallModel;
+		//setDistance(modelsManager.blockModels[index].getDimensions());
+
+		for (BlockType i = 1; i < BlocksCount; i++)
+		{
+			if (isWallMesh(i))
+			{
+				//blocksLoader.blockUiTextures[i].create1PxSquare();
+				//continue;
+
+				GLuint colorTexture = 0;
+				glGenTextures(1, &colorTexture);
+				glBindTexture(GL_TEXTURE_2D, colorTexture);
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, TEXTURE_SIZE, TEXTURE_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
+
+				std::uint64_t textures[6] = {};
+				for (int j = 0; j < 6; j++)
+				{
+					textures[j] = blocksLoader.gpuIds[getGpuIdIndexForBlock(i, j)];
+				}
+				glUniformHandleui64vARB(renderUIBlocksShader.u_texture, 6, textures);
+
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+				glDrawArrays(GL_TRIANGLES, blockGeometryForEntities[index].startIndex / 8, blockGeometryForEntities[index].componentCount);
+
+				blocksLoader.blockUiTextures[i].id = colorTexture;
+			}
+		}
+	}
+
+	for (BlockType i = 1; i < BlocksCount; i++)
+	{
+		if (isDecorativeFurniture(i))
+		{
+			int index = getDefaultBlockShapeForFurniture(i);
 
 			GLuint colorTexture = 0;
 			glGenTextures(1, &colorTexture);
@@ -1535,18 +1650,16 @@ void Renderer::renderAllBlocksUiTextures(BlocksLoader &blocksLoader)
 				textures[j] = blocksLoader.gpuIds[getGpuIdIndexForBlock(i, j)];
 			}
 			glUniformHandleui64vARB(renderUIBlocksShader.u_texture, 6, textures);
+			setDistance(modelsManager.blockModels[index].getDimensions());
 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			glDrawArrays(GL_TRIANGLES, blockGeometryForEntities[index].startIndex/8, blockGeometryForEntities[index].componentCount);
+			glDrawArrays(GL_TRIANGLES, blockGeometryForEntities[index].startIndex / 8, blockGeometryForEntities[index].componentCount);
 
 			blocksLoader.blockUiTextures[i].id = colorTexture;
 		}
-		else
-		{
-			//we leave the texture blank for now
-			//blocksLoader.blockUiTextures[i].createFromBuffer((char *)data, 2, 2, true, false);
-		}
+
 	}
+
 
 	// Unbind and delete framebuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1781,7 +1894,9 @@ void Renderer::create(ModelsManager &modelsManager)
 			glm::vec3 c = glm::vec3(blockModel.vertices[i * 12 + 6], blockModel.vertices[i * 12 + 7], blockModel.vertices[i * 12 + 8]);
 			glm::vec3 d = glm::vec3(blockModel.vertices[i * 12 + 9], blockModel.vertices[i * 12 + 10], blockModel.vertices[i * 12 + 11]);
 
-			glm::vec3 normal = {0,1,0}; //todo
+			glm::vec3 edge1 = b - a;
+			glm::vec3 edge2 = c - a;
+			glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
 			
 			glm::vec2 uvA = glm::vec2(blockModel.uvs[i * 8 + 0], blockModel.uvs[i * 8 + 1]);
 			glm::vec2 uvB = glm::vec2(blockModel.uvs[i * 8 + 2], blockModel.uvs[i * 8 + 3]);
@@ -2144,7 +2259,8 @@ void Renderer::reloadShaders()
 		renderUIBlocksShader.shader.bind();
 		GET_UNIFORM2(renderUIBlocksShader, u_texture);
 		GET_UNIFORM2(renderUIBlocksShader, u_viewProjection);
-	
+		GET_UNIFORM2(renderUIBlocksShader, u_useOneTexture);
+		
 	}
 #pragma endregion
 
