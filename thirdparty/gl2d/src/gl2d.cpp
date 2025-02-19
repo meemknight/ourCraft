@@ -544,16 +544,17 @@ or gladLoadGLLoader() or glewInit()?", userDefinedData);
 		delete[] fontMonochromeBuffer;
 		delete[] fontRgbaBuffer;
 
-		for (char c = ' '; c <= '~'; c++)
-		{
-			const stbtt_aligned_quad  q = internal::fontGetGlyphQuad(*this, c);
-			const float               m = q.y1 - q.y0;
-
-			if (m > max_height && m < 400)
-			{
-				max_height = m;
-			}
-		}
+		//for (char c = ' '; c <= '~'; c++)
+		//{
+		//	const stbtt_aligned_quad  q = internal::fontGetGlyphQuad(*this, c);
+		//	const float               m = q.y1 - q.y0;
+		//
+		//	if (m > max_height && m < 400)
+		//	{
+		//		max_height = m;
+		//	}
+		//}
+		max_height = 64;
 	}
 
 	void Font::createFromFile(const char *file)

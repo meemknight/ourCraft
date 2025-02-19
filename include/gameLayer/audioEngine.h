@@ -33,6 +33,7 @@ namespace AudioEngine
 
 	void saveSettings();
 
+	bool isMusicPlaying();
 
 	enum sounds
 	{

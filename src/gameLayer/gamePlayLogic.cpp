@@ -240,6 +240,9 @@ bool initGameplay(ProgramData &programData, const char *c) //GAME STUFF!
 
 	//we started the game!
 	AudioEngine::stopAllMusicAndSounds();
+
+	AudioEngine::playRandomNightMusic();
+
 	return true;
 }
 
@@ -521,6 +524,16 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		//std::cout << gameData.serverTimer << "\n";
 	}
 #pragma endregion
+
+#pragma region music
+
+	if (!AudioEngine::isMusicPlaying())
+	{
+		AudioEngine::playRandomNightMusic();
+	}
+
+#pragma endregion
+
 
 #pragma region reload skin
 
@@ -2954,4 +2967,6 @@ void closeGameLogic()
 	//free all resources
 	gameData.clearData();
 	threadPoolForChunkBaking.cleanup();
+	AudioEngine::stopAllMusicAndSounds();
+
 }

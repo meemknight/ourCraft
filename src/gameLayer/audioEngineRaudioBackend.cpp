@@ -174,6 +174,7 @@ namespace AudioEngine
 
 	bool isMusicPlaying()
 	{
+		if (!currentMusicPlaying) { return 0; }
 		return IsMusicPlaying(allMusic[currentMusicPlaying]);
 	}
 
@@ -201,6 +202,10 @@ namespace AudioEngine
 			}
 		}
 
+		if (!isMusicPlaying())
+		{
+			currentMusicPlaying = 0;
+		}
 
 		UpdateMusicStream(allMusic[currentMusicPlaying]);
 

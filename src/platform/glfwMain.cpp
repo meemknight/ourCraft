@@ -375,7 +375,7 @@ int main()
 
 	if (!GLAD_GL_NV_bindless_texture)
 	{
-		std::cout << "Error, Bindless texture extension not supported!\n";
+		std::cout << "Error, Bindless texture extension not supported!\nUsually integrated GPUs don't support this extension, this will be fixed in the future.\n";
 		system("pause");
 		exit(0);
 	}
