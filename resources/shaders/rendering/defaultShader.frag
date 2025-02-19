@@ -1148,6 +1148,12 @@ void main()
 			//int lastMip = textureQueryLevels(sampler2D(v_textureSampler)) - 1;
 			//vec3 colorReff = textureLod(sampler2D(v_textureSampler), vec2(0,0), lastMip).rgb;
 
+			//if(v_colors == 1)
+			//{
+			//	 roughness = 0.3;
+			//	 metallic = 1;
+			//	 textureColor.rgb = pow(textureColor.rgb, vec3(1.1));
+			//}else
 			if(v_colors-1 <= 3)
 			{
 				textureColor.rgb = paintGray(textureColor.rgb, colorsVector[v_colors-1]);

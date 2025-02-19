@@ -1478,7 +1478,8 @@ void Renderer::renderAllBlocksUiTextures(BlocksLoader &blocksLoader)
 		glDrawBuffers(1, drawBuffers);
 	}
 
-	glDisable(GL_DEPTH_TEST);
+	//glDisable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 	//glEnable(GL_BLEND);
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1503,12 +1504,6 @@ void Renderer::renderAllBlocksUiTextures(BlocksLoader &blocksLoader)
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
 
-			// Validate framebuffer for each texture
-			//if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-			//{
-			//	std::cout << "Framebuffer not complete for block: " << i << "\n";
-			//}
-
 			std::uint64_t textures[6] = {};
 			for (int j = 0; j < 6; j++)
 			{
@@ -1521,11 +1516,35 @@ void Renderer::renderAllBlocksUiTextures(BlocksLoader &blocksLoader)
 
 			blocksLoader.blockUiTextures[i].id = colorTexture;
 		}
+		else if(i >= skull && i <= oakTable)
+		{
+			int index = ModelsManager::skullModel + i - skull;
+
+
+			GLuint colorTexture = 0;
+			glGenTextures(1, &colorTexture);
+			glBindTexture(GL_TEXTURE_2D, colorTexture);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, TEXTURE_SIZE, TEXTURE_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
+
+			std::uint64_t textures[6] = {};
+			for (int j = 0; j < 6; j++)
+			{
+				textures[j] = blocksLoader.gpuIds[getGpuIdIndexForBlock(i, j)];
+			}
+			glUniformHandleui64vARB(renderUIBlocksShader.u_texture, 6, textures);
+
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glDrawArrays(GL_TRIANGLES, blockGeometryForEntities[index].startIndex/8, blockGeometryForEntities[index].componentCount);
+
+			blocksLoader.blockUiTextures[i].id = colorTexture;
+		}
 		else
 		{
 			//we leave the texture blank for now
 			//blocksLoader.blockUiTextures[i].createFromBuffer((char *)data, 2, 2, true, false);
-
 		}
 	}
 
@@ -1712,6 +1731,7 @@ void Renderer::create(ModelsManager &modelsManager)
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
 
 	std::vector<float> data;
+	data.reserve(2000);
 	for (int face = 0; face < 6; face++)
 	{
 
@@ -1746,6 +1766,85 @@ void Renderer::create(ModelsManager &modelsManager)
 
 		}
 	}
+
+
+	auto addModelData = [&](BlockModel &blockModel, int index)
+	{
+		int startPos = data.size();
+		int verticesCount = 0;
+
+		for (int i = 0; i < blockModel.vertices.size() / (3 * 4); i++)
+		{
+
+			glm::vec3 a = glm::vec3(blockModel.vertices[i * 12 + 0], blockModel.vertices[i * 12 + 1], blockModel.vertices[i * 12 + 2]);
+			glm::vec3 b = glm::vec3(blockModel.vertices[i * 12 + 3], blockModel.vertices[i * 12 + 4], blockModel.vertices[i * 12 + 5]);
+			glm::vec3 c = glm::vec3(blockModel.vertices[i * 12 + 6], blockModel.vertices[i * 12 + 7], blockModel.vertices[i * 12 + 8]);
+			glm::vec3 d = glm::vec3(blockModel.vertices[i * 12 + 9], blockModel.vertices[i * 12 + 10], blockModel.vertices[i * 12 + 11]);
+
+			glm::vec3 normal = {0,1,0}; //todo
+			
+			glm::vec2 uvA = glm::vec2(blockModel.uvs[i * 8 + 0], blockModel.uvs[i * 8 + 1]);
+			glm::vec2 uvB = glm::vec2(blockModel.uvs[i * 8 + 2], blockModel.uvs[i * 8 + 3]);
+			glm::vec2 uvC = glm::vec2(blockModel.uvs[i * 8 + 4], blockModel.uvs[i * 8 + 5]);
+			glm::vec2 uvD = glm::vec2(blockModel.uvs[i * 8 + 6], blockModel.uvs[i * 8 + 7]);
+
+			auto addVertex = [&](glm::vec3 v, glm::vec2 uv) 
+			{
+				data.push_back(v.x);
+				data.push_back(v.y);
+				data.push_back(v.z);
+				data.push_back(normal.x);
+				data.push_back(normal.y);
+				data.push_back(normal.z);
+				data.push_back(uv.x);
+				data.push_back(uv.y);
+			};
+
+			addVertex(a, uvA);
+			addVertex(b, uvB);
+			addVertex(c, uvC);
+
+			addVertex(a, uvA);
+			addVertex(c, uvC);
+			addVertex(d, uvD);
+
+			verticesCount += 6;
+		}
+
+		//for (int i = 0; i < blockModel.vertices.size()/3; i++)
+		//{
+		//	float x = blockModel.vertices[i * 3];
+		//	float y = blockModel.vertices[i * 3 + 1];
+		//	float z = blockModel.vertices[i * 3 + 2];
+		//
+		//	float uvX = blockModel.uvs[i * 2];
+		//	float uvY = blockModel.uvs[i * 2 + 1];
+		//	glm::vec3 normal = {0,1,0}; //todo
+		//	//glm::vec3 edge1 = positions[1] - positions[0];
+		//	//glm::vec3 edge2 = positions[2] - positions[0];
+		//	//normal = glm::normalize(glm::cross(edge1, edge2));
+		//
+		//	data.push_back(x);
+		//	data.push_back(y);
+		//	data.push_back(z);
+		//
+		//	data.push_back(normal.x);
+		//	data.push_back(normal.y);
+		//	data.push_back(normal.z);
+		//
+		//	data.push_back(uvX);
+		//	data.push_back(uvY);
+		//}
+		
+		blockGeometryForEntities[index].startIndex = startPos;
+		blockGeometryForEntities[index].componentCount = verticesCount;
+	};
+
+	for (int i = 0; i < ModelsManager::BLOCK_MODELS_COUNT; i++)
+	{
+		addModelData(modelsManager.blockModels[i], i);
+	}
+
 
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * data.size(), data.data(), GL_STATIC_DRAW);
 

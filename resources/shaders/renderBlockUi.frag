@@ -14,7 +14,8 @@ void main()
 {
 	
 	//color = vec4(1,0,0,1);
-	color = texture(u_texture[v_id/6], v_uv).rgba;
+	//color = texture(u_texture[v_id/6], v_uv).rgba;
+	color = texture(u_texture[0], v_uv).rgba;
 	if(color.a <= 0){discard;}
 	//color.a = sqrt(color.a);
 

@@ -1852,7 +1852,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 			if (snowGrass)
 			{
 				pushFaceShapeTextureAndColor(*currentVector, i, SNOW_GRASS_TEXTURE_INDEX * 4, color);
-				currentVector->push_back(mergeShorts(i, SNOW_GRASS_TEXTURE_INDEX * 4));
+				//currentVector->push_back(mergeShorts(i, SNOW_GRASS_TEXTURE_INDEX * 4));
 			}
 			else if (yellowGrass)
 			{

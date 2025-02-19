@@ -66,6 +66,8 @@ struct Renderer
 	};
 
 	BlockGeometryIndex blockGeometry[ModelsManager::BLOCK_MODELS_COUNT];
+	BlockGeometryIndex blockGeometryForEntities[ModelsManager::BLOCK_MODELS_COUNT];
+
 
 	void recreateBlockGeometryData(ModelsManager &modelsManager);
 
