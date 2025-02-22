@@ -295,6 +295,12 @@ void PhysicalEntity::jump(float impulse)
 	forces.jump(impulse);
 }
 
+void PhysicalEntity::move(glm::vec2 move)
+{
+	position.x += move.x;
+	position.z += move.y;
+}
+
 void adjustVectorTowardsDirection(glm::vec3 &vector, glm::vec3 desiredDirection, float threshold)
 {
 	// Calculate the angle between the vector and the desired direction

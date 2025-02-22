@@ -133,7 +133,7 @@ good performance.\n-Fancy: significant performance cost but looks very nice.");
 
 	//static glm::vec4 colorsTonemapper[] = {{0.6,0.9,0.6,1}, {0.6,0.9,0.6,1}, {0.7,0.8,0.6,1} , {0.4,0.8,0.4,1}};
 	programData.ui.menuRenderer.toggleOptions("Tonemapper: ",
-		"ACES|AgX|ZCAM|Uncharted", &getShadingSettings().tonemapper,
+		"ACES|AgX|ZCAM|Uncharted|Test", &getShadingSettings().tonemapper,
 		true, Colors_White, nullptr, programData.ui.buttonTexture,
 		Colors_Gray, 
 "The tonemapper is the thing that displays the final color\n\
@@ -1199,10 +1199,10 @@ void displayWorldSelectorMenu(ProgramData &programData)
 		}
 
 
-		programData.ui.menuRenderer.InputText("Name: ", name, sizeof(name),
+		programData.ui.menuRenderer.InputText("Name:", name, sizeof(name),
 			Colors_Gray, programData.ui.buttonTexture);
 
-		programData.ui.menuRenderer.InputText("Seed: ", seed, sizeof(seed),
+		programData.ui.menuRenderer.InputText("Seed:", seed, sizeof(seed),
 			Colors_Gray, programData.ui.buttonTexture);
 		
 		//programData.ui.menuRenderer.Toggle("Super Flat", Colors_Gray, &superFlatWorld, programData.ui.buttonTexture, programData.ui.buttonTexture);
@@ -1379,7 +1379,7 @@ void ShadingSettings::normalize()
 {
 
 	viewDistance = glm::clamp(viewDistance, 1, 50);
-	tonemapper = glm::clamp(tonemapper, 0, 3);
+	tonemapper = glm::clamp(tonemapper, 0, 4);
 	shadows = glm::clamp(shadows, 0, 2);
 	waterType = glm::clamp(waterType, 0, 1);
 

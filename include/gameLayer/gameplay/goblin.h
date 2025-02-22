@@ -2,7 +2,7 @@
 #include <gameplay/entity.h>
 #include <gameplay/life.h>
 #include <random>
-
+#include <gameplay/basicEnemyBehaviour.h>
 
 struct Goblin: public PhysicalEntity, public CanPushOthers
 	, public HasOrientationAndHeadTurnDirection, public CollidesWithPlacedBlocks,
@@ -30,8 +30,10 @@ struct GoblinClient: public ClientEntity<Goblin, GoblinClient>
 	int getTextureIndex();
 };
 
-struct GoblinServer: public ServerEntity<Goblin>
+struct GoblinServer: public ServerEntity<Goblin> 
 {
+
+	BasicEnemyBehaviour basicEnemyBehaviour;
 
 	glm::vec2 direction = {};
 	float waitTime = 1;

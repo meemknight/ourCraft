@@ -420,6 +420,8 @@ struct PhysicalEntity
 	}
 
 	void jump(float impulse = BASIC_JUMP_IMPULSE);
+
+	void move(glm::vec2 move);
 };
 
 struct CanPushOthers

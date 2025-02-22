@@ -62,6 +62,11 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 )
 {
 
+	basicEnemyBehaviour.update(this, deltaTime, chunkGetter, serverChunkStorer, rng, yourEID, othersDeleted, pathFinding,
+		playersPosition, getPosition());
+
+
+	/*
 	if (1)
 	{
 		float followDistance = 22;
@@ -460,14 +465,15 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 
 	};
+	*/
 
+	//entity.move({deltaTime,0});
 
 	doCollisionWithOthers(getPosition(), entity.getMaxColliderSize(), entity.forces,
 		serverChunkStorer, yourEID);
 
 	entity.update(deltaTime, chunkGetter);
 
-	entity.bodyOrientation = direction;
 
 	return true;
 }

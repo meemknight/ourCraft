@@ -5518,7 +5518,7 @@ void Renderer::FBO::create(GLint addColor, bool addDepth,
 	{
 		glGenTextures(1, &color);
 		glBindTexture(GL_TEXTURE_2D, color);
-		glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, 1, 1
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1
 			, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
