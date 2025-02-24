@@ -1967,7 +1967,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 				auto b = chunkCache.getBlockSafe(node.returnPos + displacement);
 				if (b && !b->isColidable())
 				{
-					auto b2 = chunkCache.getBlockSafe(node.returnPos + glm::ivec3(0, -2, 0));
+					auto b2 = chunkCache.getBlockSafe(node.returnPos + displacement + glm::ivec3(0, -1, 0));
 					if (b2 && b2->isColidable())
 					{
 						addNode(node, displacement);
