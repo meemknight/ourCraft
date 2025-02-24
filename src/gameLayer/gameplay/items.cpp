@@ -316,7 +316,7 @@ WeaponStats Item::getWeaponStats()
 
 		 case trainingSword:
 		 {
-			 stats.damage = 20;
+			 stats.damage = 200;
 		 }
 		 break;
 

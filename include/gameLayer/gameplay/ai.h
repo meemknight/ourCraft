@@ -96,6 +96,16 @@ void lookAtPosition(glm::dvec3 position,
 	glm::dvec3 yourEntityPosition, glm::vec2 bodyOrientation, float tresshold = glm::radians(85.f));
 
 
+void lookAtDirection(glm::vec3 viewDirection,
+	glm::vec3 &lookDirectionAnimation,
+	glm::dvec3 yourEntityPosition, glm::vec2 bodyOrientation
+	, float tresshold = glm::radians(85.f));
+
+void lookAtDirectionWithBodyOrientation(glm::vec3 viewDirection,
+	glm::vec3 &lookDirectionAnimation,
+	glm::dvec3 yourEntityPosition, glm::vec2 &bodyOrientation
+	, float tresshold = glm::radians(85.f));
+
 template<class E, class SETTINGS>
 inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 	decltype(chunkGetterSignature) *chunkGetter, 
@@ -727,3 +737,5 @@ inline void AnimalBehaviour<E, SETTINGS>::configureSpawnSettings(std::minstd_ran
 	speedBase = getRandomNumberFloat(rng, SETTINGS::minSpeed, SETTINGS::maxSpeed);
 
 }
+
+

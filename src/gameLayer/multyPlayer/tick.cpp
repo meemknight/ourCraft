@@ -110,7 +110,7 @@ bool genericCallUpdateForEntity(T &e,
 	ServerChunkStorer &chunkCache, std::minstd_rand &rng, 
 	std::unordered_set<std::uint64_t> &othersDeleted,
 	std::unordered_map<std::uint64_t, std::unordered_map<glm::ivec3, PathFindingNode>> &pathFinding,
-	std::unordered_map<std::uint64_t, glm::dvec3> &playersPosition
+	std::unordered_map<std::uint64_t, glm::dvec3> &playersPositionSurvival
 	)
 {
 	float time = deltaTime;
@@ -124,7 +124,7 @@ bool genericCallUpdateForEntity(T &e,
 	{
 		//todo pack things into a struct
 		rez = e.second.update(time, chunkGetter, chunkCache, rng, e.first,
-			othersDeleted, pathFinding, playersPosition);
+			othersDeleted, pathFinding, playersPositionSurvival);
 	}
 
 	if constexpr (hasRestantTimer<decltype(e.second)>)
@@ -1916,22 +1916,27 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 	if (profiler) { profiler->startSubProfile("Path Finding"); }
 #pragma region calculate player positions
-	std::unordered_map<std::uint64_t, glm::dvec3> playersPosition;
+	std::unordered_map<std::uint64_t, glm::dvec3> playersPositionSurvival;
 
-	for (auto &c : chunkCache.savedChunks)
+	for (auto &p : allSurvivalClients)
 	{
-		for (auto &p : c.second->entityData.players)
-		{
-			playersPosition.insert({p.first, p.second->getPosition()});
-		}
+		playersPositionSurvival.insert({p.first, p.second->playerData.getPosition()});
 	}
+
+	//for (auto &c : chunkCache.savedChunks)
+	//{
+	//	for (auto &p : c.second->entityData.players)
+	//	{
+	//		playersPositionSurvival.insert({p.first, p.second->getPosition()});
+	//	}
+	//}
 #pragma endregion
 
 
 #pragma region calculate path finding
 
 
-	std::unordered_map<std::uint64_t, std::unordered_map<glm::ivec3, PathFindingNode>> pathFinding;
+	std::unordered_map<std::uint64_t, std::unordered_map<glm::ivec3, PathFindingNode>> pathFindingSurvivalClients;
 
 	{
 		std::deque<PathFindingNode> queue;
@@ -2022,10 +2027,10 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 		};
 
 
-		if (!playersPosition.empty())
+		if (!playersPositionSurvival.empty())
 		{
 
-			glm::ivec3 pos = from3DPointToBlock(playersPosition.begin()->second);
+			glm::ivec3 pos = from3DPointToBlock(playersPositionSurvival.begin()->second);
 
 			//project players position down down
 			for(int i=1; i<4; i++)
@@ -2069,7 +2074,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 			}
 
-			pathFinding.emplace(playersPosition.begin()->first, std::move(positions));
+			pathFindingSurvivalClients.emplace(playersPositionSurvival.begin()->first, std::move(positions));
 		}
 	
 	};
@@ -2144,7 +2149,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 					
 					bool rez = genericCallUpdateForEntity(e, deltaTime, chunkGetter,
 						chunkCache, rng, othersDeleted,
-						pathFinding, playersPosition);
+						pathFindingSurvivalClients, playersPositionSurvival);
 					glm::ivec2 newChunk = determineChunkThatIsEntityIn(e.second.getPosition());
 
 					if (!rez)

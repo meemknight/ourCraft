@@ -16,6 +16,7 @@ struct Player : public PhysicalEntity, public CollidesWithPlacedBlocks,
 	public HasEyesAndPupils<EYE_ANIMATION_TYPE_PLAYER>
 {
 
+	//todo use mem compare
 	bool operator== (Player & other)
 	{
 		if(
@@ -25,6 +26,10 @@ struct Player : public PhysicalEntity, public CollidesWithPlacedBlocks,
 			)
 		{
 			return true;
+		}
+		else
+		{
+			return false;
 		}
 	}
 

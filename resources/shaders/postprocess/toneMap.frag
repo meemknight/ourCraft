@@ -547,7 +547,12 @@ vec3 toGammaSpace(vec3 a)
 }
 
 
-
+/* Gradient noise from Jorge Jimenez's presentation: */
+/* http://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare */
+float gradientNoise(in vec2 uv)
+{
+	return fract(52.9829189 * fract(dot(uv, vec2(0.06711056, 0.00583715))));
+}
 
 
 
@@ -565,6 +570,9 @@ void main()
 	out_color.rgb = tonemapFunction(out_color.rgb);
 	out_color.rgb = toGammaSpace(out_color.rgb);
 	
+
+	float strength = 1;
+	out_color.rgb += (strength * 1.0 / 255.0) * gradientNoise(gl_FragCoord.xy) - (strength * 0.5 / 255.0);
 	out_color = clamp(out_color, vec3(0), vec3(1));
 
 	outColor = vec4(out_color, 1);

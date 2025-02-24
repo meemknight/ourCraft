@@ -1173,6 +1173,8 @@ void setBodyAndLookOrientation(glm::vec2 &bodyOrientation, glm::vec3 &lookDirect
 void removeBodyRotationFromHead(glm::vec3 &lookDirection);
 void removeBodyRotationFromHead(glm::vec2 &bodyOrientation, glm::vec3 &lookDirection);
 
+glm::vec3 computeLookDirection(glm::vec2 bodyOrientation, glm::vec3 lookDirection);
+
 glm::vec2 getRandomUnitVector(std::minstd_rand &rng);
 glm::vec3 getRandomUnitVector3(std::minstd_rand &rng);
 

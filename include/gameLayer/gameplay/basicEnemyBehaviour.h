@@ -4,14 +4,51 @@
 #include <random>
 #include <gameplay/ai.h>
 
+struct BasicEnemyBehaviourOtherSettings
+{
+
+	float searchForPlayerTimer = 1; //how much time will it take untill the entity searches for another target, (while it doesn't have a target)
+	float searchDistance = 40; //players that get to this close will start getting targeted
+
+};
+
+
 struct BasicEnemyBehaviour
 {
 
 	glm::vec2 direction = {};
 	float waitTime = 1;
 	float keepJumpingTimer = 0;
-	float randomSightBonusTimer = 1;
 	std::uint64_t playerLockedOn = 0;
+	
+	enum states
+	{
+		stateStaying = 0, //just stays in place and looks around.
+		stateWalkingRandomly,
+		stateTargetedPlayer,
+
+	};
+	
+	float stateChangeTimer = 1;
+
+	struct
+	{
+		float timerChangeLookDirection = 1;
+	}stateStayingData;
+
+	struct
+	{
+		float changeDirectionTime = 1;
+	}stateWalkingRandomlyData;
+
+	struct
+	{
+
+	}stateTargetedPlayerData;
+
+
+	unsigned char currentState = stateStaying;
+	float searchForPlayerTimer = 1;
 
 	template<typename BaseEntity>
 	void update(
@@ -19,53 +56,94 @@ struct BasicEnemyBehaviour
 		float deltaTime, decltype(chunkGetterSignature) *chunkGetter,
 		ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng, std::uint64_t yourEID,
 		std::unordered_set<std::uint64_t> &othersDeleted,
-		std::unordered_map<std::uint64_t, std::unordered_map<glm::ivec3, PathFindingNode>> &pathFinding,
-		std::unordered_map<std::uint64_t, glm::dvec3> &playersPosition, const glm::dvec3 currentPosition)
+		std::unordered_map<std::uint64_t, std::unordered_map<glm::ivec3, PathFindingNode>> &pathFindingSurvival,
+		std::unordered_map<std::uint64_t, glm::dvec3> &playersPositionSurvival, const glm::dvec3 currentPosition,
+		BasicEnemyBehaviourOtherSettings otherSettings)
 	{
 
+		glm::vec3 realLookDirection = normalize(computeLookDirection(baseEntity->entity.bodyOrientation,
+			baseEntity->entity.lookDirectionAnimation));
+		
+		auto searchForPlayerLogicIfNeeded = [&]()
+		{
 
-		float followDistance = 22;
-		float keepFollowDistance = 33;
-		float randomSightBonus = 10;
+			if (playerLockedOn != 0) { return; }
+			if (playersPositionSurvival.empty()) { return; }
+
+			searchForPlayerTimer -= deltaTime;
+			if (searchForPlayerTimer < 0)
+			{
+
+				//todo temporary allocator
+				std::vector< std::uint64_t> searches;
+				searches.reserve(playersPositionSurvival.size());
+				for (auto &p : playersPositionSurvival) { searches.push_back(p.first); }
+				std::shuffle(searches.begin(), searches.end(), rng);
+
+				for (auto playerID :searches)
+				{
+					auto position = playersPositionSurvival[playerID];
+					
+					float distance = glm::distance(position, currentPosition);
+					if (distance <= otherSettings.searchDistance)
+					{
+						//this player is close enough
+
+						if (distance <= otherSettings.searchDistance / 10.f)
+						{
+							//instant target!
+							playerLockedOn = playerID;
+							break;
+						}
+						else
+						{
+							//percentage from approaching from begind
+							float percentage = distance;
+							percentage -= otherSettings.searchDistance / 10.f;
+							percentage /= (otherSettings.searchDistance * ( 9.f / 10.f));
+							percentage = 1.f - glm::clamp(percentage, 0.f, 1.f);
+
+							//std::cout << "Distance Calculated: " << percentage << "; final percentage: " 
+							//	<< 100*pow(percentage, 4.f) << "%\n";
+							percentage = pow(percentage, 4.f);
+
+							glm::vec3 lookDirection = realLookDirection;
+							glm::vec3 vectorToPlayer = normalize(position - currentPosition);
+
+							float viewFactor = glm::clamp(glm::dot(lookDirection, vectorToPlayer), 0.f, 1.f);
+							//std::cout << "viewFactor Calculated: " << viewFactor << "; final viewFactor: "
+							//	<< 100*pow(viewFactor, 8.f) << "%\n";
+							//std::cout << "vectorToPlayer: " << vectorToPlayer.x << " " << vectorToPlayer.y << " " << vectorToPlayer.z << "\n";
+							//std::cout << "lookDirection: " << lookDirection.x << " " << lookDirection.y << " " << lookDirection.z << "\n";
+							viewFactor = pow(viewFactor, 8.f);
+
+							percentage += viewFactor * 0.7;
+
+							if (getRandomChance(rng, percentage))
+							{
+								playerLockedOn = playerID;
+								break;
+							}
+						}
+
+					}
+				}
+
+				//remove lock on player!
+				//playerLockedOn = 0;
+
+				searchForPlayerTimer = otherSettings.searchForPlayerTimer;
+			}
+
+		};
+
 		glm::dvec3 playerLockedOnPosition = currentPosition;
 
-		randomSightBonusTimer -= deltaTime;
-		if (randomSightBonusTimer <= 0)
+		auto lookAtTargetedPlayer = [&]()
 		{
-			randomSightBonusTimer = getRandomNumberFloat(rng, 3, 12);
-			randomSightBonusTimer += getRandomNumberFloat(rng, 3, 12);
-			randomSightBonusTimer += getRandomNumberFloat(rng, 3, 12);
+			auto found = playersPositionSurvival.find(playerLockedOn);
 
-			followDistance += randomSightBonus;
-		}
-
-		if (!playerLockedOn)
-		{
-
-			//todo temporary allocator
-
-			std::vector<std::uint64_t> close;
-
-			for (auto &p : playersPosition)
-			{
-				if (glm::distance(p.second, currentPosition) <= followDistance)
-				{
-					close.push_back(p.first);
-				}
-			}
-
-			if (!close.empty())
-			{
-				playerLockedOn = close[rng() % close.size()];
-			}
-
-		}
-
-		//look at player
-		{
-			auto found = playersPosition.find(playerLockedOn);
-
-			if (found == playersPosition.end())
+			if (found == playersPositionSurvival.end())
 			{
 				playerLockedOn = 0;
 			}
@@ -75,60 +153,233 @@ struct BasicEnemyBehaviour
 					currentPosition, baseEntity->entity.bodyOrientation,
 					glm::radians(65.f));
 
-				if (glm::distance(found->second, currentPosition) <= keepFollowDistance)
+			}
+		};
+
+		auto lookAtARandomDirection = [&]()
+		{
+			auto direction = getRandomUnitVector(rng);
+			float up = getRandomNumberFloat(rng, -glm::radians(10.f), glm::radians(20.f));
+			glm::vec3 finalVector = glm::normalize(glm::vec3(direction.x, up, direction.y));
+
+			if (glm::dot(glm::vec2(finalVector.x, finalVector.z), baseEntity->entity.bodyOrientation) > 0.5f)
+			{
+				lookAtDirection(finalVector, baseEntity->entity.lookDirectionAnimation,
+					currentPosition, baseEntity->entity.bodyOrientation,
+					glm::radians(65.f));
+			}
+			else
+			{
+				lookAtDirectionWithBodyOrientation(finalVector, baseEntity->entity.lookDirectionAnimation,
+					currentPosition, baseEntity->entity.bodyOrientation,
+					glm::radians(65.f));
+			}
+	
+		};
+
+		auto changeStateStaying = [&]()
+		{
+			stateStayingData = {};
+			stateStayingData.timerChangeLookDirection = stateStayingData.timerChangeLookDirection = getRandomNumberFloat(rng, 1, 10)
+				+ getRandomNumberFloat(rng, 1, 10);
+			currentState = stateStaying;
+		};
+
+		auto changeRandomWalkDirectionIfNeeded = [&]()
+		{
+			//random walk
+			stateWalkingRandomlyData.changeDirectionTime -= deltaTime;
+
+			if (stateWalkingRandomlyData.changeDirectionTime <= 0)
+			{
+				stateWalkingRandomlyData.changeDirectionTime = getRandomNumberFloat(rng, 1, 5);
+				stateWalkingRandomlyData.changeDirectionTime += getRandomNumberFloat(rng, 1, 5);
+
+				direction = getRandomUnitVector(rng);
+
+			}
+		};
+
+		auto changeStateRandomWalking = [&]()
+		{
+			stateWalkingRandomlyData = {};
+
+
+			currentState = stateWalkingRandomly;
+
+			stateWalkingRandomlyData.changeDirectionTime = 0;
+			changeRandomWalkDirectionIfNeeded();
+
+		};
+
+		auto changeRandomState = [&]()
+		{
+			stateChangeTimer = getRandomNumberFloat(rng, 1, 5)
+				+ getRandomNumberFloat(rng, 1, 5) + getRandomNumberFloat(rng, 1, 5);
+
+			if (getRandomChance(rng, 0.5f))
+			{
+				if (currentState != stateStaying)
 				{
-					playerLockedOnPosition = found->second;
+					changeStateStaying();
+				}
+			}
+			else
+			{
+				if (currentState != stateWalkingRandomly)
+				{
+					changeStateRandomWalking();
+				}
+			}
+		};
+
+		auto dontFallIntoGaps = [&]()
+		{
+			auto blockPos = currentPosition;
+			blockPos.x += direction.x;
+			blockPos.z += direction.y;
+
+			//block under
+			blockPos.y--;
+			auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos));
+
+			//void
+			if (!b)
+			{
+				direction = {};
+				stateWalkingRandomlyData.changeDirectionTime = 0;
+
+				if (getRandomChance(rng, 0.4))
+				{
+					changeStateStaying();
 				}
 				else
 				{
-					playerLockedOn = 0;
+					changeRandomWalkDirectionIfNeeded();
+				}
+
+			}
+			else if (!b->isColidable())
+			{
+
+				//bigger fall under?
+				blockPos.y--;
+				auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos));
+
+				if (!b || !b->isColidable())
+				{
+					direction = {};
+					waitTime = 0;
 				}
 			}
-		}
 
-		if (!playerLockedOn)
+		};
+
+		auto jumpIfNeeded = [&]()
 		{
-			//todo look randomly
-		}
 
-
-		//playerLockedOn = 0;
-
-		//auto playeerPos2D = playerLockedOnPosition;
-		//playeerPos2D.y = 0;
-		//auto pos2D = getPosition();
-		//pos2D.y = 0;
-
-		auto vectorToPlayer = playerLockedOnPosition - currentPosition;
-		vectorToPlayer.y = 0;
-		bool closeToPlayer = playerLockedOn && (glm::length(vectorToPlayer) > 1.2f);
-
-		bool pathFindingSucceeded = 0;
-		if (keepJumpingTimer >= 0)
-		{
-			keepJumpingTimer -= deltaTime;
-			if (direction != glm::vec2(0, 0))
+			if (direction.x != 0 && direction.y != 0)
 			{
-				pathFindingSucceeded = true;
+				auto blockPos = currentPosition;
+				blockPos.x += direction.x;
+				blockPos.z += direction.y;
+
+				auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos));
+
+				if (b && b->isColidable())
+				{
+
+					//don't jump too tall walls lol
+					auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos) + glm::ivec3(0, 1, 0));
+					if (!b || !b->isColidable())
+					{
+						auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos) + glm::ivec3(0, 2, 0));
+						if (!b || !b->isColidable())
+						{
+							baseEntity->entity.forces.jump();
+							keepJumpingTimer = 0.4;
+						}
+					}
+
+				}
+			}
+
+		};
+
+		auto applyMoveDirection = [&]()
+		{
+			if (direction.x != 0 && direction.y != 0)
+			{
+				auto move = 2.f * deltaTime * direction;
+
+				baseEntity->entity.move(move);
+				baseEntity->entity.bodyOrientation = direction;
+			}
+		};
+
+		auto checkIfStillSeingPlayer = [&]()
+		{
+			if (playerLockedOn == 0) { return; }
+
+			auto found = playersPositionSurvival.find(playerLockedOn);
+
+			if (found == playersPositionSurvival.end())
+			{
+				playerLockedOn = 0;
+				changeRandomState();
+			}
+			else
+			{
+				float distance = glm::distance(found->second, currentPosition);
+
+				if (distance > otherSettings.searchDistance + 5)
+				{
+					playerLockedOn = 0;
+					changeRandomState();
+				}
+				else
+				{
+					//todo raymarch through the world.
+
+					playerLockedOnPosition = found->second;
+				}
+
+			}
+
+		};
+
+		auto followPlayer = [&]()
+		{
+			if (!playerLockedOn) { return; }
+
+			auto vectorToPlayer = playerLockedOnPosition - currentPosition;
+			vectorToPlayer.y = 0;
+			bool closeToPlayer = (glm::length(vectorToPlayer) > 1.2f);
+
+			bool pathFindingSucceeded = 0;
+			if (keepJumpingTimer >= 0)
+			{
+				keepJumpingTimer -= deltaTime;
+				if (direction != glm::vec2(0, 0))
+				{
+					pathFindingSucceeded = true;
+				}
+				//else
+				//{
+				//	direction = {0,0};
+				//}
 			}
 			//else
 			//{
 			//	direction = {0,0};
 			//}
-		}
-		//else
-		//{
-		//	direction = {0,0};
-		//}
 
-		//disable following
-		if (1)
-			if (!pathFindingSucceeded && playerLockedOn && closeToPlayer)
+			if(!pathFindingSucceeded && closeToPlayer)
 			{
 
-				auto path = pathFinding.find(playerLockedOn);
+				auto path = pathFindingSurvival.find(playerLockedOn);
 
-				if (path != pathFinding.end())
+				if (path != pathFindingSurvival.end())
 				{
 
 					auto pos = from3DPointToBlock(currentPosition);
@@ -332,92 +583,116 @@ struct BasicEnemyBehaviour
 					}
 
 			};
-
-		//random walk
-		if (1)
-			//if (!playerLockedOn)
-		{
-			waitTime -= deltaTime;
-
-			if (waitTime < 0)
-			{
-				int moving = getRandomChance(rng, 0.5);
-				waitTime += getRandomNumberFloat(rng, 1, 8);
-
-				if (moving)
-				{
-					direction = getRandomUnitVector(rng);
-					waitTime += getRandomNumberFloat(rng, 0, 2);
-				}
-			}
 		};
 
-		//jump
+		searchForPlayerLogicIfNeeded();
+		checkIfStillSeingPlayer();
+		lookAtTargetedPlayer();
+
+		if (playerLockedOn != 0)
 		{
-			auto blockPos = currentPosition;
-			blockPos.x += direction.x;
-			blockPos.z += direction.y;
-
-			auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos));
-
-			if (b && b->isColidable())
-			{
-
-				//don't jump too tall walls lol
-				auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos) + glm::ivec3(0, 1, 0));
-				if (!b || !b->isColidable())
-				{
-					auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos) + glm::ivec3(0, 2, 0));
-					if (!b || !b->isColidable())
-					{
-						baseEntity->entity.forces.jump();
-						keepJumpingTimer = 0.4;
-					}
-				}
-
-			}
+			currentState = stateTargetedPlayer;
 		}
 
-		//don't fall into gaps when not following player
-		if (1)
-			if (!pathFindingSucceeded)
+		switch (currentState)
+		{
+
+			case stateStaying:
 			{
-				auto blockPos = currentPosition;
-				blockPos.x += direction.x;
-				blockPos.z += direction.y;
-
-				//block under
-				blockPos.y--;
-				auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos));
-
-				//void
-				if (!b)
+				
+				stateStayingData.timerChangeLookDirection -= deltaTime;
+				if (stateStayingData.timerChangeLookDirection < 0)
 				{
-					direction = {};
-					waitTime = 0;
-				}
-				else if (!b->isColidable())
-				{
+					stateStayingData.timerChangeLookDirection = getRandomNumberFloat(rng, 1, 10)
+						+ getRandomNumberFloat(rng, 1, 10);
 
-					//bigger fall under?
-					blockPos.y--;
-					auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos));
-
-					if (!b || !b->isColidable())
-					{
-						direction = {};
-						waitTime = 0;
-					}
+					lookAtARandomDirection();
 				}
 
+
+				stateChangeTimer -= deltaTime;
+				if(stateChangeTimer < 0)
+				{
+					changeRandomState();
+				}
 
 			}
 
+			case stateWalkingRandomly:
+			{
 
-		auto move = 2.f * deltaTime * direction;
+				changeRandomWalkDirectionIfNeeded();
 
-		baseEntity->entity.move(move);
-		baseEntity->entity.bodyOrientation = direction;
+				dontFallIntoGaps();
+
+				jumpIfNeeded();
+
+				applyMoveDirection();
+
+				stateChangeTimer -= deltaTime;
+				if (stateChangeTimer < 0)
+				{
+					changeRandomState();
+				}
+			}
+			
+			case stateTargetedPlayer:
+			{
+				followPlayer();
+
+				jumpIfNeeded();
+
+				applyMoveDirection();
+			}
+
+
+		}
+
+		float followDistance = 22;
+		float keepFollowDistance = 33;
+		float randomSightBonus = 10;
+
+
+		//if (!playerLockedOn)
+		//{
+		//
+		//	//todo temporary allocator
+		//
+		//	std::vector<std::uint64_t> close;
+		//
+		//	for (auto &p : playersPosition)
+		//	{
+		//		if (glm::distance(p.second, currentPosition) <= followDistance)
+		//		{
+		//			close.push_back(p.first);
+		//		}
+		//	}
+		//
+		//	if (!close.empty())
+		//	{
+		//		playerLockedOn = close[rng() % close.size()];
+		//	}
+		//
+		//}
+		
+
+
+
+
+		//playerLockedOn = 0;
+
+		//auto playeerPos2D = playerLockedOnPosition;
+		//playeerPos2D.y = 0;
+		//auto pos2D = getPosition();
+		//pos2D.y = 0;
+
+
+
+	
+
+
+
+
 
 
 	}
