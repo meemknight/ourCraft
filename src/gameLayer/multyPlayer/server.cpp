@@ -999,7 +999,7 @@ enum TokenType : int
 	Symbol
 };
 
-struct Token
+struct TokenCommand
 {
 	int type = 0;
 	std::string value = "";
@@ -1014,23 +1014,17 @@ bool isValidNumber(const std::string &str, double &outValue)
 	return end != str.c_str() && *end == '\0'; // Ensure full string was parsed
 }
 
-std::vector<Token> parse(const char *input, std::string &errOut)
+std::vector<TokenCommand> parse(const char *input, std::string &errOut)
 {
+	std::vector<TokenCommand> tokens;
 	std::istringstream stream(input);
-	std::string token; token.reserve(100);
+	std::string token;
 	errOut = "";
-	std::vector<Token> tokens;
-	tokens.push_back({});
-	tokens.push_back({});
-	tokens.push_back({});
-	tokens.push_back({});
-	tokens.push_back({});
-	auto s = tokens.size();
 
 	while (stream >> token)
 	{
 		size_t i = 0;
-
+	
 		while (i < token.size())
 		{
 			// Handle symbols
@@ -1045,7 +1039,7 @@ std::vector<Token> parse(const char *input, std::string &errOut)
 				size_t start = i;
 				while (i < token.size() && (std::isdigit(token[i]) || token[i] == '.')) ++i;
 				std::string numStr = token.substr(start, i - start);
-
+	
 				double numValue = 0.0;
 				if (isValidNumber(numStr, numValue))
 				{
@@ -1063,8 +1057,7 @@ std::vector<Token> parse(const char *input, std::string &errOut)
 			{
 				size_t start = i;
 				while (i < token.size() && (std::isalnum(token[i]) || token[i] == '_')) ++i;
-				Token t{TokenType::Identifier, token.substr(start, i - start)};
-				tokens.push_back(t);
+				tokens.push_back({TokenType::Identifier, token.substr(start, i - start)});
 			}
 			// Skip unknown characters (e.g., spaces handled by `stream >> token`)
 			else
@@ -1097,7 +1090,7 @@ std::string executeServerCommand(std::uint64_t cid, const char *command)
 
 	std::string err;
 
-	std::vector<Token> tokens = parse(command, err);
+	std::vector<TokenCommand> tokens = parse(command, err);
 
 	if (err != "") { return err; }
 

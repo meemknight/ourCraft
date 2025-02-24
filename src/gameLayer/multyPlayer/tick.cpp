@@ -2029,6 +2029,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 		};
 
 
+		//if(0)
 		for(auto &player : playersPositionSurvival)
 		{
 			queue.clear();
