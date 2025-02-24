@@ -1016,10 +1016,16 @@ bool isValidNumber(const std::string &str, double &outValue)
 
 std::vector<Token> parse(const char *input, std::string &errOut)
 {
-	std::vector<Token> tokens;
 	std::istringstream stream(input);
-	std::string token;
+	std::string token; token.reserve(100);
 	errOut = "";
+	std::vector<Token> tokens;
+	tokens.push_back({});
+	tokens.push_back({});
+	tokens.push_back({});
+	tokens.push_back({});
+	tokens.push_back({});
+	auto s = tokens.size();
 
 	while (stream >> token)
 	{
@@ -1057,7 +1063,8 @@ std::vector<Token> parse(const char *input, std::string &errOut)
 			{
 				size_t start = i;
 				while (i < token.size() && (std::isalnum(token[i]) || token[i] == '_')) ++i;
-				tokens.push_back({TokenType::Identifier, token.substr(start, i - start)});
+				Token t{TokenType::Identifier, token.substr(start, i - start)};
+				tokens.push_back(t);
 			}
 			// Skip unknown characters (e.g., spaces handled by `stream >> token`)
 			else

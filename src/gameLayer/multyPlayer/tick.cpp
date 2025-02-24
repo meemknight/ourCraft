@@ -1948,9 +1948,9 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 			newEntry.returnPos = node.returnPos;
 			newEntry.level = node.level + 1;
 
-			positions.emplace(node.returnPos + displacement, newEntry);
+			positions[node.returnPos + displacement] = newEntry;
 
-			if (node.level < 10)
+			if (node.level < 40)
 			{
 				newEntry.returnPos = node.returnPos + displacement;
 				queue.push_back(newEntry);
@@ -1995,8 +1995,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 					if (!bUp || !bUp->isColidable())
 					{
 						auto bDown = chunkCache.getBlockSafe(node.returnPos + displacement + glm::ivec3(0, -1, 0));
-						auto bDown2 = chunkCache.getBlockSafe(node.returnPos + 
-							displacement + glm::ivec3(0, -2, 0));
+						auto bDown2 = chunkCache.getBlockSafe(node.returnPos + displacement + glm::ivec3(0, -2, 0));
 
 						if ((bDown && bDown->isColidable())
 							|| (bDown2 && bDown2->isColidable())
@@ -2004,7 +2003,10 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 						{
 							addNode(node, displacement);
 
-							checkDown(node, displacement);
+							if((!bDown || !bDown->isColidable()) && bDown2 && bDown2->isColidable())
+							{
+								checkDown(node, displacement);
+							}
 						}
 
 					}
@@ -2027,10 +2029,12 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 		};
 
 
-		if (!playersPositionSurvival.empty())
+		for(auto &player : playersPositionSurvival)
 		{
-
-			glm::ivec3 pos = from3DPointToBlock(playersPositionSurvival.begin()->second);
+			queue.clear();
+			positions.clear();
+			
+			glm::ivec3 pos = from3DPointToBlock(player.second);
 
 			//project players position down down
 			for(int i=1; i<4; i++)
@@ -2047,7 +2051,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 					root.level = 0;
 
 					queue.push_back(root);
-					positions.emplace(pos - glm::ivec3(0, i-1, 0), root);
+					positions[pos - glm::ivec3(0, i-1, 0)] = root;
 					break;
 				}
 			}
@@ -2062,19 +2066,21 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 				checkSides(node, {0,0,1});
 				checkSides(node, {0,0,-1});
 
+				//checkDown(node, {});
+
 				auto bDown = chunkCache.getBlockSafe(node.returnPos + glm::ivec3(0,-1,0));
 				if (bDown && bDown->isColidable())
 				{
 					checkUp(node, {0,1,0});
-					//checkUp(node, {0,2,0});
-					//checkUp(node, {0,3,0});
-					//checkUp(node, {0,4,0});
+					checkUp(node, {0,2,0});
+					checkUp(node, {0,3,0});
+					checkUp(node, {0,4,0});
 					//checkUp(node, {0,5,0});
 				}
 
 			}
 
-			pathFindingSurvivalClients.emplace(playersPositionSurvival.begin()->first, std::move(positions));
+			pathFindingSurvivalClients[player.first] = std::move(positions);
 		}
 	
 	};

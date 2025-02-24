@@ -196,7 +196,11 @@ struct BasicEnemyBehaviour
 				stateWalkingRandomlyData.changeDirectionTime += getRandomNumberFloat(rng, 1, 5);
 
 				direction = getRandomUnitVector(rng);
+				baseEntity->entity.bodyOrientation = direction;
 
+				lookAtDirection(glm::vec3(direction.x, 0, direction.y), baseEntity->entity.lookDirectionAnimation,
+					currentPosition, baseEntity->entity.bodyOrientation,
+					glm::radians(65.f));
 			}
 		};
 
@@ -212,7 +216,7 @@ struct BasicEnemyBehaviour
 
 		};
 
-		auto changeRandomState = [&]()
+		auto changeRandomState = [&](float stayingChance = 0.5)
 		{
 			stateChangeTimer = getRandomNumberFloat(rng, 1, 5)
 				+ getRandomNumberFloat(rng, 1, 5) + getRandomNumberFloat(rng, 1, 5);
@@ -326,7 +330,7 @@ struct BasicEnemyBehaviour
 			if (found == playersPositionSurvival.end())
 			{
 				playerLockedOn = 0;
-				changeRandomState();
+				changeRandomState(0.8);
 			}
 			else
 			{
@@ -335,7 +339,7 @@ struct BasicEnemyBehaviour
 				if (distance > otherSettings.searchDistance + 5)
 				{
 					playerLockedOn = 0;
-					changeRandomState();
+					changeRandomState(0.8);
 				}
 				else
 				{
@@ -348,9 +352,9 @@ struct BasicEnemyBehaviour
 
 		};
 
-		auto followPlayer = [&]()
+		auto followPlayer = [&]() -> bool
 		{
-			if (!playerLockedOn) { return; }
+			if (!playerLockedOn) { return false; }
 
 			auto vectorToPlayer = playerLockedOnPosition - currentPosition;
 			vectorToPlayer.y = 0;
@@ -562,11 +566,11 @@ struct BasicEnemyBehaviour
 
 				};
 
-
+				//move in the direction of the player if path finding failed
 				if (1)
 					if (!pathFindingSucceeded)
 					{
-						//std::cout << "yess ";
+						std::cout << "path finding failed!\n";
 
 						glm::vec3 d = playerLockedOnPosition
 							- currentPosition;
@@ -581,6 +585,8 @@ struct BasicEnemyBehaviour
 						}
 
 					}
+
+				return pathFindingSucceeded;
 
 			};
 		};
@@ -638,7 +644,10 @@ struct BasicEnemyBehaviour
 			
 			case stateTargetedPlayer:
 			{
-				followPlayer();
+				if (!followPlayer())
+				{
+					dontFallIntoGaps();
+				}
 
 				jumpIfNeeded();
 
