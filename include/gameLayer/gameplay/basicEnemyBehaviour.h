@@ -117,7 +117,15 @@ struct BasicEnemyBehaviour
 							//std::cout << "lookDirection: " << lookDirection.x << " " << lookDirection.y << " " << lookDirection.z << "\n";
 							viewFactor = pow(viewFactor, 8.f);
 
-							percentage += viewFactor * 0.7;
+							//if we are close and the enemy looks directly at us we have a big chance of being targeted.
+							if (distance <= otherSettings.searchDistance / 1.5f)
+							{
+								percentage += viewFactor * 0.7;
+							}
+							else
+							{
+								percentage += viewFactor * 0.3;
+							}
 
 							if (getRandomChance(rng, percentage))
 							{

@@ -25,7 +25,7 @@ void displayRenderSettingsMenu(ProgramData &programData)
 	for (auto &s : programData.ui.menuRenderer.internal.allMenuStacks
 		[programData.ui.menuRenderer.internal.currentId])
 	{
-		if (s == "Rendering")
+		if (s == "Rendering" || s == "Settings")
 		{
 			programData.ui.renderer2d.renderText({150,50},
 				("fps: " + std::to_string(programData.currentFps)).c_str(), programData.ui.font, Colors_Gray, 0.75f);
@@ -130,15 +130,27 @@ good performance.\n-Fancy: significant performance cost but looks very nice.");
 	programData.ui.menuRenderer.EndMenu();
 #pragma endregion
 
+#pragma region color post processing
+	programData.ui.menuRenderer.BeginMenu("Color post processing", Colors_Gray, programData.ui.buttonTexture);
+
+	programData.ui.menuRenderer.Text("Color post processing", {1,1,1,0.65});
 
 	//static glm::vec4 colorsTonemapper[] = {{0.6,0.9,0.6,1}, {0.6,0.9,0.6,1}, {0.7,0.8,0.6,1} , {0.4,0.8,0.4,1}};
 	programData.ui.menuRenderer.toggleOptions("Tonemapper: ",
-		"ACES|AgX|ZCAM|Uncharted|Test", &getShadingSettings().tonemapper,
-		true, Colors_White, nullptr, programData.ui.buttonTexture,
-		Colors_Gray, 
-"The tonemapper is the thing that displays the final color\n\
+		"ACES|AgX|ZCAM|Uncharted|PBR neutral", &getShadingSettings().tonemapper,
+		true, {1,1,1,0.65}, nullptr, programData.ui.buttonTexture,
+		{1,1,1,0.65},
+		"The tonemapper is the thing that displays the final color\n\
 -Aces: a filmic look.\n-AgX: a more dull neutral look.\n-ZCAM a verey neutral and vanila look\n   preserves colors, slightly more expensive.\n Unchrated :))");
 	programData.renderer.defaultShader.shadingSettings.tonemapper = getShadingSettings().tonemapper;
+
+	programData.ui.menuRenderer.EndMenu();
+
+#pragma endregion
+
+
+
+
 
 
 	programData.ui.menuRenderer.newColum(2);

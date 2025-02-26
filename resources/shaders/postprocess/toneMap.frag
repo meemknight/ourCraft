@@ -416,7 +416,6 @@ vec3 unchartedTonemapping(vec3 color)
 
 
 //https://github.com/dmnsgn/glsl-tone-map
-
 // Filmic Tonemapping Operators http://filmicworlds.com/blog/filmic-tonemapping-operators/
 vec3 filmic(vec3 x) {
   vec3 X = max(vec3(0.0), x - 0.004);
@@ -424,8 +423,66 @@ vec3 filmic(vec3 x) {
   return pow(result, vec3(2.2));
 }
 
+
+
+
+
+vec3 ACESDesaturate(vec3 x)
+{
+	const mat3 ACESInputMat = transpose(mat3(
+		0.59719, 0.35458, 0.04823,
+		0.07600, 0.90834, 0.01566,
+		0.02840, 0.13383, 0.83777
+	));
+
+	const mat3 ACESOutputMat = transpose(mat3(
+		1.60475, -0.53108, -0.07367,
+		-0.10208,  1.10813, -0.00605,
+		-0.00327, -0.07276,  1.07602
+	));
+
+	x = ACESInputMat * x; // Convert to ACES-like space
+
+	// Tonemap
+	x = x * (x + 0.024) / (x * (0.9836) + 0.107);
+	
+	x = ACESOutputMat * x; // Convert back
+
+	// Desaturate based on luminance
+	float luma = dot(x, vec3(0.2126, 0.7152, 0.0722));
+	x = mix(x, vec3(luma), smoothstep(0.8, 1.0, luma)); // Desaturate highlights
+
+	return clamp(x, 0.0, 1.0);
+}
+
+
+// https://github.com/KhronosGroup/ToneMapping
+// https://github.com/KhronosGroup/ToneMapping/tree/main/PBR_Neutral
+// Input color is non-negative and resides in the Linear Rec. 709 color space.
+// Output color is also Linear Rec. 709, but in the [0, 1] range.
+vec3 PBRNeutralToneMapping( vec3 color ) {
+  const float startCompression = 0.8 - 0.04;
+  const float desaturation = 0.15;
+
+  float x = min(color.r, min(color.g, color.b));
+  float offset = x < 0.08 ? x - 6.25 * x * x : 0.04;
+  color -= offset;
+
+  float peak = max(color.r, max(color.g, color.b));
+  if (peak < startCompression) return color;
+
+  const float d = 1. - startCompression;
+  float newPeak = 1. - d * d / (peak + d - startCompression);
+  color *= newPeak / peak;
+
+  float g = 1. - 1. / (desaturation * (peak - newPeak) + 1.);
+  return mix(color, newPeak * vec3(1, 1, 1), g);
+}
+
+//https://github.com/dmnsgn/glsl-tone-map/blob/main/lottes.glsl
 // Lottes 2016, "Advanced Techniques and Optimization of HDR Color Pipelines"
 vec3 lottes(vec3 x) {
+  x *= vec3(0.9); //I reduced the light a little
   const vec3 a = vec3(1.6);
   const vec3 d = vec3(0.977);
   const vec3 hdrMax = vec3(8.0);
@@ -442,59 +499,6 @@ vec3 lottes(vec3 x) {
   return pow(x, a) / (pow(x, a * d) * b + c);
 }
 
-
-// Khronos PBR Neutral Tone Mapper
-// https://github.com/KhronosGroup/ToneMapping/tree/main/PBR_Neutral
-
-// Input color is non-negative and resides in the Linear Rec. 709 color space.
-// Output color is also Linear Rec. 709, but in the [0, 1] range.
-vec3 neutral(vec3 color) {
-  const float startCompression = 0.8 - 0.04;
-  const float desaturation = 0.15;
-
-  float x = min(color.r, min(color.g, color.b));
-  float offset = x < 0.08 ? x - 6.25 * x * x : 0.04;
-  color -= offset;
-
-  float peak = max(color.r, max(color.g, color.b));
-  if (peak < startCompression) return color;
-
-  const float d = 1.0 - startCompression;
-  float newPeak = 1.0 - d * d / (peak + d - startCompression);
-  color *= newPeak / peak;
-
-  float g = 1.0 - 1.0 / (desaturation * (peak - newPeak) + 1.0);
-  return mix(color, vec3(newPeak), g);
-}
-
-
-vec3 ACESDesaturate(vec3 x)
-{
-	const mat3 ACESInputMat = mat3(
-		0.59719, 0.35458, 0.04823,
-		0.07600, 0.90834, 0.01566,
-		0.02840, 0.13383, 0.83777
-	);
-
-	const mat3 ACESOutputMat = mat3(
-		1.60475, -0.53108, -0.07367,
-		-0.10208,  1.10813, -0.00605,
-		-0.00327, -0.07276,  1.07602
-	);
-
-	x = ACESInputMat * x; // Convert to ACES-like space
-
-	// Tonemap
-	x = x * (x + 0.024) / (x * (0.9836) + 0.107);
-	
-	x = ACESOutputMat * x; // Convert back
-
-	// Desaturate based on luminance
-	float luma = dot(x, vec3(0.2126, 0.7152, 0.0722));
-	x = mix(x, vec3(luma), smoothstep(0.8, 1.0, luma)); // Desaturate highlights
-
-	return clamp(x, 0.0, 1.0);
-}
 
 vec3 tonemapFunction(vec3 c)
 {
@@ -514,7 +518,7 @@ vec3 tonemapFunction(vec3 c)
 	{
 		//playground
 		//return lottes(c);
-		return (c);
+		return PBRNeutralToneMapping(c);
 	}
 }
 

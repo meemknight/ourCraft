@@ -116,6 +116,8 @@ void sendPacketAndCompress(ENetPeer *to,
 		}
 		else
 		{
+			
+			//std::cout << "CHUNK SIZE BYTES: " << compressedSize << "\n";
 			//std::cout << "CompressedSize: " << compressedSize << "\n";
 
 			//std::cout << "compressed\n";

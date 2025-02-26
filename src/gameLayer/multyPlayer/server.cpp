@@ -955,7 +955,7 @@ void updateLoadedChunks(
 								Packet packet;
 								packet.header = headerRecieveEntireBlockDataForChunk;
 
-								if (blockData.size() > 1000)
+								if (blockData.size() > 100)
 								{
 									sendPacketAndCompress(client.peer, packet, (char *)blockData.data(),
 										blockData.size(), true, channelChunksAndBlocks);
