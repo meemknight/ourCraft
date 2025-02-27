@@ -291,6 +291,14 @@ struct Renderer
 		uniform u_tonemapper = 0;
 		uniform u_exposure = 0;
 
+		uniform u_saturation = 0;
+		uniform u_vibrance = 0;
+		uniform u_gamma = 0;
+		uniform u_shadowBoost = 0;
+		uniform u_highlightBoost = 0;
+		uniform u_lift = 0;
+		uniform u_gain = 0;
+
 	}applyToneMapper;
 
 	//It is the same as the z pre pass shader

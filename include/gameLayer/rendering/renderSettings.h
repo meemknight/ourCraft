@@ -65,6 +65,13 @@ struct ShadingSettings
 
 	int SSR = 1;
 
+	float toneMapSaturation = 1;
+	float toneMapVibrance = 1;
+	float toneMapGamma = 1;
+	float toneMapShadowBoost = 0;
+	float toneMapHighlightBoost = 0;
+	glm::vec3 toneMapLift = glm::vec3(0.5);
+	glm::vec3 toneMapGain = glm::vec3(0.5);
 
 	void normalize();
 

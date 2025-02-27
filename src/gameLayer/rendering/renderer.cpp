@@ -2467,7 +2467,13 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(applyToneMapper, u_exposure);
 
 
-
+	GET_UNIFORM2(applyToneMapper, u_saturation);
+	GET_UNIFORM2(applyToneMapper, u_vibrance);
+	GET_UNIFORM2(applyToneMapper, u_gamma);
+	GET_UNIFORM2(applyToneMapper, u_shadowBoost);
+	GET_UNIFORM2(applyToneMapper, u_highlightBoost);
+	GET_UNIFORM2(applyToneMapper, u_lift);
+	GET_UNIFORM2(applyToneMapper, u_gain);
 
 
 #pragma endregion
@@ -4066,6 +4072,28 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform1i(applyToneMapper.u_color, 0);
 		glUniform1i(applyToneMapper.u_tonemapper, defaultShader.shadingSettings.tonemapper);
 		glUniform1f(applyToneMapper.u_exposure, adaptiveExposure.currentExposure);
+
+		glUniform1f(applyToneMapper.u_saturation, shadingSettings.toneMapSaturation);
+		glUniform1f(applyToneMapper.u_vibrance, shadingSettings.toneMapVibrance);
+		glUniform1f(applyToneMapper.u_gamma, shadingSettings.toneMapGamma);
+		glUniform1f(applyToneMapper.u_shadowBoost, shadingSettings.toneMapShadowBoost);
+		glUniform1f(applyToneMapper.u_highlightBoost, shadingSettings.toneMapHighlightBoost);
+		
+		glm::vec3 lift = shadingSettings.toneMapLift;
+		lift = lift * glm::vec3(0.2) - glm::vec3(0.1);
+
+		glm::vec3 gain = shadingSettings.toneMapGain;
+		gain = gain * glm::vec3(0.4) + glm::vec3(0.8);
+
+		glUniform3f(applyToneMapper.u_lift, lift.x, lift.y, lift.z);
+		glUniform3f(applyToneMapper.u_gain, gain.x, gain.y, gain.z);
+
+			
+			
+			
+			
+
+
 
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

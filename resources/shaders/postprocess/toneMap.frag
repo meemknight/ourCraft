@@ -559,6 +559,43 @@ float gradientNoise(in vec2 uv)
 }
 
 
+uniform float u_saturation = 1;
+uniform float u_vibrance = 1;
+uniform float u_gamma = 1;
+uniform float u_shadowBoost = 0;
+uniform float u_highlightBoost = 0;
+uniform vec3 u_lift = vec3(0.0);
+uniform vec3 u_gain = vec3(1.0);
+
+vec3 adjustColor(vec3 color, float saturation, float vibrance, float gamma, 
+				 float shadowBoost, float highlightBoost, vec3 lift, vec3 gain) {
+	// Convert to Luma (perceived brightness)
+	float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
+
+	// Saturation adjustment
+	color = mix(vec3(luma), color, saturation);
+
+	// Vibrance adjustment (protects already saturated areas)
+	float satStrength = 1.0 - smoothstep(0.0, 1.0, max(color.r, max(color.g, color.b)));
+	color = mix(color, mix(vec3(luma), color, vibrance), satStrength);
+
+	// Shadows & Highlights adjustment
+	float shadowMask = smoothstep(0.0, 0.5, luma);
+	float highlightMask = smoothstep(0.5, 1.0, luma);
+	color *= mix(vec3(1.0), vec3(1.0 + shadowBoost), shadowMask);
+	color *= mix(vec3(1.0), vec3(1.0 + highlightBoost), highlightMask);
+
+	// Lift (shifts blacks) and Gain (scales highlights)
+	color = (color + lift) * gain;
+
+	// Gamma applied to control brightness curve
+	color = pow(max(color, 0.0), vec3(gamma));
+
+	return color;
+}
+
+
+
 
 void main()
 {
@@ -571,6 +608,9 @@ void main()
 	//vec3 purkine = purkineShift(out_color.rgb);
 	//out_color.rgb = mix(out_color.rgb, purkine, 0.05);
 	
+	out_color.rgb = adjustColor(out_color.rgb, u_saturation, u_vibrance, 
+		u_gamma, u_shadowBoost, u_highlightBoost, u_lift, u_gain);
+
 	out_color.rgb = tonemapFunction(out_color.rgb);
 	out_color.rgb = toGammaSpace(out_color.rgb);
 	

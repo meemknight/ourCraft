@@ -18,6 +18,9 @@ void displayRenderSettingsMenuButton(ProgramData &programData)
 }
 
 #define DEFAULT_SLIDER Colors_White, programData.ui.buttonTexture, Colors_Gray, programData.ui.buttonTexture, Colors_White
+#define DEFAULT_SLIDER_TRANSPARENT {1,1,1,0.65}, programData.ui.buttonTexture, {(float)0x7F / 255.0f, (float)0x7F / 255.0f, (float)0x7F / 255.0f, 0.65}, programData.ui.buttonTexture, {1,1,1,0.65}
+#define DEFAULT_COLOR_PICKER programData.ui.buttonTexture, programData.ui.buttonTexture, Colors_Gray, Colors_Gray
+#define DEFAULT_COLOR_PICKER_TRANSPARENT programData.ui.buttonTexture, programData.ui.buttonTexture, {(float)0x7F / 255.0f, (float)0x7F / 255.0f, (float)0x7F / 255.0f, 0.65}, {(float)0x7F / 255.0f, (float)0x7F / 255.0f, (float)0x7F / 255.0f, 0.65}
 
 void displayRenderSettingsMenu(ProgramData &programData)
 {
@@ -133,16 +136,51 @@ good performance.\n-Fancy: significant performance cost but looks very nice.");
 #pragma region color post processing
 	programData.ui.menuRenderer.BeginMenu("Color post processing", Colors_Gray, programData.ui.buttonTexture);
 
-	programData.ui.menuRenderer.Text("Color post processing", {1,1,1,0.65});
+	programData.ui.menuRenderer.Text("Color post processing", {(float)0x7F / 255.0f, (float)0x7F / 255.0f, (float)0x7F / 255.0f, 0.65});
 
 	//static glm::vec4 colorsTonemapper[] = {{0.6,0.9,0.6,1}, {0.6,0.9,0.6,1}, {0.7,0.8,0.6,1} , {0.4,0.8,0.4,1}};
 	programData.ui.menuRenderer.toggleOptions("Tonemapper: ",
 		"ACES|AgX|ZCAM|Uncharted|PBR neutral", &getShadingSettings().tonemapper,
-		true, {1,1,1,0.65}, nullptr, programData.ui.buttonTexture,
-		{1,1,1,0.65},
+		true, {(float)0x7F / 255.0f, (float)0x7F / 255.0f, (float)0x7F / 255.0f, 0.65}, nullptr, programData.ui.buttonTexture,
+		{(float)0x7F / 255.0f, (float)0x7F / 255.0f, (float)0x7F / 255.0f, 0.65},
 		"The tonemapper is the thing that displays the final color\n\
--Aces: a filmic look.\n-AgX: a more dull neutral look.\n-ZCAM a verey neutral and vanila look\n   preserves colors, slightly more expensive.\n Unchrated :))");
+-Aces: a filmic look.\n-AgX: a more dull neutral look.\n-ZCAM a verey neutral and vanila look\n   preserves colors, slightly more expensive.\n-Unchrated :))");
 	programData.renderer.defaultShader.shadingSettings.tonemapper = getShadingSettings().tonemapper;
+
+	if (programData.ui.menuRenderer.Button("Reset settings...", {(float)0x7F / 255.0f, (float)0x7F / 255.0f, (float)0x7F / 255.0f, 0.65}, programData.ui.buttonTexture))
+	{
+		getShadingSettings().toneMapSaturation = 1;
+		getShadingSettings().toneMapVibrance = 1;
+		getShadingSettings().toneMapGamma = 1;
+		getShadingSettings().toneMapShadowBoost = 0;
+		getShadingSettings().toneMapHighlightBoost = 0;
+		getShadingSettings().toneMapLift = glm::vec3(0.5);
+		getShadingSettings().toneMapGain = glm::vec3(0.5);
+	}
+
+	programData.ui.menuRenderer.sliderFloat("Saturation", &getShadingSettings().toneMapSaturation, 0, 2, DEFAULT_SLIDER_TRANSPARENT);
+	programData.ui.menuRenderer.sliderFloat("Vibrance", &getShadingSettings().toneMapVibrance, 0, 2, DEFAULT_SLIDER_TRANSPARENT);
+	programData.ui.menuRenderer.sliderFloat("Gamma", &getShadingSettings().toneMapGamma, 0.1, 2, DEFAULT_SLIDER_TRANSPARENT);
+	programData.ui.menuRenderer.sliderFloat("Shadow Boost", &getShadingSettings().toneMapShadowBoost, -1, 1, DEFAULT_SLIDER_TRANSPARENT);
+	programData.ui.menuRenderer.sliderFloat("Highlight Boost", &getShadingSettings().toneMapHighlightBoost, -1, 1, DEFAULT_SLIDER_TRANSPARENT);
+	
+
+	programData.ui.menuRenderer.colorPicker("Lift", &getShadingSettings().toneMapLift[0], DEFAULT_COLOR_PICKER_TRANSPARENT);
+	programData.ui.menuRenderer.colorPicker("Gain", &getShadingSettings().toneMapGain[0], DEFAULT_COLOR_PICKER_TRANSPARENT);
+
+	//glUniform1f(applyToneMapper.u_saturation, shadingSettings.toneMapSaturation);
+	//glUniform1f(applyToneMapper.u_vibrance, shadingSettings.toneMapVibrance);
+	//glUniform1f(applyToneMapper.u_gamma, shadingSettings.toneMapGamma);
+	//glUniform1f(applyToneMapper.u_shadowBoost, shadingSettings.toneMapShadowBoost);
+	//glUniform1f(applyToneMapper.u_highlightBoost, shadingSettings.toneMapHighlightBoost);
+	//glUniform3f(applyToneMapper.u_lift, shadingSettings.toneMapLift.x, shadingSettings.toneMapLift.y, shadingSettings.toneMapLift.z);
+	//glUniform3f(applyToneMapper.u_gain, shadingSettings.toneMapGain.x, shadingSettings.toneMapGain.y, shadingSettings.toneMapGain.z);
+
+
+
+
+
+
 
 	programData.ui.menuRenderer.EndMenu();
 
@@ -717,6 +755,17 @@ void saveShadingSettings()
 	SET_FLOAT(exposure);
 	SET_FLOAT(fogGradient);
 
+
+	SET_FLOAT(toneMapSaturation);
+	SET_FLOAT(toneMapVibrance);
+	SET_FLOAT(toneMapGamma);
+	SET_FLOAT(toneMapShadowBoost);
+	SET_FLOAT(toneMapHighlightBoost);
+	SET_VEC3(toneMapLift);
+	SET_VEC3(toneMapGain);
+
+
+
 	sfs::safeSave(data, RESOURCES_PATH "../playerSettings/renderSettings", 0);
 
 }
@@ -752,6 +801,12 @@ void loadShadingSettings()
 		GET_INT(useLights);
 		GET_FLOAT(lightsStrength);
 
+		GET_FLOAT(toneMapSaturation);
+		GET_FLOAT(toneMapVibrance);
+		GET_FLOAT(toneMapGamma);
+		GET_FLOAT(toneMapShadowBoost);
+		GET_FLOAT(toneMapHighlightBoost);
+
 
 		void *rawData = 0;
 		size_t dataSize = 0;
@@ -762,6 +817,16 @@ void loadShadingSettings()
 		data.getRawDataPointer("underWaterColor", rawData, dataSize);
 		if (dataSize == sizeof(shadingSettings.underWaterColor))
 			{ memcpy(&shadingSettings.underWaterColor[0], rawData, dataSize); }
+
+		data.getRawDataPointer("toneMapLift", rawData, dataSize);
+		if (dataSize == sizeof(shadingSettings.toneMapLift))
+			{ memcpy(&shadingSettings.toneMapLift[0], rawData, dataSize); }
+
+		data.getRawDataPointer("toneMapGain", rawData, dataSize);
+		if (dataSize == sizeof(shadingSettings.toneMapGain))
+			{ memcpy(&shadingSettings.toneMapGain[0], rawData, dataSize); }
+
+
 
 		GET_FLOAT(underwaterDarkenStrength);
 		GET_FLOAT(underwaterDarkenDistance);
@@ -1417,6 +1482,15 @@ void ShadingSettings::normalize()
 
 	exposure = glm::clamp(exposure, -2.f, 2.f);
 	fogGradient = glm::clamp(fogGradient, 0.f, 100.f);
+
+
+	toneMapSaturation = glm::clamp(toneMapSaturation, 0.f, 2.f);
+	toneMapVibrance = glm::clamp(toneMapVibrance, 0.f, 2.f);
+	toneMapGamma = glm::clamp(toneMapGamma, 0.1f, 2.f);
+	toneMapShadowBoost = glm::clamp(toneMapShadowBoost, -1.f, 1.f);
+	toneMapHighlightBoost = glm::clamp(toneMapHighlightBoost, -1.f, 1.f);
+	glm::vec3 toneMapLift = glm::clamp(toneMapLift ,glm::vec3(0.f), glm::vec3(1));
+	glm::vec3 toneMapGain = glm::clamp(toneMapGain, glm::vec3(0.f), glm::vec3(1));
 
 }
 
