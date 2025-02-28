@@ -564,6 +564,7 @@ uniform float u_vibrance = 1;
 uniform float u_gamma = 1;
 uniform float u_shadowBoost = 0;
 uniform float u_highlightBoost = 0;
+uniform float u_vignette = 0.18;
 uniform vec3 u_lift = vec3(0.0);
 uniform vec3 u_gain = vec3(1.0);
 
@@ -594,7 +595,25 @@ vec3 adjustColor(vec3 color, float saturation, float vibrance, float gamma,
 	return color;
 }
 
+float screen(float base, float blend)
+{
+	return 1.0 - (1.0 - base) * (1.0 - blend);
+}
 
+
+
+//https://www.shadertoy.com/view/lsKSWR
+vec3 applyVignette(vec3 color, float intensity) {
+    // Get normalized screen coordinates (0 to 1)
+    vec2 uv = gl_FragCoord.xy / textureSize(u_color, 0);
+    
+    uv *= 1.0 - uv.yx; // vec2(1.0) - uv.yx; -> 1.0 - uv.yx
+    
+    float vig = uv.x * uv.y * 15.0; // Base vignette strength
+    vig = pow(vig, mix(0.25, 1.0, intensity)); // Adjust falloff with intensity
+
+    return mix(color, color * vig, intensity);
+}
 
 
 void main()
@@ -618,6 +637,8 @@ void main()
 	float strength = 1;
 	out_color.rgb += (strength * 1.0 / 255.0) * gradientNoise(gl_FragCoord.xy) - (strength * 0.5 / 255.0);
 	out_color = clamp(out_color, vec3(0), vec3(1));
+
+	out_color.rgb = applyVignette(out_color.rgb, u_vignette);
 
 	outColor = vec4(out_color, 1);
 }

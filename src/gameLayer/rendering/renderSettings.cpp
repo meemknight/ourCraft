@@ -154,10 +154,12 @@ good performance.\n-Fancy: significant performance cost but looks very nice.");
 		getShadingSettings().toneMapGamma = 1;
 		getShadingSettings().toneMapShadowBoost = 0;
 		getShadingSettings().toneMapHighlightBoost = 0;
+		getShadingSettings().vignette = 0.18f;
 		getShadingSettings().toneMapLift = glm::vec3(0.5);
 		getShadingSettings().toneMapGain = glm::vec3(0.5);
 	}
 
+	programData.ui.menuRenderer.sliderFloat("Vignette", &getShadingSettings().vignette, 0, 1, DEFAULT_SLIDER_TRANSPARENT);
 	programData.ui.menuRenderer.sliderFloat("Saturation", &getShadingSettings().toneMapSaturation, 0, 2, DEFAULT_SLIDER_TRANSPARENT);
 	programData.ui.menuRenderer.sliderFloat("Vibrance", &getShadingSettings().toneMapVibrance, 0, 2, DEFAULT_SLIDER_TRANSPARENT);
 	programData.ui.menuRenderer.sliderFloat("Gamma", &getShadingSettings().toneMapGamma, 0.1, 2, DEFAULT_SLIDER_TRANSPARENT);
@@ -761,6 +763,7 @@ void saveShadingSettings()
 	SET_FLOAT(toneMapGamma);
 	SET_FLOAT(toneMapShadowBoost);
 	SET_FLOAT(toneMapHighlightBoost);
+	SET_FLOAT(vignette);
 	SET_VEC3(toneMapLift);
 	SET_VEC3(toneMapGain);
 
@@ -806,6 +809,7 @@ void loadShadingSettings()
 		GET_FLOAT(toneMapGamma);
 		GET_FLOAT(toneMapShadowBoost);
 		GET_FLOAT(toneMapHighlightBoost);
+		GET_FLOAT(vignette);
 
 
 		void *rawData = 0;
@@ -1489,6 +1493,7 @@ void ShadingSettings::normalize()
 	toneMapGamma = glm::clamp(toneMapGamma, 0.1f, 2.f);
 	toneMapShadowBoost = glm::clamp(toneMapShadowBoost, -1.f, 1.f);
 	toneMapHighlightBoost = glm::clamp(toneMapHighlightBoost, -1.f, 1.f);
+	vignette = glm::clamp(vignette, 0.f, 1.f);
 	glm::vec3 toneMapLift = glm::clamp(toneMapLift ,glm::vec3(0.f), glm::vec3(1));
 	glm::vec3 toneMapGain = glm::clamp(toneMapGain, glm::vec3(0.f), glm::vec3(1));
 

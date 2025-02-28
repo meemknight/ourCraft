@@ -2472,6 +2472,7 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(applyToneMapper, u_gamma);
 	GET_UNIFORM2(applyToneMapper, u_shadowBoost);
 	GET_UNIFORM2(applyToneMapper, u_highlightBoost);
+	GET_UNIFORM2(applyToneMapper, u_vignette);
 	GET_UNIFORM2(applyToneMapper, u_lift);
 	GET_UNIFORM2(applyToneMapper, u_gain);
 
@@ -3421,6 +3422,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 			//std::cout << sunPositionScreenSpaceUV.x << " " << sunPositionScreenSpaceUV.y << "\n";
 
+
+			//TODO OPTIMIZE!
 			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SSGR last step");
 			//SS God rays
 
@@ -4078,6 +4081,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform1f(applyToneMapper.u_gamma, shadingSettings.toneMapGamma);
 		glUniform1f(applyToneMapper.u_shadowBoost, shadingSettings.toneMapShadowBoost);
 		glUniform1f(applyToneMapper.u_highlightBoost, shadingSettings.toneMapHighlightBoost);
+		glUniform1f(applyToneMapper.u_vignette, shadingSettings.vignette);
 		
 		glm::vec3 lift = shadingSettings.toneMapLift;
 		lift = lift * glm::vec3(0.2) - glm::vec3(0.1);

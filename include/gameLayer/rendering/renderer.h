@@ -296,6 +296,7 @@ struct Renderer
 		uniform u_gamma = 0;
 		uniform u_shadowBoost = 0;
 		uniform u_highlightBoost = 0;
+		uniform u_vignette = 0;
 		uniform u_lift = 0;
 		uniform u_gain = 0;
 
