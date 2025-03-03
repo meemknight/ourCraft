@@ -154,7 +154,7 @@ good performance.\n-Fancy: significant performance cost but looks very nice.");
 		getShadingSettings().toneMapGamma = 1;
 		getShadingSettings().toneMapShadowBoost = 0;
 		getShadingSettings().toneMapHighlightBoost = 0;
-		getShadingSettings().vignette = 0.18f;
+		getShadingSettings().vignette = 0.15f;
 		getShadingSettings().toneMapLift = glm::vec3(0.5);
 		getShadingSettings().toneMapGain = glm::vec3(0.5);
 	}
