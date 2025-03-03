@@ -9,6 +9,8 @@ struct BasicEnemyBehaviourOtherSettings
 
 	float searchForPlayerTimer = 1; //how much time will it take untill the entity searches for another target, (while it doesn't have a target)
 	float searchDistance = 40; //players that get to this close will start getting targeted
+	float hearBonus = 0.1;
+	float sightBonus = 0.1;
 
 };
 
@@ -70,8 +72,8 @@ struct BasicEnemyBehaviour
 			if (playerLockedOn != 0) { return; }
 			if (playersPositionSurvival.empty()) { return; }
 
-			searchForPlayerTimer -= deltaTime;
-			if (searchForPlayerTimer < 0)
+			//searchForPlayerTimer -= deltaTime;
+			//if (searchForPlayerTimer < 0)
 			{
 
 				//todo temporary allocator
@@ -89,23 +91,31 @@ struct BasicEnemyBehaviour
 					{
 						//this player is close enough
 
-						if (distance <= otherSettings.searchDistance / 10.f)
-						{
-							//instant target!
-							playerLockedOn = playerID;
-							break;
-						}
-						else
+						//if (distance <= otherSettings.searchDistance / 10.f)
+						//{
+						//	//instant target!
+						//	playerLockedOn = playerID;
+						//	break;
+						//}
+						//else
 						{
 							//percentage from approaching from begind
 							float percentage = distance;
-							percentage -= otherSettings.searchDistance / 10.f;
-							percentage /= (otherSettings.searchDistance * ( 9.f / 10.f));
+							//percentage -= otherSettings.searchDistance / 10.f;
+							//percentage /= (otherSettings.searchDistance * ( 9.f / 10.f));
+							percentage /= otherSettings.searchDistance;
+							float distancePercentage = percentage;
+
 							percentage = 1.f - glm::clamp(percentage, 0.f, 1.f);
+
 
 							//std::cout << "Distance Calculated: " << percentage << "; final percentage: " 
 							//	<< 100*pow(percentage, 4.f) << "%\n";
-							percentage = pow(percentage, 4.f);
+							percentage = pow(percentage, 3.f);
+
+							percentage += otherSettings.hearBonus;
+							percentage = glm::clamp(percentage, 0.f, 1.f);
+
 
 							glm::vec3 lookDirection = realLookDirection;
 							glm::vec3 vectorToPlayer = normalize(position - currentPosition);
@@ -115,23 +125,72 @@ struct BasicEnemyBehaviour
 							//	<< 100*pow(viewFactor, 8.f) << "%\n";
 							//std::cout << "vectorToPlayer: " << vectorToPlayer.x << " " << vectorToPlayer.y << " " << vectorToPlayer.z << "\n";
 							//std::cout << "lookDirection: " << lookDirection.x << " " << lookDirection.y << " " << lookDirection.z << "\n";
-							viewFactor = pow(viewFactor, 8.f);
+							viewFactor = pow(viewFactor, 4.f);
+							
+							//if the enemy looks at least slightly towards the player we add the view factor
+							if (viewFactor > 0.1)
+							{
+								viewFactor += otherSettings.sightBonus;
+							}
+							viewFactor = glm::clamp(viewFactor, 0.f, 1.f);
 
+							float finalPercentage = percentage;
 							//if we are close and the enemy looks directly at us we have a big chance of being targeted.
-							if (distance <= otherSettings.searchDistance / 1.5f)
+							//if (distance <= otherSettings.searchDistance / 1.5f)
+							//{
+							//	finalPercentage += viewFactor * 0.7;
+							//}
+							//else
+							//{
+							//	finalPercentage += viewFactor * 0.3;
+							//}
+
+							//finalPercentage = lerp(std::max(percentage, viewFactor),  percentage * viewFactor, 0.5f);
+							finalPercentage = viewFactor - (distancePercentage/3.f); //if you are far it will have a contribution
+
+							//boost the chance of being seen if you are close and the enemy looks at you directly
+							if (viewFactor > 0.5 && percentage > 0.5)
 							{
-								percentage += viewFactor * 0.7;
-							}
-							else
-							{
-								percentage += viewFactor * 0.3;
+								finalPercentage += 0.2;
 							}
 
-							if (getRandomChance(rng, percentage))
+							//boost the chance even more if we are very close
+							if (percentage > 0.5 && viewFactor > 0.001)
+							{
+
+								finalPercentage += 0.1;
+
+								if (percentage > 0.8)
+								{
+									finalPercentage += 0.3;
+
+									if (percentage > 0.8)
+									{
+										finalPercentage += 0.3;
+
+										if (percentage > 0.9)
+										{
+											finalPercentage += 0.3;
+										}
+									}
+								}
+								
+							}
+
+
+							std::cout << "Dist perc: " << percentage << "  , view Perc: " << viewFactor <<  "  ,Final Percentage: " << finalPercentage << "\n";
+
+							//if(0)
+							//we have to do this because we check this probability 20 tiems per seccond
+							float probabilityAdjusted = 1.f - std::pow(1.f - finalPercentage, 1/20.f);
+
+							if (finalPercentage >= 0.99999 || getRandomChance(rng, probabilityAdjusted))
 							{
 								playerLockedOn = playerID;
 								break;
 							}
+
+
 						}
 
 					}
@@ -290,7 +349,7 @@ struct BasicEnemyBehaviour
 		auto jumpIfNeeded = [&]()
 		{
 
-			if (direction.x != 0 && direction.y != 0)
+			if (direction.x != 0 || direction.y != 0)
 			{
 				auto blockPos = currentPosition;
 				blockPos.x += direction.x;
@@ -320,7 +379,7 @@ struct BasicEnemyBehaviour
 
 		auto applyMoveDirection = [&]()
 		{
-			if (direction.x != 0 && direction.y != 0)
+			if (direction.x != 0 || direction.y != 0)
 			{
 				auto move = 2.f * deltaTime * direction;
 
@@ -608,12 +667,13 @@ struct BasicEnemyBehaviour
 			currentState = stateTargetedPlayer;
 		}
 
+		//if(0)
 		switch (currentState)
 		{
 
 			case stateStaying:
 			{
-				
+
 				stateStayingData.timerChangeLookDirection -= deltaTime;
 				if (stateStayingData.timerChangeLookDirection < 0)
 				{
@@ -629,7 +689,7 @@ struct BasicEnemyBehaviour
 				{
 					changeRandomState();
 				}
-
+				break;
 			}
 
 			case stateWalkingRandomly:
@@ -648,6 +708,7 @@ struct BasicEnemyBehaviour
 				{
 					changeRandomState();
 				}
+				break;
 			}
 			
 			case stateTargetedPlayer:
@@ -660,6 +721,7 @@ struct BasicEnemyBehaviour
 				jumpIfNeeded();
 
 				applyMoveDirection();
+				break;
 			}
 
 

@@ -3738,10 +3738,10 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform1f(filterBloomDataShader.u_exposure, defaultShader.shadingSettings.exposure);
 
 		float finalTresshold = getShadingSettings().bloomTresshold / 100.f;
-		finalTresshold *= linearRemap(pow(adaptiveExposure.getLuminosityOrDefaultValueIfDisabeled(), 2.2), 0, 1, 0.8, 2);
+		finalTresshold *= linearRemap(pow(adaptiveExposure.getLuminosityOrDefaultValueIfDisabeled(), 2.2), 0, 1, 0.8, 1.8);
 
 		float finalMultiplier = getShadingSettings().bloomMultiplier * (2.f/5.f);
-		finalMultiplier *= linearRemap(pow(adaptiveExposure.getLuminosityOrDefaultValueIfDisabeled(), 2.0), 0, 1, 1.2, 0.4);
+		finalMultiplier *= linearRemap(pow(adaptiveExposure.getLuminosityOrDefaultValueIfDisabeled(), 2.0), 0, 1, 1.2, 0.6);
 
 
 		if (underWater)
