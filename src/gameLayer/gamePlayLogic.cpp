@@ -2822,6 +2822,46 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	}
 
+	//close inventory, drop the item held in mouse
+	if (!gameData.insideInventoryMenu)
+	{
+		auto &itemHeld = player.inventory.heldInMouse;
+
+		if (itemHeld.type)
+		{
+
+
+			for (int i = PlayerInventory::INVENTORY_CAPACITY-1; i >=0 ; i--)
+			{
+				auto &slot = *player.inventory.getItemFromIndex(i);
+
+				if (slot.type == 0)
+				{
+					swapItems(player.inventory, i, PlayerInventory::CURSOR_INDEX);
+					break;
+				}else
+				if (areItemsTheSame(itemHeld, slot))
+				{
+					placeItem(player.inventory, PlayerInventory::CURSOR_INDEX, i);
+				}
+
+				if (itemHeld.counter == 0) { break; }
+
+			}
+
+			if (itemHeld.counter != 0)
+			{
+				gameData.entityManager.dropItemByClient(
+					gameData.entityManager.localPlayer.entity.position,
+					PlayerInventory::CURSOR_INDEX, gameData.undoQueue, gameData.c.viewDirection * 5.f,
+					gameData.serverTimer, player.inventory, 0);
+			}
+
+			
+
+		}
+	}
+
 	player.inventory.sanitize();
 
 #pragma endregion

@@ -490,6 +490,7 @@ int PlayerInventory::tryPickupItem(const Item &item)
 }
 
 
+
 //for textures
 const char *itemsNamesTextures[] = 
 {

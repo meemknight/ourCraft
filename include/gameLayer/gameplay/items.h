@@ -165,4 +165,5 @@ struct PlayerInventory
 	int tryPickupItem(const Item &item);
 
 	unsigned char revisionNumber = 0;
+
 };
