@@ -13,6 +13,7 @@
 #include <rendering/model.h>
 #include <easing.h>
 
+struct Client;
 
 //basic entity structure
 //

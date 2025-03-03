@@ -53,7 +53,8 @@ bool DroppedItemServer::update(float deltaTime, decltype(chunkGetterSignature) *
 	ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng, std::uint64_t yourEID,
 	std::unordered_set<std::uint64_t> &othersDeleted,
 	std::unordered_map<std::uint64_t, std::unordered_map<glm::ivec3, PathFindingNode>> &pathFinding,
-	std::unordered_map<std::uint64_t, glm::dvec3> &playersPosition
+	std::unordered_map<std::uint64_t, glm::dvec3> &playersPositionSirvival,
+	std::unordered_map < std::uint64_t, Client *> &allClients
 )
 {
 	//todo use persistent timer
@@ -113,30 +114,28 @@ bool DroppedItemServer::update(float deltaTime, decltype(chunkGetterSignature) *
 
 
 	if(dontPickTimer<=0)
-	for (auto &p : playersPosition)
+	for (auto &p : allClients)
 	{
-		if (glm::distance(getPosition(), p.second) < 1.f)
+		
+
+		if (glm::distance(getPosition(), p.second->playerData.getPosition()) < 1.f)
 		{
 
-			auto client = getClientNotLocked(p.first);
+			auto client = p.second;
 
-			if (client)
+			//pickupped this item
+			int pickupped = client->playerData.inventory.tryPickupItem(item);
+			if (pickupped)
 			{
+				sendPlayerInventoryAndIncrementRevision(*client);
 
-				//pickupped this item
-				int pickupped = client->playerData.inventory.tryPickupItem(item);
-				if (pickupped)
+				item.counter -= pickupped;
+				if(item.counter <= 0)
 				{
-					sendPlayerInventoryAndIncrementRevision(*client);
-
-					item.counter -= pickupped;
-					if(item.counter <= 0)
-					{
-						return 0;
-					}
+					return 0;
 				}
-
 			}
+
 
 		}
 	}

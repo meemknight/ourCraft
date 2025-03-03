@@ -162,8 +162,8 @@ struct Packet_ClientMovedItem
 {
 	unsigned short itemType;
 	unsigned char from;
+	unsigned short counter;
 	unsigned char to;
-	unsigned char counter;
 	unsigned char revisionNumber;
 };
 
@@ -178,8 +178,8 @@ struct Packet_ClientOverWriteItem
 {
 	unsigned short itemType;
 	unsigned short metadataSize = 0;
+	unsigned short counter;
 	unsigned char to;
-	unsigned char counter;
 	unsigned char revisionNumber;
 };
 

@@ -42,7 +42,8 @@ struct GoblinServer: public ServerEntity<Goblin>
 		ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng, std::uint64_t yourEID,
 		std::unordered_set<std::uint64_t> &othersDeleted,
 		std::unordered_map<std::uint64_t, std::unordered_map<glm::ivec3, PathFindingNode>> &pathFindingSurvival,
-		std::unordered_map<std::uint64_t, glm::dvec3> &playersPositionSurvival);
+		std::unordered_map<std::uint64_t, glm::dvec3> &playersPositionSurvival,
+		std::unordered_map < std::uint64_t, Client *> &allClients);
 
 };
 

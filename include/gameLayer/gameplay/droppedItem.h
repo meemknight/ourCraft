@@ -50,7 +50,8 @@ struct DroppedItemServer
 		ServerChunkStorer &serverChunkStorer, std::minstd_rand &rng, std::uint64_t yourEID,
 		std::unordered_set<std::uint64_t> &othersDeleted,
 		std::unordered_map<std::uint64_t, std::unordered_map<glm::ivec3, PathFindingNode>> &pathFinding,
-		std::unordered_map<std::uint64_t, glm::dvec3> &playersPosition);
+		std::unordered_map<std::uint64_t, glm::dvec3> &playersPositionSurvival,
+		std::unordered_map < std::uint64_t, Client *> &allClients);
 
 	void appendDataToDisk(std::ofstream &f, std::uint64_t eId);
 

@@ -110,7 +110,8 @@ bool genericCallUpdateForEntity(T &e,
 	ServerChunkStorer &chunkCache, std::minstd_rand &rng, 
 	std::unordered_set<std::uint64_t> &othersDeleted,
 	std::unordered_map<std::uint64_t, std::unordered_map<glm::ivec3, PathFindingNode>> &pathFinding,
-	std::unordered_map<std::uint64_t, glm::dvec3> &playersPositionSurvival
+	std::unordered_map<std::uint64_t, glm::dvec3> &playersPositionSurvival,
+	std::unordered_map < std::uint64_t, Client *> &allClients
 	)
 {
 	float time = deltaTime;
@@ -124,7 +125,7 @@ bool genericCallUpdateForEntity(T &e,
 	{
 		//todo pack things into a struct
 		rez = e.second.update(time, chunkGetter, chunkCache, rng, e.first,
-			othersDeleted, pathFinding, playersPositionSurvival);
+			othersDeleted, pathFinding, playersPositionSurvival, allClients);
 	}
 
 	if constexpr (hasRestantTimer<decltype(e.second)>)
@@ -1923,6 +1924,8 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 		playersPositionSurvival.insert({p.first, p.second->playerData.getPosition()});
 	}
 
+
+
 	//for (auto &c : chunkCache.savedChunks)
 	//{
 	//	for (auto &p : c.second->entityData.players)
@@ -2156,7 +2159,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 					
 					bool rez = genericCallUpdateForEntity(e, deltaTime, chunkGetter,
 						chunkCache, rng, othersDeleted,
-						pathFindingSurvivalClients, playersPositionSurvival);
+						pathFindingSurvivalClients, playersPositionSurvival, allClients);
 					glm::ivec2 newChunk = determineChunkThatIsEntityIn(e.second.getPosition());
 
 					if (!rez)
