@@ -134,10 +134,30 @@ template <typename T>
 constexpr bool hasEyesAndPupils<T, std::void_t<decltype(std::declval<T>().eyesAndPupils)>> = true;
 
 
+//takes the look direction that is relative to body orientation and the body orientation to compute the real look direction
+[[nodiscard]]
+glm::vec3 computeLookDirection(glm::vec2 bodyOrientation, glm::vec3 lookDirection);
+
+[[nodiscard]]
+glm::vec3 moveVectorRandomly(glm::vec3 vector, std::minstd_rand &rng, float radiansX, float radiansY);
+
+[[nodiscard]]
+glm::vec3 moveVectorRandomlyBiasKeepCenter(glm::vec3 vector, std::minstd_rand &rng, float radiansX, float radiansY);
+
+
 struct HasOrientationAndHeadTurnDirection
 {
 	glm::vec2 bodyOrientation = {0,-1};
+	
+	//the look direction animation is relative to body orientatio!
 	glm::vec3 lookDirectionAnimation = {0,0,-1};
+
+	glm::vec3 getLookDirection()
+	{
+		glm::vec3 realLookDirection = glm::normalize(computeLookDirection(bodyOrientation, lookDirectionAnimation));
+		return realLookDirection;
+	}
+
 };
 
 template <typename T, typename = void>
@@ -643,6 +663,8 @@ struct ServerEntity
 	}
 
 	ConditionalMember<hasCanHaveEffects(), Effects> effects = {};
+
+	ConditionalMember<::hasLookDirectionAnimation<T>, glm::vec3> wantToLookDirection = {0,0,-1};
 
 	bool hasUpdatedThisTick = 0;
 	glm::ivec2 lastChunkPositionWhenAnUpdateWasSent = {};
@@ -1174,7 +1196,6 @@ void setBodyAndLookOrientation(glm::vec2 &bodyOrientation, glm::vec3 &lookDirect
 void removeBodyRotationFromHead(glm::vec3 &lookDirection);
 void removeBodyRotationFromHead(glm::vec2 &bodyOrientation, glm::vec3 &lookDirection);
 
-glm::vec3 computeLookDirection(glm::vec2 bodyOrientation, glm::vec3 lookDirection);
 
 glm::vec2 getRandomUnitVector(std::minstd_rand &rng);
 glm::vec3 getRandomUnitVector3(std::minstd_rand &rng);

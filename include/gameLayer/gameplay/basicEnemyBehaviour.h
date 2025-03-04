@@ -41,6 +41,7 @@ struct BasicEnemyBehaviour
 	struct
 	{
 		float changeDirectionTime = 1;
+		float changeLookDirectionTime = 0;
 	}stateWalkingRandomlyData;
 
 	struct
@@ -63,8 +64,7 @@ struct BasicEnemyBehaviour
 		BasicEnemyBehaviourOtherSettings otherSettings)
 	{
 
-		glm::vec3 realLookDirection = normalize(computeLookDirection(baseEntity->entity.bodyOrientation,
-			baseEntity->entity.lookDirectionAnimation));
+		glm::vec3 realLookDirection = baseEntity->entity.getLookDirection();
 		
 		auto searchForPlayerLogicIfNeeded = [&]()
 		{
@@ -178,7 +178,7 @@ struct BasicEnemyBehaviour
 							}
 
 
-							std::cout << "Dist perc: " << percentage << "  , view Perc: " << viewFactor <<  "  ,Final Percentage: " << finalPercentage << "\n";
+							//std::cout << "Dist perc: " << percentage << "  , view Perc: " << viewFactor <<  "  ,Final Percentage: " << finalPercentage << "\n";
 
 							//if(0)
 							//we have to do this because we check this probability 20 tiems per seccond
@@ -216,9 +216,20 @@ struct BasicEnemyBehaviour
 			}
 			else
 			{
-				lookAtPosition(found->second, baseEntity->entity.lookDirectionAnimation,
-					currentPosition, baseEntity->entity.bodyOrientation,
-					glm::radians(65.f));
+				baseEntity->wantToLookDirection = found->second - currentPosition;
+				float l = glm::length(baseEntity->wantToLookDirection);
+				if (l <= 0.000001)
+				{
+					baseEntity->wantToLookDirection = {0,0,-1};
+				}
+				else
+				{
+					baseEntity->wantToLookDirection /= l;
+				}
+
+				//lookAtPosition(found->second, baseEntity->entity.lookDirectionAnimation,
+				//	currentPosition, baseEntity->entity.bodyOrientation,
+				//	glm::radians(65.f));
 
 			}
 		};
@@ -229,18 +240,21 @@ struct BasicEnemyBehaviour
 			float up = getRandomNumberFloat(rng, -glm::radians(10.f), glm::radians(20.f));
 			glm::vec3 finalVector = glm::normalize(glm::vec3(direction.x, up, direction.y));
 
-			if (glm::dot(glm::vec2(finalVector.x, finalVector.z), baseEntity->entity.bodyOrientation) > 0.5f)
-			{
-				lookAtDirection(finalVector, baseEntity->entity.lookDirectionAnimation,
-					currentPosition, baseEntity->entity.bodyOrientation,
-					glm::radians(65.f));
-			}
-			else
-			{
-				lookAtDirectionWithBodyOrientation(finalVector, baseEntity->entity.lookDirectionAnimation,
-					currentPosition, baseEntity->entity.bodyOrientation,
-					glm::radians(65.f));
-			}
+			baseEntity->wantToLookDirection = finalVector;
+
+			//todo remove
+			//if (glm::dot(glm::vec2(finalVector.x, finalVector.z), baseEntity->entity.bodyOrientation) > 0.5f)
+			//{
+			//	lookAtDirection(finalVector, baseEntity->entity.lookDirectionAnimation,
+			//		 baseEntity->entity.bodyOrientation,
+			//		glm::radians(65.f));
+			//}
+			//else
+			//{
+			//	lookAtDirectionWithBodyOrientation(finalVector, baseEntity->entity.lookDirectionAnimation,
+			//		baseEntity->entity.bodyOrientation,
+			//		glm::radians(65.f));
+			//}
 	
 		};
 
@@ -256,6 +270,8 @@ struct BasicEnemyBehaviour
 		{
 			//random walk
 			stateWalkingRandomlyData.changeDirectionTime -= deltaTime;
+			stateWalkingRandomlyData.changeLookDirectionTime -= deltaTime;
+			bool relook = false;
 
 			if (stateWalkingRandomlyData.changeDirectionTime <= 0)
 			{
@@ -263,11 +279,23 @@ struct BasicEnemyBehaviour
 				stateWalkingRandomlyData.changeDirectionTime += getRandomNumberFloat(rng, 1, 5);
 
 				direction = getRandomUnitVector(rng);
-				baseEntity->entity.bodyOrientation = direction;
 
-				lookAtDirection(glm::vec3(direction.x, 0, direction.y), baseEntity->entity.lookDirectionAnimation,
-					currentPosition, baseEntity->entity.bodyOrientation,
-					glm::radians(65.f));
+				baseEntity->wantToLookDirection = glm::vec3(direction.x, 0, direction.y);
+				relook = true;
+
+			}
+
+			if (stateWalkingRandomlyData.changeLookDirectionTime <= 0 || relook)
+			{
+				stateWalkingRandomlyData.changeLookDirectionTime = getRandomNumberFloat(rng, 1, 4);
+				stateWalkingRandomlyData.changeLookDirectionTime += getRandomNumberFloat(rng, 1, 4);
+
+				glm::vec3 viewVector = glm::vec3(direction.x, 0, direction.y);
+
+				baseEntity->wantToLookDirection = moveVectorRandomlyBiasKeepCenter(viewVector, 
+					rng, glm::radians(50.f), glm::radians(20.f));
+
+
 			}
 		};
 

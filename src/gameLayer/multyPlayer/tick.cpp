@@ -128,6 +128,29 @@ bool genericCallUpdateForEntity(T &e,
 			othersDeleted, pathFinding, playersPositionSurvival, allClients);
 	}
 
+
+	if constexpr (hasLookDirectionAnimation<decltype(e.second.entity)>)
+	{
+		//e.second.entity.lookDirectionAnimation = e.second.wantToLookDirection;
+		//e.second.entity.lookDirectionAnimation = {0,0,-1};
+		//e.second.entity.bodyOrientation = {0,-1};
+		glm::vec3 finalVector = e.second.wantToLookDirection;
+
+		if (glm::dot(glm::vec2(finalVector.x, finalVector.z), e.second.entity.bodyOrientation) > 0.5f)
+		{
+			lookAtDirection(finalVector, e.second.entity.lookDirectionAnimation,
+				 e.second.entity.bodyOrientation,
+				glm::radians(65.f));
+		}
+		else
+		{
+			lookAtDirectionWithBodyOrientation(finalVector, e.second.entity.lookDirectionAnimation,
+				e.second.entity.bodyOrientation,
+				glm::radians(65.f));
+		}
+
+	}
+
 	if constexpr (hasRestantTimer<decltype(e.second)>)
 	{
 		e.second.restantTime = 0;
@@ -283,6 +306,7 @@ bool spawnGoblin(
 {
 	//todo also send packets
 	//todo generic spawn for any entity
+
 
 	auto chunkPos = determineChunkThatIsEntityIn(goblin.position);
 	auto c = chunkManager.getChunkOrGetNull(chunkPos.x, chunkPos.y);

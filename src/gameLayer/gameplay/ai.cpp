@@ -7,13 +7,12 @@ void lookAtPosition(glm::dvec3 position,
 	, float tresshold)
 {
 	glm::vec3 viewDirection = position + glm::dvec3(0, 1.0, 0) - yourEntityPosition;
-	lookAtDirection(viewDirection, lookDirectionAnimation, yourEntityPosition, bodyOrientation, tresshold);
+	lookAtDirection(viewDirection, lookDirectionAnimation, bodyOrientation, tresshold);
 };
 
 
 void lookAtDirection(glm::vec3 viewDirection,
-	glm::vec3 &lookDirectionAnimation,
-	glm::dvec3 yourEntityPosition, glm::vec2 bodyOrientation
+	glm::vec3 &lookDirectionAnimation, glm::vec2 bodyOrientation
 	, float tresshold)
 {
 
@@ -31,8 +30,7 @@ void lookAtDirection(glm::vec3 viewDirection,
 };
 
 void lookAtDirectionWithBodyOrientation(glm::vec3 viewDirection,
-	glm::vec3 &lookDirectionAnimation,
-	glm::dvec3 yourEntityPosition, glm::vec2 &bodyOrientation
+	glm::vec3 &lookDirectionAnimation, glm::vec2 &bodyOrientation
 	, float tresshold)
 {
 

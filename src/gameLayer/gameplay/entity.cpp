@@ -188,6 +188,49 @@ glm::vec3 computeLookDirection(glm::vec2 bodyOrientation, glm::vec3 lookDirectio
 	return lookDirection;
 }
 
+[[nodiscard]]
+glm::vec3 moveVectorRandomly(glm::vec3 vector, std::minstd_rand &rng, float radiansX, float radiansY)
+{
+	vector = glm::normalize(vector);
+
+	float randYaw = getRandomNumberFloat(rng, -radiansX, radiansX);
+	float randPitch = getRandomNumberFloat(rng, -radiansY, radiansY);
+
+	glm::mat3 yawRotation = glm::mat3(glm::rotate(glm::mat4(1.0f), randYaw, glm::vec3(0, 1, 0)));
+	glm::vec3 newVector = yawRotation * vector;
+
+	glm::vec3 right = glm::normalize(glm::cross(newVector, glm::vec3(0, 1, 0)));
+	glm::mat3 pitchRotation = glm::mat3(glm::rotate(glm::mat4(1.0f), randPitch, right));
+	newVector = pitchRotation * newVector;
+
+	return glm::normalize(newVector);
+}
+
+[[nodiscard]]
+glm::vec3 moveVectorRandomlyBiasKeepCenter(glm::vec3 vector, std::minstd_rand &rng, float radiansX, float radiansY)
+{
+	vector = glm::normalize(vector);
+
+	float randYaw = getRandomNumberFloat(rng, -radiansX, radiansX);
+	float randYaw2 = getRandomNumberFloat(rng, -radiansX, radiansX);
+	float randPitch = getRandomNumberFloat(rng, -radiansY, radiansY);
+	float randPitch2 = getRandomNumberFloat(rng, -radiansY, radiansY);
+
+	if (std::abs(randYaw2) < std::abs(randYaw)) { randYaw = randYaw2; }
+	if (std::abs(randPitch2) < std::abs(randPitch)) { randPitch = randPitch2; }
+
+
+	glm::mat3 yawRotation = glm::mat3(glm::rotate(glm::mat4(1.0f), randYaw, glm::vec3(0, 1, 0)));
+	glm::vec3 newVector = yawRotation * vector;
+
+	glm::vec3 right = glm::normalize(glm::cross(newVector, glm::vec3(0, 1, 0)));
+	glm::mat3 pitchRotation = glm::mat3(glm::rotate(glm::mat4(1.0f), randPitch, right));
+	newVector = pitchRotation * newVector;
+
+	return glm::normalize(newVector);
+}
+
+
 bool getRandomChance(std::minstd_rand &rng, float chance)
 {
 	float dice = getRandomNumberFloat(rng, 0.0, 1.0);

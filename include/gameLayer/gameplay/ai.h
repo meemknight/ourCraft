@@ -97,13 +97,11 @@ void lookAtPosition(glm::dvec3 position,
 
 
 void lookAtDirection(glm::vec3 viewDirection,
-	glm::vec3 &lookDirectionAnimation,
-	glm::dvec3 yourEntityPosition, glm::vec2 bodyOrientation
+	glm::vec3 &lookDirectionAnimation, glm::vec2 bodyOrientation
 	, float tresshold = glm::radians(85.f));
 
 void lookAtDirectionWithBodyOrientation(glm::vec3 viewDirection,
-	glm::vec3 &lookDirectionAnimation,
-	glm::dvec3 yourEntityPosition, glm::vec2 &bodyOrientation
+	glm::vec3 &lookDirectionAnimation, glm::vec2 &bodyOrientation
 	, float tresshold = glm::radians(85.f));
 
 template<class E, class SETTINGS>
