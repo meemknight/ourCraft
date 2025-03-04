@@ -134,7 +134,7 @@ bool isItem(unsigned short type);
 //check if you can put from on top of to completely and does it
 bool canItemBeMovedToAndMoveIt(Item &from, Item &to);
 
-Item itemCreator(unsigned short type, unsigned char counter = 1);
+Item itemCreator(unsigned short type, unsigned short counter = 1);
 
 float computeMineDurationTime(BlockType type, Item &item);
 

@@ -653,12 +653,14 @@ bool canItemBeMovedToAndMoveIt(Item &from, Item &to)
 
 
 //create item createItem
-Item itemCreator(unsigned short type, unsigned char counter)
+Item itemCreator(unsigned short type, unsigned short counter)
 {
 	if (!counter) { return {}; }
 
 	Item ret(type);
 	ret.counter = counter;
+
+	ret.sanitize();
 
 	return ret;
 }

@@ -62,9 +62,12 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 	std::unordered_map < std::uint64_t, Client *> &allClients
 )
 {
+	BasicEnemyBehaviourOtherSettings settings;
+	settings.hearBonus = -0.1;
+
 
 	basicEnemyBehaviour.update(this, deltaTime, chunkGetter, serverChunkStorer, rng, yourEID, othersDeleted,
-		pathFindingSurvival, playersPositionSurvival, getPosition(), {});
+		pathFindingSurvival, playersPositionSurvival, getPosition(), settings);
 
 
 	/*

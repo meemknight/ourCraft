@@ -195,26 +195,21 @@ glm::vec3 orientVectorTowards(glm::vec3 vector, glm::vec3 target, float speed)
 	vector = glm::normalize(vector);
 	target = glm::normalize(target);
 
-	float dotProduct = glm::dot(vector, target);
-	float angle = glm::acos(glm::clamp(dotProduct, -1.0f, 1.0f));
+	// Compute the quaternion that rotates from vector to target
+	glm::quat rotation = glm::rotation(vector, target);
 
+	// Get the angle of rotation
+	float angle = 2.0f * glm::acos(glm::clamp(rotation.w, -1.0f, 1.0f));
+
+	// Prevent overshooting
 	if (angle < speed)
-		return target; // Prevent overshooting
+		return target;
 
-	glm::vec3 axis = glm::cross(vector, target);
+	// Perform slerp with a fraction of the full rotation (scaled by speed)
+	glm::quat interpolatedRotation = glm::slerp(glm::quat(1, 0, 0, 0), rotation, speed / angle);
 
-	// Handle the case where the vectors are nearly opposite
-	if (glm::length(axis) < 1e-6f)
-	{
-		axis = glm::abs(vector.x) > 0.9f ? glm::vec3(0, 1, 0) : glm::vec3(1, 0, 0);
-	}
-	else
-	{
-		axis = glm::normalize(axis);
-	}
-
-	glm::mat3 rotation = glm::mat3(glm::rotate(glm::mat4(1.0f), speed, axis));
-	return glm::normalize(rotation * vector);
+	// Apply the quaternion rotation to the vector
+	return glm::normalize(interpolatedRotation * vector);
 }
 
 [[nodiscard]]

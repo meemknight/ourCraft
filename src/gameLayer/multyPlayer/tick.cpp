@@ -134,7 +134,10 @@ bool genericCallUpdateForEntity(T &e,
 		//e.second.entity.lookDirectionAnimation = e.second.wantToLookDirection;
 		//e.second.entity.lookDirectionAnimation = {0,0,-1};
 		//e.second.entity.bodyOrientation = {0,-1};
-		glm::vec3 finalVector = orientVectorTowards(e.second.entity.getLookDirection(), e.second.wantToLookDirection, deltaTime * glm::radians(70.f));
+		glm::vec3 finalVector = orientVectorTowards(e.second.entity.getLookDirection(), 
+			e.second.wantToLookDirection, deltaTime * glm::radians(180.f));
+		//finalVector = e.second.wantToLookDirection;
+		
 		//glm::vec3 finalVector = orientVectorTowards(e.second.entity.lookDirectionAnimation, e.second.wantToLookDirection, deltaTime * glm::radians(70.f));
 
 		if (glm::dot(glm::vec2(finalVector.x, finalVector.z), e.second.entity.bodyOrientation) > 0.5f)
@@ -2193,7 +2196,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 						genericBroadcastEntityDeleteFromServerToPlayer(it->first,
 							true, allClients, e.second.lastChunkPositionWhenAnUpdateWasSent);
 
-						std::cout << "remove!!!!!!!\n";
+						//std::cout << "remove!!!!!!!\n";
 						//remove entity
 						it = container.erase(it);
 					}

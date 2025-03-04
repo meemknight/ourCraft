@@ -233,8 +233,9 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 
 		c.playerData.otherPlayerSettings.gameMode = OtherPlayerSettings::CREATIVE;
 
-		c.playerData.inventory.items[0] = itemCreator(ItemTypes::trainingSpear);
+		c.playerData.inventory.items[0] = itemCreator(ItemTypes::trainingSword);
 		c.playerData.inventory.items[1] = itemCreator(ItemTypes::apple, 20);
+		c.playerData.inventory.items[2] = itemCreator(ItemTypes::goblinSpawnEgg, 400);
 		c.playerData.inventory.items[13] = Item(BlockTypes::clothBlock, 64);
 		c.playerData.inventory.items[21] = Item(BlockTypes::woodLog, 64);
 		c.playerData.inventory.items[22] = Item(BlockTypes::palm_log, 64);

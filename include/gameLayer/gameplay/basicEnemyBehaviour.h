@@ -66,6 +66,37 @@ struct BasicEnemyBehaviour
 
 		glm::vec3 realLookDirection = baseEntity->entity.getLookDirection();
 		
+		auto changeStateStaying = [&]()
+		{
+			stateStayingData = {};
+			stateStayingData.timerChangeLookDirection = stateStayingData.timerChangeLookDirection = getRandomNumberFloat(rng, 1, 10)
+				+ getRandomNumberFloat(rng, 1, 10);
+			currentState = stateStaying;
+		};
+
+		//used to look at things that grab atention, will add a random bias
+		auto manuallySetLookAtDirection = [&](glm::vec3 newLookDirection)
+		{
+			if (currentState == stateStaying || currentState == stateWalkingRandomly)
+			{
+				stateStayingData.timerChangeLookDirection = getRandomNumberFloat(rng, 2, 3) + getRandomNumberFloat(rng, 1, 2);
+				stateWalkingRandomlyData.changeDirectionTime = stateStayingData.timerChangeLookDirection;
+			}
+
+			auto newLookDir = moveVectorRandomly(newLookDirection,
+				rng, glm::radians(20.f), glm::radians(10.f));
+
+			if (currentState == stateWalkingRandomly)
+			{
+				if (glm::dot(newLookDir, realLookDirection) < 0.8)
+				{
+					changeStateStaying();
+				}
+			}
+
+			baseEntity->wantToLookDirection = newLookDir;
+		};
+
 		auto searchForPlayerLogicIfNeeded = [&]()
 		{
 
@@ -84,9 +115,9 @@ struct BasicEnemyBehaviour
 
 				for (auto playerID :searches)
 				{
-					auto position = playersPositionSurvival[playerID];
+					auto positionPlayer = playersPositionSurvival[playerID];
 					
-					float distance = glm::distance(position, currentPosition);
+					float distance = glm::distance(positionPlayer, currentPosition);
 					if (distance <= otherSettings.searchDistance)
 					{
 						//this player is close enough
@@ -118,7 +149,7 @@ struct BasicEnemyBehaviour
 
 
 							glm::vec3 lookDirection = realLookDirection;
-							glm::vec3 vectorToPlayer = normalize(position - currentPosition);
+							glm::vec3 vectorToPlayer = normalize(positionPlayer - currentPosition);
 
 							float viewFactor = glm::clamp(glm::dot(lookDirection, vectorToPlayer), 0.f, 1.f);
 							//std::cout << "viewFactor Calculated: " << viewFactor << "; final viewFactor: "
@@ -178,14 +209,34 @@ struct BasicEnemyBehaviour
 							}
 
 
+							
+
 							//std::cout << "Dist perc: " << percentage << "  , view Perc: " << viewFactor <<  "  ,Final Percentage: " << finalPercentage << "\n";
 
 							//if(0)
 							//we have to do this because we check this probability 20 tiems per seccond
-							float probabilityAdjusted = 1.f - std::pow(1.f - finalPercentage, 1/20.f);
+							float probabilityAdjusted = 1.f - std::pow(1.f - finalPercentage, 1 / 20.f);
+							float probabilityAdjustedHear = 1.f - std::pow(1.f - percentage, 1/20.f);
+
+							if (probabilityAdjustedHear >= 0.99999 || getRandomChance(rng, probabilityAdjustedHear))
+							{
+								glm::vec3 newDir = positionPlayer - currentPosition;
+								float l = glm::length(baseEntity->wantToLookDirection);
+								if (l <= 0.000001)
+								{
+									newDir = {0,0,-1};
+								}
+								else
+								{
+									newDir /= l;
+								}
+
+								manuallySetLookAtDirection(newDir);
+							}
 
 							if (finalPercentage >= 0.99999 || getRandomChance(rng, probabilityAdjusted))
 							{
+								std::cout << "Locked!\n";
 								playerLockedOn = playerID;
 								break;
 							}
@@ -256,14 +307,6 @@ struct BasicEnemyBehaviour
 			//		glm::radians(65.f));
 			//}
 	
-		};
-
-		auto changeStateStaying = [&]()
-		{
-			stateStayingData = {};
-			stateStayingData.timerChangeLookDirection = stateStayingData.timerChangeLookDirection = getRandomNumberFloat(rng, 1, 10)
-				+ getRandomNumberFloat(rng, 1, 10);
-			currentState = stateStaying;
 		};
 
 		auto changeRandomWalkDirectionIfNeeded = [&]()

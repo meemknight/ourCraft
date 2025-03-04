@@ -2311,8 +2311,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	if (hitStatus.hit)
 	{
-		std::cout << "Corectness: " << hitStatus.hitCorectness << "\n";
-		std::cout << "Bonus Crit: " << hitStatus.bonusCritChance << "\n";
+		//std::cout << "Corectness: " << hitStatus.hitCorectness << "\n";
+		//std::cout << "Bonus Crit: " << hitStatus.bonusCritChance << "\n";
 
 		if (targetedEntity && !stopMainInput && hitStatus.hitCorectness > 0)
 		{
