@@ -144,6 +144,9 @@ glm::vec3 moveVectorRandomly(glm::vec3 vector, std::minstd_rand &rng, float radi
 [[nodiscard]]
 glm::vec3 moveVectorRandomlyBiasKeepCenter(glm::vec3 vector, std::minstd_rand &rng, float radiansX, float radiansY);
 
+[[nodiscard]]
+glm::vec3 orientVectorTowards(glm::vec3 vector, glm::vec3 target, float speed);
+
 
 struct HasOrientationAndHeadTurnDirection
 {

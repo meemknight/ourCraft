@@ -226,7 +226,7 @@ struct BasicEnemyBehaviour
 				{
 					baseEntity->wantToLookDirection /= l;
 				}
-
+				
 				//lookAtPosition(found->second, baseEntity->entity.lookDirectionAnimation,
 				//	currentPosition, baseEntity->entity.bodyOrientation,
 				//	glm::radians(65.f));
