@@ -6,6 +6,7 @@
 //////////////////////////////////////////
 
 #include <initializer_list>
+#include <utility>
 #include <assert.h>
 
 template<class T, size_t N>
