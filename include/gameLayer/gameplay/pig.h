@@ -2,6 +2,8 @@
 #include <gameplay/entity.h>
 #include <random>
 #include <gameplay/ai.h>
+#include <unordered_map>
+#include <unordered_set>
 
 
 

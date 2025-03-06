@@ -1,5 +1,6 @@
 #include "glslGrammar.h"
 #include <cctype>
+#include <cstring>
 #include <iostream>
 
 

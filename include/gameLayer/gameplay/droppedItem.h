@@ -1,6 +1,8 @@
 #pragma once
 #include <gameplay/entity.h>
 #include <gameplay/items.h>
+#include <unordered_map>
+#include <unordered_set>
 
 
 struct DroppedItem: public PhysicalEntity

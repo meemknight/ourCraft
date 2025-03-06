@@ -6,8 +6,10 @@
 #include <glm/glm.hpp>
 #include <random>
 #include <glm/gtx/rotate_vector.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <iostream>
 #include <fstream>
-#include <unordered_set>
+#include <algorithm>
 #include <rendering/camera.h>
 #include <gameplay/effects.h>
 #include <rendering/model.h>
