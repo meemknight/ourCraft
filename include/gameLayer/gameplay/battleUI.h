@@ -46,8 +46,7 @@ struct BattleUI
 				bool passedCenter = 0;
 			};
 
-			static constexpr int MAX_POSITIONS = 6;
-			Ball balls[MAX_POSITIONS];
+			Ball balls[6];
 			int currentBallsCount = 0;
 
 			int comboCount = 0;
