@@ -8,6 +8,7 @@
 #include <glm/gtx/rotate_vector.hpp>
 #include <fstream>
 #include <unordered_set>
+#include <algorithm>
 #include <rendering/camera.h>
 #include <gameplay/effects.h>
 #include <rendering/model.h>
