@@ -2,6 +2,7 @@
 #include <blocks.h>
 #include <vector>
 #include <string>
+#include <memory.h>
 #include <gameplay/weaponStats.h>
 
 constexpr static unsigned short ItemsStartPoint = 2'048;
