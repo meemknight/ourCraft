@@ -2,6 +2,7 @@
 #include <serializing.h>
 #include <platformTools.h>
 #include <iostream>
+#include <climits>
 #include <magic_enum.hpp>
 
 //todo can be placed
