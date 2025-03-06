@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include <random>
 #include <glm/gtx/rotate_vector.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <iostream>
 #include <fstream>
 #include <algorithm>
