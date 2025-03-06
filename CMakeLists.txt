@@ -23,10 +23,17 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 project(ourCraft)
 
 
-# Set the compiler flags for AVX
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX")
-# Uncomment the following line for AVX2 instead of AVX
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX2")
+if (MSVC)
+	# Set the compiler flags for AVX
+	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX")
+	# Uncomment the following line for AVX2 instead of AVX
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX2")
+else()
+	# Set the compiler flags for AVX
+	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
+	# Uncomment the following line for AVX2 instead of AVX
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2")
+endif()
 
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
