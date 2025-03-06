@@ -184,7 +184,7 @@ struct Chunk
 	std::vector<int> &transparentGeometry,
 	std::vector<glm::ivec4> &lights, int lod, Renderer &renderer);
 
-	bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
+	bool bakeAndDontSendDataToOpenGl(Chunk *left, Chunk *right, Chunk *front, Chunk *back,
 		Chunk *frontLeft, Chunk *frontRight, Chunk *backLeft, Chunk *backRight,
 		glm::ivec3 playerPosition,
 		std::vector<TransparentCandidate> &transparentCandidates,
