@@ -2,6 +2,8 @@
 #include <gameplay/entity.h>
 #include <gameplay/life.h>
 #include <random>
+#include <unordered_map>
+#include <unordered_sap>
 
 
 struct Zombie: public PhysicalEntity, public CanPushOthers
