@@ -3,6 +3,8 @@
 #include <gameplay/life.h>
 #include <random>
 #include <gameplay/ai.h>
+#include <unordered_map>
+#include <unordered_set>
 
 struct BasicEnemyBehaviourOtherSettings
 {
