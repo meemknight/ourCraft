@@ -102,7 +102,7 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 						rng.seed(spearData.comboSeed);
 					}
 
-					if (spearData.currentBallsCount < spearData.MAX_POSITIONS)
+					if (spearData.currentBallsCount < BattleUI::MAX_POSITIONS)
 					{
 						glm::vec2 vector = {1,0};
 						vector = glm::rotate(vector, getRandomNumberFloat(rng, 0, 3.1415926*2.f));
