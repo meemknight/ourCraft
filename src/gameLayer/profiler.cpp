@@ -243,7 +243,7 @@ void Profiler::setSubProfileManually(char *c, PL::ProfileRezults rezults)
 {
 	if (REMOVE_IMGUI) { return; }
 
-	assert(!gpuProfiler, "This function aint compatible with the gpu profiler!");
+	assert(!gpuProfiler && "This function aint compatible with the gpu profiler!");
 
 	subProfiles[c].end();
 	subProfiles[c].rezult = rezults;
