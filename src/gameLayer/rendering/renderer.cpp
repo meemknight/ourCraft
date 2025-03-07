@@ -5235,8 +5235,13 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 		//float zStart = index == 0 ? -1 : _volume->GetCameraLimit(index - 1);
 		//float zEnd = _volume->GetCameraLimit(index);
 
-		float zStart = 0.995;	//-1
-		float zEnd = 1;			// 1
+		static float zStart = -1;		//-1
+		static float zEnd = 1;			// 1
+
+		ImGui::Begin("Test");
+		ImGui::SliderFloat("zStart", &zStart, -1, 1);
+		ImGui::SliderFloat("zEnd", &zEnd, -1, 1);
+		ImGui::End();
 
 
 		glm::vec3 playerFloat = {};
@@ -5277,9 +5282,9 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 
 		double near_plane = 0.1f, far_plane = 460.f;
 
-		//std::cout << cuboidExtendsMin.x << " " << cuboidExtendsMax.x << " | " <<
-		//	cuboidExtendsMin.y << " " << cuboidExtendsMax.y << " | " <<
-		//	cuboidExtendsMin.z << " " << cuboidExtendsMax.z << "\n";
+		std::cout << cuboidExtendsMin.x << " " << cuboidExtendsMax.x << " | " <<
+			cuboidExtendsMin.y << " " << cuboidExtendsMax.y << " | " <<
+			cuboidExtendsMin.z << " " << cuboidExtendsMax.z << "\n";
 
 
 		glm::dmat4 lightProjection = glm::ortho(cuboidExtendsMin.x, cuboidExtendsMax.x,

@@ -2081,7 +2081,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			if (ImGui::CollapsingHeader("Sun Shadow Map",
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
 			{
-				ImGui::Image((void *)gameData.sunShadow.shadowTexturePreview.color, {256, 256}, 
+				//ImGui::Image((void *)gameData.sunShadow.shadowTexturePreview.color, {256, 256}, 
+				//	{0, 1}, {1, 0});
+				ImGui::Image((void *)gameData.sunShadow.shadowMap.depth, {256, 256},
 					{0, 1}, {1, 0});
 			}
 
