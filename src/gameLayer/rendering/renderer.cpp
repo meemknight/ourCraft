@@ -5222,56 +5222,143 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 	glBindFramebuffer(GL_FRAMEBUFFER, sunShadow.shadowMap.fbo);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
+	glm::vec3 posFloat = {};
 
-	glm::ivec3 newPos = c.position;
+#pragma region shadow ortographic projection calculation
 
 	{
-		//newPos.y = 120;
-		newPos.y += 60;
+		//https://github.com/maritim/LiteEngine/blob/8e165cb06e1dccf378cde0e34f17668e6d08c15b/Engine/RenderPasses/ShadowMap/DirectionalLightShadowMapRenderPass.cpp#L227
 
-		glm::vec3 moveDir = sunPos;
+		glm::dvec3 cuboidExtendsMin = glm::dvec3(std::numeric_limits<double>::max());
+		glm::dvec3 cuboidExtendsMax = glm::dvec3(-std::numeric_limits<double>::min());
 
-		float l = glm::length(moveDir);
-		if (l > 0.0001)
+		//float zStart = index == 0 ? -1 : _volume->GetCameraLimit(index - 1);
+		//float zEnd = _volume->GetCameraLimit(index);
+
+		float zStart = 0.995;	//-1
+		float zEnd = 1;			// 1
+
+
+		glm::vec3 playerFloat = {};
+		glm::ivec3 playerInt = {};
+		decomposePosition(c.position, playerFloat, playerInt);
+
+		auto cameraProjView = c.getViewProjectionWithPositionMatrixDouble();
+		glm::dmat4 invCameraProjView = glm::inverse(cameraProjView);
+
+		glm::vec3 referenceDir(0, 0, 1); // Default forward direction
+		glm::dquat lightRotation = glm::rotation(referenceDir, sunPos);
+		lightRotation = glm::conjugate(lightRotation);
+
+		for (int x = -1; x <= 1; x += 2)
 		{
-			moveDir /= l;
-			newPos += moveDir * (float)CHUNK_SIZE * 12.f;
+			for (int y = -1; y <= 1; y += 2)
+			{
+				for (int z = -1; z <= 1; z += 2)
+				{
+					glm::dvec4 cuboidCorner = glm::dvec4(x, y, z == -1 ? zStart : zEnd, 1.0f);
+
+					cuboidCorner = invCameraProjView * cuboidCorner;
+					cuboidCorner /= cuboidCorner.w;
+
+					cuboidCorner = glm::dvec4(lightRotation * glm::dvec3(cuboidCorner), 0.0f);
+
+					cuboidExtendsMin.x = std::min(cuboidExtendsMin.x, cuboidCorner.x);
+					cuboidExtendsMin.y = std::min(cuboidExtendsMin.y, cuboidCorner.y);
+					cuboidExtendsMin.z = std::min(cuboidExtendsMin.z, cuboidCorner.z);
+
+					cuboidExtendsMax.x = std::max(cuboidExtendsMax.x, cuboidCorner.x);
+					cuboidExtendsMax.y = std::max(cuboidExtendsMax.y, cuboidCorner.y);
+					cuboidExtendsMax.z = std::max(cuboidExtendsMax.z, cuboidCorner.z);
+				}
+			}
 		}
+
+
+		double near_plane = 0.1f, far_plane = 460.f;
+
+		//std::cout << cuboidExtendsMin.x << " " << cuboidExtendsMax.x << " | " <<
+		//	cuboidExtendsMin.y << " " << cuboidExtendsMax.y << " | " <<
+		//	cuboidExtendsMin.z << " " << cuboidExtendsMax.z << "\n";
+
+
+		glm::dmat4 lightProjection = glm::ortho(cuboidExtendsMin.x, cuboidExtendsMax.x,
+			cuboidExtendsMin.y, cuboidExtendsMax.y,
+			cuboidExtendsMin.z, cuboidExtendsMax.z + far_plane);
+
+		//auto mvp = lightProjection * lookAtSafe({},
+		//	glm::dvec3(sunPos), glm::dvec3(0, 1, 0));
+
+		auto mvp = lightProjection * glm::mat4_cast(lightRotation);
+
+		//glm::mat4 mvp = getLightMatrix(sunPos, c);
+
+
+		//auto mat = calculateLightProjectionMatrix(c, -skyBoxRenderer.sunPos, 1, 260, 25);
+
+		sunShadow.lightSpaceMatrix = mvp;
+		sunShadow.lightSpacePosition = glm::vec3(0); //todo
+
 	}
 
-	//glm::vec3 posFloat = {};
-	//glm::ivec3 posInt = {};
-	//c.decomposePosition(posFloat, posInt);
+	//old version
+	if(0)
+	{
+		glm::ivec3 newPos = c.position;
 
-	glm::vec3 posFloat = {};
-	glm::ivec3 posInt = newPos;
-	
-	glm::ivec3 playerPos = c.position;
+		{
+			//newPos.y = 120;
+			//newPos.y += 60;
+			newPos.y += 120;
 
-	glm::vec3 vectorToPlayer = glm::normalize(glm::vec3(playerPos - newPos));
+			glm::vec3 moveDir = sunPos;
 
-	//posInt += glm::vec3(0, 0, 10);
+			float l = glm::length(moveDir);
+			if (l > 0.0001)
+			{
+				moveDir /= l;
+				newPos += moveDir * (float)CHUNK_SIZE * 12.f;
+			}
+		}
 
-	float projectSize = 60;
+		//glm::vec3 posFloat = {};
+		//glm::ivec3 posInt = {};
+		//c.decomposePosition(posFloat, posInt);
 
-	float near_plane = 1.0f, far_plane = 460.f;
-	glm::mat4 lightProjection = glm::ortho(-projectSize, projectSize, -projectSize, projectSize,
-		near_plane,		far_plane);
-	//auto mvp = lightProjection * glm::lookAt({},
-	//	-skyBoxRenderer.sunPos, glm::vec3(0, 1, 0));
-	auto mvp = lightProjection * lookAtSafe({},
-		vectorToPlayer, glm::vec3(0, 1, 0));
+		glm::ivec3 posInt = newPos;
 
-	//glm::mat4 mvp = getLightMatrix(sunPos, c);
-	
+		glm::ivec3 playerPos = c.position;
 
-	//auto mat = calculateLightProjectionMatrix(c, -skyBoxRenderer.sunPos, 1, 260, 25);
+		glm::vec3 vectorToPlayer = glm::normalize(glm::vec3(playerPos - newPos));
 
-	sunShadow.lightSpaceMatrix = mvp;
-	sunShadow.lightSpacePosition = posInt;
-	
-	//sunShadow.lightSpaceMatrix = mat;
-	//sunShadow.lightSpacePosition = {};
+		//posInt += glm::vec3(0, 0, 10);
+
+		float projectSize = 60;
+
+		float near_plane = 1.0f, far_plane = 460.f;
+		glm::mat4 lightProjection = glm::ortho(-projectSize, projectSize, -projectSize, projectSize,
+			near_plane, far_plane);
+		//auto mvp = lightProjection * glm::lookAt({},
+		//	-skyBoxRenderer.sunPos, glm::vec3(0, 1, 0));
+		auto mvp = lightProjection * lookAtSafe({},
+			vectorToPlayer, glm::vec3(0, 1, 0));
+
+		//glm::mat4 mvp = getLightMatrix(sunPos, c);
+
+
+		//auto mat = calculateLightProjectionMatrix(c, -skyBoxRenderer.sunPos, 1, 260, 25);
+
+		sunShadow.lightSpaceMatrix = mvp;
+		sunShadow.lightSpacePosition = posInt;
+
+		//sunShadow.lightSpaceMatrix = mat;
+		//sunShadow.lightSpacePosition = {};
+
+
+	}
+#pragma endregion
+
+
 
 #pragma region setup uniforms and stuff
 	{

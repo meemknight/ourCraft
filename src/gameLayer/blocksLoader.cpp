@@ -116,7 +116,7 @@ const char *texturesNames[] = {
 	"models/goblet",		//102
 	"models/wineBottle",	//103
 	
-	"models/skull", //104
+	"models/skull2", //104
 	"models/skullTorch", //105
 	"models/books", //106
 	"models/candleHolder", //107

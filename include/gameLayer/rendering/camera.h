@@ -24,7 +24,7 @@ struct Camera
 	float fovRadians = glm::radians(70.f);
 
 	float closePlane = 0.01f;
-	float farPlane = 1200.f;
+	float farPlane = 200.f;
 
 
 	glm::dvec3 position = {};
@@ -85,3 +85,5 @@ glm::ivec3 from3DPointToBlock(glm::dvec3 in);
 
 
 glm::mat4 lookAtSafe(glm::vec3 const &eye, glm::vec3 const &center, glm::vec3 const &upVec);
+
+glm::dmat4 lookAtSafe(glm::dvec3 const &eye, glm::dvec3 const &center, glm::dvec3 const &upVec);
