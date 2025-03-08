@@ -416,7 +416,8 @@ int main()
 		//ImGuiIO &io = ImGui::GetIO();
 		//io.Fonts->AddFontFromFileTTF("path/to/your/font.ttf", 24.0f);
 
-		ImFont *font = io.Fonts->AddFontDefault(&ImFontConfig());
+		ImFontConfig fontConfig;
+		ImFont *font = io.Fonts->AddFontDefault(&fontConfig);
 		font->Scale = 1.5f; // Scale factor to make the default font larger
 		io.FontDefault = font;
 	#endif
