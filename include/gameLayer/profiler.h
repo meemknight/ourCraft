@@ -4,6 +4,7 @@
 #include <deque>
 #include <string>
 #include <vector>
+#include <cstring>
 
 
 struct GPUProfiler

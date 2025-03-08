@@ -1,5 +1,7 @@
 #include "gameplay/blocks/structureBaseBlock.h"
 
+#include <memory.h>
+
 size_t BaseBlock::formatIntoData
 (std::vector<unsigned char> &appendTo)
 {
