@@ -5277,9 +5277,9 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 					cuboidCorner = invCameraProjView * cuboidCorner;
 					cuboidCorner /= cuboidCorner.w;
 
-					cuboidCorner = glm::dvec4(lightRotation * glm::dvec3(cuboidCorner), 0.0f);
-
 					//cuboidCorner.z *= -1;
+
+					cuboidCorner = glm::dvec4(lightRotation * glm::dvec3(cuboidCorner), 0.0f);
 
 					cuboidExtendsMin.x = std::min(cuboidExtendsMin.x, cuboidCorner.x);
 					cuboidExtendsMin.y = std::min(cuboidExtendsMin.y, cuboidCorner.y);
