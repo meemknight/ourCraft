@@ -38,7 +38,7 @@ void SunShadow::renderShadowIntoTexture(Camera &camera)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, shadowTexturePreview.fbo);
 	glClear(GL_COLOR_BUFFER_BIT);
-	glBindVertexArray(0);
+	//glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glDisable(GL_DEPTH_TEST);
 
@@ -49,11 +49,11 @@ void SunShadow::renderShadowIntoTexture(Camera &camera)
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, shadowMap.depth);
 	glUniform1i(u_depthTexture, 0);
-	glUniform1f(u_far, 260.f);
-	glUniform1f(u_close, 1.f);
+	//glUniform1f(u_far, 260.f);
+	//glUniform1f(u_close, 1.f);
 
-	//glUniform1f(u_far, camera.farPlane);
-	//glUniform1f(u_close, camera.closePlane);
+	glUniform1f(u_far, camera.farPlane);
+	glUniform1f(u_close, camera.closePlane);
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 

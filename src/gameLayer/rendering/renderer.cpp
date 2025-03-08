@@ -2536,9 +2536,11 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		{
 			programData.renderer.renderShadow(sunShadow,
 				chunkSystem, c, programData, mainLightPosition);
+
+			glBindVertexArray(vaoQuad);
+			sunShadow.renderShadowIntoTexture(c);
 		}
 
-		sunShadow.renderShadowIntoTexture(c);
 	}
 
 
@@ -5237,11 +5239,16 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 
 		static float zStart = -1;		//-1
 		static float zEnd = 1;			// 1
+		static float cameraDist = 200.f;
 
 		ImGui::Begin("Test");
 		ImGui::SliderFloat("zStart", &zStart, -1, 1);
 		ImGui::SliderFloat("zEnd", &zEnd, -1, 1);
+		ImGui::SliderFloat("cameraDist", &cameraDist, 1, 400);
 		ImGui::End();
+
+		auto lastFarPlane = c.farPlane;
+		c.farPlane = cameraDist;
 
 
 		glm::vec3 playerFloat = {};
@@ -5255,6 +5262,10 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 		glm::dquat lightRotation = glm::rotation(referenceDir, sunPos);
 		lightRotation = glm::conjugate(lightRotation);
 
+
+		c.farPlane = lastFarPlane;
+
+
 		for (int x = -1; x <= 1; x += 2)
 		{
 			for (int y = -1; y <= 1; y += 2)
@@ -5267,6 +5278,8 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 					cuboidCorner /= cuboidCorner.w;
 
 					cuboidCorner = glm::dvec4(lightRotation * glm::dvec3(cuboidCorner), 0.0f);
+
+					//cuboidCorner.z *= -1;
 
 					cuboidExtendsMin.x = std::min(cuboidExtendsMin.x, cuboidCorner.x);
 					cuboidExtendsMin.y = std::min(cuboidExtendsMin.y, cuboidCorner.y);
@@ -5286,6 +5299,8 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 			cuboidExtendsMin.y << " " << cuboidExtendsMax.y << " | " <<
 			cuboidExtendsMin.z << " " << cuboidExtendsMax.z << "\n";
 
+		//cuboidExtendsMin.z = 0;
+		//cuboidExtendsMax.z = 0;
 
 		glm::dmat4 lightProjection = glm::ortho(cuboidExtendsMin.x, cuboidExtendsMax.x,
 			cuboidExtendsMin.y, cuboidExtendsMax.y,
