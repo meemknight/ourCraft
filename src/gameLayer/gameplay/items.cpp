@@ -47,7 +47,7 @@ void Item::formatIntoData(std::vector<unsigned char> &data)
 {
 	if (type == 0 || counter == 0)
 	{
-		writeData(data, unsigned short(0));
+		writeData(data, (unsigned short)(0));
 	}
 	else
 	{
