@@ -1,6 +1,7 @@
 #pragma once
 #include <blocks.h>
 #include <vector>
+#include <glm/vec2.hpp>
 
 struct StructureData
 {
@@ -52,24 +53,68 @@ struct StructureData
 
 };
 
+struct StructureDataAndFlags
+{
+	//todo other flags
+
+	struct PerCollomFlags
+	{
+		glm::ivec2 minMax = {9999, -9999};
+		bool hasBlocks = 0;
+	};
+
+	std::vector<PerCollomFlags> perCollomFlags;
+
+	PerCollomFlags &getPerCollomFlagsUnsafeRotated(int x, int z, int r, glm::ivec3 size)
+	{
+		if (r == 0)
+		{
+			return getPerCollomFlagsUnsafe(x, z);
+		}
+		else if (r == 1)
+		{
+			return getPerCollomFlagsUnsafe(size.z - 1 - z, x);
+		}
+		else if (r == 2)
+		{
+			return getPerCollomFlagsUnsafe(size.x - x - 1, size.z - z - 1);
+		}
+		else if (r == 3)
+		{
+			return getPerCollomFlagsUnsafe(z, size.x - x - 1);
+		}
+		else
+		{
+			assert(0);
+		}
+	}
+
+	PerCollomFlags &getPerCollomFlagsUnsafe(int x, int z)
+	{
+		return perCollomFlags[x + z * data->size.x];
+	}
+
+	StructureData *data;
+};
+
 
 struct StructuresManager
 {
 
 	bool loadAllStructures();
 
-	std::vector<StructureData *> trees;
-	std::vector<StructureData *> jungleTrees;
-	std::vector<StructureData *> palmTrees;
-	std::vector<StructureData *> treeHouses;
-	std::vector<StructureData *> smallPyramids;
-	std::vector<StructureData *> birchTrees;
-	std::vector<StructureData *> igloos;
-	std::vector<StructureData *> spruceTrees;
-	std::vector<StructureData *> spruceTreesSlim;
-	std::vector<StructureData *> tallTreesSlim;
-	std::vector<StructureData *> smallStones;
-	std::vector<StructureData *> abandonedHouse;
+	std::vector<StructureDataAndFlags> trees;
+	std::vector<StructureDataAndFlags> jungleTrees;
+	std::vector<StructureDataAndFlags> palmTrees;
+	std::vector<StructureDataAndFlags> treeHouses;
+	std::vector<StructureDataAndFlags> smallPyramids;
+	std::vector<StructureDataAndFlags> birchTrees;
+	std::vector<StructureDataAndFlags> igloos;
+	std::vector<StructureDataAndFlags> spruceTrees;
+	std::vector<StructureDataAndFlags> spruceTreesSlim;
+	std::vector<StructureDataAndFlags> tallTreesSlim;
+	std::vector<StructureDataAndFlags> smallStones;
+	std::vector<StructureDataAndFlags> abandonedHouse;
 
 	void clear();
 };

@@ -979,7 +979,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 #pragma endregion
 
-
+	glm::ivec2 lowestPointInChunk = {};
+	int lowestLevelInChunk = 300;
 
 	for (int x = 0; x < CHUNK_SIZE; x++)
 		for (int z = 0; z < CHUNK_SIZE; z++)
@@ -1765,19 +1766,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 				if (couldGenerateMediumStructures)
 				{
-					if (x == 5 && z == 5)
-					{
-						StructureToGenerate str;
-						str.type = Structure_AbandonedHouse;
-
-						str.pos = {x + xPadd, firstH + 1, z + zPadd};
-						str.randomNumber1 = getWhiteNoise3Val(x, z);
-						str.randomNumber2 = getWhiteNoise3Val(x + 1, z);
-						str.randomNumber3 = getWhiteNoise3Val(x + 1, z + 1);
-						str.randomNumber4 = getWhiteNoise3Val(x, z + 1);
-
-						generateStructures.push_back(str);
-					}
+					
+					//we don't do anything yet
 					
 				}
 				else
@@ -1948,8 +1938,29 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 			}
 
+			if (firstH < lowestLevelInChunk)
+			{
+				lowestLevelInChunk = firstH;
+				lowestPointInChunk = glm::ivec2(x, z);
+			}
 
+		}
 
+		if (couldGenerateMediumStructures)
+		{
+			
+			StructureToGenerate str;
+			str.type = Structure_AbandonedHouse;
+
+			str.pos = {lowestPointInChunk.x + xPadd, lowestLevelInChunk, lowestPointInChunk.y + zPadd};
+			str.randomNumber1 = getWhiteNoise3Val(lowestPointInChunk.x, lowestPointInChunk.y);
+			str.randomNumber2 = getWhiteNoise3Val(lowestPointInChunk.x + 1, lowestPointInChunk.y);
+			str.randomNumber3 = getWhiteNoise3Val(lowestPointInChunk.x + 1, lowestPointInChunk.y + 1);
+			str.randomNumber4 = getWhiteNoise3Val(lowestPointInChunk.x, lowestPointInChunk.y + 1);
+			str.replaceOverAnything = 2;
+			str.replaceEnclosedColumsWithAir = true;
+
+			generateStructures.push_back(str);
 		}
 	
 	

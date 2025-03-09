@@ -75,7 +75,7 @@ struct ListNode
 struct GhostBlock
 {
 	Block block;
-	bool replaceAnything = 0;
+	unsigned char replaceAnything = 0;
 
 	bool operator==(const GhostBlock &other)
 	{
@@ -156,7 +156,7 @@ struct ServerChunkStorer
 		bool *wasGenerated = 0, bool *wasLoaded = 0);
 
 
-	bool generateStructure(StructureToGenerate s, StructureData *structure, int rotation,
+	bool generateStructure(StructureToGenerate s, StructureDataAndFlags &structure, int rotation,
 		std::unordered_map<glm::ivec2, SavedChunk *, Ivec2Hash> &newCreatedOrLoadedChunks, std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
 		std::vector<glm::ivec3> *controlBlocks, bool replace = 0, BlockType from = 0, BlockType to = 0
 	);

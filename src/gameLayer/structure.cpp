@@ -6,8 +6,9 @@
 bool StructuresManager::loadAllStructures()
 {
 
-	auto loadFolder = [](const char *path, std::vector<StructureData*> &structures) 
+	auto loadFolder = [](const char *path, std::vector<StructureDataAndFlags> &structures) 
 	{
+
 		std::error_code err = {};
 		auto it = std::filesystem::directory_iterator(path, err);
 
@@ -39,15 +40,37 @@ bool StructuresManager::loadAllStructures()
 				}
 
 				auto structure = (StructureData *)sData;
+				StructureDataAndFlags result = {};
+				result.data = (StructureData *)sData;
+
+				result.perCollomFlags.resize(structure->size.x * structure->size.z);
 
 				for (int x = 0; x < structure->size.x; x++)
 					for (int z = 0; z < structure->size.z; z++)
-						for (int y = 0; y < structure->size.y; y++)
-				{
-					structure->unsafeGet(x, y, z).lightLevel = 0;
-				}
+					{
+						auto &perCollomFlag = result.getPerCollomFlagsUnsafe(x, z);
 
-				structures.push_back((StructureData *)sData);
+						perCollomFlag.hasBlocks = false;
+						perCollomFlag.minMax = glm::ivec2(9999, -9999);
+
+						for (int y = 0; y < structure->size.y; y++)
+						{
+							structure->unsafeGet(x, y, z).lightLevel = 0;
+
+							auto blockType = structure->unsafeGet(x, y, z).getType();
+
+							if (blockType != 0)
+							{
+								perCollomFlag.hasBlocks = true;
+								if (y < perCollomFlag.minMax.x) { perCollomFlag.minMax.x = y; }
+								if (y > perCollomFlag.minMax.y) { perCollomFlag.minMax.y = y; }
+							}
+						}
+
+					}
+
+				
+				structures.push_back(result);
 			}
 		}
 
@@ -89,67 +112,67 @@ void StructuresManager::clear()
 
 	for (auto &i : trees)
 	{
-		unsigned char *d = (unsigned char*)i;
+		unsigned char *d = (unsigned char*)i.data;
 		delete[] d;
 	}
 
 	for (auto &i : jungleTrees)
 	{
-		unsigned char *d = (unsigned char *)i;
+		unsigned char *d = (unsigned char *)i.data;
 		delete[] d;
 	}
 
 	for (auto &i : palmTrees)
 	{
-		unsigned char *d = (unsigned char *)i;
+		unsigned char *d = (unsigned char *)i.data;
 		delete[] d;
 	}
 
 	for (auto &i : treeHouses)
 	{
-		unsigned char *d = (unsigned char *)i;
+		unsigned char *d = (unsigned char *)i.data;
 		delete[] d;
 	}
 
 	for (auto &i : smallPyramids)
 	{
-		unsigned char *d = (unsigned char *)i;
+		unsigned char *d = (unsigned char *)i.data;
 		delete[] d;
 	}
 
 	for (auto &i : birchTrees)
 	{
-		unsigned char *d = (unsigned char *)i;
+		unsigned char *d = (unsigned char *)i.data;
 		delete[] d;
 	}
 
 	for (auto &i : igloos)
 	{
-		unsigned char *d = (unsigned char *)i;
+		unsigned char *d = (unsigned char *)i.data;
 		delete[] d;
 	}
 
 	for (auto &i : spruceTrees)
 	{
-		unsigned char *d = (unsigned char *)i;
+		unsigned char *d = (unsigned char *)i.data;
 		delete[] d;
 	}
 
 	for (auto &i : spruceTreesSlim)
 	{
-		unsigned char *d = (unsigned char *)i;
+		unsigned char *d = (unsigned char *)i.data;
 		delete[] d;
 	}
 
 	for (auto &i : smallStones)
 	{
-		unsigned char *d = (unsigned char *)i;
+		unsigned char *d = (unsigned char *)i.data;
 		delete[] d;
 	}
 
 	for (auto &i : tallTreesSlim)
 	{
-		unsigned char *d = (unsigned char *)i;
+		unsigned char *d = (unsigned char *)i.data;
 		delete[] d;
 	}
 

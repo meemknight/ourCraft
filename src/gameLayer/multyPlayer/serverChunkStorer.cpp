@@ -956,13 +956,13 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 }
 
 bool ServerChunkStorer::generateStructure(StructureToGenerate s,
-	StructureData *structure, int rotation, 
+	StructureDataAndFlags &structure, int rotation,
 	std::unordered_map<glm::ivec2, SavedChunk *, Ivec2Hash> &newCreatedOrLoadedChunks,
 	std::vector<SendBlocksBack> &sendNewBlocksToPlayers, 
 	std::vector<glm::ivec3> *controlBlocks, bool replace,
 	BlockType from, BlockType to)
 {
-	auto size = structure->size;
+	auto size = structure.data->size;
 
 	//the user can replace a block with another
 	auto replaceB = [&](Block &b)
@@ -998,10 +998,15 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 		bonusRandomHeightTrees = chooseRandomElement(s.randomNumber4, 6) + 2;
 	}
 
-	auto placeOneBlockLogic = [&](Block oldBlock, Block &newBlock, int x, int y, int z) -> bool
+	auto placeOneBlockLogic = [&](Block oldBlock, Block &newBlock, int x, int y, int z, unsigned char replaceAnything,
+		bool canPlaceAir) -> bool
 	{
-		//todo add various flags to the blocks to be placed and stuff
-		bool replaceAnything = false;
+
+
+		if (replaceAnything && canPlaceAir && oldBlock.getType() != BlockTypes::air && newBlock.getType() == BlockTypes::air)
+		{
+			return true;
+		}
 
 		if (oldBlock.getType() == BlockTypes::air || replaceAnything)
 		{
@@ -1058,7 +1063,6 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 				}
 
 			};
-
 
 
 			if (newBlock.getType() != BlockTypes::air)
@@ -1129,7 +1133,6 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 		startPos.z -= size.z / 2;
 		glm::ivec3 endPos = startPos + size;
 
-
 		for (int x = startPos.x; x < endPos.x; x++)
 			for (int z = startPos.z; z < endPos.z; z++)
 			{
@@ -1140,9 +1143,11 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 				int inChunkX = modBlockToChunk(x);
 				int inChunkZ = modBlockToChunk(z);
 
-				constexpr bool replaceAnything = 0;
+				int replaceAnything = s.replaceOverAnything;
 				bool sendDataToPlayers = 0;
 				SavedChunk *c = nullptr;
+
+				auto &collumFlags = structure.getPerCollomFlagsUnsafeRotated(x - startPos.x, z - startPos.z, rotation, structure.data->size);
 
 				//CASE 1: we place the block in one of the newly created or loaded CHUNKS!
 				auto it = newCreatedOrLoadedChunks.find({chunkX, chunkZ});
@@ -1165,14 +1170,24 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 					for (int y = startPos.y; y < endPos.y; y++)
 					{
 
+						bool replaceAir = 0;
+						if (s.replaceEnclosedColumsWithAir && collumFlags.hasBlocks)
+						{
+							if (y - startPos.y > collumFlags.minMax.x && y - startPos.y < collumFlags.minMax.y)
+							{
+								replaceAir = true;
+							}
+						}
+
+
 						auto &b = c->chunk.unsafeGet(inChunkX, y, inChunkZ);
 
 						auto oldBlock = b;
-						auto newBlock = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z, rotation);
+						auto newBlock = structure.data->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z, rotation);
 						newBlock.rotate(rotation);
 
 
-						if (placeOneBlockLogic(oldBlock, newBlock, x, y, z))
+						if (placeOneBlockLogic(oldBlock, newBlock, x, y, z, replaceAnything, replaceAir))
 						{
 							c->removeBlockWithData({inChunkX, y, inChunkZ}, oldBlock.getType());
 							b = newBlock; //we set the new block!
@@ -1202,13 +1217,21 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 
 						for (int y = startPos.y; y < endPos.y; y++)
 						{
+							bool replaceAir = 0;
+							if (s.replaceEnclosedColumsWithAir && collumFlags.hasBlocks)
+							{
+								if (y - startPos.y > collumFlags.minMax.x && y - startPos.y < collumFlags.minMax.y)
+								{
+									replaceAir = true;
+								}
+							}
 
 							auto oldBlock = Block{};
-							auto newBlock = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z, rotation);
+							auto newBlock = structure.data->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z, rotation);
 							newBlock.rotate(rotation);
 
 
-							if (placeOneBlockLogic(oldBlock, newBlock, x, y, z))
+							if (placeOneBlockLogic(oldBlock, newBlock, x, y, z, replaceAnything, replaceAir))
 							{
 								GhostBlock ghostBlock;
 								ghostBlock.block = newBlock;
@@ -1227,8 +1250,17 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 						for (int y = startPos.y; y < endPos.y; y++)
 						{
 
+							bool replaceAir = 0;
+							if (s.replaceEnclosedColumsWithAir && collumFlags.hasBlocks)
+							{
+								if (y - startPos.y > collumFlags.minMax.x && y - startPos.y < collumFlags.minMax.y)
+								{
+									replaceAir = true;
+								}
+							}
+
 							auto oldBlock = Block{};
-							auto newBlock = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z, rotation);
+							auto newBlock = structure.data->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z, rotation);
 							newBlock.rotate(rotation);
 
 
@@ -1239,7 +1271,21 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 								oldBlock = blockIt->second.block;
 							}
 
-							if (placeOneBlockLogic(oldBlock, newBlock, x, y, z))
+							bool allowed = 1;
+							if (blockIt != it->second.end())
+							{
+								if (replaceAnything > blockIt->second.replaceAnything)
+								{
+									//good we can replace the block
+								}
+								else
+								{
+									allowed = 0;
+								}
+							}
+
+							if(allowed)
+							if (placeOneBlockLogic(oldBlock, newBlock, x, y, z, replaceAnything, replaceAir))
 							{
 
 								GhostBlock ghostBlock;
@@ -1252,10 +1298,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 								}
 								else
 								{
-									if (replaceAnything)
-									{
-										blockIt->second = ghostBlock;
-									}
+									blockIt->second = ghostBlock;
 								}
 
 							}

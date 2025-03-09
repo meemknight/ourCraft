@@ -39,6 +39,8 @@ struct StructureToGenerate
 	BlockType replaceLeavesWith = 0;
 	BlockType replaceLogWith = 0;
 	bool paintLogicStuff = true; //paints leaves and others
+	bool replaceEnclosedColumsWithAir = 0;
+	unsigned char replaceOverAnything = 0;
 };
 
 void generateChunk(Chunk &c, WorldGenerator &wg, StructuresManager &structuresManager, BiomesManager &biomesManager
