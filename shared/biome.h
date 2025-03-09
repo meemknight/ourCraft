@@ -75,6 +75,7 @@ struct Biome
 		treeRedBirch,
 		treeSpruce,
 		treeTallOak,
+		abandonedHouse,
 	};
 
 	const char *name = "";

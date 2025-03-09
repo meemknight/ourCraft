@@ -998,7 +998,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 		bonusRandomHeightTrees = chooseRandomElement(s.randomNumber4, 6) + 2;
 	}
 
-	auto placeOneBlockLogic = [&](Block oldBlock, Block newBlock) -> bool
+	auto placeOneBlockLogic = [&](Block oldBlock, Block &newBlock, int x, int y, int z) -> bool
 	{
 		//todo add various flags to the blocks to be placed and stuff
 		bool replaceAnything = false;
@@ -1008,6 +1008,58 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 		
 			//we replace the new block with a variation if needed.
 			replaceB(newBlock);
+
+			//basic paint logic
+
+			if (s.paintLogicStuff)
+			{
+				if (newBlock.getType() == BlockTypes::birch_leaves)
+				{
+
+					int colors[] = 
+					{	0,
+						BlockColor::yellow,
+						BlockColor::brown,
+						BlockColor::brown,
+						0,
+						BlockColor::orange,
+						BlockColor::orange,
+						0,
+						0,
+						BlockColor::brown,
+						0,
+					};
+
+					int choice = getRandomNumberFloat(x, y, z, 0, 0.99) * 
+						(sizeof(colors)/sizeof(colors[0]));
+
+					newBlock.setColor(colors[choice]);
+				}
+				else
+				if (newBlock.getType() == BlockTypes::spruce_leaves_red)
+				{
+
+					int colors[] =
+					{	0,
+						BlockColor::brown,
+						0,
+						BlockColor::red,
+						0,
+						BlockColor::red,
+						0,
+						BlockColor::red,
+						0,
+					};
+
+					int choice = getRandomNumberFloat(x, y, z, 0, 0.99) *
+						(sizeof(colors) / sizeof(colors[0]));
+
+					newBlock.setColor(colors[choice]);
+				}
+
+			};
+
+
 
 			if (newBlock.getType() != BlockTypes::air)
 			{
@@ -1030,7 +1082,11 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 		return false;
 	};
 
+
+	//todo re add this!
 	bonusRandomHeightTrees = 0;
+	
+	
 	if (s.pos.y + size.y + bonusRandomHeightTrees <= CHUNK_HEIGHT)
 	{
 
@@ -1114,7 +1170,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 						auto oldBlock = b;
 						auto newBlock = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z, rotation);
 
-						if (placeOneBlockLogic(oldBlock, newBlock))
+						if (placeOneBlockLogic(oldBlock, newBlock, x, y, z))
 						{
 							c->removeBlockWithData({inChunkX, y, inChunkZ}, oldBlock.getType());
 							b = newBlock; //we set the new block!
@@ -1179,7 +1235,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 							auto oldBlock = Block{};
 							auto newBlock = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z, rotation);
 
-							if (placeOneBlockLogic(oldBlock, newBlock))
+							if (placeOneBlockLogic(oldBlock, newBlock, x, y, z))
 							{
 								GhostBlock ghostBlock;
 								ghostBlock.block = newBlock;
@@ -1208,7 +1264,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 								oldBlock = blockIt->second.block;
 							}
 
-							if (placeOneBlockLogic(oldBlock, newBlock))
+							if (placeOneBlockLogic(oldBlock, newBlock, x, y, z))
 							{
 
 								GhostBlock ghostBlock;
@@ -1356,6 +1412,14 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 			[chooseRandomElement(s.randomNumber1, structureManager.tallTreesSlim.size())];
 
 		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
+			newCreatedOrLoadedChunks, sendNewBlocksToPlayers, controlBlocks);
+	}
+	else if (s.type == Structure_AbandonedHouse)
+	{
+		auto a = structureManager.abandonedHouse
+			[chooseRandomElement(s.randomNumber1, structureManager.abandonedHouse.size())];
+
+		return generateStructure(s, a, chooseRandomElement(s.randomNumber2, 4),
 			newCreatedOrLoadedChunks, sendNewBlocksToPlayers, controlBlocks);
 	}
 

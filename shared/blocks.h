@@ -354,6 +354,29 @@ struct BlockCollider
 	glm::vec3 offset = {};
 };
 
+namespace BlockColor
+{
+	enum
+	{
+		none,
+		white,
+		lightGray,
+		darkGrayP,
+		black,
+		brown,
+		red,
+		orange,
+		yellow,
+		lime,
+		green,
+		turqoise,
+		cyan,
+		blue,
+		purple,
+		magenta,
+		pink,
+	};
+};
 
 struct Block
 {

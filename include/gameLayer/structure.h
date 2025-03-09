@@ -70,6 +70,7 @@ struct StructuresManager
 	std::vector<StructureData *> spruceTreesSlim;
 	std::vector<StructureData *> tallTreesSlim;
 	std::vector<StructureData *> smallStones;
+	std::vector<StructureData *> abandonedHouse;
 
 	void clear();
 };

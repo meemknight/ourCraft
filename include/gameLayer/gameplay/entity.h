@@ -1189,6 +1189,7 @@ constexpr bool hasRestantTimer<T, std::void_t<decltype(std::declval<T>().restant
 int getRandomNumber(std::minstd_rand &rng, int min, int max);
 
 float getRandomNumberFloat(std::minstd_rand &rng, float min, float max);
+float getRandomNumberFloat(int x, int y, int z, float a, float b);
 
 bool getRandomChance(std::minstd_rand &rng, float chance);
 

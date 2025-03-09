@@ -109,6 +109,25 @@ float getRandomNumberFloat(std::minstd_rand &rng, float min, float max)
 	return (getRandomNumber(rng, 0, 1000) / 1000.f) * (max-min) + min;
 }
 
+inline uint32_t hash(int x, int y, int z)
+{
+	uint32_t h = static_cast<uint32_t>(x) * 374761393 +
+		static_cast<uint32_t>(y) * 668265263 +
+		static_cast<uint32_t>(z) * 2147483647;
+	h ^= (h >> 13);
+	h *= 1274126177;
+	h ^= (h >> 16);
+	return h;
+}
+
+float getRandomNumberFloat(int x, int y, int z, float a, float b)
+{
+	std::minstd_rand rng;
+	rng.seed(hash(x, y, z));
+
+	return getRandomNumberFloat(rng, a, b);
+}
+
 void RubberBand::computeRubberBand(float deltaTime)
 {
 	::computeRubberBand(*this, deltaTime);
