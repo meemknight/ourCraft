@@ -656,6 +656,7 @@ bool Block::normalize()
 
 	auto type = getType();
 
+	//remove wierd blocks!
 	if (type >= BlockTypes::BlocksCount)
 	{
 		typeAndFlags = {};

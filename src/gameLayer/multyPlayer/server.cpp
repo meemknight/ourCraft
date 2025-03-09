@@ -6,7 +6,6 @@
 #include <mutex>
 #include <queue>
 #include "worldGenerator.h"
-#include <thread>
 #include <unordered_map>
 #include <iostream>
 #include <atomic>
@@ -14,7 +13,6 @@
 #include "multyPlayer/packet.h"
 #include "multyPlayer/enetServerFunction.h"
 #include <platformTools.h>
-#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <structure.h>
@@ -880,9 +878,10 @@ void updateLoadedChunks(
 				bool generated = 0;
 				bool loaded = 0;
 
+				//generate new chunks! (or load them)
 				c = sd.chunkCache.getOrCreateChunk(chunkPos.x, chunkPos.y,
-					wg, structureManager, biomesManager, sendNewBlocksToPlayers, true,
-					nullptr, worldSaver, &generated, &loaded
+					wg, structureManager, biomesManager, sendNewBlocksToPlayers, 
+					worldSaver, &generated, &loaded
 				);
 
 				if (generated)

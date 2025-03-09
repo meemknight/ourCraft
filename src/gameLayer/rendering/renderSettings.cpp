@@ -1069,6 +1069,21 @@ void displayWorldSelectorMenu(ProgramData &programData)
 			platform::getRelMousePosition(), platform::isLMouseHeld(), platform::isLMouseReleased());
 	};
 
+	auto drawBackground = [&]()
+	{
+		float rezolution = 256;
+		glm::vec2 size{renderer.windowW, renderer.windowH};
+		size /= 256.f;
+
+		renderer.renderRectangle({0,0, renderer.windowW, renderer.windowH},
+			programData.blocksLoader.backgroundTexture, {0.6,0.6,0.6,1}, {}, 0,
+			{0,size.y, size.x, 0}
+		);
+
+	};
+
+	static std::string selected = "";
+
 	if (programData.ui.menuRenderer.internal.allMenuStacks
 		[programData.ui.menuRenderer.internal.currentId].size()
 		&& programData.ui.menuRenderer.internal.allMenuStacks
@@ -1076,17 +1091,7 @@ void displayWorldSelectorMenu(ProgramData &programData)
 		)
 	{
 
-		//background
-		{
-			float rezolution = 256;
-			glm::vec2 size{renderer.windowW, renderer.windowH};
-			size /= 256.f;
-
-			renderer.renderRectangle({0,0, renderer.windowW, renderer.windowH},
-				programData.blocksLoader.backgroundTexture, {0.6,0.6,0.6,1}, {}, 0,
-				{0,size.y, size.x, 0}
-				);
-		}
+		drawBackground();
 
 		//folder logic
 
@@ -1104,7 +1109,6 @@ void displayWorldSelectorMenu(ProgramData &programData)
 			}
 		}
 
-		static std::string selected = "";
 
 		//center
 		{
@@ -1230,7 +1234,13 @@ void displayWorldSelectorMenu(ProgramData &programData)
 					}
 
 					auto rightButton = glui::Box().xRight().yCenter().xDimensionPercentage(0.5).yDimensionPercentage(1)();
-					drawButton(shrinkPercentage(rightButton, {0.1,0.05}), Colors_Gray, "Delete world");
+					if (drawButton(shrinkPercentage(rightButton, {0.1,0.05}), Colors_Gray, "Delete world"))
+					{
+						if (selected.size())
+						{
+							programData.ui.menuRenderer.StartManualMenu("Delete world");
+						}
+					}
 				}
 
 
@@ -1251,6 +1261,55 @@ void displayWorldSelectorMenu(ProgramData &programData)
 		wg.init();
 	}
 
+
+
+	programData.ui.menuRenderer.BeginManualMenu("Delete world");
+
+	if (programData.ui.menuRenderer.internal.allMenuStacks
+		[programData.ui.menuRenderer.internal.currentId].size()
+		&& programData.ui.menuRenderer.internal.allMenuStacks
+		[programData.ui.menuRenderer.internal.currentId].back() == "Delete world"
+		)
+	{
+
+		if (selected.size())
+		{
+			drawBackground();
+
+			programData.ui.menuRenderer.Text("Are you sure you want to delete:", Colors_White);
+			programData.ui.menuRenderer.Text(selected.c_str(), Colors_White);
+
+
+			if (programData.ui.menuRenderer.Button("Delete", Colors_Gray, programData.ui.buttonTexture))
+			{
+				std::string deletePath = RESOURCES_PATH "worlds/";
+				deletePath += selected;
+
+				std::error_code error;
+				std::filesystem::remove_all(deletePath, error);
+
+				selected = {};
+
+				programData.ui.menuRenderer.ExitCurrentMenu();
+			}
+
+			if (programData.ui.menuRenderer.Button("Cancle", Colors_Gray, programData.ui.buttonTexture))
+			{
+				programData.ui.menuRenderer.ExitCurrentMenu();
+			}
+		}
+		else
+		{
+			programData.ui.menuRenderer.ExitCurrentMenu();
+		}
+
+		
+	}
+
+	programData.ui.menuRenderer.EndMenu();
+
+
+
 	programData.ui.menuRenderer.BeginManualMenu("Create world");
 
 	
@@ -1267,18 +1326,7 @@ void displayWorldSelectorMenu(ProgramData &programData)
 		programData.ui.menuRenderer.Text("Create a new world!", Colors_White);
 		
 
-		//background
-		{
-			float rezolution = 256;
-			glm::vec2 size{renderer.windowW, renderer.windowH};
-			size /= 256.f;
-	
-			renderer.renderRectangle({0,0, renderer.windowW, renderer.windowH},
-				programData.blocksLoader.backgroundTexture, {0.6,0.6,0.6,1}, {}, 0,
-				{0,size.y, size.x, 0}
-			);
-		}
-
+		drawBackground();
 
 		programData.ui.menuRenderer.InputText("Name:", name, sizeof(name),
 			Colors_Gray, programData.ui.buttonTexture);

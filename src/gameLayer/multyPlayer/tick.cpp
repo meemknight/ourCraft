@@ -532,8 +532,6 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 			{
 
 				bool wasGenerated = 0;
-				//std::cout << "server recieved place block\n";
-				//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
 				auto chunk = chunkCache.getChunkOrGetNull(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z));
 				int convertedX = modBlockToChunk(i.t.pos.x);
 				int convertedZ = modBlockToChunk(i.t.pos.z);
@@ -605,8 +603,6 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 					)
 				{
 
-					//std::cout << "server recieved place block\n";
-					//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
 					auto chunk = chunkCache.getChunkOrGetNull(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z));
 					int convertedX = modBlockToChunk(i.t.pos.x);
 					int convertedZ = modBlockToChunk(i.t.pos.z);
@@ -1440,8 +1436,6 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 							if (allows)
 							{
 								bool wasGenerated = 0;
-								//std::cout << "server recieved place block\n";
-								//auto chunk = sd.chunkCache.getOrCreateChunk(i.t.pos.x / 16, i.t.pos.z / 16);
 								auto chunk = chunkCache.getChunkOrGetNull(divideChunk(i.t.pos.x), divideChunk(i.t.pos.z));
 								int convertedX = modBlockToChunk(i.t.pos.x);
 								int convertedZ = modBlockToChunk(i.t.pos.z);

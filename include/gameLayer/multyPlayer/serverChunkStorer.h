@@ -74,12 +74,12 @@ struct ListNode
 //TODO REFACTOR TO ALSO USE FULL BLOCK INFO!!
 struct GhostBlock
 {
-	BlockType type;
+	Block block;
 	bool replaceAnything = 0;
 
 	bool operator==(const GhostBlock &other)
 	{
-		return type == other.type && replaceAnything == other.replaceAnything;
+		return block == other.block && replaceAnything == other.replaceAnything;
 	}
 };
 
@@ -143,20 +143,26 @@ struct ServerChunkStorer
 	//uses chunk coorodonates
 	SavedChunk *getChunkOrGetNull(int posX, int posZ);
 
+	//OLD VERSION todo remove once refactoring is complete!
 	SavedChunk *getOrCreateChunk(int posX, int posZ, WorldGenerator &wg,
 		StructuresManager &structureManager, BiomesManager &biomesManager,
 		std::vector<SendBlocksBack> &sendNewBlocksToPlayers, bool generateGhostAndStructures,
 		std::vector<StructureToGenerate> *newStructuresToAdd, WorldSaver &worldSaver,
 		bool *wasGenerated = 0, bool *wasLoaded = 0);
 
+	SavedChunk *getOrCreateChunk(int posX, int posZ, WorldGenerator &wg,
+		StructuresManager &structureManager, BiomesManager &biomesManager,
+		std::vector<SendBlocksBack> &sendNewBlocksToPlayers, WorldSaver &worldSaver,
+		bool *wasGenerated = 0, bool *wasLoaded = 0);
+
 
 	bool generateStructure(StructureToGenerate s, StructureData *structure, int rotation,
-		std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks, std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
+		std::unordered_map<glm::ivec2, SavedChunk *, Ivec2Hash> &newCreatedOrLoadedChunks, std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
 		std::vector<glm::ivec3> *controlBlocks, bool replace = 0, BlockType from = 0, BlockType to = 0
 	);
 
 	bool generateStructure(StructureToGenerate s, StructuresManager &structureManager,
-		std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks, 
+		std::unordered_map<glm::ivec2, SavedChunk *, Ivec2Hash> &newCreatedOrLoadedChunks,
 		std::vector<SendBlocksBack> &sendNewBlocksToPlayers,
 		std::vector<glm::ivec3> *controlBlocks);
 

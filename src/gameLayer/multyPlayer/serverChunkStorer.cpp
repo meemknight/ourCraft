@@ -157,6 +157,7 @@ SavedChunk *ServerChunkStorer::getChunkOrGetNull(int posX, int posZ)
 	}
 }
 
+//old version!
 SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 	WorldGenerator &wg,
 	StructuresManager &structureManager,
@@ -807,13 +808,12 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 					}
 					newCreatedChunksSet.insert({d.x, d.z});
 				}
-
 			}
 
 			//trees
 			for (auto &s : newStructures)
 			{
-				generateStructure(s, structureManager, newCreatedChunksSet, sendNewBlocksToPlayers, 0);
+				//generateStructure(s, structureManager, newCreatedChunksSet, sendNewBlocksToPlayers, 0);
 			}
 
 		}
@@ -838,9 +838,126 @@ SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ,
 	return nullptr;
 }
 
+SavedChunk *ServerChunkStorer::getOrCreateChunk(int posX, int posZ, 
+	WorldGenerator &wg, StructuresManager &structureManager, 
+	BiomesManager &biomesManager, std::vector<SendBlocksBack> &sendNewBlocksToPlayers, 
+	WorldSaver &worldSaver, bool *wasGenerated, bool *wasLoaded)
+{
+
+	if (wasGenerated) { *wasGenerated = 0; }
+	if (wasLoaded) { *wasLoaded = 0; }
+
+#pragma region check if already generated
+	glm::ivec2 pos = {posX, posZ};
+	auto foundPos = savedChunks.find(pos);
+	if (foundPos != savedChunks.end())
+	{
+		permaAssertCommentDevelopement(foundPos->second, "chunk should not be nullpointer here!");
+		return foundPos->second;
+	}
+#pragma endregion
+
+#pragma region check if you can load it from a file and if not create the geometry!
+
+	SavedChunk *rez = new SavedChunk;
+
+	rez->chunk.x = posX;
+	rez->chunk.z = posZ;
+
+	std::vector<StructureToGenerate> newStructures;
+	newStructures.reserve(10); 
+
+	//this are chunks that have been just generated, so they need structures!
+	std::unordered_map<glm::ivec2, SavedChunk*, Ivec2Hash> newCreatedChunks;
+	std::unordered_map<glm::ivec2, SavedChunk *, Ivec2Hash> newCreatedOrLoadedChunks;
+	newCreatedChunks.reserve(10);
+	newCreatedOrLoadedChunks.reserve(10);
+
+	if (worldSaver.loadChunk(rez->chunk))
+	{
+		//we managed to load the chunk
+		if (wasLoaded) { *wasLoaded = true; }
+
+		//we loaded a chunk so no need to dirty here.
+		rez->otherData.dirty = false;
+		rez->otherData.dirtyBlockData = false;
+		//std::cout << "Loaded!\n";
+
+		worldSaver.loadBlockData(*rez);
+		if (rez->normalize())
+		{
+			rez->otherData.dirty = true;
+			rez->otherData.dirtyBlockData = true;
+		}
+	}
+	else
+	{
+		//create new chunk!
+		if (wasGenerated) { *wasGenerated = true; }
+
+		generateChunk(rez->chunk, wg, structureManager, biomesManager, newStructures);
+		rez->otherData.dirty = true;
+
+		newCreatedChunks[glm::ivec2{posX, posZ}] = rez;
+	}
+
+	newCreatedOrLoadedChunks[{posX, posZ}] =  rez;
+
+
+#pragma endregion
+
+
+#pragma region place previous ghost blocks
+
+	for (auto &c : newCreatedOrLoadedChunks)
+	{
+		auto &d = c.second->chunk;
+		if (placeGhostBlocksForChunk(d.x, d.z, d))
+		{
+			c.second->otherData.dirty = true;
+			c.second->otherData.dirtyBlockData = true; //probably not needed but just to be safe!
+		}
+	}
+
+#pragma endregion
+
+#pragma region place small structures
+
+	for (auto &s : newStructures)
+	{
+		generateStructure(s, structureManager, newCreatedOrLoadedChunks, sendNewBlocksToPlayers, 0);
+	}
+
+#pragma endregion
+
+
+
+#pragma region load entities
+
+	for (auto &c : newCreatedChunks)
+	{
+		worldSaver.loadEntityData(c.second->entityData, c.first);
+	}
+
+#pragma endregion
+
+
+#pragma region set newly loaded chunls
+
+	for (auto &c : newCreatedOrLoadedChunks)
+	{
+		savedChunks[c.first] = c.second;
+	}
+
+#pragma endregion
+
+
+	return rez;
+}
+
 bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 	StructureData *structure, int rotation, 
-	std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks, 
+	std::unordered_map<glm::ivec2, SavedChunk *, Ivec2Hash> &newCreatedOrLoadedChunks,
 	std::vector<SendBlocksBack> &sendNewBlocksToPlayers, 
 	std::vector<glm::ivec3> *controlBlocks, bool replace,
 	BlockType from, BlockType to)
@@ -875,21 +992,52 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 	};
 
 
-	int bonusRandomHeight = 0;
+	int bonusRandomHeightTrees = 0;
 	if (s.addRandomTreeHeight)
 	{
-		bonusRandomHeight = chooseRandomElement(s.randomNumber4, 6) + 2;
+		bonusRandomHeightTrees = chooseRandomElement(s.randomNumber4, 6) + 2;
 	}
 
+	auto placeOneBlockLogic = [&](Block oldBlock, Block newBlock) -> bool
+	{
+		//todo add various flags to the blocks to be placed and stuff
+		bool replaceAnything = false;
 
+		if (oldBlock.getType() == BlockTypes::air || replaceAnything)
+		{
+		
+			//we replace the new block with a variation if needed.
+			replaceB(newBlock);
 
-	if (s.pos.y + size.y + bonusRandomHeight <= CHUNK_HEIGHT)
+			if (newBlock.getType() != BlockTypes::air)
+			{
+
+				//todo paint if needed.
+
+				if (controlBlocks)
+				{
+					if (isControlBlock(newBlock.getType()))
+					{
+						//controlBlocks->push_back({x,y,z});
+					}
+				}
+
+				return true;
+			}
+
+		}
+
+		return false;
+	};
+
+	bonusRandomHeightTrees = 0;
+	if (s.pos.y + size.y + bonusRandomHeightTrees <= CHUNK_HEIGHT)
 	{
 
 
 		glm::ivec3 startPos = s.pos;
 
-		if(bonusRandomHeight)
+		if(bonusRandomHeightTrees)
 		{
 
 			int x = startPos.x;
@@ -907,7 +1055,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 			{
 				c->otherData.dirty = true;
 
-				for (int y = s.pos.y; y < s.pos.y + bonusRandomHeight; y++)
+				for (int y = s.pos.y; y < s.pos.y + bonusRandomHeightTrees; y++)
 				{
 					auto &b = c->chunk.unsafeGet(inChunkX, y, inChunkZ);
 					if (b.getType() == BlockTypes::air)
@@ -918,7 +1066,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 			}
 			else {} //we can assume that this chunk is loaded so no need for ghost blocks...
 
-			startPos.y += bonusRandomHeight;
+			startPos.y += bonusRandomHeightTrees;
 		}
 
 		startPos.x -= size.x / 2;
@@ -933,28 +1081,28 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 				int chunkX = divideChunk(x);
 				int chunkZ = divideChunk(z);
 
-				//todo this will be replaced with also a check if the
-				//chunk was created in the past
-				auto c = getChunkOrGetNull(chunkX, chunkZ);
-
 				int inChunkX = modBlockToChunk(x);
 				int inChunkZ = modBlockToChunk(z);
 
 				constexpr bool replaceAnything = 0;
-
 				bool sendDataToPlayers = 0;
-				//auto it = newCreatedChunks.find({chunkX, chunkZ});
-				//if (it != newCreatedChunks.end())
-				//{
-				//	//todo server should know what chunks can the player see to corectly send him the data
-				//	//even if the chunk is not loaded in the server side
-				//	//std::cout << "Updating chunk info to player\n";
-				//	sendDataToPlayers = true;
-				//
-				//}
-				sendDataToPlayers = true;
+				SavedChunk *c = nullptr;
 
+				//CASE 1: we place the block in one of the newly created or loaded CHUNKS!
+				auto it = newCreatedOrLoadedChunks.find({chunkX, chunkZ});
+				if (it != newCreatedOrLoadedChunks.end())
+				{
+					//this is a new chunk so we know for sure no player could already have had this chunk!
+					sendDataToPlayers = false;
+					c = it->second;
+				}
+				else
+				{
+					sendDataToPlayers = true;
+					c = getChunkOrGetNull(chunkX, chunkZ);
+				}
 
+				// IF we have a chunk, we start placing blocks.
 				if (c)
 				{
 					c->otherData.dirty = true;
@@ -963,42 +1111,62 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 
 						auto &b = c->chunk.unsafeGet(inChunkX, y, inChunkZ);
 
-						if (b.getType() == BlockTypes::air || replaceAnything)
+						auto oldBlock = b;
+						auto newBlock = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z, rotation);
+
+						if (placeOneBlockLogic(oldBlock, newBlock))
 						{
-							auto newB = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z,
-								rotation);
+							c->removeBlockWithData({inChunkX, y, inChunkZ}, oldBlock.getType());
+							b = newBlock; //we set the new block!
 
-							replaceB(newB);
-
-							if (newB.getType() != BlockTypes::air)
+							if (sendDataToPlayers)
 							{
-								b = newB;
-
-								if (sendDataToPlayers)
-								{
-									SendBlocksBack sendB;
-									sendB.pos = {x,y,z};
-									sendB.blockInfo = b;
-									sendNewBlocksToPlayers.push_back(sendB);
-								}
-
-								if (controlBlocks)
-								{
-									if (isControlBlock(newB.getType()))
-									{
-										controlBlocks->push_back({x,y,z});
-									}
-								}
+								SendBlocksBack sendB;
+								sendB.pos = {x,y,z};
+								sendB.blockInfo = b;
+								sendNewBlocksToPlayers.push_back(sendB);
 							}
+							
+						};
 
-						}
+						//todo remove!
+						//if (b.getType() == BlockTypes::air || replaceAnything)
+						//{
+						//	auto newB = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z,
+						//		rotation);
+						//
+						//	replaceB(newB);
+						//
+						//	if (newB.getType() != BlockTypes::air)
+						//	{
+						//		c->removeBlockWithData({inChunkX, y, inChunkZ}, b.getType());
+						//		b = newB; //we set the new block!
+						//
+						//		if (sendDataToPlayers)
+						//		{
+						//			SendBlocksBack sendB;
+						//			sendB.pos = {x,y,z};
+						//			sendB.blockInfo = b;
+						//			sendNewBlocksToPlayers.push_back(sendB);
+						//		}
+						//
+						//		if (controlBlocks)
+						//		{
+						//			if (isControlBlock(newB.getType()))
+						//			{
+						//				controlBlocks->push_back({x,y,z});
+						//			}
+						//		}
+						//	}
+						//
+						//}
 					}
 				}
 				else
 				{
 
+					//CASE 3: we don't have this chunk, so we add some ghost blocks!
 					auto it = ghostBlocks.find({chunkX, chunkZ});
-
 
 					if (it == ghostBlocks.end())
 					{
@@ -1007,37 +1175,18 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 
 						for (int y = startPos.y; y < endPos.y; y++)
 						{
-							auto b = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z,
-								rotation);
 
-							replaceB(b);
+							auto oldBlock = Block{};
+							auto newBlock = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z, rotation);
 
-							if (b.getType() != BlockTypes::air)
+							if (placeOneBlockLogic(oldBlock, newBlock))
 							{
-
 								GhostBlock ghostBlock;
-								ghostBlock.type = b.typeAndFlags;
+								ghostBlock.block = newBlock;
 								ghostBlock.replaceAnything = replaceAnything;
 
-								rez[{inChunkX, y, inChunkZ}] = ghostBlock; //todo either ghost either send
-
-								if (sendDataToPlayers)
-								{
-									SendBlocksBack sendB;
-									sendB.pos = {x,y,z};
-									sendB.blockInfo = b;
-									sendNewBlocksToPlayers.push_back(sendB);
-								}
-
-								if (controlBlocks)
-								{
-									if (isControlBlock(b.getType()))
-									{
-										controlBlocks->push_back({x,y,z});
-									}
-								}
-
-							};
+								rez[{inChunkX, y, inChunkZ}] = ghostBlock;
+							}
 
 						}
 
@@ -1048,63 +1197,37 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 					{
 						for (int y = startPos.y; y < endPos.y; y++)
 						{
-							auto b = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z,
-								rotation);
 
-							replaceB(b);
+							auto oldBlock = Block{};
+							auto newBlock = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z, rotation);
 
-							if (b.getType() != BlockTypes::air)
+							auto blockIt = it->second.find({inChunkX, y, inChunkZ});
+							
+							if (blockIt != it->second.end())
 							{
-								GhostBlock ghostBlock;
-								ghostBlock.type = b.getType();
-								ghostBlock.replaceAnything = replaceAnything;
+								oldBlock = blockIt->second.block;
+							}
 
-								auto blockIt = it->second.find({inChunkX, y, inChunkZ});
+							if (placeOneBlockLogic(oldBlock, newBlock))
+							{
+
+								GhostBlock ghostBlock;
+								ghostBlock.block = newBlock;
+								ghostBlock.replaceAnything = replaceAnything;
 
 								if (blockIt == it->second.end())
 								{
 									it->second[{inChunkX, y, inChunkZ}] = ghostBlock;
-
-									if (sendDataToPlayers)
-									{
-										SendBlocksBack sendB;
-										sendB.pos = {x,y,z};
-										sendB.blockInfo = b;
-										sendNewBlocksToPlayers.push_back(sendB);
-									}
-
-									if (controlBlocks)
-									{
-										if (isControlBlock(b.getType()))
-										{
-											controlBlocks->push_back({x,y,z});
-										}
-									}
 								}
 								else
 								{
 									if (replaceAnything)
 									{
 										blockIt->second = ghostBlock;
-
-										if (sendDataToPlayers)
-										{
-											SendBlocksBack sendB;
-											sendB.pos = {x,y,z};
-											sendB.blockInfo = b;
-											sendNewBlocksToPlayers.push_back(sendB);
-										}
-
-										if (controlBlocks)
-										{
-											if (isControlBlock(b.getType()))
-											{
-												controlBlocks->push_back({x,y,z});
-											}
-										}
 									}
 								}
-							};
+
+							}
 
 						}
 					}
@@ -1122,7 +1245,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 
 bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 	StructuresManager &structureManager,
-	std::unordered_set<glm::ivec2, Ivec2Hash> &newCreatedChunks,
+	std::unordered_map<glm::ivec2, SavedChunk *, Ivec2Hash> &newCreatedOrLoadedChunks,
 	std::vector<SendBlocksBack> &sendNewBlocksToPlayers, 
 	std::vector<glm::ivec3> *controlBlocks)
 {
@@ -1139,7 +1262,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 			[chooseRandomElement(s.randomNumber1, structureManager.trees.size())];
 
 		return generateStructure(s, tree,
-			chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers,
+			chooseRandomElement(s.randomNumber2, 4), newCreatedOrLoadedChunks, sendNewBlocksToPlayers,
 			controlBlocks);
 	}
 	else
@@ -1149,14 +1272,14 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 		auto tree = structureManager.jungleTrees
 			[chooseRandomElement(s.randomNumber1, structureManager.jungleTrees.size())];
 
-		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedOrLoadedChunks, sendNewBlocksToPlayers, controlBlocks);
 	}else if (s.type == Structure_PalmTree)
 	{
 
 		auto tree = structureManager.palmTrees
 			[chooseRandomElement(s.randomNumber1, structureManager.palmTrees.size())];
 
-		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks,
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedOrLoadedChunks,
 			sendNewBlocksToPlayers, controlBlocks);
 
 	}else if (s.type == Structure_TreeHouse)
@@ -1165,7 +1288,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 		auto tree = structureManager.treeHouses
 			[chooseRandomElement(s.randomNumber1, structureManager.treeHouses.size())];
 
-		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks,
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedOrLoadedChunks,
 			sendNewBlocksToPlayers, controlBlocks);
 
 	}else if (s.type == Structure_Pyramid)
@@ -1174,7 +1297,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 		auto tree = structureManager.smallPyramids
 			[chooseRandomElement(s.randomNumber1, structureManager.smallPyramids.size())];
 
-		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedChunks,
+		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4), newCreatedOrLoadedChunks,
 			sendNewBlocksToPlayers, controlBlocks);
 
 	}else if (s.type == Structure_BirchTree)
@@ -1183,7 +1306,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 			[chooseRandomElement(s.randomNumber1, structureManager.birchTrees.size())];
 
 		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
-			newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+			newCreatedOrLoadedChunks, sendNewBlocksToPlayers, controlBlocks);
 
 	}else if (s.type == Structure_Igloo)
 	{
@@ -1191,7 +1314,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 			[chooseRandomElement(s.randomNumber1, structureManager.igloos.size())];
 
 		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
-			newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+			newCreatedOrLoadedChunks, sendNewBlocksToPlayers, controlBlocks);
 
 	}
 	else
@@ -1203,13 +1326,13 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 		if (s.randomNumber3 > 0.5)
 		{
 			return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
-				newCreatedChunks, sendNewBlocksToPlayers, controlBlocks, true,
+				newCreatedOrLoadedChunks, sendNewBlocksToPlayers, controlBlocks, true,
 				BlockTypes::spruce_leaves, BlockTypes::spruce_leaves_red);
 		}
 		else
 		{
 			return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
-				newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+				newCreatedOrLoadedChunks, sendNewBlocksToPlayers, controlBlocks);
 		}
 	}else if (s.type == Structure_SpruceSlim)
 	{
@@ -1217,7 +1340,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 			[chooseRandomElement(s.randomNumber1, structureManager.spruceTreesSlim.size())];
 
 		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
-			newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+			newCreatedOrLoadedChunks, sendNewBlocksToPlayers, controlBlocks);
 	}
 	else if (s.type == Structure_SmallStone)
 	{
@@ -1225,7 +1348,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 			[chooseRandomElement(s.randomNumber1, structureManager.smallStones.size())];
 
 		return generateStructure(s, stone, chooseRandomElement(s.randomNumber2, 4),
-			newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+			newCreatedOrLoadedChunks, sendNewBlocksToPlayers, controlBlocks);
 	}
 	else if (s.type == Structure_TallSlimTree)
 	{
@@ -1233,7 +1356,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 			[chooseRandomElement(s.randomNumber1, structureManager.tallTreesSlim.size())];
 
 		return generateStructure(s, tree, chooseRandomElement(s.randomNumber2, 4),
-			newCreatedChunks, sendNewBlocksToPlayers, controlBlocks);
+			newCreatedOrLoadedChunks, sendNewBlocksToPlayers, controlBlocks);
 	}
 
 
@@ -1283,6 +1406,7 @@ Block *ServerChunkStorer::tryGetBlockIfChunkExistsNoChecks(glm::ivec3 pos)
 	return nullptr;
 }
 
+//given a chunk, we check if we have ghost blocks for it to be placed there
 bool ServerChunkStorer::placeGhostBlocksForChunk(int posX, int posZ, ChunkData &c)
 {
 	bool placed = 0;
@@ -1303,7 +1427,9 @@ bool ServerChunkStorer::placeGhostBlocksForChunk(int posX, int posZ, ChunkData &
 			{
 				//todo rotation and stuff like that
 				//todo placed by server stuff
-				block.setType(b.second.type);
+				block.typeAndFlags = b.second.block.typeAndFlags;
+				block.colorAndOtherFlags = b.second.block.colorAndOtherFlags;
+				
 				placed = true;
 			}
 		}

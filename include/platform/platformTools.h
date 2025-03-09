@@ -125,3 +125,13 @@ public:
 #define CONCATENATE_DEFFER(x, y) x##y
 #define MAKE_UNIQUE_VAR_DEFFER(x, y) CONCATENATE_DEFFER(x, y)
 #define defer(func) Defer MAKE_UNIQUE_VAR_DEFFER(_defer_, __COUNTER__)(func)
+
+
+#if INTERNAL_BUILD == 1
+	#define permaAssertDevelopement permaAssert
+	#define permaAssertCommentDevelopement permaAssertComment
+
+#else
+	#define permaAssertDevelopement
+	#define permaAssertCommentDevelopement
+#endif

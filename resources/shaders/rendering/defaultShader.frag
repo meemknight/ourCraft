@@ -1129,14 +1129,14 @@ void main()
 			vec3 colorsVector[] = vec3[](
 			vec3(1.0, 1.0, 1.0),  // whitePaint
 			vec3(0.75, 0.75, 0.75), // lightGrayPaint
-			vec3(0.25, 0.25, 0.25),  // darkGrayPaint
+			vec3(0.25, 0.25, 0.25),  // darkGrayPaint 
 			vec3(0.0, 0.0, 0.0),  // blackPaint
 			vec3(0.36, 0.25, 0.20), // brownPaint
 			vec3(1.0, 0.0, 0.0),  // redPaint
 			vec3(1.0, 0.5, 0.0),  // orangePaint
 			vec3(1.0, 1.0, 0.0),  // yellowPaint
 			vec3(81, 255, 0)/255.f, // limePaint
-			vec3(0.0, 0.5, 0.0),  // greenPaint
+			vec3(0.0, 0.1, 0.0),  // greenPaint
 			vec3(0, 255, 195)/255.f, // turqoisePaint
 			vec3(0.0, 1.0, 1.0),  // cyanPaint
 			vec3(0, 62, 176)/255.f,  // bluePaint

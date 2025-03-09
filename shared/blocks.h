@@ -361,6 +361,12 @@ struct Block
 	unsigned char lightLevel = 0; //first 4 bytes represent the sun level and bottom 4 bytes the other lights level
 	unsigned char colorAndOtherFlags = 0;
 
+	bool operator==(const Block &other)
+	{
+		return typeAndFlags == other.typeAndFlags && lightLevel == other.lightLevel &&
+			colorAndOtherFlags == other.colorAndOtherFlags;
+	};
+
 	unsigned short getColor()
 	{
 		return colorAndOtherFlags & 0b0001'1111;
