@@ -38,7 +38,6 @@ struct StructureData
 		{
 			assert(0);
 		}
-
 	}
 
 	Block *safeGet(int x, int y, int z)

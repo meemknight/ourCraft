@@ -551,7 +551,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	bool stopMainInput = gameData.escapePressed || gameData.killed || gameData.insideInventoryMenu ||
 		gameData.isInsideMapView || gameData.isInsideChat || gameData.interaction.blockInteractionType != 0;
 
-	static float moveSpeed = 70.f;
+	static float moveSpeed = 7.f;
 	float isPlayerMovingSpeed = 0;
 
 

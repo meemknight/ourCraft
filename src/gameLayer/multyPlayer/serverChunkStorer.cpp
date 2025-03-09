@@ -1169,6 +1169,8 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 
 						auto oldBlock = b;
 						auto newBlock = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z, rotation);
+						newBlock.rotate(rotation);
+
 
 						if (placeOneBlockLogic(oldBlock, newBlock, x, y, z))
 						{
@@ -1185,37 +1187,6 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 							
 						};
 
-						//todo remove!
-						//if (b.getType() == BlockTypes::air || replaceAnything)
-						//{
-						//	auto newB = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z,
-						//		rotation);
-						//
-						//	replaceB(newB);
-						//
-						//	if (newB.getType() != BlockTypes::air)
-						//	{
-						//		c->removeBlockWithData({inChunkX, y, inChunkZ}, b.getType());
-						//		b = newB; //we set the new block!
-						//
-						//		if (sendDataToPlayers)
-						//		{
-						//			SendBlocksBack sendB;
-						//			sendB.pos = {x,y,z};
-						//			sendB.blockInfo = b;
-						//			sendNewBlocksToPlayers.push_back(sendB);
-						//		}
-						//
-						//		if (controlBlocks)
-						//		{
-						//			if (isControlBlock(newB.getType()))
-						//			{
-						//				controlBlocks->push_back({x,y,z});
-						//			}
-						//		}
-						//	}
-						//
-						//}
 					}
 				}
 				else
@@ -1234,6 +1205,8 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 
 							auto oldBlock = Block{};
 							auto newBlock = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z, rotation);
+							newBlock.rotate(rotation);
+
 
 							if (placeOneBlockLogic(oldBlock, newBlock, x, y, z))
 							{
@@ -1256,6 +1229,8 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 
 							auto oldBlock = Block{};
 							auto newBlock = structure->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z, rotation);
+							newBlock.rotate(rotation);
+
 
 							auto blockIt = it->second.find({inChunkX, y, inChunkZ});
 							

@@ -408,7 +408,6 @@ struct Block
 	{
 		return typeAndFlags & 0b0111'1111'1111;
 	}
-
 	unsigned char getFlagsBytes()
 	{
 		return typeAndFlags >> 11;
@@ -449,6 +448,32 @@ struct Block
 		typeAndFlags |= topPart;
 	}
 
+	void rotate(int rotation)
+	{
+		if(rotation == 0)
+		{
+			return;
+		}
+
+		assert(rotation <= 3);
+		
+		if (hasRotationFor365RotationTypeBlocks())
+		{
+
+			if (!isWallMountedOrStangingBlock()
+				||
+				getRotatedOrStandingForWallOrStandingBlocks()
+				)
+			{
+				int r = getRotationFor365RotationTypeBlocks();
+
+				setRotationFor365RotationTypeBlocks((r + rotation) % 4);
+			}
+
+		}
+
+	}
+
 	bool getTopPartForSlabs()
 	{
 		return (typeAndFlags >> 11) & 0b0000'1;
@@ -460,7 +485,7 @@ struct Block
 		return ::isDecorativeFurniture(getType());
 	}
 
-	//used for stairs, or furnace type blocks
+	//used for stairs, or furniture type blocks
 	bool hasRotationFor365RotationTypeBlocks()
 	{
 		return isStairsMesh() || isWallMesh() || isDecorativeFurniture() || isWallMountedBlock()
