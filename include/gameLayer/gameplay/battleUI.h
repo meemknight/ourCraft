@@ -32,6 +32,8 @@ struct BattleUI
 
 	float timer = 0;
 
+	static constexpr int MAX_POSITIONS = 6;
+
 	union
 	{
 
@@ -46,7 +48,6 @@ struct BattleUI
 				bool passedCenter = 0;
 			};
 
-			static constexpr int MAX_POSITIONS = 6;
 			Ball balls[MAX_POSITIONS];
 			int currentBallsCount = 0;
 
