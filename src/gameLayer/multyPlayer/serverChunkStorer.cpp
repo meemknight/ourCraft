@@ -1325,6 +1325,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 {
 	auto chooseRandomElement = [](float randVal, int elementCount)
 	{
+		randVal = std::min(randVal, 0.999f);
 		return int(floor(randVal * elementCount));
 	};
 
@@ -1504,6 +1505,11 @@ bool ServerChunkStorer::placeGhostBlocksForChunk(int posX, int posZ, ChunkData &
 			auto pos = b.first;
 
 			auto &block = c.unsafeGet(pos.x, pos.y, pos.z);
+
+			if (b.second.block.air())
+			{
+				int a = 0;
+			}
 
 			if (b.second.replaceAnything || block.getType() == BlockTypes::air)
 			{

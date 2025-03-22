@@ -299,6 +299,9 @@ int main()
 {
 
 #ifdef _WIN32
+
+	timeBeginPeriod(1);	
+
 #ifdef _MSC_VER 
 #if INTERNAL_BUILD
 	AllocConsole();

@@ -1245,7 +1245,16 @@ void main()
 		
 
 		vec3 F0 = vec3(0.04); 
-		F0 = mix(F0, textureColor.rgb, vec3(metallic));
+
+		if(isWater())
+		{
+			//F0 = vec3(0.0217);
+			F0 = vec3(0.021, 0.021, 0.05);
+		}else
+		{
+			F0 = mix(F0, textureColor.rgb, vec3(metallic));
+		}
+
 
 		//compute lights color
 		//if(false)

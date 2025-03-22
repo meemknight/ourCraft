@@ -277,7 +277,7 @@ glm::vec3 moveVectorRandomlyBiasKeepCenter(glm::vec3 vector, std::minstd_rand &r
 bool getRandomChance(std::minstd_rand &rng, float chance)
 {
 	float dice = getRandomNumberFloat(rng, 0.0, 1.0);
-	return dice < chance;
+	return dice <= chance;
 }
 
 void doCollisionWithOthers(glm::dvec3 &positiom, glm::vec3 colider, MotionState &forces,
