@@ -4,7 +4,6 @@
 #include <platformTools.h>
 #include <string>
 
-constexpr static float BLOCK_DEFAULT_FRICTION = 8.f;
 
 int blockReorder[] = {
 	// Basic Blocks

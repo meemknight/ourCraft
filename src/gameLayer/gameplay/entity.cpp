@@ -3,7 +3,6 @@
 #include <iostream>
 
 #define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
 #include <glm/gtx/vector_angle.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <multyPlayer/serverChunkStorer.h>
@@ -392,6 +391,98 @@ void PhysicalEntity::move(glm::vec2 move)
 {
 	position.x += move.x;
 	position.z += move.y;
+}
+
+void PhysicalEntity::moveDynamic(glm::vec2 move, float deltaTime)
+{
+
+	position.x += move.x * deltaTime;
+	position.z += move.y * deltaTime;
+	return;
+
+	glm::vec2 originalMove = move;
+	
+	float velocity = glm::length(move);
+	
+	if (velocity > 0.0000001)
+	{
+		move /= velocity;
+		move *= (velocity + BLOCK_DEFAULT_FRICTION * 2) * deltaTime;
+	
+		if (move.x > 0)
+		{
+			if (forces.velocity.x < originalMove.x)
+				{ forces.velocity.x += move.x; }
+		}
+		else
+		{
+			if (forces.velocity.x > originalMove.x)
+				{ forces.velocity.x += move.x; }
+		}
+
+		if (move.y > 0)
+		{
+			if (forces.velocity.z < originalMove.y)
+			{
+				forces.velocity.z += move.y;
+			}
+		}
+		else
+		{
+			if (forces.velocity.z > originalMove.y)
+			{
+				forces.velocity.z += move.y;
+			}
+		}
+
+		//forces.velocity.x += move.x;
+		//forces.velocity.z += move.y;
+		
+	
+	}
+	else
+	{
+		//bring the entity to a stop slowly
+		//forces.velocity.x += move.x;
+		//forces.velocity.z += move.y;
+	
+	}
+
+	//float targetSpeed = glm::length(move);
+	//if (targetSpeed > 0.00001f)
+	//{
+	//	glm::vec2 targetVelocity = glm::normalize(move) * (targetSpeed);
+	//
+	//	forces.velocity.x = targetVelocity.x;
+	//	forces.velocity.z = targetVelocity.y;
+	//
+	//}
+
+
+	//float targetSpeed = glm::length(move);
+	//if (targetSpeed > 0.00001f)
+	//{
+	//	glm::vec2 targetVelocity = glm::normalize(move) * (targetSpeed);
+	//
+	//	const float ACCELERATION_RATE = 10.0f; // Adjust to control snappiness
+	//
+	//	// Smoothly interpolate velocity toward target velocity
+	//	forces.velocity.x = glm::mix(forces.velocity.x, targetVelocity.x, 1.0f - glm::exp(-ACCELERATION_RATE * deltaTime));
+	//	forces.velocity.z = glm::mix(forces.velocity.z, targetVelocity.y, 1.0f - glm::exp(-ACCELERATION_RATE * deltaTime));
+	//
+	//	//if (forces.velocity.x > targetVelocity.x) {} else if(forces.velocity.x += targetVelocity.x * deltaTime);
+	//
+	//	//if (force.x > 0) { force.x -= drag.x; if(force.x < 0) {force.x = 0;} } else
+	//}
+	//else
+	//{
+	//
+	//}
+
+
+
+
+
 }
 
 void adjustVectorTowardsDirection(glm::vec3 &vector, glm::vec3 desiredDirection, float threshold)

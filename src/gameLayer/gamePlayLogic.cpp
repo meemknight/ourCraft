@@ -603,11 +603,29 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			gameData.c.fovRadians = glm::radians(70.f);
 		}
 
-
-
 		//move
 		{
-			float speed = moveSpeed * deltaTime;
+			auto prelucrateControllerMovement = [&](float x, float y)
+			{
+				auto rez = glm::vec2(x, y);
+				float len = glm::length(rez);
+
+				if (len <= 0.1) { return glm::vec2(); }
+
+				rez /= len;
+				len -= 0.1;
+				len /= 0.8;
+				if (len > 1.f) { len = 1; }
+				rez *= len;
+
+				return rez;
+			};
+
+			auto prelucrateControllerMovementPower = [&](float x, float y)
+			{
+				return prelucrateControllerMovement(x * std::abs(x), y * std::abs(y));
+			};
+
 			glm::vec3 moveDir = {};
 			if (platform::isKeyHeld(platform::Button::Up)
 				|| platform::isKeyHeld(platform::Button::W)
@@ -642,13 +660,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			if (player.entity.fly)
 			{
 				if (platform::isKeyHeld(platform::Button::LeftShift)
-					|| platform::getControllerButtons().buttons[platform::ControllerButtons::RBumper].held
+					
 					)
 				{
 					moveDir.y -= 1;
 				}
 				if (platform::isKeyHeld(platform::Button::Space)
-					|| platform::getControllerButtons().buttons[platform::ControllerButtons::LBumper].held
+					|| platform::getControllerButtons().buttons[platform::ControllerButtons::Rthumb].held
 					)
 				{
 					moveDir.y += 1;
@@ -657,12 +675,18 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			else
 			{
 				if (platform::isKeyPressedOn(platform::Button::Space)
-					|| platform::getControllerButtons().buttons[platform::ControllerButtons::LBumper].held
+					|| platform::getControllerButtons().buttons[platform::ControllerButtons::Rthumb].held
 					)
 				{
 					gameData.entityManager.localPlayer.entity.jump();
 				}
 			}
+
+			//apply controller move
+			glm::vec2 controllerMove = prelucrateControllerMovement(platform::getControllerButtons().LStick.x, 
+				platform::getControllerButtons().LStick.y);
+			moveDir.x += controllerMove.x;
+			moveDir.z += controllerMove.y;
 
 			{
 				float l = glm::length(glm::vec2(moveDir.x, moveDir.z));
@@ -671,12 +695,14 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					moveDir.x /= l;
 					moveDir.z /= l;
 				}
+
+				float speed = moveSpeed;
 				moveDir *= speed;
 			}
 
 			static float jumpTimer = 0;
 			if (platform::isKeyPressedOn(platform::Button::Space)
-				|| platform::getControllerButtons().buttons[platform::ControllerButtons::LBumper].pressed)
+				|| platform::getControllerButtons().buttons[platform::ControllerButtons::Rthumb].pressed)
 			{
 				if (player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE)
 				{
@@ -698,11 +724,11 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			if (player.entity.fly)
 			{
-				gameData.entityManager.localPlayer.entity.flyFPS(moveDir, gameData.c.viewDirection);
+				gameData.entityManager.localPlayer.entity.flyFPS(moveDir * deltaTime, gameData.c.viewDirection);
 			}
 			else
 			{
-				gameData.entityManager.localPlayer.entity.moveFPS(moveDir, gameData.c.viewDirection);
+				gameData.entityManager.localPlayer.entity.moveFPS(moveDir, gameData.c.viewDirection, deltaTime);
 			}
 
 			//gameData.c.moveFPS(moveDir);
@@ -714,8 +740,15 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			//gameData.entityManager.localPlayer.lookDirection = 
 
 			bool rotate = !gameData.escapePressed;
-			if (platform::isRMouseHeld()) { rotate = true; }
 			gameData.c.rotateFPS(platform::getRelMousePosition(), 0.22f * 0.02f, rotate);
+
+			if (rotate) //controller
+			{
+				gameData.c.rotateFPSController(
+					-prelucrateControllerMovementPower(platform::getControllerButtons().RStick.x, platform::getControllerButtons().RStick.y),
+					11.0f * deltaTime
+				);
+			}
 
 			if (!gameData.escapePressed)
 			{
@@ -750,7 +783,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			}
 
 			auto scroll = platform::getScroll();
-			if (scroll < -0.5)
+			if (scroll < -0.5 || platform::getControllerButtons().buttons[platform::ControllerButtons::RBumper].pressed)
 			{
 				if (gameData.currentItemSelected < 8)
 				{
@@ -759,7 +792,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				}
 
 			}
-			else if (scroll > 0.5)
+			else if (scroll > 0.5 || platform::getControllerButtons().buttons[platform::ControllerButtons::LBumper].pressed)
 			{
 				if (gameData.currentItemSelected > 0)
 				{
@@ -1900,6 +1933,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					= gameData.entityManager.localPlayer.entity.position;
 
 				ImGui::Text("Entity pos: %lf, %lf, %lf", player.entity.position.x, player.entity.position.y, player.entity.position.z);
+				ImGui::Text("Entity velocity magnitude: %f", glm::length(player.entity.forces.velocity));
 				ImGui::Text("camera float: %f, %f, %f", posFloat.x, posFloat.y, posFloat.z);
 				ImGui::Text("camera int: %d, %d, %d", posInt.x, posInt.y, posInt.z);
 				ImGui::Text("camera view: %f, %f, %f", gameData.c.viewDirection.x, gameData.c.viewDirection.y, gameData.c.viewDirection.z);

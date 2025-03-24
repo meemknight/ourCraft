@@ -29,7 +29,7 @@ void Player::flyFPS(glm::vec3 direction, glm::vec3 lookDirection)
 }
 
 
-void Player::moveFPS(glm::vec3 direction, glm::vec3 lookDirection)
+void Player::moveFPS(glm::vec3 direction, glm::vec3 lookDirection, float deltaTime)
 {
 	lookDirection.y = 0;
 	lookDirection = glm::normalize(lookDirection);
@@ -43,7 +43,7 @@ void Player::moveFPS(glm::vec3 direction, glm::vec3 lookDirection)
 	move += glm::normalize(glm::cross(lookDirection, glm::vec3(0, 1, 0))) * leftRight;
 	move += lookDirection * forward;
 
-	this->position += move;
+	this->moveDynamic({move.x, move.z}, deltaTime);
 }
 
 glm::vec3 Player::getColliderSize()

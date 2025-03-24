@@ -18,18 +18,23 @@ void applyDrag(glm::vec3 &force, glm::vec3 drag)
 }
 
 //used for surface friction
-void applyDrag2(glm::vec3 &force, glm::vec3 drag)
+void applyFriction(glm::vec3 &force, float friction)
 {
+	if (friction <= 0) { return; }
+	float currentForce = glm::length(force);
+	if (currentForce <= 0) { return; }
 
-	if (force.x > 0) { force.x -= drag.x; if(force.x < 0) {force.x = 0;} } else
-	if (force.x < 0) { force.x += drag.x;  if(force.x > 0) {force.x = 0;} }
+	if (friction > currentForce) { force = {}; }
+	else { force /= currentForce; force *= (currentForce - friction); }
 
-	if (force.y > 0) { force.y -= drag.y; if(force.y < 0) {force.y = 0;} } else
-	if (force.y < 0) { force.y += drag.y; if(force.y > 0) {force.y = 0;} }
-
-	if (force.z > 0) { force.z -= drag.z; if(force.z < 0) {force.z = 0;} } else
-	if (force.z < 0) { force.z += drag.z; if(force.z > 0) {force.z = 0;} }
-
+	//if (force.x > 0) { force.x -= drag.x; if(force.x < 0) {force.x = 0;} } else
+	//if (force.x < 0) { force.x += drag.x;  if(force.x > 0) {force.x = 0;} }
+	//
+	//if (force.y > 0) { force.y -= drag.y; if(force.y < 0) {force.y = 0;} } else
+	//if (force.y < 0) { force.y += drag.y; if(force.y > 0) {force.y = 0;} }
+	//
+	//if (force.z > 0) { force.z -= drag.z; if(force.z < 0) {force.z = 0;} } else
+	//if (force.z < 0) { force.z += drag.z; if(force.z > 0) {force.z = 0;} }
 
 }
 
@@ -141,7 +146,11 @@ bool checkCollisionBrute(glm::dvec3 &pos, glm::dvec3 lastPos,
 
 	if (forces)
 	{
-		applyDrag2(forces->velocity, drag * deltaTime);
+		float maxDrag = std::max({drag.x, drag.y, drag.z});
+		maxDrag *= deltaTime;
+
+		//drag * deltaTime
+		applyFriction(forces->velocity, maxDrag);
 	}
 
 	/*

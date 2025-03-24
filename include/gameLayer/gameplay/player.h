@@ -40,7 +40,7 @@ struct Player : public PhysicalEntity, public CollidesWithPlacedBlocks,
 
 	void flyFPS(glm::vec3 direction, glm::vec3 lookDirection);
 
-	void moveFPS(glm::vec3 direction, glm::vec3 lookDirection);
+	void moveFPS(glm::vec3 direction, glm::vec3 lookDirection, float deltaTime);
 
 	int chunkDistance = 10; //TODO remove this from here!
 

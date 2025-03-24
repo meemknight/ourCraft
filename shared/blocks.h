@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <glad/glad.h>
 #include <glm/vec3.hpp>
+constexpr static float BLOCK_DEFAULT_FRICTION = 64.f;
 
 enum BlockTypes : unsigned short
 {

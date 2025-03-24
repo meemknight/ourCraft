@@ -83,13 +83,13 @@ void Camera::rotateCamera(const glm::vec2 delta)
 	yaw += delta.x;
 	pitch += delta.y;
 
-	if (yaw >= 2 * PI)
+	if (yaw >= (2.f * PI) * 2)
 	{
-		yaw -= 2 * PI;
+		yaw -= 2.f * PI;
 	}
 	else if (yaw < 0)
 	{
-		yaw = 2 * PI - yaw;
+		yaw = 2.f * PI - yaw;
 	}
 
 	if (pitch > PI/2.f - 0.01) { pitch = PI / 2.f - 0.01; }
@@ -140,6 +140,11 @@ void Camera::rotateFPS(glm::ivec2 mousePos, float speed, bool shouldMove)
 	{
 		lastMousePos = mousePos;
 	}
+}
+
+void Camera::rotateFPSController(glm::vec2 vector, float speed)
+{
+	rotateCamera(vector * speed);
 }
 
 void Camera::decomposePosition(glm::vec3& floatPart, glm::ivec3& intPart)
