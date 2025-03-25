@@ -1957,8 +1957,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			str.randomNumber2 = getWhiteNoise3Val(lowestPointInChunk.x + 1, lowestPointInChunk.y);
 			str.randomNumber3 = getWhiteNoise3Val(lowestPointInChunk.x + 1, lowestPointInChunk.y + 1);
 			str.randomNumber4 = getWhiteNoise3Val(lowestPointInChunk.x, lowestPointInChunk.y + 1);
-			str.replaceOverAnything = 2;
-			str.replaceEnclosedColumsWithAir = true;
+			str.setDefaultSmallBuildingSettings();
 
 			generateStructures.push_back(str);
 		}

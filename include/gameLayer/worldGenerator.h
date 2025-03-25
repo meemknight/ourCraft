@@ -41,6 +41,12 @@ struct StructureToGenerate
 	bool paintLogicStuff = true; //paints leaves and others
 	bool replaceEnclosedColumsWithAir = 0;
 	unsigned char replaceOverAnything = 0;
+
+	void setDefaultSmallBuildingSettings()
+	{
+		replaceOverAnything = 2;
+		replaceEnclosedColumsWithAir = true;
+	}
 };
 
 void generateChunk(Chunk &c, WorldGenerator &wg, StructuresManager &structuresManager, BiomesManager &biomesManager
