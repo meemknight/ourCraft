@@ -300,7 +300,6 @@ int fromFloatNoiseValToIntegers(float noise, int maxExclusive)
 }
 
 
-// A simple hash function (can replace with xxHash or another fast hash)
 uint32_t hash(uint32_t x, uint32_t y)
 {
 	x ^= y * 0x51d7348d;
@@ -312,12 +311,36 @@ uint32_t hash(uint32_t x, uint32_t y)
 	return x;
 }
 
+constexpr uint32_t wangHash(uint32_t x)
+{
+	x = (x ^ 61) ^ (x >> 16);
+	x *= 9;
+	x ^= x >> 4;
+	x *= 0x27d4eb2d;
+	x ^= x >> 15;
+	return x;
+}
+
+constexpr uint32_t hash(int32_t x, int32_t y, int32_t z)
+{
+	uint32_t ux = static_cast<uint32_t>(x) * 73856093u;
+	uint32_t uy = static_cast<uint32_t>(y) * 19349663u;
+	uint32_t uz = static_cast<uint32_t>(z) * 83492791u;
+
+	return wangHash(ux ^ uy ^ uz);
+}
+
+float hashNormalized(uint32_t h)
+{
+	return (h & 0xFFFFFF) / float(0x1000000);;
+}
+
 // Returns true for some (x, y), ensuring no adjacent (x, y) is also true
 // Ensures no "true" values within `radius`, checking only in positive directions
-bool generateFeature(int x, int y, float threshold = 0.1f, int radius = 2)
+bool generateFeature(int x, int y, int seedHash, float threshold = 0.1f, int radius = 2)
 {
-	uint32_t h = hash(x, y);
-	float value = (h & 0xFFFFFF) / float(0x1000000); // Normalize to [0,1]
+	uint32_t h = hash(x, y, 0);
+	float value = hashNormalized(h);// Normalize to [0,1]
 
 	if (value >= threshold) return false; // Not selected
 
@@ -329,7 +352,7 @@ bool generateFeature(int x, int y, float threshold = 0.1f, int radius = 2)
 			if (dx == 0 && dy == 0) continue; // Skip self
 			if (dx * dx + dy * dy > radius * radius) continue; // Ensure inside circle
 
-			uint32_t neighborHash = hash(x + dx, y + dy);
+			uint32_t neighborHash = hash(x + dx, y + dy, seedHash);
 			float neighborValue = (neighborHash & 0xFFFFFF) / float(0x1000000);
 
 			if (neighborValue < threshold) return false; // Conflict, discard
@@ -972,10 +995,14 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 #pragma region could generate medium structures
 
-	bool couldGenerateMediumStructures = generateFeature(c.x, c.z, 0.1, 4);
+	auto spawnProbability = [](float structuresOnceEveryChunks)
+	{
+		return 1.0 / (structuresOnceEveryChunks * structuresOnceEveryChunks);
+	};
 
+	unsigned int seedHash = wg.continentalnessNoise->GetSeed();
+	bool couldGenerateMediumStructures = generateFeature(c.x, c.z, seedHash++, spawnProbability(14), 4);
 
-	
 
 #pragma endregion
 
@@ -1946,9 +1973,13 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 		}
 
-		if (couldGenerateMediumStructures)
+
+	#pragma region big structures
+
+		#pragma region templates
+
+		auto smallAbandonedHouse = [&]()
 		{
-			
 			StructureToGenerate str;
 			str.type = Structure_AbandonedHouse;
 
@@ -1960,9 +1991,36 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			str.setDefaultSmallBuildingSettings();
 
 			generateStructures.push_back(str);
+		};
+		
+		#pragma endregion
+
+
+
+		if (couldGenerateMediumStructures)
+		{
+
+			float generateStructureChance = hashNormalized(hash(c.x, c.z, seedHash++));
+
+			//not inside oceans
+			if (currentBiomeHeight > 1)
+			{
+
+				//if(generateStructureChance)
+
+				smallAbandonedHouse();
+
+
+
+
+			}
+
+			
 		}
-	
-	
+
+	#pragma endregion
+
+
 	//profiler.end();
 	//std::cout << "Time ms: " << profiler.rezult.timeSeconds * 1000 << "\n";
 

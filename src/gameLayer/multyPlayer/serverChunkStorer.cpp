@@ -999,9 +999,11 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 	}
 
 	auto placeOneBlockLogic = [&](Block oldBlock, Block &newBlock, int x, int y, int z, unsigned char replaceAnything,
+		unsigned char oldBlockReplaceAnything,
 		bool canPlaceAir) -> bool
 	{
 
+		if (replaceAnything < oldBlockReplaceAnything) { return false; }
 
 		if (replaceAnything && canPlaceAir && newBlock.getType() == BlockTypes::air)
 		{
@@ -1196,7 +1198,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 						newBlock.rotate(rotation);
 
 
-						if (placeOneBlockLogic(oldBlock, newBlock, x, y, z, replaceAnything, replaceAir))
+						if (placeOneBlockLogic(oldBlock, newBlock, x, y, z, replaceAnything, 0, replaceAir))
 						{
 							c->removeBlockWithData({inChunkX, y, inChunkZ}, oldBlock.getType());
 							b = newBlock; //we set the new block!
@@ -1237,7 +1239,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 								int a = 0;
 							}
 
-							if (placeOneBlockLogic(oldBlock, newBlock, x, y, z, replaceAnything, replaceAir))
+							if (placeOneBlockLogic(oldBlock, newBlock, x, y, z, replaceAnything, 0, replaceAir))
 							{
 								GhostBlock ghostBlock;
 								ghostBlock.block = newBlock;
@@ -1263,6 +1265,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 
 							bool replaceAir = shouldReplaceAir(y);
 
+							int oldBlockReplaceAnything = 0;
 							auto oldBlock = Block{};
 							auto newBlock = structure.data->unsafeGetRotated(x - startPos.x, y - startPos.y, z - startPos.z, rotation);
 							newBlock.rotate(rotation);
@@ -1272,6 +1275,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 							if (blockIt != it->second.end())
 							{
 								oldBlock = blockIt->second.block;
+								oldBlockReplaceAnything = blockIt->second.replaceAnything;
 							}
 
 							bool allowed = 1;
@@ -1288,7 +1292,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 							}
 
 							if(allowed)
-							if (placeOneBlockLogic(oldBlock, newBlock, x, y, z, replaceAnything, replaceAir))
+							if (placeOneBlockLogic(oldBlock, newBlock, x, y, z, replaceAnything, oldBlockReplaceAnything, replaceAir))
 							{
 
 								GhostBlock ghostBlock;
