@@ -2374,6 +2374,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 				if (!isCreativePlayer)
 				{
+					std::cout << "Attack! ";
+
 					attackEntity(targetedEntity, gameData.currentItemSelected,
 						gameData.c.viewDirection, hitStatus);
 				}

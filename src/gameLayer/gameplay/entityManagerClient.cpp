@@ -13,6 +13,10 @@
 template<class T>
 void genericDropEntitiesThatAreTooFar(T &container, glm::ivec2 playerPos2D, int playerSquareDistance)
 {
+
+	//no need to drop entities that are based on block position because we drop them with the chunk
+	if (hasPositionBasedID<decltype((container)[0].entityBuffered)>) { return; }
+
 	for (auto it = container.begin(); it != container.end(); )
 	{
 		auto entityPos = it->second.getPosition();
@@ -411,7 +415,19 @@ std::uint64_t genericIntersectAllAttackableEntities(T &container, glm::dvec3 sta
 	{
 		auto collider = e.second.entityBuffered.getColliderSize();
 
-		bool rez = lineIntersectBoxMaxDistance(start, dir, e.second.getRubberBandPosition(), collider,
+		glm::dvec3 position = {};
+
+		if constexpr (hasPositionBasedID<decltype((container)[0].entityBuffered)>)
+		{
+			position = fromEntityIDToBlockPos(e.first);
+			position.y -= 0.5;
+		}
+		else
+		{
+			position = e.second.getRubberBandPosition();
+		}
+
+		bool rez = lineIntersectBoxMaxDistance(start, dir, position, collider,
 			maxDistance, outIntersectDist, delta);
 
 		if (rez) { return e.first; }
@@ -498,10 +514,21 @@ void genericRenderColliders(T &container,
 		pointDebugRenderer.
 			renderPoint(camera, p.second.getRubberBandPosition());
 
-		auto boxSize = p.second.entityBuffered.getColliderSize();
-		auto pos = p.second.getRubberBandPosition();
+		glm::dvec3 position = {};
 
-		drawBox(pos, boxSize);
+		if constexpr (hasPositionBasedID<decltype((container)[0].entityBuffered)>)
+		{
+			position = fromEntityIDToBlockPos(p.first);
+			position.y -= 0.5;
+		}
+		else
+		{
+			position = p.second.getRubberBandPosition();
+		}
+
+		auto boxSize = p.second.entityBuffered.getColliderSize();
+
+		drawBox(position, boxSize);
 	}
 
 }
