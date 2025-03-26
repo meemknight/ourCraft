@@ -1460,6 +1460,10 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 	{
 		defaultGenerate(structureManager.goblinTower);
 	}
+	else if (s.type == Structure_AbandonedTrainingCamp)
+	{
+		defaultGenerate(structureManager.trainingCamp);
+	}
 
 
 	return 0;

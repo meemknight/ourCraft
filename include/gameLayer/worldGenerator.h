@@ -24,6 +24,7 @@ enum
 	Structure_TallSlimTree,
 	Structure_AbandonedHouse,
 	Structure_GoblinTower,
+	Structure_AbandonedTrainingCamp,
 };
 
 //used to report back

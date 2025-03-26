@@ -2012,6 +2012,16 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			generateStructures.push_back(str);
 		};
 
+		auto trainingCamp = [&]()
+		{
+			StructureToGenerate str;
+			str.type = Structure_AbandonedTrainingCamp;
+			setPosAndRandomNumbers(str);
+			str.setDefaultSmallBuildingSettings();
+
+			generateStructures.push_back(str);
+		};
+
 		auto nothing = [&]()
 		{
 
@@ -2025,8 +2035,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 			float generateStructureChance = hashNormalized(hash(c.x, c.z, seedHash++));
 
-			std::array<std::function<void()>, 3> basicStructures 
-				= {goblinTower, smallAbandonedHouse, nothing};
+			std::array<std::function<void()>, 4> basicStructures 
+				= {goblinTower, smallAbandonedHouse, nothing, trainingCamp};
 
 			//not inside oceans
 			if (currentBiomeHeight > 1)

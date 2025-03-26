@@ -90,6 +90,7 @@ bool StructuresManager::loadAllStructures()
 	loadFolder(RESOURCES_PATH "gameData/structures/tallTree", tallTreesSlim);
 	loadFolder(RESOURCES_PATH "gameData/structures/abandonedHouse", abandonedHouse);
 	loadFolder(RESOURCES_PATH "gameData/structures/goblinTower", goblinTower);
+	loadFolder(RESOURCES_PATH "gameData/structures/trainingCamp", trainingCamp);
 	
 	if (trees.empty()) { return 0; }
 	if (jungleTrees.empty()) { return 0; }
