@@ -88,6 +88,11 @@ struct ClientEntityManager : public EntityDataClient
 		glm::dvec3 dir, float maxDistance, float &outDistance, float delta);
 
 	void renderColiders(PointDebugRenderer &pointDebugRenderer, GyzmosRenderer &gyzmosRenderer, Camera &c);
+
+	void removeBlockEntity(glm::ivec3 pos, BlockType blockType);
+
+	void addBlockEntity(glm::ivec3 pos, BlockType blockType);
+
 };
 
 

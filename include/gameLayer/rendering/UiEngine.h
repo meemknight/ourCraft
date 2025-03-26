@@ -16,6 +16,7 @@ struct BaseBlock;
 struct ChunkSystem;
 struct UndoQueue;
 struct LightSystem;
+struct ClientEntityManager;
 
 struct UiENgine
 {
@@ -85,7 +86,7 @@ struct UiENgine
 	bool renderBaseBlockUI(float deltaTime,
 		int w, int h, ProgramData &programData, 
 		BaseBlock &baseBlock, glm::ivec3 blockPos, ChunkSystem &chunkSystem,
-		UndoQueue &undoQueue, LightSystem &lightSystem
+		UndoQueue &undoQueue, LightSystem &lightSystem, ClientEntityManager &clientEntityManager
 		);
 
 };

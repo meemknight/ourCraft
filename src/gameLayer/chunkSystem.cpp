@@ -12,6 +12,7 @@
 #include <cmath>
 #include <gameplay/gameplayRules.h>
 #include <rendering/renderSettings.h>
+#include <gameplay/entityManagerClient.h>
 
 Chunk *ChunkSystem::getChunksInMatrixSpaceUnsafe(int x, int z)
 {
@@ -313,7 +314,8 @@ void bakeWorkerThread(int index, ThreadPool &threadPool)
 
 //x and z are the block positions of the player
 void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQueue &undoQueue
-	, LightSystem &lightSystem, InteractionData &interaction, ThreadPool &threadPool, Renderer &renderer)
+	, LightSystem &lightSystem, InteractionData &interaction, ThreadPool &threadPool, Renderer &renderer
+	, ClientEntityManager &clientEntityManager)
 {
 
 
@@ -391,6 +393,15 @@ void ChunkSystem::update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQu
 					p, (char *)&packetData, sizeof(packetData), 1,
 					channelPlayerPositions);
 
+
+				auto &chunkData = loadedChunks[i]->data;
+				for (int x = 0; x < CHUNK_SIZE; x++)
+					for (int z = 0; z < CHUNK_SIZE; z++)
+						for (int y = 0; y < CHUNK_HEIGHT; y++)
+						{
+							clientEntityManager.removeBlockEntity({x + chunkData.x * CHUNK_SIZE,y,z + chunkData.z * CHUNK_SIZE},
+								chunkData.blocks[x][z][y].getType());
+						}
 
 				//chunk no longer needed delete it
 				dropChunkAtIndexUnsafe(i, &gpuBuffer);
@@ -1263,7 +1274,8 @@ void ChunkSystem::dropChunkAtIndexSafe(int index, BigGpuBuffer *gpuBuffer)
 bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot,
 	UndoQueue &undoQueue, glm::dvec3 playerPos,
 	LightSystem &lightSystem, PlayerInventory &inventory, bool decreaseCounter, 
-	int faceDirection, int topPartForSlabs, bool isOnWall)
+	int faceDirection, int topPartForSlabs, bool isOnWall,
+	ClientEntityManager &clientEntityManager)
 {
 	Chunk *chunk = 0;
 	auto b = getBlockSafeAndChunk(pos.x, pos.y, pos.z, chunk);
@@ -1339,6 +1351,8 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot
 				item->sanitize();
 			};
 
+			clientEntityManager.addBlockEntity(pos, b->getType());
+
 			return true;
 		}
 		else
@@ -1351,7 +1365,7 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot
 }
 
 bool ChunkSystem::placeBlockByClientForce(glm::ivec3 pos, Block block,
-	UndoQueue &undoQue, LightSystem &lightSystem)
+	UndoQueue &undoQue, LightSystem &lightSystem, ClientEntityManager &clientEntityManager)
 {
 	Chunk *chunk = 0;
 	auto b = getBlockSafeAndChunk(pos.x, pos.y, pos.z, chunk);
@@ -1395,6 +1409,9 @@ bool ChunkSystem::placeBlockByClientForce(glm::ivec3 pos, Block block,
 
 		setChunkAndNeighboursFlagDirtyFromBlockPos(pos.x, pos.z);
 
+		clientEntityManager.addBlockEntity(pos, b->getType());
+
+
 		return true;
 	}
 
@@ -1404,7 +1421,7 @@ bool ChunkSystem::placeBlockByClientForce(glm::ivec3 pos, Block block,
 
 
 bool ChunkSystem::breakBlockByClient(glm::ivec3 pos, UndoQueue &undoQueue, 
-	glm::dvec3 playerPos, LightSystem &lightSystem)
+	glm::dvec3 playerPos, LightSystem &lightSystem, ClientEntityManager &clientEntityManager)
 {
 	Chunk *chunk = 0;
 	auto b = getBlockSafeAndChunk(pos.x, pos.y, pos.z, chunk);
@@ -1445,6 +1462,8 @@ bool ChunkSystem::breakBlockByClient(glm::ivec3 pos, UndoQueue &undoQueue,
 				}
 			}
 
+			clientEntityManager.removeBlockEntity({pos.x, pos.y, pos.z}, b->getType());
+			
 			b->setType(BlockTypes::air);
 			b->colorAndOtherFlags = 0;
 
@@ -1466,7 +1485,7 @@ bool ChunkSystem::breakBlockByClient(glm::ivec3 pos, UndoQueue &undoQueue,
 //this will do a placeBlockNoClient and also remove the undo queue
 void ChunkSystem::placeBlockByServerAndRemoveFromUndoQueue(
 	glm::ivec3 pos, Block block, LightSystem &lightSystem, InteractionData &playerInteraction
-	, UndoQueue &undoQueue, std::vector<unsigned char> *optionalData
+	, UndoQueue &undoQueue, ClientEntityManager &clientEntityManager, std::vector<unsigned char> *optionalData
 )
 {
 
@@ -1476,7 +1495,7 @@ void ChunkSystem::placeBlockByServerAndRemoveFromUndoQueue(
 		)
 	{
 		//process block placement
-		placeBlockNoClient(pos, block, lightSystem, optionalData, playerInteraction);
+		placeBlockNoClient(pos, block, lightSystem, optionalData, playerInteraction, clientEntityManager);
 	}
 	else
 	{
@@ -1499,7 +1518,8 @@ void ChunkSystem::placeBlockByServerAndRemoveFromUndoQueue(
 }
 
 void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, Block block, LightSystem &lightSystem,
-	std::vector<unsigned char> *optionalData, InteractionData &playerInteraction)
+	std::vector<unsigned char> *optionalData, InteractionData &playerInteraction
+	, ClientEntityManager &clientEntityManager)
 {
 
 	//this is forcely placed by server
@@ -1510,8 +1530,11 @@ void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, Block block, LightSystem &l
 	{
 		glm::ivec3 posInChunk = glm::ivec3(modBlockToChunk(pos.x), pos.y, modBlockToChunk(pos.z));
 		chunk->removeBlockDataFromThisPos(*b, posInChunk.x, posInChunk.y, posInChunk.z);
+		clientEntityManager.removeBlockEntity(pos, b->getType());
 
 		*b = block;
+		clientEntityManager.addBlockEntity(pos, b->getType());
+
 
 		changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->getType(), block.getType(), lightSystem);
 

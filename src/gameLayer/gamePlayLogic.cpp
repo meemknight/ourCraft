@@ -417,7 +417,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				{
 
 					gameData.chunkSystem.placeBlockNoClient(e.blockPos, e.originalBlock, gameData.lightSystem,
-						&e.blockData, gameData.interaction);
+						&e.blockData, gameData.interaction, gameData.entityManager);
 
 					if (e.blockPos == gameData.currentBlockBreaking.pos)
 					{
@@ -1410,7 +1410,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 										gameData.lightSystem,
 										player.inventory,
 										player.otherPlayerSettings.gameMode == OtherPlayerSettings::SURVIVAL,
-										faceDirection, topPartForSlabs, isOnWall
+										faceDirection, topPartForSlabs, isOnWall, gameData.entityManager
 									);
 
 
@@ -1502,7 +1502,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 								gameData.chunkSystem.breakBlockByClient(rayCastPos
 									, gameData.undoQueue,
 									gameData.entityManager.localPlayer.entity.position,
-									gameData.lightSystem);
+									gameData.lightSystem, gameData.entityManager);
 								gameData.currentBlockBreaking = {};
 							}
 							else
@@ -1605,7 +1605,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	{
 		gameData.gameplayFrameProfiler.startSubProfile("chunkSystem");
 		gameData.chunkSystem.update(blockPositionPlayer, deltaTime, gameData.undoQueue,
-			gameData.lightSystem, gameData.interaction, threadPoolForChunkBaking, programData.renderer);
+			gameData.lightSystem, gameData.interaction, threadPoolForChunkBaking, programData.renderer, gameData.entityManager);
 		gameData.gameplayFrameProfiler.endSubProfile("chunkSystem");
 	}
 
@@ -2098,7 +2098,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 									//todo implement the bulk version...
 									gameData.chunkSystem.placeBlockByClientForce(pos,
 										block, gameData.undoQueue,
-										gameData.lightSystem);
+										gameData.lightSystem, gameData.entityManager);
 
 								}
 
@@ -2403,7 +2403,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		{
 			if (programData.ui.renderBaseBlockUI(deltaTime, w, h, programData,
 				gameData.interaction.baseBlockHolder, gameData.interaction.blockInteractionPosition,
-				gameData.chunkSystem, gameData.undoQueue, gameData.lightSystem))
+				gameData.chunkSystem, gameData.undoQueue, gameData.lightSystem, gameData.entityManager))
 			{
 
 				auto block = gameData.chunkSystem.getBlockSafe(gameData.interaction.blockInteractionPosition.x, gameData.interaction.blockInteractionPosition.y,

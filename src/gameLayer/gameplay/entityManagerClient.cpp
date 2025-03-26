@@ -529,6 +529,26 @@ void ClientEntityManager::renderColiders(PointDebugRenderer &pointDebugRenderer,
 
 }
 
+void ClientEntityManager::removeBlockEntity(glm::ivec3 pos, BlockType blockType)
+{
+
+	if (blockType == BlockTypes::trainingDummy)
+	{
+		removeEntityBasedOnBlockPosition<EntityType::trainingDummy>(pos.x, pos.y, pos.z);
+	}
+
+}
+
+void ClientEntityManager::addBlockEntity(glm::ivec3 pos, BlockType blockType)
+{
+
+	if (blockType == BlockTypes::trainingDummy)
+	{
+		addEmptyEntityBasedOnBlockPosition<EntityType::trainingDummy>(pos.x, pos.y, pos.z);
+	}
+
+}
+
 
 
 

@@ -187,12 +187,8 @@ void recieveDataClient(ENetEvent &event,
 
 										auto &b = chunk->unsafeGet(x, y, z);
 
-										if (b.getType() == BlockTypes::trainingDummy)
-										{
-											entityManager.addEmptyEntityBasedOnBlockPosition<EntityType::trainingDummy>
-												(chunk->data.x * CHUNK_SIZE + x, y,
-												chunk->data.z * CHUNK_SIZE + z);
-										}
+										entityManager.addBlockEntity({chunk->data.x * CHUNK_SIZE + x, y,
+											chunk->data.z * CHUNK_SIZE + z}, b.getType());
 
 									}
 
@@ -219,12 +215,12 @@ void recieveDataClient(ENetEvent &event,
 												chunkSystem.shouldUpdateLights = true;
 											}
 
-											if (b.getType() == BlockTypes::trainingDummy)
-											{
-												entityManager.addEmptyEntityBasedOnBlockPosition<EntityType::trainingDummy>
-													(chunk->data.x *CHUNK_SIZE + x, y,
-													chunk->data.z *CHUNK_SIZE + z);
-											}
+											//if (b.getType() == BlockTypes::trainingDummy)
+											//{
+											//	entityManager.addEmptyEntityBasedOnBlockPosition<EntityType::trainingDummy>
+											//		(chunk->data.x *CHUNK_SIZE + x, y,
+											//		chunk->data.z *CHUNK_SIZE + z);
+											//}
 
 										}
 
@@ -416,7 +412,7 @@ void recieveDataClient(ENetEvent &event,
 			Packet_PlaceBlocks b = *(Packet_PlaceBlocks *)data;
 
 			chunkSystem.placeBlockByServerAndRemoveFromUndoQueue(b.blockPos, b.blockInfo, lightSystem,
-				playerInteraction, undoQueue);
+				playerInteraction, undoQueue, entityManager);
 
 			break;
 		}
@@ -430,7 +426,7 @@ void recieveDataClient(ENetEvent &event,
 				Packet_PlaceBlocks b = ((Packet_PlaceBlocks *)data)[i];
 
 				chunkSystem.placeBlockByServerAndRemoveFromUndoQueue(b.blockPos, b.blockInfo, lightSystem,
-					playerInteraction, undoQueue);
+					playerInteraction, undoQueue, entityManager);
 
 			}
 			//std::cout << "Placed blocks..." << size / sizeof(Packet_PlaceBlocks) << "\n";

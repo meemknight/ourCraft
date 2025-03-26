@@ -61,7 +61,7 @@ struct ChunkSystem
 	void cleanup(bool notifyServer);
 
 	void update(glm::ivec3 playerBlockPosition, float deltaTime, UndoQueue &undoQueue, LightSystem &lightSystem,
-		InteractionData &interaction, ThreadPool &threadPool, Renderer &renderer);
+		InteractionData &interaction, ThreadPool &threadPool, Renderer &renderer, ClientEntityManager &clientEntityManager);
 
 	bool isChunkInRadius(glm::ivec2 playerPos, glm::ivec2 chunkPos);
 
@@ -96,13 +96,15 @@ struct ChunkSystem
 	bool placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot,
 		UndoQueue &undoQueue, glm::dvec3 playerPos, 
 		LightSystem &lightSystem, PlayerInventory &inventory, bool decreaseCounter,
-		int faceDirection, int topPartForSlabs, bool isOnWall
+		int faceDirection, int topPartForSlabs, bool isOnWall,
+		ClientEntityManager &clientEntityManager
 	);
 
 
 	//used by the client to place blocks in creative mode using copy paste stuff
 	bool placeBlockByClientForce(glm::ivec3 pos, Block block,
-		UndoQueue &undoQue, LightSystem &lightSystem
+		UndoQueue &undoQue, LightSystem &lightSystem,
+		ClientEntityManager &clientEntityManager
 	
 	);
 
@@ -111,18 +113,19 @@ struct ChunkSystem
 	//returns true if succeeded
 	bool breakBlockByClient(glm::ivec3 pos,
 		UndoQueue &undoQueue, glm::dvec3 playerPos,
-		LightSystem &lightSystem
+		LightSystem &lightSystem, ClientEntityManager &clientEntityManager
 	);
 
 	void placeBlockByServerAndRemoveFromUndoQueue(glm::ivec3 pos, Block block,
 		LightSystem &lightSystem, 
 		InteractionData &playerInteraction, UndoQueue &undoQueue,
+		ClientEntityManager &clientEntityManager,
 		std::vector<unsigned char> *optionalData = 0);
 
 	//just place the block, forcely by server
 	void placeBlockNoClient(glm::ivec3 pos, Block block,
 		LightSystem &lightSystem, std::vector<unsigned char> *optionalData, 
-		InteractionData &playerInteraction);
+		InteractionData &playerInteraction, ClientEntityManager &clientEntityManager);
 
 	//internal use
 	void changeBlockLightStuff(glm::ivec3 pos, int currentSkyLightLevel, int currentNormalLightLevel,

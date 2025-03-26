@@ -1228,7 +1228,8 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
 	ProgramData &programData, BaseBlock &baseBlock, glm::ivec3 blockPos
-	, ChunkSystem &chunkSystem, UndoQueue &undoQueue, LightSystem &lightSystem)
+	, ChunkSystem &chunkSystem, UndoQueue &undoQueue, LightSystem &lightSystem,
+	ClientEntityManager &clientEntityManager)
 {
 
 	if (w != 0 && h != 0)
@@ -1334,7 +1335,7 @@ bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
 
 							//todo implement the bulk version...
 							chunkSystem.placeBlockByClientForce(pos,
-								block, undoQueue,lightSystem);
+								block, undoQueue,lightSystem, clientEntityManager);
 		
 						}
 		
