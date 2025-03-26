@@ -49,7 +49,7 @@ int blockReorder[] = {
 	 magenta_stained_glass, pink_stained_glass,
 
 	// Structures & Functional Blocks
-	craftingTable, workBench, cookingPot, ladder, trainingDummy,
+	craftingTable, workBench, cookingPot, ladder, trainingDummy, target,
 
 	// Furniture
 	bookShelf,
@@ -274,6 +274,7 @@ bool isDecorativeFurniture(BlockType type)
 		type == torch ||
 		type == torchWood ||
 		type == trainingDummy ||
+		type == target ||
 		type == globe
 		
 		;

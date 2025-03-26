@@ -4533,7 +4533,27 @@ void Renderer::renderEntities(
 		{
 			PerEntityData data = {};
 
-			auto rotMatrix = e.second.getBodyRotationMatrix();
+			glm::mat4 rotMatrix(1.f);
+
+			if constexpr (hasPositionBasedID<decltype(e.second.entityBuffered)>)
+			{
+				std::uint64_t entityID = e.first;
+				auto blockPos = fromEntityIDToBlockPos(entityID);
+
+				Block *b = chunkSystem.getBlockSafe(blockPos.x, blockPos.y, blockPos.z);
+
+				if (b)
+				{
+					int rotation = b->getRotationFor365RotationTypeBlocks();
+					rotMatrix = glm::rotate(glm::radians(90.f * rotation), glm::vec3(0, 1, 0));
+				}
+
+			}
+			else
+			{
+				rotMatrix = e.second.getBodyRotationMatrix();
+			}
+
 
 			if constexpr (hasCanBeKilled<decltype(e.second.entityBuffered)>)
 			{

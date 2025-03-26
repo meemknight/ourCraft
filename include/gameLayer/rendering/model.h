@@ -117,6 +117,7 @@ struct ModelsManager
 		stairsModel,
 		wallModel,
 		trainingDummyBaseModel,
+		targetModel,
 
 		BLOCK_MODELS_COUNT
 

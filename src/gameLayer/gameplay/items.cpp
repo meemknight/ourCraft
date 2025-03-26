@@ -930,6 +930,7 @@ char *blockNames[] = {
 	"Cobweb",
 	"Hay balde",
 	"Training dummy",
+	"Target",
 };
 
 std::string Item::getItemName()

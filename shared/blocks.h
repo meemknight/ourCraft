@@ -240,6 +240,7 @@ enum BlockTypes : unsigned short
 
 	hayBalde,
 	trainingDummy,
+	target,
 
 	BlocksCount
 };
