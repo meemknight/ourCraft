@@ -664,13 +664,22 @@ struct StaticCircularBufferForBuffering
 template <class T>
 struct ServerEntity
 {
+
+	ServerEntity() //default values
+	{
+		if constexpr (::hasLookDirectionAnimation<T>)
+		{
+			wantToLookDirection = glm::vec3(0, 0, -1);
+		}
+	};
+
 	T entity = {};
 
 	glm::dvec3 &getPosition()
 	{
 		if constexpr (hasPositionBasedID<T>)
 		{
-			return {};
+			return glm::dvec3{};
 		}
 		else
 		{
@@ -694,7 +703,7 @@ struct ServerEntity
 
 	ConditionalMember<hasCanHaveEffects(), Effects> effects = {};
 
-	ConditionalMember<::hasLookDirectionAnimation<T>, glm::vec3> wantToLookDirection = {0,0,-1};
+	ConditionalMember<::hasLookDirectionAnimation<T>, glm::vec3> wantToLookDirection = {};
 
 	bool hasUpdatedThisTick = 0;
 	glm::ivec2 lastChunkPositionWhenAnUpdateWasSent = {};
@@ -729,7 +738,7 @@ struct ClientEntity
 		}
 		else
 		{
-			return {};
+			return glm::dvec3{};
 		}
 
 	}
@@ -742,7 +751,7 @@ struct ClientEntity
 		}
 		else
 		{
-			return {};
+			return glm::dvec3{};
 		}
 	}
 
@@ -982,6 +991,7 @@ struct ClientEntity
 		BASE_CLIENT *baseClient = (BASE_CLIENT *)this;
 
 	#pragma region compute buffering		
+		if constexpr(!hasPositionBasedID<T>) //no rubber banding for position based entities for now
 		{
 
 			//remove buffering and just use the latest event
@@ -1148,7 +1158,7 @@ struct ClientEntity
 			float timer = deltaTime + restantTime;
 			if (timer > 0)
 			{
-				auto oldPosition = baseClient->oldPositionForRubberBand;
+				//auto oldPosition = baseClient->oldPositionForRubberBand;
 				//baseClient->rubberBand.addToRubberBand(oldPosition - baseClient->getPosition());
 
 				//auto oldPosition = baseClient->getPosition();

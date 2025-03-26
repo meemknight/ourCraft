@@ -1885,7 +1885,8 @@ void doHittingThings(T &e, glm::vec3 dir, glm::dvec3 playerPosition,
 	, float hitCorectness, float critChanceBonus)
 {
 
-	if constexpr (hasCanBeAttacked<decltype(e.entity)>)
+	if constexpr (hasCanBeAttacked<decltype(e.entity)>
+		&& hasLife<decltype(e.entity)>)
 	{
 		Life *life = 0;
 		Armour armour = {};

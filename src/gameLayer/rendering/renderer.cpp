@@ -4608,12 +4608,12 @@ void Renderer::renderEntities(
 			//}
 
 
-			if constexpr (hasPositionBasedID<decltype(e.second)>)
+			if constexpr (hasPositionBasedID<decltype(e.second.entityBuffered)>)
 			{
 				std::uint64_t entityID = e.first;
 				auto blockPos = fromEntityIDToBlockPos(entityID);
 
-				data.entityPositionFloat = {};
+				data.entityPositionFloat = {0,-0.5,0};
 				data.entityPositionInt = blockPos;
 			}
 			else
