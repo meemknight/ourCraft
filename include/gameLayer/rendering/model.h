@@ -131,7 +131,8 @@ struct ModelsManager
 		PigTexture,
 		CatTexture,
 		GoblinTexture,
-		HelmetTestTexture
+		TrainingDummyTexture,
+		HelmetTestTexture,
 	};
 
 	std::vector<GLuint64> gpuIds;

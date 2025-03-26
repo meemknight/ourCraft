@@ -1579,7 +1579,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 
 				if ((sides[2] != nullptr) && (sides[2]->isOpaque()))
 				{
-					aoShape == 13; //full shadow
+					aoShape = 13; //full shadow
 				}
 
 				//bool isInWater = (sides[2] != nullptr) && sides[2]->getType() == BlockTypes::water;

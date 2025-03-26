@@ -5,6 +5,7 @@
 #include <gameplay/player.h>
 #include <gameplay/cat.h>
 #include <gameplay/goblin.h>
+#include <gameplay/trainingDummy.h>
 #include "repeat.h"
 
 

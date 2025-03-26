@@ -169,6 +169,7 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		loadTexture((path + "pig.png").c_str(), appendMode, index++);
 		loadTexture((path + "cat.png").c_str(), appendMode, index++);
 		loadTexture((path + "goblin.png").c_str(), appendMode, index++);
+		loadTexture((path + "trainingDummy.png").c_str(), appendMode, index++);
 		loadTexture((path+ "helmetTest.png").c_str(), appendMode, index++);
 		
 
