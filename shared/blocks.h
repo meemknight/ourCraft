@@ -237,6 +237,10 @@ enum BlockTypes : unsigned short
 	mossyCobblestone_wall,
 
 	cobweb,
+
+	hayBalde,
+	trainingDummy,
+
 	BlocksCount
 };
 

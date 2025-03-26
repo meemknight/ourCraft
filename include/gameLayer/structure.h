@@ -115,6 +115,7 @@ struct StructuresManager
 	std::vector<StructureDataAndFlags> tallTreesSlim;
 	std::vector<StructureDataAndFlags> smallStones;
 	std::vector<StructureDataAndFlags> abandonedHouse;
+	std::vector<StructureDataAndFlags> goblinTower;
 
 	void clear();
 };

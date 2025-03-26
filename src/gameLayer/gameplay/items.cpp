@@ -928,6 +928,8 @@ char *blockNames[] = {
 	"Mossy Cobblestone Slab",
 	"Mossy Cobblestone Wall",
 	"Cobweb",
+	"Hay balde",
+	"Training dummy",
 };
 
 std::string Item::getItemName()

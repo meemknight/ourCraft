@@ -8,6 +8,8 @@
 #include <iostream>
 #include <profilerLib/include/profilerLib.h>
 #include <gl2d/gl2d.h>
+#include <array>
+#include <functional>
 
 const int waterLevel = 65;
 
@@ -1001,7 +1003,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	};
 
 	unsigned int seedHash = wg.continentalnessNoise->GetSeed();
-	bool couldGenerateMediumStructures = generateFeature(c.x, c.z, seedHash++, spawnProbability(14), 4);
+	bool couldGenerateMediumStructures = generateFeature(c.x, c.z, seedHash++, spawnProbability(10), 4);
 
 
 #pragma endregion
@@ -1794,8 +1796,11 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				if (couldGenerateMediumStructures)
 				{
 					
-					//we don't do anything yet
-					
+					//we only generate the grass
+					if (!generatedSomethingElse)
+					{
+						generateOneFeature(0.6, biomesManager.greenBiomesGrass[0]);
+					}
 				}
 				else
 				{
@@ -1978,23 +1983,41 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 		#pragma region templates
 
-		auto smallAbandonedHouse = [&]()
+		auto setPosAndRandomNumbers = [&](StructureToGenerate &str)
 		{
-			StructureToGenerate str;
-			str.type = Structure_AbandonedHouse;
-
 			str.pos = {lowestPointInChunk.x + xPadd, lowestLevelInChunk, lowestPointInChunk.y + zPadd};
 			str.randomNumber1 = getWhiteNoise3Val(lowestPointInChunk.x, lowestPointInChunk.y);
 			str.randomNumber2 = getWhiteNoise3Val(lowestPointInChunk.x + 1, lowestPointInChunk.y);
 			str.randomNumber3 = getWhiteNoise3Val(lowestPointInChunk.x + 1, lowestPointInChunk.y + 1);
 			str.randomNumber4 = getWhiteNoise3Val(lowestPointInChunk.x, lowestPointInChunk.y + 1);
+		};
+
+		auto smallAbandonedHouse = [&]()
+		{
+			StructureToGenerate str;
+			str.type = Structure_AbandonedHouse;
+			setPosAndRandomNumbers(str);
 			str.setDefaultSmallBuildingSettings();
 
 			generateStructures.push_back(str);
 		};
+
+		auto goblinTower = [&]()
+		{
+			StructureToGenerate str;
+			str.type = Structure_GoblinTower;
+			setPosAndRandomNumbers(str);
+			str.setDefaultSmallBuildingSettings();
+
+			generateStructures.push_back(str);
+		};
+
+		auto nothing = [&]()
+		{
+
+		};
 		
 		#pragma endregion
-
 
 
 		if (couldGenerateMediumStructures)
@@ -2002,14 +2025,16 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 			float generateStructureChance = hashNormalized(hash(c.x, c.z, seedHash++));
 
+			std::array<std::function<void()>, 3> basicStructures 
+				= {goblinTower, smallAbandonedHouse, nothing};
+
 			//not inside oceans
 			if (currentBiomeHeight > 1)
 			{
 
-				//if(generateStructureChance)
-
-				smallAbandonedHouse();
-
+				uint32_t randomValue = hash(c.x, c.z, seedHash++);
+				int index = randomValue % basicStructures.size();
+				basicStructures[index](); // Call the selected function
 
 
 

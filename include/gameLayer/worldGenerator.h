@@ -23,6 +23,7 @@ enum
 	Structure_SmallStone,
 	Structure_TallSlimTree,
 	Structure_AbandonedHouse,
+	Structure_GoblinTower,
 };
 
 //used to report back

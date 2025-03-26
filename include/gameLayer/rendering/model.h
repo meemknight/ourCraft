@@ -113,6 +113,7 @@ struct ModelsManager
 		slabModel,
 		stairsModel,
 		wallModel,
+		trainingDummyBaseModel,
 
 		BLOCK_MODELS_COUNT
 

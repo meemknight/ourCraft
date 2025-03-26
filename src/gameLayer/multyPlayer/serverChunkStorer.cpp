@@ -1341,6 +1341,13 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 		return int(floor(randVal * elementCount));
 	};
 
+	auto defaultGenerate = [&](std::vector<StructureDataAndFlags> &structure)
+	{
+		auto a = structure
+			[chooseRandomElement(s.randomNumber1, structure.size())];
+		return generateStructure(s, a, chooseRandomElement(s.randomNumber2, 4),
+			newCreatedOrLoadedChunks, sendNewBlocksToPlayers, controlBlocks);
+	};
 
 	if (s.type == Structure_Tree)
 	{
@@ -1447,11 +1454,11 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 	}
 	else if (s.type == Structure_AbandonedHouse)
 	{
-		auto a = structureManager.abandonedHouse
-			[chooseRandomElement(s.randomNumber1, structureManager.abandonedHouse.size())];
-
-		return generateStructure(s, a, chooseRandomElement(s.randomNumber2, 4),
-			newCreatedOrLoadedChunks, sendNewBlocksToPlayers, controlBlocks);
+		defaultGenerate(structureManager.abandonedHouse);
+	}
+	else if (s.type == Structure_GoblinTower)
+	{
+		defaultGenerate(structureManager.goblinTower);
 	}
 
 

@@ -89,6 +89,7 @@ bool StructuresManager::loadAllStructures()
 	loadFolder(RESOURCES_PATH "gameData/structures/smallStones", smallStones);
 	loadFolder(RESOURCES_PATH "gameData/structures/tallTree", tallTreesSlim);
 	loadFolder(RESOURCES_PATH "gameData/structures/abandonedHouse", abandonedHouse);
+	loadFolder(RESOURCES_PATH "gameData/structures/goblinTower", goblinTower);
 	
 	if (trees.empty()) { return 0; }
 	if (jungleTrees.empty()) { return 0; }
@@ -102,6 +103,7 @@ bool StructuresManager::loadAllStructures()
 	if (smallStones.empty()) { return 0; }
 	if (tallTreesSlim.empty()) { return 0; }
 	if (abandonedHouse.empty()) { return 0; }
+	if (goblinTower.empty()) { return 0; }
 
 	return true;
 }
