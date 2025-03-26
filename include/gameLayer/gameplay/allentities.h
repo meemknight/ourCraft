@@ -10,15 +10,16 @@
 
 
 //!!!!!!!!!!! DONT FORGET TO ALSO UPDATE THIS ONE
-#define EntitiesTypesCountMACRO 6
+#define EntitiesTypesCountMACRO 7
 constexpr static unsigned int EntitiesTypesCount = EntitiesTypesCountMACRO;
-#define REPEAT_FOR_ALL_ENTITIES(FN) REPEAT_6(FN)
+#define REPEAT_FOR_ALL_ENTITIES(FN) REPEAT_7(FN)
 //!!!!!!!!!!! ^ ALSO THIS ONE            ^^^^^
-#define REPEAT_FOR_ALL_ENTITIES_NO_PLAYERS(FN) REPEAT_NO_0_6(FN)
+#define REPEAT_FOR_ALL_ENTITIES_NO_PLAYERS(FN) REPEAT_NO_0_7(FN)
 //!!!!!!!!!!! ^ ALSO THIS ONE!							^^^^^
 
+//CHECK ALL OF THIS FILE FOR CHANGES
 
-
+//!!!!!!!!!!! v ALSO THIS ONE!							vvvvv
 namespace EntityType
 {
 	enum
@@ -29,6 +30,7 @@ namespace EntityType
 		pigs,
 		cats,
 		goblins,
+		trainingDummy,
 	};
 };
 
@@ -75,9 +77,38 @@ struct EntityGetter
 		{
 			return &baseClass->goblins;
 		}
+		else if constexpr (I == 6)
+		{
+			return &baseClass->trainingDummy;
+		}
 
 		static_assert(I >= 0 && I <= EntitiesTypesCount);
 	}
+
+	template<unsigned int I>
+	bool removeEntityBasedOnBlockPosition(int x, unsigned char y, int z)
+	{
+		auto &container = *entityGetter<I>();
+		auto id = fromBlockPosToEntityID(x, y, z, I);
+		
+		auto found = container.find(id);
+		if (found != container.end())
+		{
+			container.erase(found);
+			return true;
+		}
+
+		return false;
+	};
+
+	template<unsigned int I>
+	void addEmptyEntityBasedOnBlockPosition(int x, unsigned char y, int z)
+	{
+		auto &container = *entityGetter<I>();
+		auto id = fromBlockPosToEntityID(x, y, z, I);
+
+		container[id] = {};
+	};
 
 };
 
@@ -91,6 +122,7 @@ struct EntityData: public EntityGetter<EntityData>
 	std::unordered_map<std::uint64_t, PigServer> pigs;
 	std::unordered_map<std::uint64_t, CatServer> cats;
 	std::unordered_map<std::uint64_t, GoblinServer> goblins;
+	std::unordered_map<std::uint64_t, TrainingDummyServer> trainingDummy;
 
 };
 
@@ -104,6 +136,7 @@ struct EntityDataClient : public EntityGetter<EntityDataClient>
 	std::unordered_map<std::uint64_t, PigClient> pigs;
 	std::unordered_map<std::uint64_t, CatClient> cats;
 	std::unordered_map<std::uint64_t, GoblinClient> goblins;
+	std::unordered_map<std::uint64_t, TrainingDummyClient> trainingDummy;
 
 };
 

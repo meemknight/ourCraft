@@ -98,6 +98,32 @@ float shortestAngleDirection(float angleFrom, float angleTo)
 	return diff;
 }
 
+std::uint64_t fromBlockPosToEntityID(int x, unsigned char y, int z, unsigned char entityType)
+{
+	return (static_cast<std::uint64_t>(entityType) << 56) |  // 8 bits
+		((static_cast<std::uint64_t>(x) & MASK_24) << 32) | // 24 bits (signed)
+		(static_cast<std::uint64_t>(y) << 24) |  // 8 bits
+		(static_cast<std::uint64_t>(z) & MASK_24); // 24 bits (signed)
+}
+
+glm::ivec3 fromEntityIDToBlockPos(std::uint64_t entityId, unsigned char *outEntityType)
+{
+	if (outEntityType)
+	{
+		*outEntityType = static_cast<unsigned char>(entityId >> 56);
+	}
+
+	int x = static_cast<int>((entityId >> 32) & MASK_24);
+	int y = static_cast<int>((entityId >> 24) & MASK_8);
+	int z = static_cast<int>(entityId & MASK_24);
+
+	// Sign extend 24-bit x and z to 32-bit
+	if (x & (1 << 23)) x |= 0xFF000000; // Extend negative sign
+	if (z & (1 << 23)) z |= 0xFF000000; // Extend negative sign
+
+	return glm::ivec3(x, y, z);
+}
+
 int getRandomNumber(std::minstd_rand &rng, int min, int max)
 {
 	return rng() % (max + 1 - min) + min;

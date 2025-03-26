@@ -6,9 +6,8 @@
 #include <unordered_set>
 
 
-struct TrainingDummy: public CanPushOthers
-	, public HasOrientationAndHeadTurnDirection,
-	public CanBeAttacked 
+struct TrainingDummy: public CanPushOthers,
+	public CanBeAttacked, public PositionBasedID, public NotSyncronizedEntity
 {
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
@@ -16,8 +15,6 @@ struct TrainingDummy: public CanPushOthers
 	glm::vec3 getColliderSize();
 
 	glm::vec3 getMaxColliderSize();
-
-	Life life{200};
 
 	Armour getArmour() { return {1}; };
 };
@@ -37,7 +34,6 @@ struct TrainingDummyClient: public ClientEntity<TrainingDummy, TrainingDummyClie
 struct TrainingDummyServer: public ServerEntity<TrainingDummy>
 {
 	glm::dvec3 position = {};
-
 
 
 	bool update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter,

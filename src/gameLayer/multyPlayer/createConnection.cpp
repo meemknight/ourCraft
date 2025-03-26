@@ -179,6 +179,23 @@ void recieveDataClient(ENetEvent &event,
 							int xBegin = chunkPacket->chunk.x * CHUNK_SIZE;
 							int zBegin = chunkPacket->chunk.z * CHUNK_SIZE;
 
+							//todo mvoe this into the light system later!!!!
+							for (int x = 0; x < CHUNK_SIZE; x++)
+								for (int z = 0; z < CHUNK_SIZE; z++)
+									for (int y = 0; y < CHUNK_HEIGHT; y++)
+									{
+
+										auto &b = chunk->unsafeGet(x, y, z);
+
+										if (b.getType() == BlockTypes::trainingDummy)
+										{
+											entityManager.addEmptyEntityBasedOnBlockPosition<EntityType::trainingDummy>
+												(chunk->data.x * CHUNK_SIZE + x, y,
+												chunk->data.z * CHUNK_SIZE + z);
+										}
+
+									}
+
 							if (!dontUpdateLightSystem)
 							{
 								chunk->setDontDrawYet(true);
@@ -200,6 +217,13 @@ void recieveDataClient(ENetEvent &event,
 													15);
 
 												chunkSystem.shouldUpdateLights = true;
+											}
+
+											if (b.getType() == BlockTypes::trainingDummy)
+											{
+												entityManager.addEmptyEntityBasedOnBlockPosition<EntityType::trainingDummy>
+													(chunk->data.x *CHUNK_SIZE + x, y,
+													chunk->data.z *CHUNK_SIZE + z);
 											}
 
 										}

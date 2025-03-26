@@ -79,6 +79,9 @@ struct ModelsManager
 
 	Model goblin;
 
+	Model trainingDummy;
+
+
 	enum BlockModels
 	{
 		chairModel,

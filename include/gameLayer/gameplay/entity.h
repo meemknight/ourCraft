@@ -452,16 +452,25 @@ struct PhysicalEntity
 	void moveDynamic(glm::vec2 move, float deltaTime);
 };
 
-struct CanPushOthers
-{
-	constexpr static bool canPushOthers = true;
-};
-
+struct CanPushOthers { constexpr static bool canPushOthers = true; };
 template <typename T, typename = void>
 constexpr bool hasCanPushOthers = false;
-
 template <typename T>
 constexpr bool hasCanPushOthers<T, std::void_t<decltype(T::canPushOthers)>> = true;
+
+struct PositionBasedID { constexpr static bool positionBasedID = true; };
+template <typename T, typename = void>
+constexpr bool hasPositionBasedID = false;
+template <typename T>
+constexpr bool hasPositionBasedID<T, std::void_t<decltype(T::positionBasedID)>> = true;
+
+//this means the server won't automatically send packets and stuff like that to keep the entity sync
+struct NotSyncronizedEntity { constexpr static bool notSyncronizedEntity = true; };
+template <typename T, typename = void>
+constexpr bool hasNotSyncronizedEntity = false;
+template <typename T>
+constexpr bool hasNotSyncronizedEntity<T, std::void_t<decltype(T::notSyncronizedEntity)>> = true;
+
 
 
 template <typename T, typename = void>
@@ -521,6 +530,13 @@ constexpr bool hasCanHaveEffects <T, std::void_t<decltype(T::canHaveEffects)>> =
 template<bool B, typename T>
 using ConditionalMember = typename std::conditional<B, T, unsigned char>::type;
 
+
+
+constexpr std::uint64_t MASK_24 = 0xFFFFFF;
+constexpr std::uint64_t MASK_8 = 0xFF;
+
+std::uint64_t fromBlockPosToEntityID(int x, unsigned char y, int z, unsigned char entityType);
+glm::ivec3 fromEntityIDToBlockPos(std::uint64_t entityId, unsigned char *outEntityType = 0);
 
 
 template<class T>
@@ -652,7 +668,14 @@ struct ServerEntity
 
 	glm::dvec3 &getPosition()
 	{
-		return entity.position;
+		if constexpr (hasPositionBasedID<T>)
+		{
+			return {};
+		}
+		else
+		{
+			return entity.position;
+		}
 	}
 
 	//knock back, this does not does any calculations.
@@ -700,12 +723,27 @@ struct ClientEntity
 
 	glm::dvec3 getRubberBandPosition()
 	{
-		return rubberBand.direction + entityBuffered.position;
+		if constexpr (!hasPositionBasedID<T>)
+		{
+			return rubberBand.direction + entityBuffered.position;
+		}
+		else
+		{
+			return {};
+		}
+
 	}
 
 	glm::dvec3 &getPosition()
 	{
-		return entityBuffered.position;
+		if constexpr (!hasPositionBasedID<T>)
+		{
+			return entityBuffered.position;
+		}
+		else
+		{
+			return {};
+		}
 	}
 
 	glm::vec2 getRubberBandOrientation()

@@ -357,6 +357,8 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 	if (!goblin.vertexCount)
 		loadModel((path + "goblin.glb").c_str(), goblin);
 
+	if (!trainingDummy.vertexCount)
+		loadModel((path + "trainingDummy.glb").c_str(), trainingDummy);
 
 	
 	flags = aiProcess_ImproveCacheLocality 
@@ -746,6 +748,8 @@ void ModelsManager::clearAllModels()
 	rightHand.cleanup();
 
 	goblin.cleanup();
+
+	trainingDummy.cleanup();
 
 	for (int i = 0; i < BLOCK_MODELS_COUNT; i++)
 	{

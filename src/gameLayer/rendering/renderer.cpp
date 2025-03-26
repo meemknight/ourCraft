@@ -4607,7 +4607,22 @@ void Renderer::renderEntities(
 			//	data.textureId = modelsManager.gpuIds[e.second.getTextureIndex()];
 			//}
 
-			decomposePosition(e.second.getRubberBandPosition(), data.entityPositionFloat, data.entityPositionInt);
+
+			if constexpr (hasPositionBasedID<decltype(e.second)>)
+			{
+				std::uint64_t entityID = e.first;
+				auto blockPos = fromEntityIDToBlockPos(entityID);
+
+				data.entityPositionFloat = {};
+				data.entityPositionInt = blockPos;
+			}
+			else
+			{
+				decomposePosition(e.second.getRubberBandPosition(), data.entityPositionFloat, data.entityPositionInt);
+			}
+
+			
+			
 			entityData.push_back(data);
 		}
 
@@ -4634,6 +4649,7 @@ void Renderer::renderEntities(
 	renderAllEntitiesOfOneType(modelsManager.pig, entityManager.pigs);
 	renderAllEntitiesOfOneType(modelsManager.cat, entityManager.cats);
 	renderAllEntitiesOfOneType(modelsManager.goblin, entityManager.goblins);
+	renderAllEntitiesOfOneType(modelsManager.trainingDummy, entityManager.trainingDummy);
 
 
 	glBindVertexArray(0);
