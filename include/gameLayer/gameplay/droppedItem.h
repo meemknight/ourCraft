@@ -8,7 +8,7 @@
 struct DroppedItem: public PhysicalEntity
 {
 	unsigned short type = 0;
-	unsigned char count = 0;
+	unsigned short count = 0;
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 

@@ -206,7 +206,7 @@ void callGenericResetEntitiesInTheirNewChunk(std::integer_sequence<int, Is...>, 
 
 bool spawnDroppedItemEntity(
 	ServerChunkStorer &chunkManager, WorldSaver &worldSaver,
-	unsigned char counter, unsigned short type,
+	unsigned short counter, unsigned short type,
 	std::vector<unsigned char> *metaData, glm::dvec3 pos, MotionState motionState = {},
 	std::uint64_t newId = 0,
 	float restantTimer = 0, float dontPickUpTimer = 1)
@@ -933,11 +933,11 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 						}
 						else
 						{
-							std::cout << "Server revision : "
-								<< (int)client->playerData.inventory.revisionNumber << "\n";
-
-							std::cout << "Recieved revision : "
-								<< (int)i.t.revisionNumber << "\n";
+							//std::cout << "Server revision : "
+							//	<< (int)client->playerData.inventory.revisionNumber << "\n";
+							//
+							//std::cout << "Recieved revision : "
+							//	<< (int)i.t.revisionNumber << "\n";
 
 							killItem = true;
 						}
