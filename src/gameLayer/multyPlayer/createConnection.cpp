@@ -417,6 +417,35 @@ void recieveDataClient(ENetEvent &event,
 			break;
 		}
 
+		case headerTrainingDummyGotAttacked:
+		{
+
+			if (size != sizeof(Packet_TrainingDummyGotAttacked)) { break; }
+
+			Packet_TrainingDummyGotAttacked p = *(Packet_TrainingDummyGotAttacked*)data;
+			p.normalize();
+
+			auto pos = fromEntityIDToBlockPos(p.entityID);
+			auto block = chunkSystem.getBlockSafe(pos);
+			
+			if (block && block->getType() == BlockTypes::trainingDummy)
+			{
+
+				//std::cout << "Round trip!!! ";
+
+				auto &entity = entityManager.trainingDummy[p.entityID];
+				
+				p.attackStrength -= computeRestantTimer(p.timer, serverTimer);
+				if (p.attackStrength < 0) { break; }
+
+				entity.attackStrengthAndTimer = std::max(entity.attackStrengthAndTimer, p.attackStrength);
+
+
+			}
+
+			break;
+		}
+
 		case headerPlaceBlocks:
 		{
 			//std::cout << "headerPlaceBlocks ! ";

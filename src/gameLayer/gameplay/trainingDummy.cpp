@@ -27,11 +27,24 @@ glm::vec3 TrainingDummy::getMaxColliderSize()
 void TrainingDummyClient::update(float deltaTime, 
 	decltype(chunkGetterSignature) *chunkGetter)
 {
+	attackStrengthAndTimer -= deltaTime;
 
+	if (attackStrengthAndTimer < 0)
+	{
+		attackStrengthAndTimer = 0;
+	}
 }
 
 void TrainingDummyClient::setEntityMatrix(glm::mat4 *skinningMatrix)
 {
+
+	for (int i = 0; i < 6; i++)
+	{
+		float magnitude = std::min((attackStrengthAndTimer / 5.f),1.f) * 3.f;
+		skinningMatrix[i] = skinningMatrix[i] * glm::rotate(std::sin(attackStrengthAndTimer * 10.f) * magnitude * 0.8f, 
+			glm::vec3{0,1,0});
+	}
+
 
 }
 

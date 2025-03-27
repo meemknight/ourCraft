@@ -1534,33 +1534,69 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 								if (!doNotHit)
 								{
-									std::uint64_t wasKilled = 0;
-									bool rez = chunkCache.hitEntityByPlayer(entityId, client->playerData.getPosition(),
-										*item, wasKilled, dir, rng, hitResult.hitCorectness, hitResult.bonusCritChance);
+									bool specialCase = 0;
 
-									//todo  we have separate logic for killing players and
-									//	maybe do the same for entities?
-									if (wasKilled)
+									if (type == EntityType::trainingDummy)
+									{
+										//std::cout << "<Recieved hit!> ";
+
+										glm::ivec3 pos = fromEntityIDToBlockPos(entityId);
+
+										Block *b = chunkCache.getBlockSafe(pos);
+
+										if (b && b->getType() == BlockTypes::trainingDummy)
+										{
+											//std::cout << "<Validated hit!!> ";
+
+											Packet packet;
+											packet.cid = i.cid;
+											packet.header = headerTrainingDummyGotAttacked;
+
+											Packet_TrainingDummyGotAttacked packetData;
+											packetData.entityID = entityId;
+											packetData.timer = getTimer();
+											packetData.attackStrength = 3.f;
+
+											broadCastNotLocked(packet, &packetData, sizeof(packetData),
+												false, true, channelOtherVisualThings);
+
+										}
+
+										specialCase = true;
+									}
+
+									//some entities like training dummies are treated differently!
+									if (!specialCase)
 									{
 
-										//sd.chunkCache
+										std::uint64_t wasKilled = 0;
+										bool rez = chunkCache.hitEntityByPlayer(entityId, client->playerData.getPosition(),
+											*item, wasKilled, dir, rng, hitResult.hitCorectness, hitResult.bonusCritChance);
 
-										auto pos = chunkCache.getEntityPosition(wasKilled);
-
-										if (pos)
+										//todo  we have separate logic for killing players and
+										//	maybe do the same for entities?
+										if (wasKilled)
 										{
-											glm::vec3 p = *pos;
-											p.y += 0.5;
-											spawnDroppedItemEntity(chunkCache,
-												worldSaver, 1, ItemTypes::apple, 0, p, {}, {}, 0, 0);
-										}
-										else
-										{
-											std::cout << "ERROR gettint entity position!\n";
-										}
 
-										killEntity(worldSaver, wasKilled, chunkCache);
-									}
+											//sd.chunkCache
+
+											auto pos = chunkCache.getEntityPosition(wasKilled);
+
+											if (pos)
+											{
+												glm::vec3 p = *pos;
+												p.y += 0.5;
+												spawnDroppedItemEntity(chunkCache,
+													worldSaver, 1, ItemTypes::apple, 0, p, {}, {}, 0, 0);
+											}
+											else
+											{
+												std::cout << "ERROR gettint entity position!\n";
+											}
+
+											killEntity(worldSaver, wasKilled, chunkCache);
+										}
+									}//special case
 								}
 
 

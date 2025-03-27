@@ -24,8 +24,7 @@ struct TrainingDummy: public CanPushOthers,
 
 struct TrainingDummyClient: public ClientEntity<TrainingDummy, TrainingDummyClient>
 {
-	glm::dvec3 position = {};
-
+	float attackStrengthAndTimer = 0;
 
 	void update(float deltaTime, decltype(chunkGetterSignature) *chunkGetter);
 	void setEntityMatrix(glm::mat4 *skinningMatrix);

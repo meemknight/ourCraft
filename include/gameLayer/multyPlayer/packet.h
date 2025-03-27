@@ -92,6 +92,7 @@ enum : std::uint32_t
 	headerSendChat, //just the letters for now
 	headerClientChangeBlockData,
 	headerChangeBlockData,
+	headerTrainingDummyGotAttacked, //from server to players!
 
 };
 
@@ -101,7 +102,8 @@ enum
 	channelPlayerPositions,		
 	channelEntityPositions,
 	channelHandleConnections,	//this will also send Entity cids and timers
-	channelEffects,				
+	channelEffects,
+	channelOtherVisualThings,	//training dummies particles and stuff like that
 
 	SERVER_CHANNELS
 
@@ -332,6 +334,18 @@ struct Packet_AttackEntity
 	std::uint64_t entityID = 0;
 	glm::vec3 direction = {};
 	unsigned char inventorySlot = 0;
+};
+
+struct Packet_TrainingDummyGotAttacked //from server to players!
+{
+	std::uint64_t entityID = 0;
+	std::uint64_t timer = 0; //tick timer
+	float attackStrength = 0; //also timer
+
+	void normalize()
+	{
+		attackStrength = std::min(attackStrength, 10.f);
+	}
 };
 
 struct Packet_UpdateEffects
