@@ -1481,6 +1481,229 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 	{
 		defaultGenerate(structureManager.smallStoneRuins);
 	}
+	else if (s.type == Structure_MinesDungeon)
+	{
+
+		StructureToGenerate structureSettings = s;
+
+		structureSettings.replaceBlocks = true;
+		structureSettings.replaceEnclosedColumsWithAir = true;
+		structureSettings.replaceOverAnything = 100; //we start from 100 with dungeon type buildings!
+
+		std::minstd_rand rng(s.randomNumber1 * 1000000000);
+
+		auto generateOneFeature = [&](std::vector<StructureDataAndFlags> &structure, 
+			int rotation)
+		{
+			auto a = structure
+				[chooseRandomElement(getRandomNumberFloat(rng, 0, 0.999), structure.size())];
+			return generateStructure(structureSettings, a, rotation,
+				newCreatedOrLoadedChunks, sendNewBlocksToPlayers, controlBlocks);
+		};
+
+
+	#pragma region create dungeon layout
+
+
+		constexpr unsigned int MAX_DUNGEON_SIZE = 11;
+
+		struct DungeonPiece
+		{
+			int type = 0; // 0 none, 1 hall, 2 room, 3 entrance
+			int orientation = 0; //0 means left right (x), 1 means up down (Z)
+		};
+
+		DungeonPiece dungeon[MAX_DUNGEON_SIZE][MAX_DUNGEON_SIZE] = {};
+
+		dungeon[5][5] = DungeonPiece{3,0};
+		dungeon[4][5] = DungeonPiece{2,0};
+		dungeon[4][6] = DungeonPiece{1,1};
+		dungeon[4][7] = DungeonPiece{2,0};
+		dungeon[6][5] = DungeonPiece{2,0};
+		dungeon[7][5] = DungeonPiece{1,0};
+		dungeon[8][5] = DungeonPiece{2,0};
+
+		dungeon[3][3] = DungeonPiece{1,0};
+		dungeon[2][2] = DungeonPiece{1,1};
+		dungeon[3][2] = DungeonPiece{1,1};
+		dungeon[2][3] = DungeonPiece{1,1};
+		dungeon[1][2] = DungeonPiece{1,0};
+		dungeon[2][1] = DungeonPiece{1,0};
+		dungeon[1][1] = DungeonPiece{1,1};
+		dungeon[1][0] = DungeonPiece{1,0};
+		dungeon[0][1] = DungeonPiece{1,1};
+		dungeon[0][0] = DungeonPiece{1,0};
+		dungeon[2][0] = DungeonPiece{1,0};
+		dungeon[0][2] = DungeonPiece{1,0};
+
+
+	#pragma endregion
+		glm::ivec3 originalPosition = structureSettings.pos;
+
+		int dungeonSize = structureManager.minesDungeonRoom[0].data->sizeNotRotated.x;
+
+	#pragma region place dungeon stuff
+
+		//dungeon
+		for (int x = 0; x < MAX_DUNGEON_SIZE; x++)
+			for (int z = 0; z < MAX_DUNGEON_SIZE; z++)
+			{
+				int type = dungeon[x][z].type;
+
+				int offsetX = x - MAX_DUNGEON_SIZE / 2;
+				int offsetZ = z - MAX_DUNGEON_SIZE / 2;
+
+				structureSettings.pos = originalPosition;
+				structureSettings.pos.x += offsetX * dungeonSize;
+				structureSettings.pos.z += offsetZ * dungeonSize;
+
+				int rotation = 0;
+				if (dungeon[x][z].orientation == 1) { rotation = 1; }
+
+				if (type == 3)
+				{
+					//structureSettings.pos.x -= dungeonSize / 2;
+					//structureSettings.pos.z -= dungeonSize / 2;
+					generateOneFeature(structureManager.minesDungeonEntrance, rotation);
+				}
+				else if (type == 1)
+				{
+					//structureSettings.pos.x -= dungeonSize / 2;
+					//structureSettings.pos.z -= dungeonSize / 2;
+					generateOneFeature(structureManager.minesDungeonHall, rotation);
+				}
+				else if (type == 2)
+				{
+					generateOneFeature(structureManager.minesDungeonRoom, 0);
+				}
+
+			}
+
+		//walls
+		for (int x = 0; x < MAX_DUNGEON_SIZE; x++)
+			for (int z = 0; z < MAX_DUNGEON_SIZE; z++)
+			{
+				int type = dungeon[x][z].type;
+
+				if (type == 0) { continue; }
+
+				int offsetX = x - MAX_DUNGEON_SIZE / 2;
+				int offsetZ = z - MAX_DUNGEON_SIZE / 2;
+
+
+				int placeUP = 0;
+				int placeDOWN = 0;
+				int placeLEFT = 0;
+				int placeRIGHT = 0;
+
+				if (x == 0) { placeLEFT = true; }
+				else
+				{
+					int type = dungeon[x - 1][z].type;
+					int orientation = dungeon[x - 1][z].orientation;
+					if (type == 0 || ((type == 1 || type == 3) && orientation == 1))
+					{
+						placeLEFT = true;
+					}
+				}
+
+				if (x == MAX_DUNGEON_SIZE-1) { placeRIGHT = true; } 
+				else
+				{
+					int type = dungeon[x + 1][z].type;
+					int orientation = dungeon[x + 1][z].orientation;
+					if (type == 0 || ((type == 1 || type == 3) && orientation == 1))
+					{
+						placeRIGHT = true;
+					}
+				}
+
+				if (z == 0) { placeUP = true; }
+				else
+				{
+					int type = dungeon[x][z - 1].type;
+					int orientation = dungeon[x][z - 1].orientation;
+					if (type == 0 || ((type == 1 || type == 3) && orientation == 0))
+					{
+						placeUP = true;
+					}
+				}
+
+				if (z == MAX_DUNGEON_SIZE - 1) { placeDOWN = true; }
+				else
+				{
+					int type = dungeon[x][z + 1].type;
+					int orientation = dungeon[x][z + 1].orientation;
+					if (type == 0 || ((type == 1 || type == 3) && orientation == 0))
+					{
+						placeDOWN = true;
+					}
+				}
+
+				if (type == 1 || type == 3)
+				{
+					if (dungeon[x][z].orientation == 0)
+					{
+						placeUP = false;
+						placeDOWN = false;
+					}
+					else
+					{
+						placeLEFT = false;
+						placeRIGHT = false;
+					}
+				}
+
+				if (placeUP)
+				{
+					structureSettings.pos = originalPosition;
+					structureSettings.pos.x += offsetX * dungeonSize;
+					structureSettings.pos.z += offsetZ * dungeonSize;
+
+					structureSettings.pos.z -= dungeonSize / 2 + 1;
+					generateOneFeature(structureManager.minesDungeonEnd, 1);
+				}
+
+				if (placeDOWN)
+				{
+					structureSettings.pos = originalPosition;
+					structureSettings.pos.x += offsetX * dungeonSize;
+					structureSettings.pos.z += offsetZ * dungeonSize;
+
+					structureSettings.pos.z += dungeonSize / 2;
+					generateOneFeature(structureManager.minesDungeonEnd, 1);
+				}
+
+				if (placeLEFT)
+				{
+					structureSettings.pos = originalPosition;
+					structureSettings.pos.x += offsetX * dungeonSize;
+					structureSettings.pos.z += offsetZ * dungeonSize;
+
+					structureSettings.pos.x -= dungeonSize / 2 + 1;
+					generateOneFeature(structureManager.minesDungeonEnd, 0);
+				}
+
+				if (placeRIGHT)
+				{
+					structureSettings.pos = originalPosition;
+					structureSettings.pos.x += offsetX * dungeonSize;
+					structureSettings.pos.z += offsetZ * dungeonSize;
+
+					structureSettings.pos.x += dungeonSize / 2;
+					generateOneFeature(structureManager.minesDungeonEnd, 0);
+				}
+
+			}
+
+
+
+	#pragma endregion
+
+		
+
+
+	}
 
 
 	return 0;

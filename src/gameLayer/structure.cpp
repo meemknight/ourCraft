@@ -93,6 +93,12 @@ bool StructuresManager::loadAllStructures()
 	loadFolder(RESOURCES_PATH "gameData/structures/trainingCamp", trainingCamp);
 	loadFolder(RESOURCES_PATH "gameData/structures/smallStoneRuins", smallStoneRuins);
 	
+	loadFolder(RESOURCES_PATH "gameData/structures/minesDungeon/entrance", minesDungeonEntrance);
+	loadFolder(RESOURCES_PATH "gameData/structures/minesDungeon/hall", minesDungeonHall);
+	loadFolder(RESOURCES_PATH "gameData/structures/minesDungeon/room", minesDungeonRoom);
+	loadFolder(RESOURCES_PATH "gameData/structures/minesDungeon/end", minesDungeonEnd);
+
+
 	if (trees.empty()) { return 0; }
 	if (jungleTrees.empty()) { return 0; }
 	if (palmTrees.empty()) { return 0; }

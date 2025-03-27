@@ -131,6 +131,12 @@ struct StructuresManager
 	std::vector<StructureDataAndFlags> trainingCamp;
 	std::vector<StructureDataAndFlags> smallStoneRuins;
 
+	std::vector<StructureDataAndFlags> minesDungeonEntrance;
+	std::vector<StructureDataAndFlags> minesDungeonHall;
+	std::vector<StructureDataAndFlags> minesDungeonRoom;
+	std::vector<StructureDataAndFlags> minesDungeonEnd;
+
+
 	void clear();
 };
 

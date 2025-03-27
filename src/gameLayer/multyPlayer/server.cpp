@@ -579,6 +579,32 @@ void serverWorkerUpdate(
 				c.begin()->second.playerData.applyDamageOrLife(10);
 			}
 
+			if (settings.perClientSettings.begin()->second.generateStructure)
+			{
+				settings.perClientSettings.begin()->second.generateStructure = false;
+				auto &c = getAllClientsReff();
+
+				glm::ivec3 pos = c.begin()->second.playerData.getPosition();
+				pos.y -= 21;
+					
+				StructureToGenerate s;
+				s.type = Structure_MinesDungeon;
+				s.randomNumber1 = getRandomNumberFloat(rng, 0, 1);
+				s.randomNumber2 = getRandomNumberFloat(rng, 0, 1);
+				s.randomNumber3 = getRandomNumberFloat(rng, 0, 1);
+				s.randomNumber4 = getRandomNumberFloat(rng, 0, 1);
+				s.pos = pos;
+				s.replaceBlocks = true;
+
+				std::unordered_map<glm::ivec2, SavedChunk *, Ivec2Hash> newCreatedOrLoadedChunks;
+				std::vector<glm::ivec3> controlBlocks;
+				sd.chunkCache.generateStructure(s, structuresManager, newCreatedOrLoadedChunks,
+					sendNewBlocksToPlayers, &controlBlocks);
+
+			}
+
+
+
 			//TODO chunks shouldn't be nullptrs so why check them?
 			//	// so maybe just perma assert comment at the beginning
 

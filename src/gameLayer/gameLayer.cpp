@@ -605,6 +605,11 @@ bool gameLogic(float deltaTime)
 						c.second.killApig = true;
 					}
 
+					if (ImGui::Button("Generate structure!"))
+					{
+						c.second.generateStructure = true;
+					}
+
 					ImGui::Separator();
 					ImGui::PopID();
 				}

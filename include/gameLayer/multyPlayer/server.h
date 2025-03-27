@@ -35,6 +35,7 @@ struct PerClientServerSettings
 	bool damage = false;
 	bool heal = false;
 	bool killApig = false;
+	bool generateStructure = false;
 
 	glm::dvec3 outPlayerPos;
 };

@@ -26,6 +26,7 @@ enum
 	Structure_GoblinTower,
 	Structure_AbandonedTrainingCamp,
 	Structure_StoneRuins,
+	Structure_MinesDungeon,
 };
 
 //used to report back
