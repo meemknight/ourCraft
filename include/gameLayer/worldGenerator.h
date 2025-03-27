@@ -25,6 +25,7 @@ enum
 	Structure_AbandonedHouse,
 	Structure_GoblinTower,
 	Structure_AbandonedTrainingCamp,
+	Structure_StoneRuins,
 };
 
 //used to report back
@@ -43,7 +44,7 @@ struct StructureToGenerate
 	bool paintLogicStuff = true; //paints leaves and others
 	bool replaceEnclosedColumsWithAir = 0;
 	unsigned char replaceOverAnything = 0;
-	bool placeInCenter = true;
+	bool placeInCenter = false;
 
 	void setDefaultSmallBuildingSettings()
 	{

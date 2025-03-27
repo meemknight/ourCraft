@@ -2064,7 +2064,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 					StructureData *s = (StructureData *)data.data();
 
-					s->size = gameData.pointSize;
+					s->sizeNotRotated = gameData.pointSize;
 					s->unused = 0;
 
 					for (int x = 0; x < gameData.pointSize.x; x++)
@@ -2095,15 +2095,20 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					if (sfs::readEntireFile(data, fileBuff) ==
 						sfs::noError)
 					{
-						StructureData *s = (StructureData *)data.data();
+						int rotation = 1;
 
-						for (int x = 0; x < s->size.x; x++)
-							for (int z = 0; z < s->size.z; z++)
-								for (int y = 0; y < s->size.y; y++)
+						StructureData *s = (StructureData *)data.data();
+						auto size = s->getSizeRotated(rotation);
+
+						for (int x = 0; x < size.x; x++)
+							for (int z = 0; z < size.z; z++)
+								for (int y = 0; y < size.y; y++)
 								{
 									glm::ivec3 pos = gameData.point + glm::ivec3(x, y, z);
 
-									Block block = s->unsafeGet(x, y, z);
+									Block block = s->unsafeGetRotated(x, y, z, rotation);
+									block.rotate(rotation);
+									
 
 									//todo implement the bulk version...
 									gameData.chunkSystem.placeBlockByClientForce(pos,
@@ -2112,7 +2117,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 								}
 
-						gameData.pointSize = s->size;
+						gameData.pointSize = size;
 					}
 
 

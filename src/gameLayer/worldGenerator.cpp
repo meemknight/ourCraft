@@ -2037,6 +2037,16 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			generateStructures.push_back(str);
 		};
 
+		auto smallStoneRuins = [&]()
+		{
+			StructureToGenerate str;
+			str.type = Structure_StoneRuins;
+			setPosAndRandomNumbers(str);
+			str.setDefaultSmallBuildingSettings();
+
+			generateStructures.push_back(str);
+		};
+
 		auto nothing = [&]()
 		{
 
@@ -2068,6 +2078,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 					structuresChoice.push_back(goblinTower);
 					structuresChoice.push_back(smallAbandonedHouse);
 					structuresChoice.push_back(trainingCamp);
+					structuresChoice.push_back(smallStoneRuins);
 				}
 
 				uint32_t randomValue = hash(c.x, c.z, seedHash++);

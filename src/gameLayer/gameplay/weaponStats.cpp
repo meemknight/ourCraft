@@ -10,13 +10,13 @@ void WeaponStats::normalize()
 	critChance = glm::clamp(critChance, 0.f, 0.7f); // 0 -> 0.7;
 	critDamage = glm::clamp(critDamage, 0.f, 999.f); // 
 	surprizeDamage = glm::clamp(critDamage, 0.f, 999.f); // 
-	dexterity = glm::clamp(dexterity, -10.f, 20.f); // -10 -> 20;
+	//dexterity = glm::clamp(dexterity, -10.f, 20.f); // -10 -> 20;
 	damage = glm::clamp(damage, 1.f, 999.f); // 1 -> 999;
 	accuracy = glm::clamp(accuracy, -10.f, 20.f); // -10 -> 20;
 	range = glm::clamp(range, 1.f, 6.f); // 1 -> 6
 	knockBack = glm::clamp(knockBack, 0.f, 20.f);
 	speed = glm::clamp(speed, -10.f, 20.f);
-	comboFrequency = glm::clamp(comboFrequency, -10.f, 20.f);
+	//comboFrequency = glm::clamp(comboFrequency, -10.f, 20.f);
 	armourPenetration = glm::clamp(armourPenetration, 0.f, 999.f);
 	
 
@@ -53,16 +53,16 @@ float WeaponStats::getUIMoveSpeed()
 	return s + 0.6f;
 }
 
-float WeaponStats::getDexterityNormalized()
-{
-	return (dexterity + 10.f) / 30.f;
-}
-
-float WeaponStats::getComboFrequencyChance()
-{
-	float normalized = (comboFrequency + 10.f) / 30.f;
-	return normalized * 0.25f;
-}
+//float WeaponStats::getDexterityNormalized()
+//{
+//	return (dexterity + 10.f) / 30.f;
+//}
+//
+//float WeaponStats::getComboFrequencyChance()
+//{
+//	float normalized = (comboFrequency + 10.f) / 30.f;
+//	return normalized * 0.25f;
+//}
 
 float WeaponStats::getAccuracyAdjusted()
 {
@@ -76,7 +76,12 @@ float WeaponStats::getAccuracyAdjusted()
 	return accuracyNormalized;
 }
 
-float WeaponStats::getAccuracyNormalized()
+float WeaponStats::getAccuracyNormalized() const
 {
 	return (accuracy + 10.f) / 30.f;
+}
+
+float WeaponStats::getAccuracyNormalizedNegative() const
+{
+	return (accuracy) / 20.f;
 }

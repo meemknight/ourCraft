@@ -61,8 +61,8 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 
 		auto stats = item.getWeaponStats();
 		stats.speed = debugSpeed;
-		stats.dexterity = debugDexterity;
-		stats.comboFrequency = debugCombo;
+		//stats.dexterity = debugDexterity;
+		//stats.comboFrequency = debugCombo;
 
 		float minHitDamage = stats.getAccuracyNormalized() * 0.2;
 
@@ -328,11 +328,11 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 
 		}
 
-		if (stats.dexterity < 0)
-		{
-			result.bonusCritChance = std::min(result.bonusCritChance, 0.f);
-			result.bonusCritChance = powf(result.bonusCritChance, 3.f);
-		}
+		//if (stats.accuracy < 0)
+		//{
+		//	result.bonusCritChance = std::min(result.bonusCritChance, 0.f);
+		//	result.bonusCritChance = powf(result.bonusCritChance, 3.f);
+		//}
 
 
 	}

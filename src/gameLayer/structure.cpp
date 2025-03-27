@@ -43,17 +43,17 @@ bool StructuresManager::loadAllStructures()
 				StructureDataAndFlags result = {};
 				result.data = (StructureData *)sData;
 
-				result.perCollomFlags.resize(structure->size.x * structure->size.z);
+				result.perCollomFlags.resize(structure->sizeNotRotated.x * structure->sizeNotRotated.z);
 
-				for (int x = 0; x < structure->size.x; x++)
-					for (int z = 0; z < structure->size.z; z++)
+				for (int x = 0; x < structure->sizeNotRotated.x; x++)
+					for (int z = 0; z < structure->sizeNotRotated.z; z++)
 					{
 						auto &perCollomFlag = result.getPerCollomFlagsUnsafe(x, z);
 
 						perCollomFlag.hasBlocks = false;
 						perCollomFlag.minMax = glm::ivec2(9999, -9999);
 
-						for (int y = 0; y < structure->size.y; y++)
+						for (int y = 0; y < structure->sizeNotRotated.y; y++)
 						{
 							structure->unsafeGet(x, y, z).lightLevel = 0;
 
@@ -91,6 +91,7 @@ bool StructuresManager::loadAllStructures()
 	loadFolder(RESOURCES_PATH "gameData/structures/abandonedHouse", abandonedHouse);
 	loadFolder(RESOURCES_PATH "gameData/structures/goblinTower", goblinTower);
 	loadFolder(RESOURCES_PATH "gameData/structures/trainingCamp", trainingCamp);
+	loadFolder(RESOURCES_PATH "gameData/structures/smallStoneRuins", smallStoneRuins);
 	
 	if (trees.empty()) { return 0; }
 	if (jungleTrees.empty()) { return 0; }
@@ -105,6 +106,8 @@ bool StructuresManager::loadAllStructures()
 	if (tallTreesSlim.empty()) { return 0; }
 	if (abandonedHouse.empty()) { return 0; }
 	if (goblinTower.empty()) { return 0; }
+	if (trainingCamp.empty()) { return 0; }
+	if (smallStoneRuins.empty()) { return 0; }
 
 	return true;
 }

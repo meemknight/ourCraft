@@ -9,7 +9,25 @@ int calculateDamage(Armour armour_, const WeaponStats &weaponStats, std::minstd_
 
 	float critChance = weaponStats.critChance;
 	critChance += critChanceBonus * 0.2f;
-	critChance = glm::clamp(critChance, 0.f, 0.9f); //never 100% chance
+
+	if (weaponStats.accuracy < 0)
+	{
+		critChance += weaponStats.getAccuracyNormalizedNegative(); //we heavily decrease crit chance
+	}
+	else
+	{
+		critChance += weaponStats.getAccuracyNormalizedNegative() / 5.f;
+	}
+
+	if (weaponStats.accuracy < 0)
+	{
+		critChance = glm::clamp(critChance, 0.f, 0.8f);
+	}
+	else
+	{
+		critChance = glm::clamp(critChance, 0.f, 0.9f); //never 100% chance
+	}
+
 
 	bool crit = getRandomChance(rng, critChance);
 

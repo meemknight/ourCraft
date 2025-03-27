@@ -968,7 +968,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 	std::vector<glm::ivec3> *controlBlocks, bool replace,
 	BlockType from, BlockType to)
 {
-	auto size = structure.data->size;
+	auto size = structure.data->getSizeRotated(rotation);
 
 	if (s.placeInCenter)
 	{
@@ -1161,7 +1161,8 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 				bool sendDataToPlayers = 0;
 				SavedChunk *c = nullptr;
 
-				auto &collumFlags = structure.getPerCollomFlagsUnsafeRotated(x - startPos.x, z - startPos.z, rotation, structure.data->size);
+				auto &collumFlags = structure.getPerCollomFlagsUnsafeRotated(x - startPos.x, z - startPos.z, rotation, 
+					structure.data->getSizeRotated(rotation));
 
 				//CASE 1: we place the block in one of the newly created or loaded CHUNKS!
 				auto it = newCreatedOrLoadedChunks.find({chunkX, chunkZ});
@@ -1475,6 +1476,10 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 	else if (s.type == Structure_AbandonedTrainingCamp)
 	{
 		defaultGenerate(structureManager.trainingCamp);
+	}
+	else if (s.type == Structure_StoneRuins)
+	{
+		defaultGenerate(structureManager.smallStoneRuins);
 	}
 
 

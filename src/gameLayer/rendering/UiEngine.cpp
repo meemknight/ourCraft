@@ -1287,7 +1287,7 @@ bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
 		
 			StructureData *s = (StructureData *)data.data();
 		
-			s->size = size;
+			s->sizeNotRotated = size;
 			s->unused = 0;
 		
 			for (int x = 0; x < size.x; x++)
@@ -1320,13 +1320,13 @@ bool UiENgine::renderBaseBlockUI(float deltaTime, int w, int h,
 				sfs::noError)
 			{
 				StructureData *s = (StructureData *)data.data();
-				baseBlock.sizeX = s->size.x;
-				baseBlock.sizeY = s->size.y;
-				baseBlock.sizeZ = s->size.z;
+				baseBlock.sizeX = s->sizeNotRotated.x;
+				baseBlock.sizeY = s->sizeNotRotated.y;
+				baseBlock.sizeZ = s->sizeNotRotated.z;
 
-				for (int x = 0; x < s->size.x; x++)
-					for (int z = 0; z < s->size.z; z++)
-						for (int y = 0; y < s->size.y; y++)
+				for (int x = 0; x < s->sizeNotRotated.x; x++)
+					for (int z = 0; z < s->sizeNotRotated.z; z++)
+						for (int y = 0; y < s->sizeNotRotated.y; y++)
 						{
 							glm::ivec3 pos = startPos + glm::ivec3(x, y, z);
 		

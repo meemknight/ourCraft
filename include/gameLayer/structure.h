@@ -5,20 +5,32 @@
 
 struct StructureData
 {
-	glm::ivec3 size;
+	glm::ivec3 sizeNotRotated = {};
 	int unused = 0;
 
 	//data is held outside
 
 	Block &unsafeGet(int x, int y, int z)
 	{
-		assert(x >= 0 && y >= 0 && z >= 0 && x < size.x && y < size.y && z < size.z);
+		assert(x >= 0 && y >= 0 && z >= 0 && x < sizeNorRotated.x && y < sizeNorRotated.y && z < sizeNorRotated.z);
 
-		return ((Block *)(this + 1))[y + z * size.y + x * size.y*size.z];
+		return ((Block *)(this + 1))[y + z * sizeNotRotated.y + x * sizeNotRotated.y* sizeNotRotated.z];
+	}
+
+	glm::ivec3 getSizeRotated(int rotation)
+	{
+		if (rotation == 1 || rotation == 3)
+		{
+			return glm::ivec3(sizeNotRotated.z, sizeNotRotated.y, sizeNotRotated.x);
+		}
+
+		return sizeNotRotated;
 	}
 
 	Block &unsafeGetRotated(int x, int y, int z, int r)
 	{
+		auto size = getSizeRotated(r);
+
 		if (r == 0)
 		{
 			return unsafeGet(x, y, z);
@@ -43,7 +55,7 @@ struct StructureData
 
 	Block *safeGet(int x, int y, int z)
 	{
-		if (x < 0 || y < 0 || z < 0 || x >= size.x || y >= size.y || z >= size.z)
+		if (x < 0 || y < 0 || z < 0 || x >= sizeNotRotated.x || y >= sizeNotRotated.y || z >= sizeNotRotated.z)
 		{
 			return nullptr;
 		}
@@ -91,7 +103,7 @@ struct StructureDataAndFlags
 
 	PerCollomFlags &getPerCollomFlagsUnsafe(int x, int z)
 	{
-		return perCollomFlags[x + z * data->size.x];
+		return perCollomFlags[x + z * data->sizeNotRotated.x];
 	}
 
 	StructureData *data;
@@ -117,6 +129,7 @@ struct StructuresManager
 	std::vector<StructureDataAndFlags> abandonedHouse;
 	std::vector<StructureDataAndFlags> goblinTower;
 	std::vector<StructureDataAndFlags> trainingCamp;
+	std::vector<StructureDataAndFlags> smallStoneRuins;
 
 	void clear();
 };
