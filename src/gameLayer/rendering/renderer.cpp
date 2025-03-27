@@ -5516,9 +5516,18 @@ void GyzmosRenderer::create()
 	glCreateBuffers(1, &blockPositionBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, blockPositionBuffer);
 	glBufferData(GL_ARRAY_BUFFER, 0, 0, GL_STREAM_DRAW);
-	glVertexAttribIPointer(1, 3, GL_INT, 0, 0);
+	glVertexAttribIPointer(1, 3, GL_INT, sizeof(float) * 12, 0);
 	glEnableVertexAttribArray(1);
 	glVertexAttribDivisor(1, 1);
+
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 12, (void*)(sizeof(float) * 4));
+	glEnableVertexAttribArray(2);
+	glVertexAttribDivisor(2, 1);
+
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 12, (void *)(sizeof(float) * 8));
+	glEnableVertexAttribArray(3);
+	glVertexAttribDivisor(3, 1);
+
 
 	glCreateBuffers(1, &cubeIndices);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubeIndices);

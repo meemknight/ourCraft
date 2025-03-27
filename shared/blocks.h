@@ -594,6 +594,23 @@ struct Block
 			}
 		}
 
+		auto type = getType();
+
+		auto sizeInPixels = [&](float pixels)
+		{
+			return (pixels / 16.f);
+		};
+
+		if (type == BlockTypes::trainingDummy)
+		{
+			BlockCollider b{};
+			b.size.x = sizeInPixels(14);
+			b.size.z = b.size.x;
+			b.size.y = sizeInPixels(1);
+			return b;
+		}
+
+
 		return BlockCollider{};
 	}
 

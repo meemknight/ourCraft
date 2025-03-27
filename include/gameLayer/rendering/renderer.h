@@ -513,7 +513,9 @@ struct GyzmosRenderer
 
 	struct CubeData
 	{
-		int x=0, y=0, z=0;
+		int x = 0, y = 0, z = 0, unused = 0;
+		float posFloatX = 0, posFloatY = 0, posFloatZ = 0, posFloat2 = 0;
+		float sizeX = 0, sizeY = 0, sizeZ = 0, unused3 = 0;
 	};
 
 
@@ -545,6 +547,10 @@ struct GyzmosRenderer
 
 	void drawCube(int x, int y, int z) { cubes.push_back({x, y, z}); };
 	void drawCube(glm::ivec3 pos) { drawCube(pos.x, pos.y, pos.z); };
+	void drawCube(glm::ivec3 pos, glm::vec3 posFloat, glm::vec3 size)
+		{ cubes.push_back({pos.x, pos.y, pos.z, 0, 
+		posFloat.x,posFloat.y,posFloat.z,0,
+		size.x, size.y, size.z, 0}); };
 
 	//todo not working at far distances rn
 	void drawLine(glm::dvec3 a, glm::dvec3 b) { lines.push_back({a, b}); }

@@ -333,6 +333,7 @@ bool isColidable(BlockType type)
 		type != BlockTypes::smallRock &&
 		type != BlockTypes::cobweb &&
 		type != BlockTypes::trainingDummy &&
+		type != BlockTypes::craftingItems &&
 		type != BlockTypes::mug;
 }
 

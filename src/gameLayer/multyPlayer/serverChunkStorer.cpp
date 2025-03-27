@@ -25,6 +25,10 @@ void genericCheckEntitiesForCollisions(T &container, std::vector<ColidableEntry>
 				other.eid = e.first;
 				other.position = e.second.getPosition();
 				other.collider = e.second.entity.getColliderSize();
+
+				if constexpr (hasGetColliderOffset<decltype(e.second.entity)>) { other.position += e.second.entity.getColliderOffset(); }
+
+
 				ret.push_back(other);
 			}
 
@@ -80,6 +84,7 @@ std::vector<ColidableEntry> ServerChunkStorer::getCollisionsListThatCanPush(glm:
 					other.eid = e.first;
 					other.position = e.second.getPosition();
 					other.collider = e.second.entity.getColliderSize();
+					if constexpr (hasGetColliderOffset<decltype(e.second.entity)>) { other.position += e.second.entity.getColliderOffset(); }
 					ret.push_back(other);
 				}
 
@@ -104,6 +109,7 @@ std::vector<ColidableEntry> ServerChunkStorer::getCollisionsListThatCanPush(glm:
 					other.eid = e.first;
 					other.position = e.second->getPosition();
 					other.collider = e.second->entity.getColliderSize();
+					//if constexpr (hasGetColliderOffset<decltype(e.second->entity)>) { other.position += e.second->entity.getColliderOffset(); }
 					ret.push_back(other);
 				}
 
@@ -1717,7 +1723,11 @@ std::uint64_t genericCheckEntitiesForCollisionWithBlock(T &container, glm::ivec3
 
 		for (auto &e : container)
 		{
-			auto rez = boxColideBlock(e.second.getPosition(), e.second.entity.getColliderSize(), position);
+			glm::dvec3 position = e.second.getPosition();
+
+			if constexpr (hasGetColliderOffset<decltype(e.second.entity)>) { position += e.second.entityBuffered.getColliderOffset(); }
+
+			auto rez = boxColideBlock(position, e.second.entity.getColliderSize(), position);
 			
 			if (rez)
 			{
@@ -1740,7 +1750,12 @@ std::uint64_t callGenericCheckEntitiesForCollisionWithBlock(std::integer_sequenc
 		{
 			if (e.second)
 			{
-				auto rez = boxColideBlock(e.second->getPosition(), e.second->entity.getColliderSize(), position);
+
+				glm::dvec3 position = e.second->getPosition();
+				if constexpr (hasGetColliderOffset<decltype(e.second->entity)>) { position += e.second->entityBuffered.getColliderOffset(); }
+
+
+				auto rez = boxColideBlock(position, e.second->entity.getColliderSize(), position);
 
 				if (rez)
 				{

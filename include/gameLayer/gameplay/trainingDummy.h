@@ -14,6 +14,8 @@ struct TrainingDummy: public CanPushOthers,
 
 	glm::vec3 getColliderSize();
 
+	glm::vec3 getColliderOffset();
+
 	glm::vec3 getMaxColliderSize();
 
 	Armour getArmour() { return {1}; };

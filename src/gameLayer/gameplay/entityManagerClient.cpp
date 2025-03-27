@@ -427,6 +427,11 @@ std::uint64_t genericIntersectAllAttackableEntities(T &container, glm::dvec3 sta
 			position = e.second.getRubberBandPosition();
 		}
 
+		if constexpr (hasGetColliderOffset<decltype((container)[0].entityBuffered)>)
+		{
+			position += e.second.entityBuffered.getColliderOffset();
+		}
+
 		bool rez = lineIntersectBoxMaxDistance(start, dir, position, collider,
 			maxDistance, outIntersectDist, delta);
 
@@ -524,6 +529,11 @@ void genericRenderColliders(T &container,
 		else
 		{
 			position = p.second.getRubberBandPosition();
+		}
+
+		if constexpr (hasGetColliderOffset<decltype((container)[0].entityBuffered)>)
+		{
+			position += p.second.entityBuffered.getColliderOffset();
 		}
 
 		auto boxSize = p.second.entityBuffered.getColliderSize();

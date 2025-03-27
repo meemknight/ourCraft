@@ -1003,10 +1003,11 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 
 		constexpr static float TARGET_DIST = 20;
+		float dist = TARGET_DIST;
+
 
 		raycastBlock = gameData.chunkSystem.rayCast(cameraRayPos, gameData.c.viewDirection,
 			rayCastPos, TARGET_DIST, blockToPlace, raycastDist);
-		float dist = TARGET_DIST;
 
 		if (raycastBlock)
 		{
@@ -1052,9 +1053,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		auto &item = player.inventory.items[gameData.currentItemSelected];
 		auto weaponStats = item.getWeaponStats();
 
-
 		targetedEntity = gameData.entityManager.intersectAllAttackableEntities(cameraRayPos,
-			gameData.c.viewDirection, dist, entityHitDistance,
+			gameData.c.viewDirection, std::min(dist, weaponStats.range) , entityHitDistance,
 			weaponStats.getAccuracyAdjusted());
 
 		//std::cout << targetedEntity << "\n";
@@ -1070,7 +1070,17 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			//todo special function here
 			if (raycastBlock->getType() != BlockTypes::water)
 			{
-				programData.gyzmosRenderer.drawCube(rayCastPos);
+				auto collider = raycastBlock->getCollider();
+				collider.offset.y -= (1.f - collider.size.y) / 2.f;
+				programData.gyzmosRenderer.drawCube(rayCastPos, collider.offset, collider.size);
+
+				if (raycastBlock->hasSecondCollider())
+				{
+					auto collider = raycastBlock->getSecondCollider();
+					collider.offset.y -= (1.f - collider.size.y) / 2.f;
+					programData.gyzmosRenderer.drawCube(rayCastPos, collider.offset, collider.size);
+				}
+
 			}
 			else
 			{

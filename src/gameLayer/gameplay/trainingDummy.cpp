@@ -10,8 +10,14 @@ void TrainingDummy::update(float deltaTime, decltype(chunkGetterSignature) *chun
 
 glm::vec3 TrainingDummy::getColliderSize()
 {
-	return glm::vec3(0.8, 1.8, 0.8);
+	return glm::vec3(0.8, 1.6, 0.8);
 }
+
+glm::vec3 TrainingDummy::getColliderOffset()
+{
+	return glm::vec3(0, 0.2, 0.0);
+}
+
 
 glm::vec3 TrainingDummy::getMaxColliderSize()
 {

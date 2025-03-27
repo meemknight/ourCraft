@@ -472,6 +472,11 @@ template <typename T>
 constexpr bool hasNotSyncronizedEntity<T, std::void_t<decltype(T::notSyncronizedEntity)>> = true;
 
 
+template <typename T, typename = void>
+constexpr bool hasGetColliderOffset = false;
+template <typename T>
+constexpr bool hasGetColliderOffset<T, std::void_t<decltype(std::declval<T>().getColliderOffset())>> = true;
+
 
 template <typename T, typename = void>
 constexpr bool hasForces = false;
