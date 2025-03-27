@@ -970,6 +970,12 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 {
 	auto size = structure.data->size;
 
+	if (s.placeInCenter)
+	{
+		s.pos.x -= size.x / 2;
+		s.pos.z -= size.z / 2;
+	}
+
 	//the user can replace a block with another
 	auto replaceB = [&](Block &b)
 	{
@@ -1718,6 +1724,9 @@ bool ServerChunkStorer::entityAlreadyExists(std::uint64_t eid)
 template<class T>
 std::uint64_t genericCheckEntitiesForCollisionWithBlock(T &container, glm::ivec3 position)
 {
+	if constexpr (hasPositionBasedID<decltype(container[0].entity)>)
+	{ return 0; }
+
 	if constexpr (hasCollidesWithPlacedBlocks<decltype(container[0].entity)>)
 	{
 
@@ -1743,7 +1752,7 @@ template <int... Is>
 std::uint64_t callGenericCheckEntitiesForCollisionWithBlock(std::integer_sequence<int, Is...>,
 	EntityData &entityData, glm::ivec3 position)
 {
-
+	
 	if constexpr (hasCollidesWithPlacedBlocks<decltype(entityData.players[0]->entity)>)
 	{
 		for (auto &e : entityData.players)
@@ -1752,7 +1761,7 @@ std::uint64_t callGenericCheckEntitiesForCollisionWithBlock(std::integer_sequenc
 			{
 
 				glm::dvec3 position = e.second->getPosition();
-				if constexpr (hasGetColliderOffset<decltype(e.second->entity)>) { position += e.second->entityBuffered.getColliderOffset(); }
+				//if constexpr (hasGetColliderOffset<decltype(e.second->entity)>) { position += e.second->entityBuffered.getColliderOffset(); }
 
 
 				auto rez = boxColideBlock(position, e.second->entity.getColliderSize(), position);

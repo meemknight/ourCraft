@@ -113,8 +113,11 @@ void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, f
 		roadShape.block.push_back(BlockTypes::grassBlock);
 		roadShape.block.push_back(BlockTypes::gravel);
 		roadShape.block.push_back(BlockTypes::coarseDirt);
+		roadShape.block.push_back(BlockTypes::grassBlock);
+		roadShape.block.push_back(BlockTypes::gravel);
+		roadShape.block.push_back(BlockTypes::pathBlock);
 
-		BlockType roadCenter = BlockTypes::coarseDirt;
+		BlockType roadCenter = BlockTypes::pathBlock;
 		
 		if (roadValue < 0.25)
 		{
@@ -1010,6 +1013,13 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 	glm::ivec2 lowestPointInChunk = {};
 	int lowestLevelInChunk = 300;
+
+	struct DataForStructureGen
+	{
+		float rivers = 0;
+		float lakes = 0;
+
+	}dataForStructureGen;
 
 	for (int x = 0; x < CHUNK_SIZE; x++)
 		for (int z = 0; z < CHUNK_SIZE; z++)
@@ -1974,6 +1984,9 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			{
 				lowestLevelInChunk = firstH;
 				lowestPointInChunk = glm::ivec2(x, z);
+
+				dataForStructureGen.lakes = newLakeNoiseVal;
+				dataForStructureGen.rivers = riverChanceValue;
 			}
 
 		}
@@ -1982,6 +1995,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	#pragma region big structures
 
 		#pragma region templates
+		thread_local static StaticVector<std::function<void()>, 40> structuresChoice;
+		structuresChoice.clear();
 
 		auto setPosAndRandomNumbers = [&](StructureToGenerate &str)
 		{
@@ -2033,19 +2048,31 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		if (couldGenerateMediumStructures)
 		{
 
+		
 			float generateStructureChance = hashNormalized(hash(c.x, c.z, seedHash++));
-
-			std::array<std::function<void()>, 4> basicStructures 
-				= {goblinTower, smallAbandonedHouse, nothing, trainingCamp};
 
 			//not inside oceans
 			if (currentBiomeHeight > 1)
 			{
 
-				uint32_t randomValue = hash(c.x, c.z, seedHash++);
-				int index = randomValue % basicStructures.size();
-				basicStructures[index](); // Call the selected function
+				structuresChoice.push_back(nothing);
 
+				if (dataForStructureGen.lakes > 0.2 || dataForStructureGen.rivers > 0.2)
+				{
+
+					//rivers and lakes structures
+
+				}
+				else
+				{
+					structuresChoice.push_back(goblinTower);
+					structuresChoice.push_back(smallAbandonedHouse);
+					structuresChoice.push_back(trainingCamp);
+				}
+
+				uint32_t randomValue = hash(c.x, c.z, seedHash++);
+				int index = randomValue % structuresChoice.size();
+				structuresChoice[index](); // Call the selected function
 
 
 			}

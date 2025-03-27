@@ -43,6 +43,7 @@ struct StructureToGenerate
 	bool paintLogicStuff = true; //paints leaves and others
 	bool replaceEnclosedColumsWithAir = 0;
 	unsigned char replaceOverAnything = 0;
+	bool placeInCenter = true;
 
 	void setDefaultSmallBuildingSettings()
 	{
