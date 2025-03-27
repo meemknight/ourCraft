@@ -51,6 +51,9 @@ struct PigServer: public ServerEntity<Pig>,
 	//todo change to init
 	void configureSpawnSettings(std::minstd_rand &rng);
 
+	//todo
+	bool isUnaware() { return  false; }
+	void signalHit(glm::vec3 direction) {};
 };
 
 

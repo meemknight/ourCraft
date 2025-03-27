@@ -35,6 +35,7 @@ struct GoblinServer: public ServerEntity<Goblin>
 
 	BasicEnemyBehaviour basicEnemyBehaviour;
 
+	bool isUnaware() { return  basicEnemyBehaviour.isUnaware(); };
 
 	void appendDataToDisk(std::ofstream &f, std::uint64_t eId);
 
@@ -44,6 +45,8 @@ struct GoblinServer: public ServerEntity<Goblin>
 		std::unordered_map<std::uint64_t, std::unordered_map<glm::ivec3, PathFindingNode>> &pathFindingSurvival,
 		std::unordered_map<std::uint64_t, glm::dvec3> &playersPositionSurvival,
 		std::unordered_map < std::uint64_t, Client *> &allClients);
+
+	void signalHit(glm::vec3 direction) { basicEnemyBehaviour.signalHit(direction, this); }
 
 };
 

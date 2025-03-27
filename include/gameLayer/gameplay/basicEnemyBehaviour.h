@@ -24,6 +24,7 @@ struct BasicEnemyBehaviour
 	float waitTime = 1;
 	float keepJumpingTimer = 0;
 	std::uint64_t playerLockedOn = 0;
+	float worriedTimer = 0;
 	
 	enum states
 	{
@@ -51,6 +52,45 @@ struct BasicEnemyBehaviour
 
 	}stateTargetedPlayerData;
 
+	bool isUnaware()
+	{
+		if (worriedTimer > 0) { return false; }
+
+		if (currentState == stateStaying || currentState == stateWalkingRandomly)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	template<typename BaseEntity>
+	void signalHit(glm::vec3 direction, BaseEntity *baseEntity)
+	{
+		if (currentState != stateTargetedPlayer)
+		{
+			worriedTimer = 60;
+
+			float len = glm::length(direction);
+			if (len > 0)
+			{
+				direction /= len;
+				baseEntity->wantToLookDirection = direction;
+			}
+
+			searchForPlayerTimer = 0;
+
+			if (currentState == stateStaying)
+			{
+				stateWalkingRandomlyData = {};
+				currentState = stateWalkingRandomly;
+				stateWalkingRandomlyData.changeDirectionTime = 0;
+			}
+
+		}
+	}
 
 	unsigned char currentState = stateStaying;
 	float searchForPlayerTimer = 1;
@@ -66,13 +106,27 @@ struct BasicEnemyBehaviour
 		BasicEnemyBehaviourOtherSettings otherSettings)
 	{
 
+		worriedTimer -= deltaTime;
+		if (worriedTimer < 0) { worriedTimer = 0; }
+
 		glm::vec3 realLookDirection = baseEntity->entity.getLookDirection();
 		
 		auto changeStateStaying = [&]()
 		{
 			stateStayingData = {};
-			stateStayingData.timerChangeLookDirection = stateStayingData.timerChangeLookDirection = getRandomNumberFloat(rng, 1, 10)
-				+ getRandomNumberFloat(rng, 1, 10);
+
+			if (worriedTimer)
+			{
+				stateStayingData.timerChangeLookDirection = stateStayingData.timerChangeLookDirection = getRandomNumberFloat(rng, 1, 3)
+					+ getRandomNumberFloat(rng, 1, 2);
+			}
+			else
+			{
+				stateStayingData.timerChangeLookDirection = stateStayingData.timerChangeLookDirection = getRandomNumberFloat(rng, 1, 10)
+					+ getRandomNumberFloat(rng, 1, 10);
+			}
+
+
 			currentState = stateStaying;
 		};
 
@@ -81,7 +135,16 @@ struct BasicEnemyBehaviour
 		{
 			if (currentState == stateStaying || currentState == stateWalkingRandomly)
 			{
-				stateStayingData.timerChangeLookDirection = getRandomNumberFloat(rng, 2, 3) + getRandomNumberFloat(rng, 1, 2);
+
+				if (worriedTimer)
+				{
+					stateStayingData.timerChangeLookDirection = getRandomNumberFloat(rng, 1, 2) + getRandomNumberFloat(rng, 1, 2);
+				}
+				else
+				{
+					stateStayingData.timerChangeLookDirection = getRandomNumberFloat(rng, 2, 3) + getRandomNumberFloat(rng, 1, 2);
+				}
+
 				stateWalkingRandomlyData.changeDirectionTime = stateStayingData.timerChangeLookDirection;
 			}
 
@@ -145,8 +208,8 @@ struct BasicEnemyBehaviour
 							//std::cout << "Distance Calculated: " << percentage << "; final percentage: " 
 							//	<< 100*pow(percentage, 4.f) << "%\n";
 							percentage = pow(percentage, 3.f);
-
 							percentage += otherSettings.hearBonus;
+							if (worriedTimer) { percentage += 0.2; }
 							percentage = glm::clamp(percentage, 0.f, 1.f);
 
 
@@ -162,9 +225,11 @@ struct BasicEnemyBehaviour
 							
 							//if the enemy looks at least slightly towards the player we add the view factor
 							if (viewFactor > 0.1)
-							{
+							{ 
 								viewFactor += otherSettings.sightBonus;
+								if (worriedTimer) { viewFactor += 0.2; }
 							}
+
 							viewFactor = glm::clamp(viewFactor, 0.f, 1.f);
 
 							float finalPercentage = percentage;
@@ -320,8 +385,17 @@ struct BasicEnemyBehaviour
 
 			if (stateWalkingRandomlyData.changeDirectionTime <= 0)
 			{
-				stateWalkingRandomlyData.changeDirectionTime = getRandomNumberFloat(rng, 1, 5);
-				stateWalkingRandomlyData.changeDirectionTime += getRandomNumberFloat(rng, 1, 5);
+				if (worriedTimer)
+				{
+					stateWalkingRandomlyData.changeDirectionTime = getRandomNumberFloat(rng, 1, 3);
+					stateWalkingRandomlyData.changeDirectionTime += getRandomNumberFloat(rng, 1, 3);
+				}
+				else
+				{
+					stateWalkingRandomlyData.changeDirectionTime = getRandomNumberFloat(rng, 1, 5);
+					stateWalkingRandomlyData.changeDirectionTime += getRandomNumberFloat(rng, 1, 5);
+				}
+
 
 				direction = getRandomUnitVector(rng);
 
@@ -332,8 +406,18 @@ struct BasicEnemyBehaviour
 
 			if (stateWalkingRandomlyData.changeLookDirectionTime <= 0 || relook)
 			{
-				stateWalkingRandomlyData.changeLookDirectionTime = getRandomNumberFloat(rng, 1, 4);
-				stateWalkingRandomlyData.changeLookDirectionTime += getRandomNumberFloat(rng, 1, 4);
+				if (worriedTimer)
+				{
+					stateWalkingRandomlyData.changeLookDirectionTime = getRandomNumberFloat(rng, 1, 3);
+					stateWalkingRandomlyData.changeLookDirectionTime += getRandomNumberFloat(rng, 1, 3);
+				}
+				else
+				{
+					stateWalkingRandomlyData.changeLookDirectionTime = getRandomNumberFloat(rng, 1, 4);
+					stateWalkingRandomlyData.changeLookDirectionTime += getRandomNumberFloat(rng, 1, 4);
+				}
+
+
 
 				glm::vec3 viewVector = glm::vec3(direction.x, 0, direction.y);
 
@@ -358,6 +442,7 @@ struct BasicEnemyBehaviour
 
 		auto changeRandomState = [&](float stayingChance = 0.5)
 		{
+
 			stateChangeTimer = getRandomNumberFloat(rng, 1, 5)
 				+ getRandomNumberFloat(rng, 1, 5) + getRandomNumberFloat(rng, 1, 5);
 
@@ -366,6 +451,12 @@ struct BasicEnemyBehaviour
 				if (currentState != stateStaying)
 				{
 					changeStateStaying();
+
+					if (worriedTimer)
+					{
+						stateChangeTimer = getRandomNumberFloat(rng, 1, 2)
+							+ getRandomNumberFloat(rng, 1, 2);
+					}
 				}
 			}
 			else
@@ -750,8 +841,17 @@ struct BasicEnemyBehaviour
 				stateStayingData.timerChangeLookDirection -= deltaTime;
 				if (stateStayingData.timerChangeLookDirection < 0)
 				{
-					stateStayingData.timerChangeLookDirection = getRandomNumberFloat(rng, 1, 10)
-						+ getRandomNumberFloat(rng, 1, 10);
+
+					if (worriedTimer)
+					{
+						stateStayingData.timerChangeLookDirection = getRandomNumberFloat(rng, 1, 4)
+							+ getRandomNumberFloat(rng, 1, 4);
+					}
+					else
+					{
+						stateStayingData.timerChangeLookDirection = getRandomNumberFloat(rng, 1, 10)
+							+ getRandomNumberFloat(rng, 1, 10);
+					}
 
 					lookAtARandomDirection();
 				}
@@ -794,6 +894,10 @@ struct BasicEnemyBehaviour
 				jumpIfNeeded();
 
 				applyMoveDirection();
+
+				//will remain worried after just fighting
+				worriedTimer = std::max(worriedTimer, 60.f);
+
 				break;
 			}
 

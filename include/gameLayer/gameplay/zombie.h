@@ -53,6 +53,10 @@ struct ZombieServer: public ServerEntity<Zombie>
 		std::unordered_map<std::uint64_t, glm::dvec3> &playersPosition,
 		std::unordered_map < std::uint64_t, Client *> &allClients);
 
+	//todo
+	bool isUnaware() { return  false; }
+	void signalHit(glm::vec3 direction) {};
+
 };
 
 void animatePlayerHandsZombie(glm::mat4 *poseVector, float &currentAngle, float deltaTime);

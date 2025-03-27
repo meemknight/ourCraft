@@ -8,7 +8,8 @@ void WeaponStats::normalize()
 
 
 	critChance = glm::clamp(critChance, 0.f, 0.7f); // 0 -> 0.7;
-	critDamage = glm::clamp(critDamage, 0.5f, 3.f); // 0.5 -> 3
+	critDamage = glm::clamp(critDamage, 0.f, 999.f); // 
+	surprizeDamage = glm::clamp(critDamage, 0.f, 999.f); // 
 	dexterity = glm::clamp(dexterity, -10.f, 20.f); // -10 -> 20;
 	damage = glm::clamp(damage, 1.f, 999.f); // 1 -> 999;
 	accuracy = glm::clamp(accuracy, -10.f, 20.f); // -10 -> 20;

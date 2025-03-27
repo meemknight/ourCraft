@@ -1760,11 +1760,11 @@ std::uint64_t callGenericCheckEntitiesForCollisionWithBlock(std::integer_sequenc
 			if (e.second)
 			{
 
-				glm::dvec3 position = e.second->getPosition();
-				//if constexpr (hasGetColliderOffset<decltype(e.second->entity)>) { position += e.second->entityBuffered.getColliderOffset(); }
+				glm::dvec3 positionPlayer = e.second->getPosition();
+				if constexpr (hasGetColliderOffset<decltype(e.second->entity)>) { positionPlayer += e.second->entityBuffered.getColliderOffset(); }
 
 
-				auto rez = boxColideBlock(position, e.second->entity.getColliderSize(), position);
+				auto rez = boxColideBlock(positionPlayer, e.second->entity.getColliderSize(), position);
 
 				if (rez)
 				{
@@ -1936,7 +1936,7 @@ void doHittingThings(T &e, glm::vec3 dir, glm::dvec3 playerPosition,
 		WeaponStats stats = weapon.getWeaponStats();
 
 		int damage = calculateDamage(armour, stats, rng,
-			hitCorectness, critChanceBonus);
+			hitCorectness, critChanceBonus, e.isUnaware());
 
 		//std::cout << "Damage: " << damage << "\n";
 
@@ -1967,6 +1967,12 @@ void doHittingThings(T &e, glm::vec3 dir, glm::dvec3 playerPosition,
 		knockBack = std::max(knockBack, 0.f);
 		e.applyHitForce(hitDir * knockBack);
 
+		auto entityPos = e.getPosition();
+		glm::dvec3 directionToPlayer = playerPosition - entityPos;
+		double l = glm::length(directionToPlayer);
+		if (l) { directionToPlayer /= l; }
+
+		e.signalHit(directionToPlayer);
 	}
 	else
 	{

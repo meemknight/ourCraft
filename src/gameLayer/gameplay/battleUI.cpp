@@ -68,7 +68,8 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 
 		if (item.isSpear())
 		{
-
+			
+			/*
 			if (!started)
 			{
 				if (leftPressed || rightPressed)
@@ -306,20 +307,24 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 				}
 
 			}
+			*/
 
+			if (leftPressed || rightPressed)
+			{
+				result.bonusCritChance = 0;
+				result.hit = 1; //
+				result.hitCorectness = 1;
+			}
 
 		}
 		else if (item.isSword())
 		{
 			if (leftPressed || rightPressed)
 			{
-
 				result.bonusCritChance = 0;
 				result.hit = 1; //
 				result.hitCorectness = 1;
-
 			}
-
 
 		}
 

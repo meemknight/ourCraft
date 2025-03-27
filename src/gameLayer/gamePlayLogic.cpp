@@ -2388,6 +2388,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 					attackEntity(targetedEntity, gameData.currentItemSelected,
 						gameData.c.viewDirection, hitStatus);
+
+					AudioEngine::playHitSound();
 				}
 
 			};

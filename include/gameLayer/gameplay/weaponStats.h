@@ -6,7 +6,8 @@ struct WeaponStats
 {
 
 	float critChance = 0.1; // 0 -> 0.7;
-	float critDamage = 1.5; // 0.5 -> 3
+	float critDamage = 15; // 1 -> 999;
+	float surprizeDamage = 30; // 1 -> 999;
 	
 	float dexterity = 1; // -10 -> 20;
 	float damage = 10; // 1 -> 999;

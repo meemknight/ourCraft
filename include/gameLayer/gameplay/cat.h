@@ -48,6 +48,10 @@ struct CatServer: public ServerEntity<Cat>,
 
 	void configureSpawnSettings(std::minstd_rand &rng);
 
+	//todo
+	bool isUnaware() { return  false; }
+	void signalHit(glm::vec3 direction) {};
+
 };
 
 

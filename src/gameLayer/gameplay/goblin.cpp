@@ -48,7 +48,6 @@ int GoblinClient::getTextureIndex()
 	return ModelsManager::TexturesLoaded::GoblinTexture;
 }
 
-
 void GoblinServer::appendDataToDisk(std::ofstream &f, std::uint64_t eId)
 {
 }
