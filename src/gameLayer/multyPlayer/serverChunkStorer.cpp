@@ -6,6 +6,7 @@
 #include <platformTools.h>
 #include <repeat.h>
 #include <gameplay/blocks/blocksWithData.h>
+#include <algorithm>
 
 
 template<class T>
@@ -1511,30 +1512,206 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 		{
 			int type = 0; // 0 none, 1 hall, 2 room, 3 entrance
 			int orientation = 0; //0 means left right (x), 1 means up down (Z)
+			char posX = 0;
+			char posZ = 0;
 		};
 
 		DungeonPiece dungeon[MAX_DUNGEON_SIZE][MAX_DUNGEON_SIZE] = {};
 
-		dungeon[5][5] = DungeonPiece{3,0};
-		dungeon[4][5] = DungeonPiece{2,0};
-		dungeon[4][6] = DungeonPiece{1,1};
-		dungeon[4][7] = DungeonPiece{2,0};
-		dungeon[6][5] = DungeonPiece{2,0};
-		dungeon[7][5] = DungeonPiece{1,0};
-		dungeon[8][5] = DungeonPiece{2,0};
+		std::vector<DungeonPiece> nodes;
+		nodes.reserve(100);
+		int orientation = getRandomNumber(rng, 0, 1);
+		nodes.push_back(DungeonPiece{3, orientation, MAX_DUNGEON_SIZE/2,MAX_DUNGEON_SIZE/2});
+		dungeon[MAX_DUNGEON_SIZE / 2][MAX_DUNGEON_SIZE / 2] = nodes[0];
 
-		dungeon[3][3] = DungeonPiece{1,0};
-		dungeon[2][2] = DungeonPiece{1,1};
-		dungeon[3][2] = DungeonPiece{1,1};
-		dungeon[2][3] = DungeonPiece{1,1};
-		dungeon[1][2] = DungeonPiece{1,0};
-		dungeon[2][1] = DungeonPiece{1,0};
-		dungeon[1][1] = DungeonPiece{1,1};
-		dungeon[1][0] = DungeonPiece{1,0};
-		dungeon[0][1] = DungeonPiece{1,1};
-		dungeon[0][0] = DungeonPiece{1,0};
-		dungeon[2][0] = DungeonPiece{1,0};
-		dungeon[0][2] = DungeonPiece{1,0};
+
+		int totalNodesCount = getRandomNumber(rng, 3, 9) + getRandomNumber(rng, 3, 9);
+		//int totalNodesCount = 16;
+
+		for (int i = 0; i < totalNodesCount; i++)
+		{
+			int size = nodes.size();
+			if (!size) { break; }
+
+			int n = chooseRandomElement(getRandomNumberFloat(rng, 0, 0.999), size);
+
+			auto currentNode = nodes[n];
+
+			//fast remove element
+			if (n + 1 >= nodes.size())
+			{
+				nodes.pop_back();
+			}
+			else
+			{
+				std::swap(nodes[n], nodes.back());
+				nodes.pop_back();
+			}
+
+			if (currentNode.type == 2)
+			{
+				//room
+				int numberToSpawn = getRandomNumber(rng, 1, 4);
+				std::array<glm::ivec2, 4> directions{glm::ivec2{-1,0},{1,0},{0,1},{0,-1}};
+
+				std::shuffle(directions.begin(), directions.end(), rng);
+
+				for (int i = 0; i < numberToSpawn; i++)
+				{
+					glm::ivec2 pos(currentNode.posX, currentNode.posZ);
+					pos += directions[i];
+
+					if (pos.x >= 0 && pos.y >= 0 && pos.x < MAX_DUNGEON_SIZE && pos.y < MAX_DUNGEON_SIZE &&
+						dungeon[pos.x][pos.y].type == 0)
+					{
+
+						//we can spawn!
+
+						if (getRandomChance(rng, 0.1))
+						{
+							//rare second room spawn!
+							DungeonPiece room;
+							room.posX = pos.x;
+							room.posZ = pos.y;
+							room.type = 2;
+							nodes.push_back(room);
+							dungeon[pos.x][pos.y] = room;
+						}
+						else
+						{
+							DungeonPiece hall;
+							hall.posX = pos.x;
+							hall.posZ = pos.y;
+							hall.type = 1;
+							if (directions[i].x == -1 || directions[i].x == 1)
+							{
+								hall.orientation = 0;
+							}
+							else
+							{
+								hall.orientation = 1;
+							}
+
+							nodes.push_back(hall);
+							dungeon[pos.x][pos.y] = hall;
+						}
+
+						
+					}
+				}
+			}
+			else //hall or entry
+			{
+				if (currentNode.orientation == 0)
+				{
+					int numberToSpawn = getRandomNumber(rng, 1, 2);
+
+					std::array<glm::ivec2, 2> directions{glm::ivec2{-1,0},{1,0}};
+
+					std::shuffle(directions.begin(), directions.end(), rng);
+
+					for (int i = 0; i < numberToSpawn; i++)
+					{
+						glm::ivec2 pos(currentNode.posX, currentNode.posZ);
+						pos += directions[i];
+
+						if (pos.x >= 0 && pos.y >= 0 && pos.x < MAX_DUNGEON_SIZE && pos.y < MAX_DUNGEON_SIZE &&
+							dungeon[pos.x][pos.y].type == 0)
+						{
+							//we can spawn!
+							if (getRandomChance(rng, 0.25))
+							{
+								//rare second hall spawn!
+								DungeonPiece hall;
+								hall.posX = pos.x;
+								hall.posZ = pos.y;
+								hall.type = 1;
+								hall.orientation = currentNode.orientation;
+								nodes.push_back(hall);
+								dungeon[pos.x][pos.y] = hall;
+							}
+							else
+							{
+								DungeonPiece room;
+								room.posX = pos.x;
+								room.posZ = pos.y;
+								room.type = 2;
+								nodes.push_back(room);
+								dungeon[pos.x][pos.y] = room;
+							}
+
+						}
+					}
+				}
+				else
+				{
+					int numberToSpawn = getRandomNumber(rng, 1, 2);
+
+					std::array<glm::ivec2, 2> directions{glm::ivec2{0,-1},{0,1}};
+
+					std::shuffle(directions.begin(), directions.end(), rng);
+
+					for (int i = 0; i < numberToSpawn; i++)
+					{
+						glm::ivec2 pos(currentNode.posX, currentNode.posZ);
+						pos += directions[i];
+
+						if (pos.x >= 0 && pos.y >= 0 && pos.x < MAX_DUNGEON_SIZE && pos.y < MAX_DUNGEON_SIZE &&
+							dungeon[pos.x][pos.y].type == 0)
+						{
+							//we can spawn!
+							if (getRandomChance(rng, 0.25))
+							{
+								//rare second hall spawn!
+								DungeonPiece hall;
+								hall.posX = pos.x;
+								hall.posZ = pos.y;
+								hall.type = 1;
+								hall.orientation = currentNode.orientation;
+								nodes.push_back(hall);
+								dungeon[pos.x][pos.y] = hall;
+							}
+							else
+							{
+								//we can spawn!
+								DungeonPiece room;
+								room.posX = pos.x;
+								room.posZ = pos.y;
+								room.type = 2;
+								nodes.push_back(room);
+								dungeon[pos.x][pos.y] = room;
+							}
+						}
+					}
+				}
+
+
+
+			}
+
+
+		}
+
+		//dungeon[5][5] = DungeonPiece{3,0};
+		//dungeon[4][5] = DungeonPiece{2,0};
+		//dungeon[4][6] = DungeonPiece{1,1};
+		//dungeon[4][7] = DungeonPiece{2,0};
+		//dungeon[6][5] = DungeonPiece{2,0};
+		//dungeon[7][5] = DungeonPiece{1,0};
+		//dungeon[8][5] = DungeonPiece{2,0};
+		//
+		//dungeon[3][3] = DungeonPiece{1,0};
+		//dungeon[2][2] = DungeonPiece{1,1};
+		//dungeon[3][2] = DungeonPiece{1,1};
+		//dungeon[2][3] = DungeonPiece{1,1};
+		//dungeon[1][2] = DungeonPiece{1,0};
+		//dungeon[2][1] = DungeonPiece{1,0};
+		//dungeon[1][1] = DungeonPiece{1,1};
+		//dungeon[1][0] = DungeonPiece{1,0};
+		//dungeon[0][1] = DungeonPiece{1,1};
+		//dungeon[0][0] = DungeonPiece{1,0};
+		//dungeon[2][0] = DungeonPiece{1,0};
+		//dungeon[0][2] = DungeonPiece{1,0};
 
 
 	#pragma endregion
@@ -1559,6 +1736,9 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 
 				int rotation = 0;
 				if (dungeon[x][z].orientation == 1) { rotation = 1; }
+
+				if (rotation == 0 && getRandomChance(rng, 0.5)) { rotation = 2; }
+				if (rotation == 1 && getRandomChance(rng, 0.5)) { rotation = 3; }
 
 				if (type == 3)
 				{
