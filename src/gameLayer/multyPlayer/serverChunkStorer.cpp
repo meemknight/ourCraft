@@ -1533,7 +1533,11 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 			int size = nodes.size();
 			if (!size) { break; }
 
-			int n = chooseRandomElement(getRandomNumberFloat(rng, 0, 0.999), size);
+			int n = size-1;
+			if (getRandomChance(rng, 0.5)) //big chance we just continue from the latest thing
+			{
+				n = chooseRandomElement(getRandomNumberFloat(rng, 0, 0.999), size);
+			}
 
 			auto currentNode = nodes[n];
 
@@ -1555,6 +1559,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 				std::array<glm::ivec2, 4> directions{glm::ivec2{-1,0},{1,0},{0,1},{0,-1}};
 
 				std::shuffle(directions.begin(), directions.end(), rng);
+				bool bonus = false;
 
 				for (int i = 0; i < numberToSpawn; i++)
 				{
@@ -1567,7 +1572,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 
 						//we can spawn!
 
-						if (getRandomChance(rng, 0.1))
+						if (getRandomChance(rng, 0.25))
 						{
 							//rare second room spawn!
 							DungeonPiece room;
@@ -1596,7 +1601,11 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 							dungeon[pos.x][pos.y] = hall;
 						}
 
-						
+					}
+					else if (!bonus && numberToSpawn == 1)
+					{
+						bonus = true;
+						numberToSpawn++;
 					}
 				}
 			}
@@ -1609,6 +1618,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 					std::array<glm::ivec2, 2> directions{glm::ivec2{-1,0},{1,0}};
 
 					std::shuffle(directions.begin(), directions.end(), rng);
+					bool bonus = false;
 
 					for (int i = 0; i < numberToSpawn; i++)
 					{
@@ -1641,6 +1651,11 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 							}
 
 						}
+						else if (!bonus && numberToSpawn == 1)
+						{
+							bonus = true;
+							numberToSpawn++;
+						}
 					}
 				}
 				else
@@ -1650,6 +1665,7 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 					std::array<glm::ivec2, 2> directions{glm::ivec2{0,-1},{0,1}};
 
 					std::shuffle(directions.begin(), directions.end(), rng);
+					bool bonus = false;
 
 					for (int i = 0; i < numberToSpawn; i++)
 					{
@@ -1681,6 +1697,11 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 								nodes.push_back(room);
 								dungeon[pos.x][pos.y] = room;
 							}
+						}
+						else if (!bonus && numberToSpawn == 1)
+						{
+							bonus = true;
+							numberToSpawn++;
 						}
 					}
 				}

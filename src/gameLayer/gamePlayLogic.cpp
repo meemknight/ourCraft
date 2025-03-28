@@ -2095,7 +2095,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					if (sfs::readEntireFile(data, fileBuff) ==
 						sfs::noError)
 					{
-						int rotation = 1;
+						int rotation = 0;
 
 						StructureData *s = (StructureData *)data.data();
 						auto size = s->getSizeRotated(rotation);
