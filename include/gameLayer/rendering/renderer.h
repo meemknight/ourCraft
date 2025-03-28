@@ -58,6 +58,7 @@ struct Renderer
 	int sunFlareQueryPos = 0;
 	QueryObject sunFlareQueries[3] = {};
 	float averageLuminosity = 0.5;
+	bool fxaa = true;
 
 	struct BlockGeometryIndex
 	{
@@ -106,6 +107,7 @@ struct Renderer
 		void copyColorFromMainFBO(int w, int h);
 
 		void copyDepthToMainFbo(int w, int h);
+		void copyDepthAndColorToMainFbo(int w, int h);
 		void copyDepthFromOtherFBO(GLuint other, int w, int h);
 		void copyColorFromOtherFBO(GLuint other, int w, int h);
 		void copyDepthAndColorFromOtherFBO(GLuint other, int w, int h);
@@ -219,6 +221,24 @@ struct Renderer
 		uniform u_texture = -1;
 		uniform u_mip = -1;
 	}filterDownShader;
+
+	//http://blog.simonrodriguez.fr/articles/2016/07/implementing_fxaa.html
+	struct FXAAData
+	{
+		float edgeMinTreshold = 0.028;
+		float edgeDarkTreshold = 0.125;
+		int ITERATIONS = 12;
+		float quaityMultiplier = 0.8;
+		float SUBPIXEL_QUALITY = 0.95;
+	}fxaaData;
+
+
+	struct FXAAShader
+	{
+		Shader shader;
+		uniform u_texture = -1;
+
+	}fxaaShader;
 
 	struct AddMipsShader
 	{

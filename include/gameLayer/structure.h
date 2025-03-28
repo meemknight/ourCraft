@@ -12,7 +12,7 @@ struct StructureData
 
 	Block &unsafeGet(int x, int y, int z)
 	{
-		assert(x >= 0 && y >= 0 && z >= 0 && x < sizeNorRotated.x && y < sizeNorRotated.y && z < sizeNorRotated.z);
+		assert(x >= 0 && y >= 0 && z >= 0 && x < sizeNotRotated.x && y < sizeNotRotated.y && z < sizeNotRotated.z);
 
 		return ((Block *)(this + 1))[y + z * sizeNotRotated.y + x * sizeNotRotated.y* sizeNotRotated.z];
 	}

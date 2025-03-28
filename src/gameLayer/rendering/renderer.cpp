@@ -2264,6 +2264,18 @@ void Renderer::reloadShaders()
 	}
 #pragma endregion
 
+#pragma region fxaa
+	{
+		fxaaShader.shader.clear();
+		fxaaShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
+			RESOURCES_PATH "shaders/postProcess/fxaa.frag");
+
+		GET_UNIFORM2(fxaaShader, u_texture);
+
+
+	}
+#pragma endregion
+
 
 #pragma region zpass
 	{
@@ -2740,7 +2752,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	}
 
 	
-
 #pragma region frustum culling and sorting
 
 	//chunk vector copy has only valid non culled chunks!
@@ -3963,7 +3974,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	};
 
 	GLuint currentTexture = 0;
-
+	FBO *secondaryFBO = 0;
 
 	//bloom
 	if(getShadingSettings().bloom && getShadingSettings().bloomMultiplier > 0)
@@ -4025,7 +4036,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glBindFramebuffer(GL_FRAMEBUFFER, fboCoppy.fbo);
 		currentTexture = fboCoppy.color;
-
+		secondaryFBO = &fboMain;
 
 		warpShader.shader.bind();
 
@@ -4053,9 +4064,10 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	else
 	{
 		currentTexture = fboMain.color;
+		secondaryFBO = &fboCoppy;
 		//copyToMainFbo();
 	}
-
+	fboMain.copyDepthToMainFbo(fboMain.size.x, fboMain.size.y);
 
 	//tone mapping
 	{
@@ -4067,7 +4079,14 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glDisable(GL_BLEND);
 		glDisable(GL_DEPTH_TEST);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		if (fxaa)
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER, secondaryFBO->fbo);
+		}
+		else
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
 
 
 		applyToneMapper.shader.bind();
@@ -4093,14 +4112,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		glUniform3f(applyToneMapper.u_lift, lift.x, lift.y, lift.z);
 		glUniform3f(applyToneMapper.u_gain, gain.x, gain.y, gain.z);
-
 			
-			
-			
-			
-
-
-
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 		copyToMainFboOnlyLastFrameStuff();
@@ -4109,7 +4121,26 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	}
 
-	fboMain.copyDepthToMainFbo(fboMain.size.x, fboMain.size.y);
+	//fxaa
+	if(fxaa)
+	{
+		glBindVertexArray(vaoQuad);
+		
+		glDisable(GL_BLEND);
+		glDisable(GL_DEPTH_TEST);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	
+		fxaaShader.shader.bind();
+	
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, secondaryFBO->color);
+		glUniform1i(fxaaShader.u_texture, 0);
+	
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	}
+
+	//secondaryFBO->copyDepthAndColorToMainFbo(fboMain.size.x, fboMain.size.y);
+
 
 #pragma endregion
 
@@ -6067,6 +6098,11 @@ void Renderer::FBO::copyDepthToMainFbo(int w, int h)
 	);
 }
 
+void Renderer::FBO::copyDepthAndColorToMainFbo(int w, int h)
+{
+	writeAllToOtherFbo(0, w, h);
+}
+
 void Renderer::FBO::copyDepthFromOtherFBO(GLuint other, int w, int h)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -6266,3 +6302,4 @@ float AdaptiveExposure::getLuminosityOrDefaultValueIfDisabeled()
 {
 	return currentLuminosity;
 }
+
