@@ -66,7 +66,7 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 
 	basicEnemyBehaviour.update(this, deltaTime, chunkGetter, serverChunkStorer, rng, yourEID, othersDeleted,
-		pathFindingSurvival, playersPositionSurvival, getPosition(), settings);
+		pathFindingSurvival, playersPositionSurvival, getPosition(), allClients, settings);
 
 
 	/*
@@ -479,5 +479,23 @@ bool GoblinServer::update(float deltaTime, decltype(chunkGetterSignature) *chunk
 
 
 	return true;
+}
+
+WeaponStats GoblinServer::getWeaponStats()
+{
+	WeaponStats weaponStats;
+
+	//basic goblin
+	weaponStats.damage = 20;
+	weaponStats.critDamage = 30;
+	weaponStats.surprizeDamage = 30;
+	weaponStats.critChance = 0.1;
+	weaponStats.speed = 1;
+	weaponStats.armourPenetration = 1;
+	weaponStats.accuracy = 0.8; //accuracy is used for enemies to determine how corectly they hit
+	weaponStats.range = 2.5;
+	weaponStats.knockBack = 3;
+
+	return weaponStats;
 }
 

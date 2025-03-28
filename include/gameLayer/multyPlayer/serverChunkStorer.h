@@ -12,22 +12,6 @@
 #include <optional>
 
 
-//https://www.geeksforgeeks.org/how-to-create-an-unordered_map-of-user-defined-class-in-cpp/
-struct Ivec2Hash
-{
-	size_t operator()(const glm::ivec2 &in) const
-	{
-		int x = in.x;
-		int z = in.y;
-
-		size_t ret = 0;
-		ret += x;
-		ret += (z < 32);
-
-		return ret;
-	}
-};
-
 struct BlockInChunkPos
 {
 	BlockInChunkPos() {};

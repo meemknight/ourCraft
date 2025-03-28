@@ -14,6 +14,7 @@
 #include <gameplay/effects.h>
 #include <rendering/model.h>
 #include <easing.h>
+#include <gameplay/weaponStats.h>
 
 struct Client;
 
@@ -210,12 +211,25 @@ template <typename T>
 constexpr bool hasSkinBindlessTexture<T, std::void_t<decltype(std::declval<T>().skinBindlessTexture)>> = true;
 
 
-template <typename T, typename = void>
-constexpr bool hasLife = false;
-
-template <typename T>
-constexpr bool hasLife<T, std::void_t<decltype(std::declval<T>().life)>> = true;
-
+#pragma region has life
+	// Check if a type has a member named `life`
+	template <typename T, typename = void>
+	struct HasLifeMember: std::false_type {};
+	
+	template <typename T>
+	struct HasLifeMember<T, std::void_t<decltype(std::declval<T>().life)>>: std::true_type {};
+	
+	// Check if a type has a member named `newLife`
+	template <typename T, typename = void>
+	struct HasNewLifeMember: std::false_type {};
+	
+	template <typename T>
+	struct HasNewLifeMember<T, std::void_t<decltype(std::declval<T>().newLife)>>: std::true_type {};
+	
+	// Combine both checks: true if either `life` or `newLife` exists
+	template <typename T>
+	constexpr bool hasLife = std::disjunction_v<HasLifeMember<T>, HasNewLifeMember<T>>;
+#pragma endregion
 
 
 
@@ -682,9 +696,12 @@ struct ServerEntity
 
 	glm::dvec3 &getPosition()
 	{
+		//todo assert 0 !
 		if constexpr (hasPositionBasedID<T>)
 		{
-			return glm::dvec3{};
+			thread_local static glm::dvec3 stub;
+			stub = {};
+			return stub;
 		}
 		else
 		{
@@ -756,7 +773,9 @@ struct ClientEntity
 		}
 		else
 		{
-			return glm::dvec3{};
+			thread_local static glm::dvec3 stub;
+			stub = {};
+			return stub;
 		}
 	}
 
@@ -1298,3 +1317,4 @@ struct ServerChunkStorer;
 
 void doCollisionWithOthers(glm::dvec3 &positiom, glm::vec3 colider, 
 	MotionState &forces, ServerChunkStorer &serverChunkStorer, std::uint64_t &yourEID);
+

@@ -7,7 +7,7 @@
 #include <repeat.h>
 #include <gameplay/blocks/blocksWithData.h>
 #include <algorithm>
-
+#include <multyPlayer/doHittingThings.h>
 
 template<class T>
 void genericCheckEntitiesForCollisions(T &container, std::vector<ColidableEntry> &ret, glm::dvec3 position,
@@ -2334,82 +2334,6 @@ bool ServerChunkStorer::removeEntity(WorldSaver &worldSaver, std::uint64_t eid)
 	return 0;
 }
 
-
-//this is where we compute all hitting things!
-template<class T>
-void doHittingThings(T &e, glm::vec3 dir, glm::dvec3 playerPosition, 
-	Item &weapon, std::uint64_t &wasKilled, std::minstd_rand &rng, std::uint64_t currentId
-	, float hitCorectness, float critChanceBonus)
-{
-
-	if constexpr (hasCanBeAttacked<decltype(e.entity)>
-		&& hasLife<decltype(e.entity)>)
-	{
-		Life *life = 0;
-		Armour armour = {};
-
-	#pragma region get stuff
-		//the players are stored differently
-		if constexpr (std::is_same_v<T, PlayerServer>)
-		{
-			life = &e.newLife;
-			armour = e.getArmour();
-		}
-		else
-		{
-			life = &e.entity.life;
-			armour = e.entity.getArmour();
-		}
-	#pragma endregion
-
-		WeaponStats stats = weapon.getWeaponStats();
-
-		int damage = calculateDamage(armour, stats, rng,
-			hitCorectness, critChanceBonus, e.isUnaware());
-
-		//std::cout << "Damage: " << damage << "\n";
-
-		if (damage >= life->life)
-		{
-			wasKilled = currentId;
-			life->life = 0;
-		}
-		else
-		{
-			life->life -= damage;
-		}
-
-		glm::vec3 hitDir = dir;
-		hitDir += glm::vec3(0, 0.22, 0);
-		{
-			float l = glm::length(hitDir);
-			if (l == 0) { hitDir = {0,-1,0}; } else { hitDir /= l; }
-		}
-		
-		float knockBack = stats.knockBack;
-
-		//todo add knock back resistance
-		//std::cout << "Attacked!\n";
-		//std::cout << life->life << "\n";
-		//std::cout << &life->life << "\n";
-
-		knockBack = std::max(knockBack, 0.f);
-		e.applyHitForce(hitDir * knockBack);
-
-		auto entityPos = e.getPosition();
-		glm::dvec3 directionToPlayer = playerPosition - entityPos;
-		double l = glm::length(directionToPlayer);
-		if (l) { directionToPlayer /= l; }
-
-		e.signalHit(directionToPlayer);
-	}
-	else
-	{
-		return;
-	}
-
-}
-
 template<class T>
 bool genericHitEntityByPlayer(T &container, std::uint64_t eid, glm::vec3 dir,
 	glm::dvec3 playerPosition, Item &weapon, std::uint64_t &wasKilled, std::minstd_rand &rng
@@ -2423,12 +2347,12 @@ bool genericHitEntityByPlayer(T &container, std::uint64_t eid, glm::vec3 dir,
 
 		if constexpr (std::is_pointer_v<decltype(found->second)>)
 		{
-			doHittingThings(*found->second, dir, playerPosition, weapon, wasKilled, rng, 
+			doHittingThings(*found->second, dir, playerPosition, weapon.getWeaponStats(), wasKilled, rng,
 				eid, hitCorectness, critChanceBonus);
 		}
 		else
 		{
-			doHittingThings(found->second, dir, playerPosition, weapon, wasKilled, rng,
+			doHittingThings(found->second, dir, playerPosition, weapon.getWeaponStats(), wasKilled, rng,
 				eid, hitCorectness, critChanceBonus);
 		}
 

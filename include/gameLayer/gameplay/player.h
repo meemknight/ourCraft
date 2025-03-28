@@ -164,4 +164,8 @@ struct PlayerServer: public ServerEntity<Player>
 
 	float calculateHealingDelayTime();
 	float calculateHealingRegenTime();
+
+	bool isUnaware() { return false; }
+
+	void signalHit(glm::vec3 d) {};
 };

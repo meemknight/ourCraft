@@ -15,7 +15,7 @@ struct Goblin: public PhysicalEntity, public CanPushOthers
 
 	glm::vec3 getMaxColliderSize();
 
-	Life life{200};
+	Life life{100};
 
 	Armour getArmour() { return {1}; };
 };
@@ -48,5 +48,6 @@ struct GoblinServer: public ServerEntity<Goblin>
 
 	void signalHit(glm::vec3 direction) { basicEnemyBehaviour.signalHit(direction, this); }
 
+	WeaponStats getWeaponStats();
 };
 

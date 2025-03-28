@@ -1,10 +1,14 @@
 #pragma once
+
 #include <gameplay/entity.h>
 #include <gameplay/life.h>
 #include <random>
 #include <gameplay/ai.h>
 #include <unordered_map>
 #include <unordered_set>
+#include <multyPlayer/doHittingThings.h>
+#include <multyPlayer/client.h>
+
 
 struct BasicEnemyBehaviourOtherSettings
 {
@@ -25,6 +29,7 @@ struct BasicEnemyBehaviour
 	float keepJumpingTimer = 0;
 	std::uint64_t playerLockedOn = 0;
 	float worriedTimer = 0;
+	float hitTimer = 0; //when this reaches 0 the enemy can attack again once
 	
 	enum states
 	{
@@ -69,6 +74,8 @@ struct BasicEnemyBehaviour
 	template<typename BaseEntity>
 	void signalHit(glm::vec3 direction, BaseEntity *baseEntity)
 	{
+		hitTimer += 0.5;
+
 		if (currentState != stateTargetedPlayer)
 		{
 			worriedTimer = 60;
@@ -103,14 +110,18 @@ struct BasicEnemyBehaviour
 		std::unordered_set<std::uint64_t> &othersDeleted,
 		std::unordered_map<std::uint64_t, std::unordered_map<glm::ivec3, PathFindingNode>> &pathFindingSurvival,
 		std::unordered_map<std::uint64_t, glm::dvec3> &playersPositionSurvival, const glm::dvec3 currentPosition,
+		std::unordered_map < std::uint64_t, Client *> &allClients,
 		BasicEnemyBehaviourOtherSettings otherSettings)
 	{
 
 		worriedTimer -= deltaTime;
 		if (worriedTimer < 0) { worriedTimer = 0; }
 
+		hitTimer -= deltaTime;
+		if (hitTimer < 0) { hitTimer = 0; }
+
 		glm::vec3 realLookDirection = baseEntity->entity.getLookDirection();
-		
+
 		auto changeStateStaying = [&]()
 		{
 			stateStayingData = {};
@@ -178,10 +189,10 @@ struct BasicEnemyBehaviour
 				for (auto &p : playersPositionSurvival) { searches.push_back(p.first); }
 				std::shuffle(searches.begin(), searches.end(), rng);
 
-				for (auto playerID :searches)
+				for (auto playerID : searches)
 				{
 					auto positionPlayer = playersPositionSurvival[playerID];
-					
+
 					float distance = glm::distance(positionPlayer, currentPosition);
 					if (distance <= otherSettings.searchDistance)
 					{
@@ -222,10 +233,10 @@ struct BasicEnemyBehaviour
 							//std::cout << "vectorToPlayer: " << vectorToPlayer.x << " " << vectorToPlayer.y << " " << vectorToPlayer.z << "\n";
 							//std::cout << "lookDirection: " << lookDirection.x << " " << lookDirection.y << " " << lookDirection.z << "\n";
 							viewFactor = pow(viewFactor, 4.f);
-							
+
 							//if the enemy looks at least slightly towards the player we add the view factor
 							if (viewFactor > 0.1)
-							{ 
+							{
 								viewFactor += otherSettings.sightBonus;
 								if (worriedTimer) { viewFactor += 0.2; }
 							}
@@ -244,7 +255,7 @@ struct BasicEnemyBehaviour
 							//}
 
 							//finalPercentage = lerp(std::max(percentage, viewFactor),  percentage * viewFactor, 0.5f);
-							finalPercentage = viewFactor - (distancePercentage/3.f); //if you are far it will have a contribution
+							finalPercentage = viewFactor - (distancePercentage / 3.f); //if you are far it will have a contribution
 
 							//boost the chance of being seen if you are close and the enemy looks at you directly
 							if (viewFactor > 0.5 && percentage > 0.5)
@@ -272,18 +283,18 @@ struct BasicEnemyBehaviour
 										}
 									}
 								}
-								
+
 							}
 
 
-							
+
 
 							//std::cout << "Dist perc: " << percentage << "  , view Perc: " << viewFactor <<  "  ,Final Percentage: " << finalPercentage << "\n";
 
 							//if(0)
 							//we have to do this because we check this probability 20 tiems per seccond
 							float probabilityAdjusted = 1.f - std::pow(1.f - finalPercentage, 1 / 20.f);
-							float probabilityAdjustedHear = 1.f - std::pow(1.f - percentage, 1/20.f);
+							float probabilityAdjustedHear = 1.f - std::pow(1.f - percentage, 1 / 20.f);
 
 							if (probabilityAdjustedHear >= 0.99999 || getRandomChance(rng, probabilityAdjustedHear))
 							{
@@ -344,7 +355,7 @@ struct BasicEnemyBehaviour
 				{
 					baseEntity->wantToLookDirection /= l;
 				}
-				
+
 				//lookAtPosition(found->second, baseEntity->entity.lookDirectionAnimation,
 				//	currentPosition, baseEntity->entity.bodyOrientation,
 				//	glm::radians(65.f));
@@ -373,7 +384,7 @@ struct BasicEnemyBehaviour
 			//		baseEntity->entity.bodyOrientation,
 			//		glm::radians(65.f));
 			//}
-	
+
 		};
 
 		auto changeRandomWalkDirectionIfNeeded = [&]()
@@ -421,7 +432,7 @@ struct BasicEnemyBehaviour
 
 				glm::vec3 viewVector = glm::vec3(direction.x, 0, direction.y);
 
-				baseEntity->wantToLookDirection = moveVectorRandomlyBiasKeepCenter(viewVector, 
+				baseEntity->wantToLookDirection = moveVectorRandomlyBiasKeepCenter(viewVector,
 					rng, glm::radians(50.f), glm::radians(20.f));
 
 
@@ -609,7 +620,7 @@ struct BasicEnemyBehaviour
 			//	direction = {0,0};
 			//}
 
-			if(!pathFindingSucceeded && closeToPlayer)
+			if (!pathFindingSucceeded && closeToPlayer)
 			{
 
 				auto path = pathFindingSurvival.find(playerLockedOn);
@@ -822,6 +833,74 @@ struct BasicEnemyBehaviour
 			};
 		};
 
+		auto tryHitPlayer = [&]()
+		{
+			//can hit
+			if (hitTimer <= 0 && playerLockedOn)
+			{
+
+
+				//check if the enemy is looking towards the player to attack
+
+				glm::vec3 vectorToPlayer = playerLockedOnPosition - currentPosition;
+
+				float length = glm::length(vectorToPlayer);
+
+				bool canAttack = false;
+
+				//if we are very close the enemy can attack anyway
+				if (length < 0.5)
+				{
+					canAttack = true;
+
+					if (length == 0)
+					{
+						vectorToPlayer = {0,0,1};
+					}
+					else
+					{
+						vectorToPlayer /= length;
+					}
+				}
+				else
+				{
+					vectorToPlayer /= length;
+					if (glm::dot(vectorToPlayer, realLookDirection) > 0.69)
+					{
+						canAttack = true;
+					}
+				}
+				
+				if (canAttack)
+				{
+					WeaponStats weaponStats = baseEntity->getWeaponStats();
+					if (weaponStats.range >= length)
+					{
+						//attack player
+
+						auto found = allClients.find(playerLockedOn);
+
+						if(found != allClients.end())
+						{
+							hitTimer = weaponStats.speed;
+							std::uint64_t wasKilled = 0;
+
+							std::cout << "Attack!" << length << " ";
+
+							doHittingThings(found->second->playerData, vectorToPlayer, currentPosition,
+								weaponStats, wasKilled, rng, found->first, 1, 0);
+
+
+						}
+
+
+					}
+				}
+
+
+			}
+		};
+
 		searchForPlayerLogicIfNeeded();
 		checkIfStillSeingPlayer();
 		lookAtTargetedPlayer();
@@ -894,6 +973,8 @@ struct BasicEnemyBehaviour
 				jumpIfNeeded();
 
 				applyMoveDirection();
+
+				tryHitPlayer();
 
 				//will remain worried after just fighting
 				worriedTimer = std::max(worriedTimer, 60.f);

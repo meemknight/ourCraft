@@ -6,9 +6,9 @@
 #include "packet.h"
 #include "createConnection.h"
 #include "gamePlayLogic.h"
-#include <gameplay/allentities.h>
 #include <unordered_set>
 #include "serverChunkStorer.h"
+#include <multyPlayer/client.h>
 
 bool startEnetListener(ENetHost *_server, const std::string &path);
 void closeEnetListener();
@@ -19,23 +19,7 @@ struct ServerTask
 	std::uint64_t cid;
 };
 
-struct Client
-{
-	ENetPeer *peer = {};
-	//phisics::Entity entityData = {};
-	//bool changed = 1;
-	//char clientName[56] = {};
-	RevisionNumber revisionNumber = 1;
 
-	PlayerServer playerData;
-
-	std::vector<unsigned char> skinData;
-	bool skinDataCompressed = false;
-
-	std::unordered_set<glm::ivec2, Ivec2Hash> loadedChunks;
-
-	std::unordered_set<unsigned int> chunksPacketPendingConfirmation;
-};
 
 struct EntityIdHolder
 {
@@ -80,4 +64,5 @@ bool checkIfPlayerShouldGetChunk(glm::ivec2 playerPos2D,
 std::uint64_t getEntityIdAndIncrement(WorldSaver &worldSaver, int entityType);
 
 std::uint64_t getCurrentEntityId(int entityType);
+
 
