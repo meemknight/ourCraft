@@ -2309,7 +2309,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			//	&programData.renderer.waterRefraction);
 			
 			ImGui::Checkbox("FXAA",
-				&programData.renderer.fxaa);
+				&getShadingSettings().FXAA);
 
 			if (ImGui::CollapsingHeader("Music ",
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))

@@ -48,6 +48,7 @@ struct ShadingSettings
 	int maxLights = 40;
 	int useLights = 1;
 	float lightsStrength = 1.f;
+	bool FXAA = 1;
 
 	glm::vec3 waterColor = (glm::vec3(6, 42, 52) / 255.f);
 	glm::vec3 underWaterColor = glm::vec3(0, 17, 25) / 255.f;

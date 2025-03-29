@@ -58,7 +58,6 @@ struct Renderer
 	int sunFlareQueryPos = 0;
 	QueryObject sunFlareQueries[3] = {};
 	float averageLuminosity = 0.5;
-	bool fxaa = true;
 
 	struct BlockGeometryIndex
 	{

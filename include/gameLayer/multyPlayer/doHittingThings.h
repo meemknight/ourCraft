@@ -65,7 +65,7 @@ void doHittingThings(T &e, glm::vec3 dir, glm::dvec3 attackerPosition,
 		//std::cout << &life->life << "\n";
 
 		knockBack = std::max(knockBack, 0.f);
-		e.applyHitForce(hitDir * knockBack * 2.f);
+		e.applyHitForce(hitDir * knockBack);
 
 		auto entityPos = e.getPosition();
 		glm::dvec3 directionToAttacker = attackerPosition - entityPos;

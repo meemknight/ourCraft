@@ -74,7 +74,8 @@ struct BasicEnemyBehaviour
 	template<typename BaseEntity>
 	void signalHit(glm::vec3 direction, BaseEntity *baseEntity)
 	{
-		hitTimer += 0.5;
+		hitTimer = std::max(hitTimer, 0.5f);
+
 
 		if (currentState != stateTargetedPlayer)
 		{
@@ -119,6 +120,11 @@ struct BasicEnemyBehaviour
 
 		hitTimer -= deltaTime;
 		if (hitTimer < 0) { hitTimer = 0; }
+
+		if (!playerLockedOn)
+		{
+			hitTimer = std::max(hitTimer, 0.5f);
+		}
 
 		glm::vec3 realLookDirection = baseEntity->entity.getLookDirection();
 

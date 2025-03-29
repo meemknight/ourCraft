@@ -237,6 +237,10 @@ good performance.\n-Fancy: significant performance cost but looks very nice.");
 	);
 
 
+	programData.ui.menuRenderer.ToggleButton("FXAA", Colors_White, &getShadingSettings().FXAA, programData.ui.buttonTexture,
+		Colors_Gray);
+
+
 }
 
 glm::ivec4 shrinkPercentage(glm::ivec4 dimensions, glm::vec2 p)
@@ -767,6 +771,8 @@ void saveShadingSettings()
 	SET_VEC3(toneMapLift);
 	SET_VEC3(toneMapGain);
 
+	data.setBool("FXAA", shadingSettings.FXAA);
+
 
 
 	sfs::safeSave(data, RESOURCES_PATH "../playerSettings/renderSettings", 0);
@@ -830,7 +836,7 @@ void loadShadingSettings()
 		if (dataSize == sizeof(shadingSettings.toneMapGain))
 			{ memcpy(&shadingSettings.toneMapGain[0], rawData, dataSize); }
 
-
+		data.getBool("FXAA", shadingSettings.FXAA);
 
 		GET_FLOAT(underwaterDarkenStrength);
 		GET_FLOAT(underwaterDarkenDistance);

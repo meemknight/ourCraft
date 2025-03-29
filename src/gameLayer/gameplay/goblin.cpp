@@ -493,7 +493,7 @@ WeaponStats GoblinServer::getWeaponStats()
 	weaponStats.speed = 1;
 	weaponStats.armourPenetration = 1;
 	weaponStats.accuracy = 0.8; //accuracy is used for enemies to determine how corectly they hit
-	weaponStats.range = 2.5;
+	weaponStats.range = 1.5;
 	weaponStats.knockBack = 3;
 
 	return weaponStats;

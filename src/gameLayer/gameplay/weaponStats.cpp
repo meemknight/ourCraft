@@ -14,7 +14,7 @@ void WeaponStats::normalize()
 	damage = glm::clamp(damage, 1.f, 999.f); // 1 -> 999;
 	accuracy = glm::clamp(accuracy, -10.f, 20.f); // -10 -> 20;
 	range = glm::clamp(range, 1.f, 6.f); // 1 -> 6
-	knockBack = glm::clamp(knockBack, 0.f, 20.f);
+	knockBack = glm::clamp(knockBack, 0.f, 30.f);
 	speed = glm::clamp(speed, -10.f, 20.f);
 	//comboFrequency = glm::clamp(comboFrequency, -10.f, 20.f);
 	armourPenetration = glm::clamp(armourPenetration, 0.f, 999.f);
@@ -24,7 +24,7 @@ void WeaponStats::normalize()
 
 float WeaponStats::getKnockBackNormalized()
 {
-	return glm::clamp(knockBack, 0.f, 20.f) / 20.f;
+	return glm::clamp(knockBack, 0.f, 30.f) / 30.f;
 }
 
 glm::vec2 WeaponStats

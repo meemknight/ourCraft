@@ -4079,7 +4079,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glDisable(GL_BLEND);
 		glDisable(GL_DEPTH_TEST);
 
-		if (fxaa)
+		if (getShadingSettings().FXAA)
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, secondaryFBO->fbo);
 		}
@@ -4122,7 +4122,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	}
 
 	//fxaa
-	if(fxaa)
+	if(getShadingSettings().FXAA)
 	{
 		glBindVertexArray(vaoQuad);
 		
