@@ -34,7 +34,7 @@
 #include <gameplay/mapEngine.h>
 #include <gameplay/battleUI.h>
 #include <gameplay/food.h>
-
+#include <cameraShaker.h>
 
 struct GameData
 {
@@ -86,6 +86,8 @@ struct GameData
 
 	bool insideInventoryMenu = 0;
 	int currentInventoryTab = 0;
+	bool justDamaged = 0;
+	float hitLensDirt = 0;
 
 	struct
 	{
@@ -131,6 +133,10 @@ struct GameData
 
 ThreadPool threadPoolForChunkBaking;
 
+float &getHitLensDirt()
+{
+	return gameData.hitLensDirt;
+}
 
 void loadCurrentSkin()
 {
@@ -249,12 +255,18 @@ bool initGameplay(ProgramData &programData, const char *c) //GAME STUFF!
 
 //todo: bug: use the same revision for inventory and block placement and also resend block pos or something
 
+void playSoundAndShakeForPlayerTakingDamage()
+{
+	AudioEngine::playHurtSound();
+	gameData.justDamaged = true;
+	gameData.hitLensDirt = 1;
+}
+
 void dealDamageToLocalPlayer(int damage)
 {
 	if (damage < 0) { return; }
 	if (damage == 0) { AudioEngine::playHurtSound(); return; }
 	damage = std::min(damage, MAXSHORT - 10);
-
 
 	auto &p = gameData.entityManager.localPlayer;
 
@@ -277,8 +289,7 @@ void dealDamageToLocalPlayer(int damage)
 			(char *)&packetData, sizeof(Packet_ClientDamageLocally),
 			true, channelChunksAndBlocks);
 
-		AudioEngine::playHurtSound();
-
+		playSoundAndShakeForPlayerTakingDamage();
 	}
 
 }
@@ -549,6 +560,29 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma region input
 
+
+	if (player.otherPlayerSettings.gameMode != OtherPlayerSettings::SURVIVAL)
+	{
+		gameData.hitLensDirt = 0;
+	}
+	else
+	{
+		gameData.hitLensDirt -= deltaTime * 1.2;
+
+		gameData.hitLensDirt = std::max(gameData.hitLensDirt, 0.f);
+
+		if (player.life.life / (float)player.life.maxLife < 0.25)
+		{
+			gameData.hitLensDirt = std::max(gameData.hitLensDirt, 0.2f);
+		}
+
+		if (player.life.life / (float)player.life.maxLife < 0.15)
+		{
+			gameData.hitLensDirt = std::max(gameData.hitLensDirt, 0.3f);
+		}
+	}
+
+
 	bool stopMainInput = gameData.escapePressed || gameData.killed || gameData.insideInventoryMenu ||
 		gameData.isInsideMapView || gameData.isInsideChat || gameData.interaction.blockInteractionType != 0;
 
@@ -593,6 +627,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	//inventory and menu stuff
 
+	gameData.c.fovRadians = glm::radians(70.f);
+
 	glm::vec3 movementForCameraShake = {};
 	if (!stopMainInput)
 	{
@@ -600,10 +636,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		if (platform::isKeyHeld(platform::Button::C))
 		{
 			gameData.c.fovRadians = glm::radians(30.f);
-		}
-		else
-		{
-			gameData.c.fovRadians = glm::radians(70.f);
 		}
 
 		//move
@@ -855,6 +887,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma region block collisions and entity updates!
 	{
+		auto playerPosLastFrame = player.entity.lastPosition;
 
 		auto chunkGetter = [](glm::ivec2 pos) -> ChunkData*
 		{
@@ -973,10 +1006,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		gameData.c.position = gameData.entityManager.localPlayer.entity.position
 			+ glm::dvec3(0,1.5,0);
 
+
 		gameData.entityManager.doAllUpdates(deltaTime, chunkGetter, gameData.serverTimer);
 
 
-		gameData.cameraShaker.updateCameraShake(deltaTime, movementForCameraShake, player.entity.position - player.entity.lastPosition, 0);
+		gameData.cameraShaker.updateCameraShake(deltaTime, movementForCameraShake, 
+			glm::vec3(player.entity.position - playerPosLastFrame) * deltaTime,
+			gameData.justDamaged);
 
 
 		gameData.cameraShaker.applyCameraShake(gameData.c);
@@ -2976,7 +3012,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	if (gameData.killed)
 	{
-		programData.ui.renderer2d.renderRectangle({0,0, w,h}, {0.9,0,0,0.5});
+		programData.ui.renderer2d.renderRectangle({0,0, w,h}, {0.1,0,0,0.6});
 	}
 
 	if (gameData.escapePressed)
@@ -3061,6 +3097,11 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 
 #pragma endregion
+
+
+	//reset stuff
+	gameData.justDamaged = false;
+
 
 	//updateviewdistance changeviewdistance updaterenderdistance
 	gameData.chunkSystem.changeRenderDistance(getShadingSettings().viewDistance * 2, true);

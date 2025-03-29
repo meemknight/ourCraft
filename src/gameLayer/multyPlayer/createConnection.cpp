@@ -14,6 +14,8 @@
 
 static ConnectionData clientData;
 
+void playSoundAndShakeForPlayerTakingDamage();
+
 //todo this will get removed, for some things at least
 void submitTaskClient(Task &t)
 {
@@ -761,7 +763,7 @@ void recieveDataClient(ENetEvent &event,
 
 			entityManager.localPlayer.life.sanitize();
 
-			AudioEngine::playHurtSound();
+			playSoundAndShakeForPlayerTakingDamage();
 		}
 		break;
 

@@ -1368,6 +1368,7 @@ unsigned int cubeEntityIndices[] = {
 8,   9, 10,  8, 10, 11, // Right
 };
 
+float &getHitLensDirt();
 
 void Renderer::recreateBlocksTexturesBuffer(BlocksLoader &blocksLoader)
 {
@@ -2223,6 +2224,7 @@ void Renderer::reloadShaders()
 		RESOURCES_PATH "shaders/postProcess/applyBloomData.frag");
 	applyBloomDataShader.shader.bind();
 	GET_UNIFORM2(applyBloomDataShader, u_waterDropsPower);
+	GET_UNIFORM2(applyBloomDataShader, u_hitIntensity);
 	GET_UNIFORM2(applyBloomDataShader, u_SSGR);
 	
 
@@ -3993,8 +3995,10 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, programData.lensDirtTexture.id);
 
+		//hit lens dirt hitlensdirt
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, programData.hitDirtTexture.id);
+		glUniform1f(applyBloomDataShader.u_hitIntensity, getHitLensDirt());
 
 
 		glActiveTexture(GL_TEXTURE3);

@@ -258,6 +258,7 @@ struct Renderer
 	{
 		Shader shader;
 		uniform u_waterDropsPower;
+		uniform u_hitIntensity;
 		uniform u_SSGR;
 	}applyBloomDataShader;
 
