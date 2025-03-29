@@ -604,7 +604,6 @@ void serverWorkerUpdate(
 			}
 
 
-
 			//TODO chunks shouldn't be nullptrs so why check them?
 			//	// so maybe just perma assert comment at the beginning
 

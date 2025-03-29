@@ -63,6 +63,15 @@ bool areStringsSameToLower(const char *a, const char *b)
 void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 {
 
+	if (!temporaryPlayerHandTexture.id)
+	{
+		temporaryPlayerHandTexture.loadFromFile(RESOURCES_PATH "skins/mage.png", true);
+		temporaryPlayerHandBindlessTexture = glGetTextureHandleARB(temporaryPlayerHandTexture.id);
+		glMakeTextureHandleResidentARB(temporaryPlayerHandBindlessTexture);
+	}
+
+
+
 	bool appendMode = texturesIds.empty();
 
 

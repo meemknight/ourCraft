@@ -4515,10 +4515,16 @@ void Renderer::renderEntities(
 			//handItemMatrix = glm::translate(glm::vec3{0,0,2});
 
 			PerEntityData data = {};
-			data.textureId0 = currentSkinBindlessTexture;
-			data.textureId1 = currentSkinBindlessTexture;
-			data.textureId2 = currentSkinBindlessTexture;
-			data.textureId3 = currentSkinBindlessTexture;
+			//data.textureId1 = currentSkinBindlessTexture;
+			//data.textureId0 = currentSkinBindlessTexture;
+			//data.textureId2 = currentSkinBindlessTexture;
+			//data.textureId3 = currentSkinBindlessTexture;
+
+			data.textureId0 = modelsManager.temporaryPlayerHandBindlessTexture;
+			data.textureId1 = modelsManager.temporaryPlayerHandBindlessTexture;
+			data.textureId2 = modelsManager.temporaryPlayerHandBindlessTexture;
+			data.textureId3 = modelsManager.temporaryPlayerHandBindlessTexture;
+
 
 			glm::dvec3 position = glm::dvec3(posInt) + glm::dvec3(posFloat);
 

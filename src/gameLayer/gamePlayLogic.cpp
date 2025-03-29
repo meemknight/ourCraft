@@ -49,6 +49,7 @@ struct GameData
 	SunShadow sunShadow;
 
 	Profiler gameplayFrameProfiler;
+	CameraShaker cameraShaker;
 
 	MapEngine mapEngine;
 	bool isInsideMapView = 0;
@@ -352,9 +353,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			from3DPointToBlock(gameData.c.position), gameData.chunkSystem.squareSize,
 			gameData.entityManager, gameData.undoQueue,
 			gameData.chunkSystem, gameData.lightSystem,
-			gameData.serverTimer, disconnect, 
+			gameData.serverTimer, disconnect,
 			gameData.currentBlockInteractionRevisionNumber, shouldExitBlockInteraction,
-			gameData.killed, respawned, gameData.chat, gameData.chatStayOnTimer, 
+			gameData.killed, respawned, gameData.chat, gameData.chatStayOnTimer,
 			gameData.interaction, gameData.playersConnectionData);
 
 		if (disconnect) { return 0; }
@@ -439,7 +440,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 						size_t _ = 0;
 						if (block.readFromBuffer(e.blockData.data(), e.blockData.size(), _))
 						{
-							
+
 							auto *c = gameData.chunkSystem.getChunkSafeFromBlockPos(e.blockPos.x, e.blockPos.z);
 
 							if (c)
@@ -576,21 +577,23 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		gameData.showUI = !gameData.showUI;
 	}
 
-	if(!stopMainInput || gameData.insideInventoryMenu)
-	if (platform::isKeyReleased(platform::Button::E))
-	{
-		if (gameData.insideInventoryMenu)
+	if (!stopMainInput || gameData.insideInventoryMenu)
+		if (platform::isKeyReleased(platform::Button::E))
 		{
-			exitInventoryMenu();
+			if (gameData.insideInventoryMenu)
+			{
+				exitInventoryMenu();
+			}
+			else
+			{
+				gameData.insideInventoryMenu = true;
+				gameData.interaction = {};
+			}
 		}
-		else
-		{
-			gameData.insideInventoryMenu = true;
-			gameData.interaction = {};
-		}
-	}
 
 	//inventory and menu stuff
+
+	glm::vec3 movementForCameraShake = {};
 	if (!stopMainInput)
 	{
 
@@ -761,6 +764,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				isPlayerMovingSpeed = 1;
 			}
 
+			movementForCameraShake = moveDir;
 		}
 
 
@@ -851,7 +855,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 #pragma region block collisions and entity updates!
 	{
-			
+
 		auto chunkGetter = [](glm::ivec2 pos) -> ChunkData*
 		{
 			auto c = gameData.chunkSystem.getChunkSafeFromChunkPos(pos.x, pos.y);
@@ -864,8 +868,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				return nullptr;
 			}
 		};
-
-
 
 		
 		if (gameData.killed)
@@ -973,6 +975,11 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 		gameData.entityManager.doAllUpdates(deltaTime, chunkGetter, gameData.serverTimer);
 
+
+		gameData.cameraShaker.updateCameraShake(deltaTime, movementForCameraShake, player.entity.position - player.entity.lastPosition, 0);
+
+
+		gameData.cameraShaker.applyCameraShake(gameData.c);
 
 
 	}

@@ -144,6 +144,8 @@ struct ModelsManager
 
 	GLuint texturesSSBO = 0;
 
+	gl2d::Texture temporaryPlayerHandTexture = {};
+	GLuint64 temporaryPlayerHandBindlessTexture = 0;
 
 	void setupSSBO();
 };
