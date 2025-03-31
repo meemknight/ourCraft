@@ -4394,7 +4394,7 @@ void Renderer::renderEntities(
 #pragma region other entities setup shader
 	
 	entityRenderer.basicEntityShader.shader.bind();
-
+	
 	glUniformMatrix4fv(entityRenderer.basicEntityShader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
 	glUniformMatrix4fv(entityRenderer.basicEntityShader.u_view, 1, GL_FALSE, &viewMatrix[0][0]);
 	glUniformMatrix4fv(entityRenderer.basicEntityShader.u_modelMatrix, 1, GL_FALSE,

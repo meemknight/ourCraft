@@ -1,0 +1,94 @@
+
+Minerals:
+
+Copper
+Lead
+Iron
+Silver
+Gold
+
+
+Tools:
+
+Axe
+PickAxe
+
+
+Armour:
+
+HeadPiece
+Chest Plate
+LeggingsPants
+
+Armour Types ->
+Leather/Cloth, Lead, Iron, Silver, Gold
+Goblin Armour
+
+
+
+Weapons:
+Wooden Bow
+Goblin Bow
+Iron Silver Gold Bow
+Goblin Dagger
+Goblin Sword
+
+
+Wooden Arrow
+Fire Arrow
+Goblin Arrow
+Bone Arrow
+
+Other Items:
+
+Goblin Spawn egg
+Skeleton Spawn egg
+Wooden Stick
+Cloth piece
+Empty bottle
+Spike
+Paint brush -> recolor for all colors
+Soap
+Iron + Silver keys
+Gun Powder
+
+Fruits:
+Green - Apple
+Pinkish - strawberry
+Yellow - Pineapple
+Orange - Peach
+Brown - Coconut
+Red - chilly pepper
+Blue - Blueberry
+Purple - Grape
+Lime - Lime :)
+Black(dark purplish) - black berry
+Violet/Deep red - cherry
+Chicken Wing
+Bread
+
+Carton of juice box one for every fruit
+
+3 flower / plants / potion herbs designs (that will also be used as flower blocks)
+
+
+
+
+Equipement Items:
+
+Vitamine boxes
+Digestive pills
+Bandage
+Fruit peeler
+Rock
+Cool rock
+Cat pow (stealth sound +) / cat fang
+
+
+
+
+
+
+
+
+
