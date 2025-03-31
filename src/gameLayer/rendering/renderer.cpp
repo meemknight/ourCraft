@@ -4619,7 +4619,7 @@ void Renderer::renderEntities(
 
 			e.second.setEntityMatrixFull(skinningMatrix.data() +
 				(skinningMatrix.size() - model.transforms.size()), model, 
-				deltaTime, rng);
+				deltaTime, rng, rotMatrix);
 
 			if (isPlayers)
 			{

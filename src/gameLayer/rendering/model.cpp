@@ -16,6 +16,8 @@
 #include <map>
 #include <set>
 #include <blocks.h>
+#include <unordered_map>
+#include <magic_enum.hpp>
 
 glm::mat4 aiToGlm(const aiMatrix4x4 &matrix)
 {
@@ -315,6 +317,122 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 					boneIndex++;
 				}
 			}
+
+
+			//animations
+			int animationsCount = scene->mNumAnimations;
+
+			for (int animationTypes = 0; animationTypes < Animator::ANIMATIONS_COUNT; animationTypes++)
+			{
+				model.animationsIndex[animationTypes] = -1;
+			}
+
+			for (int i = 0; i < animationsCount; i++)
+			{
+				auto animation = scene->mAnimations[i];
+					
+				bool good = false;
+
+				for (int animationTypes = 1; animationTypes < Animator::ANIMATIONS_COUNT; animationTypes++)
+				{
+
+					auto str = std::string(magic_enum::enum_name((Animator::AnimationType)animationTypes));
+
+					if (animation->mName.C_Str() == str)
+					{
+						good = true;
+						model.animationsIndex[animationTypes] = model.animations.size();
+						break;
+					}
+
+				}
+
+				if (!good)
+				{
+					continue;
+				}
+
+				//if (strstr(animation->mName.C_Str(), "running_loop") == nullptr)
+				//{
+				//	continue;
+				//}
+
+				Animation anim;
+				anim.animationLength = static_cast<float>(animation->mDuration) / 1000.f;
+
+				int nodeCount = scene->mRootNode->mNumChildren;
+				anim.kayFrames.resize(nodeCount); // Ensure each node has a slot
+
+				// Map node names to their indices in the model
+				std::unordered_map<std::string, int> nodeIndexMap;
+				for (int j = 0; j < nodeCount; j++)
+				{
+					nodeIndexMap[scene->mRootNode->mChildren[j]->mName.C_Str()] = j;
+				}
+
+				// Process each animation channel
+				for (unsigned int channelIndex = 0; channelIndex < animation->mNumChannels; channelIndex++)
+				{
+					aiNodeAnim *nodeAnim = animation->mChannels[channelIndex];
+					std::string nodeName = nodeAnim->mNodeName.C_Str();
+
+					if (nodeIndexMap.find(nodeName) == nodeIndexMap.end())
+					{
+						continue; // Skip if the node doesn't exist in our order
+					}
+
+					int nodeIndex = nodeIndexMap[nodeName];
+
+					// Read keyframes and store them
+					for (unsigned int k = 0; k < nodeAnim->mNumPositionKeys; k++)
+					{
+						KeyFrame keyframe;
+						keyframe.timestamp = static_cast<float>(nodeAnim->mPositionKeys[k].mTime) / 1000.f;
+
+						// Position
+						keyframe.pos = glm::vec3(nodeAnim->mPositionKeys[k].mValue.x,
+							nodeAnim->mPositionKeys[k].mValue.y,
+							nodeAnim->mPositionKeys[k].mValue.z);
+
+						// Rotation
+						keyframe.rotation = glm::quat(nodeAnim->mRotationKeys[k].mValue.w,
+							nodeAnim->mRotationKeys[k].mValue.x,
+							nodeAnim->mRotationKeys[k].mValue.y,
+							nodeAnim->mRotationKeys[k].mValue.z);
+
+						// Scale
+						keyframe.scale = glm::vec3(nodeAnim->mScalingKeys[k].mValue.x,
+							nodeAnim->mScalingKeys[k].mValue.y,
+							nodeAnim->mScalingKeys[k].mValue.z);
+
+						anim.kayFrames[nodeIndex].push_back(keyframe);
+					}
+				}
+
+				// Fill missing keyframes for nodes that weren't animated
+				for (int j = 0; j < nodeCount; j++)
+				{
+					if (anim.kayFrames[j].empty())
+					{
+						KeyFrame defaultKeyframe;
+						defaultKeyframe.timestamp = 0.0f;
+
+						aiVector3D scale, position;
+						aiQuaternion rotation;
+						scene->mRootNode->mChildren[j]->mTransformation.Decompose(scale, rotation, position);
+
+						defaultKeyframe.pos = glm::vec3(position.x, position.y, position.z);
+						defaultKeyframe.rotation = glm::quat(rotation.w, rotation.x, rotation.y, rotation.z);
+						defaultKeyframe.scale = glm::vec3(scale.x, scale.y, scale.z);
+
+						anim.kayFrames[j].push_back(defaultKeyframe);
+					}
+				}
+
+
+				model.animations.push_back(std::move(anim));
+			}
+
 
 
 			model.vertexCount = indices.size();

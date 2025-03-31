@@ -546,6 +546,14 @@ constexpr bool hasCanHaveEffects <T, std::void_t<decltype(T::canHaveEffects)>> =
 
 
 
+template <typename T, typename = void>
+constexpr bool hasAnimator = false;
+template <typename T>
+constexpr bool hasAnimator <T, std::void_t<decltype(T::animator)>> = true;
+
+
+
+
 template<bool B, typename T>
 using ConditionalMember = typename std::conditional<B, T, unsigned char>::type;
 
@@ -731,6 +739,7 @@ struct ServerEntity
 	glm::ivec2 lastChunkPositionWhenAnUpdateWasSent = {};
 };
 
+
 template <class T, class BASE_CLIENT>
 struct ClientEntity
 {
@@ -751,9 +760,11 @@ struct ClientEntity
 	ConditionalMember<hasCanBeKilled<T>, bool> wasKilled = 0;
 	ConditionalMember<hasCanBeKilled<T>, float> wasKilledTimer = 0;
 
+	Animator animator;
 
 	glm::dvec3 getRubberBandPosition()
 	{
+
 		if constexpr (!hasPositionBasedID<T>)
 		{
 			return rubberBand.direction + entityBuffered.position;
@@ -816,9 +827,62 @@ struct ClientEntity
 	}
 
 	void setEntityMatrixFull(glm::mat4 *skinningMatrix, Model &model, float deltaTime,
-		std::minstd_rand &rng)
+		std::minstd_rand &rng, glm::mat4 rotMatrix)
 	{
 
+		animator.update(deltaTime * 2);
+		//animator.setAnimation(Animator::running);
+
+		int animationIndex = model.animationsIndex[animator.currentAnimation];
+		if (animationIndex >= 0)
+		{
+			auto &animation = model.animations[animationIndex];
+
+			//todo
+			if (animator.animationTime >= animation.animationLength)
+			{
+				animator.animationTime = 0;
+			}
+
+			//std::cout << animator.animationTime << "\n";
+
+			size_t animationBonesSize = animation.kayFrames.size();
+			if (animationBonesSize)
+			{
+				assert(animationBonesSize == model.transforms.size());
+
+				for (int i = 0; i < animationBonesSize; i++)
+				{
+
+					auto &keyFrames = animation.kayFrames[i];
+
+					//todo only one element case!
+					for (int k = 0; k < keyFrames.size() - 1; k++)
+					{
+
+						if ((keyFrames[k].timestamp <= animator.animationTime &&
+							keyFrames[k + 1].timestamp >= animator.animationTime
+							)
+							|| k == keyFrames.size() - 2)
+						{
+							auto rez = interpolateKeyFrames(keyFrames[k], keyFrames[k + 1], animator.animationTime);
+							auto matrix = rez.getMatrix();
+
+							//skinningMatrix[i] = skinningMatrix[i] * matrix;
+							skinningMatrix[i] = rotMatrix * matrix;
+							break;
+						}
+
+					}
+
+
+				}
+
+
+			}
+		}
+
+		
 
 
 		//if(0)
@@ -1211,6 +1275,23 @@ struct ClientEntity
 			}
 
 
+		}
+
+		//animations
+		if constexpr (hasForces<T>)
+		{
+			MotionState &forces = entityBuffered.forces;
+
+			if (!forces.colidesBottom())
+			{
+				animator.setAnimation(Animator::falling);
+			}
+			else
+			{
+				animator.setAnimation(Animator::running);
+			}
+
+			animator.setAnimation(Animator::running);
 		}
 
 		if (rubberBand.initialSize)

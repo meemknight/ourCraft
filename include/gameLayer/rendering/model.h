@@ -4,6 +4,76 @@
 #include <gl2d/gl2d.h>
 
 
+struct KeyFrame
+{
+	float timestamp = 0;
+
+	glm::vec3 pos = {};
+	glm::vec3 scale = {1,1,1};
+	glm::quat rotation = {0,0,0,1};
+
+	glm::mat4 getMatrix() const
+	{
+		glm::mat4 translation = glm::translate(glm::mat4(1.0f), pos);
+		glm::mat4 rotationMat = glm::mat4_cast(rotation);
+		//glm::mat4 scaleMat = glm::scale(glm::mat4(1.0f), scale);
+		glm::mat4 scaleMat = glm::scale(glm::mat4(1.0f), glm::vec3(1.f));
+		return translation * rotationMat * scaleMat;
+	}
+
+};
+
+inline KeyFrame interpolateKeyFrames(const KeyFrame &kf1, const KeyFrame &kf2, float time)
+{
+	if (kf1.timestamp == kf2.timestamp) return kf1; // No blending needed
+
+	float t = (time - kf1.timestamp) / (kf2.timestamp - kf1.timestamp);
+	t = glm::clamp(t, 0.0f, 1.0f);
+
+	KeyFrame result;
+	result.timestamp = time;
+	result.pos = glm::mix(kf1.pos, kf2.pos, t);
+	result.scale = glm::mix(kf1.scale, kf2.scale, t);
+	result.rotation = glm::slerp(kf1.rotation, kf2.rotation, t);
+
+	return result;
+}
+
+
+struct Animation
+{
+	float animationLength = 0;
+	std::vector<std::vector<KeyFrame>> kayFrames;
+};
+
+
+struct Animator
+{
+
+	enum AnimationType
+	{
+		none,
+		idle,
+		running,
+		falling,
+
+
+		ANIMATIONS_COUNT
+
+	};
+
+	int currentAnimation = 0;
+
+	void setAnimation(int type)
+	{
+		currentAnimation = type;
+	};
+
+	float animationTime = 0;
+
+	void update(float deltaTime) { animationTime += deltaTime; };
+};
+
 
 
 struct Model
@@ -32,7 +102,9 @@ struct Model
 	std::int8_t rArmArmourIndex = -1;
 	std::int8_t lArmArmourIndex = -1;
 
-
+	std::vector<Animation> animations;
+	std::int8_t animationsIndex[Animator::ANIMATIONS_COUNT] = {-1};
+		
 
 	void cleanup();
 };
