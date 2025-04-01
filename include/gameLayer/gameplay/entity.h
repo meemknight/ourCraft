@@ -1291,7 +1291,7 @@ struct ClientEntity
 				animator.setAnimation(Animator::running);
 			}
 
-			animator.setAnimation(Animator::running);
+			animator.setAnimation(Animator::falling);
 		}
 
 		if (rubberBand.initialSize)

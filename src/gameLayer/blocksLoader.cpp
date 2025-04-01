@@ -1499,10 +1499,11 @@ void BlocksLoader::loadAllTextures(std::string filePath, bool reportErrors)
 
 		const unsigned char *decodedImage = stbi_load_from_memory(fileData, (int)fileSize, &width, &height, &channels, 4);
 
-		if (width < 32 || height < 32)
+		int PADDING = 28;
+		if (width < PADDING || height < PADDING)
 		{
-			int newWidth = std::max(width, 32);
-			int newHeight = std::max(height, 32);
+			int newWidth = std::max(width, PADDING);
+			int newHeight = std::max(height, PADDING);
 
 			std::vector<unsigned char> newData;
 			newData.resize(4 * newWidth * newHeight, 0);
@@ -1512,8 +1513,8 @@ void BlocksLoader::loadAllTextures(std::string filePath, bool reportErrors)
 				for (int x = 0; x < width; x++)
 				{
 
-					int xx = x + std::max((32 - width) / 2, 0);
-					int yy = y + std::max((32 - height) / 2, 0);
+					int xx = x + std::max((PADDING - width) / 2, 0);
+					int yy = y + std::max((PADDING - height) / 2, 0);
 
 					newData[(xx + yy * newHeight) * 4 + 0] = decodedImage[index++];
 					newData[(xx + yy * newHeight) * 4 + 1] = decodedImage[index++];

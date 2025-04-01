@@ -336,6 +336,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			{
 				aspectIncrease = 0.10;
 			}
+			aspectIncrease = 0.2;
 
 
 			auto inventoryBox = glui::Box().xCenter().yCenter().yDimensionPixels(minDimenstion).
@@ -386,13 +387,20 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						}
 					};
 
-					auto checkInside = [&](int start, glm::vec4 box)
+					auto checkInside = [&](int start, glm::vec4 box, int rowCount, bool horizontal)
 					{
 						auto itemBox = box;
 						itemBox.z = itemBox.w;
-						for (int i = start; i < start + 9; i++)
+						for (int i = start; i < start + rowCount; i++)
 						{
-							itemBox.x = box.x + itemBox.z * (i - start);
+							if (horizontal)
+							{
+								itemBox.x = box.x + itemBox.z * (i - start);
+							}
+							else
+							{
+								itemBox.y = box.y - itemBox.w * (i - start);
+							}
 							checkInsideOneElement(itemBox, i);
 						}
 					};
@@ -466,15 +474,22 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 
 					//render items
-					auto renderItems = [&](int start, glm::ivec4 box)
+					auto renderItems = [&](int start, glm::ivec4 box, int rowCount, bool horizontal)
 					{
 						auto itemBox = box;
 						itemBox.z = itemBox.w;
-						for (int i = start; i < start + 9; i++)
+						for (int i = start; i < start + rowCount; i++)
 						{
 							if (inventory.items[i].type)
 							{
-								itemBox.x = box.x + itemBox.z * (i - start);
+								if (horizontal)
+								{
+									itemBox.x = box.x + itemBox.z * (i - start);
+								}
+								else
+								{
+									itemBox.y = box.y - itemBox.w * (i - start);
+								}
 								renderOneItem(itemBox, inventory.items[i], 4.f / 22.f);
 							}
 						}
@@ -546,10 +561,55 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						inventoryBars3.y -= inventoryBars3.w;
 						renderer2d.renderRectangle(inventoryBars3, itemsBarInventory);
 
-						checkInside(9, inventoryBars);
-						checkInside(18, inventoryBars2);
-						checkInside(27, inventoryBars3);
+						auto inventoryBars4 = inventoryBars3;
+						inventoryBars4.y -= inventoryBars4.w;
+						renderer2d.renderRectangle(inventoryBars4, itemsBarInventory);
 
+						checkInside(9, inventoryBars, 9, true);
+						checkInside(18, inventoryBars2, 9, true);
+						checkInside(27, inventoryBars3, 9, true);
+						checkInside(36, inventoryBars4, 9, true);
+
+						//coins
+						glm::ivec4 coinsBox[4] = {};
+						glm::ivec4 arrowsBox[4] = {};
+
+						glm::ivec4 healthPotionBox = {};
+						glm::ivec4 manaPotionBox = {};
+
+						coinsBox[0] = inventoryBars;
+						coinsBox[0].z = coinsBox[0].w;
+						coinsBox[0].x += inventoryBars.z + coinsBox[0].z * (2.f/16.f);
+
+						for (int i = 1; i < 4; i++)
+						{
+							coinsBox[i] = coinsBox[i - 1];
+							coinsBox[i].y -= coinsBox[i].w;
+						}
+
+						healthPotionBox = hotBarBox;
+						healthPotionBox.z = oneItemSize;
+						healthPotionBox.x += hotBarBox.z + oneItemSize * (2.f / 16.f);
+
+						manaPotionBox = healthPotionBox;
+						manaPotionBox.x += oneItemSize + oneItemSize * (2.f / 16.f);
+
+						for (int i = 0; i < 4; i++)
+						{
+							arrowsBox[i] = coinsBox[i];
+							arrowsBox[i].x += oneItemSize + oneItemSize * (2.f / 16.f);
+
+							renderer2d.renderRectangle(coinsBox[i], oneInventorySlot);
+							renderer2d.renderRectangle(arrowsBox[i], oneInventorySlot);
+						}
+
+						renderer2d.renderRectangle(healthPotionBox, oneInventorySlot);
+						renderer2d.renderRectangle(manaPotionBox, oneInventorySlot);
+
+						checkInside(PlayerInventory::COINS_START_INDEX, coinsBox[0], 4, false);
+						checkInside(PlayerInventory::ARROWS_START_INDEX, arrowsBox[0], 4, false);
+						checkInside(PlayerInventory::HEALTH_POTION_INDEX, healthPotionBox, 1, true);
+						checkInside(PlayerInventory::COINS_START_INDEX, manaPotionBox, 1, true);
 
 						//upper part
 
@@ -746,10 +806,16 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						}
 
 
-						renderItems(9, inventoryBars);
-						renderItems(18, inventoryBars2);
-						renderItems(27, inventoryBars3);
+						renderItems(9, inventoryBars, 9, true);
+						renderItems(18, inventoryBars2, 9, true);
+						renderItems(27, inventoryBars3, 9, true);
+						renderItems(36, inventoryBars4, 9, true);
 
+						renderItems(PlayerInventory::COINS_START_INDEX, coinsBox[0], 4, false);
+						renderItems(PlayerInventory::ARROWS_START_INDEX, arrowsBox[0], 4, false);
+
+						renderItems(PlayerInventory::HEALTH_POTION_INDEX, healthPotionBox, 1, true);
+						renderItems(PlayerInventory::COINS_START_INDEX, manaPotionBox, 1, true);
 
 					}
 					else if (currentInventoryTab == INVENTORY_TAB_BLOCKS)
@@ -831,8 +897,8 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 					}
 
-					checkInside(0, hotBarBox);
-					renderItems(0, hotBarBox);
+					checkInside(0, hotBarBox, 9, true);
+					renderItems(0, hotBarBox, 9, true);
 
 
 					//if (isCreative)

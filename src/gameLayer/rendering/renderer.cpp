@@ -17,7 +17,6 @@
 #include <gameplay/entityManagerClient.h>
 #include <rendering/frustumCulling.h>
 #include <rendering/model.h>
-#include <glm/gtx/quaternion.hpp>
 #include <lightSystem.h>
 #include <rendering/renderSettings.h>
 #include <vector>

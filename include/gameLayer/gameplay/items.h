@@ -141,10 +141,15 @@ float computeMineDurationTime(BlockType type, Item &item);
 
 struct PlayerInventory
 {
-	
-	constexpr static int INVENTORY_CAPACITY = 36;
-	constexpr static int CURSOR_INDEX = 36;
-	constexpr static int ARMOUR_START_INDEX = 37;
+			
+											 //basic items    bonus slots   coins  amo  potions
+	constexpr static int INVENTORY_CAPACITY = 36 +             9            + 4  +  4 +  2;
+	constexpr static int CURSOR_INDEX = INVENTORY_CAPACITY;
+	constexpr static int ARMOUR_START_INDEX = INVENTORY_CAPACITY + 1;
+	constexpr static int COINS_START_INDEX = 36 + 9;
+	constexpr static int ARROWS_START_INDEX = 36 + 9 + 4;
+	constexpr static int HEALTH_POTION_INDEX = ARROWS_START_INDEX + 4;
+	constexpr static int MANA_POTION_INDEX = HEALTH_POTION_INDEX + 1;
 	Item items[INVENTORY_CAPACITY] = {};
 	
 	Item heldInMouse = {};
