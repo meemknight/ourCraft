@@ -1499,7 +1499,7 @@ void BlocksLoader::loadAllTextures(std::string filePath, bool reportErrors)
 
 		const unsigned char *decodedImage = stbi_load_from_memory(fileData, (int)fileSize, &width, &height, &channels, 4);
 
-		int PADDING = 28;
+		int PADDING = 26;
 		if (width < PADDING || height < PADDING)
 		{
 			int newWidth = std::max(width, PADDING);

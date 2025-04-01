@@ -469,8 +469,18 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
 
 					renderer2d.renderRectangle(hotBarBox, itemsBarInventory);
-
 					oneItemSize = hotBarBox.w;
+
+					glm::ivec4 healthPotionBox = {};
+					glm::ivec4 manaPotionBox = {};
+					healthPotionBox = hotBarBox;
+					healthPotionBox.z = oneItemSize;
+					healthPotionBox.x += hotBarBox.z + oneItemSize * (2.f / 16.f);
+
+					manaPotionBox = healthPotionBox;
+					manaPotionBox.x += oneItemSize + oneItemSize * (2.f / 16.f);
+					renderer2d.renderRectangle(healthPotionBox, oneInventorySlot);
+					renderer2d.renderRectangle(manaPotionBox, oneInventorySlot);
 
 
 					//render items
@@ -574,9 +584,6 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						glm::ivec4 coinsBox[4] = {};
 						glm::ivec4 arrowsBox[4] = {};
 
-						glm::ivec4 healthPotionBox = {};
-						glm::ivec4 manaPotionBox = {};
-
 						coinsBox[0] = inventoryBars;
 						coinsBox[0].z = coinsBox[0].w;
 						coinsBox[0].x += inventoryBars.z + coinsBox[0].z * (2.f/16.f);
@@ -587,12 +594,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 							coinsBox[i].y -= coinsBox[i].w;
 						}
 
-						healthPotionBox = hotBarBox;
-						healthPotionBox.z = oneItemSize;
-						healthPotionBox.x += hotBarBox.z + oneItemSize * (2.f / 16.f);
 
-						manaPotionBox = healthPotionBox;
-						manaPotionBox.x += oneItemSize + oneItemSize * (2.f / 16.f);
 
 						for (int i = 0; i < 4; i++)
 						{
@@ -603,13 +605,11 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 							renderer2d.renderRectangle(arrowsBox[i], oneInventorySlot);
 						}
 
-						renderer2d.renderRectangle(healthPotionBox, oneInventorySlot);
-						renderer2d.renderRectangle(manaPotionBox, oneInventorySlot);
+
 
 						checkInside(PlayerInventory::COINS_START_INDEX, coinsBox[0], 4, false);
 						checkInside(PlayerInventory::ARROWS_START_INDEX, arrowsBox[0], 4, false);
-						checkInside(PlayerInventory::HEALTH_POTION_INDEX, healthPotionBox, 1, true);
-						checkInside(PlayerInventory::COINS_START_INDEX, manaPotionBox, 1, true);
+
 
 						//upper part
 
@@ -814,8 +814,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						renderItems(PlayerInventory::COINS_START_INDEX, coinsBox[0], 4, false);
 						renderItems(PlayerInventory::ARROWS_START_INDEX, arrowsBox[0], 4, false);
 
-						renderItems(PlayerInventory::HEALTH_POTION_INDEX, healthPotionBox, 1, true);
-						renderItems(PlayerInventory::COINS_START_INDEX, manaPotionBox, 1, true);
+
 
 					}
 					else if (currentInventoryTab == INVENTORY_TAB_BLOCKS)
@@ -900,6 +899,11 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 					checkInside(0, hotBarBox, 9, true);
 					renderItems(0, hotBarBox, 9, true);
 
+					checkInside(PlayerInventory::HEALTH_POTION_INDEX, healthPotionBox, 1, true);
+					checkInside(PlayerInventory::COINS_START_INDEX, manaPotionBox, 1, true);
+
+					renderItems(PlayerInventory::HEALTH_POTION_INDEX, healthPotionBox, 1, true);
+					renderItems(PlayerInventory::COINS_START_INDEX, manaPotionBox, 1, true);
 
 					//if (isCreative)
 					{
