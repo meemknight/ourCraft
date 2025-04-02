@@ -276,7 +276,7 @@ namespace glui
 	float determineTextSize(gl2d::Renderer2D &renderer, const std::string &str, gl2d::Font &f, glm::vec4 transform, bool minimize);
 
 	void renderText(gl2d::Renderer2D &renderer, const std::string &str, gl2d::Font &f, glm::vec4 transform,
-		glm::vec4 color, bool noTexture, bool minimize = true, bool alignLeft = false);
+		glm::vec4 color, bool noTexture, bool minimize = true, bool alignLeft = false, float maxSize = 0);
 
 	void renderTextInput(gl2d::Renderer2D &renderer, const std::string &str,
 		char *text, size_t textSizeWithNullChar, const std::string &typedInput,

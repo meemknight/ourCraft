@@ -470,6 +470,8 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 					renderer2d.renderRectangle(hotBarBox, itemsBarInventory);
 					oneItemSize = hotBarBox.w;
+					float maxSmallFontSize = oneItemSize / 3;
+
 
 					glm::ivec4 healthPotionBox = {};
 					glm::ivec4 manaPotionBox = {};
@@ -553,6 +555,16 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						return slider;
 					};
 
+					auto renderSmallTextOnTopOfCell = [&](glm::vec4 box, const char *text)
+					{
+						glm::vec4 textBox = box;
+						textBox.y -= textBox.w/4;
+						textBox.w /= 3;
+
+						glui::renderText(renderer2d, text, font, textBox,
+							Colors_White, true, false, false, maxSmallFontSize);
+					};
+
 					if (currentInventoryTab == INVENTORY_TAB_DEFAULT ||
 						currentInventoryTab == INVENTORY_TAB_CRAFTING
 						)
@@ -605,11 +617,11 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 							renderer2d.renderRectangle(arrowsBox[i], oneInventorySlot);
 						}
 
-
-
 						checkInside(PlayerInventory::COINS_START_INDEX, coinsBox[0], 4, false);
 						checkInside(PlayerInventory::ARROWS_START_INDEX, arrowsBox[0], 4, false);
 
+						renderSmallTextOnTopOfCell(coinsBox[3], "Coins");
+						renderSmallTextOnTopOfCell(arrowsBox[3], "Ammo");
 
 						//upper part
 
@@ -792,6 +804,8 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 							checkInsideOneElement(armourBox, inventory.ARMOUR_START_INDEX);
 							renderOneItem(armourBox, inventory.headArmour);
 
+							renderSmallTextOnTopOfCell(armourBox, "Armour");
+
 							armourBox.y += armourBox.w;
 							renderer2d.renderRectangle(armourBox, oneInventorySlot);
 							checkInsideOneElement(armourBox, inventory.ARMOUR_START_INDEX + 1);
@@ -900,10 +914,14 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 					renderItems(0, hotBarBox, 9, true);
 
 					checkInside(PlayerInventory::HEALTH_POTION_INDEX, healthPotionBox, 1, true);
-					checkInside(PlayerInventory::COINS_START_INDEX, manaPotionBox, 1, true);
+					checkInside(PlayerInventory::MANA_POTION_INDEX, manaPotionBox, 1, true);
 
 					renderItems(PlayerInventory::HEALTH_POTION_INDEX, healthPotionBox, 1, true);
-					renderItems(PlayerInventory::COINS_START_INDEX, manaPotionBox, 1, true);
+					renderItems(PlayerInventory::MANA_POTION_INDEX, manaPotionBox, 1, true);
+
+					renderSmallTextOnTopOfCell(healthPotionBox, "Health");
+					renderSmallTextOnTopOfCell(manaPotionBox, "Mana");
+
 
 					//if (isCreative)
 					{

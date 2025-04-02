@@ -296,10 +296,15 @@ namespace glui
 	//todo reuse the upper function
 	void renderText(gl2d::Renderer2D &renderer, const std::string &str,
 		gl2d::Font &f, glm::vec4 transform, glm::vec4 color,
-		bool noTexture, bool minimize, bool alignLeft)
+		bool noTexture, bool minimize, bool alignLeft, float maxSize)
 	{
 		auto newStr = getString(str);
 		auto newS = determineTextSize(renderer, newStr, f, transform, minimize);
+
+		if (newS > maxSize && maxSize != 0)
+		{
+			newS = maxSize;
+		}
 
 		glm::vec2 pos = glm::vec2(transform);
 
