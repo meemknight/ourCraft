@@ -2623,7 +2623,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				if (startPos < gameData.chatBufferPosition)
 				{
 					renderer.renderText({10, box.y + box.w - 10}, gameData.chatBuffer + startPos,
-						programData.ui.font, Colors_White, 1.0, 4, 3, false);
+						programData.ui.font, Colors_White, 64, 4, 0, false);
 				}
 
 			}
@@ -2672,7 +2672,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				}
 				
 				//renderer.renderText({0, textPos}, c.c_str(), programData.ui.font,
-				//	Colors_White, 1, 4, 3, false);
+				//	Colors_White, 1, 64, 3, false);
 
 				textPos -= textSize;
 				boxDimension += textSize;
@@ -2692,7 +2692,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					}
 
 					renderer.renderText({0, textPosCopy}, c.c_str(), programData.ui.font,
-						Colors_White, 1, 4, 3, false);
+						Colors_White, 1, 64, 3, false);
 
 					textPosCopy -= textSize;
 				}
@@ -3031,7 +3031,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			if (s == "Color post processing")
 			{
 				programData.ui.renderer2d.renderText({150,50},
-					("fps: " + std::to_string(programData.currentFps)).c_str(), programData.ui.font, Colors_Gray, 0.75f);
+					("fps: " + std::to_string(programData.currentFps)).c_str(), programData.ui.font, Colors_Gray, 64.f*0.75f);
 				dontDarkenScreen = true;
 				break;
 			}

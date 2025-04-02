@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////
-//gl2d.h				1.0.3 CHANGED
+//gl2d.h				1.0.3
 //Copyright(c) 2023 Luta Vlad
 //https://github.com/meemknight/glui
 //
@@ -41,9 +41,9 @@ namespace glui
 			bool escapeReleased,
 			const std::string &typedInput,
 			float deltaTime
-			, bool *anyButtonPressed, bool *backPressed,
-			bool *anyCustomWidgetPressed, bool *anyToggleToggeled,
-			bool *anyToggleDetoggeled, bool *andSliderDragged
+			, bool *anyButtonPressed = 0, bool *backPressed = 0,
+			bool *anyCustomWidgetPressed = 0, bool *anyToggleToggeled = 0,
+			bool *anyToggleDetoggeled = 0, bool *andSliderDragged = 0
 		);
 
 		bool Button(std::string name,
@@ -54,7 +54,7 @@ namespace glui
 		bool ButtonWithTexture(int id, gl2d::Texture t, gl2d::Color4f colors = {1,1,1,1}, glm::vec4 textureCoords = {0,1,1,0});
 
 		bool Toggle(std::string name,
-			const gl2d::Color4f colors, bool *toggle, 
+			const gl2d::Color4f colors, bool *toggle,
 			const gl2d::Texture texture = {}, const gl2d::Texture overTexture = {});
 
 		bool ToggleButton(std::string name,
@@ -71,9 +71,9 @@ namespace glui
 		void newLine();
 
 		void InputText(std::string name,
-			char *text, size_t textSizeWithNullChar, 
-			gl2d::Color4f color = {0,0,0,0}, const gl2d::Texture texture = {}, 
-			bool onlyOneEnabeled= 1, bool displayText = 1, bool enabeled = 1);
+			char *text, size_t textSizeWithNullChar,
+			gl2d::Color4f color = {0,0,0,0}, const gl2d::Texture texture = {},
+			bool onlyOneEnabeled = 1, bool displayText = 1, bool enabeled = 1);
 
 		void sliderFloat(std::string name, float *value, float min, float max,
 			gl2d::Color4f textColor = {1,1,1,1},
@@ -98,7 +98,7 @@ namespace glui
 
 		void colorPicker(std::string name, float *color3Component, gl2d::Texture sliderTexture = {},
 			gl2d::Texture ballTexture = {}, gl2d::Color4f color = {0,0,0,0}
-			,gl2d::Color4f color2 = {0,0,0,0});
+		, gl2d::Color4f color2 = {0,0,0,0});
 
 		//sepparate options by |
 		void toggleOptions(std::string name,
@@ -184,7 +184,7 @@ namespace glui
 
 				size_t textSize = 0;
 			};
-			
+
 
 			struct AlignSettings
 			{

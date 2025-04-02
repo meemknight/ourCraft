@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////
-//gl2d.h				1.0.2
+//gl2d.h				1.0.3
 //Copyright(c) 2023 Luta Vlad
 //https://github.com/meemknight/glui
 //////////////////////////////////////////////////
@@ -20,14 +20,14 @@ namespace glui
 	static constexpr bool MINECRAFT_LOOK_SLIDER = 1;
 
 
-	void defaultErrorFunc(const char* msg)
+	void defaultErrorFunc(const char *msg)
 	{
 		std::cerr << "glui error: " << msg << "\n";
 	}
 
-	static errorFuncType* errorFunc = defaultErrorFunc;
+	static errorFuncType *errorFunc = defaultErrorFunc;
 
-	errorFuncType* setErrorFuncCallback(errorFuncType* newFunc)
+	errorFuncType *setErrorFuncCallback(errorFuncType *newFunc)
 	{
 		auto a = errorFunc;
 		errorFunc = newFunc;
@@ -59,9 +59,9 @@ namespace glui
 		optionsToggle,
 	};
 
-	
 
-	
+
+
 
 	bool aabb(glm::vec4 transform, glm::vec2 point)
 	{
@@ -80,25 +80,25 @@ namespace glui
 		}
 	}
 
-	
+
 
 	constexpr float pressDownSize = 0.04f;
 	constexpr float shadowSize = 0.1f;
 	constexpr float outlineSize = 0.02f;
-	constexpr float textFit = 1.2f;
+	constexpr float textFit = 64.f;
 
 	constexpr float nonMinimizeTextSize = 0.9f;
 	constexpr float minimizeRatio = 0.8f;
 
-	constexpr float buttonFit  = 0.6f;
-	
+	constexpr float buttonFit = 0.6f;
+
 	constexpr float inSizeY = 0.8;
 	constexpr float inSizeX = 0.8;
 	constexpr float mainInSizeX = 0.9;
 	constexpr float mainInSizeY = 0.9;
 	constexpr float paddingColums = 0.9;
 
-	void splitTransforms(glm::vec4& down, glm::vec4& newTransform, glm::vec4 transform)
+	void splitTransforms(glm::vec4 &down, glm::vec4 &newTransform, glm::vec4 transform)
 	{
 		down = transform;
 		newTransform = transform;
@@ -111,7 +111,7 @@ namespace glui
 	glm::vec4 stepColorUp(glm::vec4 color, float perc)
 	{
 		glm::vec3 hsv = glm::hsvColor(glm::vec3(color));
-		
+
 		if (hsv.b >= 1.f)
 		{
 			hsv.g = std::max(0.f, hsv.g - perc * 2);
@@ -146,7 +146,7 @@ namespace glui
 		return s;
 	}
 
-	void renderFancyBox(gl2d::Renderer2D& renderer, 
+	void renderFancyBox(gl2d::Renderer2D &renderer,
 		glm::vec4 transform, glm::vec4 color, gl2d::Texture t, bool hovered, bool clicked)
 	{
 		if (color.a <= 0.01f) { return; }
@@ -166,7 +166,7 @@ namespace glui
 		{
 			newColor = stepColorUp(color, colorDim);
 		}
-		else if(colorDim < 0)
+		else if (colorDim < 0)
 		{
 			newColor = stepColorDown(color, -colorDim); //todo refactor this functions
 		}
@@ -178,7 +178,7 @@ namespace glui
 		auto lightColor = stepColorUp(newColor, 0.02);
 		auto darkColor = stepColorDown(newColor, 0.5f);
 		auto darkerColor = stepColorDown(newColor, 0.25f);
-		
+
 		auto outlineColor = stepColorUp(newColor, 0.3);
 		//auto outlineColor = darkerColor;
 
@@ -186,7 +186,7 @@ namespace glui
 
 		if (t.id == 0)
 		{
-			
+
 			float calculatedOutline = outlineSize * std::min(transform.w, transform.z);
 			if (hovered)
 			{
@@ -213,14 +213,14 @@ namespace glui
 			//renderer.renderRectangle(transform, newColor, {}, 0.f, t);
 			//renderer.render9Patch2(transform, newColor, {}, 0.f, t, GL2D_DefaultTextureCoords, {2.f/26.f, 24.f / 26.f,24.f / 26.f,2.f / 26.f});
 			//renderer.render9Patch2(transform, newColor, {}, 0.f, t, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
-			renderer.render9Patch(transform, 20,  newColor, {}, 0.f, t, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
-		
+			renderer.render9Patch(transform, 20, newColor, {}, 0.f, t, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
+
 		}
 	}
 
 	//just z and w components of transform used
 	//todo: move into gl2d a function to render text of a size
-	float determineTextSize(gl2d::Renderer2D &renderer, const std::string &str, 
+	float determineTextSize(gl2d::Renderer2D &renderer, const std::string &str,
 		gl2d::Font &f, glm::vec4 transform, bool minimize = true)
 	{
 		auto newStr = getString(str);
@@ -234,10 +234,10 @@ namespace glui
 
 		if (ratioX > 1 && ratioY > 1)
 		{
-			
+
 			///keep size
 			//return size;
-			
+
 			//else
 			//{
 			//	if (ratioX > ratioY)
@@ -275,7 +275,7 @@ namespace glui
 		return size;
 	}
 
-	glm::vec4 determineTextPos(gl2d::Renderer2D& renderer, const std::string& str, gl2d::Font& f, glm::vec4 transform,
+	glm::vec4 determineTextPos(gl2d::Renderer2D &renderer, const std::string &str, gl2d::Font &f, glm::vec4 transform,
 		bool noTexture, bool minimize = true)
 	{
 		auto newStr = getString(str);
@@ -294,28 +294,29 @@ namespace glui
 	}
 
 	//todo reuse the upper function
-	void renderText(gl2d::Renderer2D& renderer,const std::string &str,
-		gl2d::Font& f, glm::vec4 transform, glm::vec4 color, 
+	void renderText(gl2d::Renderer2D &renderer, const std::string &str,
+		gl2d::Font &f, glm::vec4 transform, glm::vec4 color,
 		bool noTexture, bool minimize, bool alignLeft)
 	{
 		auto newStr = getString(str);
 		auto newS = determineTextSize(renderer, newStr, f, transform, minimize);
 
 		glm::vec2 pos = glm::vec2(transform);
-		
+
 		if (!alignLeft)
 		{
 			pos.x += transform.z / 2.f;
-			pos.y += transform.w / 3.f;
+			pos.y += transform.w / 2.f;
 			renderer.renderText(pos, newStr.c_str(), f, color, newS, 4, 3);
 		}
 		else
 		{
 			//pos.x += transform.z * 0.02;
-			pos.y += transform.w * 0.4;
+			//pos.y += transform.w * 0.4;
+			pos.y += transform.w / 2.f;
 			renderer.renderText(pos, newStr.c_str(), f, color, newS, 4, 3, false);
 		}
-		
+
 	}
 
 
@@ -385,7 +386,7 @@ namespace glui
 			!hovered);
 
 	}
-	
+
 
 	glm::vec4 computeTextureNewPosition(glm::vec4 transform, gl2d::Texture t)
 	{
@@ -416,7 +417,7 @@ namespace glui
 
 			glm::vec4 newPos = {transform.x, transform.y, newSize};
 			newPos.y += (transform.w - newSize.y) / 2.f;
-			
+
 			return newPos;
 		}
 		else // if (aspectRatio == boxAspectRatio) // redundant
@@ -433,9 +434,9 @@ namespace glui
 		renderer.renderRectangle(newPos, t, c);
 	}
 
-	bool renderSliderFloat(gl2d::Renderer2D &renderer, glm::vec4 transform, float *value, float min, float max, 
+	bool renderSliderFloat(gl2d::Renderer2D &renderer, glm::vec4 transform, float *value, float min, float max,
 		bool &sliderBeingDragged,
-		gl2d::Texture barT, gl2d::Color4f barC, gl2d::Texture ballT, 
+		gl2d::Texture barT, gl2d::Color4f barC, gl2d::Texture ballT,
 		gl2d::Color4f ballC, RendererUi::Internal::InputData &input)
 	{
 
@@ -455,9 +456,9 @@ namespace glui
 			transform.z - barIndent * 2.f, barSize);
 
 		glm::vec4 bulletTransform(barTransform.x, barTransform.y + (barSize - bulletSize) / 2.f,
-			bulletSize/2.f, bulletSize);
+			bulletSize / 2.f, bulletSize);
 
-		bulletTransform.x += std::max( std::min((*value - min) / (max - min), 1.f), 0.f)
+		bulletTransform.x += std::max(std::min((*value - min) / (max - min), 1.f), 0.f)
 			* (barTransform.z - bulletTransform.z);
 
 		//todo color
@@ -696,8 +697,8 @@ namespace glui
 
 	bool toggleOptions(gl2d::Renderer2D &renderer, glm::vec4 transform, const std::string &text, glm::vec4 textColor,
 		const std::string &optionsSeparatedByBars, int *currentIndex, bool showText,
-		gl2d::Font &font, gl2d::Texture &texture, gl2d::Color4f textureColor, 
-		glm::ivec2 mousePos, bool mouseHeld, bool mouseReleased,  
+		gl2d::Font &font, gl2d::Texture &texture, gl2d::Color4f textureColor,
+		glm::ivec2 mousePos, bool mouseHeld, bool mouseReleased,
 		gl2d::Color4f *optionsColors, std::string toolTip)
 	{
 
@@ -870,9 +871,9 @@ namespace glui
 	}
 
 
-	float timer=0;
+	float timer = 0;
 	bool idWasSet = 0;
-	
+
 
 	bool drawButton(gl2d::Renderer2D &renderer, glm::vec4 transform, glm::vec4 color,
 		const std::string &s,
@@ -931,10 +932,10 @@ namespace glui
 	};
 
 
-	void RendererUi::renderFrame(gl2d::Renderer2D& renderer, 
-		gl2d::Font& font, glm::ivec2 mousePos, bool mouseClick,
-		bool mouseHeld, bool mouseReleased, 
-		bool escapeReleased, const std::string& typedInput, 
+	void RendererUi::renderFrame(gl2d::Renderer2D &renderer,
+		gl2d::Font &font, glm::ivec2 mousePos, bool mouseClick,
+		bool mouseHeld, bool mouseReleased,
+		bool escapeReleased, const std::string &typedInput,
 		float deltaTime,
 		bool *anyButtonPressed, bool *backPressed, bool *anyCustomWidgetPressed
 		, bool *anyToggleToggeled, bool *anyToggleDetoggeled, bool *andSliderDragged
@@ -952,7 +953,7 @@ namespace glui
 			return;
 		}
 		//find the menu stack for this Begin()
-		
+
 		auto iterMenuStack = internal.allMenuStacks.find(internal.currentId);
 		if (iterMenuStack == internal.allMenuStacks.end())
 		{
@@ -973,7 +974,7 @@ namespace glui
 			}
 		}
 
-		timer += deltaTime*2;
+		timer += deltaTime * 2;
 		if (timer >= 2.f)
 		{
 			timer -= 2;
@@ -993,7 +994,7 @@ namespace glui
 
 		std::vector<std::string> traversedStack;
 		traversedStack.reserve(currentMenuStack.size());
-			
+
 		for (auto &i : internal.widgetsVector)
 		{
 			bool add = 0;
@@ -1009,24 +1010,24 @@ namespace glui
 					}
 				}
 			}
-			
+
 			if (add && i.second.type != widgetType::beginManualMenu)
 			{
 				widgetsCopy.emplace_back(i);
 			}
 
-			if (i.second.type == widgetType::beginMenu 
+			if (i.second.type == widgetType::beginMenu
 				|| i.second.type == widgetType::beginManualMenu)
 			{
 				traversedStack.push_back(i.first);
 			}
-			else if(i.second.type == widgetType::endMenu)
+			else if (i.second.type == widgetType::endMenu)
 			{
 				traversedStack.pop_back();
 			}
 
 		}
-		
+
 		/*
 		auto currentMenuStackCopy = currentMenuStack;
 		{
@@ -1073,7 +1074,7 @@ namespace glui
 						nextStackSizeToLook = menuStack.size() - 1;
 						widgetsCopy.push_back(i);
 					}
-					
+
 					continue;
 				}
 
@@ -1101,7 +1102,7 @@ namespace glui
 				}
 
 				widgetsCopy.push_back(i);
-			
+
 			}
 		};
 		*/
@@ -1178,7 +1179,7 @@ namespace glui
 		float columAdvanceSize = colums[0].first.z; //all colums have the same width for now
 		float beginY = colums[0].first.y; //all colums start from the same height fot now
 
-		for (int i=0; i<colums.size(); i++)
+		for (int i = 0; i < colums.size(); i++)
 		{
 			colums[i].first.x += columAdvanceSize * i;
 
@@ -1196,24 +1197,24 @@ namespace glui
 		input.mouseReleased = mouseReleased;
 		input.escapeReleased = escapeReleased;
 
-		
-		for (auto& i : widgetsCopy)
+
+		for (auto &i : widgetsCopy)
 		{
 
 			auto find = internal.widgets.find(i.first);
 
 			if (find == internal.widgets.end())
 			{
-				
+
 				i.second.usedThisFrame = true;
 				i.second.justCreated = true;
 				internal.widgets.insert(i);
-				
+
 				//continue;
 			}
-			else 
+			else
 			{
-				
+
 				if (find->second.type != i.second.type)
 				{
 					errorFunc("reupdated a widget with a different type");
@@ -1237,7 +1238,7 @@ namespace glui
 
 			{
 				auto &j = *internal.widgets.find(i.first);
-				auto& widget = j.second;
+				auto &widget = j.second;
 
 				auto drawButtonImpl = [&]()
 				{
@@ -1255,634 +1256,634 @@ namespace glui
 					return rez;
 				};
 
-				
+
 				switch (widget.type)
 				{
-					case widgetType::button:
-					{
-						
-						drawButtonImpl();
+				case widgetType::button:
+				{
 
-						break;
+					drawButtonImpl();
+
+					break;
+				}
+				case widgetType::toggle:
+				{
+					auto transformDrawn = colums[currentColum].first;
+					bool hovered = 0;
+					bool clicked = 0;
+
+					glm::vec4 toggleTransform = transformDrawn;
+					glm::vec4 textTransform = transformDrawn;
+					textTransform.z -= toggleTransform.w;
+					toggleTransform.z = toggleTransform.w;
+
+					auto p = determineTextPos(renderer, j.first, font, textTransform, true);
+					toggleTransform.x = p.x + p.z;
+
+					glm::vec4 aabbBox = p;
+					aabbBox.z += toggleTransform.z;
+					aabbBox.y = std::min(toggleTransform.y, textTransform.y);
+					aabbBox.w = std::max(toggleTransform.w, textTransform.w);
+
+					if (aabb(aabbBox, input.mousePos))
+					{
+						hovered = true;
+						if (input.mouseHeld)
+						{
+							clicked = true;
+							textTransform.y += transformDrawn.w * pressDownSize;
+							toggleTransform.y += transformDrawn.w * pressDownSize;
+						}
 					}
-					case widgetType::toggle:
+
+					if (input.mouseReleased && aabb(aabbBox, input.mousePos))
 					{
-						auto transformDrawn = colums[currentColum].first;
-						bool hovered = 0;
-						bool clicked = 0;
+						*(bool *)(widget.pointer) = !(*(bool *)(widget.pointer));
 
-						glm::vec4 toggleTransform = transformDrawn;
-						glm::vec4 textTransform = transformDrawn;
-						textTransform.z -= toggleTransform.w;
-						toggleTransform.z = toggleTransform.w;
+						if (*(bool *)(widget.pointer))
+						{
+							if (anyToggleToggeled)
+							{
+								*anyToggleToggeled = true;
+							}
+						}
+						else
+						{
+							if (anyToggleDetoggeled)
+							{
+								*anyToggleDetoggeled = true;
+							}
+						}
+					}
 
-						auto p = determineTextPos(renderer, j.first, font, textTransform, true);
-						toggleTransform.x = p.x + p.z;
+					widget.returnFromUpdate = *(bool *)(widget.pointer);
 
-						glm::vec4 aabbBox = p;
-						aabbBox.z += toggleTransform.z;
-						aabbBox.y = std::min(toggleTransform.y, textTransform.y);
-						aabbBox.w = std::max(toggleTransform.w, textTransform.w);
 
-						if (aabb(aabbBox, input.mousePos))
+					if (hovered)
+					{
+						renderText(renderer, j.first, font, textTransform, stepColorDown(Colors_White, 0.8),
+							true, false);
+					}
+					else
+					{
+						renderText(renderer, j.first, font, textTransform, Colors_White, true);
+					}
+
+
+					if (widget.returnFromUpdate)
+					{
+						auto small = toggleTransform;
+						small.z *= buttonFit;
+						small.w *= buttonFit;
+						small.x += toggleTransform.z * (1.f - buttonFit) / 2.f;
+						small.y += toggleTransform.w * (1.f - buttonFit) / 2.f;
+
+						renderFancyBox(renderer, toggleTransform, widget.colors, widget.texture, hovered, clicked);
+
+						if (widget.textureOver.id)
+						{
+							renderFancyBox(renderer, toggleTransform, Colors_White, widget.textureOver, false, false);
+						}
+						else
+						{
+							renderFancyBox(renderer, small, widget.colors, widget.textureOver, false, false);
+						}
+					}
+					else
+					{
+						renderFancyBox(renderer, toggleTransform, widget.colors, widget.texture, hovered, clicked);
+					}
+
+
+
+					break;
+				}
+				case widgetType::toggleButton:
+				{
+					auto transformDrawn = colums[currentColum].first;
+					bool hovered = 0;
+					bool clicked = 0;
+
+					glm::vec4 toggleTransform = transformDrawn;
+					glm::vec4 textTransform = transformDrawn;
+
+					if (aabb(toggleTransform, input.mousePos))
+					{
+						hovered = true;
+						if (input.mouseHeld)
+						{
+							clicked = true;
+							textTransform.y += transformDrawn.w * pressDownSize;
+							toggleTransform.y += transformDrawn.w * pressDownSize;
+						}
+					}
+
+					if (input.mouseReleased && aabb(toggleTransform, input.mousePos))
+					{
+						*(bool *)(widget.pointer) = !(*(bool *)(widget.pointer));
+
+						if (*(bool *)(widget.pointer))
+						{
+							if (anyToggleToggeled)
+							{
+								*anyToggleToggeled = true;
+							}
+						}
+						else
+						{
+							if (anyToggleDetoggeled)
+							{
+								*anyToggleDetoggeled = true;
+							}
+						}
+					}
+
+					widget.returnFromUpdate = *(bool *)(widget.pointer);
+
+					renderFancyBox(renderer,
+						toggleTransform, widget.colors2,
+						widget.texture, hovered, clicked);
+
+					std::string text = getString(j.first);
+
+					if (widget.returnFromUpdate)
+					{
+						text += ": ON";
+					}
+					else
+					{
+						text += ": OFF";
+					}
+
+					if (hovered)
+					{
+						renderText(renderer, text, font, textTransform,
+							stepColorDown(Colors_White, 0.8),
+							true, false);
+					}
+					else
+					{
+						renderText(renderer, text, font, textTransform,
+							Colors_White, true);
+					}
+
+
+					break;
+				}
+				case widgetType::text:
+				{
+
+					renderText(renderer, j.first, font, colums[currentColum].first, j.second.colors, true);
+
+					break;
+				}
+				case widgetType::textInput:
+				{
+
+					char *text = (char *)j.second.pointer;
+					size_t n = j.second.textSize;
+
+					int pos = strlen(text);
+
+					bool enabled = j.second.enabeled;
+
+					auto transform = colums[currentColum].first;
+
+					bool hovered = 0;
+					bool clicked = 0;
+
+					if (j.second.onlyOneEnabeled && j.second.enabeled)
+					{
+						if (isInButton(mousePos, transform))
 						{
 							hovered = true;
-							if (input.mouseHeld)
+							if (mouseClick || mouseHeld)
 							{
+								internal.currentTextBox = j.first;
 								clicked = true;
-								textTransform.y += transformDrawn.w * pressDownSize;
-								toggleTransform.y += transformDrawn.w * pressDownSize;
 							}
 						}
 
-						if (input.mouseReleased && aabb(aabbBox, input.mousePos))
-						{
-							*(bool*)(widget.pointer) = !(*(bool*)(widget.pointer));
 
-							if (*(bool *)(widget.pointer))
+						if (j.first != internal.currentTextBox)
+						{
+							enabled = 0;
+						}
+					}
+
+					if (enabled)
+					{
+						for (auto i : typedInput)
+						{
+							if (i == 8) //backspace
 							{
-								if (anyToggleToggeled)
+								if (pos > 0)
 								{
-									*anyToggleToggeled = true;
+									pos--;
+									text[pos] = 0;
 								}
+							}
+							else if (i == '\n')
+							{
+								//ignore
 							}
 							else
 							{
-								if (anyToggleDetoggeled)
+								if (pos < n - 1)
 								{
-									*anyToggleDetoggeled = true;
+									text[pos] = i;
+									pos++;
+									text[pos] = 0;
 								}
 							}
 						}
-
-						widget.returnFromUpdate = *(bool*)(widget.pointer);
-
-
-						if (hovered)
-						{
-							renderText(renderer, j.first, font, textTransform, stepColorDown(Colors_White, 0.8),
-								true, false);
-						}
-						else
-						{
-							renderText(renderer, j.first, font, textTransform, Colors_White, true);
-						}
-						
-
-						if (widget.returnFromUpdate)
-						{
-							auto small = toggleTransform;
-							small.z *= buttonFit;
-							small.w *= buttonFit;
-							small.x += toggleTransform.z * (1.f - buttonFit) / 2.f;
-							small.y += toggleTransform.w * (1.f - buttonFit) / 2.f;
-
-							renderFancyBox(renderer, toggleTransform, widget.colors, widget.texture, hovered, clicked);
-
-							if (widget.textureOver.id)
-							{
-								renderFancyBox(renderer, toggleTransform, Colors_White, widget.textureOver, false, false);
-							}
-							else
-							{
-								renderFancyBox(renderer, small, widget.colors, widget.textureOver, false, false);
-							}
-						}
-						else
-						{
-							renderFancyBox(renderer, toggleTransform, widget.colors, widget.texture, hovered, clicked);
-						}
-
-
-
-						break;
-					}
-					case widgetType::toggleButton:
-					{
-						auto transformDrawn = colums[currentColum].first;
-						bool hovered = 0;
-						bool clicked = 0;
-
-						glm::vec4 toggleTransform = transformDrawn;
-						glm::vec4 textTransform = transformDrawn;
-
-						if (aabb(toggleTransform, input.mousePos))
-						{
-							hovered = true;
-							if (input.mouseHeld)
-							{
-								clicked = true;
-								textTransform.y += transformDrawn.w * pressDownSize;
-								toggleTransform.y += transformDrawn.w * pressDownSize;
-							}
-						}
-
-						if (input.mouseReleased && aabb(toggleTransform, input.mousePos))
-						{
-							*(bool *)(widget.pointer) = !(*(bool *)(widget.pointer));
-
-							if (*(bool *)(widget.pointer))
-							{
-								if (anyToggleToggeled)
-								{
-									*anyToggleToggeled = true;
-								}
-							}
-							else
-							{
-								if (anyToggleDetoggeled)
-								{
-									*anyToggleDetoggeled = true;
-								}
-							}
-						}
-
-						widget.returnFromUpdate = *(bool *)(widget.pointer);
-
-						renderFancyBox(renderer,
-							toggleTransform, widget.colors2,
-							widget.texture, hovered, clicked);
-
-						std::string text = getString(j.first);
-
-						if (widget.returnFromUpdate)
-						{
-							text += ": ON";
-						}
-						else
-						{
-							text += ": OFF";
-						}
-
-						if (hovered)
-						{
-							renderText(renderer, text, font, textTransform,
-								stepColorDown(Colors_White, 0.8),
-								true, false);
-						}
-						else
-						{
-							renderText(renderer, text, font, textTransform,
-								Colors_White, true);
-						}
-
-
-						break;
-					}
-					case widgetType::text:
-					{
-
-						renderText(renderer, j.first, font, colums[currentColum].first, j.second.colors, true);
-
-						break;
-					}
-					case widgetType::textInput:
-					{
-
-						char* text = (char*)j.second.pointer;
-						size_t n = j.second.textSize;
-
-						int pos = strlen(text);
-
-						bool enabled = j.second.enabeled;
-
-						auto transform = colums[currentColum].first;
-
-						bool hovered = 0;
-						bool clicked = 0;
-
-						if (j.second.onlyOneEnabeled && j.second.enabeled)
-						{
-							if (isInButton(mousePos, transform))
-							{
-								hovered = true;
-								if (mouseClick || mouseHeld)
-								{
-									internal.currentTextBox = j.first;
-									clicked = true;
-								}
-							}
-
-
-							if (j.first != internal.currentTextBox)
-							{
-								enabled = 0;
-							}
-						}
-
-						if (enabled)
-						{
-							for (auto i : typedInput)
-							{
-								if (i == 8) //backspace
-								{
-									if (pos > 0)
-									{
-										pos--;
-										text[pos] = 0;
-									}
-								}
-								else if (i == '\n')
-								{
-									//ignore
-								}
-								else
-								{
-									if (pos < n - 1)
-									{
-										text[pos] = i;
-										pos++;
-										text[pos] = 0;
-									}
-								}
-							}
-						}
-
-						if (i.second.texture.id != 0)
-						{
-							renderFancyBox(renderer, transform,
-								i.second.colors, widget.texture, hovered, clicked);
-						}
-						
-						std::string textCopy = text;
-						
-						if (j.second.displayText)
-						{
-							textCopy = getString(j.first) + textCopy;
-						}
-
-						if (enabled)
-						{
-							if ((int)timer % 2)
-							{
-								textCopy += "|";
-							}
-						}
-
-						renderText(renderer, textCopy, font, transform, Colors_White, true,
-							!hovered);
-
-
-						break;
-					}
-					case widgetType::beginMenu:
-					{
-
-						if (drawButtonImpl())
-						{
-							currentMenuStack.push_back(i.first);
-						};
-
-						break;
 					}
 
-					case widgetType::startManualMenu:
+					if (i.second.texture.id != 0)
 					{
+						renderFancyBox(renderer, transform,
+							i.second.colors, widget.texture, hovered, clicked);
+					}
 
+					std::string textCopy = text;
+
+					if (j.second.displayText)
+					{
+						textCopy = getString(j.first) + textCopy;
+					}
+
+					if (enabled)
+					{
+						if ((int)timer % 2)
+						{
+							textCopy += "|";
+						}
+					}
+
+					renderText(renderer, textCopy, font, transform, Colors_White, true,
+						!hovered);
+
+
+					break;
+				}
+				case widgetType::beginMenu:
+				{
+
+					if (drawButtonImpl())
+					{
 						currentMenuStack.push_back(i.first);
+					};
 
-						break;
+					break;
+				}
+
+				case widgetType::startManualMenu:
+				{
+
+					currentMenuStack.push_back(i.first);
+
+					break;
+				}
+
+				case widgetType::exitCurrentMenu:
+				{
+					if (currentMenuStack.size())
+					{
+						currentMenuStack.pop_back();
+					}
+					break;
+				}
+
+				case widgetType::texture:
+				{
+
+					renderTexture(renderer, colums[currentColum].first, j.second.texture, j.second.colors,
+						j.second.textureCoords);
+
+					break;
+				}
+
+				case widgetType::buttonWithTexture:
+				{
+					bool hovered = false;
+					bool clicked = false;
+					glm::vec4 transformDrawn = computeTextureNewPosition(colums[currentColum].first, j.second.texture);
+					glm::vec4 aabbPos = transformDrawn;
+					glm::vec4 color = j.second.colors;
+
+
+					if (aabb(aabbPos, input.mousePos))
+					{
+						hovered = true;
+						if (input.mouseHeld)
+						{
+							clicked = true;
+							transformDrawn.y += transformDrawn.w * pressDownSize;
+						}
 					}
 
-					case widgetType::exitCurrentMenu:
+					if (hovered)
 					{
-						if (currentMenuStack.size())
-						{
-							currentMenuStack.pop_back();
-						}
-						break;
+						color = stepColorDown(color, 0.8);
 					}
 
-					case widgetType::texture:
+					if (input.mouseReleased && aabb(aabbPos, input.mousePos))
 					{
-
-						renderTexture(renderer, colums[currentColum].first, j.second.texture, j.second.colors,
-							j.second.textureCoords);
-
-						break;
+						widget.returnFromUpdate = true;
+						if (anyButtonPressed) { *anyButtonPressed = true; }
+					}
+					else
+					{
+						widget.returnFromUpdate = false;
 					}
 
-					case widgetType::buttonWithTexture:
+					renderTexture(renderer, transformDrawn, j.second.texture, color,
+						j.second.textureCoords);
+
+					break;
+				}
+
+				case widgetType::sliderFloatW:
+				{
+					if (j.second.max <= j.second.min) { break; }
+
+					auto computedPos = colums[currentColum].first;
+
+					glm::vec4 textTransform{computedPos.x, computedPos.y, computedPos.z / 2, computedPos.w};
+					glm::vec4 sliderTransform{computedPos.x + computedPos.z / 2, computedPos.y, computedPos.z / 2, computedPos.w};
+
+					if (MINECRAFT_LOOK_SLIDER)
 					{
-						bool hovered = false;
-						bool clicked = false;
-						glm::vec4 transformDrawn = computeTextureNewPosition(colums[currentColum].first, j.second.texture);
-						glm::vec4 aabbPos = transformDrawn;
-						glm::vec4 color = j.second.colors;
-
-
-						if (aabb(aabbPos, input.mousePos))
-						{
-							hovered = true;
-							if (input.mouseHeld)
-							{
-								clicked = true;
-								transformDrawn.y += transformDrawn.w * pressDownSize;
-							}
-						}
-
-						if (hovered)
-						{
-							color = stepColorDown(color, 0.8);
-						}
-
-						if (input.mouseReleased && aabb(aabbPos, input.mousePos))
-						{
-							widget.returnFromUpdate = true;
-							if (anyButtonPressed) { *anyButtonPressed = true; }
-						}
-						else
-						{
-							widget.returnFromUpdate = false;
-						}
-
-						renderTexture(renderer, transformDrawn, j.second.texture, color,
-							j.second.textureCoords);
-
-						break;
+						textTransform = computedPos;
+						sliderTransform = computedPos;
 					}
 
-					case widgetType::sliderFloatW:
+					float *value = (float *)j.second.pointer;
+					if (!value) { break; }
+
+					*value = std::min(*value, j.second.max);
+					*value = std::max(*value, j.second.min);
+
+
+					std::string text = j.first;
+
+					std::ostringstream s;
+					s.precision(2);
+					s << std::fixed << *value;
+
+					text = getString(text) + ": " + s.str();
+
+					if (renderSliderGeneric<float>(renderer, sliderTransform,
+						value, j.second.min, j.second.max, j.second.pd.sliderBeingDragged,
+						j.second.texture, j.second.colors,
+						j.second.textureOver, j.second.colors2, input))
 					{
-						if (j.second.max <= j.second.min) { break; }
-
-						auto computedPos = colums[currentColum].first;
-
-						glm::vec4 textTransform{computedPos.x, computedPos.y, computedPos.z / 2, computedPos.w};
-						glm::vec4 sliderTransform{computedPos.x + computedPos.z / 2, computedPos.y, computedPos.z/2, computedPos.w};
-
-						if (MINECRAFT_LOOK_SLIDER)
+						if (andSliderDragged)
 						{
-							textTransform = computedPos;
-							sliderTransform = computedPos;
+							*andSliderDragged = 1;
 						}
-
-						float *value = (float*)j.second.pointer;
-						if (!value) { break; }
-
-						*value = std::min(*value, j.second.max);
-						*value = std::max(*value, j.second.min);
-
-
-						std::string text = j.first;
-						
-						std::ostringstream s;
-						s.precision(2);
-						s << std::fixed << *value;
-
-						text = getString(text) + ": " + s.str();
-
-						if(renderSliderGeneric<float>(renderer, sliderTransform,
-							value, j.second.min, j.second.max, j.second.pd.sliderBeingDragged,
-							j.second.texture, j.second.colors, 
-							j.second.textureOver, j.second.colors2, input))
-						{
-							if (andSliderDragged)
-							{
-								*andSliderDragged = 1;
-							}
-						}
-
-
-						renderText(renderer, text, font, textTransform, j.second.colors3,
-							true);
-
-
-						break;
 					}
 
-					case widgetType::colorPickerW:
+
+					renderText(renderer, text, font, textTransform, j.second.colors3,
+						true);
+
+
+					break;
+				}
+
+				case widgetType::colorPickerW:
+				{
+					auto computedPos = colums[currentColum].first;
+
+					glm::vec4 textTransform{computedPos.x, computedPos.y, computedPos.z / 4, computedPos.w};
+					glm::vec4 transform1{computedPos.x + (computedPos.z / 4.f) * 1, computedPos.y, computedPos.z / 4.f, computedPos.w};
+					glm::vec4 transform2{computedPos.x + (computedPos.z / 4.f) * 2, computedPos.y, computedPos.z / 4.f, computedPos.w};
+					glm::vec4 transform3{computedPos.x + (computedPos.z / 4.f) * 3, computedPos.y, computedPos.z / 4.f, computedPos.w};
+
+					float *value;
+					value = (float *)j.second.pointer;
+
+					if (!value) { break; }
+
+					glm::vec4 color = {value[0], value[1], value[2], 1};
+
+					if (j.second.colors.a)
 					{
-						auto computedPos = colums[currentColum].first;
+						renderFancyBox(renderer, textTransform,
+							color, j.second.texture, false, false);
 
-						glm::vec4 textTransform{computedPos.x, computedPos.y, computedPos.z / 4, computedPos.w};
-						glm::vec4 transform1{computedPos.x + (computedPos.z / 4.f)*1, computedPos.y, computedPos.z / 4.f, computedPos.w};
-						glm::vec4 transform2{computedPos.x + (computedPos.z / 4.f)*2, computedPos.y, computedPos.z / 4.f, computedPos.w};
-						glm::vec4 transform3{computedPos.x + (computedPos.z / 4.f)*3, computedPos.y, computedPos.z / 4.f, computedPos.w};
+						renderText(renderer, j.first, font, textTransform, j.second.colors, true);
 
-						float *value;
-						value = (float *)j.second.pointer;
-
-						if (!value) { break; }
-
-						glm::vec4 color = {value[0], value[1], value[2], 1};
-
-						if (j.second.colors.a)
-						{
-							renderFancyBox(renderer, textTransform,
-								color, j.second.texture, false, false);
-
-							renderText(renderer, j.first, font, textTransform, j.second.colors, true);
-
-						}
-						else
-						{
-							renderText(renderer, j.first, font, textTransform, color, true);
-						}
-
-						if (j.second.colors2.a)
-						{
-							renderSliderFloat(renderer, transform1,
-								value + 0, 0, 1, j.second.pd.sliderBeingDragged,
-								j.second.texture, j.second.colors2, j.second.textureOver, {1,0,0,1}, input);
-
-							renderSliderFloat(renderer, transform2,
-								value + 1, 0, 1, j.second.pd.sliderBeingDragged2,
-								j.second.texture, j.second.colors2, j.second.textureOver, {0,1,0,1}, input);
-
-							renderSliderFloat(renderer, transform3,
-								value + 2, 0, 1, j.second.pd.sliderBeingDragged3,
-								j.second.texture, j.second.colors2, j.second.textureOver, {0,0,1,1}, input);
-
-						}
-						else
-						{
-							renderSliderFloat(renderer, transform1,
-								value + 0, 0, 1, j.second.pd.sliderBeingDragged,
-								j.second.texture, {1,0,0,1}, j.second.textureOver, {1,0,0,1}, input);
-
-							renderSliderFloat(renderer, transform2,
-								value + 1, 0, 1, j.second.pd.sliderBeingDragged2,
-								j.second.texture, {0,1,0,1}, j.second.textureOver, {0,1,0,1}, input);
-
-							renderSliderFloat(renderer, transform3,
-								value + 2, 0, 1, j.second.pd.sliderBeingDragged3,
-								j.second.texture, {0,0,1,1}, j.second.textureOver, {0,0,1,1}, input);
-
-						}
-
-					
-						break;
 					}
-					case widgetType::newColumW:
+					else
 					{
-						currentColum++;
-						colums[currentColum].first.y -= colums[currentColum].second; //neagate end of loop;
-						break;
+						renderText(renderer, j.first, font, textTransform, color, true);
 					}
 
-					case widgetType::sliderUint8:
+					if (j.second.colors2.a)
 					{
-						if (j.second.maxInt <= j.second.minInt) { break; }
+						renderSliderFloat(renderer, transform1,
+							value + 0, 0, 1, j.second.pd.sliderBeingDragged,
+							j.second.texture, j.second.colors2, j.second.textureOver, {1,0,0,1}, input);
 
-						auto computedPos = colums[currentColum].first;
+						renderSliderFloat(renderer, transform2,
+							value + 1, 0, 1, j.second.pd.sliderBeingDragged2,
+							j.second.texture, j.second.colors2, j.second.textureOver, {0,1,0,1}, input);
 
-						glm::vec4 textTransform{computedPos.x, computedPos.y, computedPos.z / 2, computedPos.w};
-						glm::vec4 sliderTransform{computedPos.x + computedPos.z / 2, computedPos.y, computedPos.z / 2, computedPos.w};
+						renderSliderFloat(renderer, transform3,
+							value + 2, 0, 1, j.second.pd.sliderBeingDragged3,
+							j.second.texture, j.second.colors2, j.second.textureOver, {0,0,1,1}, input);
 
-						if (MINECRAFT_LOOK_SLIDER)
-						{
-							textTransform = computedPos;
-							sliderTransform = computedPos;
-						}
+					}
+					else
+					{
+						renderSliderFloat(renderer, transform1,
+							value + 0, 0, 1, j.second.pd.sliderBeingDragged,
+							j.second.texture, {1,0,0,1}, j.second.textureOver, {1,0,0,1}, input);
 
-						unsigned char *value = (unsigned char *)j.second.pointer;
-						if (!value) { break; }
+						renderSliderFloat(renderer, transform2,
+							value + 1, 0, 1, j.second.pd.sliderBeingDragged2,
+							j.second.texture, {0,1,0,1}, j.second.textureOver, {0,1,0,1}, input);
 
-						*value = std::min(*value, (unsigned char)j.second.maxInt);
-						*value = std::max(*value, (unsigned char)j.second.minInt);
+						renderSliderFloat(renderer, transform3,
+							value + 2, 0, 1, j.second.pd.sliderBeingDragged3,
+							j.second.texture, {0,0,1,1}, j.second.textureOver, {0,0,1,1}, input);
 
-						std::string text = j.first;
-
-						text = getString(text) + ": " + std::to_string(*value);
-
-						if (renderSliderGeneric<unsigned char>(renderer, sliderTransform,
-							value, j.second.minInt, j.second.maxInt, j.second.pd.sliderBeingDragged,
-							j.second.texture, j.second.colors, j.second.textureOver, j.second.colors2, input))
-						{
-							if (andSliderDragged)
-							{
-								*andSliderDragged = 1;
-							}
-						}
-
-						renderText(renderer, text, font, textTransform, j.second.colors3, true);
-
-						break;
 					}
 
-					case widgetType::sliderint8:
+
+					break;
+				}
+				case widgetType::newColumW:
+				{
+					currentColum++;
+					colums[currentColum].first.y -= colums[currentColum].second; //neagate end of loop;
+					break;
+				}
+
+				case widgetType::sliderUint8:
+				{
+					if (j.second.maxInt <= j.second.minInt) { break; }
+
+					auto computedPos = colums[currentColum].first;
+
+					glm::vec4 textTransform{computedPos.x, computedPos.y, computedPos.z / 2, computedPos.w};
+					glm::vec4 sliderTransform{computedPos.x + computedPos.z / 2, computedPos.y, computedPos.z / 2, computedPos.w};
+
+					if (MINECRAFT_LOOK_SLIDER)
 					{
-						if (j.second.maxInt <= j.second.minInt) { break; }
-
-						auto computedPos = colums[currentColum].first;
-
-						glm::vec4 textTransform{computedPos.x, computedPos.y, computedPos.z / 2, computedPos.w};
-						glm::vec4 sliderTransform{computedPos.x + computedPos.z / 2, computedPos.y, computedPos.z / 2, computedPos.w};
-
-						if (MINECRAFT_LOOK_SLIDER)
-						{
-							textTransform = computedPos;
-							sliderTransform = computedPos;
-						}
-
-						signed char *value = (signed char *)j.second.pointer;
-						if (!value) { break; }
-
-						*value = std::min(*value, (signed char)j.second.maxInt);
-						*value = std::max(*value, (signed char)j.second.minInt);
-
-						std::string text = j.first;
-
-						text = getString(text) + ": " + std::to_string(*value);
-
-						if (renderSliderGeneric<signed char>(renderer, sliderTransform,
-							value, j.second.minInt, j.second.maxInt, j.second.pd.sliderBeingDragged,
-							j.second.texture, j.second.colors, j.second.textureOver, j.second.colors2, input))
-						{
-							if (andSliderDragged)
-							{
-								*andSliderDragged = 1;
-							}
-						}
-
-						renderText(renderer, text, font, textTransform, j.second.colors3, true);
-
-						break;
+						textTransform = computedPos;
+						sliderTransform = computedPos;
 					}
 
-					case widgetType::sliderIntW: 
+					unsigned char *value = (unsigned char *)j.second.pointer;
+					if (!value) { break; }
+
+					*value = std::min(*value, (unsigned char)j.second.maxInt);
+					*value = std::max(*value, (unsigned char)j.second.minInt);
+
+					std::string text = j.first;
+
+					text = getString(text) + ": " + std::to_string(*value);
+
+					if (renderSliderGeneric<unsigned char>(renderer, sliderTransform,
+						value, j.second.minInt, j.second.maxInt, j.second.pd.sliderBeingDragged,
+						j.second.texture, j.second.colors, j.second.textureOver, j.second.colors2, input))
 					{
-						if (j.second.maxInt <= j.second.minInt) { break; }
-
-						auto computedPos = colums[currentColum].first;
-
-						glm::vec4 textTransform{computedPos.x, computedPos.y, computedPos.z / 2, computedPos.w};
-						glm::vec4 sliderTransform{computedPos.x + computedPos.z / 2, computedPos.y, computedPos.z / 2, computedPos.w};
-
-						if (MINECRAFT_LOOK_SLIDER)
+						if (andSliderDragged)
 						{
-							textTransform = computedPos;
-							sliderTransform = computedPos;
+							*andSliderDragged = 1;
 						}
-
-						int *value = (int *)j.second.pointer;
-						if (!value) { break; }
-
-						*value = std::min(*value, j.second.maxInt);
-						*value = std::max(*value, j.second.minInt);
-
-
-						std::string text = j.first;
-
-						text = getString(text) + ": " + std::to_string(*value);
-
-						if (renderSliderGeneric<int>(renderer, sliderTransform,
-							value, j.second.minInt, j.second.maxInt, j.second.pd.sliderBeingDragged,
-							j.second.texture, j.second.colors, j.second.textureOver, j.second.colors2, input))
-						{
-							if (andSliderDragged)
-							{
-								*andSliderDragged = 1;
-							}
-						}
-
-						renderText(renderer, text, font, textTransform, j.second.colors3, true);
-					
-						break;
 					}
 
-					case widgetType::customWidget:
+					renderText(renderer, text, font, textTransform, j.second.colors3, true);
+
+					break;
+				}
+
+				case widgetType::sliderint8:
+				{
+					if (j.second.maxInt <= j.second.minInt) { break; }
+
+					auto computedPos = colums[currentColum].first;
+
+					glm::vec4 textTransform{computedPos.x, computedPos.y, computedPos.z / 2, computedPos.w};
+					glm::vec4 sliderTransform{computedPos.x + computedPos.z / 2, computedPos.y, computedPos.z / 2, computedPos.w};
+
+					if (MINECRAFT_LOOK_SLIDER)
 					{
-						j.second.returnTransform = colums[currentColum].first;
-						j.second.customWidgetUsed = true;
-
-						j.second.hovered = aabb(j.second.returnTransform, mousePos);
-						
-						j.second.clicked = aabb(j.second.returnTransform, mousePos) && mouseClick;
-
-						if (j.second.clicked)
-						{
-							if (anyCustomWidgetPressed)
-							{
-								*anyCustomWidgetPressed = true;
-							}
-						}
-
-
-						break;
+						textTransform = computedPos;
+						sliderTransform = computedPos;
 					}
 
-					case widgetType::optionsToggle:
-					{
+					signed char *value = (signed char *)j.second.pointer;
+					if (!value) { break; }
 
-						if(glui::toggleOptions(renderer, colums[currentColum].first,
-							j.first, widget.colors, j.second.text2, (int *)j.second.pointer, j.second.displayText,
-							font, widget.texture, widget.colors2, input.mousePos, input.mouseHeld, input.mouseReleased,
-							(glm::vec4 *)j.second.pointer2, j.second.text3
+					*value = std::min(*value, (signed char)j.second.maxInt);
+					*value = std::max(*value, (signed char)j.second.minInt);
+
+					std::string text = j.first;
+
+					text = getString(text) + ": " + std::to_string(*value);
+
+					if (renderSliderGeneric<signed char>(renderer, sliderTransform,
+						value, j.second.minInt, j.second.maxInt, j.second.pd.sliderBeingDragged,
+						j.second.texture, j.second.colors, j.second.textureOver, j.second.colors2, input))
+					{
+						if (andSliderDragged)
+						{
+							*andSliderDragged = 1;
+						}
+					}
+
+					renderText(renderer, text, font, textTransform, j.second.colors3, true);
+
+					break;
+				}
+
+				case widgetType::sliderIntW:
+				{
+					if (j.second.maxInt <= j.second.minInt) { break; }
+
+					auto computedPos = colums[currentColum].first;
+
+					glm::vec4 textTransform{computedPos.x, computedPos.y, computedPos.z / 2, computedPos.w};
+					glm::vec4 sliderTransform{computedPos.x + computedPos.z / 2, computedPos.y, computedPos.z / 2, computedPos.w};
+
+					if (MINECRAFT_LOOK_SLIDER)
+					{
+						textTransform = computedPos;
+						sliderTransform = computedPos;
+					}
+
+					int *value = (int *)j.second.pointer;
+					if (!value) { break; }
+
+					*value = std::min(*value, j.second.maxInt);
+					*value = std::max(*value, j.second.minInt);
+
+
+					std::string text = j.first;
+
+					text = getString(text) + ": " + std::to_string(*value);
+
+					if (renderSliderGeneric<int>(renderer, sliderTransform,
+						value, j.second.minInt, j.second.maxInt, j.second.pd.sliderBeingDragged,
+						j.second.texture, j.second.colors, j.second.textureOver, j.second.colors2, input))
+					{
+						if (andSliderDragged)
+						{
+							*andSliderDragged = 1;
+						}
+					}
+
+					renderText(renderer, text, font, textTransform, j.second.colors3, true);
+
+					break;
+				}
+
+				case widgetType::customWidget:
+				{
+					j.second.returnTransform = colums[currentColum].first;
+					j.second.customWidgetUsed = true;
+
+					j.second.hovered = aabb(j.second.returnTransform, mousePos);
+
+					j.second.clicked = aabb(j.second.returnTransform, mousePos) && mouseClick;
+
+					if (j.second.clicked)
+					{
+						if (anyCustomWidgetPressed)
+						{
+							*anyCustomWidgetPressed = true;
+						}
+					}
+
+
+					break;
+				}
+
+				case widgetType::optionsToggle:
+				{
+
+					if (glui::toggleOptions(renderer, colums[currentColum].first,
+						j.first, widget.colors, j.second.text2, (int *)j.second.pointer, j.second.displayText,
+						font, widget.texture, widget.colors2, input.mousePos, input.mouseHeld, input.mouseReleased,
+						(glm::vec4 *)j.second.pointer2, j.second.text3
 						))
-						{
-							widget.returnFromUpdate = true;
-							if (anyButtonPressed) { *anyButtonPressed = true; }
-							if (anyToggleToggeled) { *anyToggleToggeled = true; }
-						}
-						else
-						{
-							widget.returnFromUpdate = false;
-						}
-
-						break;
+					{
+						widget.returnFromUpdate = true;
+						if (anyButtonPressed) { *anyButtonPressed = true; }
+						if (anyToggleToggeled) { *anyToggleToggeled = true; }
 					}
+					else
+					{
+						widget.returnFromUpdate = false;
+					}
+
+					break;
+				}
 
 				}
 
@@ -1893,12 +1894,12 @@ namespace glui
 			colums[currentColum].first.y += colums[currentColum].second;
 		}
 
-		
+
 		//clear unused data
 		{
 			std::unordered_map<std::string, Internal::Widget> widgets2;
 			widgets2.reserve(internal.widgets.size());
-			for (auto& i : internal.widgets)
+			for (auto &i : internal.widgets)
 			{
 				if (i.second.usedThisFrame)
 				{
@@ -1909,7 +1910,7 @@ namespace glui
 			internal.widgets = widgets2;
 		}
 
-		
+
 		renderer.currentCamera = camera;
 
 		internal.widgetsVector.clear();
@@ -1945,7 +1946,7 @@ namespace glui
 		{
 			return false;
 		}
-		
+
 	}
 
 	void RendererUi::Texture(int id, gl2d::Texture t, gl2d::Color4f colors, glm::vec4 textureCoords)
@@ -1987,7 +1988,7 @@ namespace glui
 
 	}
 
-	bool RendererUi::Toggle(std::string name, const gl2d::Color4f colors, bool* toggle, const gl2d::Texture texture, const gl2d::Texture overTexture)
+	bool RendererUi::Toggle(std::string name, const gl2d::Color4f colors, bool *toggle, const gl2d::Texture texture, const gl2d::Texture overTexture)
 	{
 		name += internal.idStr;
 
@@ -2013,7 +2014,7 @@ namespace glui
 
 	}
 
-	bool RendererUi::ToggleButton(std::string name, const gl2d::Color4f textColors, 
+	bool RendererUi::ToggleButton(std::string name, const gl2d::Color4f textColors,
 		bool *toggle, const gl2d::Texture texture, const gl2d::Color4f buttonColors)
 	{
 		name += internal.idStr;
@@ -2087,7 +2088,7 @@ namespace glui
 		Text("", {});
 	}
 
-	void RendererUi::InputText(std::string name, char* text, size_t textSizeWithNullChar,
+	void RendererUi::InputText(std::string name, char *text, size_t textSizeWithNullChar,
 		gl2d::Color4f color, const gl2d::Texture texture, bool onlyOneEnabeled,
 		bool displayText,
 		bool enabeled)
@@ -2101,11 +2102,11 @@ namespace glui
 		widget.textSize = textSizeWithNullChar;
 		widget.texture = texture;
 		widget.usedThisFrame = true;
-		widget.justCreated = true;	
+		widget.justCreated = true;
 		widget.enabeled = enabeled;
 		widget.displayText = displayText;
 		widget.onlyOneEnabeled = onlyOneEnabeled;
-		
+
 		internal.widgetsVector.push_back({name, widget});
 	}
 
@@ -2198,7 +2199,7 @@ namespace glui
 		internal.widgetsVector.push_back({name, widget});
 	}
 
-	void RendererUi::colorPicker(std::string name, 
+	void RendererUi::colorPicker(std::string name,
 		float *color3Component, gl2d::Texture sliderTexture,
 		gl2d::Texture ballTexture, gl2d::Color4f color
 		, gl2d::Color4f color2)
@@ -2254,10 +2255,10 @@ namespace glui
 
 	void RendererUi::PushId(int id)
 	{
-		char a = *(((char*)&id) + 0);
-		char b = *(((char*)&id) + 1);
-		char c = *(((char*)&id) + 2);
-		char d = *(((char*)&id) + 3);
+		char a = *(((char *)&id) + 0);
+		char b = *(((char *)&id) + 1);
+		char c = *(((char *)&id) + 2);
+		char d = *(((char *)&id) + 3);
 
 		internal.idStr.push_back('#');
 		internal.idStr.push_back('#');
@@ -2315,7 +2316,7 @@ namespace glui
 		int pos = 0;
 		for (const auto i : s)
 		{
-			h += i*pos;
+			h += i * pos;
 			pos += 1;
 			pos %= 10;
 		}
@@ -2604,8 +2605,8 @@ namespace glui
 
 		glm::vec4 b = dimensions;
 
-		b.x += (b.z * p.x)/2.f;
-		b.y += (b.w * p.y)/2.f;
+		b.x += (b.z * p.x) / 2.f;
+		b.y += (b.w * p.y) / 2.f;
 
 		b.z *= (1.f - p.x);
 		b.w *= (1.f - p.y);

@@ -18,7 +18,7 @@
 float determineTextSize(gl2d::Renderer2D &renderer, const std::string &str,
 	gl2d::Font &f, glm::vec4 transform, bool minimize = true)
 {
-	float size = 4;
+	float size = 64;
 
 	auto s = renderer.getTextSize(str.c_str(), f, size);
 
@@ -309,7 +309,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			if (item.counter < 10) { s = " " + s; }
 
 			renderer2d.renderText({itemBox}, s.c_str(),
-				font, {1,1,1,1}, 0.9 * (itemBox.z/100.f));
+				font, {1,1,1,1}, 60 * (itemBox.z/100.f));
 
 		}
 
@@ -1093,7 +1093,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 								<< std::setw(2) << std::setfill('0') << secconds;
 
 							renderer2d.renderText(textPos, ss.str().c_str(), font, Colors_White, 
-								box.x /(64*2.f));
+								box.x /2.f);
 
 
 							currentPos += oneItemSize;
@@ -1140,7 +1140,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						//	<< std::setw(2) << std::setfill('0') << secconds;
 						//
 						//renderer2d.renderText(textPos, ss.str().c_str(), font, Colors_White,
-						//	box.x / (64 * 2.f));
+						//	box.x / 2.f);
 
 						box.x += size * 1.1f;
 					}
