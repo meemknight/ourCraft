@@ -194,6 +194,11 @@ void UiENgine::loadTextures(std::string path)
 		itemsBarInventorySize = itemsBarInventory.GetSize();
 	}
 
+	if (!arrowUI.id)
+	{
+		arrowUI.loadFromFile((path + "arrow.png").c_str(), true, true);
+	}
+
 	if (!oneInventorySlot.id)
 	{
 		oneInventorySlot.loadFromFile((path + "ui4.png").c_str(), true, true);
@@ -248,6 +253,7 @@ void UiENgine::clearOnlyTextures()
 	vignete.cleanup();
 
 	itemsBarInventory.cleanup();
+	arrowUI.cleanup();
 	itemsBarInventorySize = {};
 
 	oneInventorySlot.cleanup();
@@ -682,7 +688,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 
 							glui::Frame insideUpperPart(glui::Box().xCenter().yTopPerc(0.1).
-								xDimensionPercentage(0.9).yDimensionPercentage(0.45)());
+								xDimensionPercentage(0.90).yDimensionPercentage(0.45)());
 
 							//highlight
 							//renderer2d.renderRectangle(glui::Box().xLeft().yTop().xDimensionPercentage(1.f).
@@ -698,7 +704,8 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 							auto border = craftingItems;
 							border.w *= 2;
-							border = shrinkRectanglePercentage(border, -0.06, -0.2);
+							border.z += craftingItems.w * 2;
+							border = shrinkRectanglePercentage(border, -0.02, -0.2);
 							renderer2d.render9Patch(border,
 								24, Colors_White, {}, 0.f, buttonTexture, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
 
@@ -707,12 +714,12 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 								int currentPos = craftingSlider;
 								craftingSlider -= platform::getScroll();
 								int minVal = 0;
-								if (allItems.size() <= 7)
+								if (allItems.size() <= 9)
 								{
 									minVal = -(allItems.size() - 2);
 								}
 
-								craftingSlider = glm::clamp(craftingSlider, -1, std::max((int)allItems.size() + 7 - 9, minVal));
+								craftingSlider = glm::clamp(craftingSlider, -1, std::max((int)allItems.size() + 9 - 11, minVal));
 
 								if (currentPos != craftingSlider && platform::getScroll())
 								{
@@ -732,11 +739,11 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 									if (allItems.size() > i)
 									{
 										glm::ivec4 itemBox;
-										if (i >= (start + 9))
+										if (i >= (start + 11))
 										{
 											itemBox = craftingItems;
 											itemBox.z = itemBox.w;
-											itemBox.x = craftingItems.x + itemBox.z * (i - start - 9);
+											itemBox.x = craftingItems.x + itemBox.z * (i - start - 11);
 											itemBox.y += itemBox.z * 1.1;
 										}
 										else
@@ -761,7 +768,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 								};
 
 
-								for (int i = start; i < start + 18; i++)
+								for (int i = start; i < start + 22; i++)
 								{
 									if (i != start + 1)
 									{
@@ -877,6 +884,15 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 								}
 							}
 
+							//arrow
+							{
+								auto itemBox = craftingItems;
+								itemBox.z = itemBox.w;
+								itemBox.x = craftingItems.x + itemBox.z * (1);
+								itemBox.y -= itemBox.w * 0.35;
+
+								renderer2d.renderRectangle(itemBox, arrowUI, Colors_White, {}, 180.f);
+							}
 
 
 						}

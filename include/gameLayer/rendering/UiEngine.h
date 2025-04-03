@@ -48,6 +48,7 @@ struct UiENgine
 	gl2d::Texture itemsHighlighter;
 	gl2d::Texture itemsBarInventory;
 	gl2d::Texture oneInventorySlot;
+	gl2d::Texture arrowUI;
 	gl2d::Texture playerCell;
 
 	glm::vec2 itemsBarSize;
