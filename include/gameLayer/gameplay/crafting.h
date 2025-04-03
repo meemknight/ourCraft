@@ -25,7 +25,7 @@ struct CraftingRecepieIndex
 	int index = 0;
 };
 
-std::vector< CraftingRecepieIndex> getAllPossibleRecepies(PlayerInventory &playerInventory);
+std::vector<CraftingRecepieIndex> getAllPossibleRecepies(PlayerInventory &playerInventory);
 
 
 bool recepieExists(int recepieIndex);

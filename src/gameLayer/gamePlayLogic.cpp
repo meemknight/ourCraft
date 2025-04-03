@@ -1240,7 +1240,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 									{
 										gameData.interaction.baseBlockHolder = *baseBlock;
 									}
-								};
+								}
+								
 
 
 								sendBlockInteractionMessage(player.entityId, rayCastPos,
@@ -1248,6 +1249,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 								
 								gameData.insideInventoryMenu = false;
 								gameData.currentInventoryTab = 0;
+
+								if (actionType == InteractionTypes::craftingTable)
+								{
+									gameData.insideInventoryMenu = true;
+									gameData.currentInventoryTab = 1;
+								}
 
 								//reset crafting table
 								// TODO!!! exit menu thingy here

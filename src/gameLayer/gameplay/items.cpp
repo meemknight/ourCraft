@@ -251,7 +251,13 @@ bool Item::isPickaxe()
 
 bool Item::isShovel()
 {
-	return 0;
+	return
+		type == copperShovel ||
+		type == leadShovel ||
+		type == ironShovel ||
+		type == silverShovel ||
+		type == goldShovel
+		;
 }
 
 bool Item::canAttack()
@@ -299,7 +305,13 @@ bool Item::isBattleAxe()
 
 bool Item::isSword()
 {
-	return type == trainingSword;
+	return type == trainingSword ||
+		type == copperSword ||
+		type == leadSword ||
+		type == ironSword ||
+		type == silverSword ||
+		type == goldSword;
+
 }
 
 bool Item::isHammer()
@@ -624,14 +636,26 @@ const char *itemsNamesTextures[] =
 
 	"tools/copperPickaxe.png",
 	"tools/copperAxe.png",
+	"tools/copperShovel.png",
 	"tools/leadPickaxe.png",
 	"tools/leadAxe.png",
+	"tools/leadShovel.png",
 	"tools/ironPickaxe.png",
 	"tools/ironAxe.png",
+	"tools/ironShovel.png",
 	"tools/silverPickaxe.png",
 	"tools/silverAxe.png",
+	"tools/silverShovel.png",
 	"tools/goldPickaxe.png",
 	"tools/goldAxe.png",
+	"tools/goldShovel.png",
+
+
+	"weapons/copperSword.png",
+	"weapons/leadSword.png",
+	"weapons/ironSword.png",
+	"weapons/silverSword.png",
+	"weapons/goldSword.png",
 
 	"trainingScythe.png",
 	"trainingSword.png",
@@ -722,16 +746,27 @@ const char *itemsNames[] =
 	"silverIngot",
 	"goldIngot",
 
-	"copper pickaxe.png",
-	"copper axe.png",
-	"lead pickaxe.png",
-	"lead axe.png",
-	"iron pickaxe.png",
-	"iron axe.png",
-	"silver pickaxe.png",
-	"silver axe.png",
-	"gold pickaxe.png",
-	"gold axe.png",
+	"copper pickaxe",
+	"copper axe",
+	"copper shovel",
+	"lead pickaxe",
+	"lead axe",
+	"lead shovel",
+	"iron pickaxe",
+	"iron axe",
+	"iron shovel",
+	"silver pickaxe",
+	"silver axe",
+	"silver shovel",
+	"gold pickaxe",
+	"gold axe",
+	"gold shovel",
+
+	"copper sword",
+	"lead sword",
+	"iron sword",
+	"silver sword",
+	"gold sword",
 
 	"trainingScythe",
 	"trainingSword",

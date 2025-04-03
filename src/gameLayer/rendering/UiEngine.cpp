@@ -318,7 +318,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			gl2d::Texture t;
 			t.id = blocksLoader.texturesIdsItems[item.type - ItemsStartPoint];
 
-			renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, in - 0.45), t, {color, color, color, 1});
+			renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, in - 0.35), t, {color, color, color, 1});
 		}
 
 		if (item.counter != 1)
@@ -346,7 +346,6 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 		if (insideInventory)
 		{
 
-			auto allItems = getAllPossibleRecepies(inventory);
 
 			renderer2d.renderRectangle({0,0,w,h}, {0.1,0.1,0.1,0.05});
 
@@ -665,6 +664,9 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						//crafting box
 						if (currentInventoryTab == INVENTORY_TAB_CRAFTING)
 						{
+							auto allItems = getAllPossibleRecepies(inventory);
+
+
 							glui::Frame insideUpperPart(glui::Box().xCenter().yTopPerc(0.1).
 								xDimensionPercentage(0.9).yDimensionPercentage(0.45)());
 
@@ -798,7 +800,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 											}
 
 											renderOneItem(box, recepie.recepie.items[i]);
-											box.y += box.z * 0.8;
+											box.x += box.z * 0.8;
 
 										}
 

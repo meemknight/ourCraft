@@ -639,7 +639,7 @@ bool isStainedGlass(BlockType type)
 
 unsigned char isInteractable(BlockType type)
 {
-	if (type == BlockTypes::craftingTable)
+	if (type == BlockTypes::craftingTable || type == BlockTypes::workBench || type == BlockTypes::craftingItems)
 	{
 		return InteractionTypes::craftingTable;
 	}else if (type == BlockTypes::structureBase)

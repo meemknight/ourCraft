@@ -171,18 +171,23 @@ static CraftingRecepie recepies[] =
 	//tools
 	recepie<2>(Item(ItemTypes::copperPickaxe, 1), {Item(ItemTypes::copperIngot, 4), Item(BlockTypes::wooden_plank, 3)}).setAnyWood(),
 	recepie<2>(Item(ItemTypes::copperAxe, 1), {Item(ItemTypes::copperIngot, 3), Item(BlockTypes::wooden_plank, 3)}).setAnyWood(),
+	recepie<2>(Item(ItemTypes::copperShovel, 1), {Item(ItemTypes::copperIngot, 3), Item(BlockTypes::wooden_plank, 3)}).setAnyWood(),
 
 	recepie<2>(Item(ItemTypes::leadPickaxe, 1), {Item(ItemTypes::copperIngot, 4), Item(BlockTypes::wooden_plank, 3)}).setAnyWood(),
 	recepie<2>(Item(ItemTypes::leadAxe, 1), {Item(ItemTypes::copperIngot, 3), Item(BlockTypes::wooden_plank, 3)}).setAnyWood(),
+	recepie<2>(Item(ItemTypes::leadShovel, 1), {Item(ItemTypes::copperIngot, 3), Item(BlockTypes::wooden_plank, 3)}).setAnyWood(),
 
 	recepie<2>(Item(ItemTypes::ironPickaxe, 1), {Item(ItemTypes::copperIngot, 4), Item(BlockTypes::wooden_plank, 3)}).setAnyWood(),
 	recepie<2>(Item(ItemTypes::ironAxe, 1), {Item(ItemTypes::copperIngot, 3), Item(BlockTypes::wooden_plank, 3)}).setAnyWood(),
+	recepie<2>(Item(ItemTypes::ironShovel, 1), {Item(ItemTypes::copperIngot, 3), Item(BlockTypes::wooden_plank, 3)}).setAnyWood(),
 
 	recepie<2>(Item(ItemTypes::silverPickaxe, 1), {Item(ItemTypes::copperIngot, 4), Item(BlockTypes::wooden_plank, 3)}).setAnyWood(),
 	recepie<2>(Item(ItemTypes::silverAxe, 1), {Item(ItemTypes::copperIngot, 3), Item(BlockTypes::wooden_plank, 3)}).setAnyWood(),
+	recepie<2>(Item(ItemTypes::silverShovel, 1), {Item(ItemTypes::copperIngot, 3), Item(BlockTypes::wooden_plank, 3)}).setAnyWood(),
 
 	recepie<2>(Item(ItemTypes::goldPickaxe, 1), {Item(ItemTypes::copperIngot, 4), Item(BlockTypes::wooden_plank, 3)}).setAnyWood(),
 	recepie<2>(Item(ItemTypes::goldAxe, 1), {Item(ItemTypes::copperIngot, 3), Item(BlockTypes::wooden_plank, 3)}).setAnyWood(),
+	recepie<2>(Item(ItemTypes::goldShovel, 1), {Item(ItemTypes::copperIngot, 3), Item(BlockTypes::wooden_plank, 3)}).setAnyWood(),
 
 
 	//armour
