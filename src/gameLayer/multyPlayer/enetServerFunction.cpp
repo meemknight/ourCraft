@@ -243,6 +243,14 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 		c.playerData.inventory.items[24] = Item(BlockTypes::stoneBrick, 64);
 		c.playerData.inventory.items[26] = Item(BlockTypes::mud, 64);
 		c.playerData.inventory.items[27] = Item(BlockTypes::birch_log, 64);
+		c.playerData.inventory.items[28] = Item(BlockTypes::wooden_plank, 64);
+		c.playerData.inventory.items[29] = Item(BlockTypes::cobblestone, 64);
+		c.playerData.inventory.items[30] = Item(ItemTypes::cloth, 64);
+		c.playerData.inventory.items[36] = Item(ItemTypes::fang, 64);
+		c.playerData.inventory.items[37] = Item(BlockTypes::torchWood, 64);
+		c.playerData.inventory.items[38] = Item(ItemTypes::arrow, 64);
+		c.playerData.inventory.items[39] = Item(ItemTypes::copperIngot, 64);
+		c.playerData.inventory.items[40] = Item(ItemTypes::leadIngot, 64);
 		c.playerData.inventory.items[31] = itemCreator(ItemTypes::catSpawnEgg);
 		c.playerData.inventory.items[32] = itemCreator(ItemTypes::zombieSpawnEgg);
 		c.playerData.inventory.items[33] = itemCreator(ItemTypes::pigSpawnEgg);

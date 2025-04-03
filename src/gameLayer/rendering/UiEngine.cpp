@@ -107,6 +107,20 @@ glm::vec4 shrinkRectanglePercentage(glm::vec4 in, float perc)
 	return in;
 }
 
+glm::vec4 shrinkRectanglePercentage(glm::vec4 in, float percX, float percY)
+{
+	float shrinkX = in.z * percX;
+	float shrinkY = in.w * percY;
+
+	in.x += shrinkX / 2.f;
+	in.y += shrinkY / 2.f;
+
+	in.z -= shrinkX;
+	in.w -= shrinkY;
+
+	return in;
+}
+
 glm::vec4 shrinkRectanglePercentageMoveDown(glm::vec4 in, float perc)
 {
 	float shrinkX = in.z * perc;
@@ -604,7 +618,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						)
 					{
 
-						//bottom part
+						//upper part
 						auto inventoryBars = glui::Box().xCenter().yBottomPerc(-0.17).xDimensionPercentage(0.9).
 							yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
 						renderer2d.renderRectangle(inventoryBars, itemsBarInventory);
@@ -658,7 +672,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						renderSmallTextOnTopOfCell(coinsBox[3], "Coins");
 						renderSmallTextOnTopOfCell(arrowsBox[3], "Ammo");
 
-						//upper part
+						//bottom part
 
 
 						//crafting box
@@ -674,11 +688,19 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 							//renderer2d.renderRectangle(glui::Box().xLeft().yTop().xDimensionPercentage(1.f).
 							//yDimensionPercentage(1.f)(), {1,0,0,0.5});
 
-
 							auto craftingItems = glui::Box().xCenter().yTopPerc(0).xDimensionPercentage(1.f).
 								yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
 							//renderer2d.renderRectangle(craftingItems, itemsBarInventory);
 
+							craftingItems.y += craftingItems.w * 0.8;
+							//craftingItems.w -= craftingItems.w;
+							//craftingItems = shrinkRectanglePercentage(craftingItems, 0.05);
+
+							auto border = craftingItems;
+							border.w *= 2;
+							border = shrinkRectanglePercentage(border, -0.06, -0.2);
+							renderer2d.render9Patch(border,
+								24, Colors_White, {}, 0.f, buttonTexture, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
 
 							if (allItems.size())
 							{
@@ -700,36 +722,62 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 							if (allItems.size())
 							{
-								auto itemBox = craftingItems;
-								itemBox.z = itemBox.w;
+								
 								int start = craftingSlider;
 
-								auto doOneRender = [&](int i)
+								std::optional<int> currentIndexSelected;
+
+								auto doOneRender = [&](int i, glm::vec4 color = Colors_White)
 								{
 									if (allItems.size() > i)
 									{
-										itemBox.x = craftingItems.x + itemBox.z * (i - start);
+										glm::ivec4 itemBox;
+										if (i >= (start + 9))
+										{
+											itemBox = craftingItems;
+											itemBox.z = itemBox.w;
+											itemBox.x = craftingItems.x + itemBox.z * (i - start - 9);
+											itemBox.y += itemBox.z * 1.1;
+										}
+										else
+										{
+											itemBox = craftingItems;
+											itemBox.z = itemBox.w;
+											itemBox.x = craftingItems.x + itemBox.z * (i - start);
+										}
 
 										int distance = glm::abs(1 - (i - start));
+										distance = glm::min(distance, 1) * 3.f;
 
-										renderOneItem(itemBox, allItems[i].recepie.result, (float)distance / 22.f, 1.f - distance / 12.f);
+										renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, 0.0), oneInventorySlot, color);
+
+										renderOneItem(itemBox, allItems[i].recepie.result, (float)distance / 22.f, 1.f - distance / 22.f);
+
+										if (glui::aabb(itemBox, mousePos))
+										{
+											currentIndexSelected = i;
+										}
 									}
 								};
 
-								for (int i = start; i < start + 9; i++)
+
+								for (int i = start; i < start + 18; i++)
 								{
 									if (i != start + 1)
 									{
-										doOneRender(i);
+										doOneRender(i, Colors_White);
 									}
 								}
 
 								{
-									auto box = itemBox; box.x = craftingItems.x + itemBox.z * (1);
-									auto itemBox = box;
+									auto itemBox = craftingItems;
 									itemBox.z = itemBox.w;
+									itemBox.x = craftingItems.x + itemBox.z * (1);
+									//auto box = itemBox; box.x = craftingItems.x + itemBox.z * (1);
+									//auto itemBox = box;
+									//itemBox.z = itemBox.w;
 
-									renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, -0.3), oneInventorySlot);
+									//renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, -0.3), oneInventorySlot);
 
 									if (glui::aabb(itemBox, mousePos))
 									{
@@ -748,7 +796,22 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 								}
 
-								doOneRender(start + 1);
+								doOneRender(start + 1, {0,1,1,1});
+
+								if (currentIndexSelected)
+								{
+									if (platform::isLMousePressed() && *currentIndexSelected != start + 1)
+									{
+										craftingSlider -= (start + 1) - *currentIndexSelected;
+
+										int minVal = 0;
+										if (allItems.size() <= 7)
+										{
+											minVal = -(allItems.size() - 2);
+										}
+										craftingSlider = glm::clamp(craftingSlider, -1, std::max((int)allItems.size() + 7 - 9, minVal));
+									}
+								}
 
 							}
 
@@ -757,11 +820,10 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 								auto craftingWindowBox = glui::Box().xCenter().yTopPerc(0.05).
 									xDimensionPercentage(1).yDimensionPercentage(1)();
-								craftingWindowBox.y += craftingItems.w;
-								craftingWindowBox.w -= craftingItems.w;
-
+								craftingWindowBox.y -= craftingItems.w * 0.8f;
+								//craftingWindowBox.w -= craftingItems.w;
 								craftingWindowBox = shrinkRectanglePercentage(craftingWindowBox, 0.05);
-
+								
 								glui::Frame craftingWindow(craftingWindowBox);
 
 								{
@@ -782,7 +844,9 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 										auto box = craftingItems;
 										box.z = oneItemSize;
 										box.w = oneItemSize;
-										box.x += box.z * 0.6;
+										box.x += box.z * 0.8;
+
+										box = shrinkRectanglePercentage(box, 0.05);
 
 										for (int i = 0; i < sizeof(recepie.recepie.items) / sizeof(recepie.recepie.items[0]); i++)
 										{
@@ -799,8 +863,11 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 												currentItemHovered = recepie.recepie.items[i];
 											}
 
+											renderer2d.renderRectangle(box, oneInventorySlot);
 											renderOneItem(box, recepie.recepie.items[i]);
-											box.x += box.z * 0.8;
+
+
+											box.x += box.z * 1.1;
 
 										}
 
