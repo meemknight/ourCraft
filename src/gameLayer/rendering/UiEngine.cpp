@@ -631,22 +631,22 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						glm::ivec4 coinsBox[4] = {};
 						glm::ivec4 arrowsBox[4] = {};
 
-						coinsBox[0] = inventoryBars;
-						coinsBox[0].z = coinsBox[0].w;
-						coinsBox[0].x += inventoryBars.z + coinsBox[0].z * (2.f/16.f);
+						arrowsBox[0] = inventoryBars;
+						arrowsBox[0].z = arrowsBox[0].w;
+						arrowsBox[0].x += inventoryBars.z + arrowsBox[0].z * (2.f/16.f);
 
 						for (int i = 1; i < 4; i++)
 						{
-							coinsBox[i] = coinsBox[i - 1];
-							coinsBox[i].y -= coinsBox[i].w;
+							arrowsBox[i] = arrowsBox[i - 1];
+							arrowsBox[i].y -= arrowsBox[i].w;
 						}
 
 
 
 						for (int i = 0; i < 4; i++)
 						{
-							arrowsBox[i] = coinsBox[i];
-							arrowsBox[i].x += oneItemSize + oneItemSize * (2.f / 16.f);
+							coinsBox[i] = arrowsBox[i];
+							coinsBox[i].x += oneItemSize + oneItemSize * (2.f / 16.f);
 
 							renderer2d.renderRectangle(coinsBox[i], oneInventorySlot);
 							renderer2d.renderRectangle(arrowsBox[i], oneInventorySlot);

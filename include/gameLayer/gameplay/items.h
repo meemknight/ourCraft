@@ -13,6 +13,7 @@ enum ItemTypes : unsigned short
 	stick = ItemsStartPoint, //keep the stick the first item!
 	cloth,
 	fang,
+	bone,
 
 	copperIngot,
 	leadIngot,

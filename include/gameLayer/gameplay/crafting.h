@@ -13,10 +13,10 @@ struct CraftingRecepie
 	Item items[5] = {};
 	Item result = {};
 
-
+	bool anyWood = 0;
 	CraftingRecepie() {};
 
-
+	CraftingRecepie &setAnyWood() { anyWood = true; return *this; }
 };
 
 struct CraftingRecepieIndex

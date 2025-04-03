@@ -192,7 +192,7 @@ unsigned short Item::getStackSize()
 {
 	if (isAmmo())
 	{
-		return 9999;
+		return 999;
 	}else if (isTool() || isPaint() || isWeapon() || isArmour())
 	{
 		return 1;
@@ -614,7 +614,7 @@ const char *itemsNamesTextures[] =
 	"stick.png",
 	"cloth.png",
 	"fang.png",
-
+	"bone.png",
 
 	"copperIngot.png",
 	"leadIngot.png",
@@ -714,6 +714,7 @@ const char *itemsNames[] =
 	"stick",
 	"cloth",
 	"fang",
+	"bone",
 
 	"copperIngot",
 	"leadIngot",
@@ -799,7 +800,7 @@ const char *itemsNames[] =
 	"gold coin",
 	"diamond coin",
 
-	"arrow",
+	"wooden arrow",
 	"flaming arrow",
 	"goblin arrow",
 	"bone arrow",
