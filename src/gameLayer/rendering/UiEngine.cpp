@@ -90,8 +90,8 @@ void renderTextIntoBox(gl2d::Renderer2D &renderer, const std::string &str,
 		pos.y += transform.w * 0.4;
 		renderer.renderText(pos, str.c_str(), f, color, newS, 4, 3, false);
 	}
-
 }
+
 
 glm::vec4 shrinkRectanglePercentage(glm::vec4 in, float perc)
 {
@@ -121,6 +121,20 @@ glm::vec4 shrinkRectanglePercentage(glm::vec4 in, float percX, float percY)
 	return in;
 }
 
+glm::vec4 shrinkRectanglePixels(glm::vec4 in, float pixelsX, float pixelsY)
+{
+	float shrinkX = pixelsX;
+	float shrinkY = pixelsY;
+
+	in.x += shrinkX / 2.f;
+	in.y += shrinkY / 2.f;
+
+	in.z -= shrinkX;
+	in.w -= shrinkY;
+
+	return in;
+}
+
 glm::vec4 shrinkRectanglePercentageMoveDown(glm::vec4 in, float perc)
 {
 	float shrinkX = in.z * perc;
@@ -134,6 +148,31 @@ glm::vec4 shrinkRectanglePercentageMoveDown(glm::vec4 in, float perc)
 
 	return in;
 }
+
+
+void renderPopupText(gl2d::Renderer2D &renderer, gl2d::Font &f, const std::string &str, glm::vec2 start, float size,
+	gl2d::Texture texture,
+	glm::vec4 color)
+{
+
+	if (!str.length()) { return; }
+	auto textSize = renderer.getTextSize(str.c_str(), f, size, 3, 10);
+
+
+
+	glm::vec4 bigBox(start, textSize);
+
+	renderer.render9Patch(shrinkRectanglePixels(bigBox, -size / 2.f, -size / 2.f),
+		24, {0.3,0.2,0.2,0.8}, {}, 0.f, texture, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
+
+	glm::vec2 textPos = {bigBox};
+	//textPos.y += textSize.y / 2;
+	textPos.y += (f.max_height * size / (2.f*64)) * 1.5f;
+
+	renderer.renderText(textPos, str.c_str(), f, Colors_White, size, 3, 10, false);
+
+}
+
 
 
 void UiENgine::init()
@@ -1156,18 +1195,19 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 					{
 
 						auto box = cursorItemIndexBox;
-
+						
 						box.x += box.z * 0.5;
 						box.y += box.w * 0.8;
 						box.w *= 1;
 						box.z *= 1.8;
-
-						renderer2d.render9Patch(box,
-							24, {0.3,0.2,0.2,0.8}, {}, 0.f, buttonTexture, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
+						//
+						//renderer2d.render9Patch(box,
+						//	24, {0.3,0.2,0.2,0.8}, {}, 0.f, buttonTexture, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
 
 						std::string text = item->formatMetaDataToString();
 
-						renderTextIntoBox(renderer2d, text, font, box, Colors_White, true, true);
+						//renderTextIntoBox(renderer2d, text, font, box, Colors_White, true, true);
+						renderPopupText(renderer2d, font, text, box, 64, buttonTexture, Colors_White);
 
 					}
 

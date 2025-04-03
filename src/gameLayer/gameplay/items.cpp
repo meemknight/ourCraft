@@ -398,9 +398,20 @@ std::string Item::formatMetaDataToString()
 		rez += std::to_string(counter);
 	}
 
+	float pickaxe = isPickaxe();
+	float axe = isAxe();
+	float shovel = isShovel();
+
+	if (pickaxe)
+		{ rez += "\nPickaxe Power: " + std::to_string(int(pickaxe)) + "%"; }
+	if (axe)
+		{ rez += "\nAxe Power: " + std::to_string(int(axe)) + "%"; }
+	if (shovel)
+		{ rez += "\nShovel Power: " + std::to_string(int(shovel)) + "%"; }
+
 	if (metaData.size())
 	{
-		rez += "\nYes";
+		rez += "\nHas metadata";
 	}
 
 	return rez;
