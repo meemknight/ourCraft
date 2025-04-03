@@ -820,6 +820,72 @@ bool fixAlpha(unsigned char *buffer, int w, int h, bool firstTime)
 	return changed;
 }
 
+bool loadFromFileAndAddPadding(gl2d::Texture &t, const char *path)
+{
+	std::ifstream file(path, std::ios::binary);
+
+	if (!file.is_open())
+	{
+		return false;
+	}
+
+	int fileSize = 0;
+	file.seekg(0, std::ios::end);
+	fileSize = (int)file.tellg();
+	file.seekg(0, std::ios::beg);
+	unsigned char *fileData = new unsigned char[fileSize];
+	file.read((char *)fileData, fileSize);
+	file.close();
+
+
+	stbi_set_flip_vertically_on_load(true);
+
+	int width = 0;
+	int height = 0;
+	int channels = 0;
+
+	const unsigned char *decodedImage = stbi_load_from_memory(fileData, (int)fileSize, &width, &height, &channels, 4);
+
+	int PADDING = 28;
+	if (width < PADDING || height < PADDING)
+	{
+		int newWidth = std::max(width, PADDING);
+		int newHeight = std::max(height, PADDING);
+
+		std::vector<unsigned char> newData;
+		newData.resize(4 * newWidth * newHeight, 0);
+
+		int index = 0;
+		for (int y = 0; y < height; y++)
+			for (int x = 0; x < width; x++)
+			{
+
+				int xx = x + std::max((PADDING - width) / 2, 0);
+				int yy = y + std::max((PADDING - height) / 2, 0);
+
+				newData[(xx + yy * newHeight) * 4 + 0] = decodedImage[index++];
+				newData[(xx + yy * newHeight) * 4 + 1] = decodedImage[index++];
+				newData[(xx + yy * newHeight) * 4 + 2] = decodedImage[index++];
+				newData[(xx + yy * newHeight) * 4 + 3] = decodedImage[index++];
+
+			}
+
+		t.createFromBuffer((const char *)newData.data(), newWidth, newHeight, true, true);
+	}
+	else
+	{
+		t.createFromBuffer((const char *)decodedImage, width, height, true, true);
+	}
+
+
+	delete[] fileData;
+	STBI_FREE(decodedImage);
+
+	return true;
+};
+
+
+
 void createFromFileDataWithAplhaFixing(gl2d::Texture &t, const unsigned char *image_file_data, 
 	const size_t image_file_size
 	, bool pixelated, bool useMipMaps, bool isNormalMap)
@@ -1470,72 +1536,6 @@ void BlocksLoader::loadAllTextures(std::string filePath, bool reportErrors)
 		}
 
 	}
-
-
-
-	auto loadFromFileAndAddPadding = [&](gl2d::Texture &t, const char *path)
-	{
-		std::ifstream file(path, std::ios::binary);
-
-		if (!file.is_open())
-		{
-			return false;
-		}
-
-		int fileSize = 0;
-		file.seekg(0, std::ios::end);
-		fileSize = (int)file.tellg();
-		file.seekg(0, std::ios::beg);
-		unsigned char *fileData = new unsigned char[fileSize];
-		file.read((char *)fileData, fileSize);
-		file.close();
-
-
-		stbi_set_flip_vertically_on_load(true);
-
-		int width = 0;
-		int height = 0;
-		int channels = 0;
-
-		const unsigned char *decodedImage = stbi_load_from_memory(fileData, (int)fileSize, &width, &height, &channels, 4);
-
-		int PADDING = 26;
-		if (width < PADDING || height < PADDING)
-		{
-			int newWidth = std::max(width, PADDING);
-			int newHeight = std::max(height, PADDING);
-
-			std::vector<unsigned char> newData;
-			newData.resize(4 * newWidth * newHeight, 0);
-
-			int index = 0;
-			for (int y = 0; y < height; y++)
-				for (int x = 0; x < width; x++)
-				{
-
-					int xx = x + std::max((PADDING - width) / 2, 0);
-					int yy = y + std::max((PADDING - height) / 2, 0);
-
-					newData[(xx + yy * newHeight) * 4 + 0] = decodedImage[index++];
-					newData[(xx + yy * newHeight) * 4 + 1] = decodedImage[index++];
-					newData[(xx + yy * newHeight) * 4 + 2] = decodedImage[index++];
-					newData[(xx + yy * newHeight) * 4 + 3] = decodedImage[index++];
-
-				}
-
-			t.createFromBuffer((const char *)newData.data(), newWidth, newHeight, true, true);
-		}
-		else
-		{
-			t.createFromBuffer((const char *)decodedImage, width, height, true, true);
-		}
-
-
-		delete[] fileData;
-		STBI_FREE(decodedImage);
-
-		return true;
-	};
 
 
 	//load items

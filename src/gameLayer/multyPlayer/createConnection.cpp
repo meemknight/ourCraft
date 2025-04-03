@@ -1110,6 +1110,8 @@ bool placeItem(PlayerInventory &inventory, int from, int to, int counter)
 	auto fromItem = inventory.getItemFromIndex(from);
 	auto toItem = inventory.getItemFromIndex(to);
 
+	if (!inventory.canItemFit(*fromItem, to)) { return false; }
+
 	if (fromItem && toItem)
 	{
 
@@ -1204,6 +1206,9 @@ bool swapItems(PlayerInventory &inventory, int from, int to)
 	auto fromPtr = inventory.getItemFromIndex(from);
 	auto toPtr = inventory.getItemFromIndex(to);
 
+	if (!inventory.canItemFit(*fromPtr, to)) { return false; }
+	if (!inventory.canItemFit(*toPtr, from)) { return false; }
+
 	if (fromPtr && toPtr && fromPtr != toPtr)
 	{
 		auto item = *fromPtr;
@@ -1228,6 +1233,8 @@ bool grabItem(PlayerInventory &inventory, int from, int to, int counter)
 
 	auto fromItem = inventory.getItemFromIndex(from);
 	auto toItem = inventory.getItemFromIndex(to);
+
+	if (!inventory.canItemFit(*fromItem, to)) { return false; }
 
 	if (fromItem && toItem && (fromItem != toItem))
 	{
@@ -1271,6 +1278,8 @@ bool forceOverWriteItem(PlayerInventory &inventory, int index, Item &item)
 	static std::vector<unsigned char> tempData;
 
 	auto to = inventory.getItemFromIndex(index);
+
+	if (!inventory.canItemFit(item, index)) { return false; }
 
 	if (to)
 	{

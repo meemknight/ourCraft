@@ -143,6 +143,15 @@ void UiENgine::loadTextures(std::string path)
 	if(!buttonTexture.id)
 	buttonTexture.loadFromFile((path + "button.png").c_str(), true, true);
 
+	if (!coinIconTexture.id)
+		loadFromFileAndAddPadding(coinIconTexture, (path + "icons/coin.png").c_str());
+
+	if(!arrowIconTexture.id) loadFromFileAndAddPadding(arrowIconTexture, (path + "icons/arrow.png").c_str());
+	if (!bootsIconTexture.id) loadFromFileAndAddPadding(bootsIconTexture, (path + "icons/boots.png").c_str());
+	if (!chestPlateIconTexture.id) loadFromFileAndAddPadding(chestPlateIconTexture, (path + "icons/chestPlate.png").c_str());
+	if (!helmetIconTexture.id) loadFromFileAndAddPadding(helmetIconTexture, (path + "icons/helmet.png").c_str());
+
+
 	if (!itemsBar.id)
 	{
 		itemsBar.loadFromFile((path + "ui1.png").c_str(), true, true);
@@ -213,6 +222,11 @@ void UiENgine::clearOnlyTextures()
 	font.cleanup();
 	uiTexture.cleanup();
 	buttonTexture.cleanup();
+	coinIconTexture.cleanup();
+	arrowIconTexture.cleanup();
+	bootsIconTexture.cleanup();
+	chestPlateIconTexture.cleanup();
+	helmetIconTexture.cleanup();
 
 	itemsBar.cleanup();
 	background.cleanup();
@@ -270,9 +284,17 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 	std::optional<Item> currentItemHovered = {};
 	auto mousePos = platform::getRelMousePosition();
 
-	auto renderOneItem = [&](glm::vec4 itemBox, Item & item, float in = 0, float color = 1)
+	auto renderOneItem = [&](glm::vec4 itemBox, Item &item, float in = 0, float color = 1, gl2d::Texture icon = {})
 	{
-		if (item.type == 0)return;
+		if (item.type == 0)
+		{
+			if (icon.id)
+			{
+				renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, -0.20), icon, {1,1,1,0.45});
+			}
+
+			return;
+		}
 
 		if (item.type < BlocksCount)
 		{
@@ -309,7 +331,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			if (item.counter < 10) { s = " " + s; }
 
 			renderer2d.renderText({itemBox}, s.c_str(),
-				font, {1,1,1,1}, 60 * (itemBox.z/100.f));
+				font, {1,1,1,1}, 40 * (itemBox.z/100.f));
 
 		}
 
@@ -486,7 +508,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 
 					//render items
-					auto renderItems = [&](int start, glm::ivec4 box, int rowCount, bool horizontal)
+					auto renderItems = [&](int start, glm::ivec4 box, int rowCount, bool horizontal, gl2d::Texture icon = {})
 					{
 						auto itemBox = box;
 						itemBox.z = itemBox.w;
@@ -504,9 +526,22 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 								}
 								renderOneItem(itemBox, inventory.items[i], 4.f / 22.f);
 							}
+							else if (icon.id)
+							{
+								if (horizontal)
+								{
+									itemBox.x = box.x + itemBox.z * (i - start);
+								}
+								else
+								{
+									itemBox.y = box.y - itemBox.w * (i - start);
+								}
+								renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, -0.20), icon, {1,1,1,0.45});
+							}
+
 						}
 					};
-
+		
 
 					glm::vec4 tabBox = inventoryBox;
 					tabBox.z = oneItemSize;
@@ -619,6 +654,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 						checkInside(PlayerInventory::COINS_START_INDEX, coinsBox[0], 4, false);
 						checkInside(PlayerInventory::ARROWS_START_INDEX, arrowsBox[0], 4, false);
+
 
 						renderSmallTextOnTopOfCell(coinsBox[3], "Coins");
 						renderSmallTextOnTopOfCell(arrowsBox[3], "Ammo");
@@ -802,19 +838,19 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 							armourBox.x = playerBox.x + playerBox.z;
 							renderer2d.renderRectangle(armourBox, oneInventorySlot);
 							checkInsideOneElement(armourBox, inventory.ARMOUR_START_INDEX);
-							renderOneItem(armourBox, inventory.headArmour);
+							renderOneItem(armourBox, inventory.headArmour, 0, 1, helmetIconTexture);
 
 							renderSmallTextOnTopOfCell(armourBox, "Armour");
 
 							armourBox.y += armourBox.w;
 							renderer2d.renderRectangle(armourBox, oneInventorySlot);
 							checkInsideOneElement(armourBox, inventory.ARMOUR_START_INDEX + 1);
-							renderOneItem(armourBox, inventory.chestArmour);
+							renderOneItem(armourBox, inventory.chestArmour, 0, 1, chestPlateIconTexture);
 
 							armourBox.y += armourBox.w;
 							renderer2d.renderRectangle(armourBox, oneInventorySlot);
 							checkInsideOneElement(armourBox, inventory.ARMOUR_START_INDEX + 2);
-							renderOneItem(armourBox, inventory.bootsArmour);
+							renderOneItem(armourBox, inventory.bootsArmour, 0, 1, bootsIconTexture);
 
 
 						}
@@ -825,8 +861,9 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						renderItems(27, inventoryBars3, 9, true);
 						renderItems(36, inventoryBars4, 9, true);
 
-						renderItems(PlayerInventory::COINS_START_INDEX, coinsBox[0], 4, false);
-						renderItems(PlayerInventory::ARROWS_START_INDEX, arrowsBox[0], 4, false);
+						renderItems(PlayerInventory::COINS_START_INDEX, coinsBox[0], 4, false, coinIconTexture);
+						renderItems(PlayerInventory::ARROWS_START_INDEX, arrowsBox[0], 4, false, arrowIconTexture);
+
 
 
 
@@ -930,7 +967,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						if (isCreative) { slotsCounter = 4; }
 
 						GLuint textures[4] = {
-							blocksLoader.texturesIdsItems[wooddenSword - ItemsStartPoint],
+							blocksLoader.texturesIdsItems[copperAxe - ItemsStartPoint],
 							blocksLoader.texturesIds[getGpuIdIndexForBlock(craftingTable, 0)],
 							blocksLoader.texturesIds[getGpuIdIndexForBlock(grassBlock, 0)],
 							blocksLoader.texturesIdsItems[stick - ItemsStartPoint],

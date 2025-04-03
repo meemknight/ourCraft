@@ -39,6 +39,9 @@ struct BlocksLoader
 
 };
 
+bool loadFromFileAndAddPadding(gl2d::Texture &t, const char *path);
+
+
 uint16_t getGpuIdIndexForBlock(short type, int face);
 
 #define SNOW_GRASS_TEXTURE_INDEX 82

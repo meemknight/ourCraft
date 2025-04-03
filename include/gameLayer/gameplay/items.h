@@ -11,11 +11,25 @@ enum ItemTypes : unsigned short
 {
 
 	stick = ItemsStartPoint, //keep the stick the first item!
-	coal,
-	wooddenSword,
-	wooddenPickaxe,
-	wooddenAxe,
-	wooddenShovel,
+	cloth,
+	fang,
+
+	copperIngot,
+	leadIngot,
+	ironIngot,
+	silverIngot,
+	goldIngot,
+
+	copperPickaxe,
+	copperAxe,
+	leadPickaxe,
+	leadAxe,
+	ironPickaxe,
+	ironAxe,
+	silverPickaxe,
+	silverAxe,
+	goldPickaxe,
+	goldAxe,
 
 	trainingScythe,
 	trainingSword,
@@ -32,11 +46,40 @@ enum ItemTypes : unsigned short
 	goblinSpawnEgg,
 
 	apple,
-	appleJuice,
+	blackBerrie,
+	blueBerrie,
+	cherries,
+	chilliPepper,
+	cocconut,
+	grapes,
+	lime,
+	peach,
+	pinapple,
+	strawberry,
 
 	leatherBoots,
-	leatherTunic,
-	leatherCap,
+	leatherChestPlate,
+	leatherHelmet,
+	
+	copperBoots,
+	copperChestPlate,
+	copperHelmet,
+
+	leadBoots,
+	leadChestPlate,
+	leadHelmet,
+
+	ironBoots,
+	ironChestPlate,
+	ironHelmet,
+
+	silverBoots,
+	silverChestPlate,
+	silverHelmet,
+
+	goldBoots,
+	goldChestPlate,
+	goldHelmet,
 
 	soap,
 	whitePaint,
@@ -55,6 +98,17 @@ enum ItemTypes : unsigned short
 	purplePaint,
 	magentaPaint,
 	pinkPaint,
+
+	copperCoin,
+	silverCoin,
+	goldCoin,
+	diamondCoin,
+
+	arrow,
+	flamingArrow,
+	goblinArrow,
+	boneArrow,
+
 
 
 	lastItem,
@@ -81,6 +135,10 @@ struct Item
 
 	bool isEatable();
 
+	bool isArrow();
+
+	bool isAmmo();
+
 	//this is used for pakcet sending and saving
 	void formatIntoData(std::vector<unsigned char> &data);
 
@@ -105,6 +163,8 @@ struct Item
 
 	bool isWeapon();
 
+	bool isCoin();
+
 	bool isBattleAxe();
 	bool isSword();
 	bool isHammer();
@@ -112,6 +172,11 @@ struct Item
 	bool isScythe();
 	bool isFlail();
 	bool isSpear();
+
+	bool isHelmet();
+	bool isChestplate();
+	bool isBoots();
+	bool isArmour();
 
 	std::string getItemName();
 
@@ -169,6 +234,9 @@ struct PlayerInventory
 
 	//returns how many items were picked!
 	int tryPickupItem(const Item &item);
+
+	//checks if an item can fit in a certain slot like for example coins go in coin slots only
+	bool canItemFit(Item &item, int slot);
 
 	unsigned char revisionNumber = 0;
 

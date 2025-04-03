@@ -140,11 +140,18 @@ static CraftingRecepie recepies[] =
 	recepie<1>(Item(BlockTypes::sand_stone, 1),{Item(BlockTypes::sand, 2)}),
 	recepie<1>(Item(BlockTypes::hardSandStone, 1),{Item(BlockTypes::sand, 2)}),
 	recepie<1>(Item(BlockTypes::stoneBrick, 1),{Item(BlockTypes::stone, 2)}),
-	recepie<2>(Item(BlockTypes::torch, 4),{Item(BlockTypes::wooden_plank, 1), Item(ItemTypes::coal)}),
 
+	recepie<1>(Item(ItemTypes::silverCoin, 1), {Item(ItemTypes::copperCoin, 100)}),
+	recepie<1>(Item(ItemTypes::goldCoin, 1), {Item(ItemTypes::silverCoin, 100)}),
+	recepie<1>(Item(ItemTypes::diamondCoin, 1), {Item(ItemTypes::goldCoin, 100)}),
+
+	recepie<1>(Item(ItemTypes::goldCoin, 100), {Item(ItemTypes::diamondCoin, 1)}),
+	recepie<1>(Item(ItemTypes::silverCoin, 100), {Item(ItemTypes::goldCoin, 1)}),
+	recepie<1>(Item(ItemTypes::copperCoin, 100), {Item(ItemTypes::silverCoin, 1)}),
 
 
 };
+
 
 
 std::vector<CraftingRecepieIndex> getAllPossibleRecepies(PlayerInventory &playerInventory)

@@ -37,6 +37,13 @@ struct UiENgine
 	gl2d::Texture uiTexture;
 	gl2d::Texture buttonTexture;
 
+	gl2d::Texture coinIconTexture;
+	gl2d::Texture arrowIconTexture;
+	gl2d::Texture bootsIconTexture;
+	gl2d::Texture chestPlateIconTexture;
+	gl2d::Texture helmetIconTexture;
+
+
 	gl2d::Texture itemsBar;
 	gl2d::Texture itemsHighlighter;
 	gl2d::Texture itemsBarInventory;

@@ -40,7 +40,31 @@ bool Item::isConsumedAfterUse()
 
 bool Item::isEatable()
 {
-	return type == apple;
+	return type == apple ||
+		type == blackBerrie ||
+		type == blueBerrie ||
+		type == cherries ||
+		type == chilliPepper ||
+		type == cocconut ||
+		type == grapes ||
+		type == lime ||
+		type == peach ||
+		type == pinapple ||
+		type == strawberry;
+}
+
+bool Item::isArrow()
+{
+	return
+		type == arrow ||
+		type == flamingArrow ||
+		type == goblinArrow ||
+		type == boneArrow;
+}
+
+bool Item::isAmmo()
+{
+	return isArrow();
 }
 
 
@@ -166,9 +190,16 @@ void Item::sanitize()
 
 unsigned short Item::getStackSize()
 {
-	if (isTool() || isPaint() || isWeapon())
+	if (isAmmo())
+	{
+		return 9999;
+	}else if (isTool() || isPaint() || isWeapon() || isArmour())
 	{
 		return 1;
+	}
+	else if (isCoin())
+	{
+		return 100;
 	}
 	else
 	{
@@ -179,13 +210,10 @@ unsigned short Item::getStackSize()
 
 bool Item::isTool()
 {
-	if (type == wooddenSword
-		|| type == wooddenPickaxe
-		|| type == wooddenAxe
-		|| type == wooddenShovel
+	if (isAxe() || isPickaxe() || isShovel()
 		)
 	{
-		return 1;
+		return true;
 	}
 	else
 	{
@@ -200,17 +228,30 @@ bool Item::isPaint()
 
 bool Item::isAxe()
 {
-	return type == wooddenAxe;
+	return 
+		type == copperAxe ||
+		type == leadAxe ||
+		type == ironAxe ||
+		type == silverAxe ||
+		type == goldAxe
+		;
 }
 
 bool Item::isPickaxe()
 {
-	return type == wooddenPickaxe;
+	return
+		type == copperPickaxe ||
+		type == leadPickaxe ||
+		type == ironPickaxe ||
+		type == silverPickaxe ||
+		type == goldPickaxe
+		;
+
 }
 
 bool Item::isShovel()
 {
-	return type == wooddenShovel;
+	return 0;
 }
 
 bool Item::canAttack()
@@ -240,6 +281,15 @@ bool Item::isWeapon()
 		isScythe() ||
 		isFlail() ||
 		isSpear();
+}
+
+bool Item::isCoin()
+{
+	return
+		type == copperCoin ||
+		type == silverCoin ||
+		type == goldCoin ||
+		type == diamondCoin;
 }
 
 bool Item::isBattleAxe()
@@ -275,6 +325,44 @@ bool Item::isFlail()
 bool Item::isSpear()
 {
 	return type == trainingSpear;
+}
+
+bool Item::isHelmet()
+{
+	return
+		type == leatherHelmet ||
+		type == copperHelmet ||
+		type == leadHelmet ||
+		type == ironHelmet ||
+		type == silverHelmet ||
+		type == goldHelmet;
+}
+
+bool Item::isChestplate()
+{
+	return
+		type == leatherChestPlate ||
+		type == copperChestPlate ||
+		type == leadChestPlate ||
+		type == ironChestPlate ||
+		type == silverChestPlate ||
+		type == goldChestPlate;
+}
+
+bool Item::isBoots()
+{
+	return
+		type == leatherBoots ||
+		type == copperBoots ||
+		type == leadBoots ||
+		type == ironBoots ||
+		type == silverBoots ||
+		type == goldBoots;
+}
+
+bool Item::isArmour()
+{
+	return isHelmet() || isChestplate() || isBoots();
 }
 
 std::string Item::formatMetaDataToString()
@@ -491,17 +579,59 @@ int PlayerInventory::tryPickupItem(const Item &item)
 	return 0;
 }
 
+bool PlayerInventory::canItemFit(Item &item, int slot)
+{
+
+	if (slot == ARMOUR_START_INDEX && !item.isHelmet()) { return false; }
+	if (slot == ARMOUR_START_INDEX + 1 && !item.isChestplate()) { return false; }
+	if (slot == ARMOUR_START_INDEX + 2 && !item.isBoots()) { return false; }
+
+	if (slot >= ARROWS_START_INDEX && slot < ARROWS_START_INDEX + 4)
+	{
+		if (!item.isAmmo())
+		{
+			return false;
+		}
+	}
+
+
+	if (slot >= COINS_START_INDEX && slot < COINS_START_INDEX + 4)
+	{
+		if (!item.isCoin())
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 
 
 //for textures
 const char *itemsNamesTextures[] = 
 {
 	"stick.png",
-	"coal.png",
-	"wooden_sword.png",
-	"wooden_pickaxe.png",
-	"wooden_axe.png",
-	"wooden_shovel.png",
+	"cloth.png",
+	"fang.png",
+
+
+	"copperIngot.png",
+	"leadIngot.png",
+	"ironIngot.png",
+	"silverIngot.png",
+	"goldIngot.png",
+
+	"tools/copperPickaxe.png",
+	"tools/copperAxe.png",
+	"tools/leadPickaxe.png",
+	"tools/leadAxe.png",
+	"tools/ironPickaxe.png",
+	"tools/ironAxe.png",
+	"tools/silverPickaxe.png",
+	"tools/silverAxe.png",
+	"tools/goldPickaxe.png",
+	"tools/goldAxe.png",
 
 	"trainingScythe.png",
 	"trainingSword.png",
@@ -517,11 +647,36 @@ const char *itemsNamesTextures[] =
 	"",
 
 	"food/apple.png",
-	"food/appleJuice.png",
+	"food/blackBerrie.png",
+	"food/blueBerrie.png",
+	"food/cherries.png",
+	"food/chilliPepper.png",
+	"food/cocconut.png",
+	"food/grapes.png",
+	"food/lime.png",
+	"food/peach.png",
+	"food/pinapple.png",
+	"food/strawberry.png",
 
 	"armour/leatherBoots.png",
-	"armour/leatherTunic.png",
-	"armour/leatherCap.png",
+	"armour/leatherChestplate.png",
+	"armour/leatherHelmet.png",
+
+	"armour/copperBoots.png",
+	"armour/copperChestPlate.png",
+	"armour/copperHelmet.png",
+	"armour/leadBoots.png",
+	"armour/leadChestPlate.png",
+	"armour/leadHelmet.png",
+	"armour/ironBoots.png",
+	"armour/ironChestPlate.png",
+	"armour/ironHelmet.png",
+	"armour/silverBoots.png",
+	"armour/silverChestPlate.png",
+	"armour/silverHelmet.png",
+	"armour/goldBoots.png",
+	"armour/goldChestPlate.png",
+	"armour/goldHelmet.png",
 
 	"soap.png",
 	"whitePaint.png",
@@ -540,16 +695,42 @@ const char *itemsNamesTextures[] =
 	"purplePaint.png",
 	"magentaPaint.png",
 	"pinkPaint.png",
+
+	"copperCoin.png",
+	"silverCoin.png",
+	"goldCoin.png",
+	"diamondCoin.png",
+
+	"ammo/arrow.png",
+	"ammo/flamingArrow.png",
+	"ammo/goblinArrow.png",
+	"ammo/boneArrow.png",
+
+
 };
 
 const char *itemsNames[] =
 {
 	"stick",
-	"coal",
-	"wooden_sword",
-	"wooden_pickaxe",
-	"wooden_axe",
-	"wooden_shovel",
+	"cloth",
+	"fang",
+
+	"copperIngot",
+	"leadIngot",
+	"ironIngot",
+	"silverIngot",
+	"goldIngot",
+
+	"copper pickaxe.png",
+	"copper axe.png",
+	"lead pickaxe.png",
+	"lead axe.png",
+	"iron pickaxe.png",
+	"iron axe.png",
+	"silver pickaxe.png",
+	"silver axe.png",
+	"gold pickaxe.png",
+	"gold axe.png",
 
 	"trainingScythe",
 	"trainingSword",
@@ -565,11 +746,35 @@ const char *itemsNames[] =
 	"goblin spawn egg",
 
 	"apple",
-	"apple juice",
+	"blackBerrie",
+	"blueBerrie",
+	"cherries",
+	"chilliPepper",
+	"cocconut",
+	"grapes",
+	"lime",
+	"peach",
+	"pinapple",
+	"strawberry",	
 
 	"leather boots",
-	"leather tunic",
+	"leather ChestPlate",
 	"leather cap",
+	"copper boots",
+	"copper ChestPlate",
+	"copper cap",
+	"lead boots",
+	"lead ChestPlate",
+	"lead cap",
+	"iron boots",
+	"iron ChestPlate",
+	"iron cap",
+	"silver boots",
+	"silver ChestPlate",
+	"silver cap",
+	"gold boots",
+	"gold ChestPlate",
+	"gold cap",
 
 	"soap",
 	"white paint",
@@ -588,6 +793,17 @@ const char *itemsNames[] =
 	"purple paint",
 	"magenta paint",
 	"pink paint",
+	
+	"copper coin",
+	"silver coin",
+	"gold coin",
+	"diamond coin",
+
+	"arrow",
+	"flaming arrow",
+	"goblin arrow",
+	"bone arrow",
+
 
 };
 
