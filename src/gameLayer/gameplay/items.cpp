@@ -939,8 +939,8 @@ float computeMineDurationTime(BlockType type, Item &item)
 	bool canBeMinedHand = canBeMinedByHand(type);
 
 	float pickaxe = (item.isPickaxe()*5 + 50) / 50.f;
-	float shovel = (item.isShovel()*3 + 50) / 50.f;
-	float axe = (item.isAxe()*3 + 50) / 50.f;
+	float shovel = (item.isShovel()*1 + 50) / 50.f;
+	float axe = (item.isAxe()*2 + 50) / 50.f;
 	
 	if (pickaxe > 1)
 	{
