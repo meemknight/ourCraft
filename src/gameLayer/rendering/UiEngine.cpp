@@ -754,7 +754,8 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 										}
 
 										int distance = glm::abs(1 - (i - start));
-										distance = glm::min(distance, 1) * 3.f;
+										distance /= 2.f;
+										//distance = glm::min(distance, 1) * 3.f;
 
 										renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, 0.0), oneInventorySlot, color);
 
@@ -763,6 +764,8 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 										if (glui::aabb(itemBox, mousePos))
 										{
 											currentIndexSelected = i;
+											cursorItemIndexBox = itemBox;
+											currentItemHovered = allItems[i].recepie.result;
 										}
 									}
 								};
@@ -890,9 +893,13 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 								itemBox.z = itemBox.w;
 								itemBox.x = craftingItems.x + itemBox.z * (1);
 								itemBox.y -= itemBox.w * 0.35;
-
 								renderer2d.renderRectangle(itemBox, arrowUI, Colors_White, {}, 180.f);
+
+								itemBox.y -= itemBox.w * 0.85;
+								renderSmallTextOnTopOfCell(itemBox, "crafting");
+
 							}
+
 
 
 						}

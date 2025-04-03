@@ -2699,7 +2699,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					}
 
 					renderer.renderText({0, textPosCopy}, c.c_str(), programData.ui.font,
-						Colors_White, 1, 64, 3, false);
+						Colors_White, 64, 3, 0, false);
 
 					textPosCopy -= textSize;
 				}

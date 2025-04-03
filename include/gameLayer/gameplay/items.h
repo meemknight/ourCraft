@@ -165,11 +165,11 @@ struct Item
 
 	bool isPaint();
 
-	bool isAxe();
+	float isAxe();
 
-	bool isPickaxe();
+	float isPickaxe();
 
-	bool isShovel();
+	float isShovel();
 
 	bool canAttack();
 

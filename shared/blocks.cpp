@@ -696,7 +696,7 @@ float getBlockBaseMineDuration(BlockType type)
 
 	if (isAnyWoddenBlock(type))
 	{
-		return 3.0;
+		return 2.5;
 	}
 
 	if (isAnyDirtBlock(type))
@@ -719,12 +719,12 @@ float getBlockBaseMineDuration(BlockType type)
 
 	if (isAnySemiHardBlock(type) || type == testBlock)
 	{
-		return 3.0;
+		return 2.5;
 	}
 
 	if (isDungeonBrick(type))
 	{
-		return 10.0;
+		return 9999999.0;
 	}
 
 	if (isAnyStone(type))
@@ -754,7 +754,7 @@ float getBlockBaseMineDuration(BlockType type)
 
 	if (isAnyUnbreakable(type))
 	{
-		return 99999999999.0f;
+		return 9999999.0f;
 	}
 
 	if (isTriviallyBreakable(type))

@@ -226,38 +226,48 @@ bool Item::isPaint()
 	return type >= soap && type <= pinkPaint;
 }
 
-bool Item::isAxe()
+float Item::isAxe()
 {
-	return 
-		type == copperAxe ||
-		type == leadAxe ||
-		type == ironAxe ||
-		type == silverAxe ||
-		type == goldAxe
-		;
+	switch (type)
+	{
+		case copperAxe: return 25;
+		case leadAxe: return 50;
+		case ironAxe: return 70;
+		case silverAxe: return 80;
+		case goldAxe: return 100;
+
+	}
+
+	return 0;
 }
 
-bool Item::isPickaxe()
+float Item::isPickaxe()
 {
-	return
-		type == copperPickaxe ||
-		type == leadPickaxe ||
-		type == ironPickaxe ||
-		type == silverPickaxe ||
-		type == goldPickaxe
-		;
+	switch (type)
+	{
+		case copperPickaxe: return 25;
+		case leadPickaxe: return 50;
+		case ironPickaxe: return 70;
+		case silverPickaxe: return 80;
+		case goldPickaxe: return 100;
+	}
 
+	return 0;
 }
 
-bool Item::isShovel()
+float Item::isShovel()
 {
-	return
-		type == copperShovel ||
-		type == leadShovel ||
-		type == ironShovel ||
-		type == silverShovel ||
-		type == goldShovel
-		;
+	switch (type)
+	{
+		case copperShovel: return 25;
+		case leadShovel: return 50;
+		case ironShovel: return 70;
+		case silverShovel: return 80;
+		case goldShovel: return 100;
+
+	}
+
+	return 0;
 }
 
 bool Item::canAttack()
@@ -928,37 +938,40 @@ float computeMineDurationTime(BlockType type, Item &item)
 
 	bool canBeMinedHand = canBeMinedByHand(type);
 
+	float pickaxe = (item.isPickaxe()*5 + 50) / 50.f;
+	float shovel = (item.isShovel()*3 + 50) / 50.f;
+	float axe = (item.isAxe()*3 + 50) / 50.f;
 	
-	if (item.isPickaxe())
+	if (pickaxe > 1)
 	{
 		if (canBeMinedByPickaxe(type))
 		{
 			//todo add speed here;
-			timer /= 2;
+			timer /= pickaxe;
 		}
 		else if (!canBeMinedHand)
 		{
 			timer *= PENALTY;
 		}
 	}
-	else if (item.isShovel())
+	else if (shovel > 1)
 	{
 		if (canBeMinedByShovel(type))
 		{
 			//todo add speed here;
-			timer /= 2;
+			timer /= shovel;
 		}
 		else if (!canBeMinedHand)
 		{
 			timer *= PENALTY;
 		}
 	}
-	else if (item.isAxe())
+	else if (axe > 1)
 	{
 		if (canBeMinedByAxe(type))
 		{
 			//todo add speed here;
-			timer /= 2;
+			timer /= axe;
 		}
 		else if (!canBeMinedHand)
 		{
