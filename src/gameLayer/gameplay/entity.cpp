@@ -131,7 +131,7 @@ int getRandomNumber(std::minstd_rand &rng, int min, int max)
 
 float getRandomNumberFloat(std::minstd_rand &rng, float min, float max)
 {
-	return (getRandomNumber(rng, 0, 1000) / 1000.f) * (max-min) + min;
+	return (getRandomNumber(rng, 0, 100000) / 100000.f) * (max-min) + min;
 }
 
 inline uint32_t hash(int x, int y, int z)

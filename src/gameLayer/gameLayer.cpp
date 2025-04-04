@@ -21,6 +21,7 @@
 #include <ourJson.h>
 #include <filesystem>
 #include <audioEngine.h>
+#include <gameplay/loot.h>
 
 #include <platformTools.h>
 
@@ -386,6 +387,63 @@ bool initGame() //main server and title screen stuff
 	}
 #pragma endregion
 
+
+#pragma region tests
+
+	//loot tests
+	if(1)
+	{
+		std::minstd_rand rng;
+
+		LootEntry test;
+		test.item = itemCreator(cloth);
+
+		std::vector<LootEntry> loot;
+		loot.push_back(test);
+		//loot.push_back(test);
+		//loot.push_back(test);
+
+		test.item = itemCreator(fang);
+		test.chance = 10;
+		loot.push_back(test);
+
+		int tries = 1000;
+		int success = 0;
+		for (int i = 0; i < tries; i++)
+		{
+
+			auto item = drawLoot(loot, rng, 100.f);
+
+			if (item.type == fang)
+			{
+				success++;
+			}
+
+		}
+
+		std::cout << "!!!!!!!Percent chance: " << (float(success) / tries) * 100 << "%\n";
+		std::cout << "!!!!!!!Get one every: " << (float(tries) / success) << "tries\n";
+
+		long long rezult = 0;
+		long long smal = 0;
+		long long big = 0;
+		for (int i = 0; i < tries; i++)
+		{
+
+			rezult += getRandomLootNumber(0, 100, rng, 0);
+			smal += getRandomLootNumber(0, 100, rng, -50);
+			big += getRandomLootNumber(0, 100, rng, 50);
+
+		}
+
+		std::cout << "!!!!!!!getRandomLootNumber avg: " << (float(rezult) / tries) << "\n";
+		std::cout << "!!!!!!!getRandomLootNumber avg small: " << (float(smal) / tries) << "\n";
+		std::cout << "!!!!!!!getRandomLootNumber avg big: " << (float(big) / tries) << "\n";
+
+	}
+
+
+#pragma endregion
 
 	return true;
 }
