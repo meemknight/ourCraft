@@ -1207,7 +1207,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						std::string text = item->formatMetaDataToString();
 
 						//renderTextIntoBox(renderer2d, text, font, box, Colors_White, true, true);
-						renderPopupText(renderer2d, font, text, box, 64, buttonTexture, Colors_White);
+						renderPopupText(renderer2d, font, text, box, oneItemSize /2.8f, buttonTexture, Colors_White);
 
 					}
 

@@ -414,6 +414,16 @@ std::string Item::formatMetaDataToString()
 		rez += "\nHas metadata";
 	}
 
+	rez += getItemStats().formatDataToString();
+
+	auto desc = "\"" + getItemDescription() + "\"";
+
+	if (desc.size())
+	{
+		rez += "\n";
+		rez += desc;
+	}
+
 	return rez;
 }
 
@@ -473,6 +483,43 @@ WeaponStats Item::getWeaponStats()
 	}
 
 	return stats;
+}
+
+ItemStats Item::getItemStats()
+{
+	ItemStats ret;
+
+	switch (type)
+	{
+
+		case leatherBoots: ret.armour = 1; break;
+		case leatherChestPlate: ret.armour = 1; break;		//1
+		case leatherHelmet: ret.armour = 1; break;
+
+		case copperBoots: ret.armour = 1; break;
+		case copperChestPlate: ret.armour = 2; break;		//2		+ 1 defence set bonus
+		case copperHelmet: ret.armour = 1; break;
+
+		case leadBoots: ret.armour = 1; break;
+		case leadChestPlate: ret.armour = 3; break;			//3		+ 1 defence
+		case leadHelmet: ret.armour = 1; break;
+
+		case ironBoots: ret.armour = 3; break;
+		case ironChestPlate: ret.armour = 4; break;			//4		+ 5% mele attack speed
+		case ironHelmet: ret.armour = 2; ret.meleAttackSpeed = 3; break;
+
+		case silverBoots: ret.armour = 3; break;
+		case silverChestPlate: ret.armour = 5; break;		//5		
+		case silverHelmet: ret.armour = 3; break;
+
+		case goldBoots: ret.armour = 5; break;
+		case goldChestPlate: ret.armour = 6; break;			//6
+		case goldHelmet: ret.armour = 5; break;
+
+	};
+
+
+	return ret;
 }
 
 
@@ -861,7 +908,6 @@ const char *itemsNames[] =
 	"goblin arrow",
 	"bone arrow",
 
-
 };
 
 const char *getItemTextureName(int itemId)
@@ -1225,3 +1271,47 @@ std::string Item::getItemName()
 	}
 }
 
+std::string ItemStats::formatDataToString()
+{
+	std::string rez = "";
+
+	// Defence
+	if (armour)
+		rez += "\nArmour: " + std::to_string(armour);
+
+	if (knockBackResistance)
+		rez += "\nKnockback Resistance: " + std::to_string(knockBackResistance) + "%";
+
+	if (thorns)
+		rez += "\nThorns: " + std::to_string(thorns) + "%";
+
+	// Attack
+	if (meleDamage)
+		rez += "\nMelee Damage: " + std::to_string(meleDamage) + "%";
+
+	if (meleAttackSpeed)
+		rez += "\nMelee Attack Speed: " + std::to_string(meleAttackSpeed) + "%";
+
+	if (critChance)
+		rez += "\nCritical Strike Chance: " + std::to_string(critChance) + "%";
+
+	// Player
+	if (speed)
+		rez += "\nMovement Speed: " + std::to_string(speed) + "%";
+
+	// Special
+	if (stealthSound)
+		rez += "\nStealth Sound: " + std::to_string(stealthSound) + "%";
+
+	if (stealthVisibility)
+		rez += "\nStealth Visibility: " + std::to_string(stealthVisibility) + "%";
+
+	// Other
+	if (luck)
+		rez += "\nLuck: " + std::to_string(luck) + "%";
+
+	if (improvedMiningPower)
+		rez += "\nMining Power: " + std::to_string(improvedMiningPower) + "%";
+
+	return rez;
+}

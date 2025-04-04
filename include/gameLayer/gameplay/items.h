@@ -129,6 +129,37 @@ enum ItemTypes : unsigned short
 
 const char *getItemTextureName(int itemId);
 
+
+struct ItemStats
+{
+
+	//defence
+	short armour = 0;
+	short knockBackResistance = 0;
+	short thorns = 0;
+
+	//attack
+	short meleDamage = 0;
+	short meleAttackSpeed = 0;
+	short critChance = 0;
+
+
+	//player
+	short speed = 0;
+
+	//special
+	short stealthSound = 0;
+	short stealthVisibility = 0;
+
+	//other
+	short luck = 0;
+
+	short improvedMiningPower = 0;
+
+	std::string formatDataToString();
+};
+
+
 struct Item
 {
 	Item() {}; //todo maybe remove, it is dangerous, use item creator, or just don't add metadata by default
@@ -192,9 +223,13 @@ struct Item
 
 	std::string getItemName();
 
+	std::string getItemDescription();
+
 	std::string formatMetaDataToString();
 
 	WeaponStats getWeaponStats();
+
+	ItemStats getItemStats();
 };
 
 //doesn't compare size
