@@ -4,6 +4,8 @@
 int getRandomLootNumber(int min, int max, std::minstd_rand &rng, float bonusLuck)
 {
 
+	if (min == max) { return min; }
+
 	int result = getRandomNumber(rng, min, max);
 
 	if (bonusLuck == 0)
@@ -117,6 +119,7 @@ Item drawLoot(std::vector<LootEntry> &loot, std::minstd_rand &rng, float bonusLu
 		if (pick <= cumulative)
 		{
 			auto rez = loot[i].item;
+			rez.counter = getRandomLootNumber(loot[i].minAmount, loot[i].maxAmount, rng, bonusLuck);
 			rez.sanitize();
 			return rez;
 		}
@@ -125,6 +128,7 @@ Item drawLoot(std::vector<LootEntry> &loot, std::minstd_rand &rng, float bonusLu
 	std::cout << "ERROR THE FALLBACK WAS REACHED IN LOOT FOR SOME REASON!\n";
 	// Fallback (shouldn't happen)
 	auto rez = loot[0].item;
+	rez.counter = getRandomLootNumber(loot[0].minAmount, loot[0].maxAmount, rng, bonusLuck);
 	rez.sanitize();
 	return rez;
 
