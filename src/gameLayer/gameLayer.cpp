@@ -390,7 +390,7 @@ bool initGame() //main server and title screen stuff
 #pragma region tests
 
 	//loot tests
-	if(1)
+	if(0)
 	{
 		std::minstd_rand rng;
 

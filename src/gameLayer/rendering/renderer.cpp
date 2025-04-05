@@ -4239,8 +4239,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 
 		}
-
-
 	
 
 
