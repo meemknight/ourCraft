@@ -64,6 +64,18 @@ struct AnimationStateClient
 
 	int currentAnimation = 0;
 
+	float attackTimer = 0;
+	bool isAttacking = false;
+
+	void signalAttack()
+	{
+		if (!isAttacking)
+		{
+			attackTimer = 0;
+			isAttacking = true;
+		}
+	}
+
 	void setAnimation(int type)
 	{
 		currentAnimation = type;
@@ -71,12 +83,13 @@ struct AnimationStateClient
 
 	float animationTime = 0;
 
-	void update(float deltaTime) { animationTime += deltaTime; };
+	void update(float deltaTime) { animationTime += deltaTime; if (isAttacking) { attackTimer += deltaTime; } };
 };
 
 struct AnimationStateServer
 {
 	float runningTime = 0;
+	bool attacked = 0;
 	
 	void update(float deltaTime) { runningTime -= deltaTime; runningTime = std::max(runningTime, 0.f); };
 };

@@ -2222,7 +2222,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 					if (!rez)
 					{
-						//todo only for local players!!!!!!
+
 						genericBroadcastEntityDeleteFromServerToPlayer(it->first,
 							true, allClients, e.second.lastChunkPositionWhenAnUpdateWasSent);
 

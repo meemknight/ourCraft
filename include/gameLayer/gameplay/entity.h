@@ -833,11 +833,40 @@ struct ClientEntity
 			animationStateClient.update(deltaTime);
 			//animator.setAnimation(Animator::running);
 
+
+			auto computeOneAnimationBone = [&](Animation &animation, float animationTime, int i)
+			{
+				auto &keyFrames = animation.kayFrames[i];
+
+				//todo only one element case!
+				for (int k = 0; k < keyFrames.size() - 1; k++)
+				{
+
+					if ((keyFrames[k].timestamp <= animationTime &&
+						keyFrames[k + 1].timestamp >= animationTime
+						)
+						|| k == keyFrames.size() - 2)
+					{
+						auto rez = interpolateKeyFrames(keyFrames[k], keyFrames[k + 1], animationTime);
+						auto matrix = rez.getMatrix();
+
+						//skinningMatrix[i] = skinningMatrix[i] * matrix;
+						skinningMatrix[i] = rotMatrix * matrix;
+						break;
+					}
+
+				}
+			};
+
+
+		#pragma region first normal animation
+
 			int animationIndex = model.animationsIndex[animationStateClient.currentAnimation];
+
 
 			if (animationIndex >= 0)
 			{
-				auto &animation = model.animations[animationIndex];
+				Animation &animation = model.animations[animationIndex];
 
 				//todo
 				if (animationStateClient.animationTime >= animation.animationLength)
@@ -845,7 +874,25 @@ struct ClientEntity
 					animationStateClient.animationTime = 0;
 				}
 
+				//attack
+				//if (animationStateClient.isAttacking)
+				//{
+				//	if (animationStateClient.attackTimer >= animation.animationLength)
+				//	{
+				//		animationStateClient.attackTimer = animation.animationLength;
+				//		animationStateClient.isAttacking = false;
+				//	}
+				//}
+
 				//std::cout << animator.animationTime << "\n";
+
+				float animationTime = animationStateClient.animationTime;
+
+				//attack
+				//if (animationStateClient.isAttacking)
+				//{
+				//	animationTime = animationStateClient.attackTimer;
+				//}
 
 				size_t animationBonesSize = animation.kayFrames.size();
 				if (animationBonesSize)
@@ -854,34 +901,53 @@ struct ClientEntity
 
 					for (int i = 0; i < animationBonesSize; i++)
 					{
-
-						auto &keyFrames = animation.kayFrames[i];
-
-						//todo only one element case!
-						for (int k = 0; k < keyFrames.size() - 1; k++)
-						{
-
-							if ((keyFrames[k].timestamp <= animationStateClient.animationTime &&
-								keyFrames[k + 1].timestamp >= animationStateClient.animationTime
-								)
-								|| k == keyFrames.size() - 2)
-							{
-								auto rez = interpolateKeyFrames(keyFrames[k], keyFrames[k + 1], animationStateClient.animationTime);
-								auto matrix = rez.getMatrix();
-
-								//skinningMatrix[i] = skinningMatrix[i] * matrix;
-								skinningMatrix[i] = rotMatrix * matrix;
-								break;
-							}
-
-						}
-
-
+						computeOneAnimationBone(animation, animationTime, i);
 					}
 
+				}
+
+
+			}
+		#pragma endregion
+
+		#pragma region attacking animation
+
+			//attack
+			if (animationStateClient.isAttacking)
+			{
+				int animationIndex = model.animationsIndex[Animation::AnimationType::meleHit];
+
+				if (animationIndex >= 0)
+				{
+					Animation &animation = model.animations[animationIndex];
+
+					//attack
+					if (animationStateClient.isAttacking)
+					{
+						if (animationStateClient.attackTimer >= animation.animationLength)
+						{
+							animationStateClient.attackTimer = animation.animationLength;
+							animationStateClient.isAttacking = false;
+						}
+					}
+
+					float animationTime = animationStateClient.attackTimer;
+
+					if (model.lArmIndex > -1) { computeOneAnimationBone(animation, animationTime, model.lArmIndex); }
+					if (model.rArmIndex > -1) { computeOneAnimationBone(animation, animationTime, model.rArmIndex); }
+					if (model.lArmArmourIndex > -1) { computeOneAnimationBone(animation, animationTime, model.lArmArmourIndex); }
+					if (model.rArmArmourIndex > -1) { computeOneAnimationBone(animation, animationTime, model.rArmArmourIndex); }
 
 				}
+
+
+
 			}
+
+		#pragma endregion
+
+
+
 
 
 		}
@@ -1285,6 +1351,11 @@ struct ClientEntity
 		if constexpr (hasAnimations<T>)
 		{
 			entityBuffered.animationStateServer.update(deltaTime);
+			
+			if (entityBuffered.animationStateServer.attacked)
+			{
+				animationStateClient.signalAttack();
+			}
 
 			MotionState forces = {};
 			if constexpr (hasForces<T>) { forces = entityBuffered.forces; }

@@ -116,6 +116,7 @@ struct BasicEnemyBehaviour
 	{
 
 		baseEntity->entity.animationStateServer.runningTime = 0;
+		baseEntity->entity.animationStateServer.attacked = 0;
 
 		worriedTimer -= deltaTime;
 		if (worriedTimer < 0) { worriedTimer = 0; }
@@ -849,7 +850,8 @@ struct BasicEnemyBehaviour
 		auto tryHitPlayer = [&]()
 		{
 			//can hit
-			if (hitTimer <= 0 && playerLockedOn)
+
+			if (hitTimer <= 0.25 && playerLockedOn)
 			{
 
 
@@ -886,25 +888,35 @@ struct BasicEnemyBehaviour
 				
 				if (canAttack)
 				{
+
 					WeaponStats weaponStats = baseEntity->getWeaponStats();
+
+					if (weaponStats.range + 1 >= length)
+					{
+						//preattack
+						baseEntity->entity.animationStateServer.attacked = true;
+					}
+
 					if (weaponStats.range >= length)
 					{
+						
 						//attack player
-
-						auto found = allClients.find(playerLockedOn);
-
-						if(found != allClients.end())
+						if (hitTimer <= 0)
 						{
-							hitTimer = weaponStats.speed;
-							std::uint64_t wasKilled = 0;
+							auto found = allClients.find(playerLockedOn);
 
-							std::cout << "Attack!" << length << " ";
+							if (found != allClients.end())
+							{
+								hitTimer = weaponStats.speed;
+								std::uint64_t wasKilled = 0;
 
-							doHittingThings(found->second->playerData, vectorToPlayer, currentPosition,
-								weaponStats, wasKilled, rng, found->first, 1, 0);
+								//std::cout << "Attack!" << length << " ";
 
+								doHittingThings(found->second->playerData, vectorToPlayer, currentPosition,
+									weaponStats, wasKilled, rng, found->first, 1, 0);
 
-						}
+							}
+						};
 
 
 					}
