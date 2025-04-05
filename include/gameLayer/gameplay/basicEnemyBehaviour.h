@@ -566,6 +566,11 @@ struct BasicEnemyBehaviour
 
 				baseEntity->entity.move(move);
 				baseEntity->entity.bodyOrientation = direction;
+				baseEntity->entity.animationStateServer.runningTime = 0.6;
+			}
+			else
+			{
+				baseEntity->entity.animationStateServer.runningTime = 0;
 			}
 		};
 

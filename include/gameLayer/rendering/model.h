@@ -44,11 +44,6 @@ struct Animation
 {
 	float animationLength = 0;
 	std::vector<std::vector<KeyFrame>> kayFrames;
-};
-
-
-struct Animator
-{
 
 	enum AnimationType
 	{
@@ -56,11 +51,16 @@ struct Animator
 		idle,
 		running,
 		falling,
-
+		meleHit,
 
 		ANIMATIONS_COUNT
-
 	};
+};
+
+
+//
+struct AnimationStateClient
+{
 
 	int currentAnimation = 0;
 
@@ -74,6 +74,18 @@ struct Animator
 	void update(float deltaTime) { animationTime += deltaTime; };
 };
 
+struct AnimationStateServer
+{
+	float runningTime = 0;
+	
+	void update(float deltaTime) { runningTime -= deltaTime; runningTime = std::max(runningTime, 0.f); };
+};
+
+//used to be inharented by an entity
+struct Animatable
+{
+	AnimationStateServer animationStateServer;
+};
 
 
 struct Model
@@ -103,7 +115,7 @@ struct Model
 	std::int8_t lArmArmourIndex = -1;
 
 	std::vector<Animation> animations;
-	std::int8_t animationsIndex[Animator::ANIMATIONS_COUNT] = {-1};
+	std::int8_t animationsIndex[Animation::ANIMATIONS_COUNT] = {-1};
 		
 
 	void cleanup();

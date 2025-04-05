@@ -2821,6 +2821,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 #pragma region render sky box 0
 
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Render skybox");
 	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
 	unsigned int attachments[5] = {
 	GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
@@ -2835,6 +2836,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	fboSkyBox.copyColorFromOtherFBO(fboMain.color,
 		fboMain.size.x, fboMain.size.y);
 
+	glPopDebugGroup();
 
 #pragma endregion
 
@@ -3347,38 +3349,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	int queryDataForSunFlare = 0;
 
-	if (getShadingSettings().waterType)
+	auto renderSun = [&]()
 	{
-
-	#pragma region depth pre pass 1
-		programData.GPUProfiler.startSubProfile("depth pre pass 1");
-		depthPrePass();
-		programData.GPUProfiler.endSubProfile("depth pre pass 1");
-	#pragma endregion
-
-
-
-	#pragma region solid pass 2
-		programData.GPUProfiler.startSubProfile("solid pass 2");
-		solidPass();
-		programData.GPUProfiler.endSubProfile("solid pass 2");
-	#pragma endregion
-
-
-	#pragma region render entities
-		programData.GPUProfiler.startSubProfile("entities");
-		renderEntities(deltaTime, c, modelsManager, blocksLoader,
-			entityManager, vp, c.getProjectionMatrix(), viewMatrix, posFloat, posInt,
-			programData.renderer.defaultShader.shadingSettings.exposure, chunkSystem, skyLightIntensity,
-			currentSkinBindlessTexture, playerClicked, playerRunning, playerHand, currentHeldItemIndex,
-			showHand, playersConnectionData);
-		programData.GPUProfiler.endSubProfile("entities");
-	#pragma endregion
-
-
-	//copy depth 3
-		fboCoppy.copyDepthFromOtherFBO(fboMain.fbo, screenX, screenY);
-	
 		constexpr static float sunScale = 0.9;
 		constexpr static float moonScale = 0.6;
 
@@ -3393,7 +3365,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		queryDataForSunFlare = sunFlareQueries[sunFlareQueryPos].getQueryResult();
 
 		sunFlareQueries[sunFlareQueryPos].begin();
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Render Sun");
 		programData.sunRenderer.render(c, sunPos, programData.skyBoxLoaderAndDrawer.sunTexture, sunTwilight, 1, sunScale);
+		glPopDebugGroup();
 		sunFlareQueries[sunFlareQueryPos].end();
 		sunFlareQueryPos++;
 		sunFlareQueryPos %= (sizeof(sunFlareQueries) / sizeof(sunFlareQueries[0]));
@@ -3410,7 +3384,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		fboSunForGodRays.clearFBO();
 		glBindFramebuffer(GL_FRAMEBUFFER, fboSunForGodRays.fbo);
 		glDisable(GL_DEPTH_TEST);
-		glViewport(0, 0, screenX/2, screenY/2);
+		glViewport(0, 0, screenX / 2, screenY / 2);
 		programData.sunRenderer.render(c, sunPos, programData.skyBoxLoaderAndDrawer.sunTexture, std::max(sunTwilight, 0.5f), 1, sunScale);
 		programData.sunRenderer.render(c, -sunPos, programData.skyBoxLoaderAndDrawer.moonTexture, 0, 0.35, moonScale);
 
@@ -3469,7 +3443,42 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		}
 	#pragma endregion
+	};
 
+	if (getShadingSettings().waterType)
+	{
+
+	#pragma region depth pre pass 1
+		programData.GPUProfiler.startSubProfile("depth pre pass 1");
+		depthPrePass();
+		programData.GPUProfiler.endSubProfile("depth pre pass 1");
+	#pragma endregion
+
+
+
+	#pragma region solid pass 2
+		programData.GPUProfiler.startSubProfile("solid pass 2");
+		solidPass();
+		programData.GPUProfiler.endSubProfile("solid pass 2");
+	#pragma endregion
+
+
+	#pragma region render entities
+		programData.GPUProfiler.startSubProfile("entities");
+		renderEntities(deltaTime, c, modelsManager, blocksLoader,
+			entityManager, vp, c.getProjectionMatrix(), viewMatrix, posFloat, posInt,
+			programData.renderer.defaultShader.shadingSettings.exposure, chunkSystem, skyLightIntensity,
+			currentSkinBindlessTexture, playerClicked, playerRunning, playerHand, currentHeldItemIndex,
+			showHand, playersConnectionData);
+		programData.GPUProfiler.endSubProfile("entities");
+	#pragma endregion
+
+
+	//copy depth 3
+		fboCoppy.copyDepthFromOtherFBO(fboMain.fbo, screenX, screenY);
+	
+
+		renderSun();
 
 		//disable bloom for transparent geometry
 		{
@@ -3564,6 +3573,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	//copy depth 3
 		fboCoppy.copyDepthFromOtherFBO(fboMain.fbo, screenX, screenY);
+
+		renderSun();
 
 		//disable bloom for transparent geometry
 		{
@@ -4408,7 +4419,7 @@ void Renderer::renderEntities(
 	{
 		glm::ivec3 entityPositionInt = {};
 		glm::vec3 entityPositionFloat = {};
-		glm::vec3 color = {1,1,1};
+		glm::vec3 color = {1,1,1}; float lightLevels = 15;
 		GLuint64 textureId0;
 		GLuint64 textureId1;
 		GLuint64 textureId2;
@@ -4665,11 +4676,12 @@ void Renderer::renderEntities(
 			//	data.textureId = modelsManager.gpuIds[e.second.getTextureIndex()];
 			//}
 
+			glm::ivec3 blockPos = {};
 
 			if constexpr (hasPositionBasedID<decltype(e.second.entityBuffered)>)
 			{
 				std::uint64_t entityID = e.first;
-				auto blockPos = fromEntityIDToBlockPos(entityID);
+				blockPos = fromEntityIDToBlockPos(entityID);
 
 				data.entityPositionFloat = {0,-0.5,0};
 				data.entityPositionInt = blockPos;
@@ -4677,10 +4689,18 @@ void Renderer::renderEntities(
 			else
 			{
 				decomposePosition(e.second.getRubberBandPosition(), data.entityPositionFloat, data.entityPositionInt);
+				blockPos = {from3DPointToBlock(e.second.getRubberBandPosition())};
 			}
 
+			//light
+			auto block = chunkSystem.getBlockSafe(blockPos.x, blockPos.y, blockPos.z);
 			
-			
+			if (block)
+				{ data.lightLevels = std::max(block->getSkyLight(), block->getLight()); }
+
+			if (dontUpdateLightSystem)
+				{ data.lightLevels = 15; }
+
 			entityData.push_back(data);
 		}
 

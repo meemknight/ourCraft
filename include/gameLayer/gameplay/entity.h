@@ -760,7 +760,7 @@ struct ClientEntity
 	ConditionalMember<hasCanBeKilled<T>, bool> wasKilled = 0;
 	ConditionalMember<hasCanBeKilled<T>, float> wasKilledTimer = 0;
 
-	Animator animator;
+	AnimationStateClient animationStateClient;
 
 	glm::dvec3 getRubberBandPosition()
 	{
@@ -830,18 +830,18 @@ struct ClientEntity
 		std::minstd_rand &rng, glm::mat4 rotMatrix)
 	{
 
-		animator.update(deltaTime * 2);
+		animationStateClient.update(deltaTime * 2);
 		//animator.setAnimation(Animator::running);
 
-		int animationIndex = model.animationsIndex[animator.currentAnimation];
+		int animationIndex = model.animationsIndex[animationStateClient.currentAnimation];
 		if (animationIndex >= 0)
 		{
 			auto &animation = model.animations[animationIndex];
 
 			//todo
-			if (animator.animationTime >= animation.animationLength)
+			if (animationStateClient.animationTime >= animation.animationLength)
 			{
-				animator.animationTime = 0;
+				animationStateClient.animationTime = 0;
 			}
 
 			//std::cout << animator.animationTime << "\n";
@@ -860,12 +860,12 @@ struct ClientEntity
 					for (int k = 0; k < keyFrames.size() - 1; k++)
 					{
 
-						if ((keyFrames[k].timestamp <= animator.animationTime &&
-							keyFrames[k + 1].timestamp >= animator.animationTime
+						if ((keyFrames[k].timestamp <= animationStateClient.animationTime &&
+							keyFrames[k + 1].timestamp >= animationStateClient.animationTime
 							)
 							|| k == keyFrames.size() - 2)
 						{
-							auto rez = interpolateKeyFrames(keyFrames[k], keyFrames[k + 1], animator.animationTime);
+							auto rez = interpolateKeyFrames(keyFrames[k], keyFrames[k + 1], animationStateClient.animationTime);
 							auto matrix = rez.getMatrix();
 
 							//skinningMatrix[i] = skinningMatrix[i] * matrix;
@@ -1280,18 +1280,27 @@ struct ClientEntity
 		//animations
 		if constexpr (hasForces<T>)
 		{
+			entityBuffered.animationStateServer.update(deltaTime);
+
 			MotionState &forces = entityBuffered.forces;
 
 			if (!forces.colidesBottom())
 			{
-				animator.setAnimation(Animator::falling);
+				animationStateClient.setAnimation(Animation::falling);
 			}
 			else
 			{
-				animator.setAnimation(Animator::running);
+				if (entityBuffered.animationStateServer.runningTime > 0)
+				{
+					animationStateClient.setAnimation(Animation::running);
+				}
+				else
+				{
+					animationStateClient.setAnimation(Animation::idle);
+				}
+
 			}
 
-			animator.setAnimation(Animator::falling);
 		}
 
 		if (rubberBand.initialSize)
@@ -1307,7 +1316,7 @@ struct ClientEntity
 				entityBuffered.lookDirectionAnimation);
 		}
 
-
+		//TODO probably remove in the future
 		if constexpr (hasCanBeKilled<T> && hasMovementSpeedForLegsAnimations<T>)
 		{
 			if (wasKilled)

@@ -322,7 +322,7 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 			//animations
 			int animationsCount = scene->mNumAnimations;
 
-			for (int animationTypes = 0; animationTypes < Animator::ANIMATIONS_COUNT; animationTypes++)
+			for (int animationTypes = 0; animationTypes < Animation::ANIMATIONS_COUNT; animationTypes++)
 			{
 				model.animationsIndex[animationTypes] = -1;
 			}
@@ -333,10 +333,10 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 					
 				bool good = false;
 
-				for (int animationTypes = 1; animationTypes < Animator::ANIMATIONS_COUNT; animationTypes++)
+				for (int animationTypes = 1; animationTypes < Animation::ANIMATIONS_COUNT; animationTypes++)
 				{
 
-					auto str = std::string(magic_enum::enum_name((Animator::AnimationType)animationTypes));
+					auto str = std::string(magic_enum::enum_name((Animation::AnimationType)animationTypes));
 
 					if (animation->mName.C_Str() == str)
 					{

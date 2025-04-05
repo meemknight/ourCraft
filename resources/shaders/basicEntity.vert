@@ -39,6 +39,7 @@ struct PerEntityData
 	float colorR;
 	float colorG;
 	float colorB;
+	float lightLevels;
 
 	uvec2 textureSampler0;
 	uvec2 textureSampler1;
@@ -58,6 +59,8 @@ void main()
 	ivec3 entityPosInt = ivec3(entityData[gl_InstanceID].entityPositionIntX, entityData[gl_InstanceID].entityPositionIntY, entityData[gl_InstanceID].entityPositionIntZ);
 	vec3 entityPosFloat = vec3(entityData[gl_InstanceID].entityPositionFloatX, entityData[gl_InstanceID].entityPositionFloatY, entityData[gl_InstanceID].entityPositionFloatZ);
 	v_color = vec3(entityData[gl_InstanceID].colorR, entityData[gl_InstanceID].colorG, entityData[gl_InstanceID].colorB);
+
+	v_color *= max(entityData[gl_InstanceID].lightLevels/15.0, 0.1);
 
 	if(textureIndex == 1)	{v_textureSampler = entityData[gl_InstanceID].textureSampler1;} else
 	if(textureIndex == 2)	{v_textureSampler = entityData[gl_InstanceID].textureSampler2;} else
