@@ -1923,7 +1923,13 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 			auto check = [&](Block &b)
 			{
 				if (!b.air() && !b.isGrassMesh()
-					&& b.getType() != BlockTypes::torch)
+					&& b.getType() != BlockTypes::torch
+					&& b.getType() != BlockTypes::vines
+					&& b.getType() != BlockTypes::ladder
+					&& b.getType() != BlockTypes::lamp
+					&& b.getType() != BlockTypes::torchWood
+					&& !b.isDecorativeFurniture()
+					)
 				{
 					return true;
 				}

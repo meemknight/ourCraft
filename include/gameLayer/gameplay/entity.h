@@ -551,12 +551,6 @@ constexpr bool hasCanHaveEffects <T, std::void_t<decltype(T::canHaveEffects)>> =
 
 
 
-template <typename T, typename = void>
-constexpr bool hasAnimator = false;
-template <typename T>
-constexpr bool hasAnimator <T, std::void_t<decltype(T::animator)>> = true;
-
-
 
 
 template<bool B, typename T>
@@ -764,8 +758,7 @@ struct ClientEntity
 
 	ConditionalMember<hasCanBeKilled<T>, bool> wasKilled = 0;
 	ConditionalMember<hasCanBeKilled<T>, float> wasKilledTimer = 0;
-
-	AnimationStateClient animationStateClient;
+	ConditionalMember<hasAnimations<T>, AnimationStateClient> animationStateClient = {};
 
 	glm::dvec3 getRubberBandPosition()
 	{
@@ -835,60 +828,65 @@ struct ClientEntity
 		std::minstd_rand &rng, glm::mat4 rotMatrix)
 	{
 
-		animationStateClient.update(deltaTime * 2);
-		//animator.setAnimation(Animator::running);
-
-		int animationIndex = model.animationsIndex[animationStateClient.currentAnimation];
-
-		if (animationIndex >= 0)
+		if constexpr (hasAnimations<T>)
 		{
-			auto &animation = model.animations[animationIndex];
+			animationStateClient.update(deltaTime);
+			//animator.setAnimation(Animator::running);
 
-			//todo
-			if (animationStateClient.animationTime >= animation.animationLength)
+			int animationIndex = model.animationsIndex[animationStateClient.currentAnimation];
+
+			if (animationIndex >= 0)
 			{
-				animationStateClient.animationTime = 0;
-			}
+				auto &animation = model.animations[animationIndex];
 
-			//std::cout << animator.animationTime << "\n";
-
-			size_t animationBonesSize = animation.kayFrames.size();
-			if (animationBonesSize)
-			{
-				assert(animationBonesSize == model.transforms.size());
-
-				for (int i = 0; i < animationBonesSize; i++)
+				//todo
+				if (animationStateClient.animationTime >= animation.animationLength)
 				{
+					animationStateClient.animationTime = 0;
+				}
 
-					auto &keyFrames = animation.kayFrames[i];
+				//std::cout << animator.animationTime << "\n";
 
-					//todo only one element case!
-					for (int k = 0; k < keyFrames.size() - 1; k++)
+				size_t animationBonesSize = animation.kayFrames.size();
+				if (animationBonesSize)
+				{
+					assert(animationBonesSize == model.transforms.size());
+
+					for (int i = 0; i < animationBonesSize; i++)
 					{
 
-						if ((keyFrames[k].timestamp <= animationStateClient.animationTime &&
-							keyFrames[k + 1].timestamp >= animationStateClient.animationTime
-							)
-							|| k == keyFrames.size() - 2)
-						{
-							auto rez = interpolateKeyFrames(keyFrames[k], keyFrames[k + 1], animationStateClient.animationTime);
-							auto matrix = rez.getMatrix();
+						auto &keyFrames = animation.kayFrames[i];
 
-							//skinningMatrix[i] = skinningMatrix[i] * matrix;
-							skinningMatrix[i] = rotMatrix * matrix;
-							break;
+						//todo only one element case!
+						for (int k = 0; k < keyFrames.size() - 1; k++)
+						{
+
+							if ((keyFrames[k].timestamp <= animationStateClient.animationTime &&
+								keyFrames[k + 1].timestamp >= animationStateClient.animationTime
+								)
+								|| k == keyFrames.size() - 2)
+							{
+								auto rez = interpolateKeyFrames(keyFrames[k], keyFrames[k + 1], animationStateClient.animationTime);
+								auto matrix = rez.getMatrix();
+
+								//skinningMatrix[i] = skinningMatrix[i] * matrix;
+								skinningMatrix[i] = rotMatrix * matrix;
+								break;
+							}
+
 						}
+
 
 					}
 
 
 				}
-
-
 			}
+
+
 		}
 
-		
+
 
 
 		//if(0)
@@ -1284,11 +1282,12 @@ struct ClientEntity
 		}
 
 		//animations
-		if constexpr (hasForces<T> && hasAnimations<T>)
+		if constexpr (hasAnimations<T>)
 		{
 			entityBuffered.animationStateServer.update(deltaTime);
 
-			MotionState &forces = entityBuffered.forces;
+			MotionState forces = {};
+			if constexpr (hasForces<T>) { forces = entityBuffered.forces; }
 
 			if (!forces.colidesBottom())
 			{
