@@ -499,6 +499,11 @@ template <typename T>
 constexpr bool hasForces<T, std::void_t<decltype(T::forces)>> = true;
 
 
+template <typename T, typename = void>
+constexpr bool hasAnimations = false;
+template <typename T>
+constexpr bool hasAnimations<T, std::void_t<decltype(T::animationStateServer)>> = true;
+
 
 struct CollidesWithPlacedBlocks
 {
@@ -834,6 +839,7 @@ struct ClientEntity
 		//animator.setAnimation(Animator::running);
 
 		int animationIndex = model.animationsIndex[animationStateClient.currentAnimation];
+
 		if (animationIndex >= 0)
 		{
 			auto &animation = model.animations[animationIndex];
@@ -1278,7 +1284,7 @@ struct ClientEntity
 		}
 
 		//animations
-		if constexpr (hasForces<T>)
+		if constexpr (hasForces<T> && hasAnimations<T>)
 		{
 			entityBuffered.animationStateServer.update(deltaTime);
 

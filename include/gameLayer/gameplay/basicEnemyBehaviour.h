@@ -115,6 +115,8 @@ struct BasicEnemyBehaviour
 		BasicEnemyBehaviourOtherSettings otherSettings)
 	{
 
+		baseEntity->entity.animationStateServer.runningTime = 0;
+
 		worriedTimer -= deltaTime;
 		if (worriedTimer < 0) { worriedTimer = 0; }
 
