@@ -308,11 +308,13 @@ bool Item::isCoin()
 		type == diamondCoin;
 }
 
+//higher armour penetration, basically a less extreme version of the hammer
 bool Item::isBattleAxe()
 {
 	return type == trainingBattleAxe;
 }
 
+//well balanced in general
 bool Item::isSword()
 {
 	return type == trainingSword ||
@@ -324,16 +326,19 @@ bool Item::isSword()
 
 }
 
+//extra slow, heavy, extremely good armour penetration and knock back
 bool Item::isHammer()
 {
 	return type == trainingWarHammer;
 }
 
+//extra fast, very high crit and surprize damage
 bool Item::isDagger()
 {
 	return type == trainingKnife;
 }
 
+//high damage high crit, low armour penetration
 bool Item::isScythe()
 {
 	return type == trainingScythe;
@@ -344,6 +349,7 @@ bool Item::isFlail()
 	return type == trainingFlail;
 }
 
+//high range
 bool Item::isSpear()
 {
 	return type == trainingSpear;

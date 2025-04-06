@@ -53,6 +53,14 @@ float WeaponStats::getUIMoveSpeed()
 	return s + 0.6f;
 }
 
+float WeaponStats::getSpeedNormalizedInSecconds()
+{
+	float normalizedSpeed = (speed + 10) / 30.f;
+	normalizedSpeed = powf(normalizedSpeed, 2.f);
+	normalizedSpeed = 1.2 + normalizedSpeed * 3;
+	return normalizedSpeed;
+}
+
 //float WeaponStats::getDexterityNormalized()
 //{
 //	return (dexterity + 10.f) / 30.f;

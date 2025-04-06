@@ -29,6 +29,8 @@ struct WeaponStats
 	//the spped that the game moves
 	float getUIMoveSpeed();
 
+	float getSpeedNormalizedInSecconds();
+
 	float getDexterityNormalized();
 
 	float getComboFrequencyChance();

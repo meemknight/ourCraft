@@ -27,6 +27,8 @@ struct BattleUI
 	//if the player lets moves die we close the ui
 	int notDieCount = 1;
 
+	float chargingTime = 0;
+
 	HitResult update(Item &item, int inventorySlot, bool dontRun, 
 		UiENgine &uiEngine, std::minstd_rand &rng, float deltaTime);
 

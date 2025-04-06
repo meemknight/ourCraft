@@ -64,8 +64,47 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 		//stats.dexterity = debugDexterity;
 		//stats.comboFrequency = debugCombo;
 
-		float minHitDamage = stats.getAccuracyNormalized() * 0.2;
+		float minHitDamage = stats.getAccuracyNormalized() * 0.5;
 
+		if (item.isWeapon())
+		{
+			chargingTime += deltaTime;
+			float speedSecconds = stats.getSpeedNormalizedInSecconds();
+
+			if (chargingTime > speedSecconds)
+			{
+				chargingTime = speedSecconds;
+			};
+			float chargingTimeNormalized = chargingTime / speedSecconds;
+			chargingTimeNormalized = glm::clamp(chargingTimeNormalized, 0.f, 1.f);
+
+
+			auto weaponChargeBarBox = glui::Box().xDimensionPercentage(0.12).yDimensionPercentage(0.02).
+				xCenter().yBottomPerc(-0.44)();
+
+			renderer.renderRectangle(weaponChargeBarBox, {0.2,0.2,0.2,0.4});
+
+			renderer.renderRectangle({weaponChargeBarBox.x, weaponChargeBarBox.y, weaponChargeBarBox.z * chargingTimeNormalized,
+				weaponChargeBarBox.w}, Colors_Gray);
+			
+
+
+			if (leftPressed || rightPressed)
+			{
+
+			
+
+				result.bonusCritChance = 0;
+				result.hit = 1; //
+				result.hitCorectness = std::max(minHitDamage, 1.f);
+			}
+		}
+		else
+		{
+			reset();
+		}
+
+	#if 0
 		if (item.isSpear())
 		{
 			
@@ -327,6 +366,7 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 			}
 
 		}
+	#endif
 
 		//if (stats.accuracy < 0)
 		//{
