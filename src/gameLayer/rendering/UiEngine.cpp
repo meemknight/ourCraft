@@ -324,7 +324,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 	bool insideInventory, int &cursorItemIndex,
 	bool insideCraftingTable, int &currentInventoryTab, bool isCreative,
 	unsigned short &selectedItem, Life &playerHealth, ProgramData &programData, LocalPlayer &player
-	, int &craftingSlider, int &outCraftingRecepieGlobalIndex, bool showUI
+	, int &craftingSlider, int &outCraftingRecepieGlobalIndex, bool showUI, int craftingStation
 )
 {
 
@@ -723,7 +723,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						//crafting box
 						if (currentInventoryTab == INVENTORY_TAB_CRAFTING)
 						{
-							auto allItems = getAllPossibleRecepies(inventory);
+							auto allItems = getAllPossibleRecepies(inventory, craftingStation);
 
 
 							glui::Frame insideUpperPart(glui::Box().xCenter().yTopPerc(0.1).

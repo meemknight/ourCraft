@@ -194,6 +194,8 @@ struct Item
 
 	bool isTool();
 
+	int isCraftingStation();
+
 	bool isPaint();
 
 	float isAxe();

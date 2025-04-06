@@ -79,24 +79,22 @@ HitResult BattleUI::update(Item &item, int inventorySlot, bool dontRun,
 			chargingTimeNormalized = glm::clamp(chargingTimeNormalized, 0.f, 1.f);
 
 
-			auto weaponChargeBarBox = glui::Box().xDimensionPercentage(0.12).yDimensionPercentage(0.02).
+			auto weaponChargeBarBox = glui::Box().xDimensionPercentage(0.12).yDimensionPercentage(0.018).
 				xCenter().yBottomPerc(-0.44)();
 
 			renderer.renderRectangle(weaponChargeBarBox, {0.2,0.2,0.2,0.4});
 
 			renderer.renderRectangle({weaponChargeBarBox.x, weaponChargeBarBox.y, weaponChargeBarBox.z * chargingTimeNormalized,
 				weaponChargeBarBox.w}, Colors_Gray);
-			
 
 
 			if (leftPressed || rightPressed)
 			{
-
-			
-
-				result.bonusCritChance = 0;
+				result.bonusCritChance = 0; //todo probably remove
 				result.hit = 1; //
-				result.hitCorectness = std::max(minHitDamage, 1.f);
+				result.hitCorectness = std::max(minHitDamage, chargingTimeNormalized);
+
+				chargingTime = 0;
 			}
 		}
 		else

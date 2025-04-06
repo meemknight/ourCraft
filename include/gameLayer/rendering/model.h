@@ -215,6 +215,7 @@ struct ModelsManager
 		wallModel,
 		trainingDummyBaseModel,
 		targetModel,
+		furnaceModel,
 
 		BLOCK_MODELS_COUNT
 

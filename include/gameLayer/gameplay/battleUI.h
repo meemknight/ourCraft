@@ -8,7 +8,7 @@
 struct HitResult
 {
 	float hitCorectness = 1;
-	float bonusCritChance = 0; // between -1 and 1;
+	float bonusCritChance = 0; // between -1 and 1; //todo probably remove
 	bool isSwipeAttack = 0;
 	bool hit = 0;	//1 if the player pressed the attack button
 };

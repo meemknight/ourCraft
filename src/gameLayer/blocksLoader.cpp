@@ -153,6 +153,7 @@ const char *texturesNames[] = {
 	"hayTop",				//136
 	"models/trainingDummyBase", //137
 	"models/target",		//138
+	"models/furnace",		//139
 
 
 };
@@ -627,6 +628,8 @@ uint16_t blocksLookupTable[] = {
 	137, 137, 137, 137, 137, 137, //training dummy base
 
 	138, 138, 138, 138, 138, 138, //target
+
+	139, 139, 139, 139, 139, 139, //furnace
 
 };
 

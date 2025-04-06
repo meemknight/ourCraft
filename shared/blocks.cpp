@@ -4,7 +4,6 @@
 #include <platformTools.h>
 #include <string>
 
-
 int blockReorder[] = {
 	// Basic Blocks
 	air, grassBlock, dirt, stone, stone_stairts, stone_slabs, stone_wall, cobblestone, cobbleStone_stairts, cobbleStone_slabs, cobbleStone_wall, gravel, water,
@@ -49,7 +48,7 @@ int blockReorder[] = {
 	 magenta_stained_glass, pink_stained_glass,
 
 	// Structures & Functional Blocks
-	craftingTable, workBench, cookingPot, ladder, trainingDummy, target,
+	craftingTable, workBench, furnace, cookingPot, ladder, trainingDummy, target,
 
 	// Furniture
 	bookShelf,
@@ -277,6 +276,7 @@ bool isDecorativeFurniture(BlockType type)
 		type == torchWood ||
 		type == trainingDummy ||
 		type == target ||
+		type == furnace ||
 		type == globe
 		
 		;
@@ -641,9 +641,11 @@ bool isStainedGlass(BlockType type)
 
 unsigned char isInteractable(BlockType type)
 {
-	if (type == BlockTypes::craftingTable || type == BlockTypes::workBench || type == BlockTypes::craftingItems)
+	int craftingStation = isCraftingStation(type);
+
+	if (craftingStation)
 	{
-		return InteractionTypes::craftingTable;
+		return craftingStation;
 	}else if (type == BlockTypes::structureBase)
 	{
 		return InteractionTypes::structureBaseBlock;
@@ -688,6 +690,26 @@ float Block::getFriction()
 
 	return BLOCK_DEFAULT_FRICTION;
 }
+
+int isCraftingStation(unsigned short type)
+{
+	switch (type)
+	{
+
+	case craftingItems:
+	case craftingTable:
+	case workBench: return WorkStationType_WorkBench;
+
+
+	case cookingPot: return WorkStationType_CookingPot;
+	case furnace: return WorkStationType_Furnace;
+
+	}
+
+
+	return 0;
+}
+
 
 
 float getBlockBaseMineDuration(BlockType type)

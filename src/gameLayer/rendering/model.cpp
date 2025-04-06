@@ -781,6 +781,7 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		"wall.glb",
 		"trainingDummyBase.glb",
 		"target.glb",
+		"furnace.glb",
 	};
 
 	static_assert(sizeof(blockModelsNames) / sizeof(blockModelsNames[0]) == BLOCK_MODELS_COUNT);
@@ -860,6 +861,7 @@ int getDefaultBlockShapeForFurniture(unsigned int b)
 		case torchWood: return ModelsManager::torchModel;
 		case trainingDummy: return ModelsManager::trainingDummyBaseModel;
 		case target: return ModelsManager::targetModel;
+		case furnace: return ModelsManager::furnaceModel;
 
 
 	}

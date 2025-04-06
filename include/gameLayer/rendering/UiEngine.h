@@ -88,7 +88,7 @@ struct UiENgine
 		bool insideCraftingTable, int &currentInventoryTab, bool isCreative,
 		unsigned short &selectedItem, Life &playerHealth, ProgramData &programData,
 		LocalPlayer &player, int &craftingSlider, int &outCraftingRecepieGlobalIndex,
-		bool showUI
+		bool showUI, int craftingStation
 		);
 
 	bool renderBaseBlockUI(float deltaTime,

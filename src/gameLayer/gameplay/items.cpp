@@ -4,6 +4,7 @@
 #include <iostream>
 #include <climits>
 #include <magic_enum.hpp>
+#include <gameplay/crafting.h>
 
 //todo can be placed
 
@@ -219,6 +220,11 @@ bool Item::isTool()
 	{
 		return false;
 	}
+}
+
+int Item::isCraftingStation()
+{
+	return ::isCraftingStation(type);
 }
 
 bool Item::isPaint()
@@ -924,7 +930,6 @@ const char *getItemTextureName(int itemId)
 	return itemsNamesTextures[itemId-ItemsStartPoint];
 }
 
-
 //doesn't compare size
 bool areItemsTheSame(Item &a, Item &b)
 {
@@ -1202,7 +1207,7 @@ char *blockNames[] = {
 	"Workbench",
 	"Oak Table",
 	"Oak Log Table",
-	"Crafting Items",
+	"Crafting Tools",
 	"Oak Big Chair",
 	"Oak Log Big Chair",
 	"Cooking Pot",
@@ -1260,6 +1265,8 @@ char *blockNames[] = {
 	"Hay balde",
 	"Training dummy",
 	"Target",
+
+	"Furnace",
 };
 
 std::string Item::getItemName()

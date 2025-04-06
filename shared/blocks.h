@@ -242,6 +242,8 @@ enum BlockTypes : unsigned short
 	trainingDummy,
 	target,
 
+	furnace,
+
 	BlocksCount
 };
 
@@ -351,6 +353,8 @@ bool canBeMinedByShovel(std::uint16_t type);
 
 bool canBeMinedByAxe(std::uint16_t type);
 
+int isCraftingStation(unsigned short type);
+
 
 BlockType fromAnyShapeToNormalBlockType(BlockType b);
 
@@ -358,6 +362,16 @@ struct BlockCollider
 {
 	glm::vec3 size = {1,1,1};
 	glm::vec3 offset = {};
+};
+
+enum WorkStationType
+{
+	WorkStationType_None = 0,
+	WorkStationType_WorkBench,
+	WorkStationType_Furnace,
+	WorkStationType_CookingPot,
+	WorkStationType_Anvil, //DONT FORGET TO ALSO UPDATE TOWARDS THE BOTTOM OF THE FILE
+
 };
 
 namespace BlockColor
@@ -419,7 +433,7 @@ struct Block
 		return typeAndFlags >> 11;
 	}
 
-	//used for stairs, or furnace type blocks
+	//used for stairs, or furniture type blocks
 	unsigned char getRotationFor365RotationTypeBlocks()
 	{
 		return (typeAndFlags >> 11) & 0b0001'1;
@@ -771,6 +785,9 @@ namespace InteractionTypes
 	{
 		none = 0,
 		craftingTable,
+		furnace,
+		cookingPot,
+		anvil,
 		structureBaseBlock,
 	};
 
