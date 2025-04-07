@@ -880,13 +880,28 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 									//	24, {0.3,0.3,0.6,1}, {}, 0.f, buttonTexture, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
 
 									//render recepie requests
+									auto craftingItems = glui::Box().xCenter().yTopPerc(0).xDimensionPercentage(1.f).
+										yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
+
+
+									//render station type
+									{
+										auto box = craftingItems;
+										box.z = oneItemSize;
+										box.w = oneItemSize;
+										box.x -= box.z * 0.3;
+
+										box = shrinkRectanglePercentage(box, 0.05);
+										//renderer2d.renderRectangle(box, oneInventorySlot);
+										renderOneItem(box, Item(BlockTypes::workBench));
+									}
+
 
 									int index = craftingSlider + 1;
 
 									if (allItems.size() > index)
 									{
-										auto craftingItems = glui::Box().xCenter().yTopPerc(0).xDimensionPercentage(1.f).
-											yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
+										
 										//renderer2d.renderRectangle(craftingItems, itemsBarInventory);
 										auto &recepie = allItems[index];
 

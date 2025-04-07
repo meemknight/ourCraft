@@ -285,6 +285,7 @@ namespace gl2d
 		stbtt_packedchar *packedCharsBuffer = 0;
 		int               packedCharsBufferSize = 0;
 		float             max_height = 0.f;
+		float			  spaceSize = 0.f; //you can manually change this variable if you want!
 		bool			  monospaced = false;
 
 		Font() {}
