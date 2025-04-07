@@ -119,6 +119,9 @@ void assertFuncInternal(
 
 #else //linux or others
 
+#include <cassert>
+#include <iostream>
+
 void assertFuncProduction(
 	const char *expression,
 	const char *file_name,
@@ -126,6 +129,9 @@ void assertFuncProduction(
 	const char *comment)
 {
 
+	std::cout << "Assertion failed: " << expression << " file: " << file_name
+		<< " line: " << line_number << "Comment: " << comment;
+	assert(0);
 	raise(SIGABRT);
 
 }
@@ -137,6 +143,9 @@ void assertFuncInternal(
 	const char *comment)
 {
 
+	std::cout << "Assertion failed: " << expression << " file: " << file_name
+		<< " line: " << line_number << "Comment: " << comment;
+	assert(0);
 	raise(SIGABRT);
 
 }

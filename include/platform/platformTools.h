@@ -22,7 +22,6 @@ inline float constexpr BYTES_TO_GB(size_t x) { return BYTES_TO_MB(x) / 1024.f; }
 
 
 
-#ifdef _WIN32
 	
 void assertFuncProduction(
 	const char *expression,
@@ -47,49 +46,18 @@ void assertFuncInternal(
 					(!!(expression)) ||														\
 					(assertFuncInternal(#expression, __FILE__, (unsigned)(__LINE__), comment), 1)\
 				)
+
 		
-	#else
-	
-		#define permaAssert(expression) (void)(											\
-					(!!(expression)) ||												\
-					(assertFuncProduction(#expression, __FILE__, (unsigned)(__LINE__)), 0)	\
-				)
-		
-		#define permaAssertComment(expression, comment) (void)(								\
-					(!!(expression)) ||														\
-					(assertFuncProduction(#expression, __FILE__, (unsigned)(__LINE__), comment), 1)	\
-
-				)
-		
-	#endif
-	
-	
-
-#else //linux or others
-	
-void assertFuncProduction(
-	const char *expression,
-	const char *file_name,
-	unsigned const line_number,
-	const char *comment = "---");
-
-void assertFuncInternal(
-	const char *expression,
-	const char *file_name,
-	unsigned const line_number,
-	const char *comment = "---");
-
-	#if INTERNAL_BUILD == 1
-	
-		#define permaAssert(expression) (void)(											\
+		#define devOnlyAssert(expression) (void)(											\
 					(!!(expression)) ||												\
 					(assertFuncInternal(#expression, __FILE__, (unsigned)(__LINE__)), 0)	\
 				)
-		
-		#define permaAssertComment(expression, comment) (void)(								\
+
+		#define devOnlyAssertComment(expression, comment) (void)(								\
 					(!!(expression)) ||														\
 					(assertFuncInternal(#expression, __FILE__, (unsigned)(__LINE__), comment), 1)\
 				)
+
 		
 	#else
 	
@@ -101,30 +69,33 @@ void assertFuncInternal(
 		#define permaAssertComment(expression, comment) (void)(								\
 					(!!(expression)) ||														\
 					(assertFuncProduction(#expression, __FILE__, (unsigned)(__LINE__), comment), 1)	\
-
 				)
+
+		#define devOnlyAssert(expression) 
+
+		#define devOnlyAssertComment(expression, comment) 
 		
 	#endif
-
-
-#endif
+	
+	
 
 
 
 #include <functional>
 
-struct Defer
+//raii stuff, it will basically call the function that you pass to it be called at scope end, usage: defer(func());
+struct DeferImpl
 {
 public:
-	explicit Defer(std::function<void()> func): func_(std::move(func)) {}
-	~Defer() { func_(); }
+	explicit DeferImpl(std::function<void()> func): func_(std::move(func)) {}
+	~DeferImpl() { func_(); }
 
 	std::function<void()> func_;
 };
 
 #define CONCATENATE_DEFFER(x, y) x##y
 #define MAKE_UNIQUE_VAR_DEFFER(x, y) CONCATENATE_DEFFER(x, y)
-#define defer(func) Defer MAKE_UNIQUE_VAR_DEFFER(_defer_, __COUNTER__)(func)
+#define defer(func) DeferImpl MAKE_UNIQUE_VAR_DEFFER(_defer_, __COUNTER__)(func)
 
 
 #if INTERNAL_BUILD == 1
