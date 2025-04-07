@@ -137,7 +137,6 @@ static CraftingRecepie recepies[] =
 	recepie<1>(Item(BlockTypes::wooden_plank, 4), {Item(BlockTypes::spruce_log)}),
 	recepie<1>(Item(BlockTypes::birchPlanks, 4), {Item(BlockTypes::birch_log)}),
 	recepie<1>(Item(BlockTypes::jungle_planks, 4),{Item(BlockTypes::jungle_log)}),
-	recepie<1>(Item(BlockTypes::craftingTable, 1),{Item(BlockTypes::wooden_plank, 4)}).setAnyWood(),
 	recepie<1>(Item(BlockTypes::sand_stone, 1),{Item(BlockTypes::sand, 2)}),
 	recepie<1>(Item(BlockTypes::hardSandStone, 1),{Item(BlockTypes::sand, 2)}),
 	recepie<1>(Item(BlockTypes::stoneBrick, 1),{Item(BlockTypes::stone, 2)}),
@@ -166,11 +165,11 @@ static CraftingRecepie recepies[] =
 
 	//bars
 
-	//recepie<1>(Item(ItemTypes::copperIngot, 1), {Item(BlockTypes::copperOre, 2)}).setRequiresFurnace(),
-	//recepie<1>(Item(ItemTypes::leadIngot, 1), {Item(BlockTypes::leadOre, 2)}).setRequiresFurnace(),
-	recepie<1>(Item(ItemTypes::ironIngot, 1), {Item(BlockTypes::iron_ore, 3)}).setRequiresFurnace(),
-	//recepie<1>(Item(ItemTypes::silverIngot, 1), {Item(BlockTypes::silverOre, 3)}).setRequiresFurnace(),
-	recepie<1>(Item(ItemTypes::goldIngot, 1), {Item(BlockTypes::gold_ore, 4)}).setRequiresFurnace(),
+	recepie<1>(Item(ItemTypes::copperIngot, 1), {Item(BlockTypes::copperOre, 2)}).setRequiresFurnace(),
+	recepie<1>(Item(ItemTypes::leadIngot, 1), {Item(BlockTypes::leadOre, 2)}).setRequiresFurnace(),
+	recepie<1>(Item(ItemTypes::ironIngot, 1), {Item(BlockTypes::ironOre, 3)}).setRequiresFurnace(),
+	recepie<1>(Item(ItemTypes::silverIngot, 1), {Item(BlockTypes::silverOre, 3)}).setRequiresFurnace(),
+	recepie<1>(Item(ItemTypes::goldIngot, 1), {Item(BlockTypes::goldOre, 4)}).setRequiresFurnace(),
 
 
 	//tools

@@ -22,11 +22,11 @@ enum BlockTypes : unsigned short
 	sand_stone,
 	snow_dirt,
 	leaves,
-	gold_ore,
-	coal_ore,
+	goldOre,
+	copperOre,
 	stoneBrick,
-	iron_ore,
-	diamond_ore,
+	ironOre,
+	silverOre,
 	bookShelf,
 	birch_log,
 	gravel,
@@ -58,7 +58,7 @@ enum BlockTypes : unsigned short
 	glass,
 	testBlock,
 	torch,
-	craftingTable,
+	leadOre,
 	coarseDirt,
 	birchPlanks,
 
@@ -243,6 +243,10 @@ enum BlockTypes : unsigned short
 	target,
 
 	furnace,
+
+	goblinWorkBench,
+	goblinChair,
+	goblinTable,
 
 	BlocksCount
 };

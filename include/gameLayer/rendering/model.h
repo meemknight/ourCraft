@@ -216,6 +216,9 @@ struct ModelsManager
 		trainingDummyBaseModel,
 		targetModel,
 		furnaceModel,
+		goblinWorkBenchModel,
+		goblinChairModel,
+		goblinTableModel,
 
 		BLOCK_MODELS_COUNT
 

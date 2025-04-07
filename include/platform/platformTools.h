@@ -3,9 +3,7 @@
 //note this should be included last
 #define NOMINMAX
 #include "config.h"
-#include <signal.h>
 #include <string.h>
-#include <stdio.h>
 #include <cstring>
 
 inline size_t constexpr KB(size_t x) { return x * 1024ull; }
@@ -48,17 +46,6 @@ void assertFuncInternal(
 				)
 
 		
-		#define devOnlyAssert(expression) (void)(											\
-					(!!(expression)) ||												\
-					(assertFuncInternal(#expression, __FILE__, (unsigned)(__LINE__)), 0)	\
-				)
-
-		#define devOnlyAssertComment(expression, comment) (void)(								\
-					(!!(expression)) ||														\
-					(assertFuncInternal(#expression, __FILE__, (unsigned)(__LINE__), comment), 1)\
-				)
-
-		
 	#else
 	
 		#define permaAssert(expression) (void)(											\
@@ -71,10 +58,6 @@ void assertFuncInternal(
 					(assertFuncProduction(#expression, __FILE__, (unsigned)(__LINE__), comment), 1)	\
 				)
 
-		#define devOnlyAssert(expression) 
-
-		#define devOnlyAssertComment(expression, comment) 
-		
 	#endif
 	
 	

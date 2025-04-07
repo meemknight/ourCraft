@@ -1114,7 +1114,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 						GLuint textures[4] = {
 							blocksLoader.texturesIdsItems[copperAxe - ItemsStartPoint],
-							blocksLoader.texturesIds[getGpuIdIndexForBlock(craftingTable, 0)],
+							blocksLoader.texturesIds[getGpuIdIndexForBlock(workBench, 0)], //todo crafting ui button
 							blocksLoader.texturesIds[getGpuIdIndexForBlock(grassBlock, 0)],
 							blocksLoader.texturesIdsItems[stick - ItemsStartPoint],
 						};

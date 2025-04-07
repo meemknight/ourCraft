@@ -9,7 +9,7 @@ int blockReorder[] = {
 	air, grassBlock, dirt, stone, stone_stairts, stone_slabs, stone_wall, cobblestone, cobbleStone_stairts, cobbleStone_slabs, cobbleStone_wall, gravel, water,
 
 	// Ores & Resources
-	coal_ore, iron_ore, gold_ore, diamond_ore, gold_block,
+	copperOre, leadOre, ironOre, silverOre, goldOre, gold_block,
 
 	// Natural Blocks
 	sand, sand_stone, sandStone_stairts, sandStone_slabs, sandStone_wall, hardSandStone, hardSandStone_stairs, hardSandStone_slabs, hardSandStone_wall,
@@ -48,7 +48,7 @@ int blockReorder[] = {
 	 magenta_stained_glass, pink_stained_glass,
 
 	// Structures & Functional Blocks
-	craftingTable, workBench, furnace, cookingPot, ladder, trainingDummy, target,
+	workBench, furnace, cookingPot, ladder, trainingDummy, target,
 
 	// Furniture
 	bookShelf,
@@ -58,7 +58,7 @@ int blockReorder[] = {
 
 	// Decorations
 	torch, torchWood, skull, skullTorch, book, candleHolder, pot, jar, globe, keg, wineBottle, goblet, mug,
-	lamp,
+	lamp, 	goblinWorkBench, goblinChair, goblinTable,
 
 	// Miscellaneous
 	smallRock, oakLogSlab, logWall, craftingItems, chickenCaracas, chickenWingsPlate, fishPlate,
@@ -277,6 +277,9 @@ bool isDecorativeFurniture(BlockType type)
 		type == trainingDummy ||
 		type == target ||
 		type == furnace ||
+		type == goblinWorkBench ||
+		type == goblinChair ||
+		type == goblinTable ||
 		type == globe
 		
 		;
@@ -371,7 +374,6 @@ bool isAnyWoddenBlock(BlockType type)
 		type == birch_log ||
 		type == jungle_log ||
 		type == palm_log ||
-		type == craftingTable ||
 		type == wooden_stairs ||
 		type == wooden_wall ||
 		type == oakLogSlab ||
@@ -501,10 +503,11 @@ bool isAnyStone(BlockType type)
 		type == blueBricks_wall ||
 		type == blueBricks_slabs ||
 		type == stoneBrick ||
-		type == coal_ore ||
-		type == gold_ore ||
-		type == diamond_ore ||
-		type == iron_ore ||
+		type == copperOre ||
+		type == leadOre ||
+		type == ironOre ||
+		type == silverOre ||
+		type == goldOre ||
 		type == plankedWallBlock ||
 		type == tiledStoneBricks ||
 		type == gold_block ||
@@ -697,7 +700,7 @@ int isCraftingStation(unsigned short type)
 	{
 
 	case craftingItems:
-	case craftingTable:
+	case goblinWorkBench:
 	case workBench: return WorkStationType_WorkBench;
 
 

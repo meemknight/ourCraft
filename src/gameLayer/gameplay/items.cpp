@@ -1075,10 +1075,10 @@ char *blockNames[] = {
 	"Snowy Dirt",
 	"Leaves",
 	"Gold Ore",
-	"Coal Ore",
+	"Copper Ore",
 	"Stone Brick",
 	"Iron Ore",
-	"Diamond Ore",
+	"Silver Ore",
 	"Bookshelf",
 	"Birch Log",
 	"Gravel",
@@ -1110,7 +1110,7 @@ char *blockNames[] = {
 	"Glass",
 	"Test Block",
 	"Torch",
-	"Crafting Table",
+	"Lead Ore",
 	"Coarse Dirt",
 	"Birch Planks",
 	"Path Block",
@@ -1267,6 +1267,10 @@ char *blockNames[] = {
 	"Target",
 
 	"Furnace",
+
+	"Goblin Workbench",
+	"Goblin chair",
+	"Goblin table",
 };
 
 std::string Item::getItemName()

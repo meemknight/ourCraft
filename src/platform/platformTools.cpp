@@ -5,6 +5,8 @@
 
 
 #include <Windows.h>
+#include <signal.h>
+#include <stdio.h>
 
 void assertFuncProduction(
 	const char *expression,

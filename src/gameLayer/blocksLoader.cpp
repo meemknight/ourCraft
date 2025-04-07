@@ -29,11 +29,11 @@ const char *texturesNames[] = {
 	"grass_block_snow",	//15
 	"snow",				//16
 	"dark_oak_leaves",	//17
-	"gold_ore",			//18
-	"coal_ore",			//19
+	"goldOre",			//18
+	"copperOre",		//19
 	"stone_bricks",		//20
-	"iron_ore",			//21
-	"diamond_ore",		//22
+	"ironOre",			//21
+	"silverOre",		//22
 	"bookshelf",		//23
 	"birch_log",		//24
 	"birch_log_top",	//25
@@ -69,9 +69,9 @@ const char *texturesNames[] = {
 	"glass",			//55
 	"",					//56 test texture
 	"torch",			//57
-	"crafting_table_front",	//58
-	"crafting_table_side",	//59
-	"crafting_table_top",	//60
+	"leadOre",			//58
+	"models/goblinWorkBench",	//59
+	"models/goblinTable",		//60
 	"gravel-dirt-bloc",		//61
 	"birch_planks",		//62
 	"pathBlock",	//63
@@ -212,7 +212,7 @@ uint16_t blocksLookupTable[] = {
 	// gold ore
 	18,18,18,18,18,18,
 
-	// coal ore
+	// copper ore
 	19,19,19,19,19,19,
 
 	//stone brick
@@ -221,7 +221,7 @@ uint16_t blocksLookupTable[] = {
 	// iron ore
 	21,21,21,21,21,21,
 
-	// diamond ore
+	// silver ore
 	22,22,22,22,22,22,
 
 	//boock shelf
@@ -317,8 +317,8 @@ uint16_t blocksLookupTable[] = {
 	//torch
 	132, 132, 132, 132, 132, 132,
 
-	//crafting table
-	58, 58, 60, 7, 59, 59, 
+	//lead ore
+	58, 58, 58, 58, 58, 58,
 
 	//coarse dirt
 	61,61,61,61,61,61,
@@ -630,6 +630,10 @@ uint16_t blocksLookupTable[] = {
 	138, 138, 138, 138, 138, 138, //target
 
 	139, 139, 139, 139, 139, 139, //furnace
+
+	59, 59, 59, 59, 59, 59,//goblinWorkBench,
+	59, 59, 59, 59, 59, 59,//goblinChair,
+	60, 60, 60, 60, 60, 60,//goblinTable,
 
 };
 
