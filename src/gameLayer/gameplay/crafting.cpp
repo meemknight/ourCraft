@@ -144,6 +144,25 @@ static CraftingRecepie recepies[] =
 	recepie<1>(Item(BlockTypes::workBench, 1),{Item(BlockTypes::wooden_plank, 10)}),
 	recepie<3>(Item(BlockTypes::furnace, 1),{Item(BlockTypes::cobblestone, 20), Item(BlockTypes::torch, 3), Item(BlockTypes::wooden_plank, 4)}).setAnyWood().setRequiresWorkBench(),
 
+	//furniture
+	recepie<1>(Item(BlockTypes::oakChair, 1),{Item(BlockTypes::wooden_plank, 4)}).setRequiresWorkBench(),
+	recepie<1>(Item(BlockTypes::oakBigChair, 1),{Item(BlockTypes::wooden_plank, 6)}).setRequiresWorkBench(),
+	recepie<1>(Item(BlockTypes::oakLogChair, 1),{Item(BlockTypes::woodLog, 4)}).setRequiresWorkBench(),
+	recepie<1>(Item(BlockTypes::oakLogBigChair, 1),{Item(BlockTypes::woodLog, 6)}).setRequiresWorkBench(),
+	recepie<1>(Item(BlockTypes::oakTable, 1),{Item(BlockTypes::wooden_plank, 8)}).setRequiresWorkBench(),
+	recepie<1>(Item(BlockTypes::oakLogTable, 1), {Item(BlockTypes::woodLog, 8)}).setRequiresWorkBench(),
+	recepie<2>(Item(BlockTypes::woddenChest, 1), {Item(BlockTypes::wooden_plank, 8),  Item(ItemTypes::leadIngot, 2)}).setRequiresWorkBench(),
+	recepie<2>(Item(BlockTypes::woddenChest, 1), {Item(BlockTypes::wooden_plank, 8),  Item(ItemTypes::ironIngot, 1)}).setRequiresWorkBench(),
+
+
+	//todo require goblin loom
+	recepie<3>(Item(BlockTypes::goblinWorkBench, 1),{Item(BlockTypes::wooden_plank, 10),  Item(ItemTypes::cloth, 5),  Item(ItemTypes::fang, 2)}).setRequiresGoblin(),
+	recepie<3>(Item(BlockTypes::goblinChair, 1),{Item(BlockTypes::wooden_plank, 4),  Item(ItemTypes::cloth, 2),  Item(ItemTypes::fang, 1)}).setRequiresGoblin(),
+	recepie<3>(Item(BlockTypes::goblinTable, 1),{Item(BlockTypes::wooden_plank, 8),  Item(ItemTypes::cloth, 4),  Item(ItemTypes::fang, 2)}).setRequiresGoblin(),
+	recepie<3>(Item(BlockTypes::goblinTorch, 4),{Item(BlockTypes::wooden_plank, 1),  Item(ItemTypes::cloth, 1),  Item(ItemTypes::fang, 1)}).setAnyWood().setRequiresGoblin(),
+	recepie<4>(Item(BlockTypes::goblinChest, 1),{Item(BlockTypes::wooden_plank, 8),  Item(ItemTypes::cloth, 5),  Item(ItemTypes::fang, 2),  Item(ItemTypes::leadIngot, 2)}).setRequiresGoblin(),
+	recepie<4>(Item(BlockTypes::goblinChest, 1),{Item(BlockTypes::wooden_plank, 8),  Item(ItemTypes::cloth, 5),  Item(ItemTypes::fang, 2),  Item(ItemTypes::ironIngot, 1)}).setRequiresGoblin(),
+
 
 	//coins
 	recepie<1>(Item(ItemTypes::silverCoin, 1), {Item(ItemTypes::copperCoin, 100)}),
@@ -234,6 +253,11 @@ std::vector<CraftingRecepieIndex> getAllPossibleRecepies(PlayerInventory &player
 			bool good = true;
 			if (recepies[i].requiresWorkBench && craftingStation != WorkStationType::WorkStationType_WorkBench) { good = false; }
 			if (recepies[i].requiresFurnace && craftingStation != WorkStationType::WorkStationType_Furnace) { good = false; }
+			if (recepies[i].requiresGoblin && craftingStation != WorkStationType::WorkStationType_GoblinStitchingPost) { good = false; }
+			
+			int benchesRequired = 0;
+			benchesRequired += recepies[i].requiresWorkBench + recepies[i].requiresFurnace + recepies[i].requiresGoblin;
+			assert(benchesRequired <= 1);
 
 			if (good)
 			{

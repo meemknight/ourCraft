@@ -154,6 +154,8 @@ const char *texturesNames[] = {
 	"models/trainingDummyBase", //137
 	"models/target",		//138
 	"models/furnace",		//139
+	"models/goblinTorch",	//140
+	"models/goblinStitchingPost",	//141
 
 
 };
@@ -634,6 +636,8 @@ uint16_t blocksLookupTable[] = {
 	59, 59, 59, 59, 59, 59,//goblinWorkBench,
 	59, 59, 59, 59, 59, 59,//goblinChair,
 	60, 60, 60, 60, 60, 60,//goblinTable,
+	140, 140, 140, 140, 140, 140, //goblin torch
+	141, 141, 141, 141, 141, 141,//goblin stitching post
 
 };
 

@@ -1258,7 +1258,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 								gameData.currentCraftingStation = false;
 
 								if (actionType >= InteractionTypes::craftingTable &&
-									actionType <= InteractionTypes::anvil
+									actionType < InteractionTypes::structureBaseBlock
 									)
 								{
 									gameData.insideInventoryMenu = true;

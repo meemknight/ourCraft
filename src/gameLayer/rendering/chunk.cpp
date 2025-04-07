@@ -1928,6 +1928,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 					&& b.getType() != BlockTypes::ladder
 					&& b.getType() != BlockTypes::lamp
 					&& b.getType() != BlockTypes::torchWood
+					&& b.getType() != BlockTypes::goblinTorch
 					&& !b.isDecorativeFurniture()
 					)
 				{
@@ -2107,7 +2108,9 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 							{
 								blockBakeLogicForGrassMesh(x, y, z, &opaqueGeometry, b);
 							}
-							else if (b.getType() == BlockTypes::torch || b.getType() == BlockTypes::torchWood)
+							else if (b.getType() == BlockTypes::torch || b.getType() == BlockTypes::torchWood
+								|| b.getType() == BlockTypes::goblinTorch
+								)
 							{
 								if (!b.getRotatedOrStandingForWallOrStandingBlocks())
 								{

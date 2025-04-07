@@ -57,8 +57,8 @@ int blockReorder[] = {
 	crate, smallCrate,
 
 	// Decorations
-	torch, torchWood, skull, skullTorch, book, candleHolder, pot, jar, globe, keg, wineBottle, goblet, mug,
-	lamp, 	goblinWorkBench, goblinChair, goblinTable,
+	torch, torchWood, goblinTorch, skull, skullTorch, book, candleHolder, pot, jar, globe, keg, wineBottle, goblet, mug,
+	lamp, 	goblinStitchingPost, goblinWorkBench, goblinChair, goblinTable,
 
 	// Miscellaneous
 	smallRock, oakLogSlab, logWall, craftingItems, chickenCaracas, chickenWingsPlate, fishPlate,
@@ -89,6 +89,7 @@ bool isBlockMesh(BlockType type)
 	return !isCrossMesh(type)
 		&& !(type == torch)
 		&& !(type == torchWood)
+		&& !(type == goblinTorch)
 		&& !(type == lamp)
 		&& !(type == ladder)
 		&& !(type == vines)
@@ -219,6 +220,7 @@ bool isWallMountedOrStangingBlock(BlockType type)
 {
 	return type == BlockTypes::torch
 		|| type == BlockTypes::torchWood
+		|| type == BlockTypes::goblinTorch
 		|| type == BlockTypes::lamp
 		;
 
@@ -230,6 +232,7 @@ bool isOpaque(BlockType type)
 		type != BlockTypes::air
 		&& type != BlockTypes::torch
 		&& type != BlockTypes::torchWood
+		&& type != BlockTypes::goblinTorch
 		&& type != BlockTypes::lamp
 		&& type != BlockTypes::cobweb
 		&& !isWallMountedBlock(type)
@@ -274,12 +277,14 @@ bool isDecorativeFurniture(BlockType type)
 		type == lamp ||
 		type == torch ||
 		type == torchWood ||
+		type == goblinTorch ||
 		type == trainingDummy ||
 		type == target ||
 		type == furnace ||
 		type == goblinWorkBench ||
 		type == goblinChair ||
 		type == goblinTable ||
+		type == goblinStitchingPost ||
 		type == globe
 		
 		;
@@ -290,6 +295,7 @@ bool isLightEmitor(BlockType type)
 	return type == BlockTypes::glowstone
 		|| type == BlockTypes::torch
 		|| type == BlockTypes::torchWood
+		|| type == BlockTypes::goblinTorch
 		|| type == BlockTypes::lamp
 		|| type == BlockTypes::candleHolder
 		|| type == BlockTypes::skullTorch;
@@ -321,6 +327,7 @@ bool isColidable(BlockType type)
 		type != BlockTypes::torch &&
 		type != BlockTypes::lamp &&
 		type != BlockTypes::torchWood &&
+		type != BlockTypes::goblinTorch &&
 		type != BlockTypes::water &&
 		type != BlockTypes::jar &&
 		type != BlockTypes::globe &&
@@ -612,7 +619,7 @@ bool isAnyGlass(BlockType type)
 
 bool isTriviallyBreakable(BlockType type)
 {
-	return type == torch || type == torchWood || type == lamp;
+	return type == torch || type == torchWood || type == lamp || type == goblinTorch;
 }
 
 bool isAnyUnbreakable(BlockType type)
@@ -706,6 +713,7 @@ int isCraftingStation(unsigned short type)
 
 	case cookingPot: return WorkStationType_CookingPot;
 	case furnace: return WorkStationType_Furnace;
+	case goblinStitchingPost: return WorkStationType_GoblinStitchingPost;
 
 	}
 

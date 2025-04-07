@@ -248,6 +248,9 @@ enum BlockTypes : unsigned short
 	goblinChair,
 	goblinTable,
 
+	goblinTorch,
+	goblinStitchingPost,
+
 	BlocksCount
 };
 
@@ -374,8 +377,10 @@ enum WorkStationType
 	WorkStationType_WorkBench,
 	WorkStationType_Furnace,
 	WorkStationType_CookingPot,
-	WorkStationType_Anvil, //DONT FORGET TO ALSO UPDATE TOWARDS THE BOTTOM OF THE FILE
+	WorkStationType_Anvil, 
+	WorkStationType_GoblinStitchingPost,
 
+	//DONT FORGET TO ALSO UPDATE TOWARDS THE BOTTOM OF THE FILE
 };
 
 namespace BlockColor
@@ -792,6 +797,7 @@ namespace InteractionTypes
 		furnace,
 		cookingPot,
 		anvil,
+		goblinStitchingPost, //add other work stations here v...
 		structureBaseBlock,
 	};
 

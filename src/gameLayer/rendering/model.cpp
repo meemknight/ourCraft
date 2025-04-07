@@ -785,6 +785,7 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		"goblinWorkBench.glb",
 		"goblinChair.glb",
 		"goblinTable.glb",
+		"goblinStitchingPost.glb",
 	};
 
 	static_assert(sizeof(blockModelsNames) / sizeof(blockModelsNames[0]) == BLOCK_MODELS_COUNT);
@@ -862,15 +863,19 @@ int getDefaultBlockShapeForFurniture(unsigned int b)
 		case lamp: return ModelsManager::lampModel;
 		case torch: return ModelsManager::torchModel;
 		case torchWood: return ModelsManager::torchModel;
+		case goblinTorch: return ModelsManager::torchModel;
 		case trainingDummy: return ModelsManager::trainingDummyBaseModel;
 		case target: return ModelsManager::targetModel;
 		case furnace: return ModelsManager::furnaceModel;
 		case goblinWorkBench : return ModelsManager::goblinWorkBenchModel;
 		case goblinChair: return ModelsManager::goblinChairModel;
 		case goblinTable: return ModelsManager::goblinTableModel;
+		case goblinStitchingPost: return ModelsManager::goblinStitchingPostModel;
 
 	}
 
+	assert(0);
+	return 0;
 }
 
 void ModelsManager::clearAllModels()

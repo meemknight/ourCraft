@@ -219,6 +219,7 @@ struct ModelsManager
 		goblinWorkBenchModel,
 		goblinChairModel,
 		goblinTableModel,
+		goblinStitchingPostModel,
 
 		BLOCK_MODELS_COUNT
 
