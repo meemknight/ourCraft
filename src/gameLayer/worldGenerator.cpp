@@ -342,12 +342,13 @@ float hashNormalized(uint32_t h)
 
 // Returns true for some (x, y), ensuring no adjacent (x, y) is also true
 // Ensures no "true" values within `radius`, checking only in positive directions
-bool generateFeature(int x, int y, int seedHash, float threshold = 0.1f, int radius = 2)
+bool generateFeature(int x, int y, int seedHash, glm::vec2 startingTavernPosition,
+	float threshold = 0.1f, int radius = 2)
 {
 		
 	//no features near 0, 0! except in 0 0 itself!
-	if (x == 0 && y == 0) { return true; }
-	if (glm::length(glm::vec2{x, y}) < 10) { return 0; }
+	if (x == startingTavernPosition.x && y == startingTavernPosition.y) { return true; }
+	if (glm::length(startingTavernPosition - glm::vec2{x, y}) < 5) { return 0; }
 
 	uint32_t h = hash(x, y, 0);
 	float value = hashNormalized(h);// Normalize to [0,1]
@@ -408,6 +409,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return;
 	}
 
+
+	glm::vec2 startingTavernPosition = {3, 4}; //todo hash based on seed
 
 	float interpolateValues[16 * 16] = {};
 	float borderingFactor[16 * 16] = {};
@@ -833,7 +836,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 #pragma endregion
 
-	bool closeToCenter = (glm::length(glm::vec2{c.x, c.z}) < 3);
+	bool closeToStartingTavern = (glm::length(startingTavernPosition - glm::vec2{c.x, c.z}) < 3);
 
 #pragma region gets
 
@@ -844,9 +847,9 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return continentalnessFinal[x * CHUNK_SIZE * (1) + y * CHUNK_SIZE + z];
 	};
 
-	auto getRivers = [closeToCenter](int x, int z)
+	auto getRivers = [closeToStartingTavern](int x, int z)
 	{
-		if (closeToCenter) 
+		if (closeToStartingTavern)
 		{
 			return 1.f;
 			//return std::min(sqrt(riversNoise[x * CHUNK_SIZE + z] + 0.2f), 1.f);
@@ -897,9 +900,9 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return whiteNoise[x * (CHUNK_SIZE + 1) + z];
 	};
 
-	auto getLakesNoiseVal = [closeToCenter](int x, int z)
+	auto getLakesNoiseVal = [closeToStartingTavern](int x, int z)
 	{
-		if (closeToCenter)
+		if (closeToStartingTavern)
 		{
 			//return pow(lakesNoise[x * CHUNK_SIZE + z] / 2.f, 2.f);
 			return 0.f;
@@ -915,9 +918,9 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return alternativeBlocksNoise[x * (CHUNK_SIZE)+z];
 	};
 
-	auto getRandomHillsVal = [closeToCenter](int x, int z)
+	auto getRandomHillsVal = [closeToStartingTavern](int x, int z)
 	{
-		if (closeToCenter)
+		if (closeToStartingTavern)
 		{
 			return pow(randomHills[x * CHUNK_SIZE + z] / 2.f, 2.f);
 		}
@@ -1035,7 +1038,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	};
 
 	unsigned int seedHash = wg.continentalnessNoise->GetSeed();
-	bool couldGenerateMediumStructures = generateFeature(c.x, c.z, seedHash++, spawnProbability(10), 4);
+	bool couldGenerateMediumStructures = generateFeature(c.x, c.z, seedHash++,
+		startingTavernPosition, spawnProbability(10), 4);
 	
 
 #pragma endregion
@@ -1834,7 +1838,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 
 
-				if (couldGenerateMediumStructures || closeToCenter)
+				if (couldGenerateMediumStructures || closeToStartingTavern)
 				{
 					
 					//we only generate the grass
@@ -2099,7 +2103,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		if (couldGenerateMediumStructures)
 		{
 
-			if (c.x == 0 && c.z == 0)
+			if (c.x == startingTavernPosition.x && c.z == startingTavernPosition.y)
 			{
 				//generate the start game tavern
 
