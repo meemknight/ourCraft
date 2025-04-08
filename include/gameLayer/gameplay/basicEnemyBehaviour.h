@@ -17,6 +17,7 @@ struct BasicEnemyBehaviourOtherSettings
 	float searchDistance = 40; //players that get to this close will start getting targeted
 	float hearBonus = 0.1;
 	float sightBonus = 0.1;
+	float runSpeed = 2.f;
 
 };
 
@@ -565,7 +566,7 @@ struct BasicEnemyBehaviour
 		{
 			if (direction.x != 0 || direction.y != 0)
 			{
-				auto move = 2.f * deltaTime * direction;
+				auto move = otherSettings.runSpeed * deltaTime * direction;
 
 				baseEntity->entity.move(move);
 				baseEntity->entity.bodyOrientation = direction;
@@ -845,6 +846,8 @@ struct BasicEnemyBehaviour
 				return pathFindingSucceeded;
 
 			};
+
+			return false;
 		};
 
 		auto tryHitPlayer = [&]()

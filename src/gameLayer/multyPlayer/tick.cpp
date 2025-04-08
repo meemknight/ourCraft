@@ -311,7 +311,6 @@ bool spawnGoblin(
 	//todo also send packets
 	//todo generic spawn for any entity
 
-
 	auto chunkPos = determineChunkThatIsEntityIn(goblin.position);
 	auto c = chunkManager.getChunkOrGetNull(chunkPos.x, chunkPos.y);
 	if (c)
@@ -330,6 +329,33 @@ bool spawnGoblin(
 	}
 	return 1;
 }
+
+bool spawnScareCrow(
+	ServerChunkStorer &chunkManager,
+	ScareCrow scareCrow, WorldSaver &worldSaver,
+	std::minstd_rand &rng)
+{
+	//todo also send packets
+	//todo generic spawn for any entity
+
+	auto chunkPos = determineChunkThatIsEntityIn(scareCrow.position);
+	auto c = chunkManager.getChunkOrGetNull(chunkPos.x, chunkPos.y);
+	if (c)
+	{
+		ScareCrowServer e = {};
+		e.entity = scareCrow;
+		//e.configureSpawnSettings(rng);
+		auto newId = getEntityIdAndIncrement(worldSaver, EntityType::scareCrow);
+		c->entityData.scareCrows.insert({newId, e});
+		chunkManager.entityChunkPositions[newId] = determineChunkThatIsEntityIn(e.getPosition());
+	}
+	else
+	{
+		return 0;
+	}
+	return 1;
+}
+
 
 bool spawnCat(
 	ServerChunkStorer &chunkManager,
@@ -1279,6 +1305,14 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 										g.position = position;
 										g.lastPosition = position;
 										spawnGoblin(chunkCache, g, worldSaver, rng);
+									}
+									else if (from->type == ItemTypes::scareCrowSpawnEgg)
+									{
+										ScareCrow g;
+										glm::dvec3 position = glm::dvec3(i.t.pos) + glm::dvec3(0.0, -0.49, 0.0);
+										g.position = position;
+										g.lastPosition = position;
+										spawnScareCrow(chunkCache, g, worldSaver, rng);
 									}
 									else if (from->isEatable())
 									{

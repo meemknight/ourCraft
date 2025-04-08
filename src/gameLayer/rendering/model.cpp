@@ -181,6 +181,7 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		loadTexture((path + "cat.png").c_str(), appendMode, index++);
 		loadTexture((path + "goblin.png").c_str(), appendMode, index++);
 		loadTexture((path + "trainingDummy.png").c_str(), appendMode, index++);
+		loadTexture((path + "scarecrow.png").c_str(), appendMode, index++);
 		loadTexture((path+ "helmetTest.png").c_str(), appendMode, index++);
 		
 
@@ -486,6 +487,9 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 
 	if (!trainingDummy.vertexCount)
 		loadModel((path + "trainingDummy.glb").c_str(), trainingDummy);
+
+	if (!scareCrow.vertexCount)
+		loadModel((path + "scareCrow.glb").c_str(), scareCrow);
 
 	
 	flags = aiProcess_ImproveCacheLocality 

@@ -4728,6 +4728,7 @@ void Renderer::renderEntities(
 	renderAllEntitiesOfOneType(modelsManager.cat, entityManager.cats);
 	renderAllEntitiesOfOneType(modelsManager.goblin, entityManager.goblins);
 	renderAllEntitiesOfOneType(modelsManager.trainingDummy, entityManager.trainingDummy);
+	renderAllEntitiesOfOneType(modelsManager.scareCrow, entityManager.scareCrows);
 
 
 	glBindVertexArray(0);

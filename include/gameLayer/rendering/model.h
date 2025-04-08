@@ -178,6 +178,8 @@ struct ModelsManager
 
 	Model trainingDummy;
 
+	Model scareCrow;
+
 
 	enum BlockModels
 	{
@@ -238,6 +240,7 @@ struct ModelsManager
 		CatTexture,
 		GoblinTexture,
 		TrainingDummyTexture,
+		scareCrowTexture,
 		HelmetTestTexture,
 	};
 

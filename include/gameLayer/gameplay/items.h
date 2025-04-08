@@ -77,6 +77,7 @@ enum ItemTypes : unsigned short
 	pigSpawnEgg,
 	catSpawnEgg,
 	goblinSpawnEgg,
+	scareCrowSpawnEgg,
 
 	apple,
 	blackBerrie,

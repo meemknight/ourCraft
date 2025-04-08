@@ -65,6 +65,7 @@ const char *itemsDescriptions[] =
 	"Oinks included.",                                             // pig spawn egg
 	"May ignore you.",                                             // cat spawn egg
 	"Good luck.",                                                  // goblin spawn egg
+	"",																//scare crow
 
 	"Keeps you going.",                                            // apple
 	"A bit tart.",                                                 // blackBerrie
