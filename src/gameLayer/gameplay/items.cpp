@@ -282,7 +282,6 @@ bool Item::canAttack()
 		type == trainingScythe ||
 		type == trainingSword ||
 		type == trainingWarHammer ||
-		type == trainingFlail ||
 		type == trainingSpear ||
 		type == trainingKnife ||
 		type == trainingBattleAxe)
@@ -344,7 +343,7 @@ bool Item::isDagger()
 	return type == trainingKnife;
 }
 
-//high damage high crit, low armour penetration
+//high damage high crit, low armour penetration, so good for like "flesh" enemies
 bool Item::isScythe()
 {
 	return type == trainingScythe;
@@ -352,7 +351,7 @@ bool Item::isScythe()
 
 bool Item::isFlail()
 {
-	return type == trainingFlail;
+	return 0;
 }
 
 //high range
@@ -414,6 +413,11 @@ std::string Item::formatMetaDataToString()
 	float axe = isAxe();
 	float shovel = isShovel();
 
+	if (isWeapon())
+	{
+		rez += getWeaponStats().formatDataToString();
+	}
+
 	if (pickaxe)
 		{ rez += "\nPickaxe Power: " + std::to_string(int(pickaxe)) + "%"; }
 	if (axe)
@@ -430,7 +434,7 @@ std::string Item::formatMetaDataToString()
 
 	auto desc = "\"" + getItemDescription() + "\"";
 
-	if (desc.size())
+	if (desc.size() > 2)
 	{
 		rez += "\n";
 		rez += desc;
@@ -439,63 +443,6 @@ std::string Item::formatMetaDataToString()
 	return rez;
 }
 
-WeaponStats Item::getWeaponStats()
-{
-
-	WeaponStats stats;
-
-	switch (type)
-	{
-		 case trainingScythe:
-		 {
-			 stats.damage = 20;
-		 }
-		 break;
-
-		 case trainingKnife:
-		 {
-			 stats.damage = 20;
-		 }
-		 break;
-
-		 case trainingSword:
-		 {
-			 stats.damage = 200;
-			 stats.range = 10;
-		 }
-		 break;
-
-		 case trainingWarHammer:
-		 {
-			 stats.damage = 20;
-		 }
-		 break;
-
-		 case trainingFlail:
-		 {
-			 stats.damage = 20;
-		 }
-		 break;
-
-		 case trainingSpear:
-		 {
-			 stats.damage = 20;
-		 }
-		 break;
-
-		 case trainingBattleAxe:
-		 {
-			 stats.damage = 20;
-		 }
-		 break;
-
-		 stats.normalize();
-
-		 break;
-	}
-
-	return stats;
-}
 
 ItemStats Item::getItemStats()
 {
@@ -737,18 +684,35 @@ const char *itemsNamesTextures[] =
 	"weapons/silverSword.png",
 	"weapons/goldSword.png",
 
-	"trainingScythe.png",
-	"trainingSword.png",
-	"trainingWarHammer.png",
-	"trainingFlail.png",
-	"trainingSpear.png",
-	"trainingKnife.png",
-	"trainingBattleAxe.png",
+	"weapons/woodenScythe.png",
+	"weapons/woodenSword.png",
+	"weapons/woodenWarHammer.png",
+	"weapons/woodenSpear.png",
+	"weapons/woodenKnife.png",
+	"weapons/woodenBattleAxe.png",
+
+	"weapons/copperWarHammer.png",
+	"weapons/copperSpear.png",
+	"weapons/copperKnife.png",
+	"weapons/copperBattleAxe.png",
+	"weapons/leadWarHammer.png",
+	"weapons/leadSpear.png",
+	"weapons/leadKnife.png",
+	"weapons/leadBattleAxe.png",
+	"weapons/silverWarHammer.png",
+	"weapons/silverSpear.png",
+	"weapons/silverKnife.png",
+	"weapons/silverBattleAxe.png",
+	"weapons/goldWarHammer.png",
+	"weapons/goldSpear.png",
+	"weapons/goldKnife.png",
+	"weapons/goldBattleAxe.png",
+
 
 	"", //eggs
 	"",
 	"",
-	"",
+	"spawnEggs/goblin.png",
 
 	"food/apple.png",
 	"food/blackBerrie.png",
@@ -782,23 +746,23 @@ const char *itemsNamesTextures[] =
 	"armour/goldChestPlate.png",
 	"armour/goldHelmet.png",
 
-	"soap.png",
-	"whitePaint.png",
-	"lightGrayPaint.png",
-	"darkGrayPaint.png",
-	"blackPaint.png",
-	"brownPaint.png",
-	"redPaint.png",
-	"orangePaint.png",
-	"yellowPaint.png",
-	"limePaint.png",
-	"greenPaint.png",
-	"turqoisePaint.png",
-	"cyanPaint.png",
-	"bluePaint.png",
-	"purplePaint.png",
-	"magentaPaint.png",
-	"pinkPaint.png",
+	"paint/soap.png",
+	"paint/whitePaint.png",
+	"paint/lightGrayPaint.png",
+	"paint/darkGrayPaint.png",
+	"paint/blackPaint.png",
+	"paint/brownPaint.png",
+	"paint/redPaint.png",
+	"paint/orangePaint.png",
+	"paint/yellowPaint.png",
+	"paint/limePaint.png",
+	"paint/greenPaint.png",
+	"paint/turqoisePaint.png",
+	"paint/cyanPaint.png",
+	"paint/bluePaint.png",
+	"paint/purplePaint.png",
+	"paint/magentaPaint.png",
+	"paint/pinkPaint.png",
 
 	"copperCoin.png",
 	"silverCoin.png",
@@ -851,10 +815,28 @@ const char *itemsNames[] =
 	"trainingScythe",
 	"trainingSword",
 	"trainingWarHammer",
-	"trainingFlail",
 	"trainingSpear",
 	"trainingKnife",
 	"trainingBattleAxe",
+
+	"copper WarHammer",
+	"copper Spear",
+	"copper Knife",
+	"copper BattleAxe",
+	"lead WarHammer",
+	"lead Spear",
+	"lead Knife",
+	"lead BattleAxe",
+	"silver WarHammer",
+	"silver Spear",
+	"silver Knife",
+	"silver BattleAxe",
+	"gold WarHammer",
+	"gold Spear",
+	"gold Knife",
+	"gold BattleAxe",
+
+
 
 	"zombie spawn egg", //eggs
 	"pig spawn egg",

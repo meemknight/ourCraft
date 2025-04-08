@@ -1685,7 +1685,7 @@ void BlocksLoader::loadAllTextures(std::string filePath, bool reportErrors)
 			createSpawnEggTexture(zombieSpawnEgg, glm::vec3{2, 161, 160} / 255.f, glm::vec3{107, 137, 89} / 255.f);
 			createSpawnEggTexture(pigSpawnEgg, glm::vec3(230, 151, 167) / 255.f, glm::vec3(148, 92, 95) / 255.f);
 			createSpawnEggTexture(catSpawnEgg, glm::vec3(230, 230, 230) / 255.f, glm::vec3(10, 10, 10) / 255.f);
-			createSpawnEggTexture(goblinSpawnEgg, glm::vec3{105, 87, 69} / 255.f, glm::vec3{100, 161, 80} / 255.f);
+			//createSpawnEggTexture(goblinSpawnEgg, glm::vec3{105, 87, 69} / 255.f, glm::vec3{100, 161, 80} / 255.f);
 
 
 		};

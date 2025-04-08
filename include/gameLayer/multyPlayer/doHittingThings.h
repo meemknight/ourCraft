@@ -17,6 +17,10 @@ void doHittingThings(T &e, glm::vec3 dir, glm::dvec3 attackerPosition,
 	if constexpr (hasCanBeAttacked<decltype(e.entity)>
 		&& (hasLife<decltype(e.entity)> || hasLife<decltype(e)>))
 	{
+		
+		hitCorectness = pow(hitCorectness, 1.2);
+
+
 		Life *life = 0;
 		Armour armour = {};
 
@@ -65,6 +69,7 @@ void doHittingThings(T &e, glm::vec3 dir, glm::dvec3 attackerPosition,
 		//std::cout << &life->life << "\n";
 
 		knockBack = std::max(knockBack, 0.f);
+		knockBack *= std::max(hitCorectness, 0.2f);
 		e.applyHitForce(hitDir * knockBack);
 
 		auto entityPos = e.getPosition();

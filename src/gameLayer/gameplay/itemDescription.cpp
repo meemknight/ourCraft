@@ -39,10 +39,27 @@ const char *itemsDescriptions[] =
 	"For safe training (probably).",                               // trainingScythe
 	"For practice, not pride.",                                    // trainingSword
 	"Massive but harmless.",                                       // trainingWarHammer
-	"Spin to win, softly.",                                        // trainingFlail
 	"Pointy, but padded.",                                         // trainingSpear
 	"Won’t cut deep—hopefully.",                                   // trainingKnife
 	"All bark, no bite.",                                          // trainingBattleAxe
+
+	"" ,														//"copperWarHammer" ,
+	"" ,															//"copperSpear" ,
+	"" ,															//"copperKnife" ,
+	"" ,														//"copperBattleAxe" ,
+	"" ,														//"leadWarHammer" ,
+	"" ,															//"leadSpear" ,
+	"" ,															//"leadKnife" ,
+	"" ,														//"leadBattleAxe" ,
+	"" ,														//"silverWarHammer" ,
+	"" ,															//"silverSpear" ,
+	"" ,															//"silverKnife" ,
+	"" ,														//"silverBattleAxe" ,
+	"" ,														//"goldWarHammer" ,
+	"" ,															//"goldSpear" ,
+	"" ,															//"goldKnife" ,
+	"" ,														//"goldBattleAxe" ,
+
 
 	"Hope you brought a sword.",                                   // zombie spawn egg
 	"Oinks included.",                                             // pig spawn egg

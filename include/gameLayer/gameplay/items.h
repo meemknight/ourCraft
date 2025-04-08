@@ -43,13 +43,34 @@ enum ItemTypes : unsigned short
 	silverSword,
 	goldSword,
 
+
 	trainingScythe,
 	trainingSword,
 	trainingWarHammer,
-	trainingFlail,
 	trainingSpear,
 	trainingKnife,
 	trainingBattleAxe,
+
+	copperWarHammer,
+	copperSpear,
+	copperKnife,
+	copperBattleAxe,
+
+	leadWarHammer,
+	leadSpear,
+	leadKnife,
+	leadBattleAxe,
+
+	silverWarHammer,
+	silverSpear,
+	silverKnife,
+	silverBattleAxe,
+
+	goldWarHammer,
+	goldSpear,
+	goldKnife,
+	goldBattleAxe,
+
 
 
 	zombieSpawnEgg,
