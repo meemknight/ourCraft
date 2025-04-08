@@ -1174,7 +1174,19 @@ std::string executeServerCommand(std::uint64_t cid, const char *command)
 		};
 
 
-		if(isEof()) return "";
+		if (isEof()) return "";
+
+		if (consumeStringToken("heal"))
+		{
+			if (!client)
+			{
+				return "No client was given for the command";
+			}
+
+			client->playerData.newLife.life = client->playerData.newLife.maxLife;
+			return "Healed";
+
+		}
 
 		if (consumeStringToken("gamemode"))
 		{
