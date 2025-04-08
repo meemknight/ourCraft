@@ -3,6 +3,8 @@
 #include <splines.h>
 #include <string>
 
+const int PLAINS_HEIGHT_INDEX = 2;
+
 struct NoiseSetting
 {
 	float scale = 0.35;

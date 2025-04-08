@@ -1482,6 +1482,10 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 	{
 		defaultGenerate(structureManager.smallStoneRuins);
 	}
+	else if (s.type == Structure_Tavern)
+	{
+		defaultGenerate(structureManager.tavern);
+	}
 	else if (s.type == Structure_MinesDungeon)
 	{
 
@@ -1490,6 +1494,10 @@ bool ServerChunkStorer::generateStructure(StructureToGenerate s,
 		structureSettings.replaceBlocks = true;
 		structureSettings.replaceEnclosedColumsWithAir = true;
 		structureSettings.replaceOverAnything = 100; //we start from 100 with dungeon type buildings!
+		
+		//generate it underground
+		structureSettings.pos.y -= (structureManager.minesDungeonEntrance[0].data->sizeNotRotated.y - 9);
+
 
 		std::minstd_rand rng(s.randomNumber1 * 1000000000);
 

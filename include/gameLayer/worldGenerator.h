@@ -27,6 +27,7 @@ enum
 	Structure_AbandonedTrainingCamp,
 	Structure_StoneRuins,
 	Structure_MinesDungeon,
+	Structure_Tavern,
 };
 
 //used to report back
@@ -50,6 +51,12 @@ struct StructureToGenerate
 	void setDefaultSmallBuildingSettings()
 	{
 		replaceOverAnything = 2;
+		replaceEnclosedColumsWithAir = true;
+	}
+
+	void setDefaultDungeonSettings()
+	{
+		replaceOverAnything = 100;
 		replaceEnclosedColumsWithAir = true;
 	}
 };

@@ -344,6 +344,11 @@ float hashNormalized(uint32_t h)
 // Ensures no "true" values within `radius`, checking only in positive directions
 bool generateFeature(int x, int y, int seedHash, float threshold = 0.1f, int radius = 2)
 {
+		
+	//no features near 0, 0! except in 0 0 itself!
+	if (x == 0 && y == 0) { return true; }
+	if (glm::length(glm::vec2{x, y}) < 10) { return 0; }
+
 	uint32_t h = hash(x, y, 0);
 	float value = hashNormalized(h);// Normalize to [0,1]
 
@@ -828,6 +833,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 #pragma endregion
 
+	bool closeToCenter = (glm::length(glm::vec2{c.x, c.z}) < 3);
 
 #pragma region gets
 
@@ -838,9 +844,17 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return continentalnessFinal[x * CHUNK_SIZE * (1) + y * CHUNK_SIZE + z];
 	};
 
-	auto getRivers = [](int x, int z)
+	auto getRivers = [closeToCenter](int x, int z)
 	{
-		return riversNoise[x * CHUNK_SIZE + z];
+		if (closeToCenter) 
+		{
+			return 1.f;
+			//return std::min(sqrt(riversNoise[x * CHUNK_SIZE + z] + 0.2f), 1.f);
+		}
+		else
+		{
+			return riversNoise[x * CHUNK_SIZE + z];
+		}
 	};
 
 	auto getHillsDropDowns = [](int x, int z)
@@ -883,9 +897,17 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return whiteNoise[x * (CHUNK_SIZE + 1) + z];
 	};
 
-	auto getLakesNoiseVal = [](int x, int z)
+	auto getLakesNoiseVal = [closeToCenter](int x, int z)
 	{
-		return lakesNoise[x * (CHUNK_SIZE) + z];
+		if (closeToCenter)
+		{
+			//return pow(lakesNoise[x * CHUNK_SIZE + z] / 2.f, 2.f);
+			return 0.f;
+		}
+		else
+		{
+			return lakesNoise[x * CHUNK_SIZE + z];
+		}
 	};
 
 	auto getAlternativeNoiseVal = [](int x, int z)
@@ -893,9 +915,16 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return alternativeBlocksNoise[x * (CHUNK_SIZE)+z];
 	};
 
-	auto getRandomHillsVal = [](int x, int z)
+	auto getRandomHillsVal = [closeToCenter](int x, int z)
 	{
-		return randomHills[x * (CHUNK_SIZE)+z];
+		if (closeToCenter)
+		{
+			return pow(randomHills[x * CHUNK_SIZE + z] / 2.f, 2.f);
+		}
+		else
+		{
+			return randomHills[x * CHUNK_SIZE + z];
+		}
 	};
 
 	auto getWhiteNoise2Val = [](int x, int z)
@@ -1007,7 +1036,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 	unsigned int seedHash = wg.continentalnessNoise->GetSeed();
 	bool couldGenerateMediumStructures = generateFeature(c.x, c.z, seedHash++, spawnProbability(10), 4);
-
+	
 
 #pragma endregion
 
@@ -1803,7 +1832,9 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 					}
 				};
 
-				if (couldGenerateMediumStructures)
+
+
+				if (couldGenerateMediumStructures || closeToCenter)
 				{
 					
 					//we only generate the grass
@@ -2017,6 +2048,16 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			generateStructures.push_back(str);
 		};
 
+		auto tavern = [&]()
+		{
+			StructureToGenerate str;
+			str.type = Structure_Tavern;
+			setPosAndRandomNumbers(str);
+			str.setDefaultSmallBuildingSettings();
+
+			generateStructures.push_back(str);
+		};
+
 		auto goblinTower = [&]()
 		{
 			StructureToGenerate str;
@@ -2058,37 +2099,55 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		if (couldGenerateMediumStructures)
 		{
 
-		
-			float generateStructureChance = hashNormalized(hash(c.x, c.z, seedHash++));
-
-			//not inside oceans
-			if (currentBiomeHeight > 1)
+			if (c.x == 0 && c.z == 0)
 			{
+				//generate the start game tavern
 
-				structuresChoice.push_back(nothing);
+				tavern();
 
-				if (dataForStructureGen.lakes > 0.2 || dataForStructureGen.rivers > 0.2)
-				{
-
-					//rivers and lakes structures
-
-				}
-				else
-				{
-					structuresChoice.push_back(goblinTower);
-					structuresChoice.push_back(smallAbandonedHouse);
-					structuresChoice.push_back(trainingCamp);
-					structuresChoice.push_back(smallStoneRuins);
-				}
-
-				uint32_t randomValue = hash(c.x, c.z, seedHash++);
-				int index = randomValue % structuresChoice.size();
-				structuresChoice[index](); // Call the selected function
-
+				StructureToGenerate str;
+				str.type = Structure_MinesDungeon;
+				setPosAndRandomNumbers(str);
+				str.pos.x += 20;
+				str.setDefaultDungeonSettings();
+				generateStructures.push_back(str);
 
 			}
+			else
+			{
 
-			
+
+				float generateStructureChance = hashNormalized(hash(c.x, c.z, seedHash++));
+
+				//not inside oceans
+				if (currentBiomeHeight > 1)
+				{
+
+					structuresChoice.push_back(nothing);
+
+					if (dataForStructureGen.lakes > 0.2 || dataForStructureGen.rivers > 0.2)
+					{
+
+						//rivers and lakes structures
+
+					}
+					else
+					{
+						structuresChoice.push_back(goblinTower);
+						structuresChoice.push_back(smallAbandonedHouse);
+						structuresChoice.push_back(trainingCamp);
+						structuresChoice.push_back(smallStoneRuins);
+					}
+
+					uint32_t randomValue = hash(c.x, c.z, seedHash++);
+					int index = randomValue % structuresChoice.size();
+					structuresChoice[index](); // Call the selected function
+
+
+				}
+
+			};
+
 		}
 
 	#pragma endregion

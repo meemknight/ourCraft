@@ -334,11 +334,6 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 		//rezult[i] += 0.1;
 	}
 
-	auto getRezultValues = [&](int x, int y)
-	{
-		return rezult[x + y * 3];
-	};
-
 	auto getXValues = [&](int x, int y)
 	{
 		return rezultX[x + y * 3];
@@ -347,6 +342,22 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 	auto getZValues = [&](int x, int y)
 	{
 		return rezultZ[x + y * 3];
+	};
+
+	auto getRezultValues = [&](int x, int y)
+	{
+
+		int xValue = getXValues(x, y);
+		int zValue = getZValues(x, y);
+
+		//guarantee the close chunks are always plains
+		if (glm::length(glm::vec2{xValue,zValue}) < 16)
+		{
+			return PLAINS_HEIGHT_INDEX;
+		}
+
+
+		return int(rezult[x + y * 3]);
 	};
 
 	for (int j = 0; j < 16; j++)
@@ -399,6 +410,7 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 		}
 
 	int value = getRezultValues(1, 1);
+
 
 	FastNoiseSIMD::FreeNoiseSet(rezult);
 	FastNoiseSIMD::FreeNoiseSet(rezult2);

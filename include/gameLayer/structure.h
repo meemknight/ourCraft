@@ -130,6 +130,7 @@ struct StructuresManager
 	std::vector<StructureDataAndFlags> goblinTower;
 	std::vector<StructureDataAndFlags> trainingCamp;
 	std::vector<StructureDataAndFlags> smallStoneRuins;
+	std::vector<StructureDataAndFlags> tavern;
 
 	std::vector<StructureDataAndFlags> minesDungeonEntrance;
 	std::vector<StructureDataAndFlags> minesDungeonHall;
