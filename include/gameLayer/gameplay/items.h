@@ -251,7 +251,9 @@ struct Item
 
 	bool isWeapon();
 
-	bool isCoin();
+	bool isCoin() const;
+
+	int getCoinValue() const;
 
 	//bool isBattleAxe();
 	//bool isSword();
@@ -303,7 +305,7 @@ struct PlayerInventory
 	constexpr static int INVENTORY_CAPACITY = 36 +             9            + 4  +  4 +  2;
 	constexpr static int CURSOR_INDEX = INVENTORY_CAPACITY;
 	constexpr static int ARMOUR_START_INDEX = INVENTORY_CAPACITY + 1;
-	constexpr static int COINS_START_INDEX = 36 + 9;
+	constexpr static int COINS_START_INDEX = 36 + 9; //COINS_START_INDEX is copper, than the rest
 	constexpr static int ARROWS_START_INDEX = 36 + 9 + 4;
 	constexpr static int HEALTH_POTION_INDEX = ARROWS_START_INDEX + 4;
 	constexpr static int MANA_POTION_INDEX = HEALTH_POTION_INDEX + 1;

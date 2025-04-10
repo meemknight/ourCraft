@@ -257,6 +257,8 @@ void addConnection(ENetHost *server, ENetEvent &event, WorldSaver &worldSaver)
 		c.playerData.inventory.items[34] = Item(BlockTypes::clay);
 		c.playerData.inventory.items[35] = Item(BlockTypes::glass);
 
+		c.playerData.inventory.items[PlayerInventory::COINS_START_INDEX] = Item(ItemTypes::copperCoin);
+
 		insertConnection(id, c);
 	}
 

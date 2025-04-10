@@ -310,13 +310,23 @@ bool Item::isWeapon()
 	//	isSpear();
 }
 
-bool Item::isCoin()
+bool Item::isCoin() const
 {
 	return
 		type == copperCoin ||
 		type == silverCoin ||
 		type == goldCoin ||
 		type == diamondCoin;
+}
+
+int Item::getCoinValue() const
+{
+	if (type == copperCoin) { return counter; }
+	if (type == silverCoin) { return counter * 100; }
+	if (type == goldCoin) { return counter * 100'00; }
+	if (type == diamondCoin) { return counter * 100'00'00; }
+
+	return 0;
 }
 
 //higher armour penetration, basically a less extreme version of the hammer
@@ -589,11 +599,128 @@ int PlayerInventory::tryPickupItem(const Item &item)
 	int currentCounter = 0;
 	int itemCounter = item.counter;
 
+	if (item.isCoin())
+	{
+
+		std::int64_t currentMoney = 0;
+		std::int64_t maxCoinCapacity = 100 + 100'00 + 100'00'00 + 100'00'00'00;
+
+
+		for (int i = 0; i < 4; i++)
+		{
+			currentMoney += items[COINS_START_INDEX + i].getCoinValue();
+		}
+
+		std::int64_t itemValue = item.getCoinValue();
+
+		if (currentMoney + itemValue > maxCoinCapacity) 
+		{ 
+			std::int64_t oneItemValue = itemValue/ item.counter;
+			if (currentMoney + oneItemValue > maxCoinCapacity)
+			{
+				//we can't do anything
+			}
+			else
+			{
+				//try pick it up....
+				//TODO
+				std::int64_t remainingSlots = maxCoinCapacity - currentMoney;
+				std::int64_t canPickUpCount = remainingSlots / oneItemValue;
+
+				currentCounter += canPickUpCount;
+				itemCounter -= canPickUpCount;
+
+				{
+					currentMoney += canPickUpCount * oneItemValue;
+
+					//we redistribute the money
+					//if (currentMoney >= 100'00'00)
+					{
+						int diamondValue = currentMoney / 100'00'00; diamondValue = std::min(diamondValue, 100);
+						items[COINS_START_INDEX + 3].type = ItemTypes::diamondCoin;
+						items[COINS_START_INDEX + 3].counter = diamondValue;
+						items[COINS_START_INDEX + 3].sanitize();
+						currentMoney -= diamondValue * 100'00'00;
+					}
+
+					//if (currentMoney >= 100'00)
+					{
+						int goldValue = currentMoney / 100'00; goldValue = std::min(goldValue, 100);
+						items[COINS_START_INDEX + 2].type = ItemTypes::goldCoin;
+						items[COINS_START_INDEX + 2].counter = goldValue;
+						items[COINS_START_INDEX + 2].sanitize();
+						currentMoney -= goldValue * 100'00;
+					}
+
+					//if (currentMoney >= 100)
+					{
+						int silverValue = currentMoney / 100; silverValue = std::min(silverValue, 100);
+						items[COINS_START_INDEX + 1].type = ItemTypes::silverCoin;
+						items[COINS_START_INDEX + 1].counter = silverValue;
+						items[COINS_START_INDEX + 1].sanitize();
+						currentMoney -= silverValue * 100;
+					}
+
+					//if (currentMoney > 0)
+					{
+						items[COINS_START_INDEX].type = ItemTypes::copperCoin;
+						items[COINS_START_INDEX].counter = currentMoney;
+						items[COINS_START_INDEX].sanitize();
+					}
+				}
+			}
+
+		}
+		else
+		{
+			currentMoney += itemValue;
+
+			//we redistribute the money
+			//if (currentMoney >= 100'00'00)
+			{
+				int diamondValue = currentMoney / 100'00'00; diamondValue = std::min(diamondValue, 100);
+				items[COINS_START_INDEX + 3].type = ItemTypes::diamondCoin;
+				items[COINS_START_INDEX + 3].counter = diamondValue;
+				items[COINS_START_INDEX + 3].sanitize();
+				currentMoney -= diamondValue * 100'00'00;
+			}
+
+			//if (currentMoney >= 100'00)
+			{
+				int goldValue = currentMoney / 100'00; goldValue = std::min(goldValue, 100);
+				items[COINS_START_INDEX + 2].type = ItemTypes::goldCoin;
+				items[COINS_START_INDEX + 2].counter = goldValue;
+				items[COINS_START_INDEX + 2].sanitize();
+				currentMoney -= goldValue * 100'00;
+			}
+
+			//if (currentMoney >= 100)
+			{
+				int silverValue = currentMoney / 100; silverValue = std::min(silverValue, 100);
+				items[COINS_START_INDEX + 1].type = ItemTypes::silverCoin;
+				items[COINS_START_INDEX + 1].counter = silverValue;
+				items[COINS_START_INDEX + 1].sanitize();
+				currentMoney -= silverValue * 100;
+			}
+
+			//if (currentMoney > 0)
+			{
+				items[COINS_START_INDEX].type = ItemTypes::copperCoin;
+				items[COINS_START_INDEX].counter = currentMoney;
+				items[COINS_START_INDEX].sanitize();
+			}
+
+			return itemCounter;
+		}
+
+	}
+
 	for (int i = 0; i < INVENTORY_CAPACITY; i++)
 	{
 		if (!items[i].type)
 		{
 			items[i] = item;
+			items[i].counter = itemCounter;
 			return itemCounter + currentCounter;
 		}
 		else if (items[i].type == item.type)
