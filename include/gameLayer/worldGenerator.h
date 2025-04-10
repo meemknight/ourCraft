@@ -28,6 +28,8 @@ enum
 	Structure_StoneRuins,
 	Structure_MinesDungeon,
 	Structure_Tavern,
+	Structure_Hay,
+	Structure_Barn,
 };
 
 //used to report back

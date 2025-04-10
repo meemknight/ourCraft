@@ -194,7 +194,9 @@ unsigned short Item::getStackSize()
 	if (isAmmo())
 	{
 		return 999;
-	}else if (isTool() || isPaint() || isWeapon() || isArmour())
+	}else if (isTool() || isPaint() || isWeapon() || isArmour() ||
+		(type >= healingPotion && type <= venomusPotion)
+		)
 	{
 		return 1;
 	}
@@ -294,14 +296,18 @@ bool Item::canAttack()
 
 bool Item::isWeapon()
 {
-	return 
-		isBattleAxe() ||
-		isSword() ||
-		isHammer() ||
-		isDagger() ||
-		isScythe() ||
-		isFlail() ||
-		isSpear();
+
+	return
+		type >= copperSword && type <= goldBattleAxe;
+
+	//return 
+	//	isBattleAxe() ||
+	//	isSword() ||
+	//	isHammer() ||
+	//	isDagger() ||
+	//	isScythe() ||
+	//	isFlail() ||
+	//	isSpear();
 }
 
 bool Item::isCoin()
@@ -314,51 +320,51 @@ bool Item::isCoin()
 }
 
 //higher armour penetration, basically a less extreme version of the hammer
-bool Item::isBattleAxe()
-{
-	return type == trainingBattleAxe;
-}
+//bool Item::isBattleAxe()
+//{
+//	return type == trainingBattleAxe;
+//}
 
 //well balanced in general
-bool Item::isSword()
-{
-	return type == trainingSword ||
-		type == copperSword ||
-		type == leadSword ||
-		type == ironSword ||
-		type == silverSword ||
-		type == goldSword;
-
-}
+//bool Item::isSword()
+//{
+//	return type == trainingSword ||
+//		type == copperSword ||
+//		type == leadSword ||
+//		type == ironSword ||
+//		type == silverSword ||
+//		type == goldSword;
+//
+//}
 
 //extra slow, heavy, extremely good armour penetration and knock back
-bool Item::isHammer()
-{
-	return type == trainingWarHammer;
-}
+//bool Item::isHammer()
+//{
+//	return type == trainingWarHammer;
+//}
 
 //extra fast, very high crit and surprize damage
-bool Item::isDagger()
-{
-	return type == trainingKnife;
-}
+//bool Item::isDagger()
+//{
+//	return type == trainingKnife;
+//}
 
 //high damage high crit, low armour penetration, so good for like "flesh" enemies
-bool Item::isScythe()
-{
-	return type == trainingScythe;
-}
+//bool Item::isScythe()
+//{
+//	return type == trainingScythe;
+//}
 
-bool Item::isFlail()
-{
-	return 0;
-}
+//bool Item::isFlail()
+//{
+//	return 0;
+//}
 
 //high range
-bool Item::isSpear()
-{
-	return type == trainingSpear;
-}
+//bool Item::isSpear()
+//{
+//	return type == trainingSpear;
+//}
 
 bool Item::isHelmet()
 {
@@ -699,6 +705,10 @@ const char *itemsNamesTextures[] =
 	"weapons/leadSpear.png",
 	"weapons/leadKnife.png",
 	"weapons/leadBattleAxe.png",
+	"weapons/ironWarHammer.png",
+	"weapons/ironSpear.png",
+	"weapons/ironKnife.png",
+	"weapons/ironBattleAxe.png",
 	"weapons/silverWarHammer.png",
 	"weapons/silverSpear.png",
 	"weapons/silverKnife.png",
@@ -775,6 +785,22 @@ const char *itemsNamesTextures[] =
 	"ammo/goblinArrow.png",
 	"ammo/boneArrow.png",
 
+	"potions/healingPotion.png",
+	"potions/manaPotion.png",
+	"potions/fireResistancePotion.png",
+	"potions/jumpBoostPotion.png",
+	"potions/luckPotion.png",
+	"potions/manaRegenPotion.png",
+	"potions/poisonPotion.png",
+	"potions/recallPotion.png",
+	"potions/regenerationPotion.png",
+	"potions/shieldingPotion.png",
+	"potions/speedPotion.png",
+	"potions/stealthPotion.png",
+	"potions/strengthPotion.png",
+	"potions/venomusPotion.png",
+
+
 
 };
 
@@ -820,14 +846,21 @@ const char *itemsNames[] =
 	"trainingKnife",
 	"trainingBattleAxe",
 
-	"copper WarHammer",
-	"copper Spear",
-	"copper Knife",
-	"copper BattleAxe",
-	"lead WarHammer",
-	"lead Spear",
-	"lead Knife",
-	"lead BattleAxe",
+	"Copper War Hammer",
+	"Copper Spear",
+	"Copper Knife",
+	"Copper Battle Axe",
+	"Lead WarHammer",
+	"Lead Spear",
+	"Lead Knife",
+	"Lead BattleAxe",
+
+	"Iron War Hammer",
+	"Iron Spear",
+	"Iron Knife",
+	"Iron Battle Axe",
+
+
 	"silver WarHammer",
 	"silver Spear",
 	"silver Knife",
@@ -903,6 +936,22 @@ const char *itemsNames[] =
 	"flaming arrow",
 	"goblin arrow",
 	"bone arrow",
+
+	"Healing Potion",
+	"Mana Potion",
+
+	"Fire Resistance Potion",
+	"JumpBoost Potion",
+	"Luck Potion",
+	"Mana Regeneration Potion",
+	"Poison Potion",
+	"Recall Potion",
+	"Regeneration Potion",
+	"Shielding Potion",
+	"Speed Potion",
+	"Stealth Potion",
+	"Strength Potion",
+	"Venomus Potion",
 
 };
 

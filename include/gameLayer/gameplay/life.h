@@ -17,6 +17,8 @@ struct Life
 struct Armour
 {
 	int armour = 0;
+
+	void normalize() { armour = std::max(armour, 0); }
 };
 
 

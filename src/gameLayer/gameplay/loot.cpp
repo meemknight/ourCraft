@@ -1,4 +1,5 @@
 #include "gameplay/loot.h"
+#include <gameplay/entity.h>
 
 
 int getRandomLootNumber(int min, int max, std::minstd_rand &rng, float bonusLuck)

@@ -1602,10 +1602,10 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 									//some entities like training dummies are treated differently!
 									if (!specialCase)
 									{
-
+										LootTable *lootTable = 0;
 										std::uint64_t wasKilled = 0;
 										bool rez = chunkCache.hitEntityByPlayer(entityId, client->playerData.getPosition(),
-											*item, wasKilled, dir, rng, hitResult.hitCorectness, hitResult.bonusCritChance);
+											*item, wasKilled, dir, rng, hitResult.hitCorectness, hitResult.bonusCritChance, lootTable);
 
 										//todo  we have separate logic for killing players and
 										//	maybe do the same for entities?
@@ -1620,8 +1620,92 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 											{
 												glm::vec3 p = *pos;
 												p.y += 0.5;
-												spawnDroppedItemEntity(chunkCache,
-													worldSaver, 1, ItemTypes::apple, 0, p, {}, {}, 0, 0);
+												float bonusLuck = 0;
+
+												if (lootTable)
+												{
+
+													if (lootTable->loot.size())
+													{
+														auto rez = drawLoot(lootTable->loot, rng, bonusLuck);
+
+														if (rez.type)
+														{
+															spawnDroppedItemEntity(chunkCache,
+																worldSaver, rez.counter, rez.type, 0, p, {}, {}, 0, 0);
+														};
+													}
+
+
+													if (lootTable->secondDropChange)
+													{
+														float chance = lootTable->secondDropChange;
+														if (bonusLuck > 0)
+														{
+															chance += chance * bonusLuck / 150.f;
+														}
+														else if (bonusLuck < 0)
+														{
+															chance += chance * bonusLuck / 200.f;
+														}
+	
+														if (getRandomChance(rng, chance))
+														{
+
+															if (lootTable->loot2.size())
+															{
+																auto rez = drawLoot(lootTable->loot2, rng, bonusLuck);
+
+																if (rez.type)
+																{
+																	spawnDroppedItemEntity(chunkCache,
+																		worldSaver, rez.counter, rez.type, 0, p, {}, {}, 0, 0);
+																};
+															}
+
+														}
+													}
+
+													//todo coins stuff
+													if (lootTable->money.y > 0)
+													{
+														int moneyNumber = getRandomLootNumber(lootTable->money.x,
+															lootTable->money.y, rng, bonusLuck);
+															
+															if (moneyNumber > 100'00'00)
+															{
+																int diamondCount = moneyNumber / 100'00'00;
+																spawnDroppedItemEntity(chunkCache,
+																	worldSaver, std::min(diamondCount, 100), ItemTypes::diamondCoin, 0, p, {}, {}, 0, 0);
+																moneyNumber -= diamondCount * 100'00'00;
+															}
+
+															if (moneyNumber > 100'00)
+															{
+																int goldCount = moneyNumber / 100'00;
+																spawnDroppedItemEntity(chunkCache,
+																	worldSaver, goldCount, ItemTypes::goldCoin, 0, p, {}, {}, 0, 0);
+																moneyNumber -= goldCount * 100'00;
+															}
+														
+															if (moneyNumber > 100)
+															{
+																int silverCount = moneyNumber / 100;
+																spawnDroppedItemEntity(chunkCache,
+																	worldSaver, silverCount, ItemTypes::silverCoin, 0, p, {}, {}, 0, 0);
+																moneyNumber -= silverCount * 100;
+															}
+
+															if (moneyNumber)
+															{
+																spawnDroppedItemEntity(chunkCache,
+																	worldSaver, moneyNumber, ItemTypes::copperCoin, 0, p, {}, {}, 0, 0);
+															}
+													}
+
+												}//loot table
+
+												
 											}
 											else
 											{
@@ -1831,12 +1915,36 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 				if (effectsTimers.regen < 0)
 				{
-					effectsTimers.regen += 1; //heal once every seccond;
-					c.second->newLife.life += 5;
+					effectsTimers.regen += 0.5; //heal once every half a seccond;
+					c.second->newLife.life += 3;
 					c.second->newLife.sanitize();
 				}
-
 			}
+			else
+			{
+				effectsTimers.regen = 0;
+			}
+
+			if (c.second->effects.allEffects[Effects::Poisoned].timerMs > 0)
+			{
+
+				effectsTimers.poison -= deltaTime;
+
+				if (effectsTimers.poison < 0)
+				{
+					effectsTimers.poison += 2.5;
+					if (c.second->newLife.life > 10)
+						{ c.second->newLife.life -= 8; }
+					c.second->newLife.sanitize();
+				}
+			}
+			else
+			{
+				effectsTimers.poison = 0;
+			}
+
+
+
 
 
 		}

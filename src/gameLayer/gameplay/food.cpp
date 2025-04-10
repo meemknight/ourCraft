@@ -11,7 +11,7 @@ Effects getItemEffects(Item &item)
 	if (type == apple)
 	{
 
-		ret.allEffects[Effects::Saturated].timerMs = 60 * 1000;
+		ret.allEffects[Effects::Saturated].timerMs = 30 * 1000;
 			
 
 	}
@@ -28,7 +28,7 @@ int getItemHealing(Item &item)
 	if (type == apple)
 	{
 
-		return 20;
+		return 25;
 
 	}
 

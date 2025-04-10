@@ -52,6 +52,8 @@ struct CatServer: public ServerEntity<Cat>,
 	bool isUnaware() { return  false; }
 	void signalHit(glm::vec3 direction) {};
 
+	LootTable &getLootTable() { return getEmptyLootTable(); }
+
 };
 
 

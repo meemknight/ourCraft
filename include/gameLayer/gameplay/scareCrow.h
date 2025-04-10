@@ -50,5 +50,8 @@ struct ScareCrowServer: public ServerEntity<ScareCrow>
 	void signalHit(glm::vec3 direction) { basicEnemyBehaviour.signalHit(direction, this); }
 
 	WeaponStats getWeaponStats();
+
+	LootTable &getLootTable() { return getScareCrawLootTable(); }
+
 };
 

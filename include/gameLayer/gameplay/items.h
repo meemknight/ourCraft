@@ -61,6 +61,11 @@ enum ItemTypes : unsigned short
 	leadKnife,
 	leadBattleAxe,
 
+	ironWarHammer,
+	ironSpear,
+	ironKnife,
+	ironBattleAxe,
+
 	silverWarHammer,
 	silverSpear,
 	silverKnife,
@@ -142,6 +147,22 @@ enum ItemTypes : unsigned short
 	flamingArrow,
 	goblinArrow,
 	boneArrow,
+
+	healingPotion,
+	manaPotion,
+
+	fireResistancePotion,
+	jumpBoostPotion,
+	luckPotion,
+	manaRegenerationPotion,
+	poisonPotion,
+	recallPotion,
+	regenerationPotion,
+	shieldingPotion,
+	speedPotion,
+	stealthPotion,
+	strengthPotion,
+	venomusPotion,
 
 
 
@@ -232,13 +253,13 @@ struct Item
 
 	bool isCoin();
 
-	bool isBattleAxe();
-	bool isSword();
-	bool isHammer();
-	bool isDagger();
-	bool isScythe();
-	bool isFlail();
-	bool isSpear();
+	//bool isBattleAxe();
+	//bool isSword();
+	//bool isHammer();
+	//bool isDagger();
+	//bool isScythe();
+	//bool isFlail();
+	//bool isSpear();
 
 	bool isHelmet();
 	bool isChestplate();

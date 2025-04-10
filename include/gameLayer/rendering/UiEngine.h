@@ -42,6 +42,7 @@ struct UiENgine
 	gl2d::Texture bootsIconTexture;
 	gl2d::Texture chestPlateIconTexture;
 	gl2d::Texture helmetIconTexture;
+	gl2d::Texture potionIconTexture;
 
 
 	gl2d::Texture itemsBar;

@@ -10,7 +10,7 @@ void WeaponStats::normalize()
 
 	critChance = glm::clamp(critChance, 0.f, 0.7f); // 0 -> 0.7;
 	critDamage = glm::clamp(critDamage, 0.f, 999.f); // 
-	surprizeDamage = glm::clamp(critDamage, 0.f, 999.f); // 
+	surprizeDamage = glm::clamp(surprizeDamage, 0.f, 999.f); // 
 	//dexterity = glm::clamp(dexterity, -10.f, 20.f); // -10 -> 20;
 	damage = glm::clamp(damage, 1.f, 999.f); // 1 -> 999;
 	accuracy = glm::clamp(accuracy, -10.f, 20.f); // -10 -> 20;
@@ -60,7 +60,7 @@ float WeaponStats::getSpeedNormalizedInSecconds() const
 	float normalizedSpeed = (speed + 10) / 30.f;
 	normalizedSpeed = 1 - normalizedSpeed;
 	normalizedSpeed = powf(normalizedSpeed, 2.f);
-	normalizedSpeed = 0.2 + normalizedSpeed * 2.6;
+	normalizedSpeed = 0.1 + normalizedSpeed * 2.0;
 	return normalizedSpeed;
 }
 
@@ -69,7 +69,7 @@ float WeaponStats::getDrawSpeedNormalizedInSecconds() const
 	float normalizedSpeed = (drawSpeed + 10) / 30.f;
 	normalizedSpeed = 1 - normalizedSpeed;
 	normalizedSpeed = powf(normalizedSpeed, 2.f);
-	normalizedSpeed = 0.2 + normalizedSpeed * 2.6;
+	normalizedSpeed = 0.1 + normalizedSpeed * 2.0;
 	return normalizedSpeed;
 }
 
@@ -113,16 +113,16 @@ std::string WeaponStats::formatDataToString() const
 	oss << std::fixed << std::setprecision(1);
 
 	oss << "\nMele damage: " << (int)damage;
-	oss << "\nCritical chance: " << ((int)(critChance * 100)) << "%";
 	oss << "\nCritical damage: " << (int)critDamage;
+	oss << "\nCritical chance: " << ((int)(critChance * 100)) << "%";
 	oss << "\nSurprise damage: " << (int)surprizeDamage;
 	oss << "\nSpeed: " << getSpeedNormalizedInSecconds() << " secconds.";
 	oss << "\nDraw speed: " << getDrawSpeedNormalizedInSecconds() << " secconds.";
 	oss << "\nArmour penetration: " << (int)armourPenetration;
-	oss << "\nAccuracy: " << ((int)(getAccuracyNormalizedNegative() * 100)) << "%";
-	oss << "\nRange: " << range;
 	oss << "\nKnockback: " << knockBack;
-	
+	oss << "\nRange: " << range;
+	oss << "\nAccuracy: " << ((int)(getAccuracyNormalizedNegative() * 100)) << "%";
+
 
 	return oss.str();
 }
@@ -203,7 +203,7 @@ WeaponStats Item::getWeaponStats()
 		stats.drawSpeed = -6;
 		stats.accuracy = 1;
 		stats.knockBack = 12;
-		stats.range = 1.3;
+		stats.range = 1.4;
 		stats.armourPenetration = std::max(damage / 3, 5);
 	};
 
@@ -230,40 +230,50 @@ WeaponStats Item::getWeaponStats()
 	}
 	break;
 
-	case trainingKnife:
-	{
-		basicKnife(3);
-	}
-	break;
+	case trainingKnife: { basicKnife(3); }break;
+	case copperKnife: { basicKnife(5); } break;
+	case leadKnife: { basicKnife(6); } break;
+	case ironKnife: { basicKnife(7); } break;
+	case silverKnife: { basicKnife(8); } break;
+	case goldKnife: { basicKnife(9); } break;
 
-	case trainingSword:
-	{
-		basicSword(5);
-	}
-	break;
 
-	case trainingWarHammer:
-	{
-		basicHammer(8);
-	}
-	break;
+	case trainingSword: { basicSword(5); } break;
+	case copperSword: { basicSword(7); } break;
+	case leadSword: { basicSword(9); } break;
+	case ironSword: { basicSword(12); } break;
+	case silverSword: { basicSword(14); } break;
+	case goldSword: { basicSword(16); } break;
 
-	case trainingSpear:
-	{
-		basicSpear(4);
-	}
-	break;
 
-	case trainingBattleAxe:
-	{
-		basicAxe(6);
-	}
+
+	case trainingWarHammer: { basicHammer(8); } break;
+	case copperWarHammer: { basicHammer(10); } break;
+	case leadWarHammer: { basicHammer(12); } break;
+	case ironWarHammer: { basicHammer(15); } break;
+	case silverWarHammer: { basicHammer(17); } break;
+	case goldWarHammer: { basicHammer(20); } break;
+
+	case trainingSpear: { basicSpear(4); } break;
+	case copperSpear: { basicSpear(6); } break;
+	case leadSpear: { basicSpear(8); } break;
+	case ironSpear: { basicSpear(10); } break;
+	case silverSpear: { basicSpear(12); } break;
+	case goldSpear: { basicSpear(14); } break;
+
+
+	case trainingBattleAxe: { basicAxe(6); } break;
+	case copperBattleAxe: { basicAxe(8); } break;
+	case leadBattleAxe: { basicAxe(10); } break;
+	case ironBattleAxe: { basicAxe(13); } break;
+	case silverBattleAxe: { basicAxe(15); } break;
+	case goldBattleAxe: { basicAxe(17); } break;
+
 	break;
+	}
 
 	stats.normalize();
 
-	break;
-	}
 
 	return stats;
 }

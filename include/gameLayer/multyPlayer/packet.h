@@ -41,7 +41,7 @@ struct Packet
 
 	void setCompressed(){header |= 0x8000'0000; }
 
-	void setNotCompressed() { header &= 0x7FFF'FFF; }
+	void setNotCompressed() { header &= 0x7FFF'FFFF; }
 
 };
 

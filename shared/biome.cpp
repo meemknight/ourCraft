@@ -46,7 +46,7 @@ bool BiomesManager::loadAllBiomes()
 	GrowElement tallOakElement;
 	tallOakElement.treeType = Biome::treeTallOak;
 
-	StaticVector<BlockTypes, 5> growOnNormalPlants = {BlockTypes::grassBlock, BlockTypes::snow_dirt};
+	StaticVector<BlockTypes, 5> growOnNormalPlants = {BlockTypes::grassBlock, BlockTypes::snow_dirt, BlockTypes::yellowGrass};
 
 
 	GrowingThing growGrass;
@@ -213,9 +213,9 @@ bool BiomesManager::loadAllBiomes()
 		b.blockVariations.push_back({BlockTypes::sand, BlockTypes::sand_stone});
 		b.blockVariations.push_back({BlockTypes::sand, BlockTypes::sand_stone});
 
-		b.grassType = BlockTypes::dead_bush;
-		b.waterType = BlockTypes::water;
-		b.waterTypeSecond = BlockTypes::water;
+		//b.grassType = BlockTypes::dead_bush;
+		//b.waterType = BlockTypes::water;
+		//b.waterTypeSecond = BlockTypes::water;
 		
 
 		b.swampBlock.block.push_back(BlockTypes::sand);
@@ -244,8 +244,8 @@ bool BiomesManager::loadAllBiomes()
 		noiseSettings2.entry.push_back(growRosePatchesVegetation);
 		
 		
-		plains.vegetationNoises.push_back(noiseSettings);
-		plains.vegetationNoises.push_back(noiseSettings2);
+		//plains.vegetationNoises.push_back(noiseSettings);
+		//plains.vegetationNoises.push_back(noiseSettings2);
 
 
 		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
@@ -253,10 +253,10 @@ bool BiomesManager::loadAllBiomes()
 		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
 		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
 		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
-		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
-		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
-		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
-		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::yellowGrass, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::yellowGrass, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::yellowGrass, BlockTypes::dirt});
+		plains.blockVariations.push_back({BlockTypes::yellowGrass, BlockTypes::dirt});
 		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
 		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
 		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
@@ -282,9 +282,9 @@ bool BiomesManager::loadAllBiomes()
 		plains.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
 
 
-		plains.grassType = BlockTypes::grass;
-		plains.waterType = BlockTypes::water;
-		plains.waterTypeSecond = BlockTypes::water;
+		//plains.grassType = BlockTypes::grass;
+		//plains.waterType = BlockTypes::water;
+		//plains.waterTypeSecond = BlockTypes::water;
 
 		plains.swampBlock.block.push_back(BlockTypes::dirt);
 		plains.swampBlock.block.push_back(BlockTypes::dirt);
@@ -340,14 +340,14 @@ bool BiomesManager::loadAllBiomes()
 		b.swampBlock.block.push_back(BlockTypes::cobblestone);
 
 		b.isICy = true;
-		b.grassType = 0;
-		b.waterType = BlockTypes::ice;
-		b.waterTypeSecond = BlockTypes::water;
+		//b.grassType = 0;
+		//b.waterType = BlockTypes::ice;
+		//b.waterTypeSecond = BlockTypes::water;
 
 		biomes.push_back(b);
 	}
 
-	//wasteLand 1
+	//wasteLand 3
 	{
 		Biome b;
 		b.name = "waste land";
@@ -360,7 +360,7 @@ bool BiomesManager::loadAllBiomes()
 		b.blockVariations.push_back({BlockTypes::volcanicRock, BlockTypes::volcanicRock});
 
 		//b.grassType = BlockTypes::grass;
-		b.waterType = BlockTypes::water;
+		//b.waterType = BlockTypes::water;
 
 
 		b.swampBlock.block.push_back(BlockTypes::volcanicRock);
@@ -372,6 +372,65 @@ bool BiomesManager::loadAllBiomes()
 
 
 		biomes.push_back(b);
+	}
+
+	//hayland 4
+	{
+		Biome hay;
+		hay.name = "plains";
+		hay.color = {0.3,0.9,0.35};
+		hay.surfaceBlock = BlockTypes::grassBlock;
+		hay.secondaryBlock = BlockTypes::dirt;
+
+		VegetationNoiseSettings noiseSettings;
+		noiseSettings.entry.push_back(growRandomTreesVegetation);
+		noiseSettings.entry.push_back(growFullGrassVegetation);
+
+
+		VegetationNoiseSettings noiseSettings2;
+		noiseSettings2.entry.push_back(growRosePatchesVegetation);
+
+
+		//hay.vegetationNoises.push_back(noiseSettings);
+		//hay.vegetationNoises.push_back(noiseSettings2);
+
+
+		hay.blockVariations.push_back({BlockTypes::yellowGrass, BlockTypes::dirt});
+		hay.blockVariations.push_back({BlockTypes::yellowGrass, BlockTypes::dirt});
+		hay.blockVariations.push_back({BlockTypes::yellowGrass, BlockTypes::dirt});
+		hay.blockVariations.push_back({BlockTypes::yellowGrass, BlockTypes::dirt});
+		hay.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		hay.blockVariations.push_back({BlockTypes::yellowGrass, BlockTypes::dirt});
+		hay.blockVariations.push_back({BlockTypes::yellowGrass, BlockTypes::dirt});
+		hay.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		hay.blockVariations.push_back({BlockTypes::yellowGrass, BlockTypes::dirt});
+		hay.blockVariations.push_back({BlockTypes::yellowGrass, BlockTypes::dirt});
+		hay.blockVariations.push_back({BlockTypes::stone, BlockTypes::stone});
+		hay.blockVariations.push_back({BlockTypes::yellowGrass, BlockTypes::dirt});
+		hay.blockVariations.push_back({BlockTypes::yellowGrass, BlockTypes::dirt});
+		hay.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		hay.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		hay.blockVariations.push_back({BlockTypes::yellowGrass, BlockTypes::dirt});
+		hay.blockVariations.push_back({BlockTypes::yellowGrass, BlockTypes::dirt});
+		hay.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		hay.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		hay.blockVariations.push_back({BlockTypes::grassBlock, BlockTypes::dirt});
+		hay.blockVariations.push_back({BlockTypes::yellowGrass, BlockTypes::dirt});
+		hay.blockVariations.push_back({BlockTypes::yellowGrass, BlockTypes::dirt});
+
+
+
+		//hay.grassType = BlockTypes::grass;
+		//hay.waterType = BlockTypes::water;
+		//hay.waterTypeSecond = BlockTypes::water;
+
+		hay.swampBlock.block.push_back(BlockTypes::dirt);
+		hay.swampBlock.block.push_back(BlockTypes::dirt);
+		hay.swampBlock.block.push_back(BlockTypes::dirt);
+		hay.swampBlock.block.push_back(BlockTypes::dirt);
+		hay.swampBlock.block.push_back(BlockTypes::clay);
+
+		biomes.push_back(hay);
 	}
 
 

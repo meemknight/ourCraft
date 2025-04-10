@@ -87,11 +87,11 @@ struct Biome
 
 	StaticVector< BlockSurfaceAndSecondary, 40> blockVariations;
 
-	StaticVector<VegetationNoiseSettings, 4> vegetationNoises;
+	//StaticVector<VegetationNoiseSettings, 4> vegetationNoises;
 
-	BlockType grassType;
-	BlockType waterType;
-	BlockType waterTypeSecond;
+	//BlockType grassType;
+	//BlockType waterType;
+	//BlockType waterTypeSecond;
 	
 	BlockVariation swampBlock;
 };
@@ -127,7 +127,7 @@ struct BiomesManager
 		plains,
 		snow,
 		wasteLand,
-
+		hayLand,
 
 	};
 

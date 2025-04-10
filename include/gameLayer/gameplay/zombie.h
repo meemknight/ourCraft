@@ -57,6 +57,8 @@ struct ZombieServer: public ServerEntity<Zombie>
 	bool isUnaware() { return  false; }
 	void signalHit(glm::vec3 direction) {};
 
+	LootTable &getLootTable() { return getEmptyLootTable(); }
+
 };
 
 void animatePlayerHandsZombie(glm::mat4 *poseVector, float &currentAngle, float deltaTime);

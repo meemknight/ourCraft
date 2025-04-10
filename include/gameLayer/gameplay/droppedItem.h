@@ -63,5 +63,6 @@ struct DroppedItemServer
 
 	glm::ivec2 lastChunkPositionWhenAnUpdateWasSent = {};
 
+	LootTable &getLootTable() { return getEmptyLootTable(); }
 };
 

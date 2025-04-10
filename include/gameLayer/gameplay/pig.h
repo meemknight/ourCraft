@@ -54,6 +54,8 @@ struct PigServer: public ServerEntity<Pig>,
 	//todo
 	bool isUnaware() { return  false; }
 	void signalHit(glm::vec3 direction) {};
+
+	LootTable &getLootTable() { return getEmptyLootTable(); }
 };
 
 

@@ -93,6 +93,8 @@ bool StructuresManager::loadAllStructures()
 	loadFolder(RESOURCES_PATH "gameData/structures/trainingCamp", trainingCamp);
 	loadFolder(RESOURCES_PATH "gameData/structures/smallStoneRuins", smallStoneRuins);
 	loadFolder(RESOURCES_PATH "gameData/structures/tavern", tavern);
+	loadFolder(RESOURCES_PATH "gameData/structures/hay", hay);
+	loadFolder(RESOURCES_PATH "gameData/structures/barn", barn);
 
 
 	loadFolder(RESOURCES_PATH "gameData/structures/minesDungeon/entrance", minesDungeonEntrance);
@@ -116,6 +118,16 @@ bool StructuresManager::loadAllStructures()
 	if (goblinTower.empty()) { return 0; }
 	if (trainingCamp.empty()) { return 0; }
 	if (smallStoneRuins.empty()) { return 0; }
+	if (tavern.empty()) { return 0; }
+	if (hay.empty()) { return 0; }
+	if (barn.empty()) { return 0; }
+
+	if (minesDungeonEntrance.empty()) { return 0; }
+	if (minesDungeonHall.empty()) { return 0; }
+	if (minesDungeonRoom.empty()) { return 0; }
+	if (minesDungeonEnd.empty()) { return 0; }
+	
+
 
 	return true;
 }

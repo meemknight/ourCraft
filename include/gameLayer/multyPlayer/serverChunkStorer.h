@@ -10,7 +10,7 @@
 #include <gameplay/physics.h>
 #include <gameplay/blocks/blocksWithData.h>
 #include <optional>
-
+#include <gameplay/lootTables.h>
 
 struct BlockInChunkPos
 {
@@ -181,9 +181,10 @@ struct ServerChunkStorer
 	//returns true if succeed
 	bool hitEntityByPlayer(std::uint64_t eid, glm::dvec3 playerPosition,
 		Item &weapon, std::uint64_t &wasKilled, glm::vec3 dir, std::minstd_rand &rng
-		, float hitCorectness, float critChanceBonus);
+		, float hitCorectness, float critChanceBonus, LootTable *&lottTable);
 
 	std::optional<glm::dvec3> getEntityPosition(std::uint64_t entity);
+
 };
 
 

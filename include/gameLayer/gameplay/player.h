@@ -142,9 +142,11 @@ struct PlayerServer: public ServerEntity<Player>
 		}
 	}
 
-	struct 
+	//todo move to server entity
+	struct EffectsTimer
 	{
 		float regen = 0;
+		float poison = 0;
 
 
 	}effectsTimers;
@@ -158,7 +160,16 @@ struct PlayerServer: public ServerEntity<Player>
 	void kill();
 
 	//todo calculate armour based on inventory
-	Armour getArmour() { return {0}; };
+	Armour getArmour() 
+	{
+		Armour rez{};
+
+		rez.armour += effects.getArmour();
+		rez.normalize();
+		
+		return rez;
+	
+	};
 
 	glm::ivec2 lastChunkPositionWhenAnUpdateWasSent = {};
 

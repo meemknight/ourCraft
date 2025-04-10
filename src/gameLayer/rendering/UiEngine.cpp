@@ -203,6 +203,8 @@ void UiENgine::loadTextures(std::string path)
 	if (!bootsIconTexture.id) loadFromFileAndAddPadding(bootsIconTexture, (path + "icons/boots.png").c_str());
 	if (!chestPlateIconTexture.id) loadFromFileAndAddPadding(chestPlateIconTexture, (path + "icons/chestPlate.png").c_str());
 	if (!helmetIconTexture.id) loadFromFileAndAddPadding(helmetIconTexture, (path + "icons/helmet.png").c_str());
+	if (!potionIconTexture.id) loadFromFileAndAddPadding(potionIconTexture, (path + "icons/potion.png").c_str());
+
 
 
 	if (!itemsBar.id)
@@ -285,6 +287,7 @@ void UiENgine::clearOnlyTextures()
 	bootsIconTexture.cleanup();
 	chestPlateIconTexture.cleanup();
 	helmetIconTexture.cleanup();
+	potionIconTexture.cleanup();
 
 	itemsBar.cleanup();
 	background.cleanup();
@@ -1087,7 +1090,6 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						}
 
 
-
 					}
 
 					checkInside(0, hotBarBox, 9, true);
@@ -1096,8 +1098,8 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 					checkInside(PlayerInventory::HEALTH_POTION_INDEX, healthPotionBox, 1, true);
 					checkInside(PlayerInventory::MANA_POTION_INDEX, manaPotionBox, 1, true);
 
-					renderItems(PlayerInventory::HEALTH_POTION_INDEX, healthPotionBox, 1, true);
-					renderItems(PlayerInventory::MANA_POTION_INDEX, manaPotionBox, 1, true);
+					renderItems(PlayerInventory::HEALTH_POTION_INDEX, healthPotionBox, 1, true, potionIconTexture);
+					renderItems(PlayerInventory::MANA_POTION_INDEX, manaPotionBox, 1, true, potionIconTexture);
 
 					renderSmallTextOnTopOfCell(healthPotionBox, "Health");
 					renderSmallTextOnTopOfCell(manaPotionBox, "Mana");

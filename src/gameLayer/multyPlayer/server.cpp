@@ -1219,9 +1219,15 @@ std::string executeServerCommand(std::uint64_t cid, const char *command)
 			if (consumeStringToken("effect"))
 			{
 
+				if (!client)
+				{
+					return "No client was given for the command!";
+				}
+
 				for (int i = 0; i < Effects::Effects_Count; i++)
 				{
 					std::string n(magic_enum::enum_name((Effects::EffectsNames)i).substr());
+
 
 					if (consumeStringToken(n))
 					{

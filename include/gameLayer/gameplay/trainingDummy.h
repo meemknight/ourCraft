@@ -44,6 +44,8 @@ struct TrainingDummyServer: public ServerEntity<TrainingDummy>
 		std::unordered_map<std::uint64_t, glm::dvec3> &playersPosition,
 		std::unordered_map < std::uint64_t, Client *> &allClients);
 
+	LootTable &getLootTable() { return getEmptyLootTable(); }
+
 };
 
 

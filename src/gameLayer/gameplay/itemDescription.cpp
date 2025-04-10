@@ -51,6 +51,10 @@ const char *itemsDescriptions[] =
 	"" ,															//"leadSpear" ,
 	"" ,															//"leadKnife" ,
 	"" ,														//"leadBattleAxe" ,
+	"",																//	ironWarHammer,
+	"",																//ironSpear,
+	"",																//ironKnife,
+	"",																//ironBattleAxe,
 	"" ,														//"silverWarHammer" ,
 	"" ,															//"silverSpear" ,
 	"" ,															//"silverKnife" ,
@@ -125,10 +129,28 @@ const char *itemsDescriptions[] =
 	"What could go wrong?",                                        // flaming arrow
 	"Pointy and petty.",                                           // goblin arrow
 	"Creepy but effective.",                                       // bone arrow
+
+	"heals you",
+	"restores your mana",
+
+	"", //fireResistancePotion,
+	"", //jumpBoostPotion,
+	"", //luckPotion,
+	"", //manaRegenerationPotion,
+	"", //poisonPotion,
+	"", //recallPotion,
+	"", //regenerationPotion,
+	"", //shieldingPotion,
+	"", //speedPotion,
+	"", //stealthPotion,
+	"", //strengthPotion,
+	"Mele damage inflics poison on enemies", //venomusPotion,
+
+
 };
 
 
-
+	
 std::string Item::getItemDescription()
 {
 

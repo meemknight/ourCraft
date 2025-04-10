@@ -998,7 +998,7 @@ bool createConnection(Packet_ReceiveCIDAndData &playerData, const char *c)
 
 	clientData = ConnectionData{};
 
-	clientData.client = enet_host_create(nullptr, 1, 1, 0, 0);
+	clientData.client = enet_host_create(nullptr, 1, SERVER_CHANNELS, 0, 0);
 
 	ENetAddress adress = {};
 	ENetEvent event = {};

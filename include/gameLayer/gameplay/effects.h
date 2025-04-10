@@ -4,7 +4,7 @@
 
 struct Effect
 {
-	int timerMs = 0;
+	int timerMs = 0; //todo change to unsigned short?
 
 	float getTimerInSecconds();
 };
@@ -16,7 +16,7 @@ struct Effects
 		Saturated,
 		Regeneration,
 		Poisoned,
-
+		Shielding,
 
 		Effects_Count
 	};
@@ -26,6 +26,16 @@ struct Effects
 	void passTimeMs(int ms);
 
 	void applyEffects(Effects &other);
+
+	int getArmour() 
+	{
+		if (allEffects[Shielding].timerMs > 0)
+		{
+			return 8;
+		}
+
+		return 0;
+	}
 };
 
 

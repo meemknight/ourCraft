@@ -10,6 +10,7 @@
 #include <gl2d/gl2d.h>
 #include <array>
 #include <functional>
+#include <gameplay/entity.h>
 
 const int waterLevel = 65;
 
@@ -25,7 +26,7 @@ void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, f
 	float randomNumber, bool sandShore, bool stonePatch, float riverValue,
 	float currentInterpolatedValue, float randomBlockVariation, 
 	float swampValue, int biomeHeight, float stoneSpikes, float canionValue, 
-	int valueWithoutCanionDropDown, int x, int z, float lakeValue)
+	int valueWithoutCanionDropDown, int x, int z, float lakeValue, BlockType &outSurfaceBlock)
 {
 
 	
@@ -142,6 +143,8 @@ void calculateBlockPass1(int height, Block *startPos, Biome &biome, bool road, f
 	}
 
 	int y = height;
+
+	outSurfaceBlock = surfaceBlock;
 
 	//find grass
 	for (; y >= waterLevel; y--)
@@ -335,6 +338,13 @@ constexpr uint32_t hash(int32_t x, int32_t y, int32_t z)
 	return wangHash(ux ^ uy ^ uz);
 }
 
+std::minstd_rand rngFromPosition(int32_t x, int32_t y, int32_t z)
+{
+	auto seed = hash(x, y, z);
+	std::minstd_rand rez(seed);
+	return rez;
+}
+
 float hashNormalized(uint32_t h)
 {
 	return (h & 0xFFFFFF) / float(0x1000000);;
@@ -423,8 +433,40 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		interpolateValues, borderingFactor, vegetationMaster, tightBorders, xCellValue, zCellValue,
 		biomeType);
 
-	auto &biome = biomesManager.biomes[biomesManager.pickBiomeIndex(biomeType)];
+
+#pragma region determine biome
+
+
+	int currentBiomeIndex = biomesManager.pickBiomeIndex(biomeType);
+	if (currentBiomeHeight == PLAINS_HEIGHT_INDEX)
+	{
+
+		auto rng = rngFromPosition(xCellValue, zCellValue, wg.regionsHeightNoise->GetSeed());
+
+		float chance = 0.2;
+
+		float distanceFromCenter = glm::length(glm::vec2{xCellValue, zCellValue});
+
+		if (distanceFromCenter < 20)
+		{
+			chance = 0.5;
+		}
+		else if (distanceFromCenter < 40)
+		{
+			chance = 0.3;
+		}
+
+		if (getRandomChance(rng, chance))
+		{
+			currentBiomeIndex = BiomesManager::hayLand;
+		}
+
+	}
+
+	auto &biome = biomesManager.biomes[currentBiomeIndex];
 	//auto &biome = biomesManager.biomes[BiomesManager::snow];
+#pragma endregion
+
 
 	c.vegetation = vegetationMaster;
 	c.regionCenterX = xCellValue;
@@ -837,6 +879,8 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 #pragma endregion
 
 	bool closeToStartingTavern = (glm::length(startingTavernPosition - glm::vec2{c.x, c.z}) < 3);
+	int blockDistanceFromCenter = glm::length(glm::vec2{c.x, c.z});
+	int chunkDistanceFromCenter = blockDistanceFromCenter / CHUNK_SIZE;
 
 #pragma region gets
 
@@ -1547,12 +1591,14 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				riverValueForPlacingRocks = 0;
 			}
 
+			BlockType surfaceBlock = 0;
+
 			calculateBlockPass1(firstH, &c.unsafeGet(x, 0, z), biome, placeRoad, roadValue, 
 				getWhiteNoiseVal(x,z), sandShore, stonePatchesVal > 0.5, 
 				riverValueForPlacingRocks, currentInterpolatedValue, 
 				getAlternativeNoiseVal(x, z), localSwampVal, currentBiomeHeight, 
 				localStoneSpikes, canionValue, valueWithoutCanionDropDown, x, z, 
-				lakeNoiseVal);
+				lakeNoiseVal, surfaceBlock);
 
 			//all caves
 			for (int y = 2; y < firstH; y++)
@@ -1702,14 +1748,22 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 				bool generatedSomethingElse = 0;
 
 				//random stones
+				if(!couldGenerateMediumStructures && !closeToStartingTavern)
 				{
 
 					float stonesChance = glm::mix(0.008, 0.04, stonePatchesVal);
 
 					stonesChance *= randomStones[0];
+					stonesChance += 0.0002;
+
 
 					//more stones near rivers
 					if (riverChanceValue > 0.2 && currentBiomeHeight == 2)
+					{
+						stonesChance += 0.002;
+					}
+
+					if (currentBiomeIndex == BiomesManager::hayLand && surfaceBlock == BlockTypes::hayBalde)
 					{
 						stonesChance += 0.002;
 					}
@@ -1718,12 +1772,31 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 					if (getWhiteNoiseChance(x, z, stonesChance))
 					{
+
 						generatedSomethingElse = true;
 
 						StructureToGenerate str;
-						str.type = Structure_SmallStone;
 
-						str.pos = {x + xPadd, firstH + 1, z + zPadd};
+						if (currentBiomeIndex == BiomesManager::hayLand)
+						{
+							if (getWhiteNoise2Chance(x, z, 0.75))
+							{
+								str.type = Structure_Hay;
+								str.pos = {x + xPadd, firstH, z + zPadd};
+							}
+							else
+							{
+								str.type = Structure_SmallStone;
+								str.pos = {x + xPadd, firstH + 1, z + zPadd};
+							}
+						}
+						else
+						{
+							str.type = Structure_SmallStone;
+							str.pos = {x + xPadd, firstH + 1, z + zPadd};
+						}
+
+
 						str.randomNumber1 = getWhiteNoise3Val(x, z);
 						str.randomNumber2 = getWhiteNoise3Val(x + 1, z);
 						str.randomNumber3 = getWhiteNoise3Val(x + 1, z + 1);
@@ -2062,6 +2135,15 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 			generateStructures.push_back(str);
 		};
 
+		auto barn = [&]()
+		{
+			StructureToGenerate str;
+			str.type = Structure_Barn;
+			setPosAndRandomNumbers(str);
+			str.setDefaultSmallBuildingSettings();
+			generateStructures.push_back(str);
+		};
+
 		auto goblinTower = [&]()
 		{
 			StructureToGenerate str;
@@ -2129,6 +2211,14 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 					structuresChoice.push_back(nothing);
 
+					
+					if (currentBiomeIndex == BiomesManager::hayLand)
+					{
+						structuresChoice.push_back(barn);
+						structuresChoice.push_back(barn);
+						structuresChoice.push_back(barn);
+					}
+
 					if (dataForStructureGen.lakes > 0.2 || dataForStructureGen.rivers > 0.2)
 					{
 
@@ -2142,6 +2232,12 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 						structuresChoice.push_back(trainingCamp);
 						structuresChoice.push_back(smallStoneRuins);
 					}
+
+					if (chunkDistanceFromCenter < 16)
+					{
+						structuresChoice.push_back(trainingCamp);
+					}
+
 
 					uint32_t randomValue = hash(c.x, c.z, seedHash++);
 					int index = randomValue % structuresChoice.size();
