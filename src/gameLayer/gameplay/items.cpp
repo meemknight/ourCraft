@@ -17,7 +17,7 @@ bool Item::isItemThatCanBeUsed()
 {
 	if (type == pigSpawnEgg || type == zombieSpawnEgg 
 		|| type == catSpawnEgg || type == goblinSpawnEgg || type == scareCrowSpawnEgg
-		|| isEatable() || isPaint()
+		|| isEatable() || isPaint() 
 		)
 	{
 		return true;
@@ -30,7 +30,7 @@ bool Item::isConsumedAfterUse()
 {
 	if (type == pigSpawnEgg || type == zombieSpawnEgg || type == catSpawnEgg
 		|| type == goblinSpawnEgg || type == scareCrowSpawnEgg
-		|| isEatable()
+		|| isEatable() 
 		)
 	{
 		return true;
@@ -51,7 +51,10 @@ bool Item::isEatable()
 		type == lime ||
 		type == peach ||
 		type == pinapple ||
-		type == strawberry;
+		type == strawberry
+		|| isPotion()
+		
+		;
 }
 
 bool Item::isArrow()
@@ -194,8 +197,8 @@ unsigned short Item::getStackSize()
 	if (isAmmo())
 	{
 		return 999;
-	}else if (isTool() || isPaint() || isWeapon() || isArmour() ||
-		(type >= healingPotion && type <= venomusPotion)
+	}else if (isTool() || isPaint() || isWeapon() || isArmour() || isPotion()
+		
 		)
 	{
 		return 1;
@@ -412,6 +415,11 @@ bool Item::isBoots()
 bool Item::isArmour()
 {
 	return isHelmet() || isChestplate() || isBoots();
+}
+
+bool Item::isPotion()
+{
+	return (type >= healingPotion && type <= badLuckPotion);
 }
 
 std::string Item::formatMetaDataToString()
@@ -926,7 +934,7 @@ const char *itemsNamesTextures[] =
 	"potions/stealthPotion.png",
 	"potions/strengthPotion.png",
 	"potions/venomusPotion.png",
-
+	"potions/badLuckPotion.png",
 
 
 };
@@ -1079,7 +1087,7 @@ const char *itemsNames[] =
 	"Stealth Potion",
 	"Strength Potion",
 	"Venomus Potion",
-
+	"Bad Luck Potion",
 };
 
 const char *getItemTextureName(int itemId)

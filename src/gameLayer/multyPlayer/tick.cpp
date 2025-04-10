@@ -1916,7 +1916,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 				if (effectsTimers.regen < 0)
 				{
 					effectsTimers.regen += 0.5; //heal once every half a seccond;
-					c.second->newLife.life += 3;
+					c.second->newLife.life += 2;
 					c.second->newLife.sanitize();
 				}
 			}
@@ -1934,7 +1934,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 				{
 					effectsTimers.poison += 2.5;
 					if (c.second->newLife.life > 10)
-						{ c.second->newLife.life -= 8; }
+						{ c.second->newLife.life -= 12; }
 					c.second->newLife.sanitize();
 				}
 			}

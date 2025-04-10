@@ -163,6 +163,7 @@ enum ItemTypes : unsigned short
 	stealthPotion,
 	strengthPotion,
 	venomusPotion,
+	badLuckPotion,
 
 
 
@@ -267,6 +268,7 @@ struct Item
 	bool isChestplate();
 	bool isBoots();
 	bool isArmour();
+	bool isPotion();
 
 	std::string getItemName();
 

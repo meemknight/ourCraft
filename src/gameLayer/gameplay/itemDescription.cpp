@@ -145,6 +145,7 @@ const char *itemsDescriptions[] =
 	"", //stealthPotion,
 	"", //strengthPotion,
 	"Mele damage inflics poison on enemies", //venomusPotion,
+	"Don't drink it lol", //bad luck,
 
 
 };

@@ -51,7 +51,7 @@ struct GoblinServer: public ServerEntity<Goblin>
 
 	WeaponStats getWeaponStats();
 
-	LootTable &getLootTable() { return getEmptyLootTable(); }
+	LootTable &getLootTable();
 };
 
 

@@ -499,3 +499,17 @@ WeaponStats GoblinServer::getWeaponStats()
 	return weaponStats;
 }
 
+
+LootTable goblinLootTable
+{
+	{LootEntry{1, 1, 4, ItemTypes::cloth}, LootEntry{30, 7, 14, ItemTypes::cloth}},
+	glm::ivec2{ 30, 75 },
+	0.30,
+	{LootEntry{1, 1, 2, ItemTypes::fang}, LootEntry{30, 5, 6, ItemTypes::fang}},
+};
+
+LootTable &GoblinServer::getLootTable()
+{
+	return goblinLootTable;
+}
+
