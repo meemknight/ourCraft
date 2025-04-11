@@ -9,7 +9,12 @@ Effects getItemEffects(Item &item)
 
 
 	if (type == apple)
-	{ ret.allEffects[Effects::Saturated].timerMs = 30 * 1000; }
+	{ ret.allEffects[Effects::Saturated].timerMs = 40 * 1000; }
+
+	if (type == applePie)
+	{
+		ret.allEffects[Effects::Saturated].timerMs = 60 * 1000;
+	}
 
 	if (type == regenerationPotion)
 	{ ret.allEffects[Effects::Regeneration].timerMs = 5 * 60 * 1000; } //5 minutes of regeneration
@@ -30,8 +35,13 @@ int getItemHealing(Item &item)
 
 	if (type == apple)
 	{
-
 		return 25;
+	}
+
+	if (type == applePie)
+	{
+
+		return 50;
 
 	}
 

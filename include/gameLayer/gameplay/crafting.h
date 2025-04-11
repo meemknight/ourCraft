@@ -14,12 +14,14 @@ struct CraftingRecepie
 	bool requiresWorkBench = 0;
 	bool requiresFurnace = 0;
 	bool requiresGoblin = 0;
+	bool requiresCookingPot = 0;
 
 	CraftingRecepie() {};
 
 	CraftingRecepie &setAnyWood() { anyWood = true; return *this; }
 	CraftingRecepie &setRequiresWorkBench() { requiresWorkBench = true; return *this; }
 	CraftingRecepie &setRequiresGoblin() { requiresGoblin = true; return *this; }
+	CraftingRecepie &setRequiresCookingPot() { requiresCookingPot = true; return *this; }
 	CraftingRecepie &setRequiresFurnace() { requiresFurnace = true; return *this; }
 };
 

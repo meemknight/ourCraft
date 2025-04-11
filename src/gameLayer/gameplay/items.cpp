@@ -51,7 +51,8 @@ bool Item::isEatable()
 		type == lime ||
 		type == peach ||
 		type == pinapple ||
-		type == strawberry
+		type == strawberry ||
+		type == applePie
 		|| isPotion()
 		
 		;
@@ -476,28 +477,28 @@ ItemStats Item::getItemStats()
 	{
 
 		case leatherBoots: ret.armour = 1; break;
-		case leatherChestPlate: ret.armour = 1; break;		//1
+		case leatherChestPlate: ret.armour = 1; break;		//1 + 1 defence set bonus
 		case leatherHelmet: ret.armour = 1; break;
 
 		case copperBoots: ret.armour = 1; break;
-		case copperChestPlate: ret.armour = 2; break;		//2		+ 1 defence set bonus
+		case copperChestPlate: ret.armour = 2; break;		//2		+ 2 defence set bonus
 		case copperHelmet: ret.armour = 1; break;
 
-		case leadBoots: ret.armour = 1; break;
-		case leadChestPlate: ret.armour = 3; break;			//3		+ 1 defence
-		case leadHelmet: ret.armour = 1; break;
+		case leadBoots: ret.armour = 2; break;
+		case leadChestPlate: ret.armour = 4; break;			//3		+ 1 defence 
+		case leadHelmet: ret.armour = 2; break;
 
 		case ironBoots: ret.armour = 3; break;
-		case ironChestPlate: ret.armour = 4; break;			//4		+ 5% mele attack speed
+		case ironChestPlate: ret.armour = 5; break;			//4		+ 5% mele attack speed
 		case ironHelmet: ret.armour = 2; ret.meleAttackSpeed = 3; break;
 
-		case silverBoots: ret.armour = 3; break;
-		case silverChestPlate: ret.armour = 5; break;		//5		
-		case silverHelmet: ret.armour = 3; break;
+		case silverBoots: ret.armour = 5; break;
+		case silverChestPlate: ret.armour = 6; break;		//5		
+		case silverHelmet: ret.armour = 5; break;
 
-		case goldBoots: ret.armour = 5; break;
-		case goldChestPlate: ret.armour = 6; break;			//6
-		case goldHelmet: ret.armour = 5; break;
+		case goldBoots: ret.armour = 7; break;
+		case goldChestPlate: ret.armour = 11; break;			//6
+		case goldHelmet: ret.armour = 7; break;
 
 	};
 
@@ -871,6 +872,7 @@ const char *itemsNamesTextures[] =
 	"food/peach.png",
 	"food/pinapple.png",
 	"food/strawberry.png",
+	"food/applePie.png",
 
 	"armour/leatherBoots.png",
 	"armour/leatherChestplate.png",
@@ -919,6 +921,7 @@ const char *itemsNamesTextures[] =
 	"ammo/flamingArrow.png",
 	"ammo/goblinArrow.png",
 	"ammo/boneArrow.png",
+	"wheat.png",
 
 	"potions/healingPotion.png",
 	"potions/manaPotion.png",
@@ -1025,6 +1028,9 @@ const char *itemsNames[] =
 	"pinapple",
 	"strawberry",	
 
+	"Apple Pie",
+
+
 	"leather boots",
 	"leather ChestPlate",
 	"leather cap",
@@ -1071,6 +1077,7 @@ const char *itemsNames[] =
 	"flaming arrow",
 	"goblin arrow",
 	"bone arrow",
+	"wheat",
 
 	"Healing Potion",
 	"Mana Potion",

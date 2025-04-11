@@ -246,7 +246,6 @@ WeaponStats Item::getWeaponStats()
 	case goldSword: { basicSword(16); } break;
 
 
-
 	case trainingWarHammer: { basicHammer(8); } break;
 	case copperWarHammer: { basicHammer(10); } break;
 	case leadWarHammer: { basicHammer(12); } break;
@@ -268,6 +267,8 @@ WeaponStats Item::getWeaponStats()
 	case ironBattleAxe: { basicAxe(13); } break;
 	case silverBattleAxe: { basicAxe(15); } break;
 	case goldBattleAxe: { basicAxe(17); } break;
+
+		//todo more damage, get to like 30 ish for swords!
 
 	break;
 	}

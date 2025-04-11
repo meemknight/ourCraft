@@ -14,8 +14,12 @@
 
 LootTable scareCrawLootTable
 {
-	{LootEntry{1, 1, 3, ItemTypes::cloth}},
-	glm::ivec2{ 3, 25 }
+	{LootEntry{1, 2, 5, ItemTypes::wheat}},
+	glm::ivec2{ 3, 25 },
+
+	0.5,
+	{LootEntry{1, 1, 3, ItemTypes::cloth}, LootEntry{10, 1, 1, ItemTypes::apple}},
+
 };
 
 

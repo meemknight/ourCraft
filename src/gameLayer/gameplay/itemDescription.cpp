@@ -81,7 +81,8 @@ const char *itemsDescriptions[] =
 	"Pucker up.",                                                  // lime
 	"Soft and sweet.",                                             // peach
 	"Spiky outside, sweet inside.",                                // pinapple
-	"Smells like summer.",                                         // strawberry
+	"Smells like summer",						                   // strawberry
+	"Restores decent health",									   // apple pie
 
 	"Better than barefoot.",                                       // leather boots
 	"Not just for looks.",                                         // leather ChestPlate
@@ -125,10 +126,11 @@ const char *itemsDescriptions[] =
 	"Now you're getting somewhere.",                               // gold coin
 	"You're filthy rich.",                                         // diamond coin
 
-	"Basic but useful.",                                           // wooden arrow
+	"Basic but useful",                                           // wooden arrow
 	"What could go wrong?",                                        // flaming arrow
-	"Pointy and petty.",                                           // goblin arrow
-	"Creepy but effective.",                                       // bone arrow
+	"Pointy and petty",                                           // goblin arrow
+	"Creepy but effective",                                       // bone arrow
+	"Used for baking stuff",
 
 	"heals you",
 	"restores your mana",

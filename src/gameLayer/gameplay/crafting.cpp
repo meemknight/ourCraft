@@ -164,6 +164,10 @@ static CraftingRecepie recepies[] =
 	recepie<4>(Item(BlockTypes::goblinChest, 1),{Item(BlockTypes::wooden_plank, 8),  Item(ItemTypes::cloth, 5),  Item(ItemTypes::fang, 2),  Item(ItemTypes::ironIngot, 1)}).setRequiresGoblin(),
 
 
+	//food
+	recepie<2>(Item(ItemTypes::applePie, 1), {Item(ItemTypes::apple, 2),  Item(ItemTypes::wheat, 3)}).setRequiresCookingPot(),
+
+
 	//coins
 	recepie<1>(Item(ItemTypes::silverCoin, 1), {Item(ItemTypes::copperCoin, 100)}),
 	recepie<1>(Item(ItemTypes::goldCoin, 1), {Item(ItemTypes::silverCoin, 100)}),
@@ -254,6 +258,7 @@ std::vector<CraftingRecepieIndex> getAllPossibleRecepies(PlayerInventory &player
 			if (recepies[i].requiresWorkBench && craftingStation != WorkStationType::WorkStationType_WorkBench) { good = false; }
 			if (recepies[i].requiresFurnace && craftingStation != WorkStationType::WorkStationType_Furnace) { good = false; }
 			if (recepies[i].requiresGoblin && craftingStation != WorkStationType::WorkStationType_GoblinStitchingPost) { good = false; }
+			if (recepies[i].requiresCookingPot && craftingStation != WorkStationType::WorkStationType_CookingPot) { good = false; }
 			
 			int benchesRequired = 0;
 			benchesRequired += recepies[i].requiresWorkBench + recepies[i].requiresFurnace + recepies[i].requiresGoblin;

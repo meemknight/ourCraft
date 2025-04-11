@@ -96,6 +96,8 @@ enum ItemTypes : unsigned short
 	pinapple,
 	strawberry,
 
+	applePie,
+
 	leatherBoots,
 	leatherChestPlate,
 	leatherHelmet,
@@ -147,6 +149,8 @@ enum ItemTypes : unsigned short
 	flamingArrow,
 	goblinArrow,
 	boneArrow,
+
+	wheat,
 
 	healingPotion,
 	manaPotion,
