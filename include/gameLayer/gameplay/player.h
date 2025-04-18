@@ -180,3 +180,6 @@ struct PlayerServer: public ServerEntity<Player>
 
 	void signalHit(glm::vec3 d) {};
 };
+
+
+EntityStats getPlayerStats(PlayerInventory &inventory);

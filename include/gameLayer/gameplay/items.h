@@ -4,6 +4,7 @@
 #include <string>
 #include <cstring>
 #include <gameplay/weaponStats.h>
+#include <gameplay/entityStats.h>
 
 constexpr static unsigned short ItemsStartPoint = 2'048;
 
@@ -170,6 +171,11 @@ enum ItemTypes : unsigned short
 	badLuckPotion,
 
 
+	gumBox,
+	bandage,
+	fruitPeeler,
+	pawKeychain,
+	vitamins,
 
 	lastItem,
 
@@ -178,34 +184,6 @@ enum ItemTypes : unsigned short
 const char *getItemTextureName(int itemId);
 
 
-struct ItemStats
-{
-
-	//defence
-	short armour = 0;
-	short knockBackResistance = 0;
-	short thorns = 0;
-
-	//attack
-	short meleDamage = 0;
-	short meleAttackSpeed = 0;
-	short critChance = 0;
-
-
-	//player
-	short speed = 0;
-
-	//special
-	short stealthSound = 0;
-	short stealthVisibility = 0;
-
-	//other
-	short luck = 0;
-
-	short improvedMiningPower = 0;
-
-	std::string formatDataToString();
-};
 
 
 struct Item
@@ -217,6 +195,10 @@ struct Item
 	std::vector<unsigned char> metaData;
 	unsigned short type = 0;
 	unsigned short counter = 1;
+	unsigned char notUsed1 = 0;
+	unsigned char notUsed2 = 0;
+	unsigned char notUsed3 = 0;
+	unsigned char notUsed4 = 0;
 
 	bool isBlock();
 
@@ -273,6 +255,8 @@ struct Item
 	bool isBoots();
 	bool isArmour();
 	bool isPotion();
+	bool isEquipement();
+
 
 	std::string getItemName();
 
@@ -282,7 +266,7 @@ struct Item
 
 	WeaponStats getWeaponStats();
 
-	ItemStats getItemStats();
+	EntityStats getItemStats();
 };
 
 //doesn't compare size
@@ -307,14 +291,18 @@ float computeMineDurationTime(BlockType type, Item &item);
 struct PlayerInventory
 {
 			
-											 //basic items    bonus slots   coins  amo  potions
-	constexpr static int INVENTORY_CAPACITY = 36 +             9            + 4  +  4 +  2;
+	constexpr static int MAX_EQUIPEMENT_SLOTS = 7;
+
+											 //basic items    bonus slots   coins  amo  potions  ability equipement
+	constexpr static int INVENTORY_CAPACITY = 36 +             9            + 4  +  4 +  2        + 1    + MAX_EQUIPEMENT_SLOTS;
 	constexpr static int CURSOR_INDEX = INVENTORY_CAPACITY;
 	constexpr static int ARMOUR_START_INDEX = INVENTORY_CAPACITY + 1;
 	constexpr static int COINS_START_INDEX = 36 + 9; //COINS_START_INDEX is copper, than the rest
 	constexpr static int ARROWS_START_INDEX = 36 + 9 + 4;
 	constexpr static int HEALTH_POTION_INDEX = ARROWS_START_INDEX + 4;
 	constexpr static int MANA_POTION_INDEX = HEALTH_POTION_INDEX + 1;
+	constexpr static int ABILITY_INDEX = MANA_POTION_INDEX + 1;
+	constexpr static int EQUIPEMENT_START_INDEX = ABILITY_INDEX + 1;
 	Item items[INVENTORY_CAPACITY] = {};
 	
 	Item heldInMouse = {};

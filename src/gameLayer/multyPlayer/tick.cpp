@@ -1317,8 +1317,8 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 									else if (from->isEatable())
 									{
 
-										auto effects = getItemEffects(*from);
-										int healing = getItemHealing(*from);
+										auto effects = getItemEffects(*from, client->playerData.inventory);
+										int healing = getItemHealing(*from, client->playerData.inventory);
 
 										//can't eat if satiety doesn't allow it
 										if (effects.allEffects[Effects::Saturated].timerMs > 0 &&

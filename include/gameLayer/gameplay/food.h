@@ -3,9 +3,8 @@
 #include <gameplay/items.h>
 
 
-
-Effects getItemEffects(Item &item);
-int getItemHealing(Item &item);
+Effects getItemEffects(Item &item, PlayerInventory &inventory);
+int getItemHealing(Item &item, PlayerInventory &inventory);
 
 
 

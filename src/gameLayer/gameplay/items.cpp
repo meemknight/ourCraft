@@ -180,8 +180,7 @@ void Item::sanitize()
 {
 	if (counter == 0)
 	{
-		type = 0;
-		metaData.clear();
+		*this = {};
 	}
 	else
 	{
@@ -199,7 +198,7 @@ unsigned short Item::getStackSize()
 	{
 		return 999;
 	}else if (isTool() || isPaint() || isWeapon() || isArmour() || isPotion()
-		
+		|| isEquipement()
 		)
 	{
 		return 1;
@@ -423,6 +422,11 @@ bool Item::isPotion()
 	return (type >= healingPotion && type <= badLuckPotion);
 }
 
+bool Item::isEquipement()
+{
+	return (type >= gumBox && type <= vitamins);
+}
+
 std::string Item::formatMetaDataToString()
 {
 
@@ -469,9 +473,9 @@ std::string Item::formatMetaDataToString()
 }
 
 
-ItemStats Item::getItemStats()
+EntityStats Item::getItemStats()
 {
-	ItemStats ret;
+	EntityStats ret;
 
 	switch (type)
 	{
@@ -499,6 +503,11 @@ ItemStats Item::getItemStats()
 		case goldBoots: ret.armour = 7; break;
 		case goldChestPlate: ret.armour = 11; break;			//6
 		case goldHelmet: ret.armour = 7; break;
+
+
+
+		case pawKeychain: ret.stealthSound = 15; break;
+
 
 	};
 
@@ -537,6 +546,8 @@ Item *PlayerInventory::getItemFromIndex(int index)
 
 void PlayerInventory::formatIntoData(std::vector<unsigned char> &data)
 {
+
+	//TODO ARMOUR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	data.reserve(INVENTORY_CAPACITY * sizeof(Item)); //rough estimate
 
@@ -594,12 +605,17 @@ bool PlayerInventory::readFromData(void *data, size_t size)
 void PlayerInventory::sanitize()
 {
 
-	for (int i = 0; i < INVENTORY_CAPACITY; i++)
+	for (int i = 0; i < ARMOUR_START_INDEX + 3; i++)
 	{
-		items[i].sanitize();
+		getItemFromIndex(i)->sanitize();
 	}
 
-	heldInMouse.sanitize();
+	//for (int i = 0; i < INVENTORY_CAPACITY; i++)
+	//{
+	//	items[i].sanitize();
+	//}
+	//
+	//heldInMouse.sanitize();
 
 }
 
@@ -775,6 +791,13 @@ bool PlayerInventory::canItemFit(Item &item, int slot)
 		}
 	}
 
+	if (slot >= EQUIPEMENT_START_INDEX && slot < EQUIPEMENT_START_INDEX + MAX_EQUIPEMENT_SLOTS)
+	{
+		if (!item.isEquipement())
+		{
+			return false;
+		}
+	}
 
 	if (slot >= COINS_START_INDEX && slot < COINS_START_INDEX + 4)
 	{
@@ -939,6 +962,11 @@ const char *itemsNamesTextures[] =
 	"potions/venomusPotion.png",
 	"potions/badLuckPotion.png",
 
+	"equipement/gumBox.png",
+	"equipement/bandage.png",
+	"equipement/fruitPeeler.png",
+	"equipement/pawKeychain.png",
+	"equipement/vitamins.png",
 
 };
 
@@ -1095,6 +1123,12 @@ const char *itemsNames[] =
 	"Strength Potion",
 	"Venomus Potion",
 	"Bad Luck Potion",
+
+	"Gum Box",
+	"Bandage",
+	"Fruit Peeler",
+	"Paw Keychain",
+	"Vitamins",
 };
 
 const char *getItemTextureName(int itemId)
@@ -1464,49 +1498,4 @@ std::string Item::getItemName()
 		//return std::string(magic_enum::enum_name((BlockTypes)type));
 		return blockNames[type];
 	}
-}
-
-std::string ItemStats::formatDataToString()
-{
-	std::string rez = "";
-
-	// Defence
-	if (armour)
-		rez += "\nArmour: " + std::to_string(armour);
-
-	if (knockBackResistance)
-		rez += "\nKnockback Resistance: " + std::to_string(knockBackResistance) + "%";
-
-	if (thorns)
-		rez += "\nThorns: " + std::to_string(thorns) + "%";
-
-	// Attack
-	if (meleDamage)
-		rez += "\nMelee Damage: " + std::to_string(meleDamage) + "%";
-
-	if (meleAttackSpeed)
-		rez += "\nMelee Attack Speed: " + std::to_string(meleAttackSpeed) + "%";
-
-	if (critChance)
-		rez += "\nCritical Strike Chance: " + std::to_string(critChance) + "%";
-
-	// Player
-	if (speed)
-		rez += "\nMovement Speed: " + std::to_string(speed) + "%";
-
-	// Special
-	if (stealthSound)
-		rez += "\nStealth Sound: " + std::to_string(stealthSound) + "%";
-
-	if (stealthVisibility)
-		rez += "\nStealth Visibility: " + std::to_string(stealthVisibility) + "%";
-
-	// Other
-	if (luck)
-		rez += "\nLuck: " + std::to_string(luck) + "%";
-
-	if (improvedMiningPower)
-		rez += "\nMining Power: " + std::to_string(improvedMiningPower) + "%";
-
-	return rez;
 }

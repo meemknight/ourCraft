@@ -419,7 +419,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			{
 				aspectIncrease = 0.10;
 			}
-			aspectIncrease = 0.2;
+			aspectIncrease = 0.33; //
 
 
 			auto inventoryBox = glui::Box().xCenter().yCenter().yDimensionPixels(minDimenstion).
@@ -555,14 +555,20 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 					glm::ivec4 healthPotionBox = {};
 					glm::ivec4 manaPotionBox = {};
+					glm::ivec4 abilityBox = {};
 					healthPotionBox = hotBarBox;
 					healthPotionBox.z = oneItemSize;
 					healthPotionBox.x += hotBarBox.z + oneItemSize * (2.f / 16.f);
 
 					manaPotionBox = healthPotionBox;
 					manaPotionBox.x += oneItemSize + oneItemSize * (2.f / 16.f);
+
+					abilityBox = manaPotionBox;
+					abilityBox.x += oneItemSize + oneItemSize * (2.f / 16.f);
+
 					renderer2d.renderRectangle(healthPotionBox, oneInventorySlot);
 					renderer2d.renderRectangle(manaPotionBox, oneInventorySlot);
+					renderer2d.renderRectangle(abilityBox, oneInventorySlot);
 
 
 					//render items
@@ -689,6 +695,9 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						glm::ivec4 coinsBox[4] = {};
 						glm::ivec4 arrowsBox[4] = {};
 
+						glm::ivec4 equipementBoxStart = {};
+						glm::ivec4 equipementBoxTop = {};
+
 						arrowsBox[0] = inventoryBars;
 						arrowsBox[0].z = arrowsBox[0].w;
 						arrowsBox[0].x += inventoryBars.z + arrowsBox[0].z * (2.f/16.f);
@@ -699,8 +708,6 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 							arrowsBox[i].y -= arrowsBox[i].w;
 						}
 
-
-
 						for (int i = 0; i < 4; i++)
 						{
 							coinsBox[i] = arrowsBox[i];
@@ -710,12 +717,31 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 							renderer2d.renderRectangle(arrowsBox[i], oneInventorySlot);
 						}
 
+						equipementBoxStart = coinsBox[0];
+						equipementBoxStart.x += oneItemSize + oneItemSize * (2.f / 16.f);
+
+						for (int i = 0; i < PlayerInventory::MAX_EQUIPEMENT_SLOTS; i++)
+						{
+							auto box = equipementBoxStart;
+							box.y -= box.w * i;
+
+							renderer2d.renderRectangle(box, oneInventorySlot);
+
+							if (i == PlayerInventory::MAX_EQUIPEMENT_SLOTS - 1)
+							{
+								equipementBoxTop = box;
+							}
+						}
+
+
 						checkInside(PlayerInventory::COINS_START_INDEX, coinsBox[0], 4, false);
 						checkInside(PlayerInventory::ARROWS_START_INDEX, arrowsBox[0], 4, false);
+						checkInside(PlayerInventory::EQUIPEMENT_START_INDEX, equipementBoxStart, 7, false);
 
 
 						renderSmallTextOnTopOfCell(coinsBox[3], "Coins");
 						renderSmallTextOnTopOfCell(arrowsBox[3], "Ammo");
+						renderSmallTextOnTopOfCell(equipementBoxTop, "Equipement");
 
 						//bottom part
 
@@ -1009,6 +1035,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 						renderItems(PlayerInventory::COINS_START_INDEX, coinsBox[0], 4, false, coinIconTexture);
 						renderItems(PlayerInventory::ARROWS_START_INDEX, arrowsBox[0], 4, false, arrowIconTexture);
+						renderItems(PlayerInventory::EQUIPEMENT_START_INDEX, equipementBoxStart, 7, false);
 
 
 
@@ -1101,8 +1128,12 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 					renderItems(PlayerInventory::HEALTH_POTION_INDEX, healthPotionBox, 1, true, potionIconTexture);
 					renderItems(PlayerInventory::MANA_POTION_INDEX, manaPotionBox, 1, true, potionIconTexture);
 
+					renderItems(PlayerInventory::ABILITY_INDEX, abilityBox, 1, true);
+
+
 					renderSmallTextOnTopOfCell(healthPotionBox, "Health");
 					renderSmallTextOnTopOfCell(manaPotionBox, "Mana");
+					renderSmallTextOnTopOfCell(abilityBox, "Ability");
 
 
 					//if (isCreative)
@@ -1214,6 +1245,10 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						box.y += box.w * 0.8;
 						box.w *= 1;
 						box.z *= 1.8;
+
+						if (box.x > w * 0.5) { box.x -= box.z; }
+						if (box.y > h * 0.5) { box.y -= box.w; }
+
 						//
 						//renderer2d.render9Patch(box,
 						//	24, {0.3,0.2,0.2,0.8}, {}, 0.f, buttonTexture, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
@@ -1359,6 +1394,19 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 				uiAtlas.get(2, 0)
 			);
 
+			
+			//inventory hotbar gameplay
+			//{
+			//
+			//	auto itemsBarBox = glui::Box().xCenter().yBottom().xDimensionPercentage(0.35).yAspectRatio(1 / 9.f)();
+			//	itemsBarBox.z = itemsBarBox.w;
+			//
+			//	for (int i = 0; i < 9; i++)
+			//	{
+			//		renderer2d.renderRectangle(itemsBarBox, oneInventorySlot, Colors_White, {}, 0);
+			//		itemsBarBox.x += itemsBarBox.z;
+			//	}
+			//}
 
 
 			//items

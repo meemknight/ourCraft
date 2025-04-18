@@ -139,7 +139,7 @@ const char *itemsDescriptions[] =
 	"", //jumpBoostPotion,
 	"", //luckPotion,
 	"", //manaRegenerationPotion,
-	"", //poisonPotion,
+	"Don't drink it lol", //poisonPotion,
 	"", //recallPotion,
 	"", //regenerationPotion,
 	"", //shieldingPotion,
@@ -149,6 +149,11 @@ const char *itemsDescriptions[] =
 	"Mele damage inflics poison on enemies", //venomusPotion,
 	"Don't drink it lol", //bad luck,
 
+	"Reduces the satiety effect by 5 secconds",
+	"Starts healing faster",
+	"All fruit good effects are longer",
+	"Stealthy like a cat",
+	"ALl healing items will heal a little more"
 
 };
 

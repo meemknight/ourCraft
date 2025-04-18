@@ -4696,7 +4696,12 @@ void Renderer::renderEntities(
 			auto block = chunkSystem.getBlockSafe(blockPos.x, blockPos.y, blockPos.z);
 			
 			if (block)
-				{ data.lightLevels = std::max(block->getSkyLight(), block->getLight()); }
+				{ 
+					data.lightLevels = std::max(block->getSkyLight(), block->getLight()); 
+					data.lightLevels = std::max((char)block->getLight(), (char)(block->getSkyLight() - ((char)15 - (char)skyLightIntensity)));
+					data.lightLevels = std::max(data.lightLevels, 0.f);
+				} 
+				else { data.lightLevels = 0; }
 
 			if (dontUpdateLightSystem)
 				{ data.lightLevels = 15; }
@@ -5323,6 +5328,8 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 
 #pragma region shadow ortographic projection calculation
 
+	//new version
+	if(0)
 	{
 		//https://github.com/maritim/LiteEngine/blob/8e165cb06e1dccf378cde0e34f17668e6d08c15b/Engine/RenderPasses/ShadowMap/DirectionalLightShadowMapRenderPass.cpp#L227
 
@@ -5417,7 +5424,7 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 	}
 
 	//old version
-	if(0)
+	if(1)
 	{
 		glm::ivec3 newPos = c.position;
 

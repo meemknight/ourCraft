@@ -3,6 +3,7 @@
 
 void writeData(std::vector<unsigned char> &vector, void *data, size_t size)
 {
+	if (size == 0) { return; }
 	vector.resize(vector.size() + size);
 	std::memcpy(&vector[vector.size() - size], data, size);
 }

@@ -374,6 +374,8 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 
 				return nullptr;
 			}
+
+			return nullptr;
 		};
 
 		auto bfront = justGetBlock(x, y, z + 1);

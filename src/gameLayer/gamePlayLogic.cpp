@@ -1283,8 +1283,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 								bool allowed = true;
 								{
-									auto effects = getItemEffects(item);
-									int healing = getItemHealing(item);
+									auto effects = getItemEffects(item, player.inventory);
+									int healing = getItemHealing(item, player.inventory);
 
 									//can't eat if satiety doesn't allow it
 									if (effects.allEffects[Effects::Saturated].timerMs > 0 &&

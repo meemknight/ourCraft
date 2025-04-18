@@ -4,7 +4,8 @@
 
 struct Effect
 {
-	int timerMs = 0; //todo change to unsigned short?
+	int timerMs = 0; 
+	//todo change to unsigned short? but make sure the calculations dont overflow!!
 
 	float getTimerInSecconds();
 };

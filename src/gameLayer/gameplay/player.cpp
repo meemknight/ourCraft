@@ -99,10 +99,37 @@ void PlayerServer::kill()
 
 float PlayerServer::calculateHealingDelayTime()
 {
-	return BASE_HEALTH_DELAY_TIME;
+	float rez = BASE_HEALTH_DELAY_TIME;
+
+	for (int i = PlayerInventory::EQUIPEMENT_START_INDEX; i < PlayerInventory::EQUIPEMENT_START_INDEX +
+		PlayerInventory::MAX_EQUIPEMENT_SLOTS; i++)
+	{
+		auto item = inventory.getItemFromIndex(i);
+
+		if (item->type == ItemTypes::bandage)
+		{
+			rez -= 5;
+		}
+	}
+
+
+	return std::max(rez, 0.f);
 }
 
 float PlayerServer::calculateHealingRegenTime()
 {
 	return BASE_HEALTH_REGEN_TIME;
+}
+
+EntityStats getPlayerStats(PlayerInventory &inventory)
+{
+	EntityStats rez;
+
+	//base player stats
+	rez.armour = 0;
+	rez.runningSpeed = 8;
+
+
+
+	return rez;
 }

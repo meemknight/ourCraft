@@ -232,43 +232,42 @@ WeaponStats Item::getWeaponStats()
 
 	case trainingKnife: { basicKnife(3); }break;
 	case copperKnife: { basicKnife(5); } break;
-	case leadKnife: { basicKnife(6); } break;
-	case ironKnife: { basicKnife(7); } break;
-	case silverKnife: { basicKnife(8); } break;
-	case goldKnife: { basicKnife(9); } break;
+	case leadKnife: { basicKnife(8); } break;
+	case ironKnife: { basicKnife(11); } break;
+	case silverKnife: { basicKnife(14); } break;
+	case goldKnife: { basicKnife(17); } break;
 
 
 	case trainingSword: { basicSword(5); } break;
 	case copperSword: { basicSword(7); } break;
-	case leadSword: { basicSword(9); } break;
-	case ironSword: { basicSword(12); } break;
-	case silverSword: { basicSword(14); } break;
-	case goldSword: { basicSword(16); } break;
+	case leadSword: { basicSword(12); } break;
+	case ironSword: { basicSword(20); } break;
+	case silverSword: { basicSword(25); } break;
+	case goldSword: { basicSword(30); } break;
 
 
 	case trainingWarHammer: { basicHammer(8); } break;
 	case copperWarHammer: { basicHammer(10); } break;
-	case leadWarHammer: { basicHammer(12); } break;
-	case ironWarHammer: { basicHammer(15); } break;
-	case silverWarHammer: { basicHammer(17); } break;
-	case goldWarHammer: { basicHammer(20); } break;
+	case leadWarHammer: { basicHammer(16); } break;
+	case ironWarHammer: { basicHammer(22); } break;
+	case silverWarHammer: { basicHammer(30); } break;
+	case goldWarHammer: { basicHammer(40); } break;
 
 	case trainingSpear: { basicSpear(4); } break;
 	case copperSpear: { basicSpear(6); } break;
-	case leadSpear: { basicSpear(8); } break;
-	case ironSpear: { basicSpear(10); } break;
-	case silverSpear: { basicSpear(12); } break;
-	case goldSpear: { basicSpear(14); } break;
+	case leadSpear: { basicSpear(10); } break;
+	case ironSpear: { basicSpear(15); } break;
+	case silverSpear: { basicSpear(21); } break;
+	case goldSpear: { basicSpear(27); } break;
 
 
 	case trainingBattleAxe: { basicAxe(6); } break;
 	case copperBattleAxe: { basicAxe(8); } break;
-	case leadBattleAxe: { basicAxe(10); } break;
-	case ironBattleAxe: { basicAxe(13); } break;
-	case silverBattleAxe: { basicAxe(15); } break;
-	case goldBattleAxe: { basicAxe(17); } break;
+	case leadBattleAxe: { basicAxe(12); } break;
+	case ironBattleAxe: { basicAxe(20); } break;
+	case silverBattleAxe: { basicAxe(28); } break;
+	case goldBattleAxe: { basicAxe(34); } break;
 
-		//todo more damage, get to like 30 ish for swords!
 
 	break;
 	}

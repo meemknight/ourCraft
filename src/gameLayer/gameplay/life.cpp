@@ -52,7 +52,7 @@ int calculateDamage(Armour armour_, const WeaponStats &weaponStats, std::minstd_
 
 	totalDamage -= armour;
 
-	totalDamage *= 100.f/(100.f+armour);
+	totalDamage *= 50.f/(50.f+armour);
 
 	totalDamage = std::max(totalDamage, 0.f);
 

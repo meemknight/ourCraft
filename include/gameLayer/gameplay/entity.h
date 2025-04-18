@@ -16,6 +16,7 @@
 #include <easing.h>
 #include <gameplay/weaponStats.h>
 #include <gameplay/lootTables.h>
+#include <gameplay/entityStats.h>
 
 struct Client;
 
