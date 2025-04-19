@@ -303,6 +303,9 @@ struct PlayerInventory
 	constexpr static int MANA_POTION_INDEX = HEALTH_POTION_INDEX + 1;
 	constexpr static int ABILITY_INDEX = MANA_POTION_INDEX + 1;
 	constexpr static int EQUIPEMENT_START_INDEX = ABILITY_INDEX + 1;
+
+	constexpr static int CHEST_START_INDEX = 100;
+
 	Item items[INVENTORY_CAPACITY] = {};
 	
 	Item heldInMouse = {};

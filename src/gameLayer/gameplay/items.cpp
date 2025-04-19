@@ -549,7 +549,7 @@ void PlayerInventory::formatIntoData(std::vector<unsigned char> &data)
 
 	//TODO ARMOUR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	data.reserve(INVENTORY_CAPACITY * sizeof(Item)); //rough estimate
+	data.reserve(data.size() + INVENTORY_CAPACITY * sizeof(Item)); //rough estimate
 
 	data.push_back(revisionNumber);
 

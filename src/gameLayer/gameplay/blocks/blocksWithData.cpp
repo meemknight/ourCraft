@@ -37,6 +37,42 @@ BaseBlock *BlocksWithDataHolder::getOrCreateBaseBlock(unsigned char x, unsigned 
 	}
 }
 
+ChestBlock *BlocksWithDataHolder::getChestBlock
+(unsigned char x, unsigned char y, unsigned char z)
+{
+	auto hash = fromBlockPosInChunkToHashValue(x, y, z);
+
+	auto found = chestBlocks.find(hash);
+
+	if (found != chestBlocks.end())
+	{
+		return &found->second;
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+ChestBlock *BlocksWithDataHolder::getOrCreateChestBlock
+(unsigned char x, unsigned char y, unsigned char z)
+{
+	auto hash = fromBlockPosInChunkToHashValue(x, y, z);
+
+	auto found = chestBlocks.find(hash);
+
+	if (found != chestBlocks.end())
+	{
+		return &found->second;
+	}
+	else
+	{
+		chestBlocks[hash] = {};
+		found = chestBlocks.find(hash);
+		return &found->second;
+	}
+}
+
 
 void appendBaseBlock(std::vector<unsigned char> &dataToAppend, 
 	glm::ivec3 position, BaseBlock &baseBlock)
@@ -52,6 +88,25 @@ void appendBaseBlock(std::vector<unsigned char> &dataToAppend,
 
 	header.pos = position;
 	header.blockType = BlockTypes::structureBase;
+	header.dataSize = wroteData;
+
+	std::memcpy(dataToAppend.data() + headerStart, &header, sizeof(header));
+
+}
+
+void appendChestBlock(std::vector<unsigned char> &dataToAppend,
+	glm::ivec3 position, ChestBlock &chestBlock)
+{
+	size_t headerStart = dataToAppend.size();
+	dataToAppend.resize(dataToAppend.size() + sizeof(BlockDataHeader));
+
+	//write the data
+	size_t wroteData = chestBlock.formatIntoData(dataToAppend);
+
+	BlockDataHeader header = {};
+
+	header.pos = position;
+	header.blockType = BlockTypes::woddenChest;
 	header.dataSize = wroteData;
 
 	std::memcpy(dataToAppend.data() + headerStart, &header, sizeof(header));
@@ -77,6 +132,12 @@ void BlocksWithDataHolder::formatBlockData
 			appendBaseBlock(dataToAppend, pos, b.second);
 		}
 
+		for (auto &b : chestBlocks)
+		{
+			glm::ivec3 pos = chunkBlockPos + fromHashValueToBlockPosinChunk(b.first);
+			appendChestBlock(dataToAppend, pos, b.second);
+		}
+
 	}
 
 }
@@ -95,55 +156,73 @@ void BlocksWithDataHolder::loadBlockData(std::vector<unsigned char> &data,
 		memcpy(&header, data.data() + pointer, sizeof(BlockDataHeader));
 		pointer += sizeof(BlockDataHeader);
 		
+		auto pos = header.pos;
+		auto size = header.dataSize;
+
+		glm::ivec3 posInChunk = pos;
+		posInChunk.x = modBlockToChunk(posInChunk.x);
+		posInChunk.z = modBlockToChunk(posInChunk.z);
+
+		auto chunkPosX = divideChunk(pos.x);
+		auto chunkPosZ = divideChunk(pos.z);
+
+		if (chunkXChunkSpace != chunkPosX && chunkZChunkSpace != chunkPosZ)
+		{
+			std::cout << "Error chunk index size in loadBlockData!\n";
+			break;
+		}
+
+		if (size < data.size() - pointer)
+		{
+			std::cout << "Error size in loadBlockData!\n";
+			break;
+		}
 
 		if (header.blockType == BlockTypes::structureBase)
 		{
+			
+			BaseBlock b;
+			size_t _ = 0;
 
-			auto pos = header.pos;
-			auto size = header.dataSize;
-
-			glm::ivec3 posInChunk = pos;
-			posInChunk.x = modBlockToChunk(posInChunk.x);
-			posInChunk.z = modBlockToChunk(posInChunk.z);
-
-			auto chunkPosX = divideChunk(pos.x);
-			auto chunkPosZ = divideChunk(pos.z);
-
-			if (chunkXChunkSpace != chunkPosX && chunkZChunkSpace != chunkPosZ)
+			if (!b.readFromBuffer(data.data() + pointer, size, _))
 			{
-				std::cout << "Error chunk index size in loadBlockData!\n";
+				std::cout << "Error read from buffer in loadBlockData!\n";
+				break;
+			}
+			
+			pointer += size;
+
+			if (!b.isDataValid())
+			{
+				std::cout << "Error is data valid in loadBlockData base block!\n";
 				break;
 			}
 
-			if (size < data.size() - pointer)
+			baseBlocks[fromBlockPosInChunkToHashValue(posInChunk.x, posInChunk.y, posInChunk.z)] =
+				b;
+
+
+		}if (header.blockType == BlockTypes::woddenChest)
+		{
+			ChestBlock c;
+			size_t _ = 0;
+
+			if (!c.readFromBuffer(data.data() + pointer, size, _))
 			{
-				std::cout << "Error size in loadBlockData!\n";
+				std::cout << "Error read from buffer in loadBlockData!\n";
 				break;
 			}
-			else
+
+			pointer += size;
+
+			if (!c.isDataValid())
 			{
-				BaseBlock b;
-				size_t _ = 0;
-
-				if (!b.readFromBuffer(data.data() + pointer, size, _))
-				{
-					std::cout << "Error read from buffer in loadBlockData!\n";
-					break;
-				}
-				
-				pointer += size;
-
-				if (!b.isDataValid())
-				{
-					std::cout << "Error is data valid in loadBlockData!\n";
-					break;
-				}
-
-				baseBlocks[fromBlockPosInChunkToHashValue(posInChunk.x, posInChunk.y, posInChunk.z)] =
-					b;
-
+				std::cout << "Error is data valid in loadBlockData chests!\n";
+				break;
 			}
 
+			chestBlocks[fromBlockPosInChunkToHashValue(posInChunk.x, posInChunk.y, posInChunk.z)] = 
+				c;
 
 		}
 		else
