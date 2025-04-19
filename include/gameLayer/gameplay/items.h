@@ -6,6 +6,8 @@
 #include <gameplay/weaponStats.h>
 #include <gameplay/entityStats.h>
 
+struct ChestBlock;
+
 constexpr static unsigned short ItemsStartPoint = 2'048;
 
 enum ItemTypes : unsigned short

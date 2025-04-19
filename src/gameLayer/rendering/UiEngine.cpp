@@ -797,7 +797,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 									minVal = -(allItems.size() - 2);
 								}
 
-								craftingSlider = glm::clamp(craftingSlider, -1, std::max((int)allItems.size() + 2, minVal));
+								craftingSlider = glm::clamp(craftingSlider, -1, std::max((int)allItems.size() - 2, minVal));
 
 								if (currentPos != craftingSlider && platform::getScroll())
 								{
@@ -849,7 +849,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 								};
 
 
-								for (int i = start; i < start + 22; i++)
+								for (int i = start; i < start + itemsRowCount * 2; i++)
 								{
 									if (i != start + 1)
 									{
