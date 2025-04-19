@@ -4953,7 +4953,7 @@ void Renderer::renderEntities(
 
 
 		//hand item
-		auto handItem = entityManager.localPlayer.inventory.getItemFromIndex(currentHeldItemIndex);
+		auto handItem = entityManager.localPlayer.inventory.getItemFromIndex(currentHeldItemIndex, nullptr);
 		if(handItem)	
 		{
 

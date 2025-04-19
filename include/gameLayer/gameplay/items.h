@@ -316,7 +316,7 @@ struct PlayerInventory
 	Item chestArmour = {}; //ARMOUR_START_INDEX + 1
 	Item bootsArmour = {}; //ARMOUR_START_INDEX + 2
 
-	Item *getItemFromIndex(int index);
+	Item *getItemFromIndex(int index, ChestBlock *chestBlock);
 
 	//doesn't clear data vector!!
 	void formatIntoData(std::vector<unsigned char> &data);

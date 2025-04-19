@@ -1944,6 +1944,30 @@ Block *ServerChunkStorer::getBlockSafe(glm::ivec3 pos)
 	return nullptr;
 }
 
+ChestBlock *ServerChunkStorer::getChestBlock(glm::ivec3 pos, SavedChunk *&c)
+{
+	c = getChunkOrGetNull(divideChunk(pos.x), divideChunk(pos.z));
+	if (!c) { return nullptr; }
+
+	if (pos.y > 0 && pos.y < CHUNK_HEIGHT)
+	{
+		auto b = c->chunk.unsafeGet(modBlockToChunk(pos.x), pos.y, modBlockToChunk(pos.z));
+
+		if (isChest(b.getType()))
+		{
+			glm::ivec3 p = glm::ivec3(modBlockToChunk(pos.x), pos.y, modBlockToChunk(pos.z));
+
+			return c->blockData.getOrCreateChestBlock(p.x,p.y,p.z);
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+
+	return nullptr;
+}
+
 Block *ServerChunkStorer::getBlockSafeAndChunk(glm::ivec3 pos, SavedChunk *&c)
 {
 	c = getChunkOrGetNull(divideChunk(pos.x), divideChunk(pos.z));

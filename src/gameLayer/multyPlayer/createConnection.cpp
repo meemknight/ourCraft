@@ -1104,11 +1104,11 @@ bool createConnection(Packet_ReceiveCIDAndData &playerData, const char *c)
 }
 
 
-bool placeItem(PlayerInventory &inventory, int from, int to, int counter)
+bool placeItem(PlayerInventory &inventory, ChestBlock *chestBlock, int from, int to, int counter)
 {
 
-	auto fromItem = inventory.getItemFromIndex(from);
-	auto toItem = inventory.getItemFromIndex(to);
+	auto fromItem = inventory.getItemFromIndex(from, chestBlock);
+	auto toItem = inventory.getItemFromIndex(to, chestBlock);
 
 	if (!inventory.canItemFit(*fromItem, to)) { return false; }
 
@@ -1200,11 +1200,11 @@ bool placeItem(PlayerInventory &inventory, int from, int to, int counter)
 }
 
 
-bool swapItems(PlayerInventory &inventory, int from, int to)
+bool swapItems(PlayerInventory &inventory, ChestBlock *chestBlock, int from, int to)
 {
 
-	auto fromPtr = inventory.getItemFromIndex(from);
-	auto toPtr = inventory.getItemFromIndex(to);
+	auto fromPtr = inventory.getItemFromIndex(from, chestBlock);
+	auto toPtr = inventory.getItemFromIndex(to, chestBlock);
 
 	if (!inventory.canItemFit(*fromPtr, to)) { return false; }
 	if (!inventory.canItemFit(*toPtr, from)) { return false; }
@@ -1228,11 +1228,11 @@ bool swapItems(PlayerInventory &inventory, int from, int to)
 	return false;
 }
 
-bool grabItem(PlayerInventory &inventory, int from, int to, int counter)
+bool grabItem(PlayerInventory &inventory, ChestBlock *chestBlock, int from, int to, int counter)
 {
 
-	auto fromItem = inventory.getItemFromIndex(from);
-	auto toItem = inventory.getItemFromIndex(to);
+	auto fromItem = inventory.getItemFromIndex(from, chestBlock);
+	auto toItem = inventory.getItemFromIndex(to, chestBlock);
 
 	if (!inventory.canItemFit(*fromItem, to)) { return false; }
 
@@ -1273,11 +1273,11 @@ bool grabItem(PlayerInventory &inventory, int from, int to, int counter)
 }
 
 
-bool forceOverWriteItem(PlayerInventory &inventory, int index, Item &item)
+bool forceOverWriteItem(PlayerInventory &inventory, ChestBlock *chestBlock, int index, Item &item)
 {
 	static std::vector<unsigned char> tempData;
 
-	auto to = inventory.getItemFromIndex(index);
+	auto to = inventory.getItemFromIndex(index, chestBlock);
 
 	if (!inventory.canItemFit(item, index)) { return false; }
 

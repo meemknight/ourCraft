@@ -17,7 +17,7 @@ struct ChunkSystem;
 struct UndoQueue;
 struct LightSystem;
 struct ClientEntityManager;
-
+struct ChestBlock;
 
 const int INVENTORY_TAB_DEFAULT = 0;
 const int INVENTORY_TAB_CRAFTING = 1;
@@ -97,7 +97,7 @@ struct UiENgine
 		int &currentInventoryTab, bool isCreative,
 		unsigned short &selectedItem, Life &playerHealth, ProgramData &programData,
 		LocalPlayer &player, int &craftingSlider, int &outCraftingRecepieGlobalIndex,
-		bool showUI, std::uint16_t interactingBlock
+		bool showUI, std::uint16_t interactingBlock, ChestBlock *chestBlock
 		);
 
 	bool renderBaseBlockUI(float deltaTime,

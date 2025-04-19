@@ -1166,7 +1166,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 						item = newItem;
 
-						forceOverWriteItem(player.inventory, gameData.currentItemSelected, item);
+						forceOverWriteItem(player.inventory, 0, gameData.currentItemSelected, item);
 
 					}
 				}
@@ -1211,9 +1211,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 							auto actionType = isInteractable(b->getType());
 
 
-							if (player.inventory.getItemFromIndex(gameData.currentItemSelected)->isPaint())
+							if (player.inventory.getItemFromIndex(gameData.currentItemSelected, nullptr)->isPaint())
 							{
-								auto &item = *player.inventory.getItemFromIndex(gameData.currentItemSelected);
+								auto &item = *player.inventory.getItemFromIndex(gameData.currentItemSelected, nullptr);
 
 								int paintType = item.type - soap;
 
@@ -1482,7 +1482,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 									);
 
 
-									auto itemLast = player.inventory.getItemFromIndex(8);
+									auto itemLast = player.inventory.getItemFromIndex(8, nullptr);
 									if (itemLast && itemLast->isPaint())
 									{
 										auto b = gameData.chunkSystem.getBlockSafe(blockToPlace->x, 
@@ -1533,7 +1533,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 							if (player.otherPlayerSettings.gameMode == OtherPlayerSettings::SURVIVAL)
 							{
 								gameData.currentBlockBreaking.timer = computeMineDurationTime(raycastBlock->getType(),
-									*player.inventory.getItemFromIndex(gameData.currentItemSelected));
+									*player.inventory.getItemFromIndex(gameData.currentItemSelected, nullptr));
 								gameData.currentBlockBreaking.totalTime = gameData.currentBlockBreaking.timer;
 							}
 							else
@@ -2416,7 +2416,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #endif
 #pragma endregion
 
-	auto hitStatus = gameData.battleUI.update(*player.inventory.getItemFromIndex(gameData.currentItemSelected),
+	auto hitStatus = gameData.battleUI.update(*player.inventory.getItemFromIndex(gameData.currentItemSelected, nullptr),
 		gameData.currentItemSelected, stopMainInput, programData.ui,
 		gameData.rng, deltaTime);
 
@@ -2428,7 +2428,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		if (targetedEntity && !stopMainInput && hitStatus.hitCorectness > 0)
 		{
 
-			auto weaponStats = player.inventory.getItemFromIndex(gameData.currentItemSelected)->
+			auto weaponStats = player.inventory.getItemFromIndex(gameData.currentItemSelected, nullptr)->
 				getWeaponStats();
 
 			if (entityHitDistance <= weaponStats.range)
@@ -2464,6 +2464,40 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	}
 
 #pragma region ui
+
+	ChestBlock *currentChestBlock = 0;
+	if (isChest(gameData.interaction.block))
+	{
+
+		Chunk *c = 0;
+		Block *b = gameData.chunkSystem.getBlockSafeAndChunk(gameData.interaction.blockInteractionPosition.x,
+			gameData.interaction.blockInteractionPosition.y, gameData.interaction.blockInteractionPosition.z,
+			c
+		);
+
+		if (!b)
+		{
+			gameData.interaction = {};
+			gameData.insideInventoryMenu = false;
+		}
+		else
+		{
+			if (b->getType() != gameData.interaction.block)
+			{
+				gameData.interaction = {};
+				gameData.insideInventoryMenu = false;
+			}
+			else
+			{
+				glm::ivec3 pos = glm::ivec3{modBlockToChunk(gameData.interaction.blockInteractionPosition.x),
+					gameData.interaction.blockInteractionPosition.y,
+				modBlockToChunk(gameData.interaction.blockInteractionPosition.z)};
+				currentChestBlock = c->blockData.getOrCreateChestBlock(pos.x, pos.y, pos.z);
+
+			}
+		}
+	}
+
 
 	int cursorSelected = -2;
 	unsigned short selectedCreativeItem = 0;
@@ -2538,7 +2572,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				cursorSelected,  gameData.currentInventoryTab, 
 				player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE,
 				selectedCreativeItem, player.life, programData, player, 
-				gameData.craftingSlider, craftedItemIndex, gameData.showUI, gameData.interaction.block
+				gameData.craftingSlider, craftedItemIndex, gameData.showUI, gameData.interaction.block, currentChestBlock
 			);
 		}
 
@@ -2752,7 +2786,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					{
 
 						if (canItemBeMovedToAndMoveIt(recepie.result,
-							*player.inventory.getItemFromIndex(PlayerInventory::CURSOR_INDEX)))
+							*player.inventory.getItemFromIndex(PlayerInventory::CURSOR_INDEX, nullptr)))
 						{
 							Packet_ClientCraftedItem packet;
 							packet.recepieIndex = craftedItemIndex;
@@ -2785,9 +2819,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 	//std::cout << cursorSelected << "\n";
 
+
 #pragma region move items in inventory
 	if (gameData.insideInventoryMenu && !gameData.escapePressed)
 	{
+
+
+
 
 		//pickup blocks or items from the creative inventory
 		if (selectedCreativeItem)
@@ -2805,7 +2843,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					}
 
 					//todo force overwrite item with metadata here!
-					forceOverWriteItem(player.inventory, PlayerInventory::CURSOR_INDEX,
+					forceOverWriteItem(player.inventory, currentChestBlock, PlayerInventory::CURSOR_INDEX,
 						item);
 
 					player.inventory.heldInMouse = item;
@@ -2825,7 +2863,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				//grab items
 				if (cursorSelected >= 0)
 				{
-					Item *selected = player.inventory.getItemFromIndex(cursorSelected);
+					Item *selected = player.inventory.getItemFromIndex(cursorSelected, currentChestBlock);
 					Item *cursor = &player.inventory.heldInMouse;
 
 					if (selected && selected != cursor)
@@ -2834,16 +2872,18 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 						if (cursor->type == 0)
 						{
 							//grab
-							grabItem(player.inventory, cursorSelected, PlayerInventory::CURSOR_INDEX);
+							grabItem(player.inventory, currentChestBlock, cursorSelected, PlayerInventory::CURSOR_INDEX);
 						}
 						else
 						{
 							//place
-							if (!placeItem(player.inventory, PlayerInventory::CURSOR_INDEX, cursorSelected))
+							if (!placeItem(player.inventory, currentChestBlock, PlayerInventory::CURSOR_INDEX, cursorSelected))
 							{
 								//swap
-								swapItems(player.inventory, cursorSelected, PlayerInventory::CURSOR_INDEX);
+								swapItems(player.inventory, currentChestBlock, cursorSelected, PlayerInventory::CURSOR_INDEX);
 							}
+
+							std::cout << currentChestBlock << "\n";
 
 						}
 
@@ -2858,13 +2898,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 				if (cursorSelected >= 0)
 				{
-					Item *selected = player.inventory.getItemFromIndex(cursorSelected);
+					Item *selected = player.inventory.getItemFromIndex(cursorSelected, currentChestBlock);
 					Item *cursor = &player.inventory.heldInMouse;
 
 					if (cursor->type != 0)
 					{
 						//place one
-						if (placeItem(player.inventory, PlayerInventory::CURSOR_INDEX, cursorSelected, 1))
+						if (placeItem(player.inventory, currentChestBlock, PlayerInventory::CURSOR_INDEX, cursorSelected, 1))
 						{
 							rightClickedThisClick[cursorSelected] = true;
 						}
@@ -2874,7 +2914,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					{
 
 						//grab
-						grabItem(player.inventory, cursorSelected, PlayerInventory::CURSOR_INDEX, selected->counter / 2);
+						grabItem(player.inventory, currentChestBlock, cursorSelected,
+							PlayerInventory::CURSOR_INDEX, selected->counter / 2);
 
 						//don't place it again lol
 						rightClickedThisClick[cursorSelected] = true;
@@ -2892,13 +2933,13 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				//right click held place items
 				if (cursorSelected >= 0 && !rightClickedThisClick[cursorSelected])
 				{
-					Item *selected = player.inventory.getItemFromIndex(cursorSelected);
+					Item *selected = player.inventory.getItemFromIndex(cursorSelected, currentChestBlock);
 					Item *cursor = &player.inventory.heldInMouse;
 
 					if (cursor->type != 0)
 					{
 						//place one
-						if (placeItem(player.inventory, PlayerInventory::CURSOR_INDEX, cursorSelected, 1))
+						if (placeItem(player.inventory, currentChestBlock, PlayerInventory::CURSOR_INDEX, cursorSelected, 1))
 						{
 							rightClickedThisClick[cursorSelected] = true;
 						}
@@ -2947,16 +2988,16 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			for (int i = PlayerInventory::INVENTORY_CAPACITY-1; i >=0 ; i--)
 			{
-				auto &slot = *player.inventory.getItemFromIndex(i);
+				auto &slot = *player.inventory.getItemFromIndex(i, 0);
 
 				if (slot.type == 0)
 				{
-					swapItems(player.inventory, i, PlayerInventory::CURSOR_INDEX);
+					swapItems(player.inventory, currentChestBlock, i, PlayerInventory::CURSOR_INDEX);
 					break;
 				}else
 				if (areItemsTheSame(itemHeld, slot))
 				{
-					placeItem(player.inventory, PlayerInventory::CURSOR_INDEX, i);
+					placeItem(player.inventory, currentChestBlock, PlayerInventory::CURSOR_INDEX, i);
 				}
 
 				if (itemHeld.counter == 0) { break; }

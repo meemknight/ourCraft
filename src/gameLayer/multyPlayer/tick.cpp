@@ -696,7 +696,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 									if (i.t.taskType == Task::placeBlock)
 									{
-										item = client->playerData.inventory.getItemFromIndex(i.t.inventroySlot);
+										item = client->playerData.inventory.getItemFromIndex(i.t.inventroySlot, 0);
 
 
 
@@ -915,7 +915,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 								serverAllows = false;
 							}
 
-							auto from = client->playerData.inventory.getItemFromIndex(i.t.from);
+							auto from = client->playerData.inventory.getItemFromIndex(i.t.from, 0);
 
 							if (!from) { serverAllows = false; }
 							else
@@ -992,8 +992,17 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 							)
 						{
 
-							Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
-							Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
+							ChestBlock *chestBlock = 0;
+							SavedChunk *currentChunkForChestBlock = 0;
+							if (client->playerData.interactingWithBlock == InteractionTypes::chestInteraction)
+							{
+								std::cout << "Tried to get chest!\n";
+								chestBlock = chunkCache.getChestBlock(client->playerData.currentBlockInteractWithPosition, currentChunkForChestBlock);
+							}
+
+
+							Item *from = client->playerData.inventory.getItemFromIndex(i.t.from, chestBlock);
+							Item *to = client->playerData.inventory.getItemFromIndex(i.t.to, chestBlock);
 
 							if (client->playerData.killed)
 							{
@@ -1030,20 +1039,29 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 											{
 												sendPlayerInventoryAndIncrementRevision(*client);
 											}
-
-											int total = (int)to->counter + (int)i.t.blockCount;
-											if (total <= to->getStackSize())
-											{
-												to->counter += i.t.blockCount;
-												from->counter -= i.t.blockCount;
-
-												if (!from->counter) { *from = {}; }
-											}
 											else
 											{
-												//this is a desync, resend inventory.
-												sendPlayerInventoryAndIncrementRevision(*client);
-											}
+												int total = (int)to->counter + (int)i.t.blockCount;
+												if (total <= to->getStackSize())
+												{
+													to->counter += i.t.blockCount;
+													from->counter -= i.t.blockCount;
+
+													if (!from->counter) { *from = {}; }
+
+													if (currentChunkForChestBlock &&
+														(i.t.from >= PlayerInventory::CHEST_START_INDEX || i.t.to >= PlayerInventory::CHEST_START_INDEX)
+														)
+													{
+														currentChunkForChestBlock->otherData.dirtyBlockData = true;
+													}
+												}
+												else
+												{
+													//this is a desync, resend inventory.
+													sendPlayerInventoryAndIncrementRevision(*client);
+												}
+											};
 
 										}
 										else
@@ -1089,7 +1107,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 								if (client->playerData.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE)
 								{
 
-									Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
+									Item *to = client->playerData.inventory.getItemFromIndex(i.t.to, 0);
 
 									if (to)
 									{
@@ -1130,6 +1148,13 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 							)
 						{
 
+							ChestBlock *chestBlock = 0;
+							SavedChunk *currentChunkForChestBlock = 0;
+							if (client->playerData.interactingWithBlock == InteractionTypes::chestInteraction)
+							{
+								std::cout << "Tried to get chest!\n";
+								chestBlock = chunkCache.getChestBlock(client->playerData.currentBlockInteractWithPosition, currentChunkForChestBlock);
+							}
 
 							if (client->playerData.killed)
 							{
@@ -1137,8 +1162,8 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 							}
 							else
 							{
-								Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
-								Item *to = client->playerData.inventory.getItemFromIndex(i.t.to);
+								Item *from = client->playerData.inventory.getItemFromIndex(i.t.from, chestBlock);
+								Item *to = client->playerData.inventory.getItemFromIndex(i.t.to, chestBlock);
 
 								if (from && to)
 								{
@@ -1146,6 +1171,13 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 									copy = std::move(*from);
 									*from = std::move(*to);
 									*to = std::move(copy);
+
+									if (currentChunkForChestBlock &&
+										(i.t.from >= PlayerInventory::CHEST_START_INDEX || i.t.to >= PlayerInventory::CHEST_START_INDEX)
+										)
+									{
+										currentChunkForChestBlock->otherData.dirtyBlockData = true;
+									}
 								}
 								else
 								{
@@ -1192,7 +1224,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 									auto resultCrafting = getRecepieFromIndexUnsafe(craftingIndex);
 
-									auto toslot = client->playerData.inventory.getItemFromIndex(to);
+									auto toslot = client->playerData.inventory.getItemFromIndex(to, 0);
 
 									if (!toslot)
 									{
@@ -1238,9 +1270,10 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 					if (client)
 					{
+
 						bool shouldUpdateRevisionStuff = false;
 						bool allowed = false;
-						Item *from = client->playerData.inventory.getItemFromIndex(i.t.from);
+						Item *from = client->playerData.inventory.getItemFromIndex(i.t.from, 0);
 
 						if (from)
 						{
@@ -1544,7 +1577,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 					{
 						if (!client->playerData.killed)
 						{
-							auto item = client->playerData.inventory.getItemFromIndex(itemInventoryIndex);
+							auto item = client->playerData.inventory.getItemFromIndex(itemInventoryIndex, 0);
 							if (item)
 							{
 								int type = getEntityTypeFromEID(entityId);

@@ -5,6 +5,7 @@
 #include <climits>
 #include <magic_enum.hpp>
 #include <gameplay/crafting.h>
+#include <gameplay/blocks/chestBlock.h>
 
 //todo can be placed
 
@@ -516,7 +517,7 @@ EntityStats Item::getItemStats()
 }
 
 
-Item *PlayerInventory::getItemFromIndex(int index)
+Item *PlayerInventory::getItemFromIndex(int index, ChestBlock *chestBlock)
 {
 	if (index < 0) { return 0; }
 
@@ -541,8 +542,14 @@ Item *PlayerInventory::getItemFromIndex(int index)
 		return &bootsArmour;
 	}
 
+	if (index >= CHEST_START_INDEX && (index < CHEST_START_INDEX + CHEST_CAPACITY) && chestBlock)
+	{
+		return &chestBlock->items[index - CHEST_START_INDEX];
+	}
+
 	return nullptr;
 }
+
 
 void PlayerInventory::formatIntoData(std::vector<unsigned char> &data)
 {
@@ -607,7 +614,7 @@ void PlayerInventory::sanitize()
 
 	for (int i = 0; i < ARMOUR_START_INDEX + 3; i++)
 	{
-		getItemFromIndex(i)->sanitize();
+		getItemFromIndex(i, nullptr)->sanitize();
 	}
 
 	//for (int i = 0; i < INVENTORY_CAPACITY; i++)

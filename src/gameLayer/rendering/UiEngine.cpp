@@ -6,6 +6,7 @@
 #include <gamePlayLogic.h>
 #include <gameplay/player.h>
 #include <gameplay/blocks/structureBaseBlock.h>
+#include <gameplay/blocks/chestBlock.h>
 #include <gameplay/crafting.h>
 #include <audioEngine.h>
 #include <iostream>
@@ -14,6 +15,7 @@
 #include <chunkSystem.h>
 #include <sstream>
 #include <iomanip>
+
 
 float determineTextSize(gl2d::Renderer2D &renderer, const std::string &str,
 	gl2d::Font &f, glm::vec4 transform, bool minimize = true)
@@ -324,7 +326,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 	int &currentInventoryTab, bool isCreative,
 	unsigned short &selectedItem, Life &playerHealth, ProgramData &programData, LocalPlayer &player
 	, int &craftingSlider, int &outCraftingRecepieGlobalIndex, bool showUI,
-	BlockType interactingBlock
+	BlockType interactingBlock, ChestBlock *chestBlock
 )
 {
 
@@ -473,7 +475,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						if (glui::aabb(box, mousePos))
 						{
 							cursorItemIndex = i;
-							auto rez = inventory.getItemFromIndex(cursorItemIndex);
+							auto rez = inventory.getItemFromIndex(cursorItemIndex, chestBlock);
 							if (rez)currentItemHovered = *rez;
 							cursorItemIndexBox = box;
 							renderer2d.renderRectangle(shrinkRectanglePercentage(box, (2.f / 22.f)),
@@ -548,7 +550,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						if (glui::aabb(itemBox, mousePos))
 						{
 							cursorItemIndex = start;
-							auto rez = inventory.getItemFromIndex(cursorItemIndex);
+							auto rez = inventory.getItemFromIndex(cursorItemIndex, chestBlock);
 							if (rez)currentItemHovered = *rez;
 							cursorItemIndexBox = itemBox;
 							renderer2d.renderRectangle(shrinkRectanglePercentage(itemBox, (2.f / 22.f)),
@@ -589,7 +591,11 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						itemBox.z = itemBox.w;
 						for (int i = start; i < start + rowCount; i++)
 						{
-							if (inventory.items[i].type)
+
+							auto rez = inventory.getItemFromIndex(i, chestBlock);
+
+							if(rez)
+							if (rez->type)
 							{
 								if (horizontal)
 								{
@@ -599,7 +605,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 								{
 									itemBox.y = box.y - itemBox.w * (i - start);
 								}
-								renderOneItem(itemBox, inventory.items[i], 4.f / 22.f);
+								renderOneItem(itemBox, *rez, 4.f / 22.f);
 							}
 							else if (icon.id)
 							{
@@ -994,7 +1000,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 							}
 
 
-						}else if(currentInventoryTab == INVENTORY_TAB_CHEST)
+						}else if(currentInventoryTab == INVENTORY_TAB_CHEST && chestBlock)
 						{
 
 							glui::Frame insideUpperPart(glui::Box().xCenter().yTopPerc(0.1).
@@ -1026,8 +1032,13 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 							inventoryBars3.y += inventoryBars3.w;
 							renderer2d.renderRectangle(inventoryBars3, itemsBarInventory);
 
+							checkInside(PlayerInventory::CHEST_START_INDEX, inventoryBars, 9, true);
+							checkInside(PlayerInventory::CHEST_START_INDEX + 9, inventoryBars2, 9, true);
+							checkInside(PlayerInventory::CHEST_START_INDEX + 18, inventoryBars3, 9, true);
 
-
+							renderItems(PlayerInventory::CHEST_START_INDEX , inventoryBars, 9, true);
+							renderItems(PlayerInventory::CHEST_START_INDEX + 9, inventoryBars2, 9, true);
+							renderItems(PlayerInventory::CHEST_START_INDEX + 18, inventoryBars3, 9, true);
 						}
 
 

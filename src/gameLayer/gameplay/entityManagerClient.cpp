@@ -97,7 +97,7 @@ bool ClientEntityManager::dropItemByClient(
 	, glm::vec3 throwForce, std::uint64_t timer, PlayerInventory &inventory, int count)
 {
 
-	auto from = inventory.getItemFromIndex(inventorySlot);
+	auto from = inventory.getItemFromIndex(inventorySlot, nullptr);
 	if (!from) { return 0; }
 
 	if (!from->type) { return 0; }

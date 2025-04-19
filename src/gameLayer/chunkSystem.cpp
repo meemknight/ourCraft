@@ -1280,7 +1280,7 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot
 	Chunk *chunk = 0;
 	auto b = getBlockSafeAndChunk(pos.x, pos.y, pos.z, chunk);
 	
-	auto item = inventory.getItemFromIndex(inventorySlot);
+	auto item = inventory.getItemFromIndex(inventorySlot, 0);
 
 	if (!item || !item->counter) { return 0; }
 
@@ -1461,7 +1461,9 @@ bool ChunkSystem::breakBlockByClient(glm::ivec3 pos, UndoQueue &undoQueue,
 					undoQueue.addDataToLastBlockEvent(std::move(extraData));
 				}
 			}
-
+			
+			glm::ivec3 posInChunk = glm::ivec3(modBlockToChunk(pos.x), pos.y, modBlockToChunk(pos.z));
+			chunk->removeBlockDataFromThisPos(*b, posInChunk.x, posInChunk.y, posInChunk.z);
 			clientEntityManager.removeBlockEntity({pos.x, pos.y, pos.z}, b->getType());
 			
 			b->setType(BlockTypes::air);

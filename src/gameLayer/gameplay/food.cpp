@@ -11,7 +11,7 @@ Effects getItemEffects(Item &item, PlayerInventory &inventory)
 	for (int i = PlayerInventory::EQUIPEMENT_START_INDEX; i < PlayerInventory::EQUIPEMENT_START_INDEX +
 		PlayerInventory::MAX_EQUIPEMENT_SLOTS; i++)
 	{
-		auto item = inventory.getItemFromIndex(i);
+		auto item = inventory.getItemFromIndex(i, nullptr);
 		if (item->type == fruitPeeler) { fruitEffectsLonger = 1; }
 	}
 
@@ -47,7 +47,7 @@ Effects getItemEffects(Item &item, PlayerInventory &inventory)
 	for (int i = PlayerInventory::EQUIPEMENT_START_INDEX; i < PlayerInventory::EQUIPEMENT_START_INDEX +
 		PlayerInventory::MAX_EQUIPEMENT_SLOTS; i++)
 	{
-		auto item = inventory.getItemFromIndex(i);
+		auto item = inventory.getItemFromIndex(i, nullptr);
 
 		if (item->type == ItemTypes::gumBox)
 		{
@@ -71,7 +71,7 @@ int getItemHealing(Item &item, PlayerInventory &inventory)
 	for (int i = PlayerInventory::EQUIPEMENT_START_INDEX; i < PlayerInventory::EQUIPEMENT_START_INDEX +
 		PlayerInventory::MAX_EQUIPEMENT_SLOTS; i++)
 	{
-		auto item = inventory.getItemFromIndex(i);
+		auto item = inventory.getItemFromIndex(i, nullptr);
 
 		if (item->type == ItemTypes::vitamins)
 		{

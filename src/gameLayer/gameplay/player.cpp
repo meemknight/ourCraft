@@ -104,7 +104,7 @@ float PlayerServer::calculateHealingDelayTime()
 	for (int i = PlayerInventory::EQUIPEMENT_START_INDEX; i < PlayerInventory::EQUIPEMENT_START_INDEX +
 		PlayerInventory::MAX_EQUIPEMENT_SLOTS; i++)
 	{
-		auto item = inventory.getItemFromIndex(i);
+		auto item = inventory.getItemFromIndex(i, 0);
 
 		if (item->type == ItemTypes::bandage)
 		{

@@ -2410,6 +2410,11 @@ void Chunk::removeBlockDataFromThisPos(Block lastBlock,
 		blockData.baseBlocks.erase(fromBlockPosInChunkToHashValue(x, y, z));
 	}
 
+	if (isChest(type))
+	{
+		blockData.chestBlocks.erase(fromBlockPosInChunkToHashValue(x, y, z));
+	}
+		
 
 }
 
