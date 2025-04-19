@@ -532,7 +532,14 @@ void WorldSaver::loadBlockData(SavedChunk &c)
 	std::vector<unsigned char> data;
 	sfs::readEntireFile(data, fileName.c_str());
 	
-	c.blockData.loadBlockData(data, pos.x, pos.y);
+	if (data.size())
+	{
+		c.blockData.loadBlockData(data, pos.x, pos.y);
+	}
+	else
+	{
+		c.blockData = {};
+	}
 
 }
 

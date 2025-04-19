@@ -2377,6 +2377,16 @@ bool ServerChunkStorer::removeEntity(WorldSaver &worldSaver, std::uint64_t eid)
 	return 0;
 }
 
+void ServerChunkStorer::removeBlockDataFromThisPos(BlockType lastBlock, glm::ivec3 blockPos)
+{
+	auto c= getChunkOrGetNull(modBlockToChunk(blockPos.x), modBlockToChunk(blockPos.z));
+
+	if (c)
+	{
+		c->removeBlockWithData(blockPos, lastBlock);
+	}
+}
+
 template<class T>
 bool genericHitEntityByPlayer(T &container, std::uint64_t eid, glm::vec3 dir,
 	glm::dvec3 playerPosition, Item &weapon, std::uint64_t &wasKilled, std::minstd_rand &rng
@@ -2556,6 +2566,11 @@ void SavedChunk::removeBlockWithData(glm::ivec3 pos,
 			pos.y, pos.z));
 	}
 
+	if (isChest(blockType))
+	{
+		blockData.chestBlocks.erase(fromBlockPosInChunkToHashValue(pos.x,
+			pos.y, pos.z));
+	}
 
 
 }

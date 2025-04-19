@@ -118,8 +118,11 @@ void BlocksWithDataHolder::formatBlockData
 	(std::vector<unsigned char> &dataToAppend, int chunkXChunkSpace, int chunkZChunkSpace)
 {
 
-	
 	size_t extraSize = baseBlocks.size() * (sizeof(BaseBlock) + sizeof(BlockDataHeader));
+
+	extraSize += chestBlocks.size() * sizeof(Item) * CHEST_CAPACITY; //estimate
+
+
 	glm::ivec3 chunkBlockPos = glm::ivec3(chunkXChunkSpace * CHUNK_SIZE, 0, chunkZChunkSpace * CHUNK_SIZE);
 
 	if (extraSize)
@@ -145,7 +148,8 @@ void BlocksWithDataHolder::formatBlockData
 void BlocksWithDataHolder::loadBlockData(std::vector<unsigned char> &data,
 	int chunkXChunkSpace, int chunkZChunkSpace)
 {
-	baseBlocks = {};
+
+	*this = {};
 
 	int pointer = 0;
 

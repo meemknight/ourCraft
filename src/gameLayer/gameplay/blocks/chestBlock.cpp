@@ -7,14 +7,14 @@ size_t ChestBlock::formatIntoData(std::vector<unsigned char> &appendTo)
 {
 
 	appendTo.reserve(appendTo.size() + CHEST_CAPACITY * sizeof(Item)); //rough estimate
+	size_t size = 0;
 
 	for (int i = 0; i < CHEST_CAPACITY; i++)
 	{
-		items[i].formatIntoData(appendTo);
+		size += items[i].formatIntoData(appendTo);
 	}
 
-
-	return size_t();
+	return size;
 }
 
 bool ChestBlock::readFromBuffer(unsigned char *data, size_t size, size_t &outReadSize)

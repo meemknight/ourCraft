@@ -2434,6 +2434,15 @@ std::vector<unsigned char> Chunk::getExtraDataForThisPosAndRemoveIt(Block lastBl
 			blockData.baseBlocks.erase(found);
 		}
 
+	}if (isChest(type))
+	{
+		auto found = blockData.chestBlocks.find(fromBlockPosInChunkToHashValue(x, y, z));
+
+		if (found != blockData.chestBlocks.end())
+		{
+			found->second.formatIntoData(rez);
+			blockData.chestBlocks.erase(found);
+		}
 	}
 
 	return rez;

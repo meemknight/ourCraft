@@ -1018,6 +1018,10 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 								24, {0.45,0.3,0.11,0.6}, {}, 0.f, buttonTexture, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
 
 
+							Item chest;
+							chest.type = interactingBlock;
+							renderSmallTextOnTopOfCell(border, chest.getItemName().c_str());
+
 							//upper part
 							auto inventoryBars = glui::Box().xCenter().yTopPerc(0).xDimensionPercentage(1.f).
 								yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();

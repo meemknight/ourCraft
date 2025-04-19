@@ -470,8 +470,33 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 						}
 
+					}
+					else if (isChest(e.originalBlock.getType()))
+					{
+
+						ChestBlock block;
+						size_t _ = 0;
+						if (block.readFromBuffer(e.blockData.data(), e.blockData.size(), _))
+						{
+							auto *c = gameData.chunkSystem.getChunkSafeFromBlockPos(e.blockPos.x, e.blockPos.z);
+
+							if (c)
+							{
+								auto blockData = c->blockData.getChestBlock(modBlockToChunk(e.blockPos.x), e.blockPos.y,
+									modBlockToChunk(e.blockPos.z));
+
+								if (blockData)
+								{
+									*blockData = block;
+								}
+
+							}
+						}
+
 
 					}
+
+
 
 
 				}
@@ -2881,8 +2906,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 								//swap
 								swapItems(player.inventory, currentChestBlock, cursorSelected, PlayerInventory::CURSOR_INDEX);
 							}
-
-							std::cout << currentChestBlock << "\n";
 
 						}
 

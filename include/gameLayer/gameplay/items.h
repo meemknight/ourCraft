@@ -215,7 +215,7 @@ struct Item
 	bool isAmmo();
 
 	//this is used for pakcet sending and saving
-	void formatIntoData(std::vector<unsigned char> &data);
+	std::size_t formatIntoData(std::vector<unsigned char> &data);
 
 	//returns how much has been read or -1 if fail
 	int readFromData(void *data, size_t size);

@@ -669,6 +669,8 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 									legal = 0;
 								}
 
+								legal = 0;
+
 								{
 									auto f = settings.perClientSettings.find(i.cid);
 									if (f != settings.perClientSettings.end())
@@ -834,6 +836,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 
 										}
 
+										chunkCache.removeBlockDataFromThisPos(lastBlock, i.t.pos);
 
 									}
 								}
@@ -996,8 +999,8 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 							SavedChunk *currentChunkForChestBlock = 0;
 							if (client->playerData.interactingWithBlock == InteractionTypes::chestInteraction)
 							{
-								std::cout << "Tried to get chest!\n";
 								chestBlock = chunkCache.getChestBlock(client->playerData.currentBlockInteractWithPosition, currentChunkForChestBlock);
+								std::cout << "Tried to get chest1! " << chestBlock << "\n";
 							}
 
 
@@ -1031,6 +1034,14 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 											from->counter -= i.t.blockCount;
 
 											if (!from->counter) { *from = {}; }
+											
+											if (currentChunkForChestBlock &&
+												(i.t.from >= PlayerInventory::CHEST_START_INDEX || i.t.to >= PlayerInventory::CHEST_START_INDEX)
+												)
+											{
+												currentChunkForChestBlock->otherData.dirtyBlockData = true;
+												std::cout << "Marked data dirty1!\n";
+											}
 										}
 										else if (areItemsTheSame(*to, *from))
 										{
@@ -1054,6 +1065,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 														)
 													{
 														currentChunkForChestBlock->otherData.dirtyBlockData = true;
+														std::cout << "Marked data dirty1!\n";
 													}
 												}
 												else
@@ -1152,8 +1164,9 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 							SavedChunk *currentChunkForChestBlock = 0;
 							if (client->playerData.interactingWithBlock == InteractionTypes::chestInteraction)
 							{
-								std::cout << "Tried to get chest!\n";
 								chestBlock = chunkCache.getChestBlock(client->playerData.currentBlockInteractWithPosition, currentChunkForChestBlock);
+								std::cout << "Tried to get chest2! " << chestBlock << "\n";
+
 							}
 
 							if (client->playerData.killed)
@@ -1177,6 +1190,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 										)
 									{
 										currentChunkForChestBlock->otherData.dirtyBlockData = true;
+										std::cout << "Marked data dirty2!\n";
 									}
 								}
 								else

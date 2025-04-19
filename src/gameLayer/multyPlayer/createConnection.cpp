@@ -277,70 +277,98 @@ void recieveDataClient(ENetEvent &event,
 				//check if corupted data
 				if(blockHeader.pos.y < 0 || blockHeader.pos.y >= CHUNK_HEIGHT) { break; } //todo request hard reset here
 
-				if (blockHeader.blockType == BlockTypes::structureBase)
+
+				Chunk *chunk = 0;
+				auto b = chunkSystem.getBlockSafeAndChunk(blockHeader.pos.x, blockHeader.pos.y, blockHeader.pos.z, chunk);
+				if (!b) { break; }
+
+				if (firstTime)
+				{
+					firstTime = 0;
+					chunk->blockData = {}; //clear the block data for this chunk
+				}
+
+				glm::ivec3 posInChunk = blockHeader.pos;
+				posInChunk.x = modBlockToChunk(posInChunk.x);
+				posInChunk.z = modBlockToChunk(posInChunk.z);
+
+				auto blockHash = fromBlockPosInChunkToHashValue(posInChunk.x, posInChunk.y, posInChunk.z);
+
+
+
+				if(blockHeader.blockType == BlockTypes::structureBase && b->getType() == BlockTypes::structureBase )
 				{
 
-					Chunk *chunk = 0;
-					auto b = chunkSystem.getBlockSafeAndChunk(blockHeader.pos.x, blockHeader.pos.y, blockHeader.pos.z, chunk);
-
-					if (!b) { break; }
-
-					if (b->getType() != BlockTypes::structureBase)
+					if (blockHeader.dataSize)
 					{
-						//todo request hard reset
-					}
-					else
-					{
-						if (firstTime)
+						BaseBlock baseBlock;
+						size_t outSize = 0;
+						if (!baseBlock.readFromBuffer((unsigned char*)data + pointer, blockHeader.dataSize, outSize))
 						{
-							firstTime = 0;
-							chunk->blockData = {}; //clear the block data for this chunk
-						}
-
-						glm::ivec3 posInChunk = blockHeader.pos;
-						posInChunk.x = modBlockToChunk(posInChunk.x);
-						posInChunk.z = modBlockToChunk(posInChunk.z);
-
-						auto blockHash = fromBlockPosInChunkToHashValue(posInChunk.x, posInChunk.y, posInChunk.z);
-
-
-						if (blockHeader.dataSize)
-						{
-							BaseBlock baseBlock;
-							size_t outSize = 0;
-							if (!baseBlock.readFromBuffer((unsigned char*)data + pointer, blockHeader.dataSize, outSize))
-							{
-								//hard reset
-							}
-							else
-							{
-								pointer += outSize;
-
-								if (baseBlock.isDataValid())
-								{
-									chunk->blockData.baseBlocks[blockHash] = baseBlock;
-								}
-								else
-								{
-									//todo hardReset
-								}
-
-							}
-
+							//hard reset
 						}
 						else
 						{
-							chunk->blockData.baseBlocks[blockHash] = {};
+							pointer += outSize;
+
+							if (baseBlock.isDataValid())
+							{
+								chunk->blockData.baseBlocks[blockHash] = baseBlock;
+							}
+							else
+							{
+								//todo hardReset
+							}
+
 						}
+
+					}
+					else
+					{
+						chunk->blockData.baseBlocks[blockHash] = {};
+					}
+				}
+				else if (isChest(blockHeader.blockType) && isChest(b->getType()))
+				{
+					
+					if (blockHeader.dataSize)
+					{
+						ChestBlock chestBlock;
+						size_t outSize = 0;
+						if (!chestBlock.readFromBuffer((unsigned char *)data + pointer, blockHeader.dataSize, outSize))
+						{
+							//hard reset
+						}
+						else
+						{
+							pointer += outSize;
+
+							if (chestBlock.isDataValid())
+							{
+								chunk->blockData.chestBlocks[blockHash] = chestBlock;
+							}
+							else
+							{
+								//todo hardReset
+							}
+
+						}
+
+					}
+					else
+					{
+						chunk->blockData.chestBlocks[blockHash] = {};
 					}
 
-					
 
 				}
 				else
 				{
-					{ break; } //todo request hard reset here
+					std::cout << "ERROR probably forgot to add block stuff here!";
+					//todo request hard reset
 				}
+
+					
 
 				
 			}

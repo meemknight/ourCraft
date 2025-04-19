@@ -74,14 +74,17 @@ bool Item::isAmmo()
 }
 
 
-void Item::formatIntoData(std::vector<unsigned char> &data)
+std::size_t Item::formatIntoData(std::vector<unsigned char> &data)
 {
 	if (type == 0 || counter == 0)
 	{
 		writeData(data, (unsigned short)(0));
+		return sizeof(unsigned short);
 	}
 	else
 	{
+		size_t s = data.size();
+
 		writeData(data, type);
 		writeData(data, counter);
 		unsigned short metaDataSize = 0;
@@ -91,6 +94,8 @@ void Item::formatIntoData(std::vector<unsigned char> &data)
 		writeData(data, metaDataSize);
 		
 		writeData(data, metaData.data(), sizeof(unsigned char) * metaData.size());
+
+		return data.size() - s;
 
 		//if (hasDurability())
 		//{

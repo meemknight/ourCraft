@@ -963,6 +963,7 @@ void updateLoadedChunks(
 						static_assert(sizeof(Packet_RecieveChunk) == sizeof(ChunkData));
 
 						{
+							//TODO merge this 2 packets into one!
 
 							client.chunksPacketPendingConfirmation.insert(sd.chunkPacketId);
 
