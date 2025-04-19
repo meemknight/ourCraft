@@ -324,6 +324,8 @@ bool isAnySemiHardBlock(BlockType type);
 //used for breaking
 bool isAnyStone(BlockType type);
 
+bool isChest(BlockType type);
+
 //used for breaking
 bool isDungeonBrick(BlockType type);
 
@@ -543,6 +545,11 @@ struct Block
 	bool isWallMountedOrStangingBlock()
 	{
 		return::isWallMountedOrStangingBlock(getType());
+	}
+
+	bool isChest()
+	{
+		return ::isChest(getType());
 	}
 
 	bool hasSecondCollider()
@@ -799,6 +806,7 @@ namespace InteractionTypes
 		anvil,
 		goblinStitchingPost, //add other work stations here v...
 		structureBaseBlock,
+		chestInteraction,
 	};
 
 };

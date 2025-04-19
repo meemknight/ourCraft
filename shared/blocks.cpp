@@ -434,7 +434,6 @@ bool isVolcanicInActiveSound(BlockType type)
 }
 
 
-
 bool isAnyWoddenLOG(BlockType type)
 {
 	return
@@ -617,6 +616,17 @@ bool isAnyGlass(BlockType type)
 		 || type == dungeonGlass;
 }
 
+bool isChest(BlockType type)
+{
+	return
+		type == woddenChest ||
+		type == goblinChest ||
+		type == copperChest ||
+		type == ironChest ||
+		type == silverChest ||
+		type == goldChest;
+}
+
 bool isTriviallyBreakable(BlockType type)
 {
 	return type == torch || type == torchWood || type == lamp || type == goblinTorch;
@@ -659,6 +669,10 @@ unsigned char isInteractable(BlockType type)
 	}else if (type == BlockTypes::structureBase)
 	{
 		return InteractionTypes::structureBaseBlock;
+	}
+	else if (isChest(type))
+	{
+		return InteractionTypes::chestInteraction;
 	}
 
 	return InteractionTypes::none;

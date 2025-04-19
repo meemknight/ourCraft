@@ -36,6 +36,7 @@ struct BlocksWithDataHolder
 struct InteractionData
 {
 	unsigned char blockInteractionType = 0;
+	unsigned short block = 0;
 	glm::ivec3 blockInteractionPosition = {0, -1, 0};
 	BaseBlock baseBlockHolder = {};
 };

@@ -18,6 +18,14 @@ struct UndoQueue;
 struct LightSystem;
 struct ClientEntityManager;
 
+
+const int INVENTORY_TAB_DEFAULT = 0;
+const int INVENTORY_TAB_CRAFTING = 1;
+const int INVENTORY_TAB_CHEST = 2;
+const int INVENTORY_TAB_BLOCKS = 3;
+const int INVENTORY_TAB_ITEMS = 4;
+
+
 struct UiENgine
 {
 
@@ -86,10 +94,10 @@ struct UiENgine
 	void renderGameUI(float deltaTime, 
 		int w, int h, int itemSelected, PlayerInventory &inventory,
 		BlocksLoader &blocksLoader, bool insideInventory, int &cursorItemIndex,
-		bool insideCraftingTable, int &currentInventoryTab, bool isCreative,
+		int &currentInventoryTab, bool isCreative,
 		unsigned short &selectedItem, Life &playerHealth, ProgramData &programData,
 		LocalPlayer &player, int &craftingSlider, int &outCraftingRecepieGlobalIndex,
-		bool showUI, int craftingStation
+		bool showUI, std::uint16_t interactingBlock
 		);
 
 	bool renderBaseBlockUI(float deltaTime,

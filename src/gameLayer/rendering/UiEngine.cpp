@@ -316,20 +316,26 @@ void UiENgine::clearOnlyTextures()
 
 }
 
-const int INVENTORY_TAB_DEFAULT = 0;
-const int INVENTORY_TAB_CRAFTING = 1;
-const int INVENTORY_TAB_BLOCKS = 2;
-const int INVENTORY_TAB_ITEMS = 3;
 
 //render ui renderui
 void UiENgine::renderGameUI(float deltaTime, int w, int h
 	, int itemSelected, PlayerInventory &inventory, BlocksLoader &blocksLoader,
 	bool insideInventory, int &cursorItemIndex,
-	bool insideCraftingTable, int &currentInventoryTab, bool isCreative,
+	int &currentInventoryTab, bool isCreative,
 	unsigned short &selectedItem, Life &playerHealth, ProgramData &programData, LocalPlayer &player
-	, int &craftingSlider, int &outCraftingRecepieGlobalIndex, bool showUI, int craftingStation
+	, int &craftingSlider, int &outCraftingRecepieGlobalIndex, bool showUI,
+	BlockType interactingBlock
 )
 {
+
+	int interactionType = 0;
+	bool insideCraftingTable = 0;
+	int craftingStation = 0;
+	{
+		interactionType = isInteractable(interactingBlock);
+		craftingStation = isCraftingStation(interactingBlock);
+		insideCraftingTable = (bool)craftingStation;
+	}
 
 	outCraftingRecepieGlobalIndex = -1;
 	if (!isCreative) 
@@ -339,6 +345,11 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 			currentInventoryTab = INVENTORY_TAB_DEFAULT;
 		}
 
+	}
+
+	if (interactionType != InteractionTypes::chestInteraction && currentInventoryTab == INVENTORY_TAB_CHEST)
+	{
+		currentInventoryTab = INVENTORY_TAB_DEFAULT;
 	}
 
 	cursorItemIndex = -1;
@@ -665,7 +676,8 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 					};
 
 					if (currentInventoryTab == INVENTORY_TAB_DEFAULT ||
-						currentInventoryTab == INVENTORY_TAB_CRAFTING
+						currentInventoryTab == INVENTORY_TAB_CRAFTING ||
+						currentInventoryTab == INVENTORY_TAB_CHEST
 						)
 					{
 
@@ -751,7 +763,6 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						{
 							auto allItems = getAllPossibleRecepies(inventory, craftingStation);
 
-
 							glui::Frame insideUpperPart(glui::Box().xCenter().yTopPerc(0.1).
 								xDimensionPercentage(0.90).yDimensionPercentage(0.45)());
 
@@ -759,7 +770,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 							//renderer2d.renderRectangle(glui::Box().xLeft().yTop().xDimensionPercentage(1.f).
 							//yDimensionPercentage(1.f)(), {1,0,0,0.5});
 
-							auto craftingItems = glui::Box().xCenter().yTopPerc(0).xDimensionPercentage(1.f).
+							auto craftingItems = glui::Box().xLeft().yTopPerc(0).xDimensionPercentage(1.f).
 								yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
 							//renderer2d.renderRectangle(craftingItems, itemsBarInventory);
 
@@ -769,22 +780,24 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 
 							auto border = craftingItems;
 							border.w *= 2;
-							border.z += craftingItems.w * 2;
+							//border.z += craftingItems.w * 2;
 							border = shrinkRectanglePercentage(border, -0.02, -0.2);
 							renderer2d.render9Patch(border,
 								24, Colors_White, {}, 0.f, buttonTexture, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
+
+							constexpr int itemsRowCount = 9;
 
 							if (allItems.size())
 							{
 								int currentPos = craftingSlider;
 								craftingSlider -= platform::getScroll();
 								int minVal = 0;
-								if (allItems.size() <= 9)
+								if (allItems.size() <= itemsRowCount-2)
 								{
 									minVal = -(allItems.size() - 2);
 								}
 
-								craftingSlider = glm::clamp(craftingSlider, -1, std::max((int)allItems.size() + 9 - 11, minVal));
+								craftingSlider = glm::clamp(craftingSlider, -1, std::max((int)allItems.size() + 2, minVal));
 
 								if (currentPos != craftingSlider && platform::getScroll())
 								{
@@ -804,11 +817,11 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 									if (allItems.size() > i)
 									{
 										glm::ivec4 itemBox;
-										if (i >= (start + 11))
+										if (i >= (start + itemsRowCount))
 										{
 											itemBox = craftingItems;
 											itemBox.z = itemBox.w;
-											itemBox.x = craftingItems.x + itemBox.z * (i - start - 11);
+											itemBox.x = craftingItems.x + itemBox.z * (i - start - itemsRowCount);
 											itemBox.y += itemBox.z * 1.1;
 										}
 										else
@@ -981,6 +994,39 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 							}
 
 
+						}else if(currentInventoryTab == INVENTORY_TAB_CHEST)
+						{
+
+							glui::Frame insideUpperPart(glui::Box().xCenter().yTopPerc(0.1).
+								xDimensionPercentage(0.90).yDimensionPercentage(0.45)());
+
+							auto chestInterior = glui::Box().xLeft().yTopPerc(0).xDimensionPercentage(1.f).
+								yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
+
+							//chestInterior.y += chestInterior.w * 0.8;
+
+							auto border = chestInterior;
+							border.w *= 3;
+							border = shrinkRectanglePercentage(border, -0.02, -0.2);
+							renderer2d.render9Patch(border,
+								24, {0.45,0.3,0.11,0.6}, {}, 0.f, buttonTexture, GL2D_DefaultTextureCoords, {0.2,0.8,0.8,0.2});
+
+
+							//upper part
+							auto inventoryBars = glui::Box().xCenter().yTopPerc(0).xDimensionPercentage(1.f).
+								yAspectRatio(itemsBarInventorySize.y / itemsBarInventorySize.x)();
+							//inventoryBars.y += inventoryBars.w;
+							renderer2d.renderRectangle(inventoryBars, itemsBarInventory);
+
+							auto inventoryBars2 = inventoryBars;
+							inventoryBars2.y += inventoryBars2.w;
+							renderer2d.renderRectangle(inventoryBars2, itemsBarInventory);
+
+							auto inventoryBars3 = inventoryBars2;
+							inventoryBars3.y += inventoryBars3.w;
+							renderer2d.renderRectangle(inventoryBars3, itemsBarInventory);
+
+
 
 						}
 
@@ -990,24 +1036,26 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						//	yDimensionPercentage(1.f)(), {1,0,0,0.5});
 
 						//player stuff
-						if (currentInventoryTab == INVENTORY_TAB_DEFAULT)
+						//if (currentInventoryTab == INVENTORY_TAB_DEFAULT)
 						{
 							glui::Frame insideUpperPart(glui::Box().xCenter().yTopPerc(0.05).
 								xDimensionPercentage(0.9).yDimensionPercentage(0.45)());
 
-							auto armourBox = glui::Box().xLeft().yTopPerc(0.1).xDimensionPercentage(1.f / 9.f).
-								yAspectRatio(1.f)();
+							//auto armourBox = glui::Box().xLeft().yTopPerc(0.1).xDimensionPercentage(1.f / 9.f).
+							//	yAspectRatio(1.f)();
+							auto armourBox = coinsBox[0];
+							armourBox.y -= (oneItemSize + oneItemSize * (2.f / 16.f))*5.6;
 							auto start = armourBox;
-							glm::vec4 playerBox = armourBox;
-							playerBox.w *= 3;
-							playerBox.z = (playerBox.w / playerCellSize.y) * playerCellSize.x;
+							//glm::vec4 playerBox = armourBox;
+							//playerBox.w *= 3;
+							//playerBox.z = (playerBox.w / playerCellSize.y) * playerCellSize.x;
 
 							//render player
-							renderer2d.renderRectangle(playerBox, playerCell);
+							//renderer2d.renderRectangle(playerBox, playerCell);
 
 							//render armour stuff to the right
 							armourBox = start;
-							armourBox.x = playerBox.x + playerBox.z;
+							//armourBox.x = playerBox.x + playerBox.z;
 							renderer2d.renderRectangle(armourBox, oneInventorySlot);
 							checkInsideOneElement(armourBox, inventory.ARMOUR_START_INDEX);
 							renderOneItem(armourBox, inventory.headArmour, 0, 1, helmetIconTexture);
@@ -1142,28 +1190,42 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 						int slotsCounter = 2;
 						if (isCreative) { slotsCounter = 4; }
 
-						GLuint textures[4] = {
+						if (interactionType == InteractionTypes::chestInteraction)
+						{
+							slotsCounter++;
+						}
+
+						GLuint textures[5] = {
 							blocksLoader.texturesIdsItems[copperAxe - ItemsStartPoint],
 							blocksLoader.texturesIds[getGpuIdIndexForBlock(workBench, 0)], //todo crafting ui button
+							blocksLoader.blockUiTextures[interactingBlock].id,
 							blocksLoader.texturesIds[getGpuIdIndexForBlock(grassBlock, 0)],
 							blocksLoader.texturesIdsItems[stick - ItemsStartPoint],
 						};
 
+						int skipped = 0;
 						for (int i = 0; i < slotsCounter; i++)
 						{
+
+							if (interactionType != InteractionTypes::chestInteraction && i == 
+								INVENTORY_TAB_CHEST)
+							{
+								skipped++;
+							}
+
 							glm::vec4 selected = {};
-							if (i == currentInventoryTab)
+							if ((i + skipped) == currentInventoryTab)
 							{
 								selected = glm::vec4(0, 0, 0, 12);
 							}
 
 							glm::vec4 color = {0.8,0.8,0.8,1};
 
-							if (i != currentInventoryTab && glui::aabb(tabBox, platform::getRelMousePosition()))
+							if ((i + skipped) != currentInventoryTab && glui::aabb(tabBox, platform::getRelMousePosition()))
 							{
 								color = {1.2,1.2,1.2,1};
 							}
-							else if (i == currentInventoryTab)
+							else if ((i + skipped) == currentInventoryTab)
 							{
 								color = {1,1,1,1};
 							}
@@ -1178,14 +1240,14 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 								platform::isLMousePressed()
 								)
 							{
-								currentInventoryTab = i;
+								currentInventoryTab = (i + skipped);
 							}
 
 							{
 								auto newBox = tabBox;
 
-								gl2d::Texture t; t.id = textures[i];
-								if (i == currentInventoryTab)
+								gl2d::Texture t; t.id = textures[(i + skipped)];
+								if ((i + skipped) == currentInventoryTab)
 								{
 									newBox.w *= 2;
 									newBox = shrinkRectanglePercentage(newBox, 0.3);

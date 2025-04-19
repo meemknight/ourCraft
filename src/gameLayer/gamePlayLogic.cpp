@@ -86,7 +86,6 @@ struct GameData
 
 	bool insideInventoryMenu = 0;
 	int currentInventoryTab = 0;
-	int currentCraftingStation = 0; //TODO INSTEAD OF DOING THIS, JUST TAKE THE CURRENT INTERACTABLE BLOCK
 	bool justDamaged = 0;
 	float hitLensDirt = 0;
 
@@ -320,7 +319,6 @@ void exitInventoryMenu()
 	gameData.interaction = {};
 
 	gameData.insideInventoryMenu = false;
-	gameData.currentCraftingStation = 0;
 
 }
 
@@ -384,7 +382,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			//exit block interaction
 			gameData.interaction = {};
 			gameData.insideInventoryMenu = 0;
-			gameData.currentCraftingStation = 0;
 		}
 
 		if (validateEvent)
@@ -603,7 +600,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	{
 		gameData.insideInventoryMenu = false;
 		gameData.interaction = {};
-		gameData.currentCraftingStation = false;
 	}
 
 	if (platform::isKeyReleased(platform::Button::F9))
@@ -627,7 +623,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			{
 				gameData.insideInventoryMenu = true;
 				gameData.interaction = {};
-				gameData.currentCraftingStation = false;
 			}
 		}
 
@@ -1236,6 +1231,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 								gameData.interaction = {};
 								gameData.currentBlockInteractionRevisionNumber++;
 								gameData.interaction.blockInteractionType = actionType;
+								gameData.interaction.block = b->getType();
 								gameData.interaction.blockInteractionPosition = rayCastPos;
 
 								if (actionType == InteractionTypes::structureBaseBlock)
@@ -1247,23 +1243,25 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 										gameData.interaction.baseBlockHolder = *baseBlock;
 									}
 								}
-								
-
 
 								sendBlockInteractionMessage(player.entityId, rayCastPos,
 									b->getType(), gameData.currentBlockInteractionRevisionNumber);
 								
 								gameData.insideInventoryMenu = false;
 								gameData.currentInventoryTab = 0;
-								gameData.currentCraftingStation = false;
 
 								if (actionType >= InteractionTypes::craftingTable &&
 									actionType < InteractionTypes::structureBaseBlock
 									)
 								{
 									gameData.insideInventoryMenu = true;
-									gameData.currentInventoryTab = 1;
-									gameData.currentCraftingStation = actionType;
+									gameData.currentInventoryTab = INVENTORY_TAB_CRAFTING;
+								}
+
+								if (actionType == InteractionTypes::chestInteraction)
+								{
+									gameData.insideInventoryMenu = true;
+									gameData.currentInventoryTab = INVENTORY_TAB_CHEST;
 								}
 
 								//reset crafting table
@@ -2537,11 +2535,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		{
 			programData.ui.renderGameUI(deltaTime, w, h, gameData.currentItemSelected,
 				player.inventory, programData.blocksLoader, gameData.insideInventoryMenu,
-				cursorSelected, 
-				(gameData.interaction.blockInteractionType == InteractionTypes::craftingTable),
-				gameData.currentInventoryTab, player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE,
+				cursorSelected,  gameData.currentInventoryTab, 
+				player.otherPlayerSettings.gameMode == OtherPlayerSettings::CREATIVE,
 				selectedCreativeItem, player.life, programData, player, 
-				gameData.craftingSlider, craftedItemIndex, gameData.showUI, gameData.currentCraftingStation
+				gameData.craftingSlider, craftedItemIndex, gameData.showUI, gameData.interaction.block
 			);
 		}
 
