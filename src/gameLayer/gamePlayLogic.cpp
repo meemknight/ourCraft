@@ -2475,7 +2475,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 			c
 		);
 
-		if (!b)
+		if (!b || !c)
 		{
 			gameData.interaction = {};
 			gameData.insideInventoryMenu = false;
@@ -2493,7 +2493,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					gameData.interaction.blockInteractionPosition.y,
 				modBlockToChunk(gameData.interaction.blockInteractionPosition.z)};
 				currentChestBlock = c->blockData.getOrCreateChestBlock(pos.x, pos.y, pos.z);
-
 			}
 		}
 	}
@@ -2853,7 +2852,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		}
 		else
 		{
-			static std::bitset<64> rightClickedThisClick = 0;
+			static std::bitset<128> rightClickedThisClick = 0;
 
 			if (platform::isLMousePressed())
 			{

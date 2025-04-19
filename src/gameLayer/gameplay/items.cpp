@@ -544,7 +544,7 @@ Item *PlayerInventory::getItemFromIndex(int index, ChestBlock *chestBlock)
 
 	if (index >= CHEST_START_INDEX && (index < CHEST_START_INDEX + CHEST_CAPACITY) && chestBlock)
 	{
-		return &chestBlock->items[index - CHEST_START_INDEX];
+		return &(chestBlock->items[index - CHEST_START_INDEX]);
 	}
 
 	return nullptr;
