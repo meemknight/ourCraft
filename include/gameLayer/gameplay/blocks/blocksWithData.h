@@ -40,6 +40,9 @@ struct BlocksWithDataHolder
 };
 
 
+void appendChestBlock(std::vector<unsigned char> &dataToAppend,
+	glm::ivec3 position, ChestBlock &chestBlock);
+	
 struct InteractionData
 {
 	unsigned char blockInteractionType = 0;

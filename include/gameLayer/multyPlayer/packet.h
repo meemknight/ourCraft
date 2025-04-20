@@ -56,6 +56,7 @@ enum : std::uint32_t
 	headerClientDroppedItem,
 	headerRecieveChunk,
 	headerRecieveEntireBlockDataForChunk,
+	headerRecieveUpdatesBlockDataForChunk,
 	headerValidateEvent,
 	headerValidateEventAndChangeID,
 	headerInValidateEvent,

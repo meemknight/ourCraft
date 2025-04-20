@@ -259,6 +259,7 @@ void recieveDataClient(ENetEvent &event,
 		}
 
 		case headerRecieveEntireBlockDataForChunk:
+		case headerRecieveUpdatesBlockDataForChunk:
 		{
 			//todo request hard reset
 			if (size == 0) { break; }
@@ -285,7 +286,11 @@ void recieveDataClient(ENetEvent &event,
 				if (firstTime)
 				{
 					firstTime = 0;
-					chunk->blockData = {}; //clear the block data for this chunk
+
+					if (p.header == headerRecieveEntireBlockDataForChunk)
+					{
+						chunk->blockData = {}; //clear the block data for this chunk
+					}
 				}
 
 				glm::ivec3 posInChunk = blockHeader.pos;
@@ -434,6 +439,7 @@ void recieveDataClient(ENetEvent &event,
 			}
 			else
 			{
+				permaAssertCommentDevelopement(0, "Not implemented chest in headerChangeBlockData");
 				//todo request hard reset
 			}
 

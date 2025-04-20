@@ -544,6 +544,40 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 #pragma endregion
 
 
+	auto updatePlayersWithAChest = [&](Client *clientToIgnore, ChestBlock &chestBlock, glm::ivec3 pos)
+	{
+		std::vector<unsigned char> blockData;
+		appendChestBlock(blockData, pos, chestBlock);
+
+		Packet packet;
+		packet.header = headerRecieveUpdatesBlockDataForChunk;
+		packet.cid = 0;
+		
+		permaAssertCommentDevelopement(blockData.size(), "updatePlayersWithAChest: empty size");
+
+		for(auto &c : clients)
+		{
+			if (c.second == clientToIgnore) { continue; }
+
+			Packet packet;
+			packet.header = headerRecieveEntireBlockDataForChunk;
+
+			if (blockData.size() > 100)
+			{
+				sendPacketAndCompress(c.second->peer, packet, (char *)blockData.data(),
+					blockData.size(), true, channelChunksAndBlocks);
+			}
+			else
+			{
+				sendPacket(c.second->peer, packet, (char *)blockData.data(),
+					blockData.size(), true, channelChunksAndBlocks);
+			};
+		}
+
+	};
+
+
+
 
 	if (profiler) { profiler->startSubProfile("Tasks"); }
 #pragma region tasks
@@ -642,6 +676,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 						{
 							//this chunk isn't in this region so undo
 							computeRevisionStuff(*client, false, i.t.eventId);
+							if (i.t.taskType == Task::placeBlock) { sendPlayerInventoryAndIncrementRevision(*client); }
 						}
 						else
 						{
@@ -662,14 +697,13 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 								}
 
 								bool legal = 1;
-								bool rensendInventory = 0;
 
 								if (client->playerData.killed)
 								{
 									legal = 0;
 								}
 
-								legal = 0;
+								//legal = 0;
 
 								{
 									auto f = settings.perClientSettings.find(i.cid);
@@ -701,7 +735,6 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 										item = client->playerData.inventory.getItemFromIndex(i.t.inventroySlot, 0);
 
 
-
 										if (item && item->isBlock() &&
 											actualPlacedBLock.getType() == item->type
 											&& item->counter
@@ -712,7 +745,6 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 										else
 										{
 											legal = false;
-											rensendInventory = true;
 										}
 									}
 
@@ -841,7 +873,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 									}
 								}
 
-								if (rensendInventory)
+								if (i.t.taskType == Task::placeBlock && !legal) { sendPlayerInventoryAndIncrementRevision(*client); }
 								{
 									sendPlayerInventoryAndIncrementRevision(*client);
 								}
@@ -1000,7 +1032,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 							if (client->playerData.interactingWithBlock == InteractionTypes::chestInteraction)
 							{
 								chestBlock = chunkCache.getChestBlock(client->playerData.currentBlockInteractWithPosition, currentChunkForChestBlock);
-								std::cout << "Tried to get chest1! " << chestBlock << "\n";
+								//std::cout << "Tried to get chest1! " << chestBlock << "\n";
 							}
 
 
@@ -1039,8 +1071,9 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 												(i.t.from >= PlayerInventory::CHEST_START_INDEX || i.t.to >= PlayerInventory::CHEST_START_INDEX)
 												)
 											{
+												updatePlayersWithAChest(client, *chestBlock, client->playerData.currentBlockInteractWithPosition);
 												currentChunkForChestBlock->otherData.dirtyBlockData = true;
-												std::cout << "Marked data dirty1!\n";
+												//std::cout << "Marked data dirty1!\n";
 											}
 										}
 										else if (areItemsTheSame(*to, *from))
@@ -1064,8 +1097,9 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 														(i.t.from >= PlayerInventory::CHEST_START_INDEX || i.t.to >= PlayerInventory::CHEST_START_INDEX)
 														)
 													{
+														updatePlayersWithAChest(client, *chestBlock, client->playerData.currentBlockInteractWithPosition);
 														currentChunkForChestBlock->otherData.dirtyBlockData = true;
-														std::cout << "Marked data dirty1!\n";
+														//std::cout << "Marked data dirty1!\n";
 													}
 												}
 												else
@@ -1177,7 +1211,6 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 							{
 								Item *from = client->playerData.inventory.getItemFromIndex(i.t.from, chestBlock);
 								Item *to = client->playerData.inventory.getItemFromIndex(i.t.to, chestBlock);
-
 								if (from && to)
 								{
 									Item copy;
@@ -1189,8 +1222,9 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 										(i.t.from >= PlayerInventory::CHEST_START_INDEX || i.t.to >= PlayerInventory::CHEST_START_INDEX)
 										)
 									{
+										updatePlayersWithAChest(client, *chestBlock, client->playerData.currentBlockInteractWithPosition);
 										currentChunkForChestBlock->otherData.dirtyBlockData = true;
-										std::cout << "Marked data dirty2!\n";
+										//std::cout << "Marked data dirty2!\n";
 									}
 								}
 								else
