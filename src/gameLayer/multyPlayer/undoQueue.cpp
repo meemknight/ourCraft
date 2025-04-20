@@ -1,7 +1,8 @@
 #include "multyPlayer/undoQueue.h"
 
 
-void UndoQueue::addPlaceBlockEvent(glm::ivec3 pos, Block old, Block newType)
+void UndoQueue::addPlaceBlockEvent(glm::ivec3 pos, Block old, Block newType, 
+	std::vector<unsigned char> data)
 {
 	UndoQueueEvent e;
 	e.setTimer();
@@ -12,6 +13,7 @@ void UndoQueue::addPlaceBlockEvent(glm::ivec3 pos, Block old, Block newType)
 	e.blockPos = pos;
 	e.originalBlock = old;
 	e.newBlock = newType;
+	e.blockData = std::move(data);
 
 	events.push_back(e);
 }

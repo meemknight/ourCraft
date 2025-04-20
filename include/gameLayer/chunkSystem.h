@@ -11,6 +11,7 @@
 #include <rendering/bigGpuBuffer.h>
 #include <gameplay/blocks/blocksWithData.h>
 #include <multyPlayer/splitUpdatesLogic.h>
+#include <vector>
 
 struct LightSystem;
 
@@ -39,6 +40,8 @@ struct ChunkSystem
 	std::vector<glm::ivec2> chunksToAddLight;
 	
 	glm::ivec2 lastPlayerPos = {};
+
+	Block *getBlockAndData(glm::ivec3 blockPos, std::vector<unsigned char> &data, Chunk *& chunk);
 
 	//[0 -> squareSize)
 	Chunk *getChunksInMatrixSpaceUnsafe(int x, int z);

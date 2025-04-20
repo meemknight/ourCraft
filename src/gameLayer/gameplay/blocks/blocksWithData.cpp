@@ -176,7 +176,7 @@ void BlocksWithDataHolder::loadBlockData(std::vector<unsigned char> &data,
 			break;
 		}
 
-		if (size < data.size() - pointer)
+		if (size > data.size() - pointer)
 		{
 			std::cout << "Error size in loadBlockData!\n";
 			break;
@@ -206,7 +206,7 @@ void BlocksWithDataHolder::loadBlockData(std::vector<unsigned char> &data,
 				b;
 
 
-		}if (header.blockType == BlockTypes::woddenChest)
+		}else if (header.blockType == BlockTypes::woddenChest)
 		{
 			ChestBlock c;
 			size_t _ = 0;

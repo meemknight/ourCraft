@@ -14,6 +14,37 @@
 #include <rendering/renderSettings.h>
 #include <gameplay/entityManagerClient.h>
 
+Block *ChunkSystem::getBlockAndData(glm::ivec3 blockPos, std::vector<unsigned char> &data, Chunk *&chunk)
+{
+	data.clear();
+	Block *b = getBlockSafeAndChunk(blockPos.x, blockPos.y, blockPos.z, chunk);
+	if (!b) { return 0; }
+
+	auto type = b->getType();
+	
+	glm::ivec3 chunkPos = glm::ivec3(modBlockToChunk(blockPos.x), blockPos.y, modBlockToChunk(blockPos.z));
+
+	if (type == BlockTypes::structureBase)
+	{
+		auto foundBlock = chunk->blockData.getBaseBlock(chunkPos.x, chunkPos.y, chunkPos.z);
+		if (foundBlock)
+		{
+			foundBlock->formatIntoData(data);
+		}
+
+	}
+	else if (isChest(type))
+	{
+		auto foundBlock = chunk->blockData.getChestBlock(chunkPos.x, chunkPos.y, chunkPos.z);
+		if (foundBlock)
+		{
+			foundBlock->formatIntoData(data);
+		}
+	}
+	
+	return b;
+}
+
 Chunk *ChunkSystem::getChunksInMatrixSpaceUnsafe(int x, int z)
 {
 	return loadedChunks[x * squareSize + z];
@@ -1278,7 +1309,8 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot
 	ClientEntityManager &clientEntityManager)
 {
 	Chunk *chunk = 0;
-	auto b = getBlockSafeAndChunk(pos.x, pos.y, pos.z, chunk);
+	std::vector<unsigned char> oldBlockData;
+	auto b = getBlockAndData(pos, oldBlockData, chunk);
 	
 	auto item = inventory.getItemFromIndex(inventorySlot, 0);
 
@@ -1324,7 +1356,7 @@ bool ChunkSystem::placeBlockByClient(glm::ivec3 pos, unsigned char inventorySlot
 				p, (char *)&packetData, sizeof(packetData), 1,
 				channelChunksAndBlocks);
 
-			undoQueue.addPlaceBlockEvent(pos, *b, block);
+			undoQueue.addPlaceBlockEvent(pos, *b, block, oldBlockData);
 
 			changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->getType(),
 				block.typeAndFlags, lightSystem);
@@ -1368,7 +1400,8 @@ bool ChunkSystem::placeBlockByClientForce(glm::ivec3 pos, Block block,
 	UndoQueue &undoQue, LightSystem &lightSystem, ClientEntityManager &clientEntityManager)
 {
 	Chunk *chunk = 0;
-	auto b = getBlockSafeAndChunk(pos.x, pos.y, pos.z, chunk);
+	std::vector<unsigned char> oldBlockData;
+	auto b = getBlockAndData(pos, oldBlockData, chunk);
 
 	if (b != nullptr)
 	{
@@ -1386,7 +1419,7 @@ bool ChunkSystem::placeBlockByClientForce(glm::ivec3 pos, Block block,
 			p, (char *)&packetData, sizeof(packetData), 1,
 			channelChunksAndBlocks);
 
-		undoQue.addPlaceBlockEvent(pos, *b, block);
+		undoQue.addPlaceBlockEvent(pos, *b, block, oldBlockData);
 
 
 		//add extra data to undo queue and also that data
@@ -1424,7 +1457,8 @@ bool ChunkSystem::breakBlockByClient(glm::ivec3 pos, UndoQueue &undoQueue,
 	glm::dvec3 playerPos, LightSystem &lightSystem, ClientEntityManager &clientEntityManager)
 {
 	Chunk *chunk = 0;
-	auto b = getBlockSafeAndChunk(pos.x, pos.y, pos.z, chunk);
+	std::vector<unsigned char> oldBlockData;
+	auto b = getBlockAndData(pos, oldBlockData, chunk);
 
 	if (b != nullptr)
 	{
@@ -1447,7 +1481,7 @@ bool ChunkSystem::breakBlockByClient(glm::ivec3 pos, UndoQueue &undoQueue,
 
 			Block airBlock;
 			airBlock.setType(BlockTypes::air);
-			undoQueue.addPlaceBlockEvent(pos, *b, airBlock);
+			undoQueue.addPlaceBlockEvent(pos, *b, airBlock, oldBlockData);
 
 			changeBlockLightStuff(pos, b->getSkyLight(), b->getLight(), b->getType(),
 				BlockTypes::air, lightSystem);
@@ -1561,6 +1595,17 @@ void ChunkSystem::placeBlockNoClient(glm::ivec3 pos, Block block, LightSystem &l
 					auto rez = chunk->blockData.getOrCreateBaseBlock(posInChunk.x, posInChunk.y, posInChunk.z);
 					*rez = baseBlock;
 				}
+			}
+			else if (isChest(block.getType()))
+			{
+				ChestBlock chestBlock;
+				size_t _ = 0;
+				if (chestBlock.readFromBuffer(optionalData->data(), optionalData->size(), _))
+				{
+					auto rez = chunk->blockData.getOrCreateChestBlock(posInChunk.x, posInChunk.y, posInChunk.z);
+					*rez = chestBlock;
+				}
+
 			}
 
 		}

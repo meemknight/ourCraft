@@ -294,12 +294,12 @@ void dealDamageToLocalPlayer(int damage)
 
 }
 
-void paintBlock(int color, Block &b, Chunk &c, glm::ivec3 pos)
+void paintBlock(int color, Block &b, Chunk &c, glm::ivec3 pos, std::vector<unsigned char> data)
 {
 	Block oldBlock = b;
 	b.setColor(color);
 	c.setDirty(true);
-	gameData.undoQueue.addPlaceBlockEvent(pos, oldBlock, b);
+	gameData.undoQueue.addPlaceBlockEvent(pos, oldBlock, b, data);
 }
 
 void exitInventoryMenu()
@@ -1228,8 +1228,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					{
 						bool didAction = 0;
 						Chunk *c = 0;
-						auto b = gameData.chunkSystem.getBlockSafeAndChunk(rayCastPos.x, 
-							rayCastPos.y, rayCastPos.z, c);
+						std::vector<unsigned char> blockData;
+						auto b = gameData.chunkSystem.getBlockAndData(rayCastPos, blockData, c);
 						if(b)
 						{
 							
@@ -1242,7 +1242,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 								int paintType = item.type - soap;
 
-								paintBlock(paintType, *b, *c, rayCastPos);
+								paintBlock(paintType, *b, *c, rayCastPos, blockData);
 
 								
 
@@ -1510,11 +1510,12 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 									auto itemLast = player.inventory.getItemFromIndex(8, nullptr);
 									if (itemLast && itemLast->isPaint())
 									{
-										auto b = gameData.chunkSystem.getBlockSafe(blockToPlace->x, 
-											blockToPlace->y, blockToPlace->z);
+										std::vector<unsigned char> blockData;
+										auto b = gameData.chunkSystem.getBlockAndData(*blockToPlace, 
+											blockData, c);
 
 										int paintType = itemLast->type - soap;
-										paintBlock(paintType, *b, *c, *blockToPlace);
+										paintBlock(paintType, *b, *c, *blockToPlace, blockData);
 
 										Packet_ClientUsedItem data;
 										data.from = 8;

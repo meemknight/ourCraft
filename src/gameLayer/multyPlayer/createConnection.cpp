@@ -294,9 +294,13 @@ void recieveDataClient(ENetEvent &event,
 
 				auto blockHash = fromBlockPosInChunkToHashValue(posInChunk.x, posInChunk.y, posInChunk.z);
 
+				if ((blockHeader.blockType == BlockTypes::structureBase) && (b->getType() != BlockTypes::structureBase) )
+				{
+					int a = 0;
+				}
 
 
-				if(blockHeader.blockType == BlockTypes::structureBase && b->getType() == BlockTypes::structureBase )
+				if((blockHeader.blockType == BlockTypes::structureBase) && (b->getType() == BlockTypes::structureBase) )
 				{
 
 					if (blockHeader.dataSize)
