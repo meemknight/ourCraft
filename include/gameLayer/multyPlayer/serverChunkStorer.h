@@ -127,12 +127,7 @@ struct ServerChunkStorer
 	//uses chunk coorodonates
 	SavedChunk *getChunkOrGetNull(int posX, int posZ);
 
-	//OLD VERSION todo remove once refactoring is complete!
-	SavedChunk *getOrCreateChunk(int posX, int posZ, WorldGenerator &wg,
-		StructuresManager &structureManager, BiomesManager &biomesManager,
-		std::vector<SendBlocksBack> &sendNewBlocksToPlayers, bool generateGhostAndStructures,
-		std::vector<StructureToGenerate> *newStructuresToAdd, WorldSaver &worldSaver,
-		bool *wasGenerated = 0, bool *wasLoaded = 0);
+
 
 	SavedChunk *getOrCreateChunk(int posX, int posZ, WorldGenerator &wg,
 		StructuresManager &structureManager, BiomesManager &biomesManager,

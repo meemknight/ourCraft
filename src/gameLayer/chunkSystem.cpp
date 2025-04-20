@@ -831,6 +831,7 @@ Block *ChunkSystem::getBlockSafeAndChunk(int x, int y, int z, Chunk *&chunk)
 
 	if (!c) { return nullptr; }
 
+
 	chunk = c;
 
 	int modX = modBlockToChunk(x);

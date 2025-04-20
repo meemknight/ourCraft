@@ -264,8 +264,8 @@ void recieveDataClient(ENetEvent &event,
 			//todo request hard reset
 			if (size == 0) { break; }
 			
-			bool firstTime = 1;
-				
+			std::unordered_set<Chunk *> alreadyCleared;
+
 			size_t pointer = 0;
 			while (size - pointer > 0)
 			{
@@ -283,13 +283,12 @@ void recieveDataClient(ENetEvent &event,
 				auto b = chunkSystem.getBlockSafeAndChunk(blockHeader.pos.x, blockHeader.pos.y, blockHeader.pos.z, chunk);
 				if (!b) { break; }
 
-				if (firstTime)
+				if (p.header == headerRecieveEntireBlockDataForChunk)
 				{
-					firstTime = 0;
-
-					if (p.header == headerRecieveEntireBlockDataForChunk)
+					if (alreadyCleared.find(chunk) == alreadyCleared.end())
 					{
 						chunk->blockData = {}; //clear the block data for this chunk
+						alreadyCleared.insert(chunk);
 					}
 				}
 
