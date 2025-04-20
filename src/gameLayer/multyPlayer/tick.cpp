@@ -559,9 +559,6 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 		{
 			if (c.second == clientToIgnore) { continue; }
 
-			Packet packet;
-			packet.header = headerRecieveEntireBlockDataForChunk;
-
 			if (blockData.size() > 100)
 			{
 				sendPacketAndCompress(c.second->peer, packet, (char *)blockData.data(),
