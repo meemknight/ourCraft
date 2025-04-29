@@ -5433,6 +5433,104 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 		}
 
 
+		//keep them square and the same size:
+					//https://www.youtube.com/watch?v=u0pk1LyLKYQ&t=99s&ab_channel=WesleyLaFerriere
+		if (1)
+		{
+			float longestDiagonal = glm::distance(cuboidExtendsMax, cuboidExtendsMin);
+
+			float firstSize = cuboidExtendsMax.x - cuboidExtendsMin.x;
+			float secondSize = cuboidExtendsMax.y - cuboidExtendsMin.y;
+			float thirdSize = cuboidExtendsMax.z - cuboidExtendsMin.z;
+
+			{
+				float ratio = longestDiagonal / firstSize;
+
+				glm::vec2 newVecValues = {cuboidExtendsMin.x, cuboidExtendsMax.x};
+				float dimension = firstSize;
+				float dimensionOver2 = dimension / 2.f;
+
+				newVecValues -= glm::vec2(cuboidExtendsMin.x + dimensionOver2, cuboidExtendsMin.x + dimensionOver2);
+				newVecValues *= ratio;
+				newVecValues += glm::vec2(cuboidExtendsMin.x + dimensionOver2, cuboidExtendsMin.x + dimensionOver2);
+
+				cuboidExtendsMin.x = newVecValues.x;
+				cuboidExtendsMax.x = newVecValues.y;
+			}
+
+			{
+				float ratio = longestDiagonal / secondSize;
+
+				glm::vec2 newVecValues = {cuboidExtendsMin.y, cuboidExtendsMax.y};
+				float dimension = secondSize;
+				float dimensionOver2 = dimension / 2.f;
+
+				newVecValues -= glm::vec2(cuboidExtendsMin.y + dimensionOver2, cuboidExtendsMin.y + dimensionOver2);
+				newVecValues *= ratio;
+				newVecValues += glm::vec2(cuboidExtendsMin.y + dimensionOver2, cuboidExtendsMin.y + dimensionOver2);
+
+				cuboidExtendsMin.y = newVecValues.x;
+				cuboidExtendsMax.y = newVecValues.y;
+			}
+
+			{//todo this size probably can be far-close
+				float ratio = longestDiagonal / thirdSize;
+
+				glm::vec2 newVecValues = {cuboidExtendsMin.z, cuboidExtendsMax.z};
+				float dimension = thirdSize;
+				float dimensionOver2 = dimension / 2.f;
+
+				newVecValues -= glm::vec2(cuboidExtendsMin.z + dimensionOver2, cuboidExtendsMin.z + dimensionOver2);
+				newVecValues *= ratio;
+				newVecValues += glm::vec2(cuboidExtendsMin.z + dimensionOver2, cuboidExtendsMin.z + dimensionOver2);
+
+				cuboidExtendsMin.z = newVecValues.x;
+				cuboidExtendsMax.z = newVecValues.y;
+			}
+
+		}
+
+
+		glm::dmat4 mvp;
+
+		//remove shadow flicker
+		if (0)
+		{
+
+			double zOffset = 500;
+			double near_plane = cuboidExtendsMin.z - zOffset;
+			double far_plane = cuboidExtendsMax.z + zOffset;
+
+			glm::dvec2 ortoMin = {cuboidExtendsMin.x, cuboidExtendsMin.y};
+			glm::dvec2 ortoMax = {cuboidExtendsMax.x, cuboidExtendsMax.y};
+
+
+			glm::dvec2 shadowMapSize(fbo.size);
+			glm::dvec2 worldUnitsPerTexel = (ortoMax - ortoMin) / shadowMapSize;
+
+			ortoMin /= worldUnitsPerTexel;
+			ortoMin = glm::floor(ortoMin);
+			ortoMin *= worldUnitsPerTexel;
+
+			ortoMax /= worldUnitsPerTexel;
+			ortoMax = glm::floor(ortoMax);
+			ortoMax *= worldUnitsPerTexel;
+
+			double zWorldUnitsPerTexel = (far_plane - near_plane) / fbo.size.x;
+
+			near_plane /= zWorldUnitsPerTexel;
+			far_plane /= zWorldUnitsPerTexel;
+			near_plane = glm::floor(near_plane);
+			far_plane = glm::floor(far_plane);
+			near_plane *= zWorldUnitsPerTexel;
+			far_plane *= zWorldUnitsPerTexel;
+
+			glm::dmat4 lightProjection = glm::ortho(ortoMin.x, ortoMax.x, ortoMin.y, ortoMax.y, near_plane, far_plane);
+
+			mvp = lightProjection * glm::mat4_cast(lightRotation);
+
+		}
+
 		double near_plane = 0.1f;
 
 		//std::cout << std::fixed << std::setprecision(2) << cuboidExtendsMin.x << " " << cuboidExtendsMax.x << " | " <<
@@ -5446,11 +5544,10 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 			cuboidExtendsMin.y, cuboidExtendsMax.y,
 			-(cuboidExtendsMax.z + farPlane), -(cuboidExtendsMin.z - farPlane));
 
-		//auto mvp = lightProjection * lookAtSafe({},
+		//mvp = lightProjection * lookAtSafe({},
 		//	glm::dvec3(sunPos), glm::dvec3(0, 1, 0));
 
-
-		auto mvp = lightProjection * glm::mat4_cast(lightRotation);
+		mvp = lightProjection * glm::mat4_cast(lightRotation);
 
 		glm::dvec3 translation = glm::dvec3(mvp[3]);
 		glm::ivec3 translationInt = glm::ivec3(translation);
