@@ -1116,7 +1116,6 @@ std::string executeServerCommand(std::uint64_t cid, const char *command)
 	std::string err;
 
 	std::vector<TokenCommand> tokens = parse(command, err);
-
 	if (err != "") { return err; }
 
 	//for (const auto &token : tokens)

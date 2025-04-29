@@ -24,7 +24,7 @@ struct Camera
 	float fovRadians = glm::radians(70.f);
 
 	float closePlane = 0.01f;
-	float farPlane = 1200.f;
+	float farPlane = 800.f;
 
 
 	glm::dvec3 position = {};

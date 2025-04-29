@@ -262,6 +262,7 @@ float truncateTo4Decimals(float number)
 }
 
 
+//TODO optimize get noise set lol
 int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 	float values[16 * 16], float borderingFactor[16 * 16], float &vegetationMaster,
 	float tightBorders[16 * 16], float &xValue, float &zValue, float &biomeTypeRandomValue)
@@ -393,7 +394,8 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 			for (int y = -14; y < 14; y++)
 				for (int x = -14; x < 14; x++)
 				{
-					if (x * x + y * y > 14 * 14) { continue; } //round up corners
+					//if (x * x + y * y > 14 * 14) { continue; } //round up corners
+					if (std::abs(x) + std::abs(y) > 14 + 14) { continue; } //round up corners
 
 					int rezX = i + x;
 					int rezY = j + y;
@@ -408,6 +410,8 @@ int WorldGenerator::getRegionHeightAndBlendingsForChunk(int chunkX, int chunkZ,
 
 			values[i + j * 16] = rez;
 		}
+
+
 
 	int value = getRezultValues(1, 1);
 

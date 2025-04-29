@@ -542,7 +542,8 @@ float testShadow(vec3 pointPos, float dotLightNormal)
 	
 	float depth = texture(u_sunShadowTexture, pos.xy).r;
 		
-	float bias = max(0.001, 0.05 * (1.f - dotLightNormal));
+	//float bias = max(0.001, 0.05 * (1.f - dotLightNormal));
+	float bias = max(0.0005, 0.001 * (1.f - dotLightNormal));
 
 	return (depth+bias) < pos.z ? 0.0 : 1.0;	
 	
@@ -555,7 +556,7 @@ float shadowCalc(float dotLightNormal)
 	
 	float depth = texture(u_sunShadowTexture, pos.xy).r;
 		
-	float bias = max(0.001, 0.05 * (1.f - dotLightNormal));
+	float bias = max(0.0005, 0.001 * (1.f - dotLightNormal));
 
 	return (depth+bias) < pos.z ? 0.0 : 1.0;	
 	//return (depth) != 1.f ? 0.0 : 1.0;	
@@ -594,7 +595,7 @@ float testShadowValue(float dotLightNormal, vec3 pos)
 	//float closestDepth = texture(map, coords).r; 
 	//return  (currentDepth - bias) < closestDepth  ? 1.0 : 0.0;
 	float depth = texture(u_sunShadowTexture, pos.xy).r;
-	float bias = max(0.001, 0.05 * (1.f - dotLightNormal));
+	float bias = max(0.0005, 0.001 * (1.f - dotLightNormal));
 	return (depth+bias) < pos.z ? 0.0 : 1.0;
 }
 
@@ -1612,6 +1613,18 @@ void main()
 		//out_color.a = 1;
 	
 	}
+
+
+	//if(gl_FragCoord.z < 0.9996) //
+	//{
+	//	out_color.rgb = mix(vec3(1,0,0), out_color.rgb, vec3(0.1)); //player
+	//}else if(gl_FragCoord.z < 0.99991) //
+	//{
+	//	out_color.rgb = mix(vec3(0,1,0), out_color.rgb, vec3(0.1));
+	//}else if(gl_FragCoord.z < 1)
+	//{
+	//	out_color.rgb = mix(vec3(0,0,1), out_color.rgb, vec3(0.1)); //far
+	//}
 
 	
 }

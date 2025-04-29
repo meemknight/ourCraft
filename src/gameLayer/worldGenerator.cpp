@@ -488,13 +488,44 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		}else
 		//if (currentBiomeHeight < value)
 		{
+
+			//float rez = ptr[int(value)];
+			//float rez2 = ptr[int(value) + 1];
+			//
+			//float interp = value - int(value);
+			//
+			////return rez;
+			//return glm::mix(rez, rez2, interp);
+
+			//if (value < currentBiomeHeight)
+			//{
+			//	float rez = ptr[int(value)];
+			//	float rez2 = ptr[int(value) - 1];
+			//	float interp = value - int(value);
+			//	interp = 1 - interp;
+			//
+			//	//return rez;
+			//	return glm::mix((float)ptr[currentBiomeHeight], (rez2 + rez) / 2.f, interp);
+			//}
+			//else
+			//{
+			//	float rez = ptr[int(value)];
+			//	float rez2 = ptr[int(value) + 1];
+			//	float interp = value - int(value);
+			//
+			//	//return rez;
+			//	return glm::mix((float)ptr[currentBiomeHeight], (rez2 + rez) / 2.f, interp);
+			//}
+
 			float rez = ptr[int(value)];
 			float rez2 = ptr[int(value) + 1];
-
+			
 			float interp = value - int(value);
-
+			
 			//return rez;
 			return glm::mix(rez, rez2, interp);
+
+
 		}
 		//else
 		//{
@@ -513,11 +544,15 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	//int startValues[] = {22, 45,  66,      72,     80, 140};
 	//int maxlevels[] =   {40, 64,  71,      120,     170, 250};
 
-	int startValues[] = {22, 48,  66,      70,     74, 100};
-	int maxlevels[] =   {40, 68,  71,      120,     170, 240};
-	int biomes[] = {BiomesManager::plains, BiomesManager::plains, 
-		BiomesManager::plains, BiomesManager::plains,
-		BiomesManager::snow, BiomesManager::snow};
+	//int startValues[] = {22, 48,  66,      70,     74, 100};
+	//int maxlevels[] =   {40, 68,  71,      120,     170, 240};
+
+	int startValues[] = {22, 48,  66,      67,     67, 67};
+	int maxlevels[] =   {40, 68,  71,      220,     220, 220};
+
+	//int biomes[] = {BiomesManager::plains, BiomesManager::plains, 
+	//	BiomesManager::plains, BiomesManager::plains,
+	//	BiomesManager::snow, BiomesManager::snow};
 
 	int valuesToAddToStart[] = {5, 5, 10,  20,  20,  20};
 	int valuesToAddToMax[] = {5, 5, 5,  20,  10,  0};

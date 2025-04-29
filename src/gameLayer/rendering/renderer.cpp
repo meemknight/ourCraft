@@ -5329,7 +5329,7 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 #pragma region shadow ortographic projection calculation
 
 	//new version
-	if(0)
+	if(1)
 	{
 		//https://github.com/maritim/LiteEngine/blob/8e165cb06e1dccf378cde0e34f17668e6d08c15b/Engine/RenderPasses/ShadowMap/DirectionalLightShadowMapRenderPass.cpp#L227
 
@@ -5340,17 +5340,24 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 		//float zEnd = _volume->GetCameraLimit(index);
 
 		static float zStart = -1;		//-1
-		static float zEnd = 1;			// 1
-		static float cameraDist = 200.f;
+		static float zEnd = 0.9985;		// 1
+		//static float cameraDist = 200.f;
+		static float farPlane = 600.f;
+
+
+		//FIRST CASCADE: 0.9985
+		//SECOND CASCADE: 0.9995
+		//Third CASCADE: 0.99994
 
 		ImGui::Begin("Test");
 		ImGui::SliderFloat("zStart", &zStart, -1, 1);
 		ImGui::SliderFloat("zEnd", &zEnd, -1, 1);
-		ImGui::SliderFloat("cameraDist", &cameraDist, 1, 400);
+		ImGui::SliderFloat("farPlane", &farPlane, -1, 700);
+		//ImGui::SliderFloat("cameraDist", &cameraDist, 1, 400);
 		ImGui::End();
 
-		auto lastFarPlane = c.farPlane;
-		c.farPlane = cameraDist;
+		//auto lastFarPlane = c.farPlane;
+		//c.farPlane = cameraDist;
 
 
 		glm::vec3 playerFloat = {};
@@ -5365,7 +5372,7 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 		lightRotation = glm::conjugate(lightRotation);
 
 
-		c.farPlane = lastFarPlane;
+		//c.farPlane = lastFarPlane;
 
 
 		for (int x = -1; x <= 1; x += 2)
@@ -5395,18 +5402,18 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 		}
 
 
-		double near_plane = 0.1f, far_plane = 460.f;
+		double near_plane = 0.1f;
 
 		std::cout << cuboidExtendsMin.x << " " << cuboidExtendsMax.x << " | " <<
 			cuboidExtendsMin.y << " " << cuboidExtendsMax.y << " | " <<
 			cuboidExtendsMin.z << " " << cuboidExtendsMax.z << "\n";
-
+		
 		//cuboidExtendsMin.z = 0;
 		//cuboidExtendsMax.z = 0;
 
 		glm::dmat4 lightProjection = glm::ortho(cuboidExtendsMin.x, cuboidExtendsMax.x,
 			cuboidExtendsMin.y, cuboidExtendsMax.y,
-			cuboidExtendsMin.z, cuboidExtendsMax.z + far_plane);
+			cuboidExtendsMin.z - farPlane, cuboidExtendsMax.z + farPlane);
 
 		//auto mvp = lightProjection * lookAtSafe({},
 		//	glm::dvec3(sunPos), glm::dvec3(0, 1, 0));
@@ -5424,7 +5431,7 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 	}
 
 	//old version
-	if(1)
+	if(0)
 	{
 		glm::ivec3 newPos = c.position;
 

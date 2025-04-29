@@ -49,7 +49,8 @@ void saveOneEntityTypeIntoOpenFile(std::ofstream &f, T &entityContainer)
 
 void saveAllEntitiesIntoOpenFile(std::ofstream &f, EntityData &entityData)
 {
-	//todo generalize
+
+	//todo generalize !!!!
 	saveOneEntityTypeIntoOpenFile(f, entityData.droppedItems);
 	saveOneEntityTypeIntoOpenFile(f, entityData.zombies);
 	saveOneEntityTypeIntoOpenFile(f, entityData.pigs);
@@ -62,7 +63,6 @@ void saveAllEntitiesIntoOpenFile(std::ofstream &f, EntityData &entityData)
 bool WorldSaver::loadChunk(ChunkData &c)
 {
 
-	//new implementation!
 
 	{
 		const glm::ivec2 pos = {c.x, c.z};
@@ -292,7 +292,7 @@ void WorldSaver::saveChunk(ChunkData &c)
 
 	return;
 
-
+	/*
 	{
 		//old implementation
 		const glm::ivec2 pos = {c.x, c.z};
@@ -390,6 +390,7 @@ void WorldSaver::saveChunk(ChunkData &c)
 		}
 
 	};
+	*/
 }
 
 void WorldSaver::saveChunkBlockData(SavedChunk &c)

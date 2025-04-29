@@ -84,7 +84,6 @@ add_subdirectory(noiseTool)
 add_subdirectory(PBRTool)
 
 
-
 # MY_SOURCES is a list of all the source files for my game 
 file(GLOB_RECURSE MY_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 file(GLOB_RECURSE SHARED_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shared/*.cpp")

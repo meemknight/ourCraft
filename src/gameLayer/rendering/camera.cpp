@@ -1,6 +1,24 @@
 #include "rendering/camera.h"
 #include <math.h>
 
+
+glm::mat4 customPerspective(float fovy, float aspect, float zNear, float zFar)
+{
+	//assert(abs(aspect - std::numeric_limits<T>::epsilon()) > static_cast<T>(0));
+
+	float const tanHalfFovy = tan(fovy / static_cast<float>(2));
+
+	glm::mat4 Result(static_cast<float>(0));
+	Result[0][0] = static_cast<float>(1) / (aspect * tanHalfFovy);
+	Result[1][1] = static_cast<float>(1) / (tanHalfFovy);
+	Result[2][2] = -(zFar + zNear) / (zFar - zNear);
+	Result[2][3] = -static_cast<float>(1);
+	Result[3][2] = -(static_cast<float>(2) * zFar * zNear) / (zFar - zNear);
+	return Result;
+
+
+}
+
 glm::mat4x4 Camera::getProjectionMatrix()
 {
 	if (std::isinf(this->aspectRatio) || std::isnan(this->aspectRatio) || this->aspectRatio == 0)

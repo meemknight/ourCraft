@@ -33,6 +33,6 @@ struct WorldSaver
 
 	bool loadEntityId(std::uint64_t &eid);
 
-	glm::ivec3 spawnPosition = glm::ivec3(0, 107, 0);
+	glm::ivec3 spawnPosition = glm::ivec3(0, 107, 0); //todo probably move from here
 
 };
