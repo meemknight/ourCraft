@@ -7,7 +7,8 @@ struct SunShadow
 	Renderer::FBO shadowMapCascades[3];
 	Renderer::FBO shadowTexturePreview;
 	Shader renderShadowIntoTextureShader;
-	
+	GLuint64 bindlessShadowTextures[3] = {};
+
 	GLint u_depthTexture;
 	GLint u_far;
 	GLint u_close;

@@ -51,11 +51,16 @@ uniform vec3 u_sunDirection;
 uniform int u_underWater;
 uniform int u_showLightLevels;
 
-in vec4 v_fragPos;
-in vec4 v_fragPosLightSpace;
+in vec4 v_fragPos; 
+in vec4 v_fragPosLightSpace; //TODO REMOVE
 in flat ivec3 v_blockPos;
 
 uniform sampler2D u_sunShadowTexture;
+
+uniform sampler2D u_cascadedShadowsMaps[3];
+uniform mat4 u_cascadedShadowMatrix[3];
+uniform ivec3 u_cascadedShadowPosition[3];
+
 
 uniform sampler2D u_brdf;
 
@@ -549,12 +554,17 @@ float testShadow(vec3 pointPos, float dotLightNormal)
 	
 }
 
-float shadowCalc(float dotLightNormal)
+float shadowCalc(float dotLightNormal, int cascade)
 {
-	vec3 pos = v_fragPosLightSpace.xyz * 0.5 + 0.5;
+
+	vec4 fragPositionLightSpace = u_cascadedShadowMatrix[cascade]
+		* vec4((fragmentPositionI - u_cascadedShadowPosition[cascade]) + fragmentPositionF, 1);
+
+
+	vec3 pos = fragPositionLightSpace.xyz * 0.5 + 0.5;
 	pos.z = min(pos.z, 1.0);
 	
-	float depth = texture(u_sunShadowTexture, pos.xy).r;
+	float depth = texture(sampler2D(u_cascadedShadowsMaps[cascade]), pos.xy).r;
 		
 	float bias = max(0.0005, 0.001 * (1.f - dotLightNormal));
 
@@ -605,12 +615,12 @@ float getShadowDistance(vec3 pos)
 	return max(depth - pos.z, 0.f);
 }
 
-float shadowCalc2(float dotLightNormal)
+float shadowCalc2(float dotLightNormal, int cascade)
 {
 	
 	if(c_shadows == 0){ return 1.f; }
 
-	if(c_shadows == 1){return shadowCalc(dotLightNormal);}
+	if(c_shadows == 1){return shadowCalc(dotLightNormal, cascade);}
 
 	vec3 projCoords = v_fragPosLightSpace.xyz * 0.5 + 0.5;
 	projCoords.z = min(projCoords.z, 1.0);
@@ -895,7 +905,27 @@ void main()
 
 	}
 
-	float shadow = shadowCalc2(dot(u_sunDirection, v_normal));
+	float viewLength = length(v_semiViewSpacePos);
+	vec3 V = -v_semiViewSpacePos / viewLength;
+	vec3 viewWorldSpace = ((u_view * vec4(v_semiViewSpacePos,1)).xyz);
+	float viewDepth = -viewWorldSpace.z;
+
+
+	int cascade = 0; //0 is close!
+	//cascades calculation!
+	if (viewDepth < 16) 
+	{
+		cascade = 0;
+	}else if (viewDepth < 44)
+	{
+		cascade = 1;
+	} 
+	else
+	{
+		cascade = 2;
+	}
+
+	float shadow = shadowCalc2(dot(u_sunDirection, v_normal), cascade);
 
 	const bool blockIsInWater = ((v_flags & 2) != 0);
 	const float baseAmbient = 0.20 + u_baseAmbientExtra;
@@ -939,7 +969,6 @@ void main()
 	computedAmbient *= 1.2;
 
 	out_bloom = vec3(0,0,0);
-	float viewDepth = 0;
 
 	if(u_shaders == 0)
 	{
@@ -1028,13 +1057,9 @@ void main()
 	}else
 	{
 
-
-		float viewLength = length(v_semiViewSpacePos);
-		vec3 V = -v_semiViewSpacePos / viewLength;
 		vec2 finalUV = v_uv;
-		vec3 viewWorldSpace = ((u_view * vec4(v_semiViewSpacePos,1)).xyz);
-		viewDepth = -viewWorldSpace.z;
 
+	
 		//paralax
 		//https://www.youtube.com/watch?v=LrnE5f3h2SU
 		/*
@@ -1332,7 +1357,7 @@ void main()
 		out_color.a *= pow(dotNV, 1); //we add an artificial coeficient, too add settings
 		out_color.a = 1-out_color.a;
 		//preview shadow
-		//if(shadowCalc(dot(u_sunDirection, v_normal)) < 0.5)
+		//if(shadowCalc(dot(u_sunDirection, v_normal), cascade) < 0.5)
 		//{
 		//	out_color.rgb = mix(out_color.rgb, vec3(1,0.5,0.7), 0.3);
 		//}

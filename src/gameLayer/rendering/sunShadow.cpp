@@ -11,16 +11,19 @@ void SunShadow::init()
 
 	for (int i = 0; i < 3; i++)
 	{
-		shadowMapCascades[0].create(false, true);
-		shadowMapCascades[0].updateSize(sizes[i], sizes[i]);
+		shadowMapCascades[i].create(false, true);
+		shadowMapCascades[i].updateSize(sizes[i], sizes[i]);
 
-		glBindTexture(GL_TEXTURE_2D, shadowMapCascades[0].depth);
+		glBindTexture(GL_TEXTURE_2D, shadowMapCascades[i].depth);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 		float border[] = {1, 1, 1, 1};
 		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+
+		bindlessShadowTextures[i] = glGetTextureHandleARB(shadowMapCascades[i].depth);
+		glMakeTextureHandleResidentARB(bindlessShadowTextures[i]);
 	}
 
 

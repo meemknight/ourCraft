@@ -2188,7 +2188,10 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(defaultShader, u_skyTexture);
 	GET_UNIFORM2(defaultShader, u_ao);
 	GET_UNIFORM2(defaultShader, u_baseAmbientExtra);
-	
+	GET_UNIFORM2(defaultShader, u_cascadedShadowsMaps);
+	GET_UNIFORM2(defaultShader, u_cascadedShadowMatrix);
+	GET_UNIFORM2(defaultShader, u_cascadedShadowPosition);
+
 
 	defaultShader.u_shadingSettings
 		= glGetUniformBlockIndex(defaultShader.shader.id, "ShadingSettings");
@@ -2932,6 +2935,10 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glBindTexture(GL_TEXTURE_2D, programData.aoTexture.id);
 		glUniform1i(defaultShader.u_ao, 11);
 	#pragma endregion
+
+		glUniformHandleui64vARB(defaultShader.u_cascadedShadowsMaps, 3, &sunShadow.bindlessShadowTextures[0]);
+		glUniform3iv(defaultShader.u_cascadedShadowPosition, 3, &sunShadow.lightSpacePositionCascades[0][0]);
+		glUniformMatrix4fv(defaultShader.u_cascadedShadowMatrix, 3, GL_FALSE, &sunShadow.lightSpaceMatrixCascades[0][0][0]);
 
 
 		glUniform1f(defaultShader.u_baseAmbientExtra, adaptiveExposure.bonusAmbient);
@@ -5350,12 +5357,12 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 	//static float cameraDist = 200.f;
 	static float farPlane = 500.f;
 
-	ImGui::Begin("Test");
-	ImGui::SliderFloat("zStart", &zStart, -1, 1);
-	ImGui::SliderFloat("zEnd", &zEnd, -1, 1);
-	ImGui::SliderFloat("farPlane", &farPlane, -1, 700);
-	//ImGui::SliderFloat("cameraDist", &cameraDist, 1, 400);
-	ImGui::End();
+	//ImGui::Begin("Test");
+	//ImGui::SliderFloat("zStart", &zStart, -1, 1);
+	//ImGui::SliderFloat("zEnd", &zEnd, -1, 1);
+	//ImGui::SliderFloat("farPlane", &farPlane, -1, 700);
+	////ImGui::SliderFloat("cameraDist", &cameraDist, 1, 400);
+	//ImGui::End();
 
 	auto renderOneFrustum = [&](float zEnd,
 		Renderer::FBO &fbo,
@@ -5518,7 +5525,9 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 
 	};
 
-	renderOneFrustum(zEnd, sunShadow.shadowMapCascades[0], sunShadow.lightSpaceMatrixCascades[0], sunShadow.lightSpacePositionCascades[0]);
+	renderOneFrustum(0.9985, sunShadow.shadowMapCascades[0], sunShadow.lightSpaceMatrixCascades[0], sunShadow.lightSpacePositionCascades[0]);
+	renderOneFrustum(0.9995, sunShadow.shadowMapCascades[1], sunShadow.lightSpaceMatrixCascades[1], sunShadow.lightSpacePositionCascades[1]);
+	renderOneFrustum(0.99994, sunShadow.shadowMapCascades[2], sunShadow.lightSpaceMatrixCascades[2], sunShadow.lightSpacePositionCascades[2]);
 
 
 	//old version
