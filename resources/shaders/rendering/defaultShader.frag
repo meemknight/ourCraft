@@ -52,7 +52,7 @@ uniform int u_underWater;
 uniform int u_showLightLevels;
 
 in vec4 v_fragPos; 
-in vec4 v_fragPosLightSpace; //TODO REMOVE
+//in vec4 v_fragPosLightSpace; //TODO REMOVE
 in flat ivec3 v_blockPos;
 
 uniform sampler2D u_sunShadowTexture;
@@ -533,22 +533,37 @@ float computeLight(vec3 N, vec3 L, vec3 V)
 }
 
 
-uniform mat4 u_lightSpaceMatrix;
-uniform ivec3 u_lightPos;
+//uniform mat4 u_lightSpaceMatrix;
+//uniform ivec3 u_lightPos;
+
+float getShadowBias(float dotLightNormal, int cascade)
+{
+	if(cascade == 0)
+	{
+		return max(0.0002, 0.0007 * (1.f - dotLightNormal));
+	}else if(cascade == 1)
+	{
+		return max(0.0003, 0.0010 * (1.f - dotLightNormal));
+	}else if(cascade == 2)
+	{
+		return max(0.005, 0.0016 * (1.f - dotLightNormal));
+	}
+}
 
 //pointPos is in worls space
-float testShadow(vec3 pointPos, float dotLightNormal)
+float testShadow(vec3 pointPos, float dotLightNormal, int cascade)
 {
 	vec4 fragPosLightSpace = 
-		u_lightSpaceMatrix * vec4(pointPos, 1);
+		u_cascadedShadowMatrix[cascade] * vec4(pointPos, 1);
 
 	vec3 pos = fragPosLightSpace.xyz * 0.5 + 0.5;
 	pos.z = min(pos.z, 1.0);
 	
-	float depth = texture(u_sunShadowTexture, pos.xy).r;
+	float depth = texture(u_cascadedShadowsMaps[cascade], pos.xy).r;
 		
 	//float bias = max(0.001, 0.05 * (1.f - dotLightNormal));
-	float bias = max(0.0005, 0.001 * (1.f - dotLightNormal));
+	float bias = getShadowBias(dotLightNormal, cascade);
+
 
 	return (depth+bias) < pos.z ? 0.0 : 1.0;	
 	
@@ -566,7 +581,8 @@ float shadowCalc(float dotLightNormal, int cascade)
 	
 	float depth = texture(sampler2D(u_cascadedShadowsMaps[cascade]), pos.xy).r;
 		
-	float bias = max(0.0005, 0.001 * (1.f - dotLightNormal));
+	float bias = getShadowBias(dotLightNormal, cascade);
+
 
 	return (depth+bias) < pos.z ? 0.0 : 1.0;	
 	//return (depth) != 1.f ? 0.0 : 1.0;	
@@ -600,18 +616,19 @@ vec2 vogelDiskSample(int sampleIndex, int samplesCount, float phi)
   return vec2(r * cosine, r * sine);
 }
 
-float testShadowValue(float dotLightNormal, vec3 pos)
+float testShadowValue(float dotLightNormal, vec3 pos, int cascade)
 {
 	//float closestDepth = texture(map, coords).r; 
 	//return  (currentDepth - bias) < closestDepth  ? 1.0 : 0.0;
-	float depth = texture(u_sunShadowTexture, pos.xy).r;
-	float bias = max(0.0005, 0.001 * (1.f - dotLightNormal));
+	float depth = texture(u_cascadedShadowsMaps[cascade], pos.xy).r;
+	float bias = getShadowBias(dotLightNormal, cascade);
+
 	return (depth+bias) < pos.z ? 0.0 : 1.0;
 }
 
-float getShadowDistance(vec3 pos)
+float getShadowDistance(vec3 pos, int cascade)
 {
-	float depth = texture(u_sunShadowTexture, pos.xy).r;
+	float depth = texture(u_cascadedShadowsMaps[cascade], pos.xy).r;
 	return max(depth - pos.z, 0.f);
 }
 
@@ -622,7 +639,9 @@ float shadowCalc2(float dotLightNormal, int cascade)
 
 	if(c_shadows == 1){return shadowCalc(dotLightNormal, cascade);}
 
-	vec3 projCoords = v_fragPosLightSpace.xyz * 0.5 + 0.5;
+	vec4 fragPosLightSpace = u_cascadedShadowMatrix[cascade] * vec4((fragmentPositionI - u_cascadedShadowPosition[cascade]) + fragmentPositionF, 1);
+
+	vec3 projCoords = fragPosLightSpace.xyz * 0.5 + 0.5;
 	projCoords.z = min(projCoords.z, 1.0);
 
 	// keep the shadow at 1.0 when outside or close to the far_plane region of the light's frustum.
@@ -639,7 +658,7 @@ float shadowCalc2(float dotLightNormal, int cascade)
 	float currentDepth = projCoords.z;
 
 	//todo move
-	vec2 texelSize = 1.0 / textureSize(u_sunShadowTexture, 0).xy;
+	vec2 texelSize = 1.0 / textureSize(u_cascadedShadowsMaps[cascade], 0).xy;
 	float shadow = 0.0;
 
 	bool fewSamples = false;
@@ -666,7 +685,7 @@ float shadowCalc2(float dotLightNormal, int cascade)
 			vec2 offset = vogelDiskSample(i, sampleSize, noise);
 			vec2 finalOffset = offset * texelSize * size;
 			
-			float s = testShadowValue(dotLightNormal, projCoords + vec3(finalOffset,0));
+			float s = testShadowValue(dotLightNormal, projCoords + vec3(finalOffset,0), cascade);
 			shadow += s;
 		}
 
@@ -681,7 +700,7 @@ float shadowCalc2(float dotLightNormal, int cascade)
 				vec2 offset = vogelDiskSample(i, sampleSize, noise);
 				vec2 finalOffset = offset * texelSize * size;
 				
-				float s = testShadowValue(dotLightNormal, projCoords + vec3(finalOffset,0));
+				float s = testShadowValue(dotLightNormal, projCoords + vec3(finalOffset,0), cascade);
 				shadow += s;
 			}
 
@@ -692,7 +711,7 @@ float shadowCalc2(float dotLightNormal, int cascade)
 	
 	
 	//float shadowPower = mix(32,1.f,shadowDistance);
-	float shadowPower = 2;
+	float shadowPower = 2.2;
 
 	return pow(clamp(shadow, 0, 1), shadowPower);
 }
@@ -1409,7 +1428,7 @@ void main()
 		{
 			vec3 godRaysContribution = vec3(0);
 
-			vec3 start = vec3((fragmentPositionI - u_lightPos) + fragmentPositionF);
+			vec3 start = vec3((fragmentPositionI - u_cascadedShadowPosition[0]) + fragmentPositionF);
 			
 			vec4 viewSpaceV = u_view * vec4(V, 0.0);
 			vec3 viewSpaceDirection = viewSpaceV.xyz / viewSpaceV.w;
@@ -1422,7 +1441,7 @@ void main()
 			{
 				start += direction*advance;
 				
-				if(testShadow(start, 1) > 0.5)
+				if(testShadow(start, 1, cascade) > 0.5)
 				{
 					godRaysContribution += vec3(0.01);
 				}
