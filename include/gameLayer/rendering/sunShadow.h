@@ -4,7 +4,7 @@
 
 struct SunShadow
 {
-	Renderer::FBO shadowMap;
+	Renderer::FBO shadowMapCascades[3];
 	Renderer::FBO shadowTexturePreview;
 	Shader renderShadowIntoTextureShader;
 	
@@ -16,8 +16,8 @@ struct SunShadow
 
 	void update();
 	
-	glm::mat4 lightSpaceMatrix{1.f};
-	glm::ivec3 lightSpacePosition = {};
+	glm::mat4 lightSpaceMatrixCascades[3]{glm::mat4(1.f)};
+	glm::ivec3 lightSpacePositionCascades[3] = {};
 
 	void renderShadowIntoTexture(Camera &camera);
 	

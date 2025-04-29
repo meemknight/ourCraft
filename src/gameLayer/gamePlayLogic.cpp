@@ -3108,8 +3108,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 		{
 			if (s == "Color post processing")
 			{
-				programData.ui.renderer2d.renderText({150,50},
-					("fps: " + std::to_string(programData.currentFps)).c_str(), programData.ui.font, Colors_Gray, 64.f*0.75f);
+				
 				dontDarkenScreen = true;
 				break;
 			}
@@ -3121,6 +3120,9 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 				programData.ui.renderer2d.windowH}, {0,0,0,0.5});
 		};
 
+
+		programData.ui.renderer2d.renderText({150,50},
+			("fps: " + std::to_string(programData.currentFps)).c_str(), programData.ui.font, Colors_Gray, 64.f * 0.75f);
 
 
 

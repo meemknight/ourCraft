@@ -6,19 +6,26 @@
 
 void SunShadow::init()
 {
-	shadowMap.create(false, true);
-	shadowMap.updateSize(2048, 2048);
 
-	glBindTexture(GL_TEXTURE_2D, shadowMap.depth);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	float border[] = {1, 1, 1, 1};
-	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+	int sizes[3] = {2048,2048,1024};
+
+	for (int i = 0; i < 3; i++)
+	{
+		shadowMapCascades[0].create(false, true);
+		shadowMapCascades[0].updateSize(sizes[i], sizes[i]);
+
+		glBindTexture(GL_TEXTURE_2D, shadowMapCascades[0].depth);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		float border[] = {1, 1, 1, 1};
+		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+	}
+
 
 	shadowTexturePreview.create(true, false);
-	shadowTexturePreview.updateSize(2048, 2048);
+	shadowTexturePreview.updateSize(sizes[0], sizes[0]);
 
 	renderShadowIntoTextureShader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/rendering/renderDepth.vert",
 		RESOURCES_PATH "shaders/rendering/renderDepth.frag");
@@ -42,12 +49,12 @@ void SunShadow::renderShadowIntoTexture(Camera &camera)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glDisable(GL_DEPTH_TEST);
 
-	glViewport(0, 0, 2048, 2048);
+	glViewport(0, 0, shadowTexturePreview.size.x, shadowTexturePreview.size.y);
 
 	renderShadowIntoTextureShader.bind();
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, shadowMap.depth);
+	glBindTexture(GL_TEXTURE_2D, shadowMapCascades[0].depth);
 	glUniform1i(u_depthTexture, 0);
 	//glUniform1f(u_far, 260.f);
 	//glUniform1f(u_close, 1.f);

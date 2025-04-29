@@ -5,7 +5,6 @@
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
 
-//todo DOUBLE!
 struct FrustumVolume
 {
 	constexpr static int PLANESCOUNT = 6;

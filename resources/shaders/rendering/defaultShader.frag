@@ -939,6 +939,7 @@ void main()
 	computedAmbient *= 1.2;
 
 	out_bloom = vec3(0,0,0);
+	float viewDepth = 0;
 
 	if(u_shaders == 0)
 	{
@@ -981,7 +982,7 @@ void main()
 
 			if(dot(u_sunDirection, vec3(0,1,0))> -0.2)
 			{
-				float shadow = shadowCalc2(dot(L, v_normal));
+				//float shadow = shadowCalc2(dot(L, v_normal));
 				
 				finalColor += clamp(dot(N, L), 0, 1)
 					* sunLightColor * shadow;
@@ -1032,6 +1033,7 @@ void main()
 		vec3 V = -v_semiViewSpacePos / viewLength;
 		vec2 finalUV = v_uv;
 		vec3 viewWorldSpace = ((u_view * vec4(v_semiViewSpacePos,1)).xyz);
+		viewDepth = -viewWorldSpace.z;
 
 		//paralax
 		//https://www.youtube.com/watch?v=LrnE5f3h2SU
@@ -1614,18 +1616,32 @@ void main()
 	
 	}
 
-
-	//if(gl_FragCoord.z < 0.9996) //
+	
+	//if(gl_FragCoord.z < 0.99952) // first cascade
 	//{
-	//	out_color.rgb = mix(vec3(1,0,0), out_color.rgb, vec3(0.1)); //player
+	//	out_color.rgb = mix(vec3(1,0,0), out_color.rgb, vec3(0.8)); //player
 	//}else if(gl_FragCoord.z < 0.99991) //
 	//{
-	//	out_color.rgb = mix(vec3(0,1,0), out_color.rgb, vec3(0.1));
-	//}else if(gl_FragCoord.z < 1)
+	//	out_color.rgb = mix(vec3(0,1,0), out_color.rgb, vec3(0.8));
+	//}else if(gl_FragCoord.z <= 1) //third cascade
 	//{
-	//	out_color.rgb = mix(vec3(0,0,1), out_color.rgb, vec3(0.1)); //far
+	//	out_color.rgb = mix(vec3(0,0,1), out_color.rgb, vec3(0.8)); //far
 	//}
 
+	//float uCascadeSplits[3] = float{10.0,30.0,100.0};
+
+	//cascades calculation!
+	//if (viewDepth < 16) 
+	//{
+	//	out_color.rgb = mix(vec3(1, 0, 0), out_color.rgb, 0.8); // near cascade (player)
+	//}else if (viewDepth < 44)
+	//{
+	//	out_color.rgb = mix(vec3(0, 1, 0), out_color.rgb, 0.8); // mid cascade
+	//} 
+	//else
+	//{
+	//	out_color.rgb = mix(vec3(0, 0, 1), out_color.rgb, 0.8); // far cascade
+	//}
 	
 }
 

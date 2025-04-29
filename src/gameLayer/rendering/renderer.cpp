@@ -4,6 +4,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/mat3x3.hpp>
 #include <glm/gtx/transform.hpp>
@@ -2885,8 +2886,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniformMatrix4fv(defaultShader.u_inverseProjMat, 1, 0,
 			&glm::inverse(projectionMatrix)[0][0]);
 		glUniformMatrix4fv(defaultShader.u_lightSpaceMatrix, 1, 0,
-			&sunShadow.lightSpaceMatrix[0][0]);
-		glUniform3iv(defaultShader.u_lightPos, 1, &sunShadow.lightSpacePosition[0]);
+			&sunShadow.lightSpaceMatrixCascades[0][0][0]);
+		glUniform3iv(defaultShader.u_lightPos, 1, &sunShadow.lightSpacePositionCascades[0][0]);
 		glUniform1i(defaultShader.u_writeScreenSpacePositions, 1);//todo remove
 
 		glUniformMatrix4fv(defaultShader.u_inverseViewProjMat, 1, 0,
@@ -2908,7 +2909,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform1i(defaultShader.u_caustics, 3);
 
 		glActiveTexture(GL_TEXTURE0 + 4);
-		glBindTexture(GL_TEXTURE_2D, sunShadow.shadowMap.depth);
+		glBindTexture(GL_TEXTURE_2D, sunShadow.shadowMapCascades[0].depth);
 		glUniform1i(defaultShader.u_sunShadowTexture, 4);
 
 		glActiveTexture(GL_TEXTURE0 + 5);
@@ -5320,17 +5321,51 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 	glEnable(GL_DEPTH_TEST);
 	glColorMask(0, 0, 0, 0);
 
-	glViewport(0, 0, 2048, 2048);
-	glBindFramebuffer(GL_FRAMEBUFFER, sunShadow.shadowMap.fbo);
-	glClear(GL_DEPTH_BUFFER_BIT);
+
 
 	glm::vec3 posFloat = {};
 
-#pragma region shadow ortographic projection calculation
-
-	//new version
-	if(1)
+#pragma region setup uniforms and stuff
 	{
+		zpassShader.shader.bind();
+		//glUniformMatrix4fv(zpassShader.u_viewProjection, 1, GL_FALSE, &sunShadow.lightSpaceMatrix[0][0]);
+		glUniform3fv(zpassShader.u_positionFloat, 1, &posFloat[0]);
+		//glUniform3iv(zpassShader.u_positionInt, 1, &sunShadow.lightSpacePosition[0]);
+		glUniform1i(zpassShader.u_renderOnlyWater, 0);
+	}
+#pragma endregion
+
+
+#pragma region render shadows!
+
+
+
+	//FIRST CASCADE: 0.9985
+	//SECOND CASCADE: 0.9995
+	//Third CASCADE: 0.99994
+
+
+	static float zStart = -1;		//-1
+	static float zEnd = 0.9985;		// 1
+	//static float cameraDist = 200.f;
+	static float farPlane = 500.f;
+
+	ImGui::Begin("Test");
+	ImGui::SliderFloat("zStart", &zStart, -1, 1);
+	ImGui::SliderFloat("zEnd", &zEnd, -1, 1);
+	ImGui::SliderFloat("farPlane", &farPlane, -1, 700);
+	//ImGui::SliderFloat("cameraDist", &cameraDist, 1, 400);
+	ImGui::End();
+
+	auto renderOneFrustum = [&](float zEnd,
+		Renderer::FBO &fbo,
+		glm::mat4 &outSunMatrix, glm::ivec3 &outSunPos)
+	{
+
+		glViewport(0, 0, fbo.size.x, fbo.size.y);
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo.fbo);
+		glClear(GL_DEPTH_BUFFER_BIT);
+
 		//https://github.com/maritim/LiteEngine/blob/8e165cb06e1dccf378cde0e34f17668e6d08c15b/Engine/RenderPasses/ShadowMap/DirectionalLightShadowMapRenderPass.cpp#L227
 
 		glm::dvec3 cuboidExtendsMin = glm::dvec3(std::numeric_limits<double>::max());
@@ -5339,30 +5374,22 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 		//float zStart = index == 0 ? -1 : _volume->GetCameraLimit(index - 1);
 		//float zEnd = _volume->GetCameraLimit(index);
 
-		static float zStart = -1;		//-1
-		static float zEnd = 0.9985;		// 1
-		//static float cameraDist = 200.f;
-		static float farPlane = 600.f;
+
 
 
 		//FIRST CASCADE: 0.9985
 		//SECOND CASCADE: 0.9995
 		//Third CASCADE: 0.99994
 
-		ImGui::Begin("Test");
-		ImGui::SliderFloat("zStart", &zStart, -1, 1);
-		ImGui::SliderFloat("zEnd", &zEnd, -1, 1);
-		ImGui::SliderFloat("farPlane", &farPlane, -1, 700);
-		//ImGui::SliderFloat("cameraDist", &cameraDist, 1, 400);
-		ImGui::End();
+	
 
 		//auto lastFarPlane = c.farPlane;
 		//c.farPlane = cameraDist;
 
 
-		glm::vec3 playerFloat = {};
-		glm::ivec3 playerInt = {};
-		decomposePosition(c.position, playerFloat, playerInt);
+		//glm::vec3 playerFloat = {};
+		//glm::ivec3 playerInt = {};
+		//decomposePosition(c.position, playerFloat, playerInt);
 
 		auto cameraProjView = c.getViewProjectionWithPositionMatrixDouble();
 		glm::dmat4 invCameraProjView = glm::inverse(cameraProjView);
@@ -5370,10 +5397,7 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 		glm::vec3 referenceDir(0, 0, 1); // Default forward direction
 		glm::dquat lightRotation = glm::rotation(referenceDir, sunPos);
 		lightRotation = glm::conjugate(lightRotation);
-
-
 		//c.farPlane = lastFarPlane;
-
 
 		for (int x = -1; x <= 1; x += 2)
 		{
@@ -5404,33 +5428,101 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 
 		double near_plane = 0.1f;
 
-		std::cout << cuboidExtendsMin.x << " " << cuboidExtendsMax.x << " | " <<
-			cuboidExtendsMin.y << " " << cuboidExtendsMax.y << " | " <<
-			cuboidExtendsMin.z << " " << cuboidExtendsMax.z << "\n";
-		
+		//std::cout << std::fixed << std::setprecision(2) << cuboidExtendsMin.x << " " << cuboidExtendsMax.x << " | " <<
+		//	cuboidExtendsMin.y << " " << cuboidExtendsMax.y << " | " <<
+		//	cuboidExtendsMin.z << " " << cuboidExtendsMax.z << "\n";
+
 		//cuboidExtendsMin.z = 0;
 		//cuboidExtendsMax.z = 0;
 
 		glm::dmat4 lightProjection = glm::ortho(cuboidExtendsMin.x, cuboidExtendsMax.x,
 			cuboidExtendsMin.y, cuboidExtendsMax.y,
-			cuboidExtendsMin.z - farPlane, cuboidExtendsMax.z + farPlane);
+			-(cuboidExtendsMax.z + farPlane), -(cuboidExtendsMin.z - farPlane));
 
 		//auto mvp = lightProjection * lookAtSafe({},
 		//	glm::dvec3(sunPos), glm::dvec3(0, 1, 0));
 
+
 		auto mvp = lightProjection * glm::mat4_cast(lightRotation);
 
-		//glm::mat4 mvp = getLightMatrix(sunPos, c);
+		glm::dvec3 translation = glm::dvec3(mvp[3]);
+		glm::ivec3 translationInt = glm::ivec3(translation);
+		glm::dvec3 translationFraction = translation - glm::dvec3(translationInt);
+		//mvp[3] = glm::dvec4(translationFraction, mvp[3].w);
 
 
-		//auto mat = calculateLightProjectionMatrix(c, -skyBoxRenderer.sunPos, 1, 260, 25);
+		outSunMatrix = mvp;
+		outSunPos = {}; //todo
 
-		sunShadow.lightSpaceMatrix = mvp;
-		sunShadow.lightSpacePosition = glm::vec3(0); //todo
+		//for (int row = 0; row < 4; ++row)
+		//{
+		//	std::cout << "| ";
+		//	for (int col = 0; col < 4; ++col)
+		//	{
+		//		std::cout << std::setw(8) << std::fixed << std::setprecision(3) << mvp[col][row] << " ";
+		//	}
+		//	std::cout << "|\n";
+		//}
+		//std::cout << "\n-\n";
 
-	}
+		//std::cout << translation.x << " " << translation.y << " " << translation.z << "\n";
+
+
+	#pragma region setup uniforms and stuff
+		{
+			glUniformMatrix4fv(zpassShader.u_viewProjection, 1, GL_FALSE, &outSunMatrix[0][0]);
+			glUniform3iv(zpassShader.u_positionInt, 1, &outSunPos[0]);
+		}
+	#pragma endregion
+
+
+		FrustumVolume firstCascadeFrustum(outSunMatrix);
+
+
+	#pragma region render shadows
+		for (auto &chunk : chunkSystem.loadedChunks)
+		{
+			if (chunk)
+			{
+				if (!chunk->isDontDrawYet())
+				{
+					int facesCount = chunk->elementCountSize;
+					if (facesCount)
+					{
+
+						//frustum culling
+						{
+							AABBVolume chunkAABB;
+
+							chunkAABB.minVertex = {chunk->data.x * CHUNK_SIZE, 0, chunk->data.z * CHUNK_SIZE};
+							chunkAABB.maxVertex = {(chunk->data.x + 1) * CHUNK_SIZE, CHUNK_HEIGHT + 1, (chunk->data.z + 1) * CHUNK_SIZE};
+
+							if (!CheckFrustumVsAABB(firstCascadeFrustum, chunkAABB))
+							{
+								//culled
+							}
+							else
+							{
+								glBindVertexArray(chunk->vao);
+								glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
+							}
+						};
+
+					}
+				}
+			}
+		}
+	#pragma endregion
+
+
+
+	};
+
+	renderOneFrustum(zEnd, sunShadow.shadowMapCascades[0], sunShadow.lightSpaceMatrixCascades[0], sunShadow.lightSpacePositionCascades[0]);
+
 
 	//old version
+	/*
 	if(0)
 	{
 		glm::ivec3 newPos = c.position;
@@ -5485,38 +5577,11 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 
 
 	}
+	*/
 #pragma endregion
 
 
 
-#pragma region setup uniforms and stuff
-	{
-		zpassShader.shader.bind();
-		glUniformMatrix4fv(zpassShader.u_viewProjection, 1, GL_FALSE, &sunShadow.lightSpaceMatrix[0][0]);
-		glUniform3fv(zpassShader.u_positionFloat, 1, &posFloat[0]);
-		glUniform3iv(zpassShader.u_positionInt, 1, &sunShadow.lightSpacePosition[0]);
-		glUniform1i(zpassShader.u_renderOnlyWater, 0);
-	}
-#pragma endregion
-
-
-
-
-	for (auto &chunk : chunkSystem.loadedChunks)
-	{
-		if (chunk)
-		{
-			if (!chunk->isDontDrawYet())
-			{
-				int facesCount = chunk->elementCountSize;
-				if (facesCount)
-				{
-					glBindVertexArray(chunk->vao);
-					glDrawElementsInstanced(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_BYTE, 0, facesCount);
-				}
-			}
-		}
-	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glColorMask(1, 1, 1, 1);
