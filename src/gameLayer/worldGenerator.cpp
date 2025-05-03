@@ -420,154 +420,6 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	}
 
 
-	glm::vec2 startingTavernPosition = {3, 4}; //todo hash based on seed
-
-	float interpolateValues[16 * 16] = {};
-	float borderingFactor[16 * 16] = {};
-	float tightBorders[16 * 16] = {};
-	float vegetationMaster = 0;
-	float xCellValue = 0;
-	float zCellValue = 0;
-	float biomeType = 0;
-	int currentBiomeHeight = wg.getRegionHeightAndBlendingsForChunk(c.x, c.z,
-		interpolateValues, borderingFactor, vegetationMaster, tightBorders, xCellValue, zCellValue,
-		biomeType);
-
-
-#pragma region determine biome
-
-
-	int currentBiomeIndex = biomesManager.pickBiomeIndex(biomeType);
-	if (currentBiomeHeight == PLAINS_HEIGHT_INDEX)
-	{
-
-		auto rng = rngFromPosition(xCellValue, zCellValue, wg.regionsHeightNoise->GetSeed());
-
-		float chance = 0.2;
-
-		float distanceFromCenter = glm::length(glm::vec2{xCellValue, zCellValue});
-
-		if (distanceFromCenter < 20)
-		{
-			chance = 0.5;
-		}
-		else if (distanceFromCenter < 40)
-		{
-			chance = 0.3;
-		}
-
-		if (getRandomChance(rng, chance))
-		{
-			currentBiomeIndex = BiomesManager::hayLand;
-		}
-
-	}
-
-	auto &biome = biomesManager.biomes[currentBiomeIndex];
-	//auto &biome = biomesManager.biomes[BiomesManager::snow];
-#pragma endregion
-
-
-	c.vegetation = vegetationMaster;
-	c.regionCenterX = xCellValue;
-	c.regionCenterZ = zCellValue;
-
-	//vegetationMaster = 1.f;
-	float vegetationPower = linearRemap(vegetationMaster, 0, 1, 1.2, 0.4);
-
-	auto interpolator = [&](int *ptr, float value)
-	{
-		if (value >= 5.f)
-		{
-			return (float)ptr[5];
-		}
-		
-		if (currentBiomeHeight == value)
-		{
-			return (float)ptr[currentBiomeHeight];
-		}else
-		//if (currentBiomeHeight < value)
-		{
-
-			//float rez = ptr[int(value)];
-			//float rez2 = ptr[int(value) + 1];
-			//
-			//float interp = value - int(value);
-			//
-			////return rez;
-			//return glm::mix(rez, rez2, interp);
-
-			//if (value < currentBiomeHeight)
-			//{
-			//	float rez = ptr[int(value)];
-			//	float rez2 = ptr[int(value) - 1];
-			//	float interp = value - int(value);
-			//	interp = 1 - interp;
-			//
-			//	//return rez;
-			//	return glm::mix((float)ptr[currentBiomeHeight], (rez2 + rez) / 2.f, interp);
-			//}
-			//else
-			//{
-			//	float rez = ptr[int(value)];
-			//	float rez2 = ptr[int(value) + 1];
-			//	float interp = value - int(value);
-			//
-			//	//return rez;
-			//	return glm::mix((float)ptr[currentBiomeHeight], (rez2 + rez) / 2.f, interp);
-			//}
-
-			float rez = ptr[int(value)];
-			float rez2 = ptr[int(value) + 1];
-			
-			float interp = value - int(value);
-			
-			//return rez;
-			return glm::mix(rez, rez2, interp);
-
-
-		}
-		//else
-		//{
-		//	float rez = ptr[int(value)];
-		//	float rez2 = ptr[int(value) + 1];
-		//
-		//	float interp = value - int(value);
-		//
-		//	//return rez;
-		//	return glm::mix(rez, rez2, interp);
-		//}
-		
-	};
-				   
-	//water    plains   hills
-	//int startValues[] = {22, 45,  66,      72,     80, 140};
-	//int maxlevels[] =   {40, 64,  71,      120,     170, 250};
-
-	//int startValues[] = {22, 48,  66,      70,     74, 100};
-	//int maxlevels[] =   {40, 68,  71,      120,     170, 240};
-
-	int startValues[] = {22, 48,  66,      67,     67, 67};
-	int maxlevels[] =   {40, 68,  71,      220,     220, 220};
-
-	//int biomes[] = {BiomesManager::plains, BiomesManager::plains, 
-	//	BiomesManager::plains, BiomesManager::plains,
-	//	BiomesManager::snow, BiomesManager::snow};
-
-	int valuesToAddToStart[] = {5, 5, 10,  20,  20,  20};
-	int valuesToAddToMax[] = {5, 5, 5,  20,  10,  0};
-	float peaksPower[] = {1,1, 0.5, 1, 1, 1};
-
-	int hillsValuesToAddToStart[] = {5, 5, 10,  10,  10,  4};
-	int hillsValuesToAddToMax[] = {5, 20, 45,  45,  30,  4};
-
-	c.clear();
-	
-	int xPadd = c.x * 16;
-	int zPadd = c.z * 16;
-
-	c.vegetation = vegetationMaster;
-
 #pragma region noises
 	alignas(32) static float continentalness[CHUNK_SIZE * CHUNK_SIZE] = {};
 	wg.continentalnessNoise->FillNoiseSet(continentalness, xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE);
@@ -669,12 +521,12 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		randomGravel[i] = powf(randomGravel[i], wg.randomSandPower + 0.1);
 		randomGravel[i] = wg.randomSandSplines.applySpline(randomGravel[i]);
 	}
-	
+
 
 	alignas(32) static float randomClay[CHUNK_SIZE * CHUNK_HEIGHT * CHUNK_SIZE] = {};
 	wg.randomStonesNoise->FillNoiseSet(randomClay, xPadd, 600, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE);
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
-	{	
+	{
 		randomClay[i] += 1;
 		randomClay[i] /= 2;
 		randomClay[i] = powf(randomClay[i], wg.randomSandPower + 0.5);
@@ -707,9 +559,9 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 	alignas(32) static float randomStones[1] = {};
 	wg.randomStonesNoise->FillNoiseSet(randomStones, xPadd, 0, zPadd, 1, 1, 1);
-	*randomStones = std::pow(((*randomStones + 1.f) / 2.f)*0.5, 3.0);
+	*randomStones = std::pow(((*randomStones + 1.f) / 2.f) * 0.5, 3.0);
 
-	
+
 	alignas(32) static float cavesNoise[CHUNK_SIZE * CHUNK_HEIGHT * CHUNK_SIZE] = {};
 	wg.cavesNoise->FillNoiseSet(cavesNoise, xPadd, 0, zPadd, CHUNK_SIZE, CHUNK_HEIGHT, CHUNK_SIZE);
 	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT; i++)
@@ -899,23 +751,19 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		stoneSpikesMaskNoise[i] = wg.stoneSpikesMaskSplines.applySpline(stoneSpikesMaskNoise[i]);
 	}
 
-	if (biome.isICy)
-	{
-		wg.iceNoise->FillNoiseSet(iceNoise, xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
-		for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
-		{
-			iceNoise[i] += 1;
-			iceNoise[i] /= 2;
-			iceNoise[i] = powf(iceNoise[i], wg.iceNoisePower);
-			iceNoise[i] = wg.iceNoiseSplines.applySpline(iceNoise[i]);
-		}
-	}
+	//if (biome.isICy)
+	//{
+	//	wg.iceNoise->FillNoiseSet(iceNoise, xPadd, 0, zPadd, CHUNK_SIZE, (1), CHUNK_SIZE, 1);
+	//	for (int i = 0; i < CHUNK_SIZE * CHUNK_SIZE; i++)
+	//	{
+	//		iceNoise[i] += 1;
+	//		iceNoise[i] /= 2;
+	//		iceNoise[i] = powf(iceNoise[i], wg.iceNoisePower);
+	//		iceNoise[i] = wg.iceNoiseSplines.applySpline(iceNoise[i]);
+	//	}
+	//}
 
 #pragma endregion
-
-	bool closeToStartingTavern = (glm::length(startingTavernPosition - glm::vec2{c.x, c.z}) < 3);
-	int blockDistanceFromCenter = glm::length(glm::vec2{c.x, c.z});
-	int chunkDistanceFromCenter = blockDistanceFromCenter / CHUNK_SIZE;
 
 #pragma region gets
 
@@ -926,14 +774,14 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return continentalnessFinal[x * CHUNK_SIZE * (1) + y * CHUNK_SIZE + z];
 	};
 
-	auto getRivers = [closeToStartingTavern](int x, int z)
+	auto getRivers = [](int x, int z)
 	{
-		if (closeToStartingTavern)
-		{
-			return 1.f;
-			//return std::min(sqrt(riversNoise[x * CHUNK_SIZE + z] + 0.2f), 1.f);
-		}
-		else
+		//if (closeToStartingTavern)
+		//{
+		//	return 1.f;
+		//	//return std::min(sqrt(riversNoise[x * CHUNK_SIZE + z] + 0.2f), 1.f);
+		//}
+		//else
 		{
 			return riversNoise[x * CHUNK_SIZE + z];
 		}
@@ -948,7 +796,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	{
 		return treeAmountNoise1[x * CHUNK_SIZE + z];
 	};
-	
+
 	auto getTreeAmount2 = [](int x, int z)
 	{
 		return treeAmountNoise2[x * CHUNK_SIZE + z];
@@ -973,20 +821,20 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	{
 		return peaksAndValies[x * CHUNK_SIZE + z];
 	};
-	
+
 	auto getWhiteNoiseVal = [](int x, int z)
 	{
 		return whiteNoise[x * (CHUNK_SIZE + 1) + z];
 	};
 
-	auto getLakesNoiseVal = [closeToStartingTavern](int x, int z)
+	auto getLakesNoiseVal = [](int x, int z)
 	{
-		if (closeToStartingTavern)
-		{
-			//return pow(lakesNoise[x * CHUNK_SIZE + z] / 2.f, 2.f);
-			return 0.f;
-		}
-		else
+		//if (closeToStartingTavern)
+		//{
+		//	//return pow(lakesNoise[x * CHUNK_SIZE + z] / 2.f, 2.f);
+		//	return 0.f;
+		//}
+		//else
 		{
 			return lakesNoise[x * CHUNK_SIZE + z];
 		}
@@ -997,13 +845,13 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 		return alternativeBlocksNoise[x * (CHUNK_SIZE)+z];
 	};
 
-	auto getRandomHillsVal = [closeToStartingTavern](int x, int z)
+	auto getRandomHillsVal = [](int x, int z)
 	{
-		if (closeToStartingTavern)
-		{
-			return pow(randomHills[x * CHUNK_SIZE + z] / 2.f, 2.f);
-		}
-		else
+		//if (closeToStartingTavern)
+		//{
+		//	return pow(randomHills[x * CHUNK_SIZE + z] / 2.f, 2.f);
+		//}
+		//else
 		{
 			return randomHills[x * CHUNK_SIZE + z];
 		}
@@ -1036,7 +884,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 	auto getDensityNoiseVal = [](int x, int y, int z) //todo more cache friendly operation here please
 	{
-		return densityNoise[x * CHUNK_SIZE * (CHUNK_HEIGHT) + y * CHUNK_SIZE + z];
+		return densityNoise[x * CHUNK_SIZE * (CHUNK_HEIGHT)+y * CHUNK_SIZE + z];
 	};
 
 	auto getRandomSandVal = [](int x, int y, int z)
@@ -1107,6 +955,281 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	};
 
 #pragma endregion
+
+
+	float localWierdness = 0.1;
+	int stoneNoiseStartLevel = 40;
+	float wierdnessTresshold = 0.5;
+
+	for (int x = 0; x < CHUNK_SIZE; x++)
+		for (int z = 0; z < CHUNK_SIZE; z++)
+		{
+
+
+
+			float firstH = 1;
+			for (int y = 0; y < 256; y++)
+			{
+
+
+				float density = 1;
+				{
+					//int heightOffset = height + wg.densityHeightoffset;
+					//int difference = y - heightOffset;
+					//float differenceMultiplier =
+					//	glm::clamp(powf(std::abs(difference) / squishFactor, wg.densitySquishPower),
+					//	1.f, 10.f);
+					//density = getDensityNoiseVal(x, y, z);
+					//if (difference > 0)
+					//{
+					//	density = powf(density, differenceMultiplier);
+					//}
+					//else if (difference < 0)
+					//{
+					//	density = powf(density, 1.f / (differenceMultiplier));
+					//}
+
+					density = getDensityNoiseVal(x, y, z);
+
+					float heightNormalized = (y - newStartLevel) / (float)heightDiff;
+					//float heightNormalized = y / 256.f;
+					heightNormalized = glm::clamp(heightNormalized, 0.f, 1.f);
+					float heightNormalizedRemapped = linearRemap(heightNormalized, 0, 1, 0.2, 7);
+
+					heightNormalized = glm::mix(0.1f, heightNormalizedRemapped, localWierdness);
+					//heightNormalized = 0.1f;
+
+
+					density = std::powf(density, heightNormalized);
+					density = glm::clamp(density, 0.f, 1.f);
+
+					//density = linearRemap(density, 0, 1)
+				}
+
+			#pragma region other block patches
+				BlockType block = BlockTypes::stone;
+
+				float sandVal = getRandomSandVal(x, y, z);
+				float gravelVal = getRandomGravelVal(x, y, z);
+				float clayVal = getRandomClayVal(x, y, z);
+
+				if (sandVal > 0.5 || gravelVal > 0.5 || clayVal > 0.5)
+				{
+					if (sandVal > gravelVal && sandVal > clayVal)
+					{
+						block = BlockTypes::sand;
+					}
+					else if (gravelVal > clayVal)
+					{
+						block = BlockTypes::gravel;
+					}
+					else
+					{
+
+						//if (biome.isICy)
+						//{
+						//	block = BlockTypes::ice;
+						//}
+						//else
+						{
+							block = BlockTypes::clay;
+						}
+
+					}
+
+				}
+			#pragma endregion
+
+
+				if (y < stoneNoiseStartLevel)
+				{
+					c.unsafeGet(x, y, z).setType(block);
+				}
+				else
+				{
+					if (y < height)
+						if (density > wierdnessTresshold)
+						{
+							firstH = y;
+							c.unsafeGet(x, y, z).setType(block);
+						}
+					//else cave
+				}
+
+			}
+
+
+			//calculateBlockPass1(firstH, &c.unsafeGet(x, 0, z), biome, placeRoad, roadValue,
+			//	getWhiteNoiseVal(x, z), sandShore, stonePatchesVal > 0.5,
+			//	riverValueForPlacingRocks, currentInterpolatedValue,
+			//	getAlternativeNoiseVal(x, z), localSwampVal, currentBiomeHeight,
+			//	localStoneSpikes, canionValue, valueWithoutCanionDropDown, x, z,
+			//	lakeNoiseVal, surfaceBlock);
+
+
+
+		}
+	
+
+
+
+
+
+#if 0
+	glm::vec2 startingTavernPosition = {3, 4}; //todo hash based on seed
+
+	float interpolateValues[16 * 16] = {};
+	float borderingFactor[16 * 16] = {};
+	float tightBorders[16 * 16] = {};
+	float vegetationMaster = 0;
+	float xCellValue = 0;
+	float zCellValue = 0;
+	float biomeType = 0;
+	int currentBiomeHeight = wg.getRegionHeightAndBlendingsForChunk(c.x, c.z,
+		interpolateValues, borderingFactor, vegetationMaster, tightBorders, xCellValue, zCellValue,
+		biomeType);
+
+
+#pragma region determine biome
+
+
+	int currentBiomeIndex = biomesManager.pickBiomeIndex(biomeType);
+	if (currentBiomeHeight == PLAINS_HEIGHT_INDEX)
+	{
+
+		auto rng = rngFromPosition(xCellValue, zCellValue, wg.regionsHeightNoise->GetSeed());
+
+		float chance = 0.2;
+
+		float distanceFromCenter = glm::length(glm::vec2{xCellValue, zCellValue});
+
+		if (distanceFromCenter < 20)
+		{
+			chance = 0.5;
+		}
+		else if (distanceFromCenter < 40)
+		{
+			chance = 0.3;
+		}
+
+		if (getRandomChance(rng, chance))
+		{
+			currentBiomeIndex = BiomesManager::hayLand;
+		}
+
+	}
+
+	auto &biome = biomesManager.biomes[currentBiomeIndex];
+	//auto &biome = biomesManager.biomes[BiomesManager::snow];
+#pragma endregion
+
+
+	c.vegetation = vegetationMaster;
+	c.regionCenterX = xCellValue;
+	c.regionCenterZ = zCellValue;
+
+	//vegetationMaster = 1.f;
+	float vegetationPower = linearRemap(vegetationMaster, 0, 1, 1.2, 0.4);
+
+	auto interpolator = [&](int *ptr, float value)
+	{
+		if (value >= 5.f)
+		{
+			return (float)ptr[5];
+		}
+		
+		if (currentBiomeHeight == value)
+		{
+			return (float)ptr[currentBiomeHeight];
+		}else
+		//if (currentBiomeHeight < value)
+		{
+
+			//float rez = ptr[int(value)];
+			//float rez2 = ptr[int(value) + 1];
+			//
+			//float interp = value - int(value);
+			//
+			////return rez;
+			//return glm::mix(rez, rez2, interp);
+
+			//if (value < currentBiomeHeight)
+			//{
+			//	float rez = ptr[int(value)];
+			//	float rez2 = ptr[int(value) - 1];
+			//	float interp = value - int(value);
+			//	interp = 1 - interp;
+			//
+			//	//return rez;
+			//	return glm::mix((float)ptr[currentBiomeHeight], (rez2 + rez) / 2.f, interp);
+			//}
+			//else
+			//{
+			//	float rez = ptr[int(value)];
+			//	float rez2 = ptr[int(value) + 1];
+			//	float interp = value - int(value);
+			//
+			//	//return rez;
+			//	return glm::mix((float)ptr[currentBiomeHeight], (rez2 + rez) / 2.f, interp);
+			//}
+
+			float rez = ptr[int(value)];
+			float rez2 = ptr[int(value) + 1];
+			
+			float interp = value - int(value);
+			
+			//return rez;
+			return glm::mix(rez, rez2, interp);
+
+
+		}
+		//else
+		//{
+		//	float rez = ptr[int(value)];
+		//	float rez2 = ptr[int(value) + 1];
+		//
+		//	float interp = value - int(value);
+		//
+		//	//return rez;
+		//	return glm::mix(rez, rez2, interp);
+		//}
+		
+	};
+				   
+	//water    plains   hills
+	//int startValues[] = {22, 45,  66,      72,     80, 140};
+	//int maxlevels[] =   {40, 64,  71,      120,     170, 250};
+
+	//int startValues[] = {22, 48,  66,      70,     74, 100};
+	//int maxlevels[] =   {40, 68,  71,      120,     170, 240};
+
+	int startValues[] = {22, 48,  66,      67,     67, 67};
+	int maxlevels[] =   {40, 68,  71,      220,     220, 220};
+
+	//int biomes[] = {BiomesManager::plains, BiomesManager::plains, 
+	//	BiomesManager::plains, BiomesManager::plains,
+	//	BiomesManager::snow, BiomesManager::snow};
+
+	int valuesToAddToStart[] = {5, 5, 10,  20,  20,  20};
+	int valuesToAddToMax[] = {5, 5, 5,  20,  10,  0};
+	float peaksPower[] = {1,1, 0.5, 1, 1, 1};
+
+	int hillsValuesToAddToStart[] = {5, 5, 10,  10,  10,  4};
+	int hillsValuesToAddToMax[] = {5, 20, 45,  45,  30,  4};
+
+	c.clear();
+	
+	int xPadd = c.x * 16;
+	int zPadd = c.z * 16;
+
+	c.vegetation = vegetationMaster;
+
+
+	bool closeToStartingTavern = (glm::length(startingTavernPosition - glm::vec2{c.x, c.z}) < 3);
+	int blockDistanceFromCenter = glm::length(glm::vec2{c.x, c.z});
+	int chunkDistanceFromCenter = blockDistanceFromCenter / CHUNK_SIZE;
+
+
 
 
 #pragma region could generate medium structures
@@ -1515,96 +1638,9 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 			
 
-			float firstH = 1;
-			for (int y = 0; y < 256; y++)
-			{
 
 
-				float density = 1;
-				{
-					//int heightOffset = height + wg.densityHeightoffset;
-					//int difference = y - heightOffset;
-					//float differenceMultiplier =
-					//	glm::clamp(powf(std::abs(difference) / squishFactor, wg.densitySquishPower),
-					//	1.f, 10.f);
-					//density = getDensityNoiseVal(x, y, z);
-					//if (difference > 0)
-					//{
-					//	density = powf(density, differenceMultiplier);
-					//}
-					//else if (difference < 0)
-					//{
-					//	density = powf(density, 1.f / (differenceMultiplier));
-					//}
 
-					density = getDensityNoiseVal(x, y, z);
-
-					float heightNormalized = (y - newStartLevel) / (float)heightDiff;
-					//float heightNormalized = y / 256.f;
-					heightNormalized = glm::clamp(heightNormalized, 0.f, 1.f);
-					float heightNormalizedRemapped = linearRemap(heightNormalized, 0, 1, 0.2, 7);
-
-					heightNormalized = glm::mix(0.1f, heightNormalizedRemapped, localWierdness);
-					//heightNormalized = 0.1f;
-
-
-					density = std::powf(density, heightNormalized);
-					density = glm::clamp(density, 0.f, 1.f);
-						
-					//density = linearRemap(density, 0, 1)
-				}
-				
-			#pragma region other block patches
-				BlockType block = BlockTypes::stone;
-
-				float sandVal = getRandomSandVal(x, y, z);
-				float gravelVal = getRandomGravelVal(x, y, z);
-				float clayVal = getRandomClayVal(x, y, z);
-
-				if (sandVal > 0.5 || gravelVal > 0.5 || clayVal > 0.5)
-				{
-					if (sandVal > gravelVal && sandVal > clayVal)
-					{
-						block = BlockTypes::sand;
-					}
-					else if (gravelVal > clayVal)
-					{
-						block = BlockTypes::gravel;
-					}
-					else
-					{
-
-						if (biome.isICy)
-						{
-							block = BlockTypes::ice;
-						}
-						else
-						{
-							block = BlockTypes::clay;
-						}
-
-					}
-
-				}
-			#pragma endregion
-
-
-				if (y < stoneNoiseStartLevel)
-				{
-					c.unsafeGet(x, y, z).setType(block);
-				}
-				else
-				{
-					if (y < height)
-					if (density > wierdnessTresshold)
-					{
-						firstH = y;
-						c.unsafeGet(x, y, z).setType(block);
-					}
-					//else cave
-				}
-
-			}
 
 			if (underGroundRivers > 0.2)
 			{
@@ -1628,12 +1664,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 			BlockType surfaceBlock = 0;
 
-			calculateBlockPass1(firstH, &c.unsafeGet(x, 0, z), biome, placeRoad, roadValue, 
-				getWhiteNoiseVal(x,z), sandShore, stonePatchesVal > 0.5, 
-				riverValueForPlacingRocks, currentInterpolatedValue, 
-				getAlternativeNoiseVal(x, z), localSwampVal, currentBiomeHeight, 
-				localStoneSpikes, canionValue, valueWithoutCanionDropDown, x, z, 
-				lakeNoiseVal, surfaceBlock);
+
 
 			//all caves
 			for (int y = 2; y < firstH; y++)
@@ -2287,7 +2318,7 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 
 	#pragma endregion
 
-
+	#endif
 	//profiler.end();
 	//std::cout << "Time ms: " << profiler.rezult.timeSeconds * 1000 << "\n";
 
