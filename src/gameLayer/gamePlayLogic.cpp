@@ -2083,6 +2083,10 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 					&programData.renderer.defaultShader.shadingSettings.fogGradientUnderWater,
 					0, 10);
 
+				ImGui::SliderFloat("normal fog",
+					&getShadingSettings().fogGradient,
+					0, 100);
+
 				if (glm::length(programData.renderer.sunPos[0]) != 0)
 				{
 					programData.renderer.sunPos = 

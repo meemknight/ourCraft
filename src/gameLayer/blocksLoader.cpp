@@ -157,6 +157,10 @@ const char *texturesNames[] = {
 	"models/goblinTorch",	//140
 	"models/goblinStitchingPost",	//141
 
+	"grassDecal/side",		//142
+	"grassDecal/corner1",	//143
+	"grassDecal/corner2",	//144
+
 
 };
 

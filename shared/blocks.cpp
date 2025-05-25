@@ -627,6 +627,11 @@ bool isChest(BlockType type)
 		type == goldChest;
 }
 
+bool canHaveDecals(BlockType type)
+{
+	return type != 0 && isBlockMesh(type) && !isTransparentGeometry(type);
+}
+
 bool isTriviallyBreakable(BlockType type)
 {
 	return type == torch || type == torchWood || type == lamp || type == goblinTorch;

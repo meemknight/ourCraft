@@ -326,6 +326,9 @@ bool isAnyStone(BlockType type);
 
 bool isChest(BlockType type);
 
+//block transitions
+bool canHaveDecals(BlockType type);
+
 //used for breaking
 bool isDungeonBrick(BlockType type);
 
@@ -481,13 +484,13 @@ struct Block
 
 	void rotate(int rotation)
 	{
-		if(rotation == 0)
+		if (rotation == 0)
 		{
 			return;
 		}
 
 		assert(rotation <= 3);
-		
+
 		if (hasRotationFor365RotationTypeBlocks())
 		{
 
@@ -550,6 +553,11 @@ struct Block
 	bool isChest()
 	{
 		return ::isChest(getType());
+	}
+
+	bool canHaveDecals()
+	{
+		return ::canHaveDecals(getType());
 	}
 
 	bool hasSecondCollider()

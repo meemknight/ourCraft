@@ -24,6 +24,7 @@ constexpr int wallsInnerFace = 66;
 constexpr int wallsBottomPart = 70;
 constexpr int wallsSideParts = 74;
 constexpr int lod1Parts = 82;
+constexpr int decalsGeometry = 88;
 
 
 Block *Chunk::safeGet(int x, int y, int z)
@@ -1612,6 +1613,128 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 
 	};
 
+	auto blockBakeLogicForDecals = [&](int x, int y, int z,
+		std::vector<int> *currentVector, Block &b
+		)
+	{
+
+		const int grassSide = 142;
+		const int grassCorner = 143;
+		const int grassCornerBig = 144;
+		Block *sides[26] = {};
+
+		auto renderOneDecal = [&](int texture, int rotation)
+		{
+			
+			unsigned char sunLight = 0;
+			unsigned char torchLight = 0;
+			int i = 2; //top face
+			//calculateLightThings(sunLight, torchLight, sides[2], b, 2, y);
+
+			if (dontUpdateLightSystem)
+			{
+				sunLight = 15;
+				torchLight = 0;
+			}
+			else
+			{
+				sunLight = b.getSkyLight();
+				torchLight = b.getLight();
+			}
+
+			pushFaceShapeTextureAndColor(transparentGeometry, decalsGeometry + rotation,
+				texture * 4, b.getColor());
+
+			int aoShape = determineAOShape(i, sides);
+
+			bool isInWater = (sides[i] != nullptr) && sides[i]->getType() == BlockTypes::water;
+
+
+			glm::ivec3 position = {x + this->data.x * CHUNK_SIZE, y,
+					z + this->data.z * CHUNK_SIZE};
+			pushFlagsLightAndPosition(transparentGeometry, position, 0, isInWater,
+				sunLight, torchLight, aoShape);
+		};
+
+		if (b.canHaveDecals() && (y == CHUNK_HEIGHT - 1
+			|| !unsafeGet(x, y + 1, z, 0).isOpaque()
+			))
+		{
+			if (b.getType() == BlockTypes::grassBlock) { return; }
+
+			getNeighboursLogic(x, y, z, sides, 0);
+
+			bool frontDecal = 0;
+			bool backDecal = 0;
+			bool leftDecal = 0;
+			bool rightDecal = 0;
+
+			bool frontLeftDecal = 0;
+			bool frontRightDecal = 0;
+			bool backLeftDecal = 0;
+			bool backRightDecal = 0;
+
+			if (sides[FRONT] && sides[FRONT]->getType() == BlockTypes::grassBlock
+				&& (!sides[UP_FRONT] || !sides[UP_FRONT]->isOpaque())) { frontDecal = true; }
+			if (sides[BACK] && sides[BACK]->getType() == BlockTypes::grassBlock
+				&& (!sides[UP_BACK] || !sides[UP_BACK]->isOpaque())) { backDecal = true; }
+			if (sides[LEFT] && sides[LEFT]->getType() == BlockTypes::grassBlock
+				&& (!sides[UP_LEFT] || !sides[UP_LEFT]->isOpaque())) { leftDecal = true; }
+			if (sides[RIGHT] && sides[RIGHT]->getType() == BlockTypes::grassBlock
+				&& (!sides[UP_RIGHT] || !sides[UP_RIGHT]->isOpaque())) { rightDecal = true; }
+
+			if (sides[FRONTLEFT] && sides[FRONTLEFT]->getType() == BlockTypes::grassBlock
+				&& (!sides[UP_FRONTLEFT] || !sides[UP_FRONTLEFT]->isOpaque())) { frontLeftDecal = true; }
+			if (sides[BACKLEFT] && sides[BACKLEFT]->getType() == BlockTypes::grassBlock
+				&& (!sides[UP_BACKLEFT] || !sides[UP_BACKLEFT]->isOpaque())) { backLeftDecal = true; }
+			if (sides[FRONTRIGHT] && sides[FRONTRIGHT]->getType() == BlockTypes::grassBlock
+				&& (!sides[UP_FRONTRIGHT] || !sides[UP_FRONTRIGHT]->isOpaque())) { frontRightDecal = true; }
+			if (sides[BACKRIGHT] && sides[BACKRIGHT]->getType() == BlockTypes::grassBlock
+				&& (!sides[UP_BACKRIGHT] || !sides[UP_BACKRIGHT]->isOpaque())) { backRightDecal = true; }
+
+			bool didCorner = false;
+			if (frontDecal && rightDecal)
+			{
+				//corner big
+				renderOneDecal(grassCornerBig, 0);
+				didCorner = true;
+			}else if (backDecal && rightDecal)
+			{
+				renderOneDecal(grassCornerBig, 1);
+				didCorner = true;
+			}else if (backDecal && leftDecal)
+			{
+				renderOneDecal(grassCornerBig, 2);
+				didCorner = true;
+			}
+			else if (frontDecal && leftDecal)
+			{
+				renderOneDecal(grassCornerBig, 3);
+				didCorner = true;
+
+			}
+
+			if (!didCorner)
+			{
+				if (frontDecal) { renderOneDecal(grassSide, 0); }
+				if (rightDecal) { renderOneDecal(grassSide, 1); }
+				if (backDecal) { renderOneDecal(grassSide, 2); }
+				if (leftDecal) { renderOneDecal(grassSide, 3); }
+			}
+			
+			//small corners
+			if (!frontDecal && !rightDecal && frontRightDecal) { renderOneDecal(grassCorner, 0); }
+			if (!backDecal && !rightDecal && backRightDecal) { renderOneDecal(grassCorner, 1); }
+			if (!backDecal && !leftDecal && backLeftDecal) { renderOneDecal(grassCorner, 2); }
+			if (!frontDecal && !leftDecal && frontLeftDecal) { renderOneDecal(grassCorner, 3); }
+
+
+
+		}
+
+
+	};
+
 	auto blockBakeLogicForTransparentBlocks = [&](int x, int y, int z,
 		std::vector<int> *currentVector, Block &b, int lod
 		)
@@ -2226,7 +2349,11 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 							float distance = glm::dot(difference, difference);
 							transparentCandidates.push_back({{x,y,z}, distance});
 						}
-
+						else
+						{
+							blockBakeLogicForDecals(x, y, z, &transparentGeometry, b);
+						}
+						
 					}
 
 			std::sort(transparentCandidates.begin(), transparentCandidates.end(), [](TransparentCandidate &a,

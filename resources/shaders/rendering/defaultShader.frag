@@ -876,7 +876,8 @@ vec3 paintGray(vec3 colorIn, vec3 newColor)
 
 vec3 paint(vec3 colorIn, vec3 newColor, vec3 colorReff)
 {
-	vec3 reffHSV = rgb2hsv(colorReff);
+	//vec3 reffHSV = rgb2hsv(colorReff);
+
 	vec3 colorInHSV = rgb2hsv(colorIn);
 	vec3 newColorHSV = rgb2hsv(newColor);
 	
@@ -1186,7 +1187,7 @@ void main()
 			vec3(0.0, 0.1, 0.0),  // greenPaint
 			vec3(0, 255, 195)/255.f, // turqoisePaint
 			vec3(0.0, 1.0, 1.0),  // cyanPaint
-			vec3(0, 62, 176)/255.f,  // bluePaint
+			vec3(0, 62, 176)/255.f * 1.2,  // bluePaint
 			vec3(98, 0, 209)/255.f,  // purplePaint
 			vec3(1.0, 0.0, 1.0),  // magentaPaint
 			vec3(1.0, 0.5, 0.75)  // pinkPaint

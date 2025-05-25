@@ -698,6 +698,31 @@ float vertexData[] = {
 		#pragma endregion
 
 
+
+		//top for decals
+		-0.5, 0.5, -0.5,
+		-0.5, 0.5, 0.5,
+		0.5, 0.5, 0.5,
+		0.5, 0.5, -0.5,
+
+		//top for decals
+		-0.5, 0.5, -0.5,
+		-0.5, 0.5, 0.5,
+		0.5, 0.5, 0.5,
+		0.5, 0.5, -0.5,
+
+		//top for decals
+		-0.5, 0.5, -0.5,
+		-0.5, 0.5, 0.5,
+		0.5, 0.5, 0.5,
+		0.5, 0.5, -0.5,
+
+		//top for decals
+		-0.5, 0.5, -0.5,
+		-0.5, 0.5, 0.5,
+		0.5, 0.5, 0.5,
+		0.5, 0.5, -0.5,
+
 };
 
 float vertexUV[] = {
@@ -1254,6 +1279,27 @@ float vertexUV[] = {
 
 	#pragma endregion
 
+
+	//top for decals
+	1, 0,
+	1, 1,
+	0, 1,
+	0, 0,
+
+	0, 0,
+	1, 0,
+	1, 1,
+	0, 1,
+
+	0, 1,
+	0, 0,
+	1, 0,
+	1, 1,
+
+	1, 1,
+	0, 1,
+	0, 0,
+	1, 0,
 
 };
 
@@ -3348,11 +3394,12 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glBindTexture(GL_TEXTURE_2D, fboCoppy.depth);
 		glUniform1i(defaultShader.u_depthTexture, 9);
 
-
-		glDepthFunc(GL_LESS);
+		glDepthFunc(GL_LEQUAL);
 		glDisable(GL_CULL_FACE); //todo change
 		renderTransparentGeometry(firstLod, otherLods);
 		glEnable(GL_CULL_FACE);
+		glDepthFunc(GL_LESS);
+
 	};
 
 	int queryDataForSunFlare = 0;
