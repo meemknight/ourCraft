@@ -160,6 +160,8 @@ const char *texturesNames[] = {
 	"grassDecal/side",		//142
 	"grassDecal/corner1",	//143
 	"grassDecal/corner2",	//144
+	"grassDecal/full",		//145
+	"grassDecal/3sides",	//146
 
 
 };

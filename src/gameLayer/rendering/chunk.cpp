@@ -1621,6 +1621,8 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 		const int grassSide = 142;
 		const int grassCorner = 143;
 		const int grassCornerBig = 144;
+		const int grassFull = 145;
+		const int grass3Sides = 146;
 		Block *sides[26] = {};
 
 		auto renderOneDecal = [&](int texture, int rotation)
@@ -1683,6 +1685,12 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 			if (sides[RIGHT] && sides[RIGHT]->getType() == BlockTypes::grassBlock
 				&& (!sides[UP_RIGHT] || !sides[UP_RIGHT]->isOpaque())) { rightDecal = true; }
 
+			if (frontDecal && rightDecal && backDecal && leftDecal)
+			{
+				renderOneDecal(grassFull, 0);
+				return;
+			}
+
 			if (sides[FRONTLEFT] && sides[FRONTLEFT]->getType() == BlockTypes::grassBlock
 				&& (!sides[UP_FRONTLEFT] || !sides[UP_FRONTLEFT]->isOpaque())) { frontLeftDecal = true; }
 			if (sides[BACKLEFT] && sides[BACKLEFT]->getType() == BlockTypes::grassBlock
@@ -1691,6 +1699,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 				&& (!sides[UP_FRONTRIGHT] || !sides[UP_FRONTRIGHT]->isOpaque())) { frontRightDecal = true; }
 			if (sides[BACKRIGHT] && sides[BACKRIGHT]->getType() == BlockTypes::grassBlock
 				&& (!sides[UP_BACKRIGHT] || !sides[UP_BACKRIGHT]->isOpaque())) { backRightDecal = true; }
+
 
 			bool didCorner = false;
 			if (frontDecal && rightDecal)
