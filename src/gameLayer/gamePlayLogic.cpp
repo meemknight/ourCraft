@@ -2054,7 +2054,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 			if (ImGui::CollapsingHeader("Light Stuff",
 				ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding))
-			{
+			{	
 				ImGui::Checkbox("showLightLevels", &gameData.showLightLevels);
 				ImGui::SliderInt("skyLightIntensity", &gameData.skyLightIntensity, 0, 15);
 				ImGui::SliderFloat("metallic", &programData.renderer.metallic, 0, 1);

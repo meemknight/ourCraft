@@ -110,8 +110,8 @@ namespace AudioEngine
 
 			if (m.stream.buffer)
 			{
-				allMusic.push_back(m);
 				m.looping = false;
+				allMusic.push_back(m);
 			}
 		};
 
@@ -155,7 +155,6 @@ namespace AudioEngine
 
 		if (allMusic.size() <= index) { return; }
 	
-		//todo transition period
 		StopMusicStream(allMusic[index]);
 
 		allMusic[index].looping = false;

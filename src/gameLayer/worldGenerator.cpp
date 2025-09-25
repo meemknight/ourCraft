@@ -547,8 +547,19 @@ void generateChunk(ChunkData& c, WorldGenerator &wg, StructuresManager &structur
 	//int startValues[] = {22, 48,  66,      70,     74, 100};
 	//int maxlevels[] =   {40, 68,  71,      120,     170, 240};
 
-	int startValues[] = {22, 48,  66,      67,     67, 67};
-	int maxlevels[] =   {40, 68,  71,      220,     220, 220};
+	//^^^ LEGACY
+
+	//OROGINAL, working good
+	//int startValues[] = {22, 48,  66,      67,     67, 67};
+	//int maxlevels[] =   {40, 68,  71,      220,     220, 220};
+
+	//					water	water    plains	      hills	     mountain   big mountain
+	//int startValues[] = {22,	48+17,		49+17,      50+17,		67+17,		67+17};
+	//int maxlevels[] =   {40+19,	68+17,		71+17,      210+17,		220+17,		220+17};
+
+	int startValues[] = {22, 22,	66,		67,      68,		80};
+	int maxlevels[] =   {40, 68,	71,		100,      210+17,		220+17};
+							
 
 	//int biomes[] = {BiomesManager::plains, BiomesManager::plains, 
 	//	BiomesManager::plains, BiomesManager::plains,

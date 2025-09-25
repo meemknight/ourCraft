@@ -1,0 +1,12 @@
+entities of not visible yet chunks should not be visible to the player
+
+dried rivers look better than road, so change the road to look like that as well
+
+move the remaining sprites in game
+
+changing the view distance should not reset all the chunks
+
+
+for world gen, let's add an alternative min height so that some mountain areas can go till plains
+
+for world gen, make sure rivers can enter in ocean and also for rivers maybe make the river at the height of the plains? so we have different level rivers
