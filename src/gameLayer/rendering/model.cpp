@@ -810,6 +810,7 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 
 
 
+
 	//todo check if it frees all of them
 	importer.FreeScene();
 

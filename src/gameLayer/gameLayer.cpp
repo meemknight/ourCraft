@@ -214,6 +214,7 @@ void loadAllDefaultTexturePacks()
 
 	programData.renderer.recreateBlocksTexturesBuffer(programData.blocksLoader);
 
+	//todo remove? repeating? it seems like i also call it down
 	programData.renderer.renderAllBlocksUiTextures(programData.blocksLoader, programData.modelsManager);
 
 	

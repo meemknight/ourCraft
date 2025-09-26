@@ -4911,6 +4911,17 @@ void Renderer::renderEntities(
 #pragma endregion
 
 
+	static gl2d::Texture tempWhite;
+	static GLuint64 tempWhiteBindlessHandle = 0;
+
+	if (!tempWhite.id)
+	{
+		tempWhite.create1PxSquare();
+
+		tempWhiteBindlessHandle = glGetTextureHandleARB(tempWhite.id);
+		glMakeTextureHandleResidentARB(tempWhiteBindlessHandle);
+	}
+
 #pragma region item entities
 
 	entityRenderer.itemEntityShader.shader.bind();
@@ -4930,12 +4941,23 @@ void Renderer::renderEntities(
 
 			BlocksLoader::ItemGeometry geometry = {};
 
+			bool isALoadedModel = 0;
+
 			if (type >= ItemsStartPoint)
 			{
 				texture = blocksLoader.gpuIdsItems
 					[type - ItemsStartPoint];
 
 				geometry = blocksLoader.itemsGeometry[type - ItemsStartPoint + 1];
+
+				//this means this is a model
+				if (geometry.indexBuffer)
+				{
+					texture = tempWhiteBindlessHandle;
+					isALoadedModel = true;
+				}
+
+
 			}
 			else
 			{
@@ -4971,13 +4993,28 @@ void Renderer::renderEntities(
 				glUniform3fv(entityRenderer.itemEntityShader.u_entityPositionFloat, 1, &entityFloat[0]);
 				glUniform3iv(entityRenderer.itemEntityShader.u_entityPositionInt, 1, &entityInt[0]);
 
+				float scale = 0.4;
+				if (isALoadedModel)
+				{
+					scale = 1;
+				}
+
 				glUniformMatrix4fv(entityRenderer.itemEntityShader.u_modelMatrix, 1, GL_FALSE,
-					glm::value_ptr(glm::scale(glm::vec3{0.4f})));
+					glm::value_ptr(glm::scale(glm::vec3{scale})));
 			}
 
 
 			glBindVertexArray(geometry.vao);
-			glDrawArrays(GL_TRIANGLES, 0, geometry.count);
+
+			if (isALoadedModel)
+			{
+				glDrawElements(GL_TRIANGLES, geometry.count, GL_UNSIGNED_SHORT, 0);
+			}
+			else
+			{
+				glDrawArrays(GL_TRIANGLES, 0, geometry.count);
+			}
+
 		
 		};
 

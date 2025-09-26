@@ -20,10 +20,14 @@ struct BlocksLoader
 	std::vector<GLuint64> gpuIdsItems;
 	std::vector<GLuint> texturesIdsItems;
 	
+	std::vector<GLuint64> gpuIdsItemsFor3Ditems;
+	std::vector<GLuint> texturesIdsFor3Ditems;
+
 	struct ItemGeometry
 	{
 		GLuint vao = 0;
 		GLuint buffer = 0;
+		GLuint indexBuffer = 0;
 		unsigned int count = 0;
 
 		void clear();

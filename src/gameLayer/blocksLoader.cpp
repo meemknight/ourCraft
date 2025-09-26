@@ -6,6 +6,10 @@
 #include <gameplay/items.h>
 #include <platformTools.h>
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 //loadallblocks
 //load all textures
 //loadalltextures
@@ -1810,6 +1814,14 @@ void BlocksLoader::clearAllTextures()
 	gpuIdsItems.clear();
 
 	backgroundTexture.cleanup();
+
+	for (auto &t : texturesIdsFor3Ditems)
+	{
+		texturesIdsFor3Ditems.clear();
+	}
+
+	gpuIdsItemsFor3Ditems.clear();
+	texturesIdsFor3Ditems.clear();
 }
 
 void BlocksLoader::loadAllItemsGeometry()
@@ -2179,6 +2191,118 @@ void BlocksLoader::loadAllItemsGeometry()
 	};
 
 
+#pragma region weapons models
+
+	Assimp::Importer importer;
+
+	// Step 2: Specify Import Options
+	unsigned int flags = aiProcess_Triangulate | aiProcess_LimitBoneWeights | 
+		aiProcess_JoinIdenticalVertices | aiProcess_ImproveCacheLocality | aiProcess_GenUVCoords | aiProcess_TransformUVCoords
+		| aiProcess_FindInstances | aiProcess_GenNormals | aiProcess_PreTransformVertices;
+
+	importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT); // Remove lines and points
+	importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, aiComponent_NORMALS | aiComponent_BONEWEIGHTS | aiComponent_ANIMATIONS);
+
+
+	std::vector<unsigned short> indices;
+	indices.reserve(400);
+
+	auto loadModel = [&](const char *path)
+	{
+		finalData.clear();
+		indices.clear();
+
+		const aiScene *scene = importer.ReadFile(path, flags);
+
+		if (scene)
+		{
+			ItemGeometry result = {};
+
+			glGenVertexArrays(1, &result.vao);
+			glBindVertexArray(result.vao);
+
+			glGenBuffers(1, &result.buffer);
+			glBindBuffer(GL_ARRAY_BUFFER, result.buffer);
+			glGenBuffers(1, &result.indexBuffer);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, result.indexBuffer);
+
+			unsigned int vertexOffset = 0;
+
+			for (unsigned int m = 0; m < scene->mNumMeshes; ++m)
+			{
+				const aiMesh *mesh = scene->mMeshes[m];
+
+				for (unsigned int v = 0; v < mesh->mNumVertices; ++v)
+				{
+					finalData.push_back(mesh->mVertices[v].x);
+					finalData.push_back(mesh->mVertices[v].y);
+					finalData.push_back(mesh->mVertices[v].z);
+
+					finalData.push_back(mesh->mNormals[v].x);
+					finalData.push_back(mesh->mNormals[v].y);
+					finalData.push_back(mesh->mNormals[v].z);
+
+					if (mesh->HasTextureCoords(0))
+					{
+						finalData.push_back(mesh->mTextureCoords[0][v].x);
+						finalData.push_back(mesh->mTextureCoords[0][v].y);
+					}
+					else
+					{
+						finalData.push_back(0);
+						finalData.push_back(0);
+					}
+				}
+
+				for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
+				{
+					const aiFace &face = mesh->mFaces[i];
+					for (unsigned int j = 0; j < face.mNumIndices; ++j)
+					{
+						indices.push_back(face.mIndices[j] + vertexOffset);
+					}
+				}
+
+				vertexOffset += mesh->mNumVertices;
+			}
+
+			result.count = indices.size();
+
+			if (result.count < 3)
+			{
+				result.clear();
+				return false;
+			}
+
+			glBufferStorage(GL_ARRAY_BUFFER, finalData.size() * sizeof(float),
+				finalData.data(), 0);
+
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
+			glEnableVertexAttribArray(1);
+			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
+			glEnableVertexAttribArray(2);
+			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
+
+			glBufferStorage(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(indices[0]),
+				indices.data(), 0);
+
+			itemsGeometry.push_back(result);
+
+			glBindVertexArray(0);
+
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	};
+
+
+#pragma endregion
+
+
 	gl2d::Texture defaultTexture;
 	defaultTexture.id = texturesIds[0];
 	loadItem(defaultTexture);
@@ -2192,12 +2316,33 @@ void BlocksLoader::loadAllItemsGeometry()
 		}
 		else
 		{
-			gl2d::Texture t;
-			t.id = texturesIdsItems[i - ItemTypes::stick];
-			loadItem(t);
+
+			//todo
+
+			if (i == ItemTypes::ironSword)
+			{
+
+				if (!loadModel(RESOURCES_PATH "assets/models/items/ironSword.glb"))
+				{
+					gl2d::Texture t;
+					t.id = texturesIdsItems[i - ItemTypes::stick];
+					loadItem(t);
+					std::cout << "\n\nNO!!!\n\n";
+				}
+
+			}else
+			{
+				gl2d::Texture t;
+				t.id = texturesIdsItems[i - ItemTypes::stick];
+				loadItem(t);
+			}
+
+
 		}
 	}
 	glBindVertexArray(0);
+
+	importer.FreeScene();
 
 }
 
@@ -2210,6 +2355,7 @@ uint16_t getGpuIdIndexForBlock(short type, int face)
 void BlocksLoader::ItemGeometry::clear()
 {
 	glDeleteBuffers(1, &buffer);
+	glDeleteBuffers(1, &indexBuffer);
 	glDeleteVertexArrays(1, &vao);
 	*this = {};
 }

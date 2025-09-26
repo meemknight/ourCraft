@@ -7,6 +7,10 @@ move the remaining sprites in game
 changing the view distance should not reset all the chunks
 
 
-for world gen, let's add an alternative min height so that some mountain areas can go till plains
-
 for world gen, make sure rivers can enter in ocean and also for rivers maybe make the river at the height of the plains? so we have different level rivers
+
+for world gen, make the continentalness noise just slightly more vast and maybe mountains more vast. Maybe bias things to increase the chances of getting to bigger biome zones
+
+load only dimensions
+
+shrink UVs extremely slightly for the models
