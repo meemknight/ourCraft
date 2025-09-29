@@ -2063,7 +2063,13 @@ void Renderer::recreateBlockGeometryData(ModelsManager &modelsManager)
 
 	auto noRotation = [&](int i)
 	{
-		return i == ModelsManager::fence;
+		return 
+			i == ModelsManager::fence ||
+			i == ModelsManager::fenceFront ||
+			i == ModelsManager::fenceBack ||
+			i == ModelsManager::fenceLeft ||
+			i == ModelsManager::fenceRight
+			;
 	};
 
 	static std::vector<float> newVertexData;

@@ -73,7 +73,6 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 	}
 
 
-
 	bool appendMode = texturesIds.empty();
 
 
@@ -791,6 +790,10 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		"goblinTable.glb",
 		"goblinStitchingPost.glb",
 		"fence.glb",
+		"fence_front.glb",
+		"fence_back.glb",
+		"fence_left.glb",
+		"fence_right.glb",
 	};
 
 	static_assert(sizeof(blockModelsNames) / sizeof(blockModelsNames[0]) == BLOCK_MODELS_COUNT);

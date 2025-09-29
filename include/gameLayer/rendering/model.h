@@ -223,6 +223,10 @@ struct ModelsManager
 		goblinTableModel,
 		goblinStitchingPostModel,
 		fence,
+		fenceFront,
+		fenceBack,
+		fenceLeft,
+		fenceRight,
 
 		BLOCK_MODELS_COUNT
 
