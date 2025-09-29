@@ -251,6 +251,8 @@ enum BlockTypes : unsigned short
 	goblinTorch,
 	goblinStitchingPost,
 
+	woodenFence,
+
 	BlocksCount
 };
 
@@ -356,6 +358,9 @@ unsigned char isInteractable(BlockType type);
 
 bool isBlock(std::uint16_t type);
 
+bool noRotationForFurniture(std::uint16_t type);
+
+bool isFenceMesh(std::uint16_t type);
 
 bool canBeMinedByHand(std::uint16_t type);
 
@@ -491,7 +496,7 @@ struct Block
 
 		assert(rotation <= 3);
 
-		if (hasRotationFor365RotationTypeBlocks())
+		if (hasRotationFor365RotationTypeBlocks() && !noRotationForFurniture())
 		{
 
 			if (!isWallMountedOrStangingBlock()
@@ -526,6 +531,11 @@ struct Block
 			|| isWallMountedOrStangingBlock();
 	}
 
+	bool noRotationForFurniture()
+	{
+		return ::noRotationForFurniture(getType());
+	}
+
 	void setType(BlockType t)
 	{
 		typeAndFlags = t & 0b0111'1111'1111;
@@ -548,6 +558,11 @@ struct Block
 	bool isWallMountedOrStangingBlock()
 	{
 		return::isWallMountedOrStangingBlock(getType());
+	}
+
+	bool isFenceMesh()
+	{
+		return ::isFenceMesh(getType());
 	}
 
 	bool isChest()

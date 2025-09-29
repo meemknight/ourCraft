@@ -14,3 +14,5 @@ for world gen, make the continentalness noise just slightly more vast and maybe 
 load only dimensions
 
 shrink UVs extremely slightly for the models
+
+move world, and settings folder out of resources!

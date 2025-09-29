@@ -2169,10 +2169,20 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 		auto bakeForBlockGeometry = [&](int x, int y, int z, Renderer::BlockGeometryIndex &geometry, Block &b)
 		{
 
+			if (b.isFenceMesh())
+			{
+				int a = 0;
+			}
+
 			//std::minstd_rand rng;
 			//rng.seed(hash(x, y, z));
 			//int rotation = getRandomNumber(rng, 0, 3);
-			int rotation = b.getRotationFor365RotationTypeBlocks();
+			int rotation = 0;
+			
+			if (!b.noRotationForFurniture())
+			{
+				rotation = b.getRotationFor365RotationTypeBlocks();
+			}
 
 
 			auto type = b.getType();
@@ -2278,7 +2288,7 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 							{
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::vinesModel], b);
 							}
-							else if (b.isDecorativeFurniture())
+							else if (b.isDecorativeFurniture() || b.isFenceMesh())
 							{
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[getDefaultBlockShapeForFurniture(b.getType())], b);
 							}

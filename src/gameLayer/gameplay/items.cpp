@@ -1495,6 +1495,8 @@ char *blockNames[] = {
 	"Goblin torch",
 	"Goblin stitching station",
 
+	"Wooden Fence",
+
 };
 
 std::string Item::getItemName()

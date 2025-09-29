@@ -50,6 +50,9 @@ int blockReorder[] = {
 	// Structures & Functional Blocks
 	workBench, furnace, cookingPot, ladder, trainingDummy, target,
 
+	//fences
+	woodenFence,
+
 	// Furniture
 	bookShelf,
 	oakChair, oakBigChair, oakLogChair, oakLogBigChair, oakTable, oakLogTable,
@@ -97,7 +100,7 @@ bool isBlockMesh(BlockType type)
 		&& !isWallMesh(type)
 		&& !isSlabMesh(type)
 		&& !isDecorativeFurniture(type)
-		&& !isWallMountedBlock(type)
+		&& !isFenceMesh(type)
 		
 		;
 }
@@ -241,6 +244,7 @@ bool isOpaque(BlockType type)
 		&& !(isStairsMesh(type))
 		&& !(isSlabMesh(type))
 		&& !(isWallMesh(type))
+		&& !(isFenceMesh(type))
 		&& !(isAnyLeaves(type))
 		&& !(isTransparentGeometry(type))
 		&& !(isGrassMesh(type));
@@ -399,6 +403,7 @@ bool isAnyWoddenBlock(BlockType type)
 		type == strippedOakLog ||
 		type == strippedBirchLog ||
 		type == strippedSpruceLog ||
+		type == woodenFence ||
 		type == logWall;
 		
 }
@@ -686,6 +691,16 @@ unsigned char isInteractable(BlockType type)
 bool isBlock(std::uint16_t type) //todo == 0 ???????????????????/
 {
 	return type > 0 && type < BlocksCount;
+}
+
+bool noRotationForFurniture(std::uint16_t type)
+{
+	return isFenceMesh(type);
+}
+
+bool isFenceMesh(std::uint16_t type)
+{
+	return type == BlockTypes::woodenFence;
 }
 
 bool Block::normalize()

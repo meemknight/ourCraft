@@ -649,7 +649,12 @@ uint16_t blocksLookupTable[] = {
 	140, 140, 140, 140, 140, 140, //goblin torch
 	141, 141, 141, 141, 141, 141,//goblin stitching post
 
+	7,7,7,7,7,7,//fence
+
 };
+
+static_assert(BlockTypes::BlocksCount == sizeof(blocksLookupTable) / (sizeof(blocksLookupTable[0]) * 6), 
+	"Forgot to add a texture here");
 
 void fixAlphaForNormals(unsigned char *buffer, int w, int h)
 {

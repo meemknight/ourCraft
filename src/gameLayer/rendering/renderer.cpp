@@ -1679,7 +1679,7 @@ void Renderer::renderAllBlocksUiTextures(BlocksLoader &blocksLoader, ModelsManag
 
 	for (BlockType i = 1; i < BlocksCount; i++)
 	{
-		if (isDecorativeFurniture(i))
+		if (isDecorativeFurniture(i) || isFenceMesh(i))
 		{
 			int index = getDefaultBlockShapeForFurniture(i);
 
@@ -2061,14 +2061,29 @@ void Renderer::create(ModelsManager &modelsManager)
 void Renderer::recreateBlockGeometryData(ModelsManager &modelsManager)
 {
 
+	auto noRotation = [&](int i)
+	{
+		return i == ModelsManager::fence;
+	};
+
 	static std::vector<float> newVertexData;
 	newVertexData.clear();
 	int newVertexDataSize = sizeof(vertexData) / sizeof(vertexData[0]);
 	int newVertexUVSize = sizeof(vertexUV) / sizeof(vertexUV[0]);
 	for (int i = 0; i < ModelsManager::BLOCK_MODELS_COUNT; i++)
 	{
-		newVertexDataSize += modelsManager.blockModels[i].vertices.size() * 4;
-		newVertexUVSize += modelsManager.blockModels[i].uvs.size() * 4;
+
+		if (noRotation(i))
+		{
+			newVertexDataSize += modelsManager.blockModels[i].vertices.size();
+			newVertexUVSize += modelsManager.blockModels[i].uvs.size();
+		}
+		else
+		{
+			newVertexDataSize += modelsManager.blockModels[i].vertices.size() * 4;
+			newVertexUVSize += modelsManager.blockModels[i].uvs.size() * 4;
+		}
+
 	}
 
 	newVertexData.resize(newVertexDataSize);
@@ -2085,7 +2100,7 @@ void Renderer::recreateBlockGeometryData(ModelsManager &modelsManager)
 	int currentUvIndex = sizeof(vertexUV) / 4;
 
 	//special rotate rotates the block a few degrees each time instead of 90. for crates
-	auto addGeometry = [&](BlockGeometryIndex &b, BlockModel &model, bool specialRotate)
+	auto addGeometry = [&](BlockGeometryIndex &b, BlockModel &model, bool specialRotate, bool noRotate)
 	{
 		b.startIndex = currentVertexIndex / (sizeof(float) * 3);
 		b.componentCount = model.vertices.size() / (3 * 4);
@@ -2099,6 +2114,7 @@ void Renderer::recreateBlockGeometryData(ModelsManager &modelsManager)
 		);
 
 		size_t vSize = model.vertices.size();
+		if(!noRotate)
 		for (int i = 0; i < vSize / 3; i++)
 		{
 			glm::vec2 angle = {};
@@ -2143,26 +2159,44 @@ void Renderer::recreateBlockGeometryData(ModelsManager &modelsManager)
 			newVertexData[currentVertexIndex + model.vertices.size()*3 + i * 3 + 2] = angle.y;
 		}
 
-
-		currentVertexIndex += model.vertices.size() * 4;
+		if (noRotate)
+		{
+			currentVertexIndex += model.vertices.size();
+		}
+		else
+		{
+			currentVertexIndex += model.vertices.size() * 4;
+		}
 
 		memcpy(newUVData.data() + currentUvIndex, model.uvs.data(),
 			model.uvs.size() * sizeof(float));
-		memcpy(newUVData.data() + currentUvIndex + model.uvs.size(), model.uvs.data(),
-			model.uvs.size() * sizeof(float));
-		memcpy(newUVData.data() + currentUvIndex + model.uvs.size() * 2, model.uvs.data(),
-			model.uvs.size() * sizeof(float));
-		memcpy(newUVData.data() + currentUvIndex + model.uvs.size() * 3, model.uvs.data(),
-			model.uvs.size() * sizeof(float));
+
+		if (!noRotate)
+		{
+			memcpy(newUVData.data() + currentUvIndex + model.uvs.size(), model.uvs.data(),
+				model.uvs.size() * sizeof(float));
+			memcpy(newUVData.data() + currentUvIndex + model.uvs.size() * 2, model.uvs.data(),
+				model.uvs.size() * sizeof(float));
+			memcpy(newUVData.data() + currentUvIndex + model.uvs.size() * 3, model.uvs.data(),
+				model.uvs.size() * sizeof(float));
+		}
 
 
-		currentUvIndex += model.uvs.size() * 4;
+		if (noRotate)
+		{
+			currentUvIndex += model.uvs.size();
+		}
+		else
+		{
+			currentUvIndex += model.uvs.size() * 4;
+		}
+
 	};
 
 	for (int i = 0; i < ModelsManager::BLOCK_MODELS_COUNT; i++)
 	{
 		addGeometry(blockGeometry[i], modelsManager.blockModels[i], 
-			i == ModelsManager::crateModel);
+			i == ModelsManager::crateModel, noRotation(i));
 	}
 
 	//todo optimize with buffer storage!!!! (don't forget to recreate the buffer!!)

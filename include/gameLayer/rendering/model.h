@@ -159,7 +159,7 @@ struct BlockModel
 	void cleanup() { *this = {}; }
 };
 
-
+//modelsloader modelloader
 struct ModelsManager
 {
 
@@ -222,6 +222,7 @@ struct ModelsManager
 		goblinChairModel,
 		goblinTableModel,
 		goblinStitchingPostModel,
+		fence,
 
 		BLOCK_MODELS_COUNT
 

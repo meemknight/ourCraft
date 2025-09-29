@@ -790,6 +790,7 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		"goblinChair.glb",
 		"goblinTable.glb",
 		"goblinStitchingPost.glb",
+		"fence.glb",
 	};
 
 	static_assert(sizeof(blockModelsNames) / sizeof(blockModelsNames[0]) == BLOCK_MODELS_COUNT);
@@ -797,11 +798,6 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 
 	for (int i = 0; i < BLOCK_MODELS_COUNT; i++)
 	{
-
-		if (i == 4)
-		{
-			int a = 0;
-		}
 
 		if (!blockModels[i].vertices.size())
 			loadBlockModel((path + blockModelsNames[i]).c_str(), blockModels[i]);
@@ -876,6 +872,8 @@ int getDefaultBlockShapeForFurniture(unsigned int b)
 		case goblinChair: return ModelsManager::goblinChairModel;
 		case goblinTable: return ModelsManager::goblinTableModel;
 		case goblinStitchingPost: return ModelsManager::goblinStitchingPostModel;
+		case woodenFence: return ModelsManager::fence;
+			
 
 	}
 
