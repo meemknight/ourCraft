@@ -252,6 +252,11 @@ enum BlockTypes : unsigned short
 	goblinStitchingPost,
 
 	woodenFence,
+	woodenLogFence,
+	spruceFence,
+	spruceLogFence,
+	birchFence,
+	birchLogFence,
 
 	BlocksCount
 };
@@ -305,6 +310,7 @@ bool isBricksSound(BlockType type);
 bool isVolcanicActiveSound(BlockType type);
 bool isVolcanicInActiveSound(BlockType type);
 
+bool isFenceConnectorBlock(std::uint16_t type);
 
 bool isAnyWoddenLOG(BlockType type);
 
@@ -371,7 +377,6 @@ bool canBeMinedByShovel(std::uint16_t type);
 bool canBeMinedByAxe(std::uint16_t type);
 
 int isCraftingStation(unsigned short type);
-
 
 BlockType fromAnyShapeToNormalBlockType(BlockType b);
 
@@ -580,6 +585,12 @@ struct Block
 		return isStairsMesh();
 	}
 
+	bool isFenceConnectorBlock()
+	{
+		return ::isFenceConnectorBlock(getType());
+	}
+
+
 	BlockCollider getCollider()
 	{
 
@@ -645,6 +656,13 @@ struct Block
 				b.offset.x = 0.25;
 				return b;
 			}
+		}
+		else if (isFenceMesh())
+		{
+			BlockCollider b{};
+			b.size.x = 1.f * (4.f / 16.f);
+			b.size.z = 1.f * (4.f / 16.f);
+			return b;
 		}
 
 		auto type = getType();

@@ -650,6 +650,15 @@ uint16_t blocksLookupTable[] = {
 	141, 141, 141, 141, 141, 141,//goblin stitching post
 
 	7,7,7,7,7,7,//fence
+	5,5,5,5,5,5,//log fence
+
+	//spruce fence
+	74, 74, 74, 74, 74, 74,
+	52, 52, 52, 52, 52, 52,
+
+	//birch fence
+	62, 62, 62, 62, 62, 62,
+	24, 24, 25, 25, 24, 24,
 
 };
 

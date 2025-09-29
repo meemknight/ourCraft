@@ -876,7 +876,11 @@ int getDefaultBlockShapeForFurniture(unsigned int b)
 		case goblinTable: return ModelsManager::goblinTableModel;
 		case goblinStitchingPost: return ModelsManager::goblinStitchingPostModel;
 		case woodenFence: return ModelsManager::fence;
-			
+		case woodenLogFence: return ModelsManager::fence;
+		case spruceFence: return ModelsManager::fence;
+		case spruceLogFence: return ModelsManager::fence;
+		case birchFence: return ModelsManager::fence;
+		case birchLogFence: return ModelsManager::fence;
 
 	}
 

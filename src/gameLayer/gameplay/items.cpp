@@ -1497,6 +1497,12 @@ char *blockNames[] = {
 
 	"Wooden Fence",
 
+	"Hard Wood Fence",
+	"Spruce Fence",
+	"Hard Spruce Fence",
+	"Birch Fence",
+	"Hard Birch Fence",
+
 };
 
 std::string Item::getItemName()

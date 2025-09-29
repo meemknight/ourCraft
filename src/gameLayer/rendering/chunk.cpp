@@ -283,101 +283,102 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 		return getGpuIdIndexForBlock(type, i);
 	};
 
-	auto getNeighboursLogic = [&](int x, int y, int z, Block *sides[26], int lod)
+	auto justGetBlock = [&](int x, int y, int z) -> Block *
 	{
-		auto justGetBlock = [&](int x, int y, int z) -> Block *
+		int HEIGHT = CHUNK_HEIGHT;
+		int SIZE = CHUNK_SIZE;
+		if (lod == 1) { HEIGHT = CHUNK_HEIGHT / 2; }
+		if (lod == 1) { SIZE = CHUNK_SIZE / 2; }
+
+		if (y >= HEIGHT || y < 0) { return nullptr; }
+
+		if (x >= 0 && x < SIZE && z >= 0 && z < SIZE)
 		{
-			int HEIGHT = CHUNK_HEIGHT;
-			int SIZE = CHUNK_SIZE;
-			if (lod == 1) { HEIGHT = CHUNK_HEIGHT / 2; }
-			if (lod == 1) { SIZE = CHUNK_SIZE / 2; }
+			return &unsafeGet(x, y, z, lod);
+		}
 
-			if (y >= HEIGHT || y < 0) { return nullptr; }
-
-			if (x >= 0 && x < SIZE && z >= 0 && z < SIZE)
+		if (x >= 0 && x < SIZE)
+		{
+			//z is the problem
+			if (z < 0)
 			{
-				return &unsafeGet(x, y, z, lod);
-			}
-
-			if (x >= 0 && x < SIZE)
-			{
-				//z is the problem
-				if (z < 0)
+				if (back)
 				{
-					if (back)
-					{
-						return &back->unsafeGet(x, y, SIZE - 1, lod);
-					}
-				}
-				else
-				{
-					if (front)
-					{
-						return &front->unsafeGet(x, y, 0, lod);
-					}
-				}
-			}
-			else if (z >= 0 && z < SIZE)
-			{
-				//x is the problem
-				if (x < 0)
-				{
-					if (left)
-					{
-						return &left->unsafeGet(SIZE - 1, y, z, lod);
-					}
-				}
-				else
-				{
-					if (right)
-					{
-						return &right->unsafeGet(0, y, z, lod);
-					}
+					return &back->unsafeGet(x, y, SIZE - 1, lod);
 				}
 			}
 			else
 			{
-				//both are the problem
-				if (x < 0 && z < 0)
+				if (front)
 				{
-					if (backLeft)
+					return &front->unsafeGet(x, y, 0, lod);
+				}
+			}
+		}
+		else if (z >= 0 && z < SIZE)
+		{
+			//x is the problem
+			if (x < 0)
+			{
+				if (left)
+				{
+					return &left->unsafeGet(SIZE - 1, y, z, lod);
+				}
+			}
+			else
+			{
+				if (right)
+				{
+					return &right->unsafeGet(0, y, z, lod);
+				}
+			}
+		}
+		else
+		{
+			//both are the problem
+			if (x < 0 && z < 0)
+			{
+				if (backLeft)
+				{
+					return &backLeft->unsafeGet(SIZE - 1, y, SIZE - 1, lod);
+				}
+			}
+			else
+				if (x >= SIZE && z < 0)
+				{
+					if (backRight)
 					{
-						return &backLeft->unsafeGet(SIZE - 1, y, SIZE - 1, lod);
+						return &backRight->unsafeGet(0, y, SIZE - 1, lod);
+					}
+				}
+				else if (x < 0 && z >= SIZE)
+				{
+					if (frontLeft)
+					{
+						return &frontLeft->unsafeGet(SIZE - 1, y, 0, lod);
 					}
 				}
 				else
-					if (x >= SIZE && z < 0)
+					if (x >= SIZE && z >= SIZE)
 					{
-						if (backRight)
+						if (frontRight)
 						{
-							return &backRight->unsafeGet(0, y, SIZE - 1, lod);
-						}
-					}
-					else if (x < 0 && z >= SIZE)
-					{
-						if (frontLeft)
-						{
-							return &frontLeft->unsafeGet(SIZE - 1, y, 0, lod);
+							return &frontRight->unsafeGet(0, y, 0, lod);
 						}
 					}
 					else
-						if (x >= SIZE && z >= SIZE)
-						{
-							if (frontRight)
-							{
-								return &frontRight->unsafeGet(0, y, 0, lod);
-							}
-						}
-						else
-						{
-							permaAssertComment(0, "error in chunk get neighbour logic!");
-						}
-
-				return nullptr;
-			}
+					{
+						permaAssertComment(0, "error in chunk get neighbour logic!");
+					}
 
 			return nullptr;
-		};
+		}
+
+		return nullptr;
+	};
+
+	auto getNeighboursLogic = [&](int x, int y, int z, Block *sides[26], int lod)
+	{
 
 		auto bfront = justGetBlock(x, y, z + 1);
 		auto bback = justGetBlock(x, y, z - 1);
@@ -2169,10 +2170,6 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 		auto bakeForBlockGeometry = [&](int x, int y, int z, Renderer::BlockGeometryIndex &geometry, Block &b)
 		{
 
-			if (b.isFenceMesh())
-			{
-				int a = 0;
-			}
 
 			//std::minstd_rand rng;
 			//rng.seed(hash(x, y, z));
@@ -2288,7 +2285,26 @@ bool Chunk::bakeAndDontSendDataToOpenGl(Chunk *left,
 							{
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::vinesModel], b);
 							}
-							else if (b.isDecorativeFurniture() || b.isFenceMesh())
+							else if (b.isFenceMesh())
+							{
+
+								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::fence], b);
+
+
+
+								auto bfront = justGetBlock(x, y, z + 1);
+								auto bBack = justGetBlock(x, y, z - 1);
+								auto bleft = justGetBlock(x - 1, y, z);
+								auto bright = justGetBlock(x + 1, y, z);
+
+								if (bfront && bfront->isFenceConnectorBlock()) { bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::fenceFront], b); }
+								if (bBack && bBack->isFenceConnectorBlock()) { bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::fenceBack], b); }
+								if (bleft && bleft->isFenceConnectorBlock()) { bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::fenceLeft], b); }
+								if (bright && bright->isFenceConnectorBlock()) { bakeForBlockGeometry(x, y, z, renderer.blockGeometry[ModelsManager::fenceRight], b); }
+
+
+							}
+							else if (b.isDecorativeFurniture())
 							{
 								bakeForBlockGeometry(x, y, z, renderer.blockGeometry[getDefaultBlockShapeForFurniture(b.getType())], b);
 							}

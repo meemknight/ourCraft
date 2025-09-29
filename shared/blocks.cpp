@@ -51,7 +51,7 @@ int blockReorder[] = {
 	workBench, furnace, cookingPot, ladder, trainingDummy, target,
 
 	//fences
-	woodenFence,
+	woodenFence, woodenLogFence, spruceFence, spruceLogFence, birchFence, birchLogFence,
 
 	// Furniture
 	bookShelf,
@@ -404,6 +404,13 @@ bool isAnyWoddenBlock(BlockType type)
 		type == strippedBirchLog ||
 		type == strippedSpruceLog ||
 		type == woodenFence ||
+
+		type == woodenLogFence ||
+		type == spruceFence ||
+		type == spruceLogFence ||
+		type == birchFence ||
+		type == birchLogFence ||
+
 		type == logWall;
 		
 }
@@ -700,7 +707,17 @@ bool noRotationForFurniture(std::uint16_t type)
 
 bool isFenceMesh(std::uint16_t type)
 {
-	return type == BlockTypes::woodenFence;
+	return type == BlockTypes::woodenFence
+		|| type == BlockTypes::woodenLogFence
+		|| type == BlockTypes::spruceFence
+		|| type == BlockTypes::spruceLogFence
+		|| type == BlockTypes::birchFence
+		|| type == BlockTypes::birchLogFence;
+}
+
+bool isFenceConnectorBlock(std::uint16_t type)
+{
+	return type != 0 && (isFenceMesh(type) || isBlockMesh(type));
 }
 
 bool Block::normalize()
@@ -941,11 +958,13 @@ BlockType fromAnyShapeToNormalBlockType(BlockType b)
 
 	case oakLogChair:
 	case oakLogSlab:
+	case woodenLogFence:
 	case logWall: {return woodLog; }
 
 	case oakChair:
 	case wooden_slab:
 	case wooden_wall:
+	case woodenFence:
 	case wooden_stairs: { return wooden_plank; };
 
 	case bricks_slabs:
@@ -1017,10 +1036,12 @@ BlockType fromAnyShapeToNormalBlockType(BlockType b)
 
 	case birchPlanks_slabs:
 	case birchPlanks_wall:
+	case birchFence:
 	case birchPlanks_stairs: { return birchPlanks; };
 
 	case sprucePlank_stairs:
 	case sprucePlank_slabs:
+	case spruceFence:
 	case sprucePlank_wall: { return sprucePlank; };
 
 	case dungeonStone_stairs : 
@@ -1039,6 +1060,11 @@ BlockType fromAnyShapeToNormalBlockType(BlockType b)
 	case mossyCobblestone_slab:
 	case mossyCobblestone_wall: { return mossyCobblestone; }
 
+	case spruceLogFence: { return spruceLogFence; }
+
+	case birchLogFence: { return birchLogFence; }
+
+
 	};
 
 	if (INTERNAL_BUILD == 1)
@@ -1046,6 +1072,7 @@ BlockType fromAnyShapeToNormalBlockType(BlockType b)
 		permaAssertComment(!isStairsMesh(b), "error you forgot to add a stair here!");
 		permaAssertComment(!isWallMesh(b), "error you forgot to add a wall here!");
 		permaAssertComment(!isSlabMesh(b), "error you forgot to add a slab here!");
+		permaAssertComment(!isFenceMesh(b), "error you forgot to add a fence here!");
 	}
 
 	return b;
