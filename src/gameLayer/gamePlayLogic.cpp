@@ -35,6 +35,7 @@
 #include <gameplay/battleUI.h>
 #include <gameplay/food.h>
 #include <cameraShaker.h>
+#include <blockUpdates.h>
 
 struct GameData
 {
@@ -1048,6 +1049,79 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 #pragma endregion
 
 
+#pragma region blockNieghbourChangeUpdate
+
+	auto computeNeighbourChangeUpdateOneBLock = [&](Block &in, 
+		int x, int y, int z)
+	{
+
+		if (hasBlockNeighbourChangeUpdate(in.getType()))
+		{
+			
+			auto up = gameData.chunkSystem.getBlockSafe(x, y + 1, z);
+			auto down = gameData.chunkSystem.getBlockSafe(x, y - 1, z);
+			auto left = gameData.chunkSystem.getBlockSafe(x-1, y, z);
+			auto right = gameData.chunkSystem.getBlockSafe(x+1, y, z);
+			auto front = gameData.chunkSystem.getBlockSafe(x, y, z + 1);
+			auto back = gameData.chunkSystem.getBlockSafe(x, y, z - 1);
+
+
+			auto rez = blockNieghbourChangeUpdate(in,
+				front ? std::optional<Block>(*front) : std::nullopt,
+				back ? std::optional<Block>(*back) : std::nullopt,
+				up ? std::optional<Block>(*up) : std::nullopt,
+				down ? std::optional<Block>(*down) : std::nullopt,
+				left ? std::optional<Block>(*left) : std::nullopt,
+				right ? std::optional<Block>(*right) : std::nullopt);
+			
+			if (rez.newBlockType.typeAndFlags != in.typeAndFlags)
+			{
+
+				//todo drop block
+				if (rez.shouldDropCurrentBlock)
+				{
+
+				}
+				
+				std::cout << "Yes!\n";
+
+				gameData.chunkSystem.placeBlockNoClient({x,y,z}, rez.newBlockType, gameData.lightSystem, 0, 
+					gameData.interaction, gameData.entityManager);
+
+
+			}
+
+
+
+		}
+
+
+
+	};
+
+	auto computeNeighbourChangeUpdate = [&](
+		int x, int y, int z)
+	{
+		auto up = gameData.chunkSystem.getBlockSafe(x, y + 1, z);
+		auto down = gameData.chunkSystem.getBlockSafe(x, y - 1, z);
+		auto left = gameData.chunkSystem.getBlockSafe(x - 1, y, z);
+		auto right = gameData.chunkSystem.getBlockSafe(x + 1, y, z);
+		auto front = gameData.chunkSystem.getBlockSafe(x, y, z + 1);
+		auto back = gameData.chunkSystem.getBlockSafe(x, y, z - 1);
+
+		if (up) { computeNeighbourChangeUpdateOneBLock(*up, x, y + 1, z); }
+		if (down) { computeNeighbourChangeUpdateOneBLock(*down, x, y - 1, z); }
+		if (left) { computeNeighbourChangeUpdateOneBLock(*left, x - 1, y, z); }
+		if (right) { computeNeighbourChangeUpdateOneBLock(*right, x + 1, y, z); }
+		if (front) { computeNeighbourChangeUpdateOneBLock(*front, x, y, z + 1); }
+		if (back) { computeNeighbourChangeUpdateOneBLock(*back, x, y, z - 1); }
+
+	};
+
+#pragma endregion
+
+
+
 
 #pragma region place blocks
 
@@ -1507,12 +1581,15 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 									);
 
 
+									std::vector<unsigned char> blockData;
+									auto b = gameData.chunkSystem.getBlockAndData(*blockToPlace,
+										blockData, c);
+
+
 									auto itemLast = player.inventory.getItemFromIndex(8, nullptr);
 									if (itemLast && itemLast->isPaint())
 									{
-										std::vector<unsigned char> blockData;
-										auto b = gameData.chunkSystem.getBlockAndData(*blockToPlace, 
-											blockData, c);
+
 
 										int paintType = itemLast->type - soap;
 										paintBlock(paintType, *b, *c, *blockToPlace, blockData);
@@ -1531,6 +1608,8 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 									AudioEngine::playSound(getSoundForBlockStepping(item.type),
 										PLACED_BLOCK_SOUND_VOLUME);
+
+									computeNeighbourChangeUpdate(blockToPlace->x, blockToPlace->y, blockToPlace->z);
 
 
 								}
@@ -1598,6 +1677,11 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 									gameData.entityManager.localPlayer.entity.position,
 									gameData.lightSystem, gameData.entityManager);
 								gameData.currentBlockBreaking = {};
+
+								auto b = gameData.chunkSystem.getBlockSafe(rayCastPos.x, rayCastPos.y, rayCastPos.z);
+								computeNeighbourChangeUpdate(rayCastPos.x, rayCastPos.y, rayCastPos.z);
+
+
 							}
 							else
 							{

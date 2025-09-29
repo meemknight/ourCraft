@@ -1077,3 +1077,9 @@ BlockType fromAnyShapeToNormalBlockType(BlockType b)
 
 	return b;
 }
+
+//true for standing on wall!
+unsigned char getRotatedOrStandingForWallOrStandingBlocks(BlockType b)
+{
+	return (b >> 13) & 0b001;
+}

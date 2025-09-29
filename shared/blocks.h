@@ -380,6 +380,9 @@ int isCraftingStation(unsigned short type);
 
 BlockType fromAnyShapeToNormalBlockType(BlockType b);
 
+//true for standing on wall!
+unsigned char getRotatedOrStandingForWallOrStandingBlocks(BlockType b);
+
 struct BlockCollider
 {
 	glm::vec3 size = {1,1,1};
@@ -466,7 +469,7 @@ struct Block
 	//true for standing on wall!
 	unsigned char getRotatedOrStandingForWallOrStandingBlocks()
 	{
-		return (typeAndFlags >> 13) & 0b001;
+		return ::getRotatedOrStandingForWallOrStandingBlocks(typeAndFlags);
 	}
 
 	void setRotatedOrStandingForWallOrStandingBlocks(bool isOnWall)
