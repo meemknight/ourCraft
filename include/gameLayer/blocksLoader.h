@@ -20,26 +20,48 @@ struct BlocksLoader
 	std::vector<GLuint64> gpuIdsItems;
 	std::vector<GLuint> texturesIdsItems;
 	
-	std::vector<GLuint64> gpuIdsItemsFor3Ditems;
-	std::vector<GLuint> texturesIdsFor3Ditems;
 
-	struct ItemGeometry
+	struct ItemGeometry2D
+	{
+		GLuint vao = 0;
+		GLuint buffer = 0;
+		unsigned int count = 0;
+
+		void clear();
+	};
+
+	struct ItemGeometry3D
 	{
 		GLuint vao = 0;
 		GLuint buffer = 0;
 		GLuint indexBuffer = 0;
 		unsigned int count = 0;
 
+		GLuint64 gpuId = 0;
+		gl2d::Texture texturesId;
+
 		void clear();
 	};
 
-	std::vector<ItemGeometry> itemsGeometry;
+
+	struct FullItemGeometryData
+	{
+		ItemGeometry2D model2D;
+
+		ItemGeometry3D model3D;
+
+	};
+
+
+	std::vector<FullItemGeometryData> itemsGeometry;
 
 	gl2d::Texture backgroundTexture;
 
 	std::vector<gl2d::Texture> blockUiTextures;
 
 	std::vector<glm::vec3> blocksColors;
+
+	void clearItemsGeometry();
 
 };
 

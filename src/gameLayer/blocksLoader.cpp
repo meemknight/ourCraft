@@ -1829,34 +1829,18 @@ void BlocksLoader::clearAllTextures()
 
 	backgroundTexture.cleanup();
 
-	for (auto &t : texturesIdsFor3Ditems)
-	{
-		texturesIdsFor3Ditems.clear();
-	}
+	clearItemsGeometry();
 
-	gpuIdsItemsFor3Ditems.clear();
-	texturesIdsFor3Ditems.clear();
 }
 
 void BlocksLoader::loadAllItemsGeometry()
 {
-	if (itemsGeometry.size())
-	{
-		for (int i = 1; i < itemsGeometry.size(); i++)
-		{
-			if (itemsGeometry[0].vao != itemsGeometry[i].vao)
-			{
-				itemsGeometry[i].clear();
-			}
-		}
-		itemsGeometry[0].clear();
-		itemsGeometry.clear();
-	}
+	clearItemsGeometry();
 
 	std::vector<float> finalData;
 	
 
-	auto loadItem = [&](gl2d::Texture &t)
+	auto loadItem2D = [&](gl2d::Texture &t, ItemGeometry2D &result)
 	{
 		permaAssertComment(t.id, "recieved no texture id in loadItem in blocks loader");
 
@@ -1866,7 +1850,7 @@ void BlocksLoader::loadAllItemsGeometry()
 		finalData.clear();
 		finalData.reserve(100);
 
-		ItemGeometry result = {};
+		result = {};
 
 		glGenVertexArrays(1, &result.vao);
 		glBindVertexArray(result.vao);
@@ -2201,7 +2185,6 @@ void BlocksLoader::loadAllItemsGeometry()
 
 		result.count = finalData.size() / 8;
 
-		itemsGeometry.push_back(result);
 	};
 
 
@@ -2212,7 +2195,7 @@ void BlocksLoader::loadAllItemsGeometry()
 	// Step 2: Specify Import Options
 	unsigned int flags = aiProcess_Triangulate | aiProcess_LimitBoneWeights | 
 		aiProcess_JoinIdenticalVertices | aiProcess_ImproveCacheLocality | aiProcess_GenUVCoords | aiProcess_TransformUVCoords
-		| aiProcess_FindInstances | aiProcess_GenNormals | aiProcess_PreTransformVertices;
+		| aiProcess_FindInstances | aiProcess_GenNormals | aiProcess_PreTransformVertices | aiProcess_RemoveRedundantMaterials;
 
 	importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT); // Remove lines and points
 	importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, aiComponent_NORMALS | aiComponent_BONEWEIGHTS | aiComponent_ANIMATIONS);
@@ -2221,16 +2204,17 @@ void BlocksLoader::loadAllItemsGeometry()
 	std::vector<unsigned short> indices;
 	indices.reserve(400);
 
-	auto loadModel = [&](const char *path)
+	auto loadModel3D = [&](const char *path, ItemGeometry3D &result)
 	{
 		finalData.clear();
 		indices.clear();
+
+		result = {};
 
 		const aiScene *scene = importer.ReadFile(path, flags);
 
 		if (scene)
 		{
-			ItemGeometry result = {};
 
 			glGenVertexArrays(1, &result.vao);
 			glBindVertexArray(result.vao);
@@ -2301,7 +2285,6 @@ void BlocksLoader::loadAllItemsGeometry()
 			glBufferStorage(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(indices[0]),
 				indices.data(), 0);
 
-			itemsGeometry.push_back(result);
 
 			glBindVertexArray(0);
 
@@ -2317,12 +2300,20 @@ void BlocksLoader::loadAllItemsGeometry()
 #pragma endregion
 
 
-	gl2d::Texture defaultTexture;
-	defaultTexture.id = texturesIds[0];
-	loadItem(defaultTexture);
+	FullItemGeometryData defaultItemFullGeometryData;
+	{
+		gl2d::Texture defaultTexture;
+		defaultTexture.id = texturesIds[0];
+		ItemGeometry2D defaultItem;
+		loadItem2D(defaultTexture, defaultItem);
+		defaultItemFullGeometryData.model2D = defaultItem;
+		itemsGeometry.push_back(defaultItemFullGeometryData);
+	}
 
 	for (int i = ItemTypes::stick; i < ItemTypes::lastItem; i++)
 	{
+
+		FullItemGeometryData finalRezult = defaultItemFullGeometryData;
 
 		if (texturesIdsItems[i - ItemTypes::stick] == texturesIds[0])
 		{
@@ -2336,21 +2327,17 @@ void BlocksLoader::loadAllItemsGeometry()
 			if (i == ItemTypes::ironSword)
 			{
 
-				if (!loadModel(RESOURCES_PATH "assets/models/items/ironSword.glb"))
-				{
-					gl2d::Texture t;
-					t.id = texturesIdsItems[i - ItemTypes::stick];
-					loadItem(t);
-					std::cout << "\n\nNO!!!\n\n";
-				}
+				loadModel3D(RESOURCES_PATH "assets/models/items/ironSword.glb", finalRezult.model3D);
 
-			}else
+			}
+
 			{
 				gl2d::Texture t;
 				t.id = texturesIdsItems[i - ItemTypes::stick];
-				loadItem(t);
+				loadItem2D(t, finalRezult.model2D);
 			}
 
+			itemsGeometry.push_back(finalRezult);
 
 		}
 	}
@@ -2360,16 +2347,49 @@ void BlocksLoader::loadAllItemsGeometry()
 
 }
 
+void BlocksLoader::clearItemsGeometry()
+{
+	if (itemsGeometry.size())
+	{
+		for (int i = 1; i < itemsGeometry.size(); i++)
+		{
+			if (itemsGeometry[0].model2D.vao != itemsGeometry[i].model2D.vao)
+			{
+				itemsGeometry[i].model2D.clear();
+			}
+
+			itemsGeometry[i].model3D.clear();
+		}
+
+		itemsGeometry[0].model2D.clear();
+		itemsGeometry[0].model3D.clear();
+
+		itemsGeometry.clear();
+	}
+}
+
 uint16_t getGpuIdIndexForBlock(short type, int face)
 {
 	return blocksLookupTable[type * 6 + face] * 4;
 }
 
 
-void BlocksLoader::ItemGeometry::clear()
+void BlocksLoader::ItemGeometry2D::clear()
 {
 	glDeleteBuffers(1, &buffer);
-	glDeleteBuffers(1, &indexBuffer);
 	glDeleteVertexArrays(1, &vao);
 	*this = {};
+}
+
+void BlocksLoader::ItemGeometry3D::clear()
+{
+
+	glDeleteBuffers(1, &buffer);
+	glDeleteVertexArrays(1, &vao);
+	glDeleteBuffers(1, &indexBuffer);
+
+	texturesId.cleanup();
+
+	*this = {};
+
 }

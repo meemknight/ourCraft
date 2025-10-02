@@ -4975,34 +4975,46 @@ void Renderer::renderEntities(
 
 	{
 
+		//not for blocks
 		auto renderOneItem = [&](auto type, glm::dvec3 pos, int light, glm::mat4 *mat = 0)
 		{
 			std::uint64_t texture;
 
-			BlocksLoader::ItemGeometry geometry = {};
-
-			bool isALoadedModel = 0;
+			GLuint vao = 0;
+			unsigned int count = 0;
+			bool isA3DModel = 0;
 
 			if (type >= ItemsStartPoint)
 			{
-				texture = blocksLoader.gpuIdsItems
-					[type - ItemsStartPoint];
 
-				geometry = blocksLoader.itemsGeometry[type - ItemsStartPoint + 1];
+
+				BlocksLoader::FullItemGeometryData geometry = blocksLoader.itemsGeometry[type - ItemsStartPoint + 1];
 
 				//this means this is a model
-				if (geometry.indexBuffer)
+				if (geometry.model3D.count)
 				{
 					texture = tempWhiteBindlessHandle;
-					isALoadedModel = true;
+					isA3DModel = true;
+					vao = geometry.model3D.vao;
+					count = geometry.model3D.count;
+				}
+				else
+				{
+					texture = blocksLoader.gpuIdsItems
+						[type - ItemsStartPoint];
+
+					isA3DModel = false;
+					vao = geometry.model2D.vao;
+					count = geometry.model2D.count;
 				}
 
 
 			}
 			else
 			{
-				texture = blocksLoader.gpuIds
-					[getGpuIdIndexForBlock(type, 0)];
+				return;
+				//texture = blocksLoader.gpuIds
+				//	[getGpuIdIndexForBlock(type, 0)];
 			}
 
 			glUniformHandleui64ARB(entityRenderer.itemEntityShader.u_texture, texture);
@@ -5034,7 +5046,7 @@ void Renderer::renderEntities(
 				glUniform3iv(entityRenderer.itemEntityShader.u_entityPositionInt, 1, &entityInt[0]);
 
 				float scale = 0.4;
-				if (isALoadedModel)
+				if (isA3DModel)
 				{
 					scale = 1;
 				}
@@ -5044,15 +5056,15 @@ void Renderer::renderEntities(
 			}
 
 
-			glBindVertexArray(geometry.vao);
+			glBindVertexArray(vao);
 
-			if (isALoadedModel)
+			if (isA3DModel)
 			{
-				glDrawElements(GL_TRIANGLES, geometry.count, GL_UNSIGNED_SHORT, 0);
+				glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_SHORT, 0);
 			}
 			else
 			{
-				glDrawArrays(GL_TRIANGLES, 0, geometry.count);
+				glDrawArrays(GL_TRIANGLES, 0, count);
 			}
 
 		

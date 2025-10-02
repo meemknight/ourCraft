@@ -9,6 +9,8 @@ NieghbourChangeUpdateResult blockNieghbourChangeUpdate(Block in,
 	NieghbourChangeUpdateResult rez;
 	rez.newBlockType = in;
 
+	//DISABLE
+	return rez;
 
 	if (in.isWallMountedOrStangingBlock())
 	{
