@@ -4953,11 +4953,11 @@ void Renderer::renderEntities(
 
 	static gl2d::Texture tempWhite;
 	static GLuint64 tempWhiteBindlessHandle = 0;
-
+	
 	if (!tempWhite.id)
 	{
 		tempWhite.create1PxSquare();
-
+	
 		tempWhiteBindlessHandle = glGetTextureHandleARB(tempWhite.id);
 		glMakeTextureHandleResidentARB(tempWhiteBindlessHandle);
 	}
@@ -4993,7 +4993,12 @@ void Renderer::renderEntities(
 				//this means this is a model
 				if (geometry.model3D.count)
 				{
-					texture = tempWhiteBindlessHandle;
+					texture = geometry.model3D.gpuId;
+					if (texture == 0)
+					{
+						texture = tempWhiteBindlessHandle;
+					}
+
 					isA3DModel = true;
 					vao = geometry.model3D.vao;
 					count = geometry.model3D.count;

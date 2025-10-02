@@ -9,6 +9,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <assimp/texture.h>
 
 //loadallblocks
 //load all textures
@@ -2195,7 +2196,10 @@ void BlocksLoader::loadAllItemsGeometry()
 	// Step 2: Specify Import Options
 	unsigned int flags = aiProcess_Triangulate | aiProcess_LimitBoneWeights | 
 		aiProcess_JoinIdenticalVertices | aiProcess_ImproveCacheLocality | aiProcess_GenUVCoords | aiProcess_TransformUVCoords
-		| aiProcess_FindInstances | aiProcess_GenNormals | aiProcess_PreTransformVertices | aiProcess_RemoveRedundantMaterials;
+		| aiProcess_FindInstances | aiProcess_GenNormals | aiProcess_PreTransformVertices | aiProcess_RemoveRedundantMaterials
+		| aiProcess_EmbedTextures
+		;
+
 
 	importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT); // Remove lines and points
 	importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, aiComponent_NORMALS | aiComponent_BONEWEIGHTS | aiComponent_ANIMATIONS);
@@ -2264,7 +2268,7 @@ void BlocksLoader::loadAllItemsGeometry()
 				vertexOffset += mesh->mNumVertices;
 			}
 
-			result.count = indices.size();
+			result.count = (unsigned int)indices.size();
 
 			if (result.count < 3)
 			{
@@ -2285,6 +2289,75 @@ void BlocksLoader::loadAllItemsGeometry()
 			glBufferStorage(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(indices[0]),
 				indices.data(), 0);
 
+			// --- TEXTURE: try to load the first embedded diffuse/albedo texture (keeps default if none)
+			{
+				bool loadedTexture = false;
+
+				// Find first material with a diffuse texture
+				for (unsigned int mi = 0; mi < scene->mNumMaterials && !loadedTexture; ++mi)
+				{
+					aiMaterial *mat = scene->mMaterials[mi];
+					aiString texPath;
+					if (mat->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == AI_SUCCESS ||
+						mat->GetTexture(aiTextureType_BASE_COLOR, 0, &texPath) == AI_SUCCESS)
+					{
+						// Embedded textures are retrieved via GetEmbeddedTexture
+						const aiTexture *tex = scene->GetEmbeddedTexture(texPath.C_Str());
+						if (tex)
+						{
+							if (tex->mHeight == 0)
+							{
+								// Compressed (e.g., PNG/JPG in memory) -> use your createFromFileData()
+								const unsigned char *fileData = reinterpret_cast<const unsigned char *>(tex->pcData);
+								const size_t fileSize = static_cast<size_t>(tex->mWidth);
+								result.texturesId.createFromFileData(fileData, fileSize, true, false);
+								loadedTexture = true;
+								break;
+							}
+							else
+							{
+								// Uncompressed RGBA data in aiTexel (tex->mWidth x tex->mHeight)
+								const int w = static_cast<int>(tex->mWidth);
+								const int h = static_cast<int>(tex->mHeight);
+
+								// Convert aiTexel (RGBA) to tightly packed RGBA8 and flip vertically
+								std::vector<unsigned char> rgba(static_cast<size_t>(w) * h * 4);
+								const aiTexel *src = tex->pcData;
+								for (int y = 0; y < h; ++y)
+								{
+									const int srcY = h - 1 - y; // flip vertically to match stbi's behavior in your file path
+									const aiTexel *row = src + srcY * w;
+									unsigned char *dst = rgba.data() + (static_cast<size_t>(y) * w * 4);
+									for (int x = 0; x < w; ++x)
+									{
+										// aiTexel has r,g,b,a fields
+										dst[x * 4 + 0] = row[x].r;
+										dst[x * 4 + 1] = row[x].g;
+										dst[x * 4 + 2] = row[x].b;
+										dst[x * 4 + 3] = row[x].a;
+									}
+								}
+
+								result.texturesId.createFromBuffer(reinterpret_cast<const char *>(rgba.data()), w, h, true, false);
+								loadedTexture = true;
+								break;
+							}
+						}
+					}
+				}
+
+				// --- BINDLESS: if we loaded a texture, make/get the bindless handle
+				if (loadedTexture)
+				{
+					if (result.texturesId.id != 0)
+					{
+						// Requires ARB_bindless_texture
+						GLuint64 handle = glGetTextureHandleARB(result.texturesId.id);
+						glMakeTextureHandleResidentARB(handle);
+						result.gpuId = handle;
+					}
+				}
+			}
 
 			glBindVertexArray(0);
 
@@ -2326,10 +2399,15 @@ void BlocksLoader::loadAllItemsGeometry()
 
 			if (i == ItemTypes::ironSword)
 			{
-
 				loadModel3D(RESOURCES_PATH "assets/models/items/ironSword.glb", finalRezult.model3D);
-
 			}
+			else
+			if (i == ItemTypes::copperSword)
+			{
+				loadModel3D(RESOURCES_PATH "assets/models/items/copperSword.glb", finalRezult.model3D);
+			}
+
+
 
 			{
 				gl2d::Texture t;
