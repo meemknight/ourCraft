@@ -10,6 +10,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/texture.h>
+#include <magic_enum.hpp>
 
 //loadallblocks
 //load all textures
@@ -2383,6 +2384,8 @@ void BlocksLoader::loadAllItemsGeometry()
 		itemsGeometry.push_back(defaultItemFullGeometryData);
 	}
 
+	std::string path3DModel;
+
 	for (int i = ItemTypes::stick; i < ItemTypes::lastItem; i++)
 	{
 
@@ -2396,16 +2399,21 @@ void BlocksLoader::loadAllItemsGeometry()
 		{
 
 			//todo
+			path3DModel = RESOURCES_PATH "assets/models/items/";
+			path3DModel += getItem3DModelName(i);
+			path3DModel += ".glb";
 
-			if (i == ItemTypes::ironSword)
-			{
-				loadModel3D(RESOURCES_PATH "assets/models/items/ironSword.glb", finalRezult.model3D);
-			}
-			else
-			if (i == ItemTypes::copperSword)
-			{
-				loadModel3D(RESOURCES_PATH "assets/models/items/copperSword.glb", finalRezult.model3D);
-			}
+			loadModel3D(path3DModel.c_str(), finalRezult.model3D);
+
+			//if (i == ItemTypes::ironSword)
+			//{
+			//	loadModel3D(RESOURCES_PATH "assets/models/items/ironSword.glb", finalRezult.model3D);
+			//}
+			//else
+			//if (i == ItemTypes::copperSword)
+			//{
+			//	loadModel3D(RESOURCES_PATH "assets/models/items/copperSword.glb", finalRezult.model3D);
+			//}
 
 
 

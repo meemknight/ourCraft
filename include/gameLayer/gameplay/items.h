@@ -184,7 +184,7 @@ enum ItemTypes : unsigned short
 };
 
 const char *getItemTextureName(int itemId);
-
+const char *getItem3DModelName(int itemId);
 
 
 

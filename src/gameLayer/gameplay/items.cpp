@@ -982,6 +982,166 @@ const char *itemsNamesTextures[] =
 
 };
 
+
+//for textures
+const char *item3DModelName[] =
+{
+	"stick",
+	"cloth",
+	"fang",
+	"bone",
+
+	"copperIngot",
+	"leadIngot",
+	"ironIngot",
+	"silverIngot",
+	"goldIngot",
+
+	"copperPickaxe",
+	"copperAxe",
+	"copperShovel",
+	"leadPickaxe",
+	"leadAxe",
+	"leadShovel",
+	"ironPickaxe",
+	"ironAxe",
+	"ironShovel",
+	"silverPickaxe",
+	"silverAxe",
+	"silverShovel",
+	"goldPickaxe",
+	"goldAxe",
+	"goldShovel",
+
+
+	"copperSword",
+	"leadSword",
+	"ironSword",
+	"silverSword",
+	"goldSword",
+
+	"woodenScythe",
+	"woodenSword",
+	"woodenWarHammer",
+	"woodenSpear",
+	"woodenKnife",
+	"woodenBattleAxe",
+
+	"copperWarHammer",
+	"copperSpear",
+	"copperKnife",
+	"copperBattleAxe",
+	"leadWarHammer",
+	"leadSpear",
+	"leadKnife",
+	"leadBattleAxe",
+	"ironWarHammer",
+	"ironSpear",
+	"ironKnife",
+	"ironBattleAxe",
+	"silverWarHammer",
+	"silverSpear",
+	"silverKnife",
+	"silverBattleAxe",
+	"goldWarHammer",
+	"goldSpear",
+	"goldKnife",
+	"goldBattleAxe",
+
+
+	"", //eggs
+	"",
+	"",
+	"goblin",
+	"scareCrow",
+
+	"apple",
+	"blackBerrie",
+	"blueBerrie",
+	"cherries",
+	"chilliPepper",
+	"cocconut",
+	"grapes",
+	"lime",
+	"peach",
+	"pinapple",
+	"strawberry",
+	"applePie",
+
+	"leatherBoots",
+	"leatherChestplate",
+	"leatherHelmet",
+
+	"copperBoots",
+	"copperChestPlate",
+	"copperHelmet",
+	"leadBoots",
+	"leadChestPlate",
+	"leadHelmet",
+	"ironBoots",
+	"ironChestPlate",
+	"ironHelmet",
+	"silverBoots",
+	"silverChestPlate",
+	"silverHelmet",
+	"goldBoots",
+	"goldChestPlate",
+	"goldHelmet",
+
+	"soap",
+	"whitePaint",
+	"lightGrayPaint",
+	"darkGrayPaint",
+	"blackPaint",
+	"brownPaint",
+	"redPaint",
+	"orangePaint",
+	"yellowPaint",
+	"limePaint",
+	"greenPaint",
+	"turqoisePaint",
+	"cyanPaint",
+	"bluePaint",
+	"purplePaint",
+	"magentaPaint",
+	"pinkPaint",
+
+	"copperCoin",
+	"silverCoin",
+	"goldCoin",
+	"diamondCoin",
+
+	"arrow",
+	"flamingArrow",
+	"goblinArrow",
+	"boneArrow",
+	"wheat",
+
+	"healingPotion",
+	"manaPotion",
+	"fireResistancePotion",
+	"jumpBoostPotion",
+	"luckPotion",
+	"manaRegenPotion",
+	"poisonPotion",
+	"recallPotion",
+	"regenerationPotion",
+	"shieldingPotion",
+	"speedPotion",
+	"stealthPotion",
+	"strengthPotion",
+	"venomusPotion",
+	"badLuckPotion",
+
+	"gumBox",
+	"bandage",
+	"fruitPeeler",
+	"pawKeychain",
+	"vitamins",
+
+};
+
+
 const char *itemsNames[] =
 {
 	"stick",
@@ -1150,6 +1310,15 @@ const char *getItemTextureName(int itemId)
 
 	return itemsNamesTextures[itemId-ItemsStartPoint];
 }
+
+const char *getItem3DModelName(int itemId)
+{
+	static_assert(sizeof(item3DModelName) / sizeof(item3DModelName[0]) == lastItem - ItemsStartPoint);
+
+	return item3DModelName[itemId - ItemsStartPoint];
+}
+
+
 
 //doesn't compare size
 bool areItemsTheSame(Item &a, Item &b)
