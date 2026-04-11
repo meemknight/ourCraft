@@ -840,14 +840,23 @@ struct ClientEntity
 			{
 				auto &keyFrames = animation.kayFrames[i];
 
-				//todo only one element case!
-				for (int k = 0; k < keyFrames.size() - 1; k++)
+				if (keyFrames.empty())
+					return;
+
+				if (keyFrames.size() == 1)
+				{
+					auto matrix = keyFrames[0].getMatrix();
+					skinningMatrix[i] = rotMatrix * matrix;
+					return;
+				}
+
+				for (int k = 0; k < (int)keyFrames.size() - 1; k++)
 				{
 
 					if ((keyFrames[k].timestamp <= animationTime &&
 						keyFrames[k + 1].timestamp >= animationTime
 						)
-						|| k == keyFrames.size() - 2)
+						|| k == (int)keyFrames.size() - 2)
 					{
 						auto rez = interpolateKeyFrames(keyFrames[k], keyFrames[k + 1], animationTime);
 						auto matrix = rez.getMatrix();

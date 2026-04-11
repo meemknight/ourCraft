@@ -883,6 +883,12 @@ bool loadFromFileAndAddPadding(gl2d::Texture &t, const char *path)
 
 	const unsigned char *decodedImage = stbi_load_from_memory(fileData, (int)fileSize, &width, &height, &channels, 4);
 
+	if (!decodedImage)
+	{
+		delete[] fileData;
+		return false;
+	}
+
 	int PADDING = 28;
 	if (width < PADDING || height < PADDING)
 	{
@@ -900,10 +906,10 @@ bool loadFromFileAndAddPadding(gl2d::Texture &t, const char *path)
 				int xx = x + std::max((PADDING - width) / 2, 0);
 				int yy = y + std::max((PADDING - height) / 2, 0);
 
-				newData[(xx + yy * newHeight) * 4 + 0] = decodedImage[index++];
-				newData[(xx + yy * newHeight) * 4 + 1] = decodedImage[index++];
-				newData[(xx + yy * newHeight) * 4 + 2] = decodedImage[index++];
-				newData[(xx + yy * newHeight) * 4 + 3] = decodedImage[index++];
+				newData[(xx + yy * newWidth) * 4 + 0] = decodedImage[index++];
+				newData[(xx + yy * newWidth) * 4 + 1] = decodedImage[index++];
+				newData[(xx + yy * newWidth) * 4 + 2] = decodedImage[index++];
+				newData[(xx + yy * newWidth) * 4 + 3] = decodedImage[index++];
 
 			}
 
@@ -934,6 +940,11 @@ void createFromFileDataWithAplhaFixing(gl2d::Texture &t, const unsigned char *im
 	int channels = 0;
 
 	unsigned char *decodedImage = stbi_load_from_memory(image_file_data, (int)image_file_size, &width, &height, &channels, 4);
+
+	if (!decodedImage)
+	{
+		return;
+	}
 
 	if (isNormalMap)
 	{
@@ -968,8 +979,7 @@ bool loadFromFileWithAplhaFixing(gl2d::Texture &t,
 		if (reportErrors)
 		{
 			char c[300] = {0};
-			strcat(c, "error openning: ");
-			strcat(c + strlen(c), fileName);
+			snprintf(c, sizeof(c), "error openning: %s", fileName);
 			reportError(c);
 		};
 		return 0;

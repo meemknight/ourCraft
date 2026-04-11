@@ -68,6 +68,8 @@ struct Profiler
 
 	void setSubProfileManually(char *c, PL::ProfileRezults rezults);
 
+	static constexpr int MAX_SUB_PROFILES = 15;
+
 	std::unordered_map<std::string, PL::Profiler> subProfiles;
 
 	void displayPlot(const char *mainPlotName, float scale = 32);
