@@ -10,7 +10,7 @@ void *compressData(const char *data, size_t size, size_t &compressedSize)
 	//PL::Profiler profiler;
 	//profiler.start();
 
-	size_t newExpectedMaxSize = size * 0.8;
+	size_t newExpectedMaxSize = ZSTD_compressBound(size);
 
 	char *rezult = new char[newExpectedMaxSize];
 
@@ -39,7 +39,7 @@ void *compressDataForce(const char *data, size_t size, size_t &compressedSize)
 	//PL::Profiler profiler;
 	//profiler.start();
 
-	size_t newExpectedMaxSize = size * 1.2;
+	size_t newExpectedMaxSize = ZSTD_compressBound(size);
 
 	char *rezult = new char[newExpectedMaxSize];
 

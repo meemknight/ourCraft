@@ -3,6 +3,7 @@
 #include <multiPlot.h>
 #include <platformTools.h>
 #include <iostream>
+#include <algorithm>
 
 
 #if REMOVE_IMGUI == 0
@@ -79,9 +80,10 @@ void Profiler::endFrame()
 
 		bool pauseNextFrame = 0;
 
+		int profileCount = 0;
 		for (auto &i : subProfiles)
 		{
-			//permaAssert(index != (sizeof(data.dataMs) / sizeof(data.dataMs[0])));
+			if (profileCount >= MAX_SUB_PROFILES) break;
 
 			int position = subProfiles.size() - (index++) + 1;
 
@@ -90,6 +92,7 @@ void Profiler::endFrame()
 
 			accumulated = data.dataMs[position];
 
+			profileCount++;
 			//if (accumulated > 40.0)
 			//{
 			//	pauseNextFrame = true;
@@ -98,7 +101,7 @@ void Profiler::endFrame()
 
 		data.dataMsReal[0] = 0;
 
-		for (int i = 0; i < subProfiles.size(); i++)
+		for (int i = 0; i < std::min((int)subProfiles.size(), MAX_SUB_PROFILES); i++)
 		{
 			data.dataMsReal[0] += data.dataMsReal[i+1];
 		}
@@ -123,7 +126,7 @@ void Profiler::endFrame()
 
 		for (auto &i : subProfiles)
 		{
-			permaAssert(index != (sizeof(data.dataMs) / sizeof(data.dataMs[0])));
+			if (index >= MAX_SUB_PROFILES) break;
 
 			int position = subProfiles.size() - (index++);
 
@@ -279,6 +282,7 @@ void Profiler::displayPlot(const char *mainPlotName, float scale)
 	int counter = 0;
 	for (auto &p : subProfiles)
 	{
+		if (counter >= MAX_SUB_PROFILES) break;
 		names[subProfiles.size() - (counter++)] = p.first.c_str();
 	}
 

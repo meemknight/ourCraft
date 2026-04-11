@@ -404,11 +404,11 @@ void SkyBoxLoaderAndDrawer::loadTexture(const char *name, SkyBox &skyBox, int fo
 
 
 			for (int j = jBeg; j < height / immageRatio.y && j >= 0; j += jAdvance)
-				for (int i = xBeg; i < width / immageRatio.x && i >= 0; i += xAdvance)
+				for (int xi = xBeg; xi < width / immageRatio.x && xi >= 0; xi += xAdvance)
 				{
-					extractedData[index] = *getPixel(i + paddingX, j + paddingY, data);
-					extractedData[index + 1] = *(getPixel(i + paddingX, j + paddingY, data) + 1);
-					extractedData[index + 2] = *(getPixel(i + paddingX, j + paddingY, data) + 2);
+					extractedData[index] = *getPixel(xi + paddingX, j + paddingY, data);
+					extractedData[index + 1] = *(getPixel(xi + paddingX, j + paddingY, data) + 1);
+					extractedData[index + 2] = *(getPixel(xi + paddingX, j + paddingY, data) + 2);
 					//extractedData[index] = 100;
 					//extractedData[index + 1] = 100;
 					//extractedData[index + 2] = 100;
