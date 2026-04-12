@@ -33,6 +33,7 @@ struct BattleUI
 		UiENgine &uiEngine, std::minstd_rand &rng, float deltaTime);
 
 	float timer = 0;
+	static constexpr int MAX_SPEAR_POSITIONS = 6;
 
 	union
 	{
@@ -48,8 +49,7 @@ struct BattleUI
 				bool passedCenter = 0;
 			};
 
-			static constexpr int MAX_POSITIONS = 6;
-			Ball balls[MAX_POSITIONS];
+			Ball balls[MAX_SPEAR_POSITIONS];
 			int currentBallsCount = 0;
 
 			int comboCount = 0;

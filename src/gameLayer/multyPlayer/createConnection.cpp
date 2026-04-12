@@ -287,7 +287,7 @@ void recieveDataClient(ENetEvent &event,
 				{
 					if (alreadyCleared.find(chunk) == alreadyCleared.end())
 					{
-						chunk->blockData = {}; //clear the block data for this chunk
+					chunk->blockData = BlocksWithDataHolder{}; //clear the block data for this chunk
 						alreadyCleared.insert(chunk);
 					}
 				}
@@ -333,7 +333,7 @@ void recieveDataClient(ENetEvent &event,
 					}
 					else
 					{
-						chunk->blockData.baseBlocks[blockHash] = {};
+				chunk->blockData.baseBlocks[blockHash] = BaseBlock{};
 					}
 				}
 				else if (isChest(blockHeader.blockType) && isChest(b->getType()))
@@ -365,7 +365,7 @@ void recieveDataClient(ENetEvent &event,
 					}
 					else
 					{
-						chunk->blockData.chestBlocks[blockHash] = {};
+				chunk->blockData.chestBlocks[blockHash] = ChestBlock{};
 					}
 
 
@@ -559,7 +559,7 @@ void recieveDataClient(ENetEvent &event,
 					
 					if (found == entityManager.players.end())
 					{
-						entityManager.players[entity->eid] = {};
+					entityManager.players[entity->eid] = PlayerClient{};
 						found = entityManager.players.find(entity->eid);
 						float restantTimer = computeRestantTimer(entity->timer, serverTimer);
 						found->second.restantTime = restantTimer;
@@ -570,7 +570,7 @@ void recieveDataClient(ENetEvent &event,
 						auto connection = playersConnectionData.find(entity->eid);
 						if (connection == playersConnectionData.end())
 						{
-							playersConnectionData[entity->eid] = {};
+						playersConnectionData[entity->eid] = PlayerConnectionData{};
 						}
 
 
@@ -740,7 +740,7 @@ void recieveDataClient(ENetEvent &event,
 
 			if (player == playersConnectionData.end())
 			{
-				playersConnectionData[p.cid] = {};
+				playersConnectionData[p.cid] = PlayerConnectionData{};
 				player = playersConnectionData.find(p.cid);
 			}
 
@@ -775,7 +775,7 @@ void recieveDataClient(ENetEvent &event,
 
 			entityManager.localPlayer.life = p->life;
 
-			entityManager.localPlayer.lastLife = {};
+			entityManager.localPlayer.lastLife = Life{};
 			entityManager.localPlayer.justHealedTimer = 0;
 			entityManager.localPlayer.justRecievedDamageTimer = 0;
 
@@ -830,7 +830,7 @@ void recieveDataClient(ENetEvent &event,
 			{
 				entityManager.localPlayer.entity.position = packetData->pos;
 				entityManager.localPlayer.entity.lastPosition = packetData->pos;
-				entityManager.localPlayer.entity.forces = {};
+				entityManager.localPlayer.entity.forces = MotionState{};
 				respawn = true;
 			}else
 			{
@@ -843,7 +843,7 @@ void recieveDataClient(ENetEvent &event,
 
 					found->second.entityBuffered.position = packetData->pos;
 					found->second.entityBuffered.lastPosition = packetData->pos;
-					found->second.entityBuffered.forces = {};
+					found->second.entityBuffered.forces = MotionState{};
 				}
 			}
 
@@ -1166,7 +1166,7 @@ bool placeItem(PlayerInventory &inventory, ChestBlock *chestBlock, int from, int
 			toItem->counter = counter;
 			fromItem->counter -= counter;
 
-			if (fromItem->counter == 0) { *fromItem = {}; }
+			if (fromItem->counter == 0) { *fromItem = Item{}; }
 
 			Packet_ClientMovedItem packet;
 			packet.counter = counter;
@@ -1212,7 +1212,7 @@ bool placeItem(PlayerInventory &inventory, ChestBlock *chestBlock, int from, int
 					toItem->counter += counter;
 					fromItem->counter -= counter;
 
-					if (fromItem->counter == 0) { *fromItem = {}; }
+					if (fromItem->counter == 0) { *fromItem = Item{}; }
 
 					Packet_ClientMovedItem packet;
 					packet.counter = addCounter;
@@ -1290,7 +1290,7 @@ bool grabItem(PlayerInventory &inventory, ChestBlock *chestBlock, int from, int 
 			toItem->counter = counter;
 			fromItem->counter -= counter;
 
-			if (fromItem->counter == 0) { *fromItem = {}; }
+			if (fromItem->counter == 0) { *fromItem = Item{}; }
 
 			Packet_ClientMovedItem packet;
 			packet.counter = counter;

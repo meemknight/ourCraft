@@ -156,7 +156,7 @@ void sendPacket(ENetPeer *to, Packet p,
 	if (freeCallback)
 	{
 		packet->freeCallback = freeCallback;
-		packet->userData = (void*)packetId;
+		packet->userData = reinterpret_cast<void *>(static_cast<std::uintptr_t>(packetId));
 	}
 
 	memcpy(packet->data, &p, sizeof(Packet));

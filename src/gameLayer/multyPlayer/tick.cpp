@@ -1723,8 +1723,8 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 											packetData.timer = getTimer();
 											packetData.attackStrength = 3.f;
 
-											broadCastNotLocked(packet, &packetData, sizeof(packetData),
-												false, true, channelOtherVisualThings);
+									broadCastNotLocked(packet, &packetData, sizeof(packetData),
+										nullptr, true, channelOtherVisualThings);
 
 										}
 
@@ -1881,7 +1881,7 @@ void doGameTick(float deltaTime, int deltaTimeMs, std::uint64_t currentTimer,
 							packetData.pos = worldSaver.spawnPosition;
 
 							broadCastNotLocked(packet, &packetData, sizeof(packetData),
-								false, true, channelChunksAndBlocks);
+								nullptr, true, channelChunksAndBlocks);
 						}
 
 					}
@@ -2783,4 +2783,3 @@ void sendUpdateLifeLifePlayerPacket(Client &client)
 	p.life = client.playerData.newLife;
 	sendPacket(client.peer, headerUpdateLife, &p, sizeof(p), true, channelChunksAndBlocks);
 }
-

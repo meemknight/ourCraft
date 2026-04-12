@@ -63,7 +63,7 @@ int getThredPoolSize()
 	return threadPool.currentCounter;
 }
 
-#define ENTITY_SET_IN_CHUNKS(X) resetEntitiesInTheirNewChunk(*c.orphanEntities.entityGetter<X>(), [](auto &entityData) { return entityData.entityGetter<X>(); });
+#define ENTITY_SET_IN_CHUNKS(X) resetEntitiesInTheirNewChunk(*c.orphanEntities.entityGetter<X>(), [](auto &entityData) { return entityData.template entityGetter<X>(); });
 #define ITERATE_TEST(X) iterateTest(*chunk.second->entityData.entityGetter<X>());
 
 
@@ -564,4 +564,3 @@ void ThreadPool::cleanup()
 	setThreadsNumber(0, workerThread);
 	taskTaken.clear();
 }
-

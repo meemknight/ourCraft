@@ -497,7 +497,7 @@ struct BasicEnemyBehaviour
 
 			//block under
 			blockPos.y--;
-			auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos));
+			auto b = serverChunkStorerGetBlockSafe(serverChunkStorer, from3DPointToBlock(blockPos));
 
 			//void
 			if (!b)
@@ -520,7 +520,7 @@ struct BasicEnemyBehaviour
 
 				//bigger fall under?
 				blockPos.y--;
-				auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos));
+				auto b = serverChunkStorerGetBlockSafe(serverChunkStorer, from3DPointToBlock(blockPos));
 
 				if (!b || !b->isColidable())
 				{
@@ -540,16 +540,16 @@ struct BasicEnemyBehaviour
 				blockPos.x += direction.x;
 				blockPos.z += direction.y;
 
-				auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos));
+				auto b = serverChunkStorerGetBlockSafe(serverChunkStorer, from3DPointToBlock(blockPos));
 
 				if (b && b->isColidable())
 				{
 
 					//don't jump too tall walls lol
-					auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos) + glm::ivec3(0, 1, 0));
+					auto b = serverChunkStorerGetBlockSafe(serverChunkStorer, from3DPointToBlock(blockPos) + glm::ivec3(0, 1, 0));
 					if (!b || !b->isColidable())
 					{
-						auto b = serverChunkStorer.getBlockSafe(from3DPointToBlock(blockPos) + glm::ivec3(0, 2, 0));
+						auto b = serverChunkStorerGetBlockSafe(serverChunkStorer, from3DPointToBlock(blockPos) + glm::ivec3(0, 2, 0));
 						if (!b || !b->isColidable())
 						{
 							baseEntity->entity.forces.jump();
@@ -711,14 +711,14 @@ struct BasicEnemyBehaviour
 
 												auto checkOneDirection = [&](glm::ivec3 blockPos)
 												{
-													auto b = serverChunkStorer.getBlockSafe(blockPos + glm::ivec3(0, 1, 0));
+							auto b = serverChunkStorerGetBlockSafe(serverChunkStorer, blockPos + glm::ivec3(0, 1, 0));
 													if (b && b->isColidable())
 													{
 														problems = true;
 														return true;
 													}
 
-													b = serverChunkStorer.getBlockSafe(blockPos + glm::ivec3(0, -1, 0));
+							b = serverChunkStorerGetBlockSafe(serverChunkStorer, blockPos + glm::ivec3(0, -1, 0));
 													if (!b || !b->isColidable())
 													{
 														problems = true;

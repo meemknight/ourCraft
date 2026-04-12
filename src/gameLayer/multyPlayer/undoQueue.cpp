@@ -35,7 +35,7 @@ void UndoQueue::changedBlockDataEvent(glm::ivec3 pos, Block block,
 
 }
 
-void UndoQueue::addDataToLastBlockEvent(std::vector<unsigned char> &dataToSteal)
+void UndoQueue::addDataToLastBlockEvent(std::vector<unsigned char> &&dataToSteal)
 {
 	events.back().blockData = std::move(dataToSteal);
 }

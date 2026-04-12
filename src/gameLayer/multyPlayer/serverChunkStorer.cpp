@@ -10,6 +10,16 @@
 #include <multyPlayer/doHittingThings.h>
 #include <gameplay/lootTables.h>
 
+SavedChunk *serverChunkStorerGetChunkOrGetNull(ServerChunkStorer &serverChunkStorer, int posX, int posZ)
+{
+	return serverChunkStorer.getChunkOrGetNull(posX, posZ);
+}
+
+Block *serverChunkStorerGetBlockSafe(ServerChunkStorer &serverChunkStorer, glm::ivec3 pos)
+{
+	return serverChunkStorer.getBlockSafe(pos);
+}
+
 template<class T>
 void genericCheckEntitiesForCollisions(T &container, std::vector<ColidableEntry> &ret, glm::dvec3 position,
 	glm::vec3 collider, std::uint64_t eidToIgnore)
@@ -1553,9 +1563,6 @@ std::uint64_t callGenericCheckEntitiesForCollisionWithBlock(std::integer_sequenc
 			{
 
 				glm::dvec3 positionPlayer = e.second->getPosition();
-				if constexpr (hasGetColliderOffset<decltype(e.second->entity)>) { positionPlayer += e.second->entityBuffered.getColliderOffset(); }
-
-
 				auto rez = boxColideBlock(positionPlayer, e.second->entity.getColliderSize(), position);
 
 				if (rez)
@@ -1719,17 +1726,19 @@ bool genericHitEntityByPlayer(T &container, std::uint64_t eid, glm::vec3 dir,
 
 	if (found != container.end())
 	{
+		auto weaponStats = weapon.getWeaponStats();
+
 		//players
 		if constexpr (std::is_pointer_v<decltype(found->second)>)
 		{
-			doHittingThings(*found->second, dir, playerPosition, weapon.getWeaponStats(), wasKilled, rng,
+			doHittingThings(*found->second, dir, playerPosition, weaponStats, wasKilled, rng,
 				eid, hitCorectness, critChanceBonus);
 
 			lootTable = nullptr;
 		}
 		else
 		{
-			doHittingThings(found->second, dir, playerPosition, weapon.getWeaponStats(), wasKilled, rng,
+			doHittingThings(found->second, dir, playerPosition, weaponStats, wasKilled, rng,
 				eid, hitCorectness, critChanceBonus);
 
 			lootTable = &found->second.getLootTable();

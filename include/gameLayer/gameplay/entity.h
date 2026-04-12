@@ -10,6 +10,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <array>
 #include <rendering/camera.h>
 #include <gameplay/effects.h>
 #include <rendering/model.h>
@@ -83,6 +84,16 @@ struct PositionAndEID
 
 
 struct ServerChunkStorer;
+struct SavedChunk;
+struct Block;
+
+float getRandomNumberFloat(std::minstd_rand &rng, float min, float max);
+float getRandomNumberFloat(int x, int y, int z, float a, float b);
+bool getRandomChance(std::minstd_rand &rng, float chance);
+std::array<glm::ivec2, 9> *getChunkNeighboursOffsets();
+SavedChunk *serverChunkStorerGetChunkOrGetNull(ServerChunkStorer &serverChunkStorer, int posX, int posZ);
+Block *serverChunkStorerGetBlockSafe(ServerChunkStorer &serverChunkStorer, glm::ivec3 pos);
+float computeRestantTimer(std::uint64_t older, std::uint64_t newer);
 
 struct RubberBand
 {
@@ -1485,4 +1496,3 @@ struct ServerChunkStorer;
 
 void doCollisionWithOthers(glm::dvec3 &positiom, glm::vec3 colider, 
 	MotionState &forces, ServerChunkStorer &serverChunkStorer, std::uint64_t &yourEID);
-

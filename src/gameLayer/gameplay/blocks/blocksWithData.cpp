@@ -67,7 +67,7 @@ ChestBlock *BlocksWithDataHolder::getOrCreateChestBlock
 	}
 	else
 	{
-		chestBlocks[hash] = {};
+		chestBlocks[hash] = ChestBlock{};
 		found = chestBlocks.find(hash);
 		return &found->second;
 	}

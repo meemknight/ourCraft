@@ -753,7 +753,7 @@ void removeCidFromServerSettings(std::uint64_t cid)
 
 void onPacketDestroyForChunkSending(ENetPacket *packet)
 {
-	unsigned int userData = (unsigned int)packet->userData;
+	auto userData = static_cast<unsigned int>(reinterpret_cast<std::uintptr_t>(packet->userData));
 	
 	Packet p = {};
 	size_t dataSize = 0;

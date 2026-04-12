@@ -129,7 +129,7 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 	for (auto offset : *getChunkNeighboursOffsets())
 	{
 		glm::ivec2 pos = chunkPosition + offset;
-		auto c = serverChunkStorer.getChunkOrGetNull(pos.x, pos.y);
+		auto c = serverChunkStorerGetChunkOrGetNull(serverChunkStorer, pos.x, pos.y);
 		if (c)
 		{
 			for (auto &p : c->entityData.players)
@@ -735,5 +735,3 @@ inline void AnimalBehaviour<E, SETTINGS>::configureSpawnSettings(std::minstd_ran
 	speedBase = getRandomNumberFloat(rng, SETTINGS::minSpeed, SETTINGS::maxSpeed);
 
 }
-
-

@@ -359,7 +359,7 @@ void UiENgine::renderGameUI(float deltaTime, int w, int h
 	std::optional<Item> currentItemHovered = {};
 	auto mousePos = platform::getRelMousePosition();
 
-	auto renderOneItem = [&](glm::vec4 itemBox, Item &item, float in = 0, float color = 1, gl2d::Texture icon = {})
+	auto renderOneItem = [&](glm::vec4 itemBox, const Item &item, float in = 0, float color = 1, gl2d::Texture icon = {})
 	{
 		if (item.type == 0)
 		{

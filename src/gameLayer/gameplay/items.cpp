@@ -119,7 +119,7 @@ std::size_t Item::formatIntoData(std::vector<unsigned char> &data)
 
 int Item::readFromData(void *data, size_t size)
 {
-	*this = {};
+	*this = Item{};
 
 	if (size < sizeof(unsigned short))
 	{
@@ -577,7 +577,7 @@ void PlayerInventory::formatIntoData(std::vector<unsigned char> &data)
 
 bool PlayerInventory::readFromData(void *data, size_t size)
 {
-	*this = {};
+	*this = PlayerInventory{};
 
 	size_t currentAdvance = 0;
 

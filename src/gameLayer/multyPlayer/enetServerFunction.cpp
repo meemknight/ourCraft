@@ -944,7 +944,7 @@ void enetServerFunction(std::string path)
 	StructuresManager structuresManager;
 	BiomesManager biomesManager;
 	WorldSaver worldSaver;
-	serverProfiler = {};
+	serverProfiler = Profiler{};
 
 	worldSaver.savePath = RESOURCES_PATH "worlds/"; //"saves/";
 	worldSaver.savePath += path + "/world";
@@ -1174,7 +1174,7 @@ void enetServerFunction(std::string path)
 bool startEnetListener(ENetHost *_server, const std::string &path)
 {
 	server = _server;
-	connections = {};
+	connections = std::unordered_map<std::uint64_t, Client>{};
 
 	bool expected = 0;
 	if (enetServerRunning.compare_exchange_strong(expected, 1))
