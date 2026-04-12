@@ -2553,8 +2553,13 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	auto projectionMatrix = c.getProjectionMatrix();
 	auto vp = projectionMatrix * viewMatrix;
 
-	//todo change, also reuse in the the decal shader
-	float timeGrass = std::clock() / 1000.f;
+	animationTimer += deltaTime;
+	if (animationTimer > 10000.f)
+	{
+		animationTimer -= 10000.f;
+	}
+
+	float timeGrass = animationTimer;
 
 	float sunTwilight = 0;
 	{
@@ -2759,7 +2764,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform3fv(defaultShader.u_positionFloat, 1, &posFloat[0]);
 		glUniform3iv(defaultShader.u_positionInt, 1, &posInt[0]);
 		glUniform1i(defaultShader.u_typesCount, BlocksCount);	//remove
-		glUniform1f(defaultShader.u_time, std::clock() / 400.f);
+		glUniform1f(defaultShader.u_time, animationTimer * 2.5f);
 		glUniform1i(defaultShader.u_showLightLevels, showLightLevels);
 		glUniform1i(defaultShader.u_skyLightIntensity, skyLightIntensity);
 		glUniform3fv(defaultShader.u_sunDirection, 1, &mainLightPosition[0]);
@@ -3916,7 +3921,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, fboMain.color);
 		glUniform1i(warpShader.u_color, 0);
-		glUniform1f(warpShader.u_time, timeGrass); //todo change
+		glUniform1f(warpShader.u_time, animationTimer);
 		glUniform3f(warpShader.u_underwaterColor, underWater.x,
 			underWater.y, underWater.z);
 
@@ -4187,8 +4192,7 @@ void Renderer::renderDecal(glm::ivec3 position, Camera &c, Block b, ProgramData 
 	}
 
 
-	//todo change, also reuse in the the decal shader
-	float timeGrass = std::clock() / 1000.f;
+	float timeGrass = animationTimer;
 
 	auto viewMatrix = c.getViewMatrix();
 	auto vp = c.getProjectionMatrix() * viewMatrix;
@@ -4411,10 +4415,14 @@ void Renderer::renderEntities(
 	//render hand draw hand renderHand drawHand
 	renderHand();
 
-	std::minstd_rand rng{std::random_device()()};
+	static std::minstd_rand rng(std::random_device{}());
 
 	auto renderAllEntitiesOfOneType = [&](Model &model, auto &container, bool isPlayers = 0)
 	{
+		if (container.empty() || model.vertexCount == 0 || model.transforms.empty())
+		{
+			return;
+		}
 
 		glBindVertexArray(model.vao);
 
@@ -4557,18 +4565,26 @@ void Renderer::renderEntities(
 			entityData.push_back(data);
 		}
 
+		if (entityData.empty())
+		{
+			return;
+		}
+
+		auto *skinningUploadData = skinningMatrix.empty() ? nullptr : skinningMatrix.data();
+		auto *entityUploadData = entityData.empty() ? nullptr : entityData.data();
+
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, skinningMatrixSSBO);
 		//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, skinningMatrixSSBO);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, skinningMatrix.size() * sizeof(glm::mat4),
-			&skinningMatrix[0][0][0], GL_STREAM_DRAW);
+			skinningUploadData, GL_STREAM_DRAW);
 
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, perEntityDataSSBO);
 		//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, perEntityDataSSBO);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, entityData.size() * sizeof(entityData[0]),
-			entityData.data(), GL_STREAM_DRAW);
+			entityUploadData, GL_STREAM_DRAW);
 
 		glDrawElementsInstanced(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, nullptr,
-			container.size());
+			static_cast<GLsizei>(entityData.size()));
 
 	};
 

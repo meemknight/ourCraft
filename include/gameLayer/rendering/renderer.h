@@ -513,6 +513,7 @@ struct Renderer
 
 
 	float waterTimer = 0;
+	float animationTimer = 0;
 
 	GLuint lightBuffer = 0;
 	size_t lightsBufferCount = 0;

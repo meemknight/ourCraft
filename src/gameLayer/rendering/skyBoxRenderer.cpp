@@ -5,6 +5,7 @@
 #include <platform/resourceResolver.h>
 #include <stb_image/stb_image.h>
 #include <platformTools.h>
+#include <chrono>
 #include <iostream>
 #include <fstream>
 
@@ -711,7 +712,10 @@ void SkyBoxLoaderAndDrawer::drawBefore(const glm::mat4 &viewProjMat,
 	float rotation1 = 0;
 	float rotation2 = 0;
 	{
-		float rot = clock() / 80'000.f; //todo
+		static const auto startTime = std::chrono::steady_clock::now();
+		const float wallSeconds = std::chrono::duration<float>(
+			std::chrono::steady_clock::now() - startTime).count();
+		float rot = wallSeconds / 80.f;
 		if (timeOfDay <= 0.25)
 		{
 			rotation1 = 3.141592f/2.f;
