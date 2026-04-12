@@ -145,10 +145,8 @@ inline uint32_t hash(int x, int y, int z)
 
 bool getRandomChance(int x, int y, int z, float chance)
 {
-	std::minstd_rand rng;
-	rng.seed(hash(x,y,z));
-
-	return getRandomChance(rng, chance);
+	const double normalizedHash = static_cast<double>(hash(x, y, z)) / 4294967295.0;
+	return normalizedHash <= chance;
 }
 
 
@@ -2431,7 +2429,7 @@ void Chunk::sendDataToOpenGL(bool updateGeometry,
 
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsBuffer);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, lights.size() * sizeof(lights[0]),
-			lights.data(), GL_STREAM_READ);
+			lights.data(), GL_STREAM_DRAW);
 		lightsElementCountSize = lights.size();
 
 		//gpuBuffer->addChunk({data.x, data.z}, opaqueGeometry);
