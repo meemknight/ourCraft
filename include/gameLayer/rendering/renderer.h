@@ -517,6 +517,7 @@ struct Renderer
 
 	GLuint lightBuffer = 0;
 	size_t lightsBufferCount = 0;
+	size_t lightBufferCapacity = 0;
 	
 	glm::vec3 sunPos = glm::normalize(glm::vec3(-1, 0.84, -1));//todo change
 

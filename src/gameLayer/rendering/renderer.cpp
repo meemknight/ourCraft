@@ -2552,6 +2552,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	auto viewMatrix = c.getViewMatrix();
 	auto projectionMatrix = c.getProjectionMatrix();
 	auto vp = projectionMatrix * viewMatrix;
+	auto inverseProjectionMatrix = glm::inverse(projectionMatrix);
+	auto inverseViewMatrix = glm::inverse(viewMatrix);
+	auto inverseViewProjectionMatrix = glm::inverse(vp);
 
 	animationTimer += deltaTime;
 	if (animationTimer > 10000.f)
@@ -2657,8 +2660,12 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	
 
 	//chunk vector copy has only valid non culled chunks!
-	std::vector<Chunk*> chunkVectorCopy;
-	chunkVectorCopy.reserve(chunkSystem.loadedChunks.size());
+	static std::vector<Chunk*> visibleChunks;
+	visibleChunks.clear();
+	if (visibleChunks.capacity() < chunkSystem.loadedChunks.size())
+	{
+		visibleChunks.reserve(chunkSystem.loadedChunks.size());
+	}
 
 	FrustumVolume cameraFrustum(c.getViewProjectionWithPositionMatrixDouble());
 
@@ -2689,31 +2696,55 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 			if (!culled)
 			{
-				chunkVectorCopy.push_back(c);
+				visibleChunks.push_back(c);
 			}
 		}
 	}
 
 	//sort chunks
 	{
-		std::sort(chunkVectorCopy.begin(), chunkVectorCopy.end(),
-			[x = divideChunk(blockPosition.x), z = divideChunk(blockPosition.z)](Chunk *b, Chunk *a)
+		const int cameraChunkX = divideChunk(blockPosition.x);
+		const int cameraChunkZ = divideChunk(blockPosition.z);
+		Chunk *firstVisibleChunk = visibleChunks.empty() ? nullptr : visibleChunks.front();
+		Chunk *lastVisibleChunk = visibleChunks.empty() ? nullptr : visibleChunks.back();
+
+		static bool hasSortCache = false;
+		static int lastSortChunkX = 0;
+		static int lastSortChunkZ = 0;
+		static size_t lastVisibleChunkCount = 0;
+		static Chunk *lastFirstVisibleChunk = nullptr;
+		static Chunk *lastLastVisibleChunk = nullptr;
+
+		if (!hasSortCache ||
+			cameraChunkX != lastSortChunkX ||
+			cameraChunkZ != lastSortChunkZ ||
+			visibleChunks.size() != lastVisibleChunkCount ||
+			firstVisibleChunk != lastFirstVisibleChunk ||
+			lastVisibleChunk != lastLastVisibleChunk)
 		{
-			if (a == nullptr) { return false; }
-			if (b == nullptr) { return true; }
+			std::sort(visibleChunks.begin(), visibleChunks.end(),
+				[cameraChunkX, cameraChunkZ](Chunk *b, Chunk *a)
+			{
+				int ax = a->data.x - cameraChunkX;
+				int az = a->data.z - cameraChunkZ;
 
-			int ax = a->data.x - x;
-			int az = a->data.z - z;
+				int bx = b->data.x - cameraChunkX;
+				int bz = b->data.z - cameraChunkZ;
 
-			int bx = b->data.x - x;
-			int bz = b->data.z - z;
+				unsigned long reza = ax * ax + az * az;
+				unsigned long rezb = bx * bx + bz * bz;
 
-			unsigned long reza = ax * ax + az * az;
-			unsigned long rezb = bx * bx + bz * bz;
+				return reza < rezb;
+			}
+			);
 
-			return reza < rezb;
+			hasSortCache = true;
+			lastSortChunkX = cameraChunkX;
+			lastSortChunkZ = cameraChunkZ;
+			lastVisibleChunkCount = visibleChunks.size();
+			lastFirstVisibleChunk = visibleChunks.empty() ? nullptr : visibleChunks.front();
+			lastLastVisibleChunk = visibleChunks.empty() ? nullptr : visibleChunks.back();
 		}
-		);
 	}
 
 
@@ -2729,7 +2760,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	};
 	glDrawBuffers(5, attachments);
 
-	programData.skyBoxLoaderAndDrawer.drawBefore(c.getProjectionMatrix() * c.getViewMatrix(),
+	programData.skyBoxLoaderAndDrawer.drawBefore(vp,
 		mainLightPosition, dayTime);
 
 	fboSkyBox.copyColorFromOtherFBO(fboMain.color,
@@ -2760,6 +2791,22 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 
 		defaultShader.shader.bind();
+		static bool defaultShaderSamplerUniformsInitialized = false;
+		if (!defaultShaderSamplerUniformsInitialized)
+		{
+			glUniform1i(defaultShader.u_dudv, 1);
+			glUniform1i(defaultShader.u_dudvNormal, 2);
+			glUniform1i(defaultShader.u_caustics, 3);
+			glUniform1i(defaultShader.u_sunShadowTexture, 4);
+			glUniform1i(defaultShader.u_lastFrameColor, 5);
+			glUniform1i(defaultShader.u_lastFramePositionViewSpace, 6);
+			glUniform1i(defaultShader.u_brdf, 7);
+			glUniform1i(defaultShader.u_skyTexture, 8);
+			glUniform1i(defaultShader.u_depthTexture, 9);
+			glUniform1i(defaultShader.u_PeelTexture, 10);
+			glUniform1i(defaultShader.u_ao, 11);
+			defaultShaderSamplerUniformsInitialized = true;
+		}
 		glUniformMatrix4fv(defaultShader.u_viewProjection, 1, GL_FALSE, &vp[0][0]);
 		glUniform3fv(defaultShader.u_positionFloat, 1, &posFloat[0]);
 		glUniform3iv(defaultShader.u_positionInt, 1, &posInt[0]);
@@ -2780,14 +2827,14 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniform1f(defaultShader.u_near, c.closePlane);
 		glUniform1f(defaultShader.u_far, c.farPlane);
 		glUniformMatrix4fv(defaultShader.u_inverseProjMat, 1, 0,
-			&glm::inverse(projectionMatrix)[0][0]);
+			&inverseProjectionMatrix[0][0]);
 		glUniformMatrix4fv(defaultShader.u_lightSpaceMatrix, 1, 0,
 			&sunShadow.lightSpaceMatrixCascades[0][0][0]);
 		glUniform3iv(defaultShader.u_lightPos, 1, &sunShadow.lightSpacePositionCascades[0][0]);
 		glUniform1i(defaultShader.u_writeScreenSpacePositions, 1);//todo remove
 
 		glUniformMatrix4fv(defaultShader.u_inverseViewProjMat, 1, 0,
-			&glm::inverse(projectionMatrix * viewMatrix)[0][0]);
+			&inverseViewProjectionMatrix[0][0]);
 
 		glUniformMatrix4fv(defaultShader.u_lastViewProj, 1, 0,
 			&(c.lastFrameViewProjMatrix)[0][0]);
@@ -2795,37 +2842,28 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		programData.numbersTexture.bind(0);
 
 		programData.dudv.bind(1);
-		glUniform1i(defaultShader.u_dudv, 1);
 
 		programData.dudvNormal.bind(2);
-		glUniform1i(defaultShader.u_dudvNormal, 2);
 
 		programData.causticsTexture.bind(3);
-		glUniform1i(defaultShader.u_caustics, 3);
 
 		glActiveTexture(GL_TEXTURE0 + 4);
 		glBindTexture(GL_TEXTURE_2D, sunShadow.shadowMapCascades[0].depth);
-		glUniform1i(defaultShader.u_sunShadowTexture, 4);
 
 		glActiveTexture(GL_TEXTURE0 + 5);
 		glBindTexture(GL_TEXTURE_2D, fboLastFrame.color);
-		glUniform1i(defaultShader.u_lastFrameColor, 5);
 
 		glActiveTexture(GL_TEXTURE0 + 6);
 		glBindTexture(GL_TEXTURE_2D, fboLastFramePositions.color);
-		glUniform1i(defaultShader.u_lastFramePositionViewSpace, 6);
 
 		glActiveTexture(GL_TEXTURE0 + 7);
 		glBindTexture(GL_TEXTURE_2D, programData.brdfTexture.id);
-		glUniform1i(defaultShader.u_brdf, 7);
 
 		glActiveTexture(GL_TEXTURE0 + 8);
 		glBindTexture(GL_TEXTURE_2D, fboSkyBox.color);
-		glUniform1i(defaultShader.u_skyTexture, 8);
 
 		glActiveTexture(GL_TEXTURE0 + 11);
 		glBindTexture(GL_TEXTURE_2D, programData.aoTexture.id);
-		glUniform1i(defaultShader.u_ao, 11);
 
 		glUniformHandleui64vARB(defaultShader.u_cascadedShadowsMaps, 3, &sunShadow.bindlessShadowTextures[0]);
 		glUniform3iv(defaultShader.u_cascadedShadowPosition, 3, &sunShadow.lightSpacePositionCascades[0][0]);
@@ -2836,10 +2874,10 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		glUniform1f(defaultShader.u_timeGrass, timeGrass);
 
-		glUniformMatrix4fv(defaultShader.u_cameraProjection, 1, GL_FALSE, glm::value_ptr(c.getProjectionMatrix()));
+		glUniformMatrix4fv(defaultShader.u_cameraProjection, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
 
 		glUniformMatrix4fv(defaultShader.u_inverseView, 1, GL_FALSE,
-			glm::value_ptr(glm::inverse(viewMatrix)));
+			glm::value_ptr(inverseViewMatrix));
 
 		glUniformMatrix4fv(defaultShader.u_view, 1, GL_FALSE,
 			glm::value_ptr(viewMatrix));
@@ -2890,46 +2928,52 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 				if (maxLights)
 				{
 					int currentSize = 0;
-					int s = chunkVectorCopy.size();
+					int s = visibleChunks.size();
 					for (int i = s - 1; i >= 0; i--)
 					{
-						auto &c = chunkVectorCopy[i];
-						if (c && !c->isDontDrawYet())
-						{
-							currentSize += c->lightsElementCountSize;
+						auto &c = visibleChunks[i];
+						currentSize += c->lightsElementCountSize;
 
-							if (currentSize >= maxLights)
-							{
-								break;
-							}
+						if (currentSize >= maxLights)
+						{
+							break;
 						}
 
 					}
 
+					size_t currentBytes = currentSize * sizeof(glm::ivec4);
+					if (currentBytes > lightBufferCapacity)
+					{
+						lightBufferCapacity = 1;
+						while (lightBufferCapacity < currentBytes)
+						{
+							lightBufferCapacity *= 2;
+						}
+					}
+
 					glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightBuffer);
-					glBufferData(GL_SHADER_STORAGE_BUFFER, currentSize * sizeof(glm::ivec4), NULL, GL_STREAM_COPY);
+					glBufferData(GL_SHADER_STORAGE_BUFFER, lightBufferCapacity, NULL, GL_STREAM_COPY);
 					glBindBuffer(GL_COPY_WRITE_BUFFER, lightBuffer);
 					size_t offset = 0;
+					//todo only copy chunks that are close
+					//todo max lights
 
 					for (int i = s - 1; i >= 0; i--)
 					{
-						auto &c = chunkVectorCopy[i];
-						if (c && !c->isDontDrawYet())
+						auto &c = visibleChunks[i];
+						lightsBufferCount += c->lightsElementCountSize;
+
+						glBindBuffer(GL_COPY_READ_BUFFER, c->lightsBuffer);
+
+						// Copy data from the first existing SSBO to the new SSBO
+						glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset,
+							c->lightsElementCountSize * sizeof(glm::ivec4));
+
+						offset += c->lightsElementCountSize * sizeof(glm::ivec4);
+
+						if (lightsBufferCount > maxLights)
 						{
-							lightsBufferCount += c->lightsElementCountSize;
-
-							glBindBuffer(GL_COPY_READ_BUFFER, c->lightsBuffer);
-
-							// Copy data from the first existing SSBO to the new SSBO
-							glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset,
-								c->lightsElementCountSize * sizeof(glm::ivec4));
-
-							offset += c->lightsElementCountSize * sizeof(glm::ivec4);
-
-							if (lightsBufferCount > maxLights)
-							{
-								break;
-							}
+							break;
 						}
 
 					}
@@ -2953,66 +2997,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			//	glUniform1i(u_lightsCount, c->lightsElementCountSize);
 			//}
 		}
-
-		//old
-		
-		if(0)
-		{
-
-			if (chunkSystem.shouldUpdateLights)
-			{
-				chunkSystem.shouldUpdateLights = 0;
-
-				//std::cout << "Updated lights\n";
-
-				lightsBufferCount = 0;
-
-				for (auto c : chunkSystem.loadedChunks)
-				{
-					if (c && !c->isDontDrawYet())
-					{
-						lightsBufferCount += c->lightsElementCountSize;
-					}
-				}
-
-				glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightBuffer);
-				glBufferData(GL_SHADER_STORAGE_BUFFER, lightsBufferCount * sizeof(glm::ivec4), NULL, GL_STREAM_COPY);
-
-				glBindBuffer(GL_COPY_WRITE_BUFFER, lightBuffer);
-
-				//todo only copy chunks that are close
-				//todo max lights
-				size_t offset = 0;
-				for (auto c : chunkSystem.loadedChunks)
-				{
-
-					if (c && !c->isDontDrawYet())
-					{
-						glBindBuffer(GL_COPY_READ_BUFFER, c->lightsBuffer);
-
-						// Copy data from the first existing SSBO to the new SSBO
-						glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset,
-							c->lightsElementCountSize * sizeof(glm::ivec4));
-
-						offset += c->lightsElementCountSize * sizeof(glm::ivec4);
-					}
-				}
-
-				glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightBuffer);
-				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, lightBuffer);
-			};
-
-			glUniform1i(defaultShader.u_lightsCount, lightsBufferCount);
-
-			//auto c = chunkSystem.getChunkSafeFromBlockPos(posInt.x, posInt.z);
-			//
-			//if (c)
-			//{
-			//	glBindBuffer(GL_SHADER_STORAGE_BUFFER, c->lightsBuffer);
-			//	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, c->lightsBuffer);
-			//	glUniform1i(u_lightsCount, c->lightsElementCountSize);
-			//}
-		}
 		
 
 	}
@@ -3020,75 +3004,128 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	//configure opaque geometry
 	static std::vector<DrawElementsIndirectCommand> drawCommands;
+	static size_t drawCommandsOpaqueBufferCapacity = 0;
+	auto uploadIndirectDrawCommands = [&](const void *data, size_t bytes)
+	{
+		if (bytes == 0)
+		{
+			return;
+		}
+
+		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCommandsOpaqueBuffer);
+
+		if (bytes > drawCommandsOpaqueBufferCapacity)
+		{
+			drawCommandsOpaqueBufferCapacity = 1;
+			while (drawCommandsOpaqueBufferCapacity < bytes)
+			{
+				drawCommandsOpaqueBufferCapacity *= 2;
+			}
+		}
+
+		glBufferData(GL_DRAW_INDIRECT_BUFFER, drawCommandsOpaqueBufferCapacity, nullptr, GL_STREAM_DRAW);
+		glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, bytes, data);
+	};
 
 	if(unifiedGeometry)
 	{
 		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCommandsOpaqueBuffer);
-		drawCommands.clear();
 
-		if (sortChunks)
+		Chunk *firstVisibleChunk = visibleChunks.empty() ? nullptr : visibleChunks.front();
+		Chunk *lastVisibleChunk = visibleChunks.empty() ? nullptr : visibleChunks.back();
+		size_t totalOpaqueFaces = 0;
+		for (auto *chunk : visibleChunks)
 		{
-			int s = chunkVectorCopy.size();
-			for (int i = s - 1; i >= 0; i--)
-			{
-				auto chunk = chunkVectorCopy[i];
-				
-				int facesCount = chunk->elementCountSize;
-				if (facesCount)
-				{
-
-					auto entry = chunkSystem.gpuBuffer
-						.getEntry({chunk->data.x,chunk->data.z});
-
-					permaAssertComment(
-						(int)entry.size / (4 * sizeof(int)) == facesCount,
-						"Gib Gpu Buffer desync");
-
-					// Prepare draw command for this chunk
-					DrawElementsIndirectCommand command;
-					command.count = 4; // Assuming you're drawing quads
-					command.instanceCount = facesCount;
-					command.firstIndex = 0;
-					command.baseVertex = 0;
-					command.baseInstance = entry.beg / (4 * sizeof(int)); 
-
-					// Add draw command to the array
-					drawCommands.push_back(command);
-
-				}
-			}
-		}
-		else
-		{
-			for (auto &chunk : chunkVectorCopy)
-			{
-				int facesCount = chunk->elementCountSize;
-				if (facesCount)
-				{
-					auto entry = chunkSystem.gpuBuffer
-						.getEntry({chunk->data.x,chunk->data.z});
-
-					permaAssertComment(
-						(int)entry.size / (4 * sizeof(int)) == facesCount,
-						"Gib Gpu Buffer desync");
-
-					// Prepare draw command for this chunk
-					DrawElementsIndirectCommand command;
-					command.count = 4; // Assuming you're drawing quads
-					command.instanceCount = facesCount;
-					command.firstIndex = 0;
-					command.baseVertex = 0;
-					command.baseInstance = entry.beg / (4 * sizeof(int));
-
-					// Add draw command to the array
-					drawCommands.push_back(command);
-
-				}
-			}
+			totalOpaqueFaces += chunk->elementCountSize;
 		}
 
-		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCommandsOpaqueBuffer);
-		glBufferData(GL_DRAW_INDIRECT_BUFFER, drawCommands.size() * sizeof(DrawElementsIndirectCommand), drawCommands.data(), GL_STREAM_DRAW);
+		static bool hasDrawCommandCache = false;
+		static size_t lastDrawCommandVisibleCount = 0;
+		static size_t lastDrawCommandOpaqueFaces = 0;
+		static Chunk *lastDrawCommandFirstChunk = nullptr;
+		static Chunk *lastDrawCommandLastChunk = nullptr;
+		static bool lastDrawCommandSortMode = false;
+
+		if (!hasDrawCommandCache ||
+			lastDrawCommandSortMode != sortChunks ||
+			lastDrawCommandVisibleCount != visibleChunks.size() ||
+			lastDrawCommandOpaqueFaces != totalOpaqueFaces ||
+			lastDrawCommandFirstChunk != firstVisibleChunk ||
+			lastDrawCommandLastChunk != lastVisibleChunk)
+		{
+			drawCommands.clear();
+			drawCommands.reserve(visibleChunks.size());
+
+			if (sortChunks)
+			{
+				int s = visibleChunks.size();
+				for (int i = s - 1; i >= 0; i--)
+				{
+					auto chunk = visibleChunks[i];
+					
+					int facesCount = chunk->elementCountSize;
+					if (facesCount)
+					{
+
+						auto entry = chunkSystem.gpuBuffer
+							.getEntry({chunk->data.x,chunk->data.z});
+
+						permaAssertComment(
+							(int)entry.size / (4 * sizeof(int)) == facesCount,
+							"Gib Gpu Buffer desync");
+
+						// Prepare draw command for this chunk
+						DrawElementsIndirectCommand command;
+						command.count = 4; // Assuming you're drawing quads
+						command.instanceCount = facesCount;
+						command.firstIndex = 0;
+						command.baseVertex = 0;
+						command.baseInstance = entry.beg / (4 * sizeof(int)); 
+
+						// Add draw command to the array
+						drawCommands.push_back(command);
+
+					}
+				}
+			}
+			else
+				{
+					for (auto &chunk : visibleChunks)
+					{
+						int facesCount = chunk->elementCountSize;
+						if (facesCount)
+						{
+							auto entry = chunkSystem.gpuBuffer
+								.getEntry({chunk->data.x,chunk->data.z});
+
+							permaAssertComment(
+								(int)entry.size / (4 * sizeof(int)) == facesCount,
+								"Gib Gpu Buffer desync");
+
+							// Prepare draw command for this chunk
+							DrawElementsIndirectCommand command;
+							command.count = 4; // Assuming you're drawing quads
+							command.instanceCount = facesCount;
+							command.firstIndex = 0;
+							command.baseVertex = 0;
+							command.baseInstance = entry.beg / (4 * sizeof(int));
+
+							// Add draw command to the array
+							drawCommands.push_back(command);
+
+						}
+					}
+				}
+
+			uploadIndirectDrawCommands(drawCommands.data(), drawCommands.size() * sizeof(DrawElementsIndirectCommand));
+
+			hasDrawCommandCache = true;
+			lastDrawCommandSortMode = sortChunks;
+			lastDrawCommandVisibleCount = visibleChunks.size();
+			lastDrawCommandOpaqueFaces = totalOpaqueFaces;
+			lastDrawCommandFirstChunk = firstVisibleChunk;
+			lastDrawCommandLastChunk = lastVisibleChunk;
+		}
 	}
 
 	auto renderStaticGeometry = [&]()
@@ -3112,10 +3149,10 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			//this is just for a spped cmparison test
 			if (sortChunks)
 			{
-				int s = chunkVectorCopy.size();
+				int s = visibleChunks.size();
 				for (int i = s - 1; i >= 0; i--)
 				{
-					auto chunk = chunkVectorCopy[i];
+					auto chunk = visibleChunks[i];
 					int facesCount = chunk->elementCountSize;
 					if (facesCount)
 					{
@@ -3126,7 +3163,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			}
 			else
 			{
-				for (auto &chunk : chunkVectorCopy)
+				for (auto &chunk : visibleChunks)
 				{
 					int facesCount = chunk->elementCountSize;
 					if (facesCount)
@@ -3148,7 +3185,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		if (!renderTransparent) { return; }
 
-		for (auto &chunk : chunkVectorCopy)
+		for (auto &chunk : visibleChunks)
 		{
 			int facesCount = chunk->transparentElementCountSize;
 			if (facesCount)
@@ -3477,61 +3514,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	}
 
-
-	if(0)
-	{
-		programData.GPUProfiler.startSubProfile("SSR PASS");
-
-		//fboMain.color
-
-		copyToMainFboOnlyLastFrameStuff();
-		
-		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fboOnlyFirstTarget);
-
-		glDisable(GL_DEPTH_TEST);
-		
-		glDisable(GL_BLEND);
-		//glEnable(GL_BLEND);
-		//glBlendEquation(GL_FUNC_ADD);
-		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-		ssrShader.shader.bind();
-		glBindVertexArray(vaoQuad);
-
-		glUniformMatrix4fv(ssrShader.u_cameraProjection, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
-
-		glUniformMatrix4fv(ssrShader.u_inverseView, 1, GL_FALSE,
-			glm::value_ptr(glm::inverse(viewMatrix)));
-
-		glUniformMatrix4fv(ssrShader.u_view, 1, GL_FALSE,
-			glm::value_ptr(viewMatrix));
-
-		glUniformMatrix4fv(ssrShader.u_inverseCameraViewProjection, 1, GL_FALSE,
-			glm::value_ptr(glm::inverse(projectionMatrix *viewMatrix)));
-
-
-		glActiveTexture(GL_TEXTURE0 + 5);
-		glBindTexture(GL_TEXTURE_2D, fboLastFrame.color);
-		glUniform1i(ssrShader.u_color, 5);
-
-		glActiveTexture(GL_TEXTURE0 + 6);
-		glBindTexture(GL_TEXTURE_2D, fboLastFramePositions.color);
-		glUniform1i(ssrShader.u_positionViewSpace, 6);
-
-		glActiveTexture(GL_TEXTURE0 + 1);
-		glBindTexture(GL_TEXTURE_2D, fboMain.thirdColor);
-		glUniform1i(ssrShader.u_normals, 1);
-
-		glActiveTexture(GL_TEXTURE0 + 12);
-		glBindTexture(GL_TEXTURE_2D, fboMain.fifthColor);
-		glUniform1i(ssrShader.u_materials, 12);
-
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-		programData.GPUProfiler.endSubProfile("SSR PASS");
-	}
-
-
 	if(1)
 	{
 
@@ -3798,14 +3780,19 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		hbaoShader.shader.bind();
 		glBindVertexArray(vaoQuad);
+		static bool hbaoSamplerUniformsInitialized = false;
+		if (!hbaoSamplerUniformsInitialized)
+		{
+			glUniform1i(hbaoShader.u_gPosition, 0);
+			glUniform1i(hbaoShader.u_gNormal, 1);
+			hbaoSamplerUniformsInitialized = true;
+		}
 		
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, fboMain.secondaryColor);
-		glUniform1i(hbaoShader.u_gPosition, 0);
 
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, fboMain.thirdColor);
-		glUniform1i(hbaoShader.u_gNormal, 1);
 
 		glUniformMatrix4fv(hbaoShader.u_view, 1, GL_FALSE,
 			glm::value_ptr(viewMatrix));
@@ -3828,17 +3815,22 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		
 		
 		applyHBAOShader.shader.bind();
+		static bool applyHbaoSamplerUniformsInitialized = false;
+		if (!applyHbaoSamplerUniformsInitialized)
+		{
+			glUniform1i(applyHBAOShader.u_hbao, 0);
+			glUniform1i(applyHBAOShader.u_currentViewSpace, 1);
+			applyHbaoSamplerUniformsInitialized = true;
+		}
 		glEnable(GL_BLEND);
 		glBlendFunci(0, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, fboHBAO.color);
-		glUniform1i(applyHBAOShader.u_hbao, 0);
 		glUniform1f(applyHBAOShader.u_viewDistance, (chunkSystem.squareSize/2.f) * 16.f);
 		
 
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, fboMain.secondaryColor);
-		glUniform1i(applyHBAOShader.u_currentViewSpace, 1);
 
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -3915,19 +3907,24 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		secondaryFBO = &fboMain;
 
 		warpShader.shader.bind();
+		static bool warpSamplerUniformsInitialized = false;
+		if (!warpSamplerUniformsInitialized)
+		{
+			glUniform1i(warpShader.u_color, 0);
+			glUniform1i(warpShader.u_currentViewSpace, 1);
+			warpSamplerUniformsInitialized = true;
+		}
 
 		glm::vec3 underWater = defaultShader.shadingSettings.underWaterColor;
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, fboMain.color);
-		glUniform1i(warpShader.u_color, 0);
 		glUniform1f(warpShader.u_time, animationTimer);
 		glUniform3f(warpShader.u_underwaterColor, underWater.x,
 			underWater.y, underWater.z);
 
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, fboMain.secondaryColor);
-		glUniform1i(warpShader.u_currentViewSpace, 1);
 
 
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -3966,10 +3963,15 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 
 		applyToneMapper.shader.bind();
+		static bool toneMapperSamplerUniformsInitialized = false;
+		if (!toneMapperSamplerUniformsInitialized)
+		{
+			glUniform1i(applyToneMapper.u_color, 0);
+			toneMapperSamplerUniformsInitialized = true;
+		}
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, currentTexture);
-		glUniform1i(applyToneMapper.u_color, 0);
 		glUniform1i(applyToneMapper.u_tonemapper, defaultShader.shadingSettings.tonemapper);
 		glUniform1f(applyToneMapper.u_exposure, adaptiveExposure.currentExposure);
 
@@ -4007,10 +4009,15 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
 		fxaaShader.shader.bind();
+		static bool fxaaSamplerUniformsInitialized = false;
+		if (!fxaaSamplerUniformsInitialized)
+		{
+			glUniform1i(fxaaShader.u_texture, 0);
+			fxaaSamplerUniformsInitialized = true;
+		}
 	
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, secondaryFBO->color);
-		glUniform1i(fxaaShader.u_texture, 0);
 	
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	}
@@ -4280,11 +4287,78 @@ void Renderer::renderEntities(
 
 	static std::vector<glm::mat4> skinningMatrix;
 	skinningMatrix.clear();
+	static size_t skinningMatrixHighWaterMark = 0;
 
 	static std::vector<PerEntityData> entityData;
 	entityData.clear();
+	static size_t entityDataHighWaterMark = 0;
+	static size_t skinningMatrixSsboCapacity = 0;
+	static size_t entityDataSsboCapacity = 0;
+
+	auto ensureEntityScratchCapacity = [&](size_t skinningCount, size_t entityCount)
+	{
+		if (skinningCount > skinningMatrixHighWaterMark)
+		{
+			skinningMatrix.reserve(skinningCount);
+			skinningMatrixHighWaterMark = skinningCount;
+		}
+
+		if (entityCount > entityDataHighWaterMark)
+		{
+			entityData.reserve(entityCount);
+			entityDataHighWaterMark = entityCount;
+		}
+	};
+
+	auto uploadSkinningMatrixSsbo = [&](const void *data, size_t bytes)
+	{
+		if (bytes == 0)
+		{
+			return;
+		}
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, skinningMatrixSSBO);
+
+		if (bytes > skinningMatrixSsboCapacity)
+		{
+			skinningMatrixSsboCapacity = 1;
+			while (skinningMatrixSsboCapacity < bytes)
+			{
+				skinningMatrixSsboCapacity *= 2;
+			}
+		}
+
+		glBufferData(GL_SHADER_STORAGE_BUFFER, skinningMatrixSsboCapacity, nullptr, GL_STREAM_DRAW);
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, bytes, data);
+	};
+
+	auto uploadEntityDataSsbo = [&](const void *data, size_t bytes)
+	{
+		if (bytes == 0)
+		{
+			return;
+		}
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, perEntityDataSSBO);
+
+		if (bytes > entityDataSsboCapacity)
+		{
+			entityDataSsboCapacity = 1;
+			while (entityDataSsboCapacity < bytes)
+			{
+				entityDataSsboCapacity *= 2;
+			}
+		}
+
+		glBufferData(GL_SHADER_STORAGE_BUFFER, entityDataSsboCapacity, nullptr, GL_STREAM_DRAW);
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, bytes, data);
+	};
 
 	glm::mat4 handItemMatrix = glm::mat4{1.f};
+	const double maxDroppedItemDistance = (chunkSystem.squareSize / 2.0) * CHUNK_SIZE;
+	const double maxDroppedItemDistanceSq = maxDroppedItemDistance * maxDroppedItemDistance;
+	auto handItem = entityManager.localPlayer.inventory.getItemFromIndex(currentHeldItemIndex, nullptr);
+	const bool needsHandPose = showHand || (handItem && !handItem->isBlock() && handItem->type);
 
 	auto renderHand = [&]()
 	{
@@ -4297,8 +4371,7 @@ void Renderer::renderEntities(
 		skinningMatrix.clear();
 		entityData.clear();
 
-		skinningMatrix.reserve(model.transforms.size());
-		entityData.reserve(model.transforms.size());
+		ensureEntityScratchCapacity(model.transforms.size(), 1);
 
 		{
 			BoneTransform handIdle;
@@ -4399,13 +4472,8 @@ void Renderer::renderEntities(
 
 		if (showHand)
 		{
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, skinningMatrixSSBO);
-			glBufferData(GL_SHADER_STORAGE_BUFFER, skinningMatrix.size() * sizeof(glm::mat4),
-				&skinningMatrix[0][0][0], GL_STREAM_DRAW);
-
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, perEntityDataSSBO);
-			glBufferData(GL_SHADER_STORAGE_BUFFER, entityData.size() * sizeof(entityData[0]),
-				entityData.data(), GL_STREAM_DRAW);
+			uploadSkinningMatrixSsbo(skinningMatrix.data(), skinningMatrix.size() * sizeof(glm::mat4));
+			uploadEntityDataSsbo(entityData.data(), entityData.size() * sizeof(entityData[0]));
 
 			glDrawElements(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, nullptr);
 		};
@@ -4413,7 +4481,10 @@ void Renderer::renderEntities(
 	};
 
 	//render hand draw hand renderHand drawHand
-	renderHand();
+	if (needsHandPose)
+	{
+		renderHand();
+	}
 
 	static std::minstd_rand rng(std::random_device{}());
 
@@ -4431,8 +4502,7 @@ void Renderer::renderEntities(
 		skinningMatrix.clear();
 		entityData.clear();
 
-		skinningMatrix.reserve(model.transforms.size() * container.size());
-		entityData.reserve(container.size());
+		ensureEntityScratchCapacity(model.transforms.size() * container.size(), container.size());
 
 		for (auto &e : container)
 		{
@@ -4573,15 +4643,9 @@ void Renderer::renderEntities(
 		auto *skinningUploadData = skinningMatrix.empty() ? nullptr : skinningMatrix.data();
 		auto *entityUploadData = entityData.empty() ? nullptr : entityData.data();
 
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, skinningMatrixSSBO);
-		//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, skinningMatrixSSBO);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, skinningMatrix.size() * sizeof(glm::mat4),
-			skinningUploadData, GL_STREAM_DRAW);
+		uploadSkinningMatrixSsbo(skinningUploadData, skinningMatrix.size() * sizeof(glm::mat4));
 
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, perEntityDataSSBO);
-		//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, perEntityDataSSBO);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, entityData.size() * sizeof(entityData[0]),
-			entityUploadData, GL_STREAM_DRAW);
+		uploadEntityDataSsbo(entityUploadData, entityData.size() * sizeof(entityData[0]));
 
 		glDrawElementsInstanced(GL_TRIANGLES, model.vertexCount, GL_UNSIGNED_INT, nullptr,
 			static_cast<GLsizei>(entityData.size()));
@@ -4616,40 +4680,6 @@ void Renderer::renderEntities(
 			glm::value_ptr(glm::scale(glm::vec3{0.4f})));
 		glUniform3fv(entityRenderer.blockEntityshader.u_cameraPositionFloat, 1, &posFloat[0]);
 		glUniform3iv(entityRenderer.blockEntityshader.u_cameraPositionInt, 1, &posInt[0]);
-
-		//debug stuff
-		if (0)
-		{
-			//todo something better here lol
-			std::uint64_t textures[6] = {};
-
-			for (int i = 0; i < 6; i++)
-			{
-				textures[i] = blocksLoader.gpuIds[getGpuIdIndexForBlock(BlockTypes::bookShelf, i)];
-			}
-
-			glUniformHandleui64vARB(entityRenderer.blockEntityshader.u_texture, 6, textures);
-
-
-			//todo instance rendering
-			for (auto &e : entityRenderer.itemEntitiesToRender)
-			{
-				glm::vec3 entityFloat = {};
-				glm::ivec3 entityInt = {};
-
-				decomposePosition(e.position, entityFloat, entityInt);
-
-				entityFloat += glm::vec3(0, 0.2, 0);
-
-				glUniform3fv(entityRenderer.blockEntityshader.u_entityPositionFloat, 1, &entityFloat[0]);
-				glUniform3iv(entityRenderer.blockEntityshader.u_entityPositionInt, 1, &entityInt[0]);
-
-				glDrawArrays(GL_TRIANGLES, 0, 36);
-
-			}
-
-		}
-
 		//real entities
 		{
 
@@ -4657,6 +4687,9 @@ void Renderer::renderEntities(
 			for (auto &e : entityManager.droppedItems)
 			{
 				if (!isBlock(e.second.entityBuffered.type)) { continue; }
+				auto itemPosition = e.second.getRubberBandPosition();
+				auto itemToCamera = itemPosition - c.position;
+				if (glm::dot(itemToCamera, itemToCamera) > maxDroppedItemDistanceSq) { continue; }
 
 				//todo something better here lol
 				std::uint64_t textures[6] = {};
@@ -4684,7 +4717,7 @@ void Renderer::renderEntities(
 				glm::ivec3 entityInt = {};
 
 				//decomposePosition(e.second.item.position, entityFloat, entityInt);
-				decomposePosition(e.second.getRubberBandPosition(), entityFloat, entityInt);
+				decomposePosition(itemPosition, entityFloat, entityInt);
 
 				entityFloat += glm::vec3(0, 0.2, 0);
 
@@ -4692,7 +4725,7 @@ void Renderer::renderEntities(
 				glUniform3iv(entityRenderer.blockEntityshader.u_entityPositionInt, 1, &entityInt[0]);
 
 
-				auto b = chunkSystem.getBlockSafe(e.second.getRubberBandPosition() + glm::dvec3(0, 0.2, 0));
+				auto b = chunkSystem.getBlockSafe(itemPosition + glm::dvec3(0, 0.2, 0));
 				int rez = skyLightIntensity;
 
 				if (b)
@@ -4847,8 +4880,11 @@ void Renderer::renderEntities(
 			//continue;
 			if (isBlock(e.second.entityBuffered.type)) { continue; }
 			if (!e.second.entityBuffered.type) { continue; }
+			auto itemPosition = e.second.getRubberBandPosition();
+			auto itemToCamera = itemPosition - c.position;
+			if (glm::dot(itemToCamera, itemToCamera) > maxDroppedItemDistanceSq) { continue; }
 
-			auto b = chunkSystem.getBlockSafe(e.second.getRubberBandPosition() + glm::dvec3(0, 0.2, 0));
+			auto b = chunkSystem.getBlockSafe(itemPosition + glm::dvec3(0, 0.2, 0));
 			int rez = skyLightIntensity;
 
 			if (b)
@@ -4862,13 +4898,12 @@ void Renderer::renderEntities(
 				rez = 15;
 			}
 
-			renderOneItem(e.second.entityBuffered.type, e.second.getRubberBandPosition(), rez);
+			renderOneItem(e.second.entityBuffered.type, itemPosition, rez);
 
 		}
 
 
 		//hand item
-		auto handItem = entityManager.localPlayer.inventory.getItemFromIndex(currentHeldItemIndex, nullptr);
 		if(handItem)	
 		{
 
@@ -5396,44 +5431,6 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 
 		glm::dmat4 mvp;
 
-		//remove shadow flicker
-		if (0)
-		{
-
-			double zOffset = 500;
-			double near_plane = cuboidExtendsMin.z - zOffset;
-			double far_plane = cuboidExtendsMax.z + zOffset;
-
-			glm::dvec2 ortoMin = {cuboidExtendsMin.x, cuboidExtendsMin.y};
-			glm::dvec2 ortoMax = {cuboidExtendsMax.x, cuboidExtendsMax.y};
-
-
-			glm::dvec2 shadowMapSize(fbo.size);
-			glm::dvec2 worldUnitsPerTexel = (ortoMax - ortoMin) / shadowMapSize;
-
-			ortoMin /= worldUnitsPerTexel;
-			ortoMin = glm::floor(ortoMin);
-			ortoMin *= worldUnitsPerTexel;
-
-			ortoMax /= worldUnitsPerTexel;
-			ortoMax = glm::floor(ortoMax);
-			ortoMax *= worldUnitsPerTexel;
-
-			double zWorldUnitsPerTexel = (far_plane - near_plane) / fbo.size.x;
-
-			near_plane /= zWorldUnitsPerTexel;
-			far_plane /= zWorldUnitsPerTexel;
-			near_plane = glm::floor(near_plane);
-			far_plane = glm::floor(far_plane);
-			near_plane *= zWorldUnitsPerTexel;
-			far_plane *= zWorldUnitsPerTexel;
-
-			glm::dmat4 lightProjection = glm::ortho(ortoMin.x, ortoMax.x, ortoMin.y, ortoMax.y, near_plane, far_plane);
-
-			mvp = lightProjection * glm::mat4_cast(lightRotation);
-
-		}
-
 		double near_plane = 0.1f;
 
 		//std::cout << std::fixed << std::setprecision(2) << cuboidExtendsMin.x << " " << cuboidExtendsMax.x << " | " <<
@@ -5524,68 +5521,6 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 	renderOneFrustum(0.9985, sunShadow.shadowMapCascades[0], sunShadow.lightSpaceMatrixCascades[0], sunShadow.lightSpacePositionCascades[0]);
 	renderOneFrustum(0.9995, sunShadow.shadowMapCascades[1], sunShadow.lightSpaceMatrixCascades[1], sunShadow.lightSpacePositionCascades[1]);
 	renderOneFrustum(0.99994, sunShadow.shadowMapCascades[2], sunShadow.lightSpaceMatrixCascades[2], sunShadow.lightSpacePositionCascades[2]);
-
-
-	//old version
-	/*
-	if(0)
-	{
-		glm::ivec3 newPos = c.position;
-
-		{
-			//newPos.y = 120;
-			//newPos.y += 60;
-			newPos.y += 120;
-
-			glm::vec3 moveDir = sunPos;
-
-			float l = glm::length(moveDir);
-			if (l > 0.0001)
-			{
-				moveDir /= l;
-				newPos += moveDir * (float)CHUNK_SIZE * 12.f;
-			}
-		}
-
-		//glm::vec3 posFloat = {};
-		//glm::ivec3 posInt = {};
-		//c.decomposePosition(posFloat, posInt);
-
-		glm::ivec3 posInt = newPos;
-
-		glm::ivec3 playerPos = c.position;
-
-		glm::vec3 vectorToPlayer = glm::normalize(glm::vec3(playerPos - newPos));
-
-		//posInt += glm::vec3(0, 0, 10);
-
-		float projectSize = 60;
-
-		float near_plane = 1.0f, far_plane = 460.f;
-		glm::mat4 lightProjection = glm::ortho(-projectSize, projectSize, -projectSize, projectSize,
-			near_plane, far_plane);
-		//auto mvp = lightProjection * glm::lookAt({},
-		//	-skyBoxRenderer.sunPos, glm::vec3(0, 1, 0));
-		auto mvp = lightProjection * lookAtSafe({},
-			vectorToPlayer, glm::vec3(0, 1, 0));
-
-		//glm::mat4 mvp = getLightMatrix(sunPos, c);
-
-
-		//auto mat = calculateLightProjectionMatrix(c, -skyBoxRenderer.sunPos, 1, 260, 25);
-
-		sunShadow.lightSpaceMatrix = mvp;
-		sunShadow.lightSpacePosition = posInt;
-
-		//sunShadow.lightSpaceMatrix = mat;
-		//sunShadow.lightSpacePosition = {};
-
-
-	}
-	*/
-
-
-
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glColorMask(1, 1, 1, 1);
