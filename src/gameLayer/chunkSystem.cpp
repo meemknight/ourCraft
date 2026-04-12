@@ -336,6 +336,10 @@ void bakeWorkerThread(int index, ThreadPool &threadPool)
 			//done work
 			threadPool.threIsWork[index] = false;
 		}
+		else
+		{
+			std::this_thread::yield();
+		}
 
 
 	}

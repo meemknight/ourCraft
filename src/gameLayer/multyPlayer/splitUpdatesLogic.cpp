@@ -489,6 +489,10 @@ void workerThread(int index, ThreadPool &threadPool)
 			//done work
 			threadPool.threIsWork[index] = false;
 		}
+		else
+		{
+			std::this_thread::yield();
+		}
 
 		
 	}
@@ -551,7 +555,10 @@ void ThreadPool::waitForEveryoneToFinish()
 {
 	for (int i = 0; i < currentCounter; i++)
 	{
-		while (threIsWork[i] != 0) {};
+		while (threIsWork[i] != 0)
+		{
+			std::this_thread::yield();
+		}
 	}
 }
 
