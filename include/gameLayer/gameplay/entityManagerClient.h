@@ -144,7 +144,6 @@ inline void ClientEntityManager::addOrUpdateGenericEntity(std::uint64_t eid, T e
 
 		//found->second.entity = entity;
 		found->second.bufferedEntityData.addElement(entity, serverTimer, timeUpdatedOnServer);
-		found->second.restantTime = restantTimer; //todo this can be removed from here?
 	}
 
 

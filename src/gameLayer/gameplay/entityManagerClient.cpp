@@ -309,7 +309,6 @@ void ClientEntityManager::addOrUpdateDroppedItem(std::uint64_t eid,
 
 		found->second.bufferedEntityData.addElement(droppedItem, serverTimer, timeUpdatedOnServer);
 		//found->second.entity = droppedItem;
-		found->second.restantTime = restantTimer;
 
 		for (auto &e : undoQueue.events)
 		{
@@ -363,8 +362,6 @@ void genericUpdateLoop(T &container, float deltaTime, ChunkData *(chunkGetter)(g
 				if (it->second.wasKilledTimer <= 0)
 				{
 					it->second.wasKilledTimer = 0;
-					++it;
-					//continue;
 				}
 			}
 		}
@@ -585,8 +582,6 @@ void ClientEntityManager::addBlockEntity(glm::ivec3 pos, BlockType blockType)
 	}
 
 }
-
-
 
 
 

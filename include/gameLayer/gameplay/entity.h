@@ -846,7 +846,6 @@ struct ClientEntity
 
 		if constexpr (hasAnimations<T>)
 		{
-			animationStateClient.update(deltaTime);
 			//animator.setAnimation(Animator::running);
 
 
@@ -854,7 +853,17 @@ struct ClientEntity
 			{
 				auto &keyFrames = animation.kayFrames[i];
 
-				//todo only one element case!
+				if (keyFrames.empty())
+				{
+					return;
+				}
+
+				if (keyFrames.size() == 1)
+				{
+					skinningMatrix[i] = rotMatrix * keyFrames[0].getMatrix();
+					return;
+				}
+
 				for (int k = 0; k < keyFrames.size() - 1; k++)
 				{
 
@@ -1392,6 +1401,8 @@ struct ClientEntity
 				}
 
 			}
+
+			animationStateClient.update(deltaTime);
 
 		}
 
