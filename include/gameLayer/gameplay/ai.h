@@ -126,30 +126,47 @@ inline void AnimalBehaviour<E, SETTINGS>::updateAnimalBehaviour(float deltaTime,
 	bool thereIsClosestPlayer = false;
 	float closesestDist = 1000000000000.f;
 
+	struct ClosePlayersContext
+	{
+		E *baseEntity = nullptr;
+		std::vector<std::pair<std::uint64_t, glm::dvec3>> *playersClose = nullptr;
+		glm::dvec3 *closestPlayerPosition = nullptr;
+		std::uint64_t *closestPlayer = nullptr;
+		bool *thereIsClosestPlayer = nullptr;
+		float *closestDist = nullptr;
+	};
+
+	ClosePlayersContext closePlayersContext = {
+		baseEntity,
+		&playersClose,
+		&closestPlayerPosition,
+		&closestPlayer,
+		&thereIsClosestPlayer,
+		&closesestDist,
+	};
+
 	for (auto offset : *getChunkNeighboursOffsets())
 	{
 		glm::ivec2 pos = chunkPosition + offset;
-		auto c = serverChunkStorerGetChunkOrGetNull(serverChunkStorer, pos.x, pos.y);
-		if (c)
-		{
-			for (auto &p : c->entityData.players)
+		serverChunkStorerForEachPlayerInChunk(serverChunkStorer, pos.x, pos.y, &closePlayersContext,
+			[](void *rawContext, std::uint64_t playerId, glm::dvec3 playerPosition)
 			{
-				float distance = glm::length(p.second->entity.position - baseEntity->getPosition());
+				auto &context = *static_cast<ClosePlayersContext *>(rawContext);
+				float distance = glm::length(playerPosition - context.baseEntity->getPosition());
 
 				if (distance <= 15)
 				{
-					playersClose.push_back({p.first, p.second->entity.position});
-					thereIsClosestPlayer = true;
+					context.playersClose->push_back({playerId, playerPosition});
+					*context.thereIsClosestPlayer = true;
 
-					if (distance < closesestDist)
+					if (distance < *context.closestDist)
 					{
-						closesestDist = distance;
-						closestPlayerPosition = p.second->entity.position;
-						closestPlayer = p.first;
+						*context.closestDist = distance;
+						*context.closestPlayerPosition = playerPosition;
+						*context.closestPlayer = playerId;
 					}
 				}
-			}
-		}
+			});
 	}
 #pragma endregion
 

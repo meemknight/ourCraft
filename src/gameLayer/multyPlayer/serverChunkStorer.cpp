@@ -20,6 +20,20 @@ Block *serverChunkStorerGetBlockSafe(ServerChunkStorer &serverChunkStorer, glm::
 	return serverChunkStorer.getBlockSafe(pos);
 }
 
+void serverChunkStorerForEachPlayerInChunk(ServerChunkStorer &serverChunkStorer, int posX, int posZ,
+	void *context, ServerChunkPlayerVisitor visitor)
+{
+	if (!visitor) { return; }
+
+	auto chunk = serverChunkStorer.getChunkOrGetNull(posX, posZ);
+	if (!chunk) { return; }
+
+	for (auto &player : chunk->entityData.players)
+	{
+		visitor(context, player.first, player.second->entity.position);
+	}
+}
+
 template<class T>
 void genericCheckEntitiesForCollisions(T &container, std::vector<ColidableEntry> &ret, glm::dvec3 position,
 	glm::vec3 collider, std::uint64_t eidToIgnore)

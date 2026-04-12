@@ -50,6 +50,7 @@ struct StructureData
 		else
 		{
 			assert(0);
+			return unsafeGet(x, y, z);
 		}
 	}
 
@@ -98,6 +99,7 @@ struct StructureDataAndFlags
 		else
 		{
 			assert(0);
+			return getPerCollomFlagsUnsafe(x, z);
 		}
 	}
 
@@ -142,4 +144,3 @@ struct StructuresManager
 
 	void clear();
 };
-

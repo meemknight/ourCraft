@@ -2371,7 +2371,11 @@ void WorldGenerator::generateChunkPreview(gl2d::Texture &t, glm::ivec2 size, glm
 						c = Colors_Red;
 					}
 
-					Color cfinal{c.r * 255,c.g * 255,c.b * 255,c.a * 255};
+					Color cfinal{
+						static_cast<unsigned char>(glm::clamp(c.r * 255.f, 0.f, 255.f)),
+						static_cast<unsigned char>(glm::clamp(c.g * 255.f, 0.f, 255.f)),
+						static_cast<unsigned char>(glm::clamp(c.b * 255.f, 0.f, 255.f)),
+						static_cast<unsigned char>(glm::clamp(c.a * 255.f, 0.f, 255.f))};
 					chunkPreviewData[i + j * size.x] = cfinal;
 				}
 

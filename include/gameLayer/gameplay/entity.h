@@ -86,6 +86,7 @@ struct PositionAndEID
 struct ServerChunkStorer;
 struct SavedChunk;
 struct Block;
+using ServerChunkPlayerVisitor = void (*)(void *context, std::uint64_t playerId, glm::dvec3 position);
 
 float getRandomNumberFloat(std::minstd_rand &rng, float min, float max);
 float getRandomNumberFloat(int x, int y, int z, float a, float b);
@@ -93,6 +94,8 @@ bool getRandomChance(std::minstd_rand &rng, float chance);
 std::array<glm::ivec2, 9> *getChunkNeighboursOffsets();
 SavedChunk *serverChunkStorerGetChunkOrGetNull(ServerChunkStorer &serverChunkStorer, int posX, int posZ);
 Block *serverChunkStorerGetBlockSafe(ServerChunkStorer &serverChunkStorer, glm::ivec3 pos);
+void serverChunkStorerForEachPlayerInChunk(ServerChunkStorer &serverChunkStorer, int posX, int posZ,
+	void *context, ServerChunkPlayerVisitor visitor);
 float computeRestantTimer(std::uint64_t older, std::uint64_t newer);
 
 struct RubberBand

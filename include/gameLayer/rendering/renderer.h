@@ -601,18 +601,13 @@ struct PointDebugRenderer
 
 constexpr int mergeShortsUnsigned(unsigned short a, unsigned short b)
 {
-	int rez = 0;
-	((unsigned short *)&rez)[0] = a;
-	((unsigned short *)&rez)[1] = b;
-	return rez;
+	return static_cast<int>((static_cast<unsigned int>(b) << 16) | static_cast<unsigned int>(a));
 }
 
 constexpr int mergeShorts(short a, short b)
 {
-	int rez = 0;
-	((short*)&rez)[0] = a;
-	((short*)&rez)[1] = b;
-	return rez;
+	return static_cast<int>((static_cast<unsigned int>(static_cast<unsigned short>(b)) << 16)
+		| static_cast<unsigned int>(static_cast<unsigned short>(a)));
 }
 
 constexpr unsigned char merge4bits(unsigned char a, unsigned char b)

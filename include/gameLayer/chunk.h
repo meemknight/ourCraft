@@ -184,6 +184,7 @@ struct Chunk
 		else
 		{
 			permaAssertComment(0, "unsafe get wrong lod");
+			return data.blocks[x][z][y];
 		}
 	}
 
@@ -240,6 +241,5 @@ struct Chunk
 };
 
 #undef DECLARE_FLAG
-
 
 
