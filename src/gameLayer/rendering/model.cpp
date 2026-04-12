@@ -25,6 +25,54 @@ glm::mat4 aiToGlm(const aiMatrix4x4 &matrix)
 	return glm::make_mat4(&matrix.a1); // a1 represents the first element of the matrix
 }
 
+namespace
+{
+	glm::vec3 toGlmVec3(const aiVector3D &value)
+	{
+		return {value.x, value.y, value.z};
+	}
+
+	glm::quat toGlmQuat(const aiQuaternion &value)
+	{
+		return {value.w, value.x, value.y, value.z};
+	}
+
+	template <typename KeyType, typename ValueType, typename Extractor, typename Interpolator>
+	ValueType sampleAnimationTrack(const KeyType *keys, unsigned int keyCount, double time,
+		const ValueType &defaultValue, Extractor extractor, Interpolator interpolator)
+	{
+		if (keyCount == 0 || keys == nullptr)
+		{
+			return defaultValue;
+		}
+
+		if (keyCount == 1 || time <= keys[0].mTime)
+		{
+			return extractor(keys[0]);
+		}
+
+		for (unsigned int i = 0; i + 1 < keyCount; ++i)
+		{
+			auto startTime = keys[i].mTime;
+			auto endTime = keys[i + 1].mTime;
+
+			if (time <= endTime)
+			{
+				if (endTime <= startTime)
+				{
+					return extractor(keys[i + 1]);
+				}
+
+				float factor = static_cast<float>((time - startTime) / (endTime - startTime));
+				factor = glm::clamp(factor, 0.0f, 1.0f);
+				return interpolator(extractor(keys[i]), extractor(keys[i + 1]), factor);
+			}
+		}
+
+		return extractor(keys[keyCount - 1]);
+	}
+}
+
 const aiNode *findNodeContainingMesh(const aiNode *node, const aiMesh *mesh)
 {
 	for (unsigned int i = 0; i < node->mNumMeshes; ++i)
@@ -372,7 +420,13 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 				//}
 
 				Animation anim;
-				anim.animationLength = static_cast<float>(animation->mDuration) / 1000.f;
+				double ticksPerSecond = animation->mTicksPerSecond;
+				if (ticksPerSecond <= 0.0)
+				{
+					ticksPerSecond = 1000.0;
+				}
+
+				anim.animationLength = static_cast<float>(animation->mDuration / ticksPerSecond);
 
 				int nodeCount = scene->mRootNode->mNumChildren;
 				anim.kayFrames.resize(nodeCount); // Ensure each node has a slot
@@ -396,28 +450,77 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 					}
 
 					int nodeIndex = nodeIndexMap[nodeName];
+					auto *node = scene->mRootNode->mChildren[nodeIndex];
+
+					aiVector3D defaultScale;
+					aiVector3D defaultPosition;
+					aiQuaternion defaultRotation;
+					node->mTransformation.Decompose(defaultScale, defaultRotation, defaultPosition);
+
+					std::vector<double> keyTimes;
+					keyTimes.reserve(nodeAnim->mNumPositionKeys + nodeAnim->mNumRotationKeys + nodeAnim->mNumScalingKeys);
+
+					for (unsigned int k = 0; k < nodeAnim->mNumPositionKeys; ++k)
+					{
+						keyTimes.push_back(nodeAnim->mPositionKeys[k].mTime);
+					}
+					for (unsigned int k = 0; k < nodeAnim->mNumRotationKeys; ++k)
+					{
+						keyTimes.push_back(nodeAnim->mRotationKeys[k].mTime);
+					}
+					for (unsigned int k = 0; k < nodeAnim->mNumScalingKeys; ++k)
+					{
+						keyTimes.push_back(nodeAnim->mScalingKeys[k].mTime);
+					}
+
+					if (keyTimes.empty())
+					{
+						keyTimes.push_back(0.0);
+					}
+
+					std::sort(keyTimes.begin(), keyTimes.end());
+					keyTimes.erase(std::unique(keyTimes.begin(), keyTimes.end(), [](double a, double b)
+					{
+						return std::abs(a - b) < 0.0001;
+					}), keyTimes.end());
 
 					// Read keyframes and store them
-					for (unsigned int k = 0; k < nodeAnim->mNumPositionKeys; k++)
+					for (double keyTime : keyTimes)
 					{
 						KeyFrame keyframe;
-						keyframe.timestamp = static_cast<float>(nodeAnim->mPositionKeys[k].mTime) / 1000.f;
+						keyframe.timestamp = static_cast<float>(keyTime / ticksPerSecond);
+						keyframe.pos = sampleAnimationTrack(nodeAnim->mPositionKeys, nodeAnim->mNumPositionKeys,
+							keyTime, toGlmVec3(defaultPosition),
+							[](const aiVectorKey &key)
+							{
+								return toGlmVec3(key.mValue);
+							},
+							[](const glm::vec3 &a, const glm::vec3 &b, float factor)
+							{
+								return glm::mix(a, b, factor);
+							});
 
-						// Position
-						keyframe.pos = glm::vec3(nodeAnim->mPositionKeys[k].mValue.x,
-							nodeAnim->mPositionKeys[k].mValue.y,
-							nodeAnim->mPositionKeys[k].mValue.z);
+						keyframe.rotation = sampleAnimationTrack(nodeAnim->mRotationKeys, nodeAnim->mNumRotationKeys,
+							keyTime, toGlmQuat(defaultRotation),
+							[](const aiQuatKey &key)
+							{
+								return toGlmQuat(key.mValue);
+							},
+							[](const glm::quat &a, const glm::quat &b, float factor)
+							{
+								return glm::slerp(a, b, factor);
+							});
 
-						// Rotation
-						keyframe.rotation = glm::quat(nodeAnim->mRotationKeys[k].mValue.w,
-							nodeAnim->mRotationKeys[k].mValue.x,
-							nodeAnim->mRotationKeys[k].mValue.y,
-							nodeAnim->mRotationKeys[k].mValue.z);
-
-						// Scale
-						keyframe.scale = glm::vec3(nodeAnim->mScalingKeys[k].mValue.x,
-							nodeAnim->mScalingKeys[k].mValue.y,
-							nodeAnim->mScalingKeys[k].mValue.z);
+						keyframe.scale = sampleAnimationTrack(nodeAnim->mScalingKeys, nodeAnim->mNumScalingKeys,
+							keyTime, toGlmVec3(defaultScale),
+							[](const aiVectorKey &key)
+							{
+								return toGlmVec3(key.mValue);
+							},
+							[](const glm::vec3 &a, const glm::vec3 &b, float factor)
+							{
+								return glm::mix(a, b, factor);
+							});
 
 						anim.kayFrames[nodeIndex].push_back(keyframe);
 					}

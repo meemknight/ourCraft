@@ -78,7 +78,11 @@ struct AnimationStateClient
 
 	void setAnimation(int type)
 	{
-		currentAnimation = type;
+		if (currentAnimation != type)
+		{
+			currentAnimation = type;
+			animationTime = 0;
+		}
 	};
 
 	float animationTime = 0;
