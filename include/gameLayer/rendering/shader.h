@@ -23,10 +23,11 @@ struct Shader
 };
 
 GLint getUniform(GLuint id, const char* name);
+GLint getUniformOptional(GLuint id, const char* name);
 GLint getUniformSubroutine(GLuint id, GLenum shaderType, const char* name);
 GLuint getUniformBlock(GLuint id, const char* name);
 GLuint getUniformSubroutineIndex(GLuint id, GLenum shaderType, const char* name);
 GLuint getStorageBlockIndex(GLuint id, const char* name);
-
+GLuint getStorageBlockIndexOptional(GLuint id, const char* name);
 
 

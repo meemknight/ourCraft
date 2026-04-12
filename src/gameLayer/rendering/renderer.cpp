@@ -26,7 +26,7 @@
 
 
 #define GET_UNIFORM(s, n) n = s.getUniform(#n);
-#define GET_UNIFORM2(s, n) s. n = s.shader.getUniform(#n);
+#define GET_UNIFORM2(s, n) s. n = getUniformOptional(s.shader.id, #n);
 
 
 
@@ -2097,9 +2097,9 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(defaultShader, u_skyTexture);
 	GET_UNIFORM2(defaultShader, u_ao);
 	GET_UNIFORM2(defaultShader, u_baseAmbientExtra);
-	GET_UNIFORM2(defaultShader, u_cascadedShadowsMaps);
-	GET_UNIFORM2(defaultShader, u_cascadedShadowMatrix);
-	GET_UNIFORM2(defaultShader, u_cascadedShadowPosition);
+	defaultShader.u_cascadedShadowsMaps = getUniformOptional(defaultShader.shader.id, "u_cascadedShadowsMaps[0]");
+	defaultShader.u_cascadedShadowMatrix = getUniformOptional(defaultShader.shader.id, "u_cascadedShadowMatrix[0]");
+	defaultShader.u_cascadedShadowPosition = getUniformOptional(defaultShader.shader.id, "u_cascadedShadowPosition[0]");
 
 
 	defaultShader.u_shadingSettings

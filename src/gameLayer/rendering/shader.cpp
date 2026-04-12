@@ -312,12 +312,19 @@ GLint getUniformSubroutine(GLuint id, GLenum shaderType, const char* name)
 
 GLint getUniform(GLuint id, const char* name)
 {
+	if (id == 0) { return -1; }
 	GLint uniform = glGetUniformLocation(id, name);
 	if (uniform == -1)
 	{
 		std::cout << "uniform error " << name << "\n";
 	}
 	return uniform;
+};
+
+GLint getUniformOptional(GLuint id, const char* name)
+{
+	if (id == 0) { return -1; }
+	return glGetUniformLocation(id, name);
 };
 
 GLuint getUniformBlock(GLuint id, const char* name)
@@ -342,10 +349,17 @@ GLuint getUniformSubroutineIndex(GLuint id, GLenum shaderType, const char* name)
 
 GLuint getStorageBlockIndex(GLuint id, const char* name)
 {
+	if (id == 0) { return GL_INVALID_INDEX; }
 	GLuint uniform = glGetProgramResourceIndex(id, GL_SHADER_STORAGE_BLOCK, name);
 	if (uniform == GL_INVALID_INDEX)
 	{
 		std::cout << "storage block index error " << name << "\n";
 	}
 	return uniform;
+};
+
+GLuint getStorageBlockIndexOptional(GLuint id, const char* name)
+{
+	if (id == 0) { return GL_INVALID_INDEX; }
+	return glGetProgramResourceIndex(id, GL_SHADER_STORAGE_BLOCK, name);
 };
