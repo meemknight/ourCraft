@@ -1,5 +1,4 @@
 #define GLM_ENABLE_EXPERIMENTAL
-#define NOMINMAX
 #include "gameLayer.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -13,9 +12,13 @@
 #include <shader.h>
 #include <camera.h>
 #include <deque>
-#include <Windows.h>
 #include <filesystem>
 #include <stb_image/stb_image_write.h>
+
+#ifdef _WIN32
+#define NOMINMAX
+#include <Windows.h>
+#endif
 
 gl2d::Texture colorT;
 gl2d::Texture pbrT;
@@ -87,24 +90,24 @@ GLint u_viewProjection = 0;
 GLint u_modelMatrix = 0;
 GLint u_view = 0;
 
-bool ShowOpenFileDialog(HWND hwnd, char *filePath, DWORD filePathSize, const char *initialDir,
+bool ShowOpenFileDialog(char *filePath, std::size_t filePathSize, const char *initialDir,
 	const char *filter)
 {
+	#ifdef _WIN32
 	// Initialize the OPENFILENAME structure
-	OPENFILENAMEA ofn;
-	ZeroMemory(&ofn, sizeof(ofn));
+	OPENFILENAMEA ofn{};
 
 	// Zero out the file path buffer
-	ZeroMemory((void *)filePath, filePathSize);
+	ZeroMemory((void *)filePath, static_cast<DWORD>(filePathSize));
 
 	//strcpy(filePath, initialDir);
 
 
 
 	ofn.lStructSize = sizeof(ofn);
-	ofn.hwndOwner = hwnd;
+	ofn.hwndOwner = nullptr;
 	ofn.lpstrFile = filePath;
-	ofn.nMaxFile = filePathSize;
+	ofn.nMaxFile = static_cast<DWORD>(filePathSize);
 	ofn.lpstrInitialDir = initialDir;
 	ofn.lpstrFilter = filter;
 	ofn.nFilterIndex = 1;
@@ -112,6 +115,13 @@ bool ShowOpenFileDialog(HWND hwnd, char *filePath, DWORD filePathSize, const cha
 
 	// Show the file open dialog
 	return GetOpenFileNameA(&ofn);
+	#else
+	(void)filePath;
+	(void)filePathSize;
+	(void)initialDir;
+	(void)filter;
+	return false;
+	#endif
 }
 
 
@@ -662,7 +672,7 @@ bool gameLogic(float deltaTime)
 			if (ImGui::MenuItem("Open"))
 			{
 				char path[300] = {};
-				if (ShowOpenFileDialog(0, path, sizeof(path), RESOURCES_PATH, ".png"))
+				if (ShowOpenFileDialog(path, sizeof(path), RESOURCES_PATH, ".png"))
 				{
 					loadTexture(path);
 				}

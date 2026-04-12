@@ -36,6 +36,12 @@
 #include <gameplay/food.h>
 #include <cameraShaker.h>
 #include <blockUpdates.h>
+#include <limits>
+
+#ifdef _WIN32
+#define NOMINMAX
+#include <Windows.h>
+#endif
 
 struct GameData
 {
@@ -182,21 +188,21 @@ void loadCurrentSkin()
 
 }
 
-bool ShowOpenFileDialog(HWND hwnd, char *filePath, DWORD filePathSize, const char *initialDir,
+bool ShowOpenFileDialog(char *filePath, std::size_t filePathSize, const char *initialDir,
 	const char *filter)
 {
+	#ifdef _WIN32
 	// Initialize the OPENFILENAME structure
-	OPENFILENAMEA ofn;
-	ZeroMemory(&ofn, sizeof(ofn));
+	OPENFILENAMEA ofn{};
 
 	// Zero out the file path buffer
-	ZeroMemory((void*)filePath, filePathSize);
+	ZeroMemory((void *)filePath, static_cast<DWORD>(filePathSize));
 
 
 	ofn.lStructSize = sizeof(ofn);
-	ofn.hwndOwner = hwnd;
+	ofn.hwndOwner = nullptr;
 	ofn.lpstrFile = filePath;
-	ofn.nMaxFile = filePathSize;
+	ofn.nMaxFile = static_cast<DWORD>(filePathSize);
 	ofn.lpstrInitialDir = initialDir;
 	ofn.lpstrFilter = filter;
 	ofn.nFilterIndex = 1;
@@ -204,6 +210,13 @@ bool ShowOpenFileDialog(HWND hwnd, char *filePath, DWORD filePathSize, const cha
 
 	// Show the file open dialog
 	return GetOpenFileNameA(&ofn);
+	#else
+	(void)filePath;
+	(void)filePathSize;
+	(void)initialDir;
+	(void)filter;
+	return false;
+	#endif
 }
 
 bool initGameplay(ProgramData &programData, const char *c) //GAME STUFF!
@@ -267,7 +280,7 @@ void dealDamageToLocalPlayer(int damage)
 {
 	if (damage < 0) { return; }
 	if (damage == 0) { AudioEngine::playHurtSound(); return; }
-	damage = std::min(damage, MAXSHORT - 10);
+	damage = std::min(damage, static_cast<int>(std::numeric_limits<short>::max()) - 10);
 
 	auto &p = gameData.entityManager.localPlayer;
 
@@ -2221,7 +2234,7 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 
 				if (ImGui::Button("OPEN FILE DIALOGUE"))
 				{
-					ShowOpenFileDialog(0, fileBuff, sizeof(fileBuff),
+					ShowOpenFileDialog(fileBuff, sizeof(fileBuff),
 						RESOURCES_PATH "gameData/structures/",
 						".structure");
 				}

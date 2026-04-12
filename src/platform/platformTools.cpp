@@ -122,6 +122,7 @@ void assertFuncInternal(
 #else //linux or others
 
 #include <cassert>
+#include <csignal>
 #include <iostream>
 
 void assertFuncProduction(
