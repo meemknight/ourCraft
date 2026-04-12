@@ -22,6 +22,7 @@
 #include <filesystem>
 #include <audioEngine.h>
 #include <gameplay/loot.h>
+#include <platform/resourceResolver.h>
 
 #include <platformTools.h>
 
@@ -35,6 +36,31 @@ ProgramData programData;
 
 inline void stubErrorFunc(const char *msg, void *userDefinedData)
 {}
+
+namespace
+{
+	bool loadTextureWithResolvedPath(gl2d::Texture &texture, const std::filesystem::path &primaryPath,
+		bool pixelated, bool useMipMaps, const std::vector<std::filesystem::path> &extraCandidates = {})
+	{
+		if (texture.id) { return true; }
+
+		std::filesystem::path resolvedPath;
+		if (!resourceResolver::tryResolvePath(primaryPath, resolvedPath, extraCandidates))
+		{
+			resourceResolver::reportMissingPathOnce(primaryPath);
+			return false;
+		}
+
+		texture.loadFromFile(resolvedPath.string().c_str(), pixelated, useMipMaps);
+		if (!texture.id)
+		{
+			resourceResolver::reportMissingPathOnce(primaryPath);
+			return false;
+		}
+
+		return true;
+	}
+}
 
 void clearOtherTextures()
 {
@@ -76,37 +102,35 @@ void loadOtherTextures(const char *basePath)
 
 	if (!programData.numbersTexture.id)
 	{
-		programData.numbersTexture.loadFromFile((p + "numbers.png").c_str(), true, true);
+		loadTextureWithResolvedPath(programData.numbersTexture, p + "numbers.png", true, true);
 		//programData.dudv.loadFromFile(RESOURCES_PATH "assets/otherTextures/test.jpg", true, true);
 	};
 
 	if (!programData.dudv.id)
 	{
-		programData.dudv.loadFromFile((p + "waterDUDV.png").c_str(), false, true);
-
-		if (!programData.dudv.id)
-		{
-			programData.dudv.loadFromFile((p + "waterDUDV.jpg").c_str(), false, true);
-		}
+		loadTextureWithResolvedPath(programData.dudv, p + "waterDUDV.png", false, true,
+			{p + "waterDUDV.jpg"});
 
 		//programData.dudv.loadFromFile(RESOURCES_PATH "assets/otherTextures/wdudv.jpg", false, true);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		if (programData.dudv.id)
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		}
 	};
 
 	if (!programData.causticsTexture.id)
 	{
-		programData.causticsTexture.loadFromFile((p + "caustics.png").c_str(), false, true);
-
-		if (!programData.causticsTexture.id)
-		{
-			programData.causticsTexture.loadFromFile((p + "caustics.jpg").c_str(), false, true);
-		}
+		loadTextureWithResolvedPath(programData.causticsTexture, p + "caustics.png", false, true,
+			{p + "caustics.jpg", p + "caustics3.png", p + "caustics2.jpg"});
 
 		//programData.causticsTexture.loadFromFile(RESOURCES_PATH "assets/otherTextures/caustics3.png", false, true);
 		//programData.causticsTexture.loadFromFile(RESOURCES_PATH "assets/otherTextures/test.jpg", false, true);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		if (programData.causticsTexture.id)
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		}
 	};
 
 	if (!programData.dudvNormal.id)
@@ -115,55 +139,65 @@ void loadOtherTextures(const char *basePath)
 		//programData.dudvNormal.loadFromFile(RESOURCES_PATH "assets/otherTextures/normal2.png", false, true);
 		//programData.dudvNormal.loadFromFile(RESOURCES_PATH "assets/otherTextures/normal.jpg", false, true);
 		//programData.dudvNormal.loadFromFile(RESOURCES_PATH "assets/otherTextures/normal2.jpg", false, true);
-		programData.dudvNormal.loadFromFile((p+"normal.png").c_str(), false, true); //best
+		loadTextureWithResolvedPath(programData.dudvNormal, p + "normal.png", false, true,
+			{p + "normal.jpg", p + "normal2.png", p + "normal2.jpg", p + "normal4.png", p + "normal5.jpg"});
 
-		if (!programData.dudvNormal.id)
+
+		if (programData.dudvNormal.id)
 		{
-			programData.dudvNormal.loadFromFile((p + "normal.jpg").c_str(), false, true); //best
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		}
-
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	};
 
 
 	if (!programData.aoTexture.id)
 	{
-		programData.aoTexture.loadFromFile((p+"ao.png").c_str(), false, true);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+		if (loadTextureWithResolvedPath(programData.aoTexture, p + "ao.png", false, true))
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+		}
 	};
 
 	if (!programData.brdfTexture.id)
 	{
-		programData.brdfTexture.loadFromFile((p + "brdf.png").c_str(), false, false);
+		loadTextureWithResolvedPath(programData.brdfTexture, p + "brdf.png", false, false);
 	}
 
 	if (!programData.crackTexture.id)
 	{
-		programData.crackTexture.loadFromFile((p + "crack.png").c_str(), true, true);
+		loadTextureWithResolvedPath(programData.crackTexture, p + "crack.png", true, true);
 	}
 
 	if (!programData.lensDirtTexture.id)
 	{
-		programData.lensDirtTexture.loadFromFile((p + "lensDirt.png").c_str(), true, true);
+		loadTextureWithResolvedPath(programData.lensDirtTexture, p + "lensDirt.png", true, true,
+			{p + "lensDirt1.png"});
 	}
 
 	if (!programData.hitDirtTexture.id)
 	{
-		programData.hitDirtTexture.loadFromFile((p + "hitLensDirt.png").c_str(), true, true);
+		loadTextureWithResolvedPath(programData.hitDirtTexture, p + "hitLensDirt.png", true, true);
 	}
 
 	if (!programData.waterDirtTexture.id)
 	{
-		programData.waterDirtTexture.loadFromFile((p + "waterLensDirt.png").c_str(), true, true);
+		loadTextureWithResolvedPath(programData.waterDirtTexture, p + "waterLensDirt.png", true, true);
 	}
 
 	if (!programData.heartsTexture.id)
 	{
 		//todo better api here
-		programData.heartsTexture.loadFromFileWithPixelPadding((p + "hearts.png").c_str(), 
-			9, true, false);
+		std::filesystem::path resolvedPath;
+		if (resourceResolver::tryResolvePath(p + "hearts.png", resolvedPath))
+		{
+			programData.heartsTexture.loadFromFileWithPixelPadding(resolvedPath.string().c_str(), 
+				9, true, false);
+		}
+		else
+		{
+			resourceResolver::reportMissingPathOnce(p + "hearts.png");
+		}
 		auto s = programData.heartsTexture.GetSize();
 		programData.heartsAtlas = gl2d::TextureAtlasPadding(5, 1, s.x, s.y);
 	}

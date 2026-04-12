@@ -2,6 +2,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "rendering/skyBoxRenderer.h"
+#include <platform/resourceResolver.h>
 #include <stb_image/stb_image.h>
 #include <platformTools.h>
 #include <iostream>
@@ -69,24 +70,28 @@ void SkyBoxLoaderAndDrawer::createGpuData()
 {
 
 
-	atmosphericScatteringShader.shader.loadShaderProgramFromFile(RESOURCES_PATH  "shaders/skybox/hdrToCubeMap.vert",
-		RESOURCES_PATH  "shaders/skybox/atmosphericScattering.frag");
-	atmosphericScatteringShader.u_lightPos = getUniform(atmosphericScatteringShader.shader.id, "u_lightPos");
-	atmosphericScatteringShader.u_color1 = getUniform(atmosphericScatteringShader.shader.id, "u_color1");
-	atmosphericScatteringShader.u_color2 = getUniform(atmosphericScatteringShader.shader.id, "u_color2");
-	atmosphericScatteringShader.u_groundColor = getUniform(atmosphericScatteringShader.shader.id, "u_groundColor");
-	atmosphericScatteringShader.u_g = getUniform(atmosphericScatteringShader.shader.id, "u_g");
-	atmosphericScatteringShader.u_useGround = getUniform(atmosphericScatteringShader.shader.id, "u_useGround");
-	atmosphericScatteringShader.u_viewProjection = getUniform(atmosphericScatteringShader.shader.id, "u_viewProjection");
-	atmosphericScatteringShader.u_noSun = getUniform(atmosphericScatteringShader.shader.id, "u_noSun");
+	if (atmosphericScatteringShader.shader.loadShaderProgramFromFile(RESOURCES_PATH  "shaders/skybox/hdrToCubeMap.vert",
+		RESOURCES_PATH  "shaders/skybox/atmosphericScattering.frag"))
+	{
+		atmosphericScatteringShader.u_lightPos = getUniform(atmosphericScatteringShader.shader.id, "u_lightPos");
+		atmosphericScatteringShader.u_color1 = getUniform(atmosphericScatteringShader.shader.id, "u_color1");
+		atmosphericScatteringShader.u_color2 = getUniform(atmosphericScatteringShader.shader.id, "u_color2");
+		atmosphericScatteringShader.u_groundColor = getUniform(atmosphericScatteringShader.shader.id, "u_groundColor");
+		atmosphericScatteringShader.u_g = getUniform(atmosphericScatteringShader.shader.id, "u_g");
+		atmosphericScatteringShader.u_useGround = getUniform(atmosphericScatteringShader.shader.id, "u_useGround");
+		atmosphericScatteringShader.u_viewProjection = getUniform(atmosphericScatteringShader.shader.id, "u_viewProjection");
+		atmosphericScatteringShader.u_noSun = getUniformOptional(atmosphericScatteringShader.shader.id, "u_noSun");
+	}
 	
 
-	normalSkyBox.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/skybox/skyBox.vert", RESOURCES_PATH "shaders/skybox/skyBox.frag");
-	normalSkyBox.modelViewUniformLocation = getUniform(normalSkyBox.shader.id, "u_viewProjection");
-	normalSkyBox.u_sunPos = getUniform(normalSkyBox.shader.id, "u_sunPos");
-	normalSkyBox.u_blend = getUniform(normalSkyBox.shader.id, "u_blend");
-	normalSkyBox.u_rotation1 = getUniform(normalSkyBox.shader.id, "u_rotation1");
-	normalSkyBox.u_rotation2 = getUniform(normalSkyBox.shader.id, "u_rotation2");
+	if (normalSkyBox.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/skybox/skyBox.vert", RESOURCES_PATH "shaders/skybox/skyBox.frag"))
+	{
+		normalSkyBox.modelViewUniformLocation = getUniform(normalSkyBox.shader.id, "u_viewProjection");
+		normalSkyBox.u_sunPos = getUniformOptional(normalSkyBox.shader.id, "u_sunPos");
+		normalSkyBox.u_blend = getUniform(normalSkyBox.shader.id, "u_blend");
+		normalSkyBox.u_rotation1 = getUniform(normalSkyBox.shader.id, "u_rotation1");
+		normalSkyBox.u_rotation2 = getUniform(normalSkyBox.shader.id, "u_rotation2");
+	}
 
 
 	hdrtoCubeMap.shader.loadShaderProgramFromFile(RESOURCES_PATH  "shaders/skybox/hdrToCubeMap.vert", RESOURCES_PATH  "shaders/skybox/hdrToCubeMap.frag");
@@ -241,12 +246,28 @@ void SkyBoxLoaderAndDrawer::loadAllTextures(std::string path)
 
 	if (!sunTexture.id)
 	{
-		sunTexture.loadFromFile((path + "sun.png").c_str(), false, false);
+		std::filesystem::path resolvedPath;
+		if (resourceResolver::tryResolvePath(path + "sun.png", resolvedPath))
+		{
+			sunTexture.loadFromFile(resolvedPath.string().c_str(), false, false);
+		}
+		else
+		{
+			resourceResolver::reportMissingPathOnce(path + "sun.png");
+		}
 	}
 
 	if (!moonTexture.id)
 	{
-		moonTexture.loadFromFile((path + "moon.png").c_str(), false, false);
+		std::filesystem::path resolvedPath;
+		if (resourceResolver::tryResolvePath(path + "moon.png", resolvedPath))
+		{
+			moonTexture.loadFromFile(resolvedPath.string().c_str(), false, false);
+		}
+		else
+		{
+			resourceResolver::reportMissingPathOnce(path + "moon.png");
+		}
 	}
 }
 

@@ -11,6 +11,7 @@
 #include <audioEngine.h>
 #include <iostream>
 #include <magic_enum.hpp>
+#include <platform/resourceResolver.h>
 #include <safeSave.h>
 #include <chunkSystem.h>
 #include <sstream>
@@ -187,16 +188,39 @@ void UiENgine::init()
 
 void UiENgine::loadTextures(std::string path)
 {
+	auto loadTextureIfMissing = [&](gl2d::Texture &texture, const std::filesystem::path &requestedPath,
+		bool pixelated = true, bool useMipMaps = true)
+	{
+		if (texture.id) { return; }
+
+		std::filesystem::path resolvedPath;
+		if (!resourceResolver::tryResolvePath(requestedPath, resolvedPath))
+		{
+			resourceResolver::reportMissingPathOnce(requestedPath);
+			return;
+		}
+
+		texture.loadFromFile(resolvedPath.string().c_str(), pixelated, useMipMaps);
+	};
+
 	if (!font.texture.id)
 	{
-		font.createFromFile((path + "font.ttf").c_str());
+		std::filesystem::path resolvedPath;
+		if (resourceResolver::tryResolvePath(path + "font.ttf", resolvedPath))
+		{
+			font.createFromFile(resolvedPath.string().c_str());
+		}
+		else
+		{
+			resourceResolver::reportMissingPathOnce(path + "font.ttf");
+		}
 	}
 	
 	if(!uiTexture.id)
-	uiTexture.loadFromFile((path + "ui0.png").c_str(), true, true);
+	loadTextureIfMissing(uiTexture, path + "ui0.png");
 	
 	if(!buttonTexture.id)
-	buttonTexture.loadFromFile((path + "button.png").c_str(), true, true);
+	loadTextureIfMissing(buttonTexture, path + "button.png");
 
 	if (!coinIconTexture.id)
 		loadFromFileAndAddPadding(coinIconTexture, (path + "icons/coin.png").c_str());
@@ -211,46 +235,46 @@ void UiENgine::loadTextures(std::string path)
 
 	if (!itemsBar.id)
 	{
-		itemsBar.loadFromFile((path + "ui1.png").c_str(), true, true);
+		loadTextureIfMissing(itemsBar, path + "ui1.png");
 		itemsBarSize = itemsBar.GetSize();
 	}
 
 	if (!itemsHighlighter.id)
 	{
-		itemsHighlighter.loadFromFile((path + "ui2.png").c_str(), true, true);
+		loadTextureIfMissing(itemsHighlighter, path + "ui2.png");
 		itemsHighlighterSize = itemsHighlighter.GetSize();
 	}
 
 	if (!background.id)
 	{
-		background.loadFromFile((path + "background.jpg").c_str(), true, true);
+		loadTextureIfMissing(background, path + "background.jpg");
 	}
 
 	if (!vignete.id)
 	{
-		vignete.loadFromFile((path + "vignette.png").c_str(), true, true);
+		loadTextureIfMissing(vignete, path + "vignette.png");
 	}
 
 	if (!itemsBarInventory.id)
 	{
-		itemsBarInventory.loadFromFile((path + "ui3.png").c_str(), true, true);
+		loadTextureIfMissing(itemsBarInventory, path + "ui3.png");
 		itemsBarInventorySize = itemsBarInventory.GetSize();
 	}
 
 	if (!arrowUI.id)
 	{
-		arrowUI.loadFromFile((path + "arrow.png").c_str(), true, true);
+		loadTextureIfMissing(arrowUI, path + "arrow.png");
 	}
 
 	if (!oneInventorySlot.id)
 	{
-		oneInventorySlot.loadFromFile((path + "ui4.png").c_str(), true, true);
+		loadTextureIfMissing(oneInventorySlot, path + "ui4.png");
 		oneInventorySlotSize = oneInventorySlot.GetSize();
 	}
 
 	if (!playerCell.id)
 	{
-		playerCell.loadFromFile((path + "ui5.png").c_str(), true, true);
+		loadTextureIfMissing(playerCell, path + "ui5.png");
 		playerCellSize = playerCell.GetSize();
 	}
 
@@ -262,7 +286,7 @@ void UiENgine::loadTextures(std::string path)
 
 		if (!battleTextures[i].id)
 		{
-			battleTextures[i].loadFromFile((newPath + n + ".png").c_str(), true, true);
+			loadTextureIfMissing(battleTextures[i], newPath + n + ".png");
 		}
 	}
 
@@ -274,7 +298,7 @@ void UiENgine::loadTextures(std::string path)
 
 		if (!effectsTexture[i].id)
 		{
-			effectsTexture[i].loadFromFile((newPath + n + ".png").c_str(), true, true);
+			loadTextureIfMissing(effectsTexture[i], newPath + n + ".png");
 		}
 	}
 }

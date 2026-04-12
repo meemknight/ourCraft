@@ -18,6 +18,7 @@
 #include <blocks.h>
 #include <unordered_map>
 #include <magic_enum.hpp>
+#include <platform/resourceResolver.h>
 
 glm::mat4 aiToGlm(const aiMatrix4x4 &matrix)
 {
@@ -127,7 +128,11 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		}
 		else
 		{
-			texture.loadFromFile(path, true, true);
+			std::filesystem::path resolvedPath;
+			if (resourceResolver::tryResolvePath(path, resolvedPath))
+			{
+				texture.loadFromFile(resolvedPath.string().c_str(), true, true);
+			}
 		}
 
 		if (texture.id)
@@ -147,8 +152,7 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		}
 		else
 		{
-			//todo error report
-			std::cout << "Error loading: " << path << "\n";
+			resourceResolver::reportMissingPathOnce(path);
 
 			handle = gpuIds[0];
 			texture.id = texturesIds[0];
@@ -216,7 +220,17 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		vertexes.clear();
 		indices.clear();
 
-		const aiScene *scene = importer.ReadFile(path, flags);
+		std::filesystem::path resolvedPath;
+		if (!resourceResolver::tryResolvePath(path, resolvedPath))
+		{
+			if (reportErrors)
+			{
+				resourceResolver::reportMissingPathOnce(path);
+			}
+			return;
+		}
+
+		const aiScene *scene = importer.ReadFile(resolvedPath.string(), flags);
 
 		if (scene)
 		{
@@ -461,7 +475,7 @@ void ModelsManager::loadAllModels(std::string path, bool reportErrors)
 		}
 		else if(reportErrors)
 		{
-			std::cout << "noSchene in" << path << "\n";
+			std::cout << "noSchene in" << resolvedPath.string() << "\n";
 			std::cout << importer.GetErrorString() << "\n";
 		}
 

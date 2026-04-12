@@ -4,6 +4,7 @@
 #include <iostream>
 #include <errorReporting.h>
 #include <gameplay/items.h>
+#include <platform/resourceResolver.h>
 #include <platformTools.h>
 
 #include <assimp/Importer.hpp>
@@ -859,10 +860,18 @@ bool fixAlpha(unsigned char *buffer, int w, int h, bool firstTime)
 
 bool loadFromFileAndAddPadding(gl2d::Texture &t, const char *path)
 {
-	std::ifstream file(path, std::ios::binary);
+	std::filesystem::path resolvedPath;
+	if (!resourceResolver::tryResolvePath(path, resolvedPath))
+	{
+		resourceResolver::reportMissingPathOnce(path);
+		return false;
+	}
+
+	std::ifstream file(resolvedPath, std::ios::binary);
 
 	if (!file.is_open())
 	{
+		resourceResolver::reportMissingPathOnce(path);
 		return false;
 	}
 
@@ -961,16 +970,23 @@ void createFromFileDataWithAplhaFixing(gl2d::Texture &t, const unsigned char *im
 bool loadFromFileWithAplhaFixing(gl2d::Texture &t, 
 	const char *fileName, bool pixelated, bool useMipMaps, bool isNormalMap, bool reportErrors)
 {
-	std::ifstream file(fileName, std::ios::binary);
+	std::filesystem::path resolvedPath;
+	if (!resourceResolver::tryResolvePath(fileName, resolvedPath))
+	{
+		if (reportErrors)
+		{
+			resourceResolver::reportMissingPathOnce(fileName);
+		}
+		return 0;
+	}
+
+	std::ifstream file(resolvedPath, std::ios::binary);
 
 	if (!file.is_open())
 	{
 		if (reportErrors)
 		{
-			char c[300] = {0};
-			strcat(c, "error openning: ");
-			strcat(c + strlen(c), fileName);
-			reportError(c);
+			resourceResolver::reportMissingPathOnce(fileName);
 		};
 		return 0;
 	}
@@ -1182,8 +1198,24 @@ void BlocksLoader::loadAllTextures(std::string filePath, bool reportErrors)
 	{
 
 		gl2d::Texture t;
-		
-		if (!loadFromFileWithAplhaFixing(t, path.c_str(), true, false, isNormalMap, errors)) { return 0; }
+		std::filesystem::path resolvedPath;
+		std::vector<std::filesystem::path> extraCandidates;
+		auto requestedPath = std::filesystem::path(path);
+		if (requestedPath.parent_path().filename() == "models")
+		{
+			extraCandidates.push_back(requestedPath.parent_path().parent_path() / requestedPath.filename());
+		}
+
+		if (!resourceResolver::tryResolvePath(requestedPath, resolvedPath, extraCandidates))
+		{
+			if (errors)
+			{
+				resourceResolver::reportMissingPathOnce(requestedPath);
+			}
+			return 0;
+		}
+
+		if (!loadFromFileWithAplhaFixing(t, resolvedPath.string().c_str(), true, false, isNormalMap, false)) { return 0; }
 		t.bind();
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
