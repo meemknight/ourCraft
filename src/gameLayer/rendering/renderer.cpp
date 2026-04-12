@@ -188,7 +188,7 @@ float vertexData[] = {
 	0.5, 0.5, -0.5,
 	-0.5, 0.5, 0.5,
 	
-#pragma region leaves
+// region leaves
 
 	//moving leaves
 	//front
@@ -226,9 +226,9 @@ float vertexData[] = {
 	0.5, 0.5, 0.5,
 	0.5, -0.5, 0.5,
 	0.5, -0.5, -0.5,
-#pragma endregion
+// endregion
 
-#pragma region torch and water
+// region torch and water
 
 	//torch
 	//front
@@ -354,9 +354,9 @@ float vertexData[] = {
 	0.5, 0.5, 0.5,
 	0.5, -0.625, 0.5,
 	0.5, -0.625, -0.5,
-#pragma endregion
+// endregion
 
-#pragma region stairs
+// region stairs
 
 	//half bottom
 		//front
@@ -378,176 +378,10 @@ float vertexData[] = {
 		-0.5, -0.5, -0.5,
 
 		//right
-		0.5, 0.0, -0.5,
-		0.5, 0.0, 0.5,
-		0.5, -0.5, 0.5,
-		0.5, -0.5, -0.5,
-
-	//top corner piece
-	//front left side
-		-0.5, 0.0, 0,
-		-0.5, 0.5, 0,
-		-0.5, 0.5, -0.5,
-		-0.5, 0.0, -0.5,
-
-	//front right side
-		0.5, 0.5, -0.5,
-		0.5, 0.5, 0,
-		0.5, 0.0, 0,
-		0.5, 0.0, -0.5,
-
-	//front left side
-		-0.5, 0.0, 0.5,
-		-0.5, 0.5, 0.5,
-		-0.5, 0.5, 0,
-		-0.5, 0.0, 0,
-
-		//front right side
-		0.5, 0.5, 0,
-		0.5, 0.5, 0.5,
-		0.5, 0.0, 0.5,
-		0.5, 0.0, 0,
-
-	//side
-		0, 0.5, 0.5,
-		-0.5, 0.5, 0.5,
-		-0.5, 0, 0.5,
-		0, 0, 0.5,
-
-		-0.5, 0, -0.5,
-		-0.5, 0.5, -0.5,
-		0, 0.5, -0.5,
-		0, 0, -0.5,
-
-	//side
-		0.5, 0.5, 0.5,
-		0, 0.5, 0.5,
-		0, 0, 0.5,
-		0.5, 0, 0.5,
-
-		0, 0, -0.5,
-		0, 0.5, -0.5,
-		0.5, 0.5, -0.5,
-		0.5, 0, -0.5,
-
-	//top half
-		//0
-		-0.5, 0.5, -0.5,
-		-0.5, 0.5, 0,
-		0.5, 0.5, 0,
-		0.5, 0.5, -0.5,
-
-		//2
-		-0.5, 0.5, 0,
-		-0.5, 0.5, 0.5,
-		0.5, 0.5, 0.5,
-		0.5, 0.5, 0,
-
-		//1
-		-0.5, 0.5, -0.5,
-		-0.5, 0.5, 0.5,
-		0.0, 0.5, 0.5,
-		0.0, 0.5, -0.5,
-
-
-		//3
-		0, 0.5, -0.5,
-		0, 0.5, 0.5,
-		0.5, 0.5, 0.5,
-		0.5, 0.5, -0.5,
-
-	//top half but bottom part
-	//0
-		-0.5, 0, -0.5,
-		-0.5, 0, 0,
-		0.5, 0, 0,
-		0.5, 0, -0.5,
-
-		//2
-		-0.5, 0, 0,
-		-0.5, 0, 0.5,
-		0.5, 0, 0.5,
-		0.5, 0, 0,
-
-		//1
-		-0.5, 0, -0.5,
-		-0.5, 0, 0.5,
-		0.0, 0, 0.5,
-		0.0, 0, -0.5,
-
-
-		//3
-		0, 0, -0.5,
-		0, 0, 0.5,
-		0.5, 0, 0.5,
-		0.5, 0, -0.5,
-
-	//frontal middle top piece
-		//front
-		0.5, 0.5, 0,
-		-0.5, 0.5, 0,
-		-0.5, 0, 0,
-		0.5, 0, 0,
-
-		//back
-		-0.5, 0, 0,
-		-0.5, 0.5, 0,
-		0.5, 0.5, 0,
-		0.5, 0, 0,
-
-		//right
-		0, 0.5, -0.5,
-		0, 0.5, 0.5,
-		0, 0, 0.5,
-		0, 0, -0.5,
-
-		//left
-		0, 0, 0.5,
-		0, 0.5, 0.5,
-		0, 0.5, -0.5,
-		0, 0, -0.5,
-#pragma endregion
-
-#pragma region slabs
-
-	//bottom slabs!!!
-	//top
-	-0.5, 0, -0.5,
-	-0.5, 0, 0.5,
-	0.5, 0, 0.5,
-	0.5, 0, -0.5,
-
-	//half top
-	//front
-			0.5, 0.5, 0.5,
-			-0.5, 0.5, 0.5,
-			-0.5, 0.0, 0.5,
-			0.5, 0.0, 0.5,
-
-			//back
-			-0.5, 0.0, -0.5,
-			-0.5, 0.5, -0.5,
-			0.5, 0.5, -0.5,
-			0.5, 0.0, -0.5,
-
-			//left
-			-0.5, 0.0, 0.5,
-			-0.5, 0.5, 0.5,
-			-0.5, 0.5, -0.5,
-			-0.5, 0.0, -0.5,
-
-			//right
-			0.5, 0.5, -0.5,
-			0.5, 0.5, 0.5,
-			0.5, 0.0, 0.5,
-			0.5, 0.0, -0.5,
-
-		//bottom moddle part
-		0.5, 0.0, 0.5,
-		-0.5, 0.0, 0.5,
-		-0.5, 0.0, -0.5,
-		0.5, 0.0, -0.5,
-#pragma endregion
+	0.5, 0.0, -0.5,
+	0.5, 0.0, 0.5,
+	0.5, -0.5, 0.5,
+	0.5, -0.5, -0.5,
 
 
 	//walls inner part
@@ -656,7 +490,7 @@ float vertexData[] = {
 		0.5, -0.5, 0.0,
 
 
-	#pragma region LOD1
+	// region LOD1
 		//lod 1
 
 			//front
@@ -690,12 +524,9 @@ float vertexData[] = {
 			-0.5, -0.5, -0.5,
 
 			//right
-			1.5, 1.5, -0.5,
-			1.5, 1.5, 1.5,
-			1.5, -0.5, 1.5,
-			1.5, -0.5, -0.5,
-
-		#pragma endregion
+		1.5, 1.5, -0.5,
+		1.5, -0.5, 1.5,
+		1.5, -0.5, -0.5,
 
 
 
@@ -762,7 +593,7 @@ float vertexUV[] = {
 	0, 0,
 	1, 0,
 
-#pragma region other
+// region other
 
 	//grass
 	//front
@@ -949,9 +780,9 @@ float vertexUV[] = {
 	0, 1,
 	0, 0,
 	1, 0,
-#pragma endregion
+// endregion
 
-#pragma region stairs
+// region stairs
 
 
 	//half botom
@@ -1096,7 +927,6 @@ float vertexUV[] = {
 		0.5, 1,
 		0, 1,
 		0, 0.5,
-#pragma endregion
 
 
 	//bottom slabs!!!
@@ -1237,7 +1067,7 @@ float vertexUV[] = {
 	0.5, 0,
 	1, 0,
 
-	#pragma region lods
+	// region lods
 
 		//front
 		2, 1, //
@@ -1275,9 +1105,6 @@ float vertexUV[] = {
 		0, -1,//
 		2, -1,//
 
-
-
-	#pragma endregion
 
 
 	//top for decals
@@ -1867,7 +1694,6 @@ void Renderer::create(ModelsManager &modelsManager)
 
 
 
-#pragma region basic entity renderer
 
 	//GLuint vaoCube = 0;
 	//GLuint vertexBufferCube = 0;
@@ -2029,10 +1855,8 @@ void Renderer::create(ModelsManager &modelsManager)
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, perEntityDataSSBO);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, perEntityDataSSBO);
 
-#pragma endregion
 
 
-#pragma region decals
 	{
 
 
@@ -2052,7 +1876,6 @@ void Renderer::create(ModelsManager &modelsManager)
 	}
 
 
-#pragma endregion
 
 
 
@@ -2297,11 +2120,10 @@ void Renderer::reloadShaders()
 	defaultShader.u_lights = getStorageBlockIndex(defaultShader.shader.id, "u_lights");
 	glShaderStorageBlockBinding(defaultShader.shader.id, defaultShader.u_lights, 4);
 
-#pragma region bloom
 
 	filterBloomDataShader.shader.clear();
-	filterBloomDataShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
-		RESOURCES_PATH "shaders/postProcess/filterBloomData.frag");
+	filterBloomDataShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postprocess/drawQuads.vert",
+		RESOURCES_PATH "shaders/postprocess/filterBloomData.frag");
 	filterBloomDataShader.shader.bind();
 	GET_UNIFORM2(filterBloomDataShader, u_exposure);
 	GET_UNIFORM2(filterBloomDataShader, u_tresshold);
@@ -2309,8 +2131,8 @@ void Renderer::reloadShaders()
 
 
 	applyBloomDataShader.shader.clear();
-	applyBloomDataShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
-		RESOURCES_PATH "shaders/postProcess/applyBloomData.frag");
+	applyBloomDataShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postprocess/drawQuads.vert",
+		RESOURCES_PATH "shaders/postprocess/applyBloomData.frag");
 	applyBloomDataShader.shader.bind();
 	GET_UNIFORM2(applyBloomDataShader, u_waterDropsPower);
 	GET_UNIFORM2(applyBloomDataShader, u_hitIntensity);
@@ -2319,30 +2141,28 @@ void Renderer::reloadShaders()
 
 
 	filterDownShader.shader.clear();
-	filterDownShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
-		RESOURCES_PATH "shaders/postProcess/filterDown.frag");
+	filterDownShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postprocess/drawQuads.vert",
+		RESOURCES_PATH "shaders/postprocess/filterDown.frag");
 	GET_UNIFORM2(filterDownShader, u_texture);
 	GET_UNIFORM2(filterDownShader, u_mip);
 
 
 	addMipsShader.shader.clear();
-	addMipsShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
-		RESOURCES_PATH "shaders/postProcess/addMipsShader.frag");
+	addMipsShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postprocess/drawQuads.vert",
+		RESOURCES_PATH "shaders/postprocess/addMipsShader.frag");
 	GET_UNIFORM2(addMipsShader, u_texture);
 	GET_UNIFORM2(addMipsShader, u_mip);
 
 
 	gausianBLurShader.shader.clear();
-	gausianBLurShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
-		RESOURCES_PATH "shaders/postProcess/gausianBlur.frag");
+	gausianBLurShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postprocess/drawQuads.vert",
+		RESOURCES_PATH "shaders/postprocess/gausianBlur.frag");
 	GET_UNIFORM2(gausianBLurShader, u_horizontal);
 	GET_UNIFORM2(gausianBLurShader, u_mip);
 	GET_UNIFORM2(gausianBLurShader, u_texel);
 
 
-#pragma endregion
 
-#pragma region ui blocks
 	{
 		renderUIBlocksShader.shader.clear();
 		renderUIBlocksShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/renderBlockUi.vert",
@@ -2353,22 +2173,18 @@ void Renderer::reloadShaders()
 		GET_UNIFORM2(renderUIBlocksShader, u_useOneTexture);
 		
 	}
-#pragma endregion
 
-#pragma region fxaa
 	{
 		fxaaShader.shader.clear();
-		fxaaShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
-			RESOURCES_PATH "shaders/postProcess/fxaa.frag");
+		fxaaShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postprocess/drawQuads.vert",
+			RESOURCES_PATH "shaders/postprocess/fxaa.frag");
 
 		GET_UNIFORM2(fxaaShader, u_texture);
 
 
 	}
-#pragma endregion
 
 
-#pragma region zpass
 	{
 
 		zpassShader.shader.clear();
@@ -2392,14 +2208,12 @@ void Renderer::reloadShaders()
 		zpassShader.u_textureSamplerers = getStorageBlockIndex(zpassShader.shader.id, "u_textureSamplerers");
 		glShaderStorageBlockBinding(zpassShader.shader.id, zpassShader.u_textureSamplerers, 3);
 	}
-#pragma endregion
 
-#pragma region ssr
 	{
 		ssrShader.shader.clear();
 
-		ssrShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
-			RESOURCES_PATH "shaders/postProcess/ssr.frag");
+		ssrShader.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/postprocess/drawQuads.vert",
+			RESOURCES_PATH "shaders/postprocess/ssr.frag");
 		ssrShader.shader.bind();
 
 		GET_UNIFORM2(ssrShader, u_color);
@@ -2413,10 +2227,8 @@ void Renderer::reloadShaders()
 		
 
 	}
-#pragma endregion
 
 
-#pragma region decals
 	{
 
 		decalShader.shader.clear();
@@ -2445,10 +2257,8 @@ void Renderer::reloadShaders()
 
 
 	}
-#pragma endregion
 
 
-#pragma region basic entity renderer
 
 	entityRenderer.blockEntityshader.shader.clear();
 
@@ -2511,14 +2321,12 @@ void Renderer::reloadShaders()
 	glShaderStorageBlockBinding(entityRenderer.basicEntityShader.shader.id, entityRenderer.basicEntityShader.u_perEntityData, 7);
 
 
-#pragma endregion
 
-#pragma region post process
 
 	hbaoShader.shader.clear();
-	hbaoShader.shader.loadShaderProgramFromFile(
-		RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
-		RESOURCES_PATH "shaders/postProcess/hbao.frag");
+		hbaoShader.shader.loadShaderProgramFromFile(
+			RESOURCES_PATH "shaders/postprocess/drawQuads.vert",
+			RESOURCES_PATH "shaders/postprocess/hbao.frag");
 
 	GET_UNIFORM2(hbaoShader, u_gPosition);
 	GET_UNIFORM2(hbaoShader, u_gNormal);
@@ -2527,24 +2335,24 @@ void Renderer::reloadShaders()
 
 
 	radialBlurShader.shader.clear();
-	radialBlurShader.shader.loadShaderProgramFromFile(
-		RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
-		RESOURCES_PATH "shaders/postProcess/radialBlur.frag");
+		radialBlurShader.shader.loadShaderProgramFromFile(
+			RESOURCES_PATH "shaders/postprocess/drawQuads.vert",
+			RESOURCES_PATH "shaders/postprocess/radialBlur.frag");
 	GET_UNIFORM2(radialBlurShader, u_texture);
 	GET_UNIFORM2(radialBlurShader, u_center);
 
 
 	maskDepthShader.shader.clear();
-	maskDepthShader.shader.loadShaderProgramFromFile(
-		RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
-		RESOURCES_PATH "shaders/postProcess/maskDepth.frag");
+		maskDepthShader.shader.loadShaderProgramFromFile(
+			RESOURCES_PATH "shaders/postprocess/drawQuads.vert",
+			RESOURCES_PATH "shaders/postprocess/maskDepth.frag");
 	GET_UNIFORM2(maskDepthShader, u_depthTexture);
 
 
 	applyHBAOShader.shader.clear();
-	applyHBAOShader.shader.loadShaderProgramFromFile(
-		RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
-		RESOURCES_PATH "shaders/postProcess/applyHBAO.frag");
+		applyHBAOShader.shader.loadShaderProgramFromFile(
+			RESOURCES_PATH "shaders/postprocess/drawQuads.vert",
+			RESOURCES_PATH "shaders/postprocess/applyHBAO.frag");
 	GET_UNIFORM2(applyHBAOShader, u_hbao);
 	GET_UNIFORM2(applyHBAOShader, u_currentViewSpace);
 	GET_UNIFORM2(applyHBAOShader, u_viewDistance);
@@ -2552,9 +2360,9 @@ void Renderer::reloadShaders()
 
 
 	warpShader.shader.clear();
-	warpShader.shader.loadShaderProgramFromFile(
-		RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
-		RESOURCES_PATH "shaders/postProcess/warp.frag");
+		warpShader.shader.loadShaderProgramFromFile(
+			RESOURCES_PATH "shaders/postprocess/drawQuads.vert",
+			RESOURCES_PATH "shaders/postprocess/warp.frag");
 	GET_UNIFORM2(warpShader, u_color);
 	GET_UNIFORM2(warpShader, u_time);
 	GET_UNIFORM2(warpShader, u_underwaterColor);
@@ -2562,9 +2370,9 @@ void Renderer::reloadShaders()
 
 
 	applyToneMapper.shader.clear();
-	applyToneMapper.shader.loadShaderProgramFromFile(
-		RESOURCES_PATH "shaders/postProcess/drawQuads.vert",
-		RESOURCES_PATH "shaders/postProcess/toneMap.frag");
+		applyToneMapper.shader.loadShaderProgramFromFile(
+			RESOURCES_PATH "shaders/postprocess/drawQuads.vert",
+			RESOURCES_PATH "shaders/postprocess/toneMap.frag");
 	GET_UNIFORM2(applyToneMapper, u_color);
 	GET_UNIFORM2(applyToneMapper, u_tonemapper);
 	GET_UNIFORM2(applyToneMapper, u_exposure);
@@ -2580,7 +2388,6 @@ void Renderer::reloadShaders()
 	GET_UNIFORM2(applyToneMapper, u_gain);
 
 
-#pragma endregion
 	
 }
 
@@ -2843,7 +2650,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	}
 
 	
-#pragma region frustum culling and sorting
 
 	//chunk vector copy has only valid non culled chunks!
 	std::vector<Chunk*> chunkVectorCopy;
@@ -2905,11 +2711,9 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		);
 	}
 
-#pragma endregion
 
 
 
-#pragma region render sky box 0
 
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Render skybox");
 	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
@@ -2928,10 +2732,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	glPopDebugGroup();
 
-#pragma endregion
 
 
-#pragma region setup uniforms and stuff
 	{
 
 		defaultShader.shadingSettings.fogDistance =
@@ -2985,7 +2787,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glUniformMatrix4fv(defaultShader.u_lastViewProj, 1, 0,
 			&(c.lastFrameViewProjMatrix)[0][0]);
 
-	#pragma region textures
 		programData.numbersTexture.bind(0);
 
 		programData.dudv.bind(1);
@@ -3020,7 +2821,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glActiveTexture(GL_TEXTURE0 + 11);
 		glBindTexture(GL_TEXTURE_2D, programData.aoTexture.id);
 		glUniform1i(defaultShader.u_ao, 11);
-	#pragma endregion
 
 		glUniformHandleui64vARB(defaultShader.u_cascadedShadowsMaps, 3, &sunShadow.bindlessShadowTextures[0]);
 		glUniform3iv(defaultShader.u_cascadedShadowPosition, 3, &sunShadow.lightSpacePositionCascades[0][0]);
@@ -3061,7 +2861,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			glUniform3iv(defaultShader.u_pointPosI, 1, &i[0]);
 		}
 
-	#pragma region lights
 		//new
 		if(1)
 		{
@@ -3210,10 +3009,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			//}
 		}
 		
-	#pragma endregion
 
 	}
-#pragma endregion
 
 
 	//configure opaque geometry
@@ -3472,7 +3269,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glDisable(GL_BLEND);
 		glDepthFunc(GL_LESS);
 
-	#pragma region render sun for SSGR
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "render sun for SSGR");
 		//SS God rays
 		fboSunForGodRaysSecond.clearFBO();
@@ -3488,10 +3284,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glViewport(0, 0, screenX, screenY);
 		glEnable(GL_DEPTH_TEST);
 		glPopDebugGroup();
-	#pragma endregion
 
 
-	#pragma region SSGR
 		{
 			glBindVertexArray(vaoQuad);
 
@@ -3537,28 +3331,22 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			glPopDebugGroup();
 
 		}
-	#pragma endregion
 	};
 
 	if (getShadingSettings().waterType)
 	{
 
-	#pragma region depth pre pass 1
 		programData.GPUProfiler.startSubProfile("depth pre pass 1");
 		depthPrePass();
 		programData.GPUProfiler.endSubProfile("depth pre pass 1");
-	#pragma endregion
 
 
 
-	#pragma region solid pass 2
 		programData.GPUProfiler.startSubProfile("solid pass 2");
 		solidPass();
 		programData.GPUProfiler.endSubProfile("solid pass 2");
-	#pragma endregion
 
 
-	#pragma region render entities
 		programData.GPUProfiler.startSubProfile("entities");
 		renderEntities(deltaTime, c, modelsManager, blocksLoader,
 			entityManager, vp, c.getProjectionMatrix(), viewMatrix, posFloat, posInt,
@@ -3566,7 +3354,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			currentSkinBindlessTexture, playerClicked, playerRunning, playerHand, currentHeldItemIndex,
 			showHand, playersConnectionData);
 		programData.GPUProfiler.endSubProfile("entities");
-	#pragma endregion
 
 
 	//copy depth 3
@@ -3583,7 +3370,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			glDrawBuffers(5, attachments);
 		}
 
-	#pragma region render only water geometry to depth 4
 		programData.GPUProfiler.startSubProfile("render only water to depth 4");
 		defaultShader.shader.bind();
 		glBindFramebuffer(GL_FRAMEBUFFER, fboCoppy.fbo);
@@ -3597,10 +3383,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		renderTransparentGeometry(true, false);
 		programData.GPUProfiler.endSubProfile("render only water to depth 4");
-	#pragma endregion
 
 
-	#pragma region render with depth peel first part of the transparent of the geometry 5
 		programData.GPUProfiler.startSubProfile("render first water 5");
 		glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
 		defaultShader.shader.bind();
@@ -3621,21 +3405,16 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		//todo disable ssr for this step?
 		renderTransparentGeometry(true, false);
 		programData.GPUProfiler.endSubProfile("render first water 5");
-	#pragma endregion
 
 
-	#pragma region copy color buffer and last depth for later use 6
 		fboCoppy.copyDepthAndColorFromOtherFBO(fboMain.fbo, screenX, screenY);
-	#pragma endregion
 
 		
-	#pragma region render transparent geometry last phaze 7
 		programData.GPUProfiler.startSubProfile("final transparency 7");
 
 		renderTransparentGeometryPhaze(true, true, true);
 		//renderTransparentGeometryPhaze(false, false, true);
 		programData.GPUProfiler.endSubProfile("final transparency 7");
-	#pragma endregion
 
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
@@ -3656,7 +3435,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		solidPass();
 		programData.GPUProfiler.endSubProfile("solid pass 2");
 
-	#pragma region render entities
 		programData.GPUProfiler.startSubProfile("entities");
 		renderEntities(deltaTime, c, modelsManager, blocksLoader,
 			entityManager, vp, c.getProjectionMatrix(), viewMatrix, posFloat, posInt,
@@ -3664,7 +3442,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 			currentSkinBindlessTexture, playerClicked, playerRunning, playerHand, currentHeldItemIndex,
 			showHand, playersConnectionData);
 		programData.GPUProfiler.endSubProfile("entities");
-	#pragma endregion
 
 	//copy depth 3
 		fboCoppy.copyDepthFromOtherFBO(fboMain.fbo, screenX, screenY);
@@ -3695,7 +3472,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 	}
 
-#pragma region ssr
 
 	if(0)
 	{
@@ -3750,9 +3526,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		programData.GPUProfiler.endSubProfile("SSR PASS");
 	}
 
-#pragma endregion
 
-#pragma region get automatic exposure
 	if(1)
 	{
 
@@ -3832,7 +3606,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		adaptiveExposure.update(deltaTime, averageLuminosity);
 
 	}
-#pragma endregion
 
 	bool lastBloomChannel = 0;
 	if (getShadingSettings().bloom && getShadingSettings().bloomMultiplier > 0)
@@ -3840,7 +3613,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 		programData.GPUProfiler.startSubProfile("Bloom");
 
-#pragma region get bloom filtered data
 	{
 		glDisable(GL_DEPTH_TEST);
 
@@ -3881,9 +3653,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 		glDisable(GL_BLEND);
 
 	}
-#pragma endregion
 
-#pragma region bloom blur
 	{
 		glBindVertexArray(vaoQuad);
 
@@ -3898,7 +3668,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 			for (int i = 0; i < currentMips + 1; i++)
 			{
-			#pragma region scale down
 				mipW /= 2;
 				mipH /= 2;
 				glViewport(0, 0, mipW, mipH);
@@ -3917,9 +3686,7 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 				glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 				lastBloomChannel = horizontal;
-			#pragma endregion
 
-			#pragma region copy data
 
 				glBindFramebuffer(GL_FRAMEBUFFER, blurFbo[!horizontal]);
 				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
@@ -3935,10 +3702,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 				glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 				lastBloomChannel = !horizontal;
 
-			#pragma endregion
 
 
-			#pragma region blur
 				gausianBLurShader.shader.bind();
 				glActiveTexture(GL_TEXTURE0);
 				//glUniform1i(gausianBLurShader.u_toBlurcolorInput, 0);
@@ -3964,7 +3729,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 				}
 				horizontal = !horizontal;
 
-			#pragma endregion
 
 			}
 		}
@@ -4009,14 +3773,12 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 
 
 	}
-#pragma endregion
 
 		programData.GPUProfiler.endSubProfile("Bloom");
 
 	};
 
 
-#pragma region post process
 
 	//hbao
 	if (programData.renderer.ssao)
@@ -4251,10 +4013,8 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	//secondaryFBO->copyDepthAndColorToMainFbo(fboMain.size.x, fboMain.size.y);
 
 
-#pragma endregion
 
 
-#pragma region lens flare
 
 
 	{
@@ -4352,7 +4112,6 @@ void Renderer::renderFromBakedData(SunShadow &sunShadow, ChunkSystem &chunkSyste
 	}
 
 
-#pragma endregion
 
 
 
@@ -4420,14 +4179,12 @@ void Renderer::renderDecal(glm::ivec3 position, Camera &c, Block b, ProgramData 
 	int elementCountSize = currentVector.size() / 4; //todo magic number
 
 
-#pragma region add data
 	{
 		glBindBuffer(GL_ARRAY_BUFFER, decalShader.geometry);
 
 		glBufferData(GL_ARRAY_BUFFER, currentVector.size() * sizeof(currentVector[0]),
 			currentVector.data(), GL_DYNAMIC_DRAW);
 	}
-#pragma endregion
 
 
 	//todo change, also reuse in the the decal shader
@@ -4475,7 +4232,7 @@ void Renderer::renderEntities(
 	Camera &c,
 	ModelsManager &modelsManager,
 	BlocksLoader &blocksLoader, ClientEntityManager &entityManager,
-	glm::mat4 &vp, glm::mat4 &projection,
+	glm::mat4 &vp, const glm::mat4 &projection,
 	glm::mat4 &viewMatrix,
 	glm::vec3 posFloat,
 	glm::ivec3 posInt,
@@ -4486,15 +4243,12 @@ void Renderer::renderEntities(
 	)
 {
 
-#pragma region setup pipeline
 
 	glBindFramebuffer(GL_FRAMEBUFFER, fboMain.fbo);
 	glDepthFunc(GL_LESS);
 
-#pragma endregion
 
 
-#pragma region other entities setup shader
 	
 	entityRenderer.basicEntityShader.shader.bind();
 	
@@ -4507,7 +4261,6 @@ void Renderer::renderEntities(
 	glUniform1f(entityRenderer.basicEntityShader.u_exposure, exposure);
 	
 
-#pragma endregion
 
 
 	struct PerEntityData
@@ -4834,7 +4587,6 @@ void Renderer::renderEntities(
 	glBindVertexArray(0);
 
 	//cube entities
-#pragma region cubeEntities
 	{
 
 		entityRenderer.blockEntityshader.shader.bind();
@@ -4948,7 +4700,6 @@ void Renderer::renderEntities(
 
 
 	}
-#pragma endregion
 
 
 	static gl2d::Texture tempWhite;
@@ -4962,7 +4713,6 @@ void Renderer::renderEntities(
 		glMakeTextureHandleResidentARB(tempWhiteBindlessHandle);
 	}
 
-#pragma region item entities
 
 	entityRenderer.itemEntityShader.shader.bind();
 
@@ -5123,7 +4873,6 @@ void Renderer::renderEntities(
 	}
 
 
-#pragma endregion
 
 
 
@@ -5473,7 +5222,6 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 
 	glm::vec3 posFloat = {};
 
-#pragma region setup uniforms and stuff
 	{
 		zpassShader.shader.bind();
 		//glUniformMatrix4fv(zpassShader.u_viewProjection, 1, GL_FALSE, &sunShadow.lightSpaceMatrix[0][0]);
@@ -5481,10 +5229,8 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 		//glUniform3iv(zpassShader.u_positionInt, 1, &sunShadow.lightSpacePosition[0]);
 		glUniform1i(zpassShader.u_renderOnlyWater, 0);
 	}
-#pragma endregion
 
 
-#pragma region render shadows!
 
 
 
@@ -5713,18 +5459,15 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 		//std::cout << translation.x << " " << translation.y << " " << translation.z << "\n";
 
 
-	#pragma region setup uniforms and stuff
 		{
 			glUniformMatrix4fv(zpassShader.u_viewProjection, 1, GL_FALSE, &outSunMatrix[0][0]);
 			glUniform3iv(zpassShader.u_positionInt, 1, &outSunPos[0]);
 		}
-	#pragma endregion
 
 
 		FrustumVolume firstCascadeFrustum(outSunMatrix);
 
 
-	#pragma region render shadows
 		for (auto &chunk : chunkSystem.loadedChunks)
 		{
 			if (chunk)
@@ -5757,7 +5500,6 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 				}
 			}
 		}
-	#pragma endregion
 
 
 
@@ -5825,7 +5567,6 @@ void Renderer::renderShadow(SunShadow &sunShadow,
 
 	}
 	*/
-#pragma endregion
 
 
 
@@ -6656,4 +6397,3 @@ float AdaptiveExposure::getLuminosityOrDefaultValueIfDisabeled()
 {
 	return currentLuminosity;
 }
-

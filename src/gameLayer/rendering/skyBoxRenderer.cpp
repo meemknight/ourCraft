@@ -69,8 +69,8 @@ void SkyBoxLoaderAndDrawer::createGpuData()
 {
 
 
-	atmosphericScatteringShader.shader.loadShaderProgramFromFile(RESOURCES_PATH  "shaders/skyBox/hdrToCubeMap.vert",
-		RESOURCES_PATH  "shaders/skyBox/atmosphericScattering.frag");
+	atmosphericScatteringShader.shader.loadShaderProgramFromFile(RESOURCES_PATH  "shaders/skybox/hdrToCubeMap.vert",
+		RESOURCES_PATH  "shaders/skybox/atmosphericScattering.frag");
 	atmosphericScatteringShader.u_lightPos = getUniform(atmosphericScatteringShader.shader.id, "u_lightPos");
 	atmosphericScatteringShader.u_color1 = getUniform(atmosphericScatteringShader.shader.id, "u_color1");
 	atmosphericScatteringShader.u_color2 = getUniform(atmosphericScatteringShader.shader.id, "u_color2");
@@ -81,7 +81,7 @@ void SkyBoxLoaderAndDrawer::createGpuData()
 	atmosphericScatteringShader.u_noSun = getUniform(atmosphericScatteringShader.shader.id, "u_noSun");
 	
 
-	normalSkyBox.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/skyBox/skyBox.vert", RESOURCES_PATH "shaders/skyBox/skyBox.frag");
+	normalSkyBox.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/skybox/skyBox.vert", RESOURCES_PATH "shaders/skybox/skyBox.frag");
 	normalSkyBox.modelViewUniformLocation = getUniform(normalSkyBox.shader.id, "u_viewProjection");
 	normalSkyBox.u_sunPos = getUniform(normalSkyBox.shader.id, "u_sunPos");
 	normalSkyBox.u_blend = getUniform(normalSkyBox.shader.id, "u_blend");
@@ -89,18 +89,18 @@ void SkyBoxLoaderAndDrawer::createGpuData()
 	normalSkyBox.u_rotation2 = getUniform(normalSkyBox.shader.id, "u_rotation2");
 
 
-	hdrtoCubeMap.shader.loadShaderProgramFromFile(RESOURCES_PATH  "shaders/skyBox/hdrToCubeMap.vert", RESOURCES_PATH  "shaders/skyBox/hdrToCubeMap.frag");
+	hdrtoCubeMap.shader.loadShaderProgramFromFile(RESOURCES_PATH  "shaders/skybox/hdrToCubeMap.vert", RESOURCES_PATH  "shaders/skybox/hdrToCubeMap.frag");
 	hdrtoCubeMap.u_equirectangularMap = getUniform(hdrtoCubeMap.shader.id, "u_equirectangularMap");
 	hdrtoCubeMap.modelViewUniformLocation = getUniform(hdrtoCubeMap.shader.id, "u_viewProjection");
 
-	convolute.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/skyBox/hdrToCubeMap.vert",
-		RESOURCES_PATH "shaders/skyBox/convolute.frag");
+	convolute.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/skybox/hdrToCubeMap.vert",
+		RESOURCES_PATH "shaders/skybox/convolute.frag");
 	convolute.u_environmentMap = getUniform(convolute.shader.id, "u_environmentMap");
 	convolute.modelViewUniformLocation = getUniform(convolute.shader.id, "u_viewProjection");
 	convolute.u_sampleQuality = getUniform(convolute.shader.id, "u_sampleQuality");
 
-	preFilterSpecular.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/skyBox/hdrToCubeMap.vert",
-		RESOURCES_PATH "shaders/skyBox/preFilterSpecular.frag");
+	preFilterSpecular.shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/skybox/hdrToCubeMap.vert",
+		RESOURCES_PATH "shaders/skybox/preFilterSpecular.frag");
 	preFilterSpecular.modelViewUniformLocation = getUniform(preFilterSpecular.shader.id, "u_viewProjection");
 	preFilterSpecular.u_environmentMap = getUniform(preFilterSpecular.shader.id, "u_environmentMap");
 	preFilterSpecular.u_roughness = getUniform(preFilterSpecular.shader.id, "u_roughness");
@@ -833,8 +833,8 @@ void SunRenderer::create()
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, (void*)(sizeof(float) * 2));
 
 
-	shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/skyBox/sun.vert", 
-		RESOURCES_PATH "shaders/skyBox/sun.frag");
+	shader.loadShaderProgramFromFile(RESOURCES_PATH "shaders/skybox/sun.vert", 
+		RESOURCES_PATH "shaders/skybox/sun.frag");
 	
 	u_modelViewProjectionMatrix = getUniform(shader.id, "u_modelViewProjectionMatrix");
 	u_sunset = getUniform(shader.id, "u_sunset");

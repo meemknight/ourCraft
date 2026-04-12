@@ -496,7 +496,7 @@ struct Renderer
 		Camera &c,
 		ModelsManager &modelsManager,
 		BlocksLoader &blocksLoader, ClientEntityManager &entityManager,
-		glm::mat4 &vp, glm::mat4 &projection, glm::mat4 &viewMatrix, glm::vec3 posFloat, glm::ivec3 posInt,
+		glm::mat4 &vp, const glm::mat4 &projection, glm::mat4 &viewMatrix, glm::vec3 posFloat, glm::ivec3 posInt,
 		float exposure, ChunkSystem &chunkSystem, int skyLightIntensity,
 		GLuint64 currentSkinBindlessTexture,
 		bool &playerClicked, float playerRunning, BoneTransform &playerHand,
