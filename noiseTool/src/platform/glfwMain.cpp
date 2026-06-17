@@ -388,7 +388,7 @@ int main()
 
 	//long lastTime = clock();
 	
-	auto stop = std::chrono::high_resolution_clock::now();
+	auto stop = std::chrono::steady_clock::now();
 
 	while (!glfwWindowShouldClose(wind))
 	{
@@ -400,10 +400,10 @@ int main()
 		//long newTime = clock();
 		//float deltaTime = (float)(newTime - lastTime) / CLOCKS_PER_SEC;
 		//lastTime = clock();
-		auto start = std::chrono::high_resolution_clock::now();
+		auto start = std::chrono::steady_clock::now();
 
 		float deltaTime = (std::chrono::duration_cast<std::chrono::nanoseconds>(start - stop)).count() / 1000000000.0;
-		stop = std::chrono::high_resolution_clock::now();
+		stop = std::chrono::steady_clock::now();
 
 		float augmentedDeltaTime = deltaTime;
 		if (augmentedDeltaTime > 1.f / 10) { augmentedDeltaTime = 1.f / 10; }

@@ -1486,6 +1486,7 @@ void BlocksLoader::loadAllTextures(std::string filePath, bool reportErrors)
 
 	}
 
+
 	//generate bump maps for paralax
 	{
 

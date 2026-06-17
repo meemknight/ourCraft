@@ -1008,7 +1008,53 @@ bool WorldGeneratorSettings::loadSettings(const char *data)
 				return true;
 			};
 
+			auto isSymbol = [&](char s) { return 0; };
+			auto consumeSymbol = [&](char s) { return 0; };
+
+			auto nextToken = [&]() {};
+			auto isFloat = [&]() { return 0; };
+
 			//if (isEof()) { break; }
+			 
+			//while inside the while, we read an entire line
+			//for reading a key value pair inside the key value pair,
+			// probably the best approach is to use recursion
+
+			if (consumeSymbol('"'))
+			{
+				if (isString())
+				{
+
+					std::string key = tokens[i].s;
+					nextToken();
+
+					if (consumeSymbol('"'))
+					{
+						//if next token is the symbol : it will advance
+						if (consumeSymbol(':'))
+						{
+
+							if (isNumber())
+							{
+								//read number
+								//..
+								nextToken();
+							}
+							else if (isFloat())
+							{
+								//read float
+								//..
+								nextToken();
+							}
+
+						}
+						else { /* error */ }
+					}
+					else { /* error */ }
+				}
+				else { /* error */ }
+			}
+			else { /* error */ }
 
 			if (isString())
 			{

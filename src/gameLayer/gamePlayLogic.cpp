@@ -130,6 +130,7 @@ struct GameData
 
 		*this = GameData{};
 	}
+
 }gameData;
 
 ThreadPool threadPoolForChunkBaking;
@@ -323,6 +324,8 @@ void exitInventoryMenu()
 
 }
 
+
+
 bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 {
 	gameData.gameplayFrameProfiler.endSubProfile("swap chain and others");
@@ -334,7 +337,6 @@ bool gameplayFrame(float deltaTime, int w, int h, ProgramData &programData)
 	glViewport(0, 0, w, h);
 
 	auto &player = gameData.entityManager.localPlayer;
-
 
 #pragma region server stuff
 	{

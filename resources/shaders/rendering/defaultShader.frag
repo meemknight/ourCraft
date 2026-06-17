@@ -548,6 +548,7 @@ float getShadowBias(float dotLightNormal, int cascade)
 	{
 		return max(0.005, 0.0016 * (1.f - dotLightNormal));
 	}
+	return 0.005;
 }
 
 //pointPos is in worls space
@@ -716,11 +717,12 @@ float shadowCalc2(float dotLightNormal, int cascade)
 	return pow(clamp(shadow, 0, 1), shadowPower);
 }
 
-vec3 SSR(out bool success,vec3 viewPos, vec3 N, 
+vec3 SSR(out bool success, vec3 viewPos, vec3 N, 
 	out float mixFactor, float roughness, vec3 wp, vec3 viewDir, vec3 viewSpaceNormal, vec2 rezolution);
 
 vec3 computeAmbientTerm(vec3 gammaAmbient, vec3 N, vec3 V, vec3 F0, float roughness, 
-	float metallic, vec3 albedo, out bool ssrSuccess, vec3 out_color);
+float metallic, vec3 albedo, 
+out bool ssrSuccess, vec3 out_color);
 
 vec2 reprojectViewSpace(vec2 currentTextureSpacePos)
 {
@@ -947,8 +949,8 @@ void main()
 
 	float shadow = shadowCalc2(dot(u_sunDirection, v_normal), cascade);
 
-	const bool blockIsInWater = ((v_flags & 2) != 0);
-	const float baseAmbient = 0.20 + u_baseAmbientExtra;
+	      bool blockIsInWater = ((v_flags & 2) != 0);
+	      float baseAmbient = 0.20 + u_baseAmbientExtra;
 	const float multiplier = 0.70;
 
 
@@ -1040,7 +1042,8 @@ void main()
 		
 		out_color = vec4(finalColor,textureColor.a);
 		out_color.a = 1-out_color.a;
-		out_color.a *= clamp(0,1,dot(N,V));
+		out_color.a *= clamp(dot(N, V), 0.0, 1.0);
+		//out_color.a *= clamp(0,1,dot(N,V));
 
 
 		out_color.a = 1-out_color.a;
@@ -1709,7 +1712,8 @@ void main()
 //    return viewSpacePosition.xyz;
 //}
 
-const float INFINITY = 1.f/0.f;
+const float INFINITY = 1e20;
+//const float INFINITY = 1.f/0.f;
 const float SSR_minRayStep = 1.0;
 const int	SSR_maxSteps = 50;
 const int	SSR_numBinarySearchSteps = 20;
@@ -1939,7 +1943,7 @@ vec3 computeClipInfo(float zn, float zf) {
 }
 
 
-void swap(in out float a, in out float b)
+void swap(inout float a, inout float b)
 {
 	 float temp = a;
 	 a = b;

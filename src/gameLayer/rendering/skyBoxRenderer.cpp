@@ -551,7 +551,7 @@ void SkyBoxLoaderAndDrawer::loadHDRtexture(const char *name, SkyBox &skyBox, GLu
 
 	glDeleteTextures(1, &hdrTexture);
 
-	createConvolutedAndPrefilteredTextureData(skyBox, frameBuffer);
+	createConvolutedAndPrefilteredTextureData(skyBox);
 }
 
 void SkyBoxLoaderAndDrawer::createConvolutedAndPrefilteredTextureData(SkyBox &skyBox,

@@ -18,7 +18,7 @@
 
 
 #ifdef _WIN32
-#define GPU_ENGINE 1
+#define GPU_ENGINE 0
 extern "C"
 {
 	__declspec(dllexport) unsigned long NvOptimusEnablement = GPU_ENGINE;
@@ -328,6 +328,22 @@ namespace platform
 #pragma endregion
 
 
+bool HasExtension(const char *name)
+{
+	GLint count = 0;
+	glGetIntegerv(GL_NUM_EXTENSIONS, &count);
+
+	for (GLint i = 0; i < count; i++)
+	{
+		const char *ext = (const char *)glGetStringi(GL_EXTENSIONS, i);
+		if (strcmp(ext, name) == 0)
+			return true;
+	}
+
+	return false;
+}
+
+
 int main()
 {
 
@@ -374,12 +390,16 @@ int main()
 
 	permaAssertComment(gladLoadGL(), "err initializing glad");
 
-	if (!GLAD_GL_NV_bindless_texture)
+	if (!GLAD_GL_ARB_bindless_texture)
 	{
 		std::cout << "Error, Bindless texture extension not supported!\nUsually integrated GPUs don't support this extension, this will be fixed in the future.\n";
 		std::cout << "Press enter to try anyway...\n";
 		system("pause");
 	}
+
+
+	// example
+	bool bindless = HasExtension("GL_ARB_bindless_texture");
 
 	//enableReportGlErrors();
 
