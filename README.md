@@ -38,10 +38,10 @@ Features and todos:
 	- [x] Color grading
 	- [x] Fog -(todo improve)
 	- [x] Underwater fog -(todo improve)
-	- [ ] God rays	
+	- [x] God rays	
 	- [x] Fake Shadows for all light types (todo improve)
   	- [x] Shadows (todo optimize)
-   	- [ ] Cascaded shadow maps
+   	- [x] Cascaded shadow maps
 	- [ ] Depth of field (maybe blur far stuff)
   - [ ] Use the same shader for all things in game
 	
@@ -55,6 +55,7 @@ Features and todos:
   - [ ] Buffering
   - [x] Rubber banding
   - [x] Entities
+
 
 
 
